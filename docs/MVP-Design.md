@@ -84,7 +84,7 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 | Armor | Persistent | Leather Cap (+1 Heart), Chain Mail (+1 Defense) |
 | Boots | Persistent | Dash Boots (+1 Move die) |
 | Spell | Charges or single-use | Flame Scroll (3 Attack dice at range 3), Frost Wand (2 charges: freeze for a round) |
-| Tool | Persistent | Boomerang (stun a monster within 4), Grapple Hook (pull yourself up to 4 tiles in a line) |
+| Tool | Persistent | Boomerang (stun a monster within 4), Grapple Hook (pull yourself up to 4 tiles in a line; not built yet) |
 | Bomb | Single-use | Bomb (range 3, 2 Attack dice against every monster in a 3×3 area) |
 | Potion | Single-use | Health Potion (restore 3 hearts) |
 | Treasure | Kept for score | Coin Pouch (5g), Emerald (15g), Golden Idol (40g) |
@@ -92,6 +92,15 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 - **Starter kit** (new characters): Wooden Sword, Buckler, Health Potion.
 - **Equipping or swapping gear** takes your action.
 - **Using a belt item** doesn't take your action (once per turn). Using an item from the backpack takes your action.
+- **Only single-use cards** (potions, bombs, scrolls) go on the belt. Reusable cards with an effect (boomerang,
+  wand) must be equipped to use.
+- **Dropping a card** onto your tile is free. Picking up loot from your tile takes your action and fills the
+  backpack as far as it can.
+- **Chest loot** goes to the backpack, or onto your tile if the backpack is full.
+- **Targeted cards** need line of sight and must have a target: a bomb must catch at least one monster in its
+  blast, and potions only heal yourself and can't be used at full hearts.
+- **Stuns:** a stunned monster skips its next turn and can't be stunned again during the following round.
+  Bosses can't be stunned.
 
 ## Turn structure
 
@@ -118,21 +127,30 @@ facing door of the next room.
   **6** *(tunable)*.
 - Each remaining hit removes 1 heart.
 - **Melee** needs an orthogonally adjacent target. **Ranged** needs line of sight; walls block it.
-- **Luck** rerolls one die of any roll you make.
+- **Line of sight** runs between tile centers. Only walls block it, not pits, chests or other figures, and
+  grazing a wall's corner is allowed.
+- **Luck** rerolls one of your own movement or attack dice. A movement die can be rerolled any time before
+  your first step. With Luck left, an attack waits for you to reroll or confirm; spending your last Luck
+  resolves it. Luck doesn't apply to defense rolls.
 
 ### Monsters (first theme)
 
 | Monster | Hearts | Move | Attack | Defense | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Slime | 1 | 2 | 1 | 1 | Splits into two once when first hit |
+| Slime | 1 | 2 | 1 | 1 | When defeated, splits into two Slimelings (1 heart, 0 defense, don't split) |
 | Bat | 1 | 4 | 1 | 0 | Flies over pits; moves erratically |
 | Spear Guard | 2 | 3 | 2 | 1 | Reach 2 in a straight line |
 | Archer Guard | 2 | 2 | 2 | 1 | Ranged 5; keeps its distance |
 | Skeleton | 2 | 3 | 2 | 1 | Rises again once unless finished by a bomb or spell |
 | **Boss: Iron Warden** | 10 | 3 | 3 | 2 | Every other turn, a flail sweep hits every tile within 2 |
 
-**Monster AI:** move along a path toward the nearest player and attack if able. Ranged monsters keep
-their distance. Monsters stay in their own room.
+**Monster AI:** each monster heads for the closest tile it can attack from and stops as soon as it can
+attack. Among the heroes it can reach, it attacks the one with the fewest hearts. Ranged monsters back away
+from adjacent heroes before shooting, and erratic monsters take each step in a random direction half the
+time. Monsters stay in their own room.
+
+Monster stats and cards live in `src/Woad.Core/Content/Data/*.json`, and each dungeon theme has its own
+file under `Themes/`.
 
 ## Dungeon
 
@@ -222,7 +240,7 @@ Woad (Godot project, repo root)          Woad.Core (src/, pure C#, no Godot)
 | # | Milestone | Done when |
 | --- | --- | --- |
 | M0 | Scaffold ✅ | Godot 4.7 + .NET 10 project builds, tests pass, and the 640×360 layout runs |
-| M1 | Core rules | Room grid, pathing, dice, turn loop, combat, cards/slots/backpack, monster AI: all unit tested |
+| M1 | Core rules ✅ | Room grid, pathing, dice, turn loop, combat, cards/slots/backpack, monster AI: all unit tested |
 | M2 | Playable room | One room in Godot: mouse move/attack, dice tray, hot-seat turns, enemy phase |
 | M3 | Characters | Main menu, point-buy creation, character list, JSON save/load, run setup for 1–4 players |
 | M4 | Dungeon | 3 procedural floors, room templates, doors, splitting up, fog, minimap, stairs, boss, exit |

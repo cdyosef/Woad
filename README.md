@@ -53,6 +53,9 @@ project. Everyone working on the project should use the same editor version. To 
 project.godot, Woad.csproj   Godot game project (repo root): scenes, UI, input, presentation
 scenes/                      Godot scenes, each with its C# script alongside
 src/Woad.Core/               Pure C# rules engine: no Godot references allowed
+  Rules/GameSession*.cs        Executes commands (Commands/) and returns events (Events/)
+  Model/                       Run state the game draws from: heroes, monsters, rooms, cards
+  Content/Data/                Cards, monsters and dungeon themes as JSON (embedded in the DLL)
 tests/Woad.Core.Tests/       xUnit tests for Woad.Core
 docs/                        Design documents
 tools/                       Dev-machine scripts

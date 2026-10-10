@@ -1,0 +1,52 @@
+using Woad.Core.Content;
+
+namespace Woad.Core.Tests.Support;
+
+/// <summary>
+/// Small, stable content for rules tests, so tuning the real game's cards and monsters
+/// never breaks them. Each monster isolates one behavior.
+/// </summary>
+internal static class TestContent
+{
+    public const string ThemeId = "test_theme";
+
+    public const string CardsJson = """
+        [
+          { "id": "sword", "name": "Sword", "type": "weapon", "slot": "mainHand", "modifiers": { "attackDice": 1 } },
+          { "id": "big_sword", "name": "Big Sword", "type": "weapon", "slot": "mainHand", "modifiers": { "attackDice": 2 } },
+          { "id": "bow", "name": "Bow", "type": "weapon", "slot": "mainHand", "twoHanded": true, "modifiers": { "attackDice": 1 }, "attackRange": 4 },
+          { "id": "shield", "name": "Shield", "type": "shield", "slot": "offHand", "modifiers": { "defenseDice": 1 } },
+          { "id": "cap", "name": "Cap", "type": "armor", "slot": "head", "modifiers": { "hearts": 1 } },
+          { "id": "boots", "name": "Boots", "type": "boots", "slot": "feet", "modifiers": { "moveDice": 1 } },
+          { "id": "potion", "name": "Potion", "type": "potion", "usage": "singleUse", "effect": { "kind": "heal", "amount": 3 } },
+          { "id": "bomb", "name": "Bomb", "type": "bomb", "usage": "singleUse", "effect": { "kind": "attack", "amount": 2, "range": 3, "areaRadius": 1 } },
+          { "id": "scroll", "name": "Scroll", "type": "spell", "usage": "singleUse", "effect": { "kind": "attack", "amount": 3, "range": 3 } },
+          { "id": "wand", "name": "Wand", "type": "spell", "slot": "offHand", "usage": "charges", "charges": 2, "effect": { "kind": "stun", "amount": 1, "range": 3 } },
+          { "id": "boomerang", "name": "Boomerang", "type": "tool", "slot": "offHand", "effect": { "kind": "stun", "amount": 1, "range": 4 } },
+          { "id": "coin", "name": "Coin", "type": "treasure", "value": 5 },
+          { "id": "gem", "name": "Gem", "type": "treasure", "value": 15 }
+        ]
+        """;
+
+    public const string MonstersJson = """
+        [
+          { "id": "grunt", "name": "Grunt", "glyph": "m", "hearts": 1, "move": 2, "attackDice": 1, "defenseDice": 1 },
+          { "id": "brute", "name": "Brute", "glyph": "B", "hearts": 2, "move": 2, "attackDice": 2, "defenseDice": 1 },
+          { "id": "dummy", "name": "Dummy", "glyph": "d", "hearts": 3, "move": 0, "attackDice": 0, "defenseDice": 0 },
+          { "id": "splitter", "name": "Splitter", "glyph": "s", "hearts": 1, "move": 2, "attackDice": 1, "defenseDice": 1, "splitsInto": "piece", "splitCount": 2 },
+          { "id": "piece", "name": "Piece", "glyph": "p", "hearts": 1, "move": 2, "attackDice": 1, "defenseDice": 0 },
+          { "id": "spearman", "name": "Spearman", "glyph": "g", "hearts": 2, "move": 3, "attackDice": 2, "defenseDice": 1, "attackPattern": "reach", "attackRange": 2 },
+          { "id": "archer", "name": "Archer", "glyph": "a", "hearts": 2, "move": 2, "attackDice": 2, "defenseDice": 1, "attackPattern": "ranged", "attackRange": 5, "keepsDistance": true },
+          { "id": "flyer", "name": "Flyer", "glyph": "f", "hearts": 1, "move": 4, "attackDice": 1, "defenseDice": 0, "flying": true },
+          { "id": "bat", "name": "Bat", "glyph": "b", "hearts": 1, "move": 4, "attackDice": 1, "defenseDice": 0, "flying": true, "erratic": true },
+          { "id": "bones", "name": "Bones", "glyph": "k", "hearts": 2, "move": 2, "attackDice": 1, "defenseDice": 0, "reassembles": true },
+          { "id": "boss", "name": "Boss", "glyph": "W", "hearts": 10, "move": 0, "attackDice": 1, "defenseDice": 0, "sweep": { "radius": 2, "every": 2 }, "stunImmune": true, "boss": true }
+        ]
+        """;
+
+    public const string ThemeJson = """
+        { "id": "test_theme", "name": "Test Theme", "lootDeck": [ { "card": "coin", "copies": 2 }, { "card": "gem" } ] }
+        """;
+
+    public static ContentCatalog Catalog { get; } = ContentCatalog.Parse(CardsJson, MonstersJson, [ThemeJson]);
+}

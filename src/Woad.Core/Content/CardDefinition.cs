@@ -1,0 +1,96 @@
+namespace Woad.Core.Content;
+
+public enum CardType
+{
+    Weapon,
+    Shield,
+    Armor,
+    Boots,
+    Spell,
+    Tool,
+    Bomb,
+    Potion,
+    Treasure,
+}
+
+/// <summary>Body slots a card can be equipped into. The belt is separate: it holds single-use cards.</summary>
+public enum EquipSlot
+{
+    Head,
+    Body,
+    MainHand,
+    OffHand,
+    Feet,
+}
+
+public enum CardUsage
+{
+    /// <summary>Kept after use. Gear with an effect (e.g. a boomerang) must be equipped to use it.</summary>
+    Persistent,
+
+    /// <summary>Discarded after one use. Usable from the belt or the backpack.</summary>
+    SingleUse,
+
+    /// <summary>Kept, but each use spends a charge. Must be equipped to use.</summary>
+    Charges,
+}
+
+public enum CardEffectKind
+{
+    /// <summary>Restore <see cref="CardEffect.Amount"/> hearts to yourself.</summary>
+    Heal,
+
+    /// <summary>Roll <see cref="CardEffect.Amount"/> attack dice against every monster in the area.</summary>
+    Attack,
+
+    /// <summary>The target monster skips its next <see cref="CardEffect.Amount"/> turns.</summary>
+    Stun,
+}
+
+/// <summary>What happens when a card is used.</summary>
+public sealed record CardEffect
+{
+    public required CardEffectKind Kind { get; init; }
+
+    public int Amount { get; init; }
+
+    /// <summary>Maximum Manhattan distance to the target tile; 0 means your own tile.</summary>
+    public int Range { get; init; }
+
+    /// <summary>Attack only: monsters within this many tiles (diagonals count as 1) of the target are hit.</summary>
+    public int AreaRadius { get; init; }
+}
+
+public sealed record CardDefinition
+{
+    public required string Id { get; init; }
+
+    public required string Name { get; init; }
+
+    public required CardType Type { get; init; }
+
+    /// <summary>The slot this card is equipped into, or null if it can't be equipped.</summary>
+    public EquipSlot? Slot { get; init; }
+
+    /// <summary>Two-handed cards fill both the main hand and the off hand.</summary>
+    public bool TwoHanded { get; init; }
+
+    public CardUsage Usage { get; init; } = CardUsage.Persistent;
+
+    /// <summary>Uses per floor when <see cref="Usage"/> is <see cref="CardUsage.Charges"/>.</summary>
+    public int Charges { get; init; }
+
+    /// <summary>Bonuses granted while equipped.</summary>
+    public Stats Modifiers { get; init; } = Stats.None;
+
+    /// <summary>Main-hand weapons: reach of the Attack action. 1 is melee; more is ranged and needs line of sight.</summary>
+    public int AttackRange { get; init; } = 1;
+
+    public CardEffect? Effect { get; init; }
+
+    /// <summary>Gold value. Treasure cards count toward the run's score.</summary>
+    public int Value { get; init; }
+
+    /// <summary>Rules text shown on the card.</summary>
+    public string Text { get; init; } = "";
+}

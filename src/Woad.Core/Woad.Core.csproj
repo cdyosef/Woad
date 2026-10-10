@@ -10,4 +10,12 @@
     <RootNamespace>Woad.Core</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Content\Data\**\*.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Woad.Core.Tests" />
+  </ItemGroup>
+
 </Project>

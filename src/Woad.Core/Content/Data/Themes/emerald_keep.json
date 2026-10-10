@@ -1,0 +1,20 @@
+{
+  "id": "emerald_keep",
+  "name": "The Emerald Keep",
+  "lootDeck": [
+    { "card": "health_potion", "copies": 4 },
+    { "card": "bomb", "copies": 3 },
+    { "card": "flame_scroll", "copies": 2 },
+    { "card": "frost_wand" },
+    { "card": "boomerang" },
+    { "card": "knights_sword" },
+    { "card": "short_bow" },
+    { "card": "tower_shield" },
+    { "card": "leather_cap", "copies": 2 },
+    { "card": "chain_mail" },
+    { "card": "dash_boots" },
+    { "card": "coin_pouch", "copies": 6 },
+    { "card": "emerald", "copies": 3 },
+    { "card": "golden_idol" }
+  ]
+}
