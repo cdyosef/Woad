@@ -22,7 +22,7 @@ public partial class Sfx : Node
         _instance = this;
         for (int i = 0; i < Voices; i++)
         {
-            var player = new AudioStreamPlayer { VolumeDb = VolumeDb };
+            var player = new AudioStreamPlayer { VolumeDb = VolumeDb, Bus = AudioSettings.SfxBus };
             AddChild(player);
             _players.Add(player);
         }
@@ -67,11 +67,12 @@ public partial class Sfx : Node
     }
 
     /// <summary>
-    /// Stops all sound, gives the audio thread a moment to let go of it, then quits. Quitting while
-    /// sounds play makes Godot report them as resources still in use.
+    /// Stops all sound and music, gives the audio thread a moment to let go of it, then quits.
+    /// Quitting while sounds play makes Godot report them as resources still in use.
     /// </summary>
     public static async void QuitGame(Node context, int exitCode = 0)
     {
+        Music.Silence();
         if (_instance is not null)
         {
             foreach (AudioStreamPlayer player in _instance._players)

@@ -46,6 +46,7 @@ public partial class Main
 
             ResultsScreen results = await Screen<ResultsScreen>();
             Check(true, "the results screen follows the end of the run");
+            Check(Music.Current == "victory", "the results screen plays the victory tune");
 
             IReadOnlyList<Character> saved = (await _characters.LoadAllAsync()).Characters;
             Check(saved.Count == 2 && saved.All(character => character.RunsPlayed == 1 && character.Xp == GameRules.XpForEscaping),

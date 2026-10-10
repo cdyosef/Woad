@@ -1,8 +1,8 @@
 """Generates Woad's placeholder art and sound into assets/.
 
 Everything is original and built from this file: pixel sprites drawn as text grids, tiles and UI
-frames drawn procedurally, a heading pixel font (BMFont), and 8-bit style sound effects synthesized
-from waveforms. The output is deterministic, so re-running it only changes files whose source
+frames drawn procedurally, a heading pixel font (BMFont), and 8-bit style sound effects and music
+synthesized from waveforms. The output is deterministic, so re-running it only changes files whose source
 changed. Real art can replace any file later under the same name.
 
 Usage (from the repo root):  python tools/build-assets.py
@@ -533,6 +533,211 @@ def build_sounds(directory):
         write_wav(directory / f"{name}.wav", samples)
 
 
+# ---- Music --------------------------------------------------------------------------------
+# Songs are written as short scores: "A4/1.5" is A4 for 1.5 beats, "-/1" is a beat of rest, and
+# "|" marks bar lines (ignored, for reading). Looping songs are a whole number of bars long and
+# every note ends inside them, so the end joins the start without a click.
+
+NOTE_STEPS = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
+
+
+def midi(name):
+    """'A4' -> 69, 'C#5' -> 73, 'Bb3' -> 58."""
+    accidental = {"#": 1, "b": -1}.get(name[1:-1], 0)
+    return NOTE_STEPS[name[0]] + accidental + 12 * (int(name[-1]) + 1)
+
+
+def hz(note):
+    return 440.0 * 2 ** ((note - 69) / 12)
+
+
+def pulse(duty):
+    return lambda phase: 1.0 if phase % 1.0 < duty else -1.0
+
+
+def triangle(phase):
+    return 4.0 * abs(phase % 1.0 - 0.5) - 1.0
+
+
+def parse_score(score, transpose=0):
+    """Score text to (midi note or None, beats) pairs."""
+    events = []
+    for token in score.replace("|", " ").split():
+        name, beats = token.split("/")
+        events.append((None if name == "-" else midi(name) + transpose, float(beats)))
+    return events
+
+
+def chord_tones(chord):
+    """'Am' -> [A3, C4, E4] as midi notes; 'F' -> [F3, A3, C4]."""
+    root = midi(chord.rstrip("m") + "3")
+    return [root, root + (3 if chord.endswith("m") else 4), root + 7]
+
+
+class Song:
+    """A buffer that voices are mixed into, sized in beats at a tempo."""
+
+    def __init__(self, bpm, beats, tail_seconds=0.0):
+        self.beat = 60.0 / bpm
+        self.samples = [0.0] * (round(beats * self.beat * RATE) + int(tail_seconds * RATE))
+
+    def place(self, start_beat, samples):
+        start = round(start_beat * self.beat * RATE)
+        for i, value in enumerate(samples[:len(self.samples) - start]):
+            self.samples[start + i] += value
+
+    def note(self, start_beat, note, beats, wave_fn, volume, gate=0.9, decay=0.0, vibrato=False):
+        """One note, held for `gate` of its length, with an optional fade (decay) and late vibrato."""
+        seconds = beats * self.beat * gate
+        frequency = hz(note)
+        release = min(0.04, seconds / 3)
+        samples, phase = [], 0.0
+        for i in range(int(seconds * RATE)):
+            t = i / RATE
+            wobble = 1 + 0.005 * math.sin(2 * math.pi * 5.5 * t) if vibrato and t > 0.25 else 1
+            phase += frequency * wobble / RATE
+            envelope = min(1.0, t / 0.005) * min(1.0, (seconds - t) / release) * math.exp(-decay * t)
+            samples.append(wave_fn(phase) * envelope * volume)
+        self.place(start_beat, samples)
+
+    def voice(self, score, wave_fn, volume, transpose=0, **style):
+        beat = 0.0
+        for note, beats in parse_score(score, transpose):
+            if note is not None:
+                self.note(beat, note, beats, wave_fn, volume, **style)
+            beat += beats
+
+    def arpeggio(self, chords, pattern, wave_fn, volume, octave=1, step=0.5):
+        """Broken chords, one chord per bar: `pattern` indexes the chord's tones, one per step."""
+        beat = 0.0
+        for chord in chords:
+            tones = [tone + 12 * octave for tone in chord_tones(chord)]
+            for index in pattern:
+                self.note(beat, tones[index % 3] + 12 * (index // 3), step, wave_fn, volume, gate=0.7, decay=6)
+                beat += step
+
+    def bass(self, chords, rhythm, volume, octave=-1, start_bar=0):
+        """One chord per bar. `rhythm` is (offset from the root in semitones, beats) pairs."""
+        beat = start_bar * 4.0
+        for chord in chords:
+            root = chord_tones(chord)[0] + 12 * octave
+            for offset, beats in rhythm:
+                self.note(beat, root + offset, beats, triangle, volume, gate=0.85)
+                beat += beats
+
+    def drums(self, bars, pattern, volume):
+        """The same bar of drums, `bars` times over."""
+        for bar in range(bars):
+            self.drum_bar(bar, pattern, volume)
+
+    def drum_bar(self, bar, pattern, volume):
+        """`pattern` is one bar of sixteenths: k kick, s snare, h hi-hat, c crash cymbal, . rest."""
+        sounds = {
+            "k": tone(lambda t: 150 - 1000 * t, 0.09, sine, volume * 1.6, release=0.05),
+            "s": noise(0.12, volume, decay=28, seed=31, lowpass=0.35),
+            "h": noise(0.03, volume * 0.45, decay=120, seed=37, lowpass=0.05),
+            "c": noise(0.9, volume * 0.8, decay=5, seed=41, lowpass=0.08),
+        }
+        for step, hit in enumerate(pattern):
+            if hit in sounds:
+                self.place(bar * 4 + step / 4, sounds[hit])
+
+
+TITLE_BEAT = [  # one pattern per bar: a lone kick grows into a full beat, a fill, then the climax
+    *["k..............."] * 4,
+    *["k...h...k...h..."] * 4,
+    *["k.h.s.h.k.hks.h."] * 3,
+    "k...s...k.s.ssss",
+    "c.hhs.hhk.hks.hh",
+    "k.hhs.hhk.hks.hh",
+    "c.hhs.hhk.hks.hh",
+    "k.hhs.hhc.......",
+]
+
+
+def title_theme():
+    """The menus: a slow, wistful D minor over a beat that swells to a climax, then starts again calm."""
+    chords = ["Dm", "Bb", "F", "C", "Dm", "Bb", "Gm", "A"] * 2
+    song = Song(bpm=84, beats=64)
+    for bar, pattern in enumerate(TITLE_BEAT):
+        song.drum_bar(bar, pattern, 0.025 + 0.135 * (bar / 15) ** 1.3)
+    # The climax (last four bars): the melody doubled an octave up and a busier bass.
+    song.voice("-/48 F5/1 E5/1 D5/1 A4/1 | Bb4/1 D5/1 F5/1 D5/1 | Bb4/1.5 A4/0.5 G4/2 | A4/3 -/1",
+               pulse(0.25), 0.06, transpose=12, vibrato=True)
+    song.bass(chords[12:], [(0, 0.5), (12, 0.5)] * 4, 0.1, start_bar=12)
+    song.voice("A4/2 F4/1 D4/1 | D5/1.5 C5/0.5 Bb4/1 A4/1 | A4/2 C5/1 F5/1 | E5/3 -/1 |"
+               "F5/1.5 E5/0.5 D5/1 A4/1 | Bb4/1.5 C5/0.5 D5/2 | G4/1 Bb4/1 D5/1 C5/1 | C#5/3 -/1 |"
+               "D5/2 F5/1 A5/1 | G5/1.5 F5/0.5 D5/2 | C5/1 F5/1 A5/1 G5/1 | E5/2 G5/1 E5/1 |"
+               "F5/1 E5/1 D5/1 A4/1 | Bb4/1 D5/1 F5/1 D5/1 | Bb4/1.5 A4/0.5 G4/2 | A4/3 -/1",
+               pulse(0.5), 0.11, vibrato=True)
+    song.arpeggio(chords, [0, 1, 2, 3, 2, 1, 0, 1], pulse(0.25), 0.05)
+    song.bass(chords, [(0, 2), (7, 2)], 0.2)
+    return song.samples
+
+
+def dungeon_theme():
+    """Exploring: a steady A minor walk with a quiet beat."""
+    chords = ["Am", "Am", "F", "G", "Am", "Am", "Dm", "E"] * 2
+    song = Song(bpm=104, beats=64)
+    song.voice("E5/1.5 D5/0.5 C5/1 B4/1 | A4/3 -/1 | A4/1 C5/1 F5/1.5 E5/0.5 | D5/2 B4/2 |"
+               "C5/1.5 B4/0.5 A4/1 E5/1 | E5/3 -/1 | F5/1 E5/1 D5/1 C5/1 | B4/2 G#4/2 |"
+               "A5/1.5 G5/0.5 E5/1 C5/1 | D5/1 E5/1 C5/2 | F5/1.5 E5/0.5 D5/1 C5/1 | B4/1 D5/1 G5/2 |"
+               "E5/1 A5/1 G5/1 E5/1 | C5/3 -/1 | D5/1 F5/1 A5/1 F5/1 | E5/2 G#4/1 B4/1",
+               pulse(0.5), 0.09, vibrato=True)
+    song.arpeggio(chords, [0, 2, 1, 2] * 2, pulse(0.125), 0.04)
+    song.bass(chords, [(0, 0.5), (0, 0.5), (12, 0.5), (0, 0.5)] * 2, 0.2)
+    song.drums(16, "k...h...k.k.h...", 0.12)
+    return song.samples
+
+
+def boss_theme():
+    """The Iron Warden: fast, driving E minor."""
+    chords = ["Em", "Em", "C", "D", "Em", "Em", "C", "B", "Am", "Am", "Em", "Em", "C", "D", "B", "B"]
+    song = Song(bpm=150, beats=64)
+    song.voice("E5/0.5 E5/0.5 G5/0.5 E5/0.5 B5/1 A5/1 | G5/1 F#5/1 E5/2 |"
+               "E5/0.5 E5/0.5 G5/0.5 E5/0.5 C6/1 B5/1 | A5/1 F#5/1 D5/2 |"
+               "E5/0.5 E5/0.5 G5/0.5 E5/0.5 B5/1 A5/1 | G5/1 A5/1 B5/2 | C6/1 B5/1 A5/1 G5/1 | F#5/2 D#5/2 |"
+               "A5/1.5 G5/0.5 E5/2 | C6/1 B5/1 A5/2 | G5/1.5 F#5/0.5 E5/2 | B4/1 E5/1 G5/2 |"
+               "C6/1.5 B5/0.5 G5/2 | D6/1.5 C6/0.5 A5/2 | B5/1 A5/1 F#5/1 D#5/1 | B4/2 -/2",
+               pulse(0.25), 0.1, transpose=-12)
+    song.arpeggio(chords, [0, 1, 2, 3] * 2, pulse(0.125), 0.035)
+    song.bass(chords, [(0, 0.5), (12, 0.5)] * 4, 0.22)
+    song.drums(16, "k.h.s.h.k.hks.hh", 0.13)
+    return song.samples
+
+
+def victory_tune():
+    """The results screen after someone escapes: a rising C major fanfare."""
+    song = Song(bpm=132, beats=8, tail_seconds=0.8)
+    song.voice("G4/0.333 C5/0.333 E5/0.334 G5/1 E5/0.5 F5/0.5 G5/1 A5/0.5 B5/0.5 C6/3",
+               pulse(0.5), 0.12, gate=0.95, vibrato=True)
+    song.voice("E4/0.333 G4/0.333 C5/0.334 E5/1 C5/0.5 C5/0.5 D5/1 F5/0.5 F5/0.5 E5/3", pulse(0.25), 0.06, gate=0.95)
+    song.voice("C3/2 F2/1 G2/1 C3/4", triangle, 0.22, decay=0.4)
+    song.drums(1, "s.s.s.......s...", 0.1)
+    return song.samples
+
+
+def defeat_tune():
+    """The results screen when nobody escaped: a slow fall to A minor."""
+    song = Song(bpm=76, beats=8, tail_seconds=0.8)
+    song.voice("E5/1 D5/1 C5/1 B4/1 | A4/0.5 G#4/0.5 A4/3", pulse(0.5), 0.11, gate=0.95, vibrato=True)
+    song.voice("C5/2 A4/2 | E4/1 E4/3", pulse(0.25), 0.05, gate=0.95)
+    song.voice("A2/2 F2/2 | E2/2 A2/2", triangle, 0.22, decay=0.3)
+    return song.samples
+
+
+def build_music(directory):
+    songs = {
+        "title": title_theme(),
+        "dungeon": dungeon_theme(),
+        "boss": boss_theme(),
+        "victory": victory_tune(),
+        "defeat": defeat_tune(),
+    }
+    for name, samples in songs.items():
+        write_wav(directory / f"{name}.wav", samples)
+
+
 # ---- Build --------------------------------------------------------------------------------
 
 def main():
@@ -566,6 +771,7 @@ def main():
 
     build_font(ASSETS / "fonts", "woad_gothic")
     build_sounds(ASSETS / "audio")
+    build_music(ASSETS / "audio" / "music")
     print(f"Assets written to {ASSETS}")
 
 

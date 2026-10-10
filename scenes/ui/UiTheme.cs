@@ -11,6 +11,8 @@ public static class UiTheme
     /// <summary>The heading font is drawn 9 pixels tall; sizes are multiples of that.</summary>
     public const int HeadingPixelSize = 9;
 
+    private static readonly List<Texture2D> DrawnTextures = [];
+
     public static Theme Create()
     {
         var theme = new Theme { DefaultFontSize = FontSize };
@@ -43,7 +45,44 @@ public static class UiTheme
         theme.SetColor("font_color", "TooltipLabel", Palette.Text);
         theme.SetFontSize("font_size", "TooltipLabel", FontSize);
 
+        theme.SetStylebox("slider", "HSlider", SliderTrack(Palette.PanelDark));
+        theme.SetStylebox("grabber_area", "HSlider", SliderTrack(Palette.Trim));
+        theme.SetStylebox("grabber_area_highlight", "HSlider", SliderTrack(Palette.TrimBright));
+        theme.SetIcon("grabber", "HSlider", Grabber(Palette.Trim));
+        theme.SetIcon("grabber_highlight", "HSlider", Grabber(Palette.TrimBright));
+
         return theme;
+    }
+
+    /// <summary>Lets go of the textures drawn here, alongside <see cref="GameArt.Release"/>.</summary>
+    public static void Release()
+    {
+        foreach (Texture2D texture in DrawnTextures)
+        {
+            texture.Dispose();
+        }
+
+        DrawnTextures.Clear();
+    }
+
+    private static StyleBoxFlat SliderTrack(Color fill)
+    {
+        StyleBoxFlat track = Box(fill, Palette.TrimDim);
+        track.SetContentMarginAll(3);
+        return track;
+    }
+
+    /// <summary>A small gold slider knob with a dark outline, drawn in code.</summary>
+    private static Texture2D Grabber(Color fill)
+    {
+        const int width = 7, height = 13;
+        Image image = Image.CreateEmpty(width, height, false, Image.Format.Rgba8);
+        image.Fill(Palette.Ink);
+        image.FillRect(new Rect2I(1, 1, width - 2, height - 2), fill);
+        image.FillRect(new Rect2I(1, 1, width - 2, 1), fill.Lightened(0.35f));
+        ImageTexture texture = ImageTexture.CreateFromImage(image);
+        DrawnTextures.Add(texture);
+        return texture;
     }
 
     /// <summary>"1 die", "2 dice", "1 step", "3 steps".</summary>

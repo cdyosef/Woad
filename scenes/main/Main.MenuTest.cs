@@ -19,6 +19,7 @@ public partial class Main
         try
         {
             MainMenu menu = await Screen<MainMenu>();
+            Check(Music.Current == "title", "the menus play the title music");
             await Click(this, menu.CharactersButton);
 
             CharacterListScreen list = await LoadedList();
@@ -53,6 +54,22 @@ public partial class Main
 
             await Click(this, list.BackButton);
             menu = await Screen<MainMenu>();
+            await Click(this, menu.SettingsButton);
+            SettingsScreen settings = await Screen<SettingsScreen>();
+            float? loudMusicDb = AudioSettings.BusVolumeDb(AudioSettings.MusicBus);
+            await ClickSliderAt(settings.MusicSlider, 0.25f);
+            Check(AudioSettings.MusicVolume is > 0.1f and < 0.4f, "clicking a quarter of the way along the music slider turns the music down");
+            Check(AudioSettings.BusVolumeDb(AudioSettings.MusicBus) < loudMusicDb, "the music bus gets quieter");
+            await ClickSliderAt(settings.SoundSlider, 0);
+            Check(AudioSettings.SfxVolume == 0 && AudioSettings.BusVolumeDb(AudioSettings.SfxBus) is null, "the sound slider's far left mutes sound effects");
+            float savedMusic = AudioSettings.MusicVolume;
+            await Click(this, settings.BackButton);
+            menu = await Screen<MainMenu>();
+            string settingsFile = Path.Combine(saveFolder, "settings.cfg");
+            AudioSettings.SetMusicVolume(1);
+            AudioSettings.Load(settingsFile);
+            Check(AudioSettings.MusicVolume == savedMusic && AudioSettings.SfxVolume == 0, "leaving Settings saves the volumes, and they load again");
+
             await Click(this, menu.PlayButton);
             RunSetupScreen setup = await Screen<RunSetupScreen>();
             await WaitFor(this, () => setup.IsLoaded, "the roster to load");
@@ -69,11 +86,13 @@ public partial class Main
             var morgan = game.Session.State.Heroes[1];
             Check(morgan.MaxHearts == 6 && morgan.EffectiveStats.AttackDice == 3, "the hero has the character's stats plus gear");
             Check(morgan.Portrait == "moss", "the hero has the chosen portrait");
+            Check(Music.Current == "dungeon", "a run plays the dungeon music");
 
             await Click(this, game.MenuButton);
             await Click(this, game.MenuButton);
             setup = await Screen<RunSetupScreen>();
             Check(true, "the Menu button leaves the run after confirming");
+            Check(Music.Current == "title", "leaving the run brings back the title music");
 
             await WaitFor(this, () => setup.IsLoaded, "the roster to load");
             Button back = setup.GetChildren().OfType<Button>().First(button => button.Text == "Back");
@@ -110,6 +129,13 @@ public partial class Main
         await WaitFor(this, () => _screen is T && _screen.IsNodeReady(), typeof(T).Name);
         await NextFrame(this);
         return (T)_screen!;
+    }
+
+    /// <summary>Clicks a slider's track part of the way along: 0 is the far left, 1 the far right.</summary>
+    private Task ClickSliderAt(HSlider slider, float fraction)
+    {
+        Rect2 rect = slider.GetGlobalRect();
+        return ClickAt(this, new Vector2(rect.Position.X + 1 + fraction * (rect.Size.X - 2), rect.GetCenter().Y));
     }
 
     private async Task<CharacterListScreen> LoadedList()
