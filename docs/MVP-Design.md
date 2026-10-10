@@ -163,15 +163,33 @@ file under `Themes/`.
 
 ## Dungeon
 
-- **3 floors**, each 6–8 rooms, laid out by a random walk on a 5×5 room map.
-- **Room roles:** Arrival, Combat, Treasure (big chest), Stairs down (floors 1–2), and Boss + Exit (floor 3).
-- **Room contents** come from handcrafted 9×9 text templates (walls, pits, pots, chests, spawn points),
-  mirrored or rotated for variety.
-- **Fog:** rooms stay hidden until someone enters. The minimap shows explored rooms and every player's
-  location.
-- **Trap rooms** (homage): the doors shut while monsters remain.
-- **Scaling:** difficulty rises with floor depth and party size.
-- **Seeds:** every run has one, and the same seed always builds the same dungeon.
+- **3 floors**, each 6–8 rooms, laid out by a random walk on a 5×5 room map. A few extra doors
+  between neighboring rooms add loops.
+- **Room roles:** the walk's first room is the Arrival room, which has no monsters. The room farthest
+  from it holds the Stairs down (floors 1–2) or the Boss and Exit (floor 3). A dead end becomes the
+  Treasure room (chests, one guard), and the rest are Combat rooms.
+- **Room layouts** are handcrafted 9×9 text templates in the theme file (walls, pits, chests, stairs,
+  exit, hero starts, monster spawn points, the boss). Each use is randomly rotated and mirrored. When
+  content loads, every layout is checked: doorways are plain floor, and everything can be reached
+  from every door.
+- **Monsters** are bought for a room's spawn points from the theme's roster (weighted, some only from
+  floor 2) until its threat budget runs out. Slimes and bats cost 1; guards and skeletons cost 2.
+  Budgets *(tunable)*: combat and stairs rooms get floor + party size − 1, plus 1 in a trap room;
+  treasure rooms 1; arrival rooms 0; the boss room the boss plus party-size worth of guards.
+- **Doors** are gold bars on the board's edges. Stand in the doorway and click it again to go through
+  (1 step). If someone is standing in the far doorway, you land on the nearest free tile.
+- **Fog:** rooms stay hidden until someone enters. The minimap shows the floor's explored rooms,
+  outlines of rooms seen through their doors, and every player's location.
+- **Trap rooms** (one per floor from floor 2): nobody can leave through the doors while monsters
+  remain. Heroes outside can still come in to help.
+- **Clearing a room** restores 1 heart *(tunable)* to every hero in it.
+- **Stairs:** stand on them and click again to go down (1 step). You arrive in the next floor's
+  arrival room. Reaching a floor for the first time restores your Luck and recharges wands.
+- **Exit:** sealed until the boss in its room is defeated. Stand on it and click again to escape. Your
+  turn ends, and you're out of the run with your treasure.
+- **Splitting up:** heroes can be on different rooms and floors. During the monsters' phase the view
+  cuts to each room where something happens.
+- **Seeds:** every run has one. The same seed and party size always build the same dungeon.
 
 ## Loot, downed players and winning
 
@@ -258,7 +276,7 @@ Woad (Godot project, repo root)          Woad.Core (src/, pure C#, no Godot)
 | M1 | Core rules ✅ | Room grid, pathing, dice, turn loop, combat, cards/slots/backpack, monster AI: all unit tested |
 | M2 | Playable room ✅ | One room in Godot: mouse move/attack, dice tray, hot-seat turns, enemy phase |
 | M3 | Characters ✅ | Main menu, point-buy creation, character list, JSON save/load, run setup for 1–4 players |
-| M4 | Dungeon | 3 procedural floors, room templates, doors, splitting up, fog, minimap, stairs, boss, exit |
+| M4 | Dungeon ✅ | 3 procedural floors, room templates, doors, splitting up, fog, minimap, stairs, boss, exit |
 | M5 | Loot & scoring | Loot deck, chests, drops, downed loot piles, results screen, rewards persisted |
 | M6 | Theme pass | Original placeholder art for the first theme, gothic UI frames, SFX, dice animation |
 

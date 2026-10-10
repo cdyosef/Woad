@@ -181,6 +181,20 @@ public sealed partial class GameSession
         {
             Split(room, monster.Position, Content.GetMonster(splitId), definition.SplitCount, events);
         }
+
+        if (room.Monsters.Count == 0)
+        {
+            events.Add(new RoomCleared(room.Id));
+            foreach (Hero hero in State.ActiveHeroesIn(room))
+            {
+                int healed = Math.Min(GameRules.HeartsOnRoomClear, hero.MaxHearts - hero.Hearts);
+                if (healed > 0)
+                {
+                    hero.Hearts += healed;
+                    events.Add(new HeroHealed(hero.Id, healed, hero.Hearts));
+                }
+            }
+        }
     }
 
     /// <summary>Spawns the pieces of a split monster on its tile and the free tiles around it.</summary>

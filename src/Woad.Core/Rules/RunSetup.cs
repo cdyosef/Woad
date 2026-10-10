@@ -10,8 +10,19 @@ namespace Woad.Core.Rules;
 /// </summary>
 public sealed record HeroSetup(string Name, Stats BaseStats, IReadOnlyList<string> CardIds, Guid? CharacterId = null, string Portrait = "");
 
-/// <summary>One room of the dungeon and the rooms its doors lead to.</summary>
-public sealed record RoomSetup(string Id, RoomTemplate Template, IReadOnlyDictionary<Direction, string>? Doors = null);
+/// <summary>
+/// One room of the dungeon and the rooms its doors lead to. <paramref name="MapPosition"/> is
+/// its cell on the floor's map. In a <paramref name="Trap"/> room the doors stay shut while
+/// monsters remain.
+/// </summary>
+public sealed record RoomSetup(
+    string Id,
+    RoomTemplate Template,
+    IReadOnlyDictionary<Direction, string>? Doors = null,
+    int Floor = 1,
+    GridPosition MapPosition = default,
+    RoomRole Role = RoomRole.Combat,
+    bool Trap = false);
 
 public sealed record RunSetup
 {

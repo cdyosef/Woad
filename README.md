@@ -77,18 +77,21 @@ dotnet test Woad.sln    # run the rules-engine tests
 
 Run the game with F5 in the Godot editor. You can also run it from a terminal with
 `Godot_v4.7.2-stable_mono_win64 --path .`. Create a character from **Characters**, then choose
-**Play** to seat 1–4 characters and start a run. Every run currently uses the same demo room.
+**Play** to seat 1–4 characters and start a run. Each run generates a new three-floor dungeon from
+its seed.
 
 ### Smoke tests
 
-`tools/smoke-test.ps1` builds everything, runs the rules tests, and then runs the game headless
-in three debug modes. Pass the mode after `--` on the Godot command line:
+`tools/smoke-test.ps1` builds everything, runs the rules tests (including bots playing whole
+generated dungeons), and then runs the game headless in four debug modes. Pass the mode after `--`
+on the Godot command line:
 
 | Flag | What it does |
 | --- | --- |
 | `--menutest` | Creates two characters, seats them, starts and leaves a run, and deletes one, using synthetic clicks and typing. Saves go to a throwaway temp folder. |
-| `--uitest` | Starts a run with a fixed debug party and plays the first two turns by pushing real mouse clicks through the UI, checking each result. |
-| `--autoplay` | Starts a run with the debug party and lets a bot play until the room is cleared or everyone is down, narrating to the console. Add `--fast` for 8× speed. |
+| `--uitest` | Puts a fixed debug party in a single room and plays two turns by pushing real mouse clicks through the UI (cards, targeting, Luck, moving, equipping), checking each result. |
+| `--floortest` | Clicks through a door and down the stairs in a tiny three-room setup, checking that the view follows the hero. |
+| `--autoplay` | The debug party plays a generated dungeon with the rules-engine bot until the run ends, narrating to the console. Add `--fast` for 8× speed. |
 
 Each test exits with code 1 on its first failed check.
 

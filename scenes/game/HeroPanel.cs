@@ -8,11 +8,6 @@ namespace Woad.Scenes.Game;
 /// <summary>Left panel: the active hero's hearts, stats, equipment and what's left of their turn.</summary>
 public partial class HeroPanel : Panel
 {
-    private const string Help =
-        "Roll, then click a blue tile to move. Click a red-outlined monster to attack, " +
-        "or a gold-outlined chest to open it. Select a card to use, equip or drop it. " +
-        "Right-click cancels.";
-
     private static readonly (EquipSlot Slot, string Caption)[] Slots =
     [
         (EquipSlot.Head, "Head"),
@@ -64,7 +59,6 @@ public partial class HeroPanel : Panel
 
         Add(UiTheme.Label(new(8, 190), new(160, 12), "THIS TURN", color: Palette.Trim));
         _turn = Add(UiTheme.Label(new(8, 203), new(160, 36)));
-        Add(UiTheme.Label(new(8, 270), new(160, 84), Help, color: Palette.TextDim));
     }
 
     public void ShowHero(Hero? hero, TurnState? turn, int? selectedCardId)

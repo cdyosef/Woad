@@ -16,6 +16,9 @@ public static class GameRules
     /// <summary>A monster's defense die showing this or higher blocks one hit.</summary>
     public const int MonsterBlockFace = 6;
 
+    /// <summary>Hearts restored to each hero in a room when its last monster falls.</summary>
+    public const int HeartsOnRoomClear = 1;
+
     public const int BeltCapacity = 2;
 
     public const int BackpackCapacity = 6;

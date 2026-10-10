@@ -1,7 +1,6 @@
 using Godot;
 using Woad.Core.Characters;
 using Woad.Core.Rules;
-using Woad.Scenes.Game;
 using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Menu;
@@ -25,7 +24,8 @@ public partial class RunSetupScreen : MenuScreen
 
     public event Action? NewCharacterRequested;
 
-    public event Action<RunSetup>? StartRequested;
+    /// <summary>The chosen heroes in seat order, and the seed for the dungeon and dice.</summary>
+    public event Action<IReadOnlyList<HeroSetup>, ulong>? StartRequested;
 
     internal Button StartButton { get; private set; } = null!;
 
@@ -141,6 +141,6 @@ public partial class RunSetupScreen : MenuScreen
             return;
         }
 
-        StartRequested?.Invoke(DemoRun.CreateSetup([.. _party.Select(character => character.ToHeroSetup())], seed));
+        StartRequested?.Invoke([.. _party.Select(character => character.ToHeroSetup())], seed);
     }
 }

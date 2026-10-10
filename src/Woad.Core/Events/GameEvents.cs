@@ -74,3 +74,11 @@ public sealed record EnemyPhaseStarted(int Round) : GameEvent;
 public sealed record EnemyPhaseEnded(int Round) : GameEvent;
 
 public sealed record RunEnded(IReadOnlyList<int> WinnerHeroIds) : GameEvent;
+
+/// <summary>A hero went down the stairs. <paramref name="FirstTimeOnFloor"/> means Luck and charges were restored.</summary>
+public sealed record HeroDescended(int HeroId, string FromRoomId, string RoomId, int Floor, GridPosition Position, bool FirstTimeOnFloor) : GameEvent;
+
+public sealed record HeroEscaped(int HeroId, int TreasureValue) : GameEvent;
+
+/// <summary>The last monster in a room was defeated. A trap room's doors open again.</summary>
+public sealed record RoomCleared(string RoomId) : GameEvent;

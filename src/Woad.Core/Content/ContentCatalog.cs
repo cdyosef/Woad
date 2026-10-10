@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Woad.Core.Dungeon;
+using Woad.Core.Grid;
 
 namespace Woad.Core.Content;
 
@@ -11,25 +13,25 @@ public sealed class ContentCatalog
     private const string ResourcePrefix = "Woad.Core.Content.Data.";
     private const string ThemeResourcePrefix = ResourcePrefix + "Themes.";
 
-    /// <summary>Characters with a fixed meaning in room templates; monsters can't use them as glyphs.</summary>
-    private const string ReservedGlyphs = ".#~C0123456789";
-
     private static readonly Lazy<ContentCatalog> Default = new(LoadEmbedded);
 
     private readonly Dictionary<string, CardDefinition> _cards;
     private readonly Dictionary<string, MonsterDefinition> _monsters;
     private readonly Dictionary<string, ThemeDefinition> _themes;
     private readonly Dictionary<char, MonsterDefinition> _monstersByGlyph;
+    private readonly Dictionary<string, IReadOnlyList<ThemeRoom>> _themeRooms;
 
     private ContentCatalog(
         IEnumerable<CardDefinition> cards,
         IEnumerable<MonsterDefinition> monsters,
-        IEnumerable<ThemeDefinition> themes)
+        IEnumerable<ThemeDefinition> themes,
+        Dictionary<string, IReadOnlyList<ThemeRoom>> themeRooms)
     {
         _cards = cards.ToDictionary(card => card.Id, StringComparer.Ordinal);
         _monsters = monsters.ToDictionary(monster => monster.Id, StringComparer.Ordinal);
         _themes = themes.ToDictionary(theme => theme.Id, StringComparer.Ordinal);
         _monstersByGlyph = _monsters.Values.ToDictionary(monster => monster.Glyph);
+        _themeRooms = themeRooms;
     }
 
     public IReadOnlyDictionary<string, CardDefinition> Cards => _cards;
@@ -53,9 +55,19 @@ public sealed class ContentCatalog
             .OfType<ThemeDefinition>()
             .ToList();
 
+        var themeRooms = new Dictionary<string, IReadOnlyList<ThemeRoom>>(StringComparer.Ordinal);
         if (errors.Count == 0)
         {
             Validate(cards, monsters, themes, errors);
+        }
+
+        if (errors.Count == 0)
+        {
+            Dictionary<char, MonsterDefinition> glyphs = monsters.ToDictionary(monster => monster.Glyph);
+            foreach (ThemeDefinition theme in themes)
+            {
+                themeRooms[theme.Id] = ParseRooms(theme, glyphs, errors);
+            }
         }
 
         if (errors.Count > 0)
@@ -63,8 +75,12 @@ public sealed class ContentCatalog
             throw new InvalidContentException(errors);
         }
 
-        return new ContentCatalog(cards, monsters, themes);
+        return new ContentCatalog(cards, monsters, themes, themeRooms);
     }
+
+    /// <summary>The theme's room layouts, parsed and checked.</summary>
+    public IReadOnlyList<ThemeRoom> RoomsFor(string themeId) =>
+        _themeRooms.TryGetValue(themeId, out IReadOnlyList<ThemeRoom>? rooms) ? rooms : throw new KeyNotFoundException($"Unknown theme '{themeId}'.");
 
     public CardDefinition GetCard(string id) =>
         _cards.TryGetValue(id, out CardDefinition? card) ? card : throw new KeyNotFoundException($"Unknown card '{id}'.");
@@ -158,6 +174,29 @@ public sealed class ContentCatalog
                     errors.Add($"Theme '{theme.Id}' loot deck entry '{entry.Card}' needs at least 1 copy.");
                 }
             }
+
+            if (theme.Floors < 1)
+            {
+                errors.Add($"Theme '{theme.Id}' needs at least 1 floor.");
+            }
+
+            foreach (RosterEntry entry in theme.Roster)
+            {
+                if (!monsterIds.Contains(entry.Monster))
+                {
+                    errors.Add($"Theme '{theme.Id}' roster references unknown monster '{entry.Monster}'.");
+                }
+
+                if (entry.Weight < 1 || entry.MinFloor < 1)
+                {
+                    errors.Add($"Theme '{theme.Id}' roster entry '{entry.Monster}' needs a weight and minFloor of at least 1.");
+                }
+            }
+
+            if (theme.Boss is { } boss && !monsters.Any(monster => monster.Id == boss && monster.Boss))
+            {
+                errors.Add($"Theme '{theme.Id}' boss '{boss}' must be a monster marked as a boss.");
+            }
         }
     }
 
@@ -229,7 +268,7 @@ public sealed class ContentCatalog
     {
         string name = $"Monster '{monster.Id}'";
 
-        if (ReservedGlyphs.Contains(monster.Glyph) || char.IsWhiteSpace(monster.Glyph))
+        if (RoomTemplate.ReservedCharacters.Contains(monster.Glyph) || char.IsWhiteSpace(monster.Glyph))
         {
             errors.Add($"{name} glyph '{monster.Glyph}' is reserved for room templates.");
         }
@@ -265,6 +304,92 @@ public sealed class ContentCatalog
         if (monster.Sweep is { Radius: < 1 } or { Every: < 1 })
         {
             errors.Add($"{name} sweep needs a radius and every of at least 1.");
+        }
+    }
+
+    private static List<ThemeRoom> ParseRooms(ThemeDefinition theme, Dictionary<char, MonsterDefinition> glyphs, List<string> errors)
+    {
+        var rooms = new List<ThemeRoom>();
+        ReportDuplicates(theme.Rooms.Select(room => room.Id), $"room id in theme '{theme.Id}'", errors);
+        foreach (ThemeRoomDefinition room in theme.Rooms)
+        {
+            string name = $"Theme '{theme.Id}' room '{room.Id}'";
+            try
+            {
+                RoomTemplate template = RoomTemplate.Parse(room.Layout, glyph => glyphs.GetValueOrDefault(glyph));
+                int before = errors.Count;
+                ValidateRoom(name, room, template, errors);
+                if (errors.Count == before)
+                {
+                    rooms.Add(new ThemeRoom(room.Id, room.Roles, template));
+                }
+            }
+            catch (FormatException exception)
+            {
+                errors.Add($"{name}: {exception.Message}");
+            }
+        }
+
+        return rooms;
+    }
+
+    /// <summary>Checks a layout fits its roles and that everything in it can be reached from every door.</summary>
+    private static void ValidateRoom(string name, ThemeRoomDefinition room, RoomTemplate template, List<string> errors)
+    {
+        if (room.Roles.Count == 0)
+        {
+            errors.Add($"{name} has no roles.");
+        }
+
+        foreach (Direction side in Enum.GetValues<Direction>())
+        {
+            GridPosition door = side.DoorTile();
+            if (room.Layout.Count == RoomGrid.Size && room.Layout[door.Y].Trim()[door.X] != '.')
+            {
+                errors.Add($"{name}: the {side} doorway {door} must be plain floor ('.').");
+            }
+        }
+
+        bool stairsRole = room.Roles.Contains(RoomRole.Stairs);
+        bool bossRole = room.Roles.Contains(RoomRole.Boss);
+        int stairs = template.TilesOf(TileKind.StairsDown).Count();
+        int exits = template.TilesOf(TileKind.Exit).Count();
+
+        if (room.Roles.Contains(RoomRole.Arrival) && template.HeroStarts.Count != 4)
+        {
+            errors.Add($"{name}: arrival rooms need hero starts 1, 2, 3 and 4.");
+        }
+
+        if (stairsRole != (stairs == 1))
+        {
+            errors.Add($"{name}: stairs rooms need exactly one '>', and other rooms none.");
+        }
+
+        if (bossRole != (exits == 1 && template.BossSpawn is not null))
+        {
+            errors.Add($"{name}: boss rooms need one '&' and one '*', and other rooms neither.");
+        }
+
+        if (room.Roles.Any(role => role is RoomRole.Combat or RoomRole.Stairs) && template.SpawnPoints.Count == 0)
+        {
+            errors.Add($"{name}: combat and stairs rooms need at least one monster spawn point ('M').");
+        }
+
+        PathSearch reach = PathSearch.Run(Direction.North.DoorTile(), position => template.Layout[position].IsWalkable());
+        IEnumerable<GridPosition> mustReach = Enum.GetValues<Direction>().Select(side => side.DoorTile())
+            .Concat(template.HeroStarts.Values)
+            .Concat(template.SpawnPoints)
+            .Concat(template.TilesOf(TileKind.StairsDown))
+            .Concat(template.TilesOf(TileKind.Exit))
+            .Concat(template.BossSpawn is { } boss ? [boss] : []);
+        foreach (GridPosition position in mustReach.Where(position => !reach.CanReach(position)))
+        {
+            errors.Add($"{name}: {position} can't be reached from the doors.");
+        }
+
+        foreach (GridPosition chest in template.TilesOf(TileKind.Chest).Where(chest => !chest.OrthogonalNeighbors().Any(reach.CanReach)))
+        {
+            errors.Add($"{name}: the chest at {chest} can't be reached.");
         }
     }
 

@@ -12,12 +12,18 @@ public enum TileKind
 
     /// <summary>A treasure chest. Blocks movement; opened from an adjacent tile.</summary>
     Chest,
+
+    /// <summary>Stairs to the next floor. Stand on them to descend.</summary>
+    StairsDown,
+
+    /// <summary>The way out of the dungeon. Opens once the boss in its room is defeated.</summary>
+    Exit,
 }
 
 public static class TileKindExtensions
 {
     public static bool IsWalkable(this TileKind tile, bool flying = false) =>
-        tile == TileKind.Floor || (flying && tile == TileKind.Pit);
+        tile is TileKind.Floor or TileKind.StairsDown or TileKind.Exit || (flying && tile == TileKind.Pit);
 
     public static bool BlocksSight(this TileKind tile) => tile == TileKind.Wall;
 }

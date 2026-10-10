@@ -33,11 +33,33 @@ public sealed partial class GameSession
         }
 
         Hero hero = ActiveHero;
+        if (ActiveRoom.IsSealed)
+        {
+            return [];
+        }
+
         return ActiveRoom.Doors
-            .Where(door => hero.Position == door.Key.DoorTile()
-                && !IsOccupied(State.Rooms[door.Value], door.Key.Opposite().DoorTile()))
+            .Where(door => hero.Position == door.Key.DoorTile() && DoorLanding(State.Rooms[door.Value], door.Key) is not null)
             .Select(door => door.Key)
             .ToList();
+    }
+
+    /// <summary>
+    /// Where a hero coming through the door on <paramref name="side"/> lands in <paramref name="target"/>:
+    /// the facing doorway, or the nearest free tile to it when someone is standing there.
+    /// </summary>
+    private GridPosition? DoorLanding(Room target, Direction side)
+    {
+        GridPosition doorway = side.Opposite().DoorTile();
+        PathSearch search = PathSearch.Run(doorway, tile => target.Layout[tile].IsWalkable());
+        return search.Distances
+            .OrderBy(entry => entry.Value)
+            .ThenBy(entry => entry.Key.Y)
+            .ThenBy(entry => entry.Key.X)
+            .Select(entry => entry.Key)
+            .Where(tile => target.Layout[tile].IsWalkable() && !IsOccupied(target, tile))
+            .Select(tile => (GridPosition?)tile)
+            .FirstOrDefault();
     }
 
     private string? Handle(RollMovement command, List<GameEvent> events)
@@ -94,16 +116,20 @@ public sealed partial class GameSession
             return "Stand in the doorway first.";
         }
 
+        if (room.IsSealed)
+        {
+            return "The doors are sealed until every monster here is defeated.";
+        }
+
         if (CheckCanMove(1) is { } error)
         {
             return error;
         }
 
         Room target = State.Rooms[targetId];
-        GridPosition arrival = command.Door.Opposite().DoorTile();
-        if (IsOccupied(target, arrival))
+        if (DoorLanding(target, command.Door) is not { } arrival)
         {
-            return "Something is blocking the other side of the door.";
+            return "There's no room on the other side of the door.";
         }
 
         hero.RoomId = target.Id;

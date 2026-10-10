@@ -1,8 +1,9 @@
 <#
 .SYNOPSIS
-    Builds Woad, runs the rules-engine tests, then runs the game headless three times: clicking
-    through the menus (--menutest), pushing real mouse clicks through a run (--uitest) and
-    letting a bot play the room (--autoplay).
+    Builds Woad, runs the rules-engine tests, then runs the game headless four times: clicking
+    through the menus (--menutest), pushing real mouse clicks through a room (--uitest) and
+    through a door and down stairs (--floortest), and letting a bot play a generated dungeon
+    (--autoplay).
 
 .PARAMETER Godot
     Path to a Godot .NET console executable. Defaults to $env:GODOT, then the version Woad.csproj
@@ -47,6 +48,7 @@ Invoke-Step 'Build' { dotnet build "$root\Woad.sln" -v q -nologo }
 Invoke-Step 'Rules tests' { dotnet test "$root\Woad.sln" --no-build -nologo }
 Invoke-Step 'Menu click test' { & $Godot --headless --path $root --quit-after 20000 -- --menutest }
 Invoke-Step 'Run click test' { & $Godot --headless --path $root --quit-after 6000 -- --uitest }
-Invoke-Step 'Autoplay' { & $Godot --headless --path $root --quit-after 40000 -- --autoplay --fast }
+Invoke-Step 'Floor click test' { & $Godot --headless --path $root --quit-after 6000 -- --floortest }
+Invoke-Step 'Autoplay' { & $Godot --headless --path $root --quit-after 400000 -- --autoplay --fast }
 
 Write-Host 'All smoke tests passed.' -ForegroundColor Green

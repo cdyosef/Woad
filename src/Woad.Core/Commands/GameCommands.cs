@@ -51,3 +51,9 @@ public sealed record OpenChest(int HeroId, GridPosition Chest) : GameCommand(Her
 public sealed record PickUpLoot(int HeroId) : GameCommand(HeroId);
 
 public sealed record EndTurn(int HeroId) : GameCommand(HeroId);
+
+/// <summary>Go down the stairs you're standing on to the next floor (costs 1 movement).</summary>
+public sealed record TakeStairs(int HeroId) : GameCommand(HeroId);
+
+/// <summary>Leave the dungeon through the exit you're standing on, once its boss is defeated. Ends your turn.</summary>
+public sealed record Escape(int HeroId) : GameCommand(HeroId);

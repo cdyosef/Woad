@@ -80,6 +80,8 @@ public sealed partial class GameSession
             OpenChest c => Handle(c, events),
             PickUpLoot c => Handle(c, events),
             EndTurn c => Handle(c, events),
+            TakeStairs c => Handle(c, events),
+            Escape c => Handle(c, events),
             _ => $"Unknown command {command.GetType().Name}.",
         };
 
@@ -109,13 +111,18 @@ public sealed partial class GameSession
     private string? Handle(EndTurn command, List<GameEvent> events)
     {
         events.Add(new TurnEnded(command.HeroId));
+        AdvanceTurn(ActiveHero.Seat, events);
+        return null;
+    }
 
-        int seat = ActiveHero.Seat;
-        Hero? next = State.Heroes.FirstOrDefault(hero => hero.IsActive && hero.Seat > seat);
+    /// <summary>Starts the next seated hero's turn, or the enemy phase and a new round after the last seat.</summary>
+    private void AdvanceTurn(int fromSeat, List<GameEvent> events)
+    {
+        Hero? next = State.Heroes.FirstOrDefault(hero => hero.IsActive && hero.Seat > fromSeat);
         if (next is not null)
         {
             StartTurn(next, events);
-            return null;
+            return;
         }
 
         RunEnemyPhase(events);
@@ -123,8 +130,6 @@ public sealed partial class GameSession
         {
             StartRound(events);
         }
-
-        return null;
     }
 
     private void StartRound(List<GameEvent> events)
@@ -194,7 +199,15 @@ public sealed partial class GameSession
 
         foreach (RoomSetup roomSetup in setup.Rooms)
         {
-            var room = new Room(roomSetup.Id, roomSetup.Template.Layout, new Dictionary<Direction, string>(roomSetup.Doors ?? new Dictionary<Direction, string>()));
+            var room = new Room(
+                roomSetup.Id,
+                roomSetup.Template.Layout,
+                new Dictionary<Direction, string>(roomSetup.Doors ?? new Dictionary<Direction, string>()),
+                roomSetup.Floor,
+                roomSetup.MapPosition,
+                roomSetup.Role,
+                roomSetup.Trap,
+                roomSetup.Template.HeroStarts.OrderBy(start => start.Key).Select(start => start.Value).ToList());
             foreach (MonsterSpawn spawn in roomSetup.Template.Monsters)
             {
                 room.AddMonster(new Monster(state.NextId(), spawn.Monster, spawn.Position));

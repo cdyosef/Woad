@@ -194,7 +194,7 @@ public class MovementTests
     }
 
     [Fact]
-    public void ABlockedDoorwayCantBeUsed()
+    public void AnOccupiedDoorwayPutsYouOnTheNearestFreeTile()
     {
         GameSession session = TestRun.Start(TwoRooms("""
             .........
@@ -211,8 +211,12 @@ public class MovementTests
         session.Do(new RollMovement(hero.Id));
         session.Do(new MoveHero(hero.Id, Direction.East.DoorTile()));
 
-        Assert.Empty(session.GetUsableDoors());
-        Assert.Contains("blocking", session.Refuse(new GoThroughDoor(hero.Id, Direction.East)));
+        Assert.Equal([Direction.East], session.GetUsableDoors());
+        var entered = session.Do(new GoThroughDoor(hero.Id, Direction.East)).SingleOf<HeroEnteredRoom>();
+
+        // The dummy stands in the west doorway (0,4); the nearest free tiles are (0,3), (1,4) and (0,5).
+        Assert.Equal(new GridPosition(0, 3), entered.Position);
+        Assert.Equal(new GridPosition(0, 3), hero.Position);
     }
 
     [Fact]

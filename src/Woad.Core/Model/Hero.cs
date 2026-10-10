@@ -67,6 +67,9 @@ public sealed class Hero
 
     public int Kills { get; internal set; }
 
+    /// <summary>The deepest floor reached. Reaching a new one restores Luck and recharges cards.</summary>
+    public int DeepestFloor { get; internal set; } = 1;
+
     public bool IsActive => Status == HeroStatus.Active;
 
     /// <summary>Equipped cards by slot. A two-handed card appears under both hands.</summary>

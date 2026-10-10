@@ -72,7 +72,7 @@ public class CombatTests
 
         IReadOnlyList<GameEvent> events = session.Do(new AttackMonster(hero.Id, grunt.Id));
 
-        Assert.Equal(new MonsterDefeated(grunt.Id, hero.Id), events[^1]);
+        Assert.Contains(new MonsterDefeated(grunt.Id, hero.Id), events);
         Assert.Empty(session.RoomById().Monsters);
         Assert.Equal(1, hero.Kills);
     }
@@ -130,7 +130,7 @@ public class CombatTests
         Assert.Equal([brute], session.GetAttackableMonsters());
         IReadOnlyList<GameEvent> events = session.Do(new AttackMonster(session.HeroInSeat().Id, brute.Id));
 
-        Assert.Equal(new MonsterDefeated(brute.Id, session.HeroInSeat().Id), events[^1]);
+        Assert.Contains(new MonsterDefeated(brute.Id, session.HeroInSeat().Id), events);
     }
 
     [Fact]
@@ -182,7 +182,7 @@ public class CombatTests
         Assert.False(bones.Collapsed);
 
         events = session.Do(new AttackMonster(hero.Id, bones.Id));
-        Assert.Equal(new MonsterDefeated(bones.Id, hero.Id), events[^1]);
+        Assert.Contains(new MonsterDefeated(bones.Id, hero.Id), events);
         Assert.Equal(1, hero.Kills);
     }
 
@@ -205,7 +205,7 @@ public class CombatTests
 
         IReadOnlyList<GameEvent> events = session.Do(new UseCard(hero.Id, hero.Card("bomb").Id, bones.Position));
 
-        Assert.Equal(new MonsterDefeated(bones.Id, hero.Id), events[^1]);
+        Assert.Contains(new MonsterDefeated(bones.Id, hero.Id), events);
         Assert.DoesNotContain(events, gameEvent => gameEvent is MonsterCollapsed);
     }
 
@@ -226,7 +226,7 @@ public class CombatTests
         Assert.Equal(1, hero.LuckRemaining);
 
         events = session.Do(new ConfirmAttack(hero.Id));
-        Assert.Equal(new MonsterDefeated(grunt.Id, hero.Id), events[^1]);
+        Assert.Contains(new MonsterDefeated(grunt.Id, hero.Id), events);
         Assert.Null(session.State.Turn.PendingAttack);
     }
 
@@ -240,7 +240,7 @@ public class CombatTests
 
         IReadOnlyList<GameEvent> events = session.Do(new RerollDie(hero.Id, 0));
 
-        Assert.Equal(new MonsterDefeated(grunt.Id, hero.Id), events[^1]);
+        Assert.Contains(new MonsterDefeated(grunt.Id, hero.Id), events);
         Assert.Null(session.State.Turn!.PendingAttack);
         Assert.Contains("no Luck", session.Refuse(new RerollDie(hero.Id, 0)));
     }

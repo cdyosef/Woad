@@ -68,4 +68,7 @@ public sealed record MonsterDefinition
     public bool Boss { get; init; }
 
     public int Xp { get; init; }
+
+    /// <summary>How much of a room's difficulty budget this monster uses up when generated.</summary>
+    public int Threat { get; init; } = 1;
 }

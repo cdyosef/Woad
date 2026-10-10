@@ -32,6 +32,11 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         ChestOpened { AddedToBackpack: true } chest => $"{nameOf(chest.HeroId)} opens the chest: {cardNameOf(chest.CardId)}!",
         ChestOpened chest => $"{nameOf(chest.HeroId)} opens the chest: {cardNameOf(chest.CardId)}, but has no room and leaves it on the floor.",
         LootPickedUp loot => $"{nameOf(loot.HeroId)} picks up {string.Join(", ", loot.CardIds.Select(cardNameOf))}.",
+        HeroDescended { FirstTimeOnFloor: true } descended =>
+            $"{nameOf(descended.HeroId)} descends to floor {descended.Floor}. Luck and charges are restored.",
+        HeroDescended descended => $"{nameOf(descended.HeroId)} descends to floor {descended.Floor}.",
+        HeroEscaped escaped => $"{nameOf(escaped.HeroId)} escapes the dungeon with {escaped.TreasureValue}g of treasure!",
+        RoomCleared => "The room falls silent.",
         RunEnded { WinnerHeroIds.Count: 0 } => "The run is over. Nobody escaped.",
         RunEnded ended => $"{Names(ended.WinnerHeroIds)} wins the run!",
         _ => null,

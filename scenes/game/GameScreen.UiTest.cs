@@ -79,6 +79,48 @@ public partial class GameScreen
         }
     }
 
+    /// <summary>
+    /// Debug mode (<c>-- --floortest</c>, with <see cref="DemoRun.DoorsAndStairs"/>): clicks through a
+    /// door and down the stairs, checking the view and minimap follow the hero.
+    /// </summary>
+    private async void RunFloorTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            Check(_shownRoomId == "a", "the run starts in the first room");
+
+            await Click(this, _roll);
+            await WaitUntilIdle();
+            await ClickTile(aria.Position);
+            await WaitUntilIdle();
+            Check(aria.RoomId == "b" && aria.Position == new GridPosition(0, 4), "clicking your own doorway tile goes through the door");
+            Check(_shownRoomId == "b", "the view follows the hero into the next room");
+            Check(_session.State.Rooms["b"].Explored, "the new room is explored and shows on the minimap");
+
+            await ClickTile(new GridPosition(1, 4));
+            await WaitUntilIdle();
+            Check(aria.Position == new GridPosition(1, 4), "the hero walks onto the stairs");
+            await ClickTile(aria.Position);
+            await WaitUntilIdle();
+            Check(aria.RoomId == "c" && aria.DeepestFloor == 2, "clicking the stairs you stand on goes down a floor");
+            Check(_shownRoomId == "c", "the view follows the hero to the next floor");
+
+            await Click(this, _endTurn);
+            await WaitUntilIdle();
+            Check(_shownRoomId == "a" && ActiveHero!.Seat == 1, "the next hero's turn shows their room");
+
+            GD.Print("Floor test passed.");
+            GetTree().Quit();
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Floor test failed: {exception.Message}");
+            GetTree().Quit(1);
+        }
+    }
+
     internal Task WaitUntilIdle() => WaitFor(this, () => !_busy, "event playback to finish");
 
     private Task ClickTile(GridPosition tile) =>

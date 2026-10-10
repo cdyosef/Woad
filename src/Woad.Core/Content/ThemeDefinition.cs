@@ -7,12 +7,61 @@ public sealed record LootDeckEntry
     public int Copies { get; init; } = 1;
 }
 
-/// <summary>A dungeon's identity: its name, loot deck and (later) monster roster and art.</summary>
+/// <summary>What a room is for in a generated floor.</summary>
+public enum RoomRole
+{
+    /// <summary>Where heroes start the floor (the first floor's entrance, or the bottom of the stairs). No monsters.</summary>
+    Arrival,
+
+    Combat,
+
+    /// <summary>Chests and few guards.</summary>
+    Treasure,
+
+    /// <summary>Holds the stairs down to the next floor.</summary>
+    Stairs,
+
+    /// <summary>The last floor's boss, guarding the exit.</summary>
+    Boss,
+}
+
+/// <summary>A monster the generator may place on this theme's floors.</summary>
+public sealed record RosterEntry
+{
+    public required string Monster { get; init; }
+
+    /// <summary>Relative chance of being picked among the monsters that fit.</summary>
+    public int Weight { get; init; } = 1;
+
+    /// <summary>The first floor this monster can appear on.</summary>
+    public int MinFloor { get; init; } = 1;
+}
+
+/// <summary>A handcrafted room layout and the roles it can be used for.</summary>
+public sealed record ThemeRoomDefinition
+{
+    public required string Id { get; init; }
+
+    public required IReadOnlyList<RoomRole> Roles { get; init; }
+
+    /// <summary>Nine rows of nine characters; see <see cref="Dungeon.RoomTemplate"/> for the legend.</summary>
+    public required IReadOnlyList<string> Layout { get; init; }
+}
+
+/// <summary>A dungeon's identity: its name, loot deck, monsters, boss and room layouts.</summary>
 public sealed record ThemeDefinition
 {
     public required string Id { get; init; }
 
     public required string Name { get; init; }
 
+    public int Floors { get; init; } = 3;
+
     public IReadOnlyList<LootDeckEntry> LootDeck { get; init; } = [];
+
+    public IReadOnlyList<RosterEntry> Roster { get; init; } = [];
+
+    public string? Boss { get; init; }
+
+    public IReadOnlyList<ThemeRoomDefinition> Rooms { get; init; } = [];
 }

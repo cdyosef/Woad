@@ -121,6 +121,11 @@ public partial class BoardView : Control
             DrawTile(tile, _room.Layout[tile]);
         }
 
+        foreach ((Direction side, _) in _room.Doors)
+        {
+            DrawDoor(side, _room.IsSealed);
+        }
+
         foreach (GridPosition tile in _room.LootPositions)
         {
             DrawLoot(tile, _room.LootAt(tile).Count);
@@ -166,6 +171,31 @@ public partial class BoardView : Control
                 DrawRect(new Rect2(rect.Position + new Vector2(2, 2), new Vector2(TileSize - 4, 4)), Palette.Wall);
                 break;
 
+            case TileKind.StairsDown:
+                DrawRect(rect.Grow(-2), Palette.Wall);
+                for (int step = 0; step < 4; step++)
+                {
+                    float inset = 4 + step * 3;
+                    DrawRect(new Rect2(rect.Position.X + inset, rect.Position.Y + 5 + step * 6, TileSize - inset * 2, 3), Palette.WallTop);
+                }
+
+                break;
+
+            case TileKind.Exit:
+                bool sealedExit = _room!.Monsters.Any(monster => monster.Definition.Boss);
+                var arch = new Rect2(rect.Position + new Vector2(5, 3), new Vector2(22, 27));
+                DrawRect(arch, sealedExit ? Palette.Pit : Palette.TrimBright with { A = 0.85f });
+                DrawRect(arch, Palette.Trim, filled: false, width: 2);
+                if (sealedExit)
+                {
+                    for (int bar = 1; bar < 4; bar++)
+                    {
+                        DrawLine(arch.Position + new Vector2(bar * 5.5f, 0), arch.Position + new Vector2(bar * 5.5f, arch.Size.Y), Palette.TrimDim, 2);
+                    }
+                }
+
+                break;
+
             case TileKind.Chest:
                 bool open = _room!.IsChestOpened(tile);
                 var body = new Rect2(rect.Position + new Vector2(6, 10), new Vector2(20, 14));
@@ -174,6 +204,20 @@ public partial class BoardView : Control
                 DrawRect(body, Palette.Ink, filled: false, width: 1);
                 break;
         }
+    }
+
+    /// <summary>A bar on the board's edge marking a door: gold when open, red while a trap room is sealed.</summary>
+    private void DrawDoor(Direction side, bool sealedShut)
+    {
+        Rect2 tile = TileRect(side.DoorTile());
+        Rect2 bar = side switch
+        {
+            Direction.North => new Rect2(tile.Position.X + 4, 0, TileSize - 8, 4),
+            Direction.South => new Rect2(tile.Position.X + 4, Pixels - 4, TileSize - 8, 4),
+            Direction.West => new Rect2(0, tile.Position.Y + 4, 4, TileSize - 8),
+            _ => new Rect2(Pixels - 4, tile.Position.Y + 4, 4, TileSize - 8),
+        };
+        DrawRect(bar, sealedShut ? Palette.Danger : Palette.TrimBright);
     }
 
     private void DrawLoot(GridPosition tile, int count)

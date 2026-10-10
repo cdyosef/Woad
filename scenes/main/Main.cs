@@ -1,6 +1,7 @@
 using Godot;
 using Woad.Core.Characters;
 using Woad.Core.Content;
+using Woad.Core.Dungeon;
 using Woad.Core.Rules;
 using Woad.Scenes.Game;
 using Woad.Scenes.Menu;
@@ -15,6 +16,9 @@ namespace Woad.Scenes;
 /// </summary>
 public partial class Main : Control
 {
+    /// <summary>The only dungeon so far. Choosing among themes comes with more dungeons.</summary>
+    private const string ThemeId = "emerald_keep";
+
     private ContentCatalog _content = null!;
     private ICharacterRepository _characters = null!;
     private Control? _screen;
@@ -31,9 +35,18 @@ public partial class Main : Control
             : ProjectSettings.GlobalizePath("user://characters");
         _characters = new JsonCharacterRepository(saveFolder, _content);
 
-        if (args.Contains("--uitest") || args.Contains("--autoplay"))
+        ulong seed = (ulong)DateTime.UtcNow.Ticks;
+        if (args.Contains("--uitest"))
         {
-            ShowGame(DemoRun.DebugSetup((ulong)DateTime.UtcNow.Ticks));
+            Show(new GameScreen { Setup = DemoRun.SingleRoom(seed), Content = _content });
+        }
+        else if (args.Contains("--floortest"))
+        {
+            Show(new GameScreen { Setup = DemoRun.DoorsAndStairs(seed), Content = _content });
+        }
+        else if (args.Contains("--autoplay"))
+        {
+            ShowGame(DemoRun.DebugHeroes, seed);
         }
         else
         {
@@ -91,9 +104,12 @@ public partial class Main : Control
         Show(screen);
     }
 
-    private void ShowGame(RunSetup setup)
+    /// <summary>Generates a dungeon for the party and starts playing it.</summary>
+    private void ShowGame(IReadOnlyList<HeroSetup> heroes, ulong seed)
     {
-        var game = new GameScreen { Setup = setup, Content = _content };
+        RunSetup NewRun(ulong runSeed) => DungeonGenerator.CreateRun(_content, ThemeId, heroes, runSeed);
+
+        var game = new GameScreen { Setup = NewRun(seed), Content = _content, NewRun = NewRun };
         game.ExitRequested += ShowRunSetup;
         Show(game);
     }
