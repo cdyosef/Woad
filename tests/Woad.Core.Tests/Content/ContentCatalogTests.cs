@@ -42,7 +42,7 @@ public class ContentCatalogTests
     {
         ContentCatalog content = ContentCatalog.LoadDefault();
 
-        Assert.All(["wooden_sword", "buckler", "health_potion"], id => content.GetCard(id));
+        Assert.All(Woad.Core.Rules.GameRules.StarterKit, id => content.GetCard(id));
     }
 
     [Fact]

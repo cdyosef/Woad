@@ -205,8 +205,9 @@ file under `Themes/`.
    176 px              288 px              176 px
 ```
 
-- **Scaling:** 640×360 viewport, integer scaled to 1280×720, 1920×1080, 2560×1440 and 4K, with
-  nearest-neighbor filtering.
+- **Scaling:** a 640×360 layout, integer scaled to 1280×720, 1920×1080, 2560×1440 and 4K, with
+  nearest-neighbor filtering. The window stretches in `canvas_items` mode, so text renders at full
+  resolution and stays sharp while the layout keeps its 640×360 coordinates.
 - **Dungeon art:** placeholder tiles and sprites are original, in a 16-bit palette that nods to
   *A Link to the Past*.
 - **UI art:** dark panels, ornate gold and bone trim and a gothic pixel font, in the spirit of
@@ -241,7 +242,7 @@ Woad (Godot project, repo root)          Woad.Core (src/, pure C#, no Godot)
 | --- | --- | --- |
 | M0 | Scaffold ✅ | Godot 4.7 + .NET 10 project builds, tests pass, and the 640×360 layout runs |
 | M1 | Core rules ✅ | Room grid, pathing, dice, turn loop, combat, cards/slots/backpack, monster AI: all unit tested |
-| M2 | Playable room | One room in Godot: mouse move/attack, dice tray, hot-seat turns, enemy phase |
+| M2 | Playable room ✅ | One room in Godot: mouse move/attack, dice tray, hot-seat turns, enemy phase |
 | M3 | Characters | Main menu, point-buy creation, character list, JSON save/load, run setup for 1–4 players |
 | M4 | Dungeon | 3 procedural floors, room templates, doors, splitting up, fog, minimap, stairs, boss, exit |
 | M5 | Loot & scoring | Loot deck, chests, drops, downed loot piles, results screen, rewards persisted |

@@ -20,6 +20,9 @@ public static class GameRules
 
     public const int BackpackCapacity = 6;
 
+    /// <summary>Cards every new character starts with.</summary>
+    public static IReadOnlyList<string> StarterKit { get; } = ["wooden_sword", "buckler", "health_potion"];
+
     /// <summary>Stats every new character starts with, before spending creation points.</summary>
     public static Stats HeroBaseStats { get; } = new()
     {

@@ -51,7 +51,8 @@ project. Everyone working on the project should use the same editor version. To 
 
 ```
 project.godot, Woad.csproj   Godot game project (repo root): scenes, UI, input, presentation
-scenes/                      Godot scenes, each with its C# script alongside
+scenes/game/                 The game screen: board, tokens, dice tray, panels, event playback
+scenes/ui/                   Shared UI pieces: palette, theme, card slots, hearts
 src/Woad.Core/               Pure C# rules engine: no Godot references allowed
   Rules/GameSession*.cs        Executes commands (Commands/) and returns events (Events/)
   Model/                       Run state the game draws from: heroes, monsters, rooms, cards
@@ -71,7 +72,22 @@ dotnet test Woad.sln    # run the rules-engine tests
 ```
 
 Run the game with F5 in the Godot editor. You can also run it from a terminal with
-`Godot_v4.7.2-stable_mono_win64 --path .`.
+`Godot_v4.7.2-stable_mono_win64 --path .`. For now it opens straight into a demo room with
+two hot-seat heroes, Aria and Bran.
+
+### Smoke tests
+
+`tools/smoke-test.ps1` builds everything, runs the rules tests, and then runs the game headless
+in two debug modes. Pass the mode after `--` on the Godot command line:
+
+| Flag | What it does |
+| --- | --- |
+| `--uitest` | Plays the first two turns by pushing real mouse clicks through the UI and checks each result. Exits 1 on failure. |
+| `--autoplay` | A bot plays the room until it's cleared or everyone is down, narrating to the console. Add `--fast` for 8× speed. |
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\smoke-test.ps1
+```
 
 ## Save data
 

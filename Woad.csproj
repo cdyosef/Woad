@@ -17,4 +17,12 @@
     <ProjectReference Include="src/Woad.Core/Woad.Core.csproj" />
   </ItemGroup>
 
+  <!-- Explicit global usings: full ImplicitUsings would add System.Threading (Timer) and clash with Godot types. -->
+  <ItemGroup>
+    <Using Include="System" />
+    <Using Include="System.Collections.Generic" />
+    <Using Include="System.Linq" />
+    <Using Include="System.Threading.Tasks" />
+  </ItemGroup>
+
 </Project>
