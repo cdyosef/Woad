@@ -15,7 +15,7 @@ public partial class MenuScreen : Control
         AddChild(new Panel { Position = new Vector2(8, 8), Size = new Vector2(Width - 16, Height - 16), MouseFilter = MouseFilterEnum.Ignore });
         if (title.Length > 0)
         {
-            AddChild(UiTheme.Label(new Vector2(20, 14), new Vector2(400, 24), title, 18, Palette.TrimBright));
+            AddChild(UiTheme.Heading(UiTheme.Label(new Vector2(20, 14), new Vector2(500, 24), title, 18, Palette.TrimBright), 2));
         }
     }
 
@@ -26,5 +26,5 @@ public partial class MenuScreen : Control
     }
 
     protected Label Caption(Vector2 position, string text, float width = 200) =>
-        Add(UiTheme.Label(position, new Vector2(width, 12), text, color: Palette.Trim));
+        Add(UiTheme.Heading(UiTheme.Label(position, new Vector2(width, 12), text, color: Palette.Trim), 1));
 }

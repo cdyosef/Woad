@@ -12,6 +12,7 @@ public partial class SeatButton : Button
     public SeatButton()
     {
         FocusMode = FocusModeEnum.None;
+        Pressed += () => Sfx.Play("click");
     }
 
     public int Seat { get; init; }

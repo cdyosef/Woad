@@ -40,7 +40,7 @@ public partial class HeroPanel : Panel
         _stats = Add(UiTheme.Label(new(8, 37), new(160, 26)));
         _record = Add(UiTheme.Label(new(8, 64), new(160, 12), color: Palette.TextDim));
 
-        Add(UiTheme.Label(new(8, 80), new(160, 12), "EQUIPMENT", color: Palette.Trim));
+        Add(UiTheme.Heading(UiTheme.Label(new(8, 79), new(160, 12), "EQUIPMENT", color: Palette.Trim), 1));
         for (int i = 0; i < Slots.Length; i++)
         {
             (EquipSlot slot, string caption) = Slots[i];
@@ -57,7 +57,7 @@ public partial class HeroPanel : Panel
             _slots[slot] = cardSlot;
         }
 
-        Add(UiTheme.Label(new(8, 190), new(160, 12), "THIS TURN", color: Palette.Trim));
+        Add(UiTheme.Heading(UiTheme.Label(new(8, 189), new(160, 12), "THIS TURN", color: Palette.Trim), 1));
         _turn = Add(UiTheme.Label(new(8, 203), new(160, 36)));
     }
 

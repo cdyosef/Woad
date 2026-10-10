@@ -253,13 +253,23 @@ file under `Themes/`.
 - **Scaling:** a 640×360 layout, integer scaled to 1280×720, 1920×1080, 2560×1440 and 4K, with
   nearest-neighbor filtering. The window stretches in `canvas_items` mode, so text renders at full
   resolution and stays sharp while the layout keeps its 640×360 coordinates.
-- **Dungeon art:** placeholder tiles and sprites are original, in a 16-bit palette that nods to
-  *A Link to the Past*.
-- **UI art:** dark panels, ornate gold and bone trim and a gothic pixel font, in the spirit of
-  *Castlevania*. The font must be open-licensed and is still to be chosen.
-- **Dice:** animated d6 in the dice tray. Hits and blocks are highlighted.
-- **Theme files:** everything themeable lives under `assets/themes/<theme>/`: tiles, monsters, card art,
-  palette, music and SFX. New dungeons are new themes.
+- **Dungeon art:** original 16×16 placeholder sprites, drawn at 2× (32px tiles), in a 16-bit palette
+  that nods to *A Link to the Past*:
+  - **Tiles:** green flagstones, stone blocks, chasms that join up with their neighbors, stairs, a
+    barred or lit exit, chests and clay pots.
+  - **Heroes:** one adventurer sprite whose tunic is tinted with the player's seat color.
+  - **Monsters:** a sprite each. Slimelings are small slimes, the Iron Warden looms larger, and a
+    collapsed skeleton becomes a bone pile.
+- **UI art:** dark panels in riveted, gold-trimmed frames, and an original serif capitals pixel font
+  for headings, titles and banners, in the spirit of *Castlevania*. Body text stays in the default
+  font for readability.
+- **Dice:** dice jitter and spin as they tumble, then land with a small pop. Successful faces glow gold.
+- **Sound:** synthesized 8-bit effects for buttons, dice, footsteps, hits, blocks, defeats, healing,
+  coins, chests, pots, doors, stairs, turns, the monsters' phase, being downed and victory. There's
+  no music yet.
+- **Where it comes from:** `tools/build-assets.py` generates all of it into `assets/` (see the
+  README). Theme art lives under `assets/themes/<theme>/`, so a new dungeon is a new theme folder.
+  Missing art falls back to plain shapes.
 
 ## Architecture
 
@@ -291,7 +301,7 @@ Woad (Godot project, repo root)          Woad.Core (src/, pure C#, no Godot)
 | M3 | Characters ✅ | Main menu, point-buy creation, character list, JSON save/load, run setup for 1–4 players |
 | M4 | Dungeon ✅ | 3 procedural floors, room templates, doors, splitting up, fog, minimap, stairs, boss, exit |
 | M5 | Loot & scoring ✅ | Loot deck, chests, drops, downed loot piles, results screen, rewards persisted |
-| M6 | Theme pass | Original placeholder art for the first theme, gothic UI frames, SFX, dice animation |
+| M6 | Theme pass ✅ | Original placeholder art for the first theme, gothic UI frames, SFX, dice animation |
 
 ## Out of scope for the MVP
 

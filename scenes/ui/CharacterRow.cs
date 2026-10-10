@@ -12,6 +12,7 @@ public partial class CharacterRow : Button
         ToggleMode = true;
         FocusMode = FocusModeEnum.None;
         CustomMinimumSize = new Vector2(280, 40);
+        Pressed += () => Sfx.Play("click");
     }
 
     public Character? Character { get; private set; }

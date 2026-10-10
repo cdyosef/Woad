@@ -2,7 +2,7 @@ using Godot;
 
 namespace Woad.Scenes.Ui;
 
-/// <summary>A row of little pixel hearts: full for current hearts, dark for lost ones.</summary>
+/// <summary>A row of pixel hearts: full for current hearts, dark for lost ones.</summary>
 public partial class HeartsView : Control
 {
     private const float HeartWidth = 8;
@@ -20,9 +20,20 @@ public partial class HeartsView : Control
 
     public override void _Draw()
     {
+        Texture2D? full = GameArt.Ui("heart_full");
+        Texture2D? empty = GameArt.Ui("heart_empty");
         for (int i = 0; i < _maxHearts; i++)
         {
-            DrawHeart(this, new Vector2(i * (HeartWidth + Gap), 0), HeartWidth, i < _hearts ? Palette.Heart : Palette.HeartEmpty);
+            var origin = new Vector2(i * (HeartWidth + Gap), 0);
+            Texture2D? texture = i < _hearts ? full : empty;
+            if (texture is not null)
+            {
+                DrawTextureRect(texture, new Rect2(origin, new Vector2(HeartWidth, HeartWidth)), tile: false);
+            }
+            else
+            {
+                DrawHeart(this, origin, HeartWidth, i < _hearts ? Palette.Heart : Palette.HeartEmpty);
+            }
         }
     }
 

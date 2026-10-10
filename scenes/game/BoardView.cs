@@ -25,6 +25,9 @@ public partial class BoardView : Control
 
     public event Action? CancelRequested;
 
+    /// <summary>Which theme's tile art to draw; without art the board falls back to flat shapes.</summary>
+    public string ThemeId { get; set; } = "";
+
     public override void _Ready()
     {
         Size = new Vector2(Pixels, Pixels);
@@ -151,8 +154,79 @@ public partial class BoardView : Control
         }
     }
 
+    /// <summary>Draws a tile from the theme's art: floor first, then whatever stands on it. False when there's no art.</summary>
+    private bool DrawTexturedTile(GridPosition tile, TileKind kind)
+    {
+        if (GameArt.Tile(ThemeId, (tile.X + tile.Y) % 2 == 0 ? "floor_a" : "floor_b") is not { } floor)
+        {
+            return false;
+        }
+
+        Rect2 rect = TileRect(tile);
+        string? feature = kind switch
+        {
+            TileKind.Wall => "wall",
+            TileKind.Pit => "pit",
+            TileKind.StairsDown => "stairs",
+            TileKind.Chest => _room!.IsChestOpened(tile) ? "chest_open" : "chest",
+            TileKind.Pot => "pot",
+            TileKind.Exit => _room!.Monsters.Any(monster => monster.Definition.Boss) ? "exit_sealed" : "exit_open",
+            _ => null,
+        };
+
+        if (kind == TileKind.Pit)
+        {
+            DrawChasm(tile, rect);
+            return true;
+        }
+
+        if (kind is not (TileKind.Wall or TileKind.StairsDown))
+        {
+            DrawTextureRect(floor, rect, tile: false);
+        }
+
+        if (feature is not null && GameArt.Tile(ThemeId, feature) is { } texture)
+        {
+            DrawTextureRect(texture, rect, tile: false);
+        }
+
+        return true;
+    }
+
+    /// <summary>Pits join into one chasm: a crumbling lip only along edges that border solid ground.</summary>
+    private void DrawChasm(GridPosition tile, Rect2 rect)
+    {
+        DrawRect(rect, Palette.Pit);
+        Color[] lip = [new Color("2a3a33"), new Color("1a2420"), new Color("0e1412")];
+        foreach (Direction side in Enum.GetValues<Direction>())
+        {
+            if (_room!.Layout[tile.Step(side)] == TileKind.Pit)
+            {
+                continue;
+            }
+
+            for (int depth = 0; depth < lip.Length; depth++)
+            {
+                float thickness = side == Direction.North ? 3 : 2;
+                Rect2 band = side switch
+                {
+                    Direction.North => new Rect2(rect.Position.X, rect.Position.Y + depth * thickness, TileSize, thickness),
+                    Direction.South => new Rect2(rect.Position.X, rect.End.Y - (depth + 1) * thickness, TileSize, thickness),
+                    Direction.West => new Rect2(rect.Position.X + depth * thickness, rect.Position.Y, thickness, TileSize),
+                    _ => new Rect2(rect.End.X - (depth + 1) * thickness, rect.Position.Y, thickness, TileSize),
+                };
+                DrawRect(band, lip[depth]);
+            }
+        }
+    }
+
     private void DrawTile(GridPosition tile, TileKind kind)
     {
+        if (DrawTexturedTile(tile, kind))
+        {
+            return;
+        }
+
         Rect2 rect = TileRect(tile);
         DrawRect(rect, (tile.X + tile.Y) % 2 == 0 ? Palette.FloorLight : Palette.FloorDark);
         DrawLine(rect.Position + new Vector2(0, TileSize - 0.5f), rect.End - new Vector2(0, 0.5f), Palette.Grout);

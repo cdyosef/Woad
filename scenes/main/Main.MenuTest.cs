@@ -3,6 +3,7 @@ using Woad.Core.Characters;
 using Woad.Core.Content;
 using Woad.Scenes.Game;
 using Woad.Scenes.Menu;
+using Woad.Scenes.Ui;
 using static Woad.Scenes.Debug.UiDriver;
 
 namespace Woad.Scenes;
@@ -88,12 +89,12 @@ public partial class Main
             Check(Directory.GetFiles(saveFolder, "*.json").Length == 1, "deleting removes the save file");
 
             GD.Print("Menu test passed.");
-            GetTree().Quit();
+            Sfx.QuitGame(this);
         }
         catch (Exception exception)
         {
             GD.PushError($"Menu test failed: {exception.Message}");
-            GetTree().Quit(1);
+            Sfx.QuitGame(this, 1);
         }
         finally
         {

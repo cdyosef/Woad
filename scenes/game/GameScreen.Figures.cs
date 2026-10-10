@@ -1,4 +1,5 @@
 using Godot;
+using Woad.Core.Content;
 using Woad.Core.Events;
 using Woad.Core.Grid;
 using Woad.Core.Model;
@@ -73,6 +74,8 @@ public partial class GameScreen
 
     private TokenView CreateToken(Figure figure)
     {
+        string theme = _session.State.ThemeId;
+        MonsterDefinition? monster = figure.Monster;
         var token = new TokenView
         {
             EntityId = figure.Id,
@@ -80,6 +83,10 @@ public partial class GameScreen
             Glyph = figure.Glyph,
             Fill = figure.Fill,
             Position = BoardView.TileOrigin(figure.Position),
+            Body = monster is null ? GameArt.HeroBody : GameArt.Monster(theme, monster.Id),
+            Tint = monster is null ? GameArt.HeroTunic : null,
+            CollapsedBody = monster is { Reassembles: true } ? GameArt.Monster(theme, "bones") : null,
+            SpriteScale = monster is null ? 1f : GameArt.MonsterScale(monster),
         };
         _tokens[figure.Id] = token;
         _board.AddChild(token);
@@ -113,6 +120,7 @@ public partial class GameScreen
         Tween tween = CreateTween();
         foreach (GridPosition step in path)
         {
+            tween.TweenCallback(Callable.From(() => Sfx.PlayVaried("step")));
             tween.TweenProperty(token, "position", BoardView.TileOrigin(step), StepSeconds);
         }
 
@@ -241,10 +249,11 @@ public partial class GameScreen
         await ToSignal(tween, Tween.SignalName.Finished);
     }
 
-    private static Figure MonsterFigure(int id, Woad.Core.Content.MonsterDefinition definition, string roomId, GridPosition position, int hearts) => new()
+    private static Figure MonsterFigure(int id, MonsterDefinition definition, string roomId, GridPosition position, int hearts) => new()
     {
         Id = id,
         IsHero = false,
+        Monster = definition,
         RoomId = roomId,
         Position = position,
         Hearts = hearts,
@@ -259,6 +268,9 @@ public partial class GameScreen
         public int Id { get; init; }
 
         public bool IsHero { get; init; }
+
+        /// <summary>Null for heroes.</summary>
+        public MonsterDefinition? Monster { get; init; }
 
         public string RoomId { get; set; } = "";
 

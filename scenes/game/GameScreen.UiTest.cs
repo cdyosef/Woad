@@ -70,12 +70,12 @@ public partial class GameScreen
             Check(_session.State.Round == 2 || _session.State.Phase != RunPhase.InProgress, "the round advances after the enemy phase");
 
             GD.Print("UI test passed.");
-            GetTree().Quit();
+            Sfx.QuitGame(this);
         }
         catch (Exception exception)
         {
             GD.PushError($"UI test failed: {exception.Message}");
-            GetTree().Quit(1);
+            Sfx.QuitGame(this, 1);
         }
     }
 
@@ -112,12 +112,12 @@ public partial class GameScreen
             Check(_shownRoomId == "a" && ActiveHero!.Seat == 1, "the next hero's turn shows their room");
 
             GD.Print("Floor test passed.");
-            GetTree().Quit();
+            Sfx.QuitGame(this);
         }
         catch (Exception exception)
         {
             GD.PushError($"Floor test failed: {exception.Message}");
-            GetTree().Quit(1);
+            Sfx.QuitGame(this, 1);
         }
     }
 

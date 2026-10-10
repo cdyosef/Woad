@@ -14,6 +14,7 @@ public partial class CardSlot : Button
         Alignment = HorizontalAlignment.Left;
         ClipText = true;
         TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        Pressed += () => Sfx.Play("click");
     }
 
     public CardInstance? Card { get; private set; }

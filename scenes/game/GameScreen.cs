@@ -103,6 +103,7 @@ public partial class GameScreen : Control
         _dice.Clear();
 
         _session = new GameSession(Content, setup);
+        _board.ThemeId = setup.ThemeId;
         ReloadFigures();
         ShowRoom(_session.State.RoomOf(_session.State.Heroes[0]).Id);
         await PlayEvents(_session.Begin());
@@ -158,7 +159,7 @@ public partial class GameScreen : Control
             GD.Print($"Autoplay finished: {_session.State.Phase} after round {_session.State.Round}; " +
                      string.Join(", ", _session.State.Heroes.Select(hero =>
                          $"{hero.Name} {hero.Status} on floor {hero.DeepestFloor}, {hero.Hearts}/{hero.MaxHearts} hearts, {hero.Kills} kills")));
-            GetTree().Quit();
+            Sfx.QuitGame(this);
             return;
         }
 
@@ -166,7 +167,7 @@ public partial class GameScreen : Control
         if (!await ExecuteAsync(command))
         {
             GD.PushError($"Autoplay command was refused: {command}");
-            GetTree().Quit(1);
+            Sfx.QuitGame(this, 1);
         }
     }
 
@@ -246,6 +247,7 @@ public partial class GameScreen : Control
             await Pause(0.25);
         }
 
+        PlaySound(gameEvent);
         switch (gameEvent)
         {
             case TurnStarted turn:
@@ -390,6 +392,62 @@ public partial class GameScreen : Control
                     ? "The dungeon claims you"
                     : $"{string.Join(" & ", ended.WinnerHeroIds.Select(NameOf))} {(ended.WinnerHeroIds.Count == 1 ? "wins" : "win")}!";
                 await _banner.Flash(title, Palette.TrimBright, 1.2);
+                break;
+        }
+    }
+
+    private static void PlaySound(GameEvent gameEvent)
+    {
+        switch (gameEvent)
+        {
+            case TurnStarted:
+                Sfx.Play("turn");
+                break;
+            case EnemyPhaseStarted:
+                Sfx.Play("monsters");
+                break;
+            case MovementRolled or AttackRolled or DefenseRolled or DieRerolled:
+                Sfx.PlayVaried("dice");
+                break;
+            case Damaged { Amount: > 0 }:
+                Sfx.Play("hit");
+                break;
+            case Damaged:
+                Sfx.Play("block");
+                break;
+            case MonsterStunned:
+                Sfx.Play("block", 0.6f);
+                break;
+            case MonsterDefeated:
+                Sfx.Play("defeat");
+                break;
+            case HeroHealed or RoomCleared:
+                Sfx.Play("heal");
+                break;
+            case ChestOpened:
+                Sfx.Play("treasure");
+                break;
+            case LootDropped or LootPickedUp:
+                Sfx.Play("coin");
+                break;
+            case PotSmashed smashed:
+                Sfx.Play("pot");
+                Sfx.Play(smashed.CardId is not null ? "coin" : smashed.HeartsRestored > 0 ? "heal" : "click");
+                break;
+            case HeroEnteredRoom:
+                Sfx.Play("door");
+                break;
+            case HeroDescended:
+                Sfx.Play("stairs");
+                break;
+            case HeroDowned:
+                Sfx.Play("downed");
+                break;
+            case HeroEscaped or RunEnded { WinnerHeroIds.Count: > 0 }:
+                Sfx.Play("victory");
+                break;
+            case CardEquipped or CardBelted or CardStowed or CardDropped:
+                Sfx.Play("click");
                 break;
         }
     }

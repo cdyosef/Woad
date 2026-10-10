@@ -1,0 +1,17 @@
+[remap]
+
+importer="font_data_bmfont"
+type="FontFile"
+uid="uid://ddih5bnbi4h4v"
+path="res://.godot/imported/woad_gothic.fnt-2c79ad7e257f81c1c5ee691600108147.fontdata"
+
+[deps]
+
+source_file="res://assets/fonts/woad_gothic.fnt"
+dest_files=["res://.godot/imported/woad_gothic.fnt-2c79ad7e257f81c1c5ee691600108147.fontdata"]
+
+[params]
+
+fallbacks=[]
+compress=true
+scaling_mode=2

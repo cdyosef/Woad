@@ -38,6 +38,21 @@ public partial class TurnBanner : Control
         DrawRect(band, Palette.PanelDark with { A = 0.92f });
         DrawLine(band.Position, band.Position + new Vector2(band.Size.X, 0), Palette.Trim, 2);
         DrawLine(band.Position + new Vector2(0, band.Size.Y), band.End, Palette.Trim, 2);
-        DrawString(ThemeDB.FallbackFont, new Vector2(0, band.Position.Y + 26), _text, HorizontalAlignment.Center, Size.X, 16, _color);
+        if (GameArt.HeadingFont is { } heading)
+        {
+            // Double size when it fits across the band, otherwise single.
+            string text = _text.ToUpperInvariant();
+            int size = UiTheme.HeadingPixelSize * 2;
+            if (heading.GetStringSize(text, fontSize: size).X > Size.X - 16)
+            {
+                size = UiTheme.HeadingPixelSize;
+            }
+
+            DrawString(heading, new Vector2(0, band.Position.Y + 20 + size / 2f), text, HorizontalAlignment.Center, Size.X, size, _color);
+        }
+        else
+        {
+            DrawString(ThemeDB.FallbackFont, new Vector2(0, band.Position.Y + 26), _text, HorizontalAlignment.Center, Size.X, 16, _color);
+        }
     }
 }

@@ -34,7 +34,14 @@ public partial class MinimapView : Control
     public override void _Draw()
     {
         Font font = ThemeDB.FallbackFont;
-        DrawString(font, new Vector2(0, 9), $"FLOOR {_floor}", fontSize: UiTheme.FontSize, modulate: Palette.Trim);
+        if (GameArt.HeadingFont is { } heading)
+        {
+            DrawString(heading, new Vector2(0, 9), $"FLOOR {_floor}", fontSize: UiTheme.HeadingPixelSize, modulate: Palette.Trim);
+        }
+        else
+        {
+            DrawString(font, new Vector2(0, 9), $"FLOOR {_floor}", fontSize: UiTheme.FontSize, modulate: Palette.Trim);
+        }
         if (_state is null)
         {
             return;

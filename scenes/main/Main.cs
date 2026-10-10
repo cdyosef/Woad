@@ -27,6 +27,7 @@ public partial class Main : Control
     public override void _Ready()
     {
         Theme = UiTheme.Create();
+        AddChild(new Sfx());
         _content = ContentCatalog.LoadDefault();
 
         string[] args = OS.GetCmdlineUserArgs();
@@ -62,6 +63,12 @@ public partial class Main : Control
         {
             RunMenuTest(saveFolder);
         }
+    }
+
+    public override void _ExitTree()
+    {
+        Theme = null;
+        GameArt.Release();
     }
 
     private void Show(Control screen)

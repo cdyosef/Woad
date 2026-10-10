@@ -4,7 +4,11 @@ using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Game;
 
-/// <summary>A hero (circle) or monster (square) standing on the board, with heart pips underneath.</summary>
+/// <summary>
+/// A hero or monster standing on the board: its sprite (a hero's tunic tinted with their seat
+/// color) on a small shadow, with heart pips underneath. Without art it falls back to a circle
+/// (hero) or square (monster) with a letter.
+/// </summary>
 public partial class TokenView : Node2D
 {
     private const float Radius = 10;
@@ -23,6 +27,18 @@ public partial class TokenView : Node2D
     public string Glyph { get; init; } = "";
 
     public Color Fill { get; init; } = Colors.White;
+
+    /// <summary>The sprite; null falls back to a shape.</summary>
+    public Texture2D? Body { get; init; }
+
+    /// <summary>Drawn over the body, tinted with <see cref="Fill"/> (heroes' tunics).</summary>
+    public Texture2D? Tint { get; init; }
+
+    /// <summary>Shown instead of the body while collapsed (a skeleton's bone pile).</summary>
+    public Texture2D? CollapsedBody { get; init; }
+
+    /// <summary>Sprite size relative to a tile: smaller for slimelings, bigger for bosses.</summary>
+    public float SpriteScale { get; init; } = 1;
 
     public void SetHearts(int hearts, int maxHearts)
     {
@@ -53,6 +69,47 @@ public partial class TokenView : Node2D
 
     public override void _Draw()
     {
+        if (Body is not null)
+        {
+            DrawSprite();
+        }
+        else
+        {
+            DrawShape();
+        }
+
+        DrawHeartPips();
+
+        if (_stunned)
+        {
+            DrawString(ThemeDB.FallbackFont, new Vector2(Center.X + 7, 6), "z", fontSize: 9, modulate: Palette.TrimBright);
+        }
+    }
+
+    private void DrawSprite()
+    {
+        // A shadow under the feet; the active hero's glows gold.
+        DrawSetTransform(new Vector2(BoardView.TileSize / 2f, 26), 0, new Vector2(1, 0.35f));
+        DrawCircle(Vector2.Zero, 11, _active ? Palette.TrimBright with { A = 0.85f } : new Color(0, 0, 0, 0.35f), antialiased: true);
+        DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+
+        float size = BoardView.TileSize * SpriteScale;
+        var rect = new Rect2((BoardView.TileSize - size) / 2, 27 - size, size, size);
+        if (_collapsed && CollapsedBody is not null)
+        {
+            DrawTextureRect(CollapsedBody, rect, tile: false);
+            return;
+        }
+
+        DrawTextureRect(Body!, rect, tile: false, modulate: _collapsed ? new Color(0.5f, 0.5f, 0.5f) : Colors.White);
+        if (Tint is not null)
+        {
+            DrawTextureRect(Tint, rect, tile: false, modulate: Fill);
+        }
+    }
+
+    private void DrawShape()
+    {
         Color fill = _collapsed ? Fill.Darkened(0.55f) : Fill;
         if (_active)
         {
@@ -71,15 +128,7 @@ public partial class TokenView : Node2D
             DrawRect(body, Palette.Ink, filled: false, width: 1.5f);
         }
 
-        Font font = ThemeDB.FallbackFont;
-        DrawString(font, new Vector2(0, Center.Y + 4), _collapsed ? "x" : Glyph, HorizontalAlignment.Center, BoardView.TileSize, 11, Palette.Ink);
-
-        DrawHeartPips();
-
-        if (_stunned)
-        {
-            DrawString(font, new Vector2(Center.X + 6, 6), "z", fontSize: 9, modulate: Palette.TrimBright);
-        }
+        DrawString(ThemeDB.FallbackFont, new Vector2(0, Center.Y + 4), _collapsed ? "x" : Glyph, HorizontalAlignment.Center, BoardView.TileSize, 11, Palette.Ink);
     }
 
     private void DrawHeartPips()
@@ -89,7 +138,7 @@ public partial class TokenView : Node2D
             return;
         }
 
-        const float top = 27;
+        const float top = 28;
         const float width = 24;
         float left = Center.X - width / 2;
 

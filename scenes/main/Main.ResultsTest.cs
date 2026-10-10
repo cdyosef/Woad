@@ -5,6 +5,7 @@ using Woad.Core.Model;
 using Woad.Core.Rules;
 using Woad.Scenes.Game;
 using Woad.Scenes.Menu;
+using Woad.Scenes.Ui;
 using static Woad.Scenes.Debug.UiDriver;
 
 namespace Woad.Scenes;
@@ -58,12 +59,12 @@ public partial class Main
             Check(true, "Done returns to party setup");
 
             GD.Print("Results test passed.");
-            GetTree().Quit();
+            Sfx.QuitGame(this);
         }
         catch (Exception exception)
         {
             GD.PushError($"Results test failed: {exception.Message}");
-            GetTree().Quit(1);
+            Sfx.QuitGame(this, 1);
         }
         finally
         {

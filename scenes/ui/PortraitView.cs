@@ -37,6 +37,7 @@ public partial class PortraitView : Control
     {
         if (Clickable && @event is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left })
         {
+            Sfx.Play("click");
             Clicked?.Invoke();
             AcceptEvent();
         }

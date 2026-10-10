@@ -252,7 +252,7 @@ public partial class GameScreen
         _inventory.ActionRequested += OnCardAction;
         right.AddChild(_inventory);
 
-        right.AddChild(UiTheme.Label(new Vector2(8, 170), new Vector2(160, 12), "DICE", color: Palette.Trim));
+        right.AddChild(UiTheme.Heading(UiTheme.Label(new Vector2(8, 169), new Vector2(160, 12), "DICE", color: Palette.Trim), 1));
         _dice = new DiceTray { Position = new Vector2(8, 182), Size = new Vector2(160, 80) };
         _dice.DieClicked += index => ExecuteForActiveHero(heroId => new RerollDie(heroId, index));
         right.AddChild(_dice);

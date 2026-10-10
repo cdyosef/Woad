@@ -44,6 +44,13 @@ function Invoke-Step([string]$Name, [scriptblock]$Command) {
     }
 }
 
+if (Get-Command python -ErrorAction SilentlyContinue) {
+    Invoke-Step 'Generated assets are up to date' {
+        python -I "$root\tools\build-assets.py" | Out-Null
+        git -C $root diff --exit-code --stat -- assets
+    }
+}
+
 Invoke-Step 'Build' { dotnet build "$root\Woad.sln" -v q -nologo }
 Invoke-Step 'Rules tests' { dotnet test "$root\Woad.sln" --no-build -nologo }
 Invoke-Step 'Menu click test' { & $Godot --headless --path $root --quit-after 20000 -- --menutest }

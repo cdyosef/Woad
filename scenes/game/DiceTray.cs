@@ -5,8 +5,9 @@ using Woad.Scenes.Ui;
 namespace Woad.Scenes.Game;
 
 /// <summary>
-/// Shows the dice of the latest roll and the defense rolls answering it. Successful faces
-/// are gold. When Luck allows, dice in the first row can be clicked to reroll them.
+/// Shows the dice of the latest roll and the defense rolls answering it. Dice tumble (jittering and
+/// spinning) before they land with a small pop; successful faces glow gold. When Luck allows, dice
+/// in the first row can be clicked to reroll them.
 /// </summary>
 public partial class DiceTray : Control
 {
@@ -88,8 +89,11 @@ public partial class DiceTray : Control
             for (int i = 0; i < row.Faces.Length; i++)
             {
                 int face = row.Shown[i];
-                bool success = row.SuccessFace > 0 && !row.Rolling && face >= row.SuccessFace;
-                DrawDie(DieRect(r, i), face, success, r == 0 && _rerollable);
+                bool success = row.SuccessFace > 0 && !row.Rolling[i] && face >= row.SuccessFace;
+                float scale = 1 + 0.35f * row.Pop[i];
+                DrawSetTransform(DieRect(r, i).GetCenter() + row.Offset[i], row.Angle[i], new Vector2(scale, scale));
+                DrawDie(face, success, r == 0 && _rerollable);
+                DrawSetTransform(Vector2.Zero, 0, Vector2.One);
             }
         }
     }
@@ -117,30 +121,57 @@ public partial class DiceTray : Control
     private async Task Tumble(Row row, IEnumerable<int> dice)
     {
         int[] tumbling = dice.ToArray();
-        row.Rolling = true;
-        for (int frame = 0; frame < 6; frame++)
+        foreach (int i in tumbling)
+        {
+            row.Rolling[i] = true;
+        }
+
+        for (int frame = 0; frame < 7; frame++)
         {
             foreach (int i in tumbling)
             {
                 row.Shown[i] = Random.Shared.Next(1, 7);
+                row.Angle[i] = (float)(Random.Shared.NextDouble() - 0.5);
+                row.Offset[i] = new Vector2(Random.Shared.Next(-2, 3), Random.Shared.Next(-2, 3));
             }
 
             QueueRedraw();
-            await ToSignal(GetTree().CreateTimer(0.045), SceneTreeTimer.SignalName.Timeout);
+            await ToSignal(GetTree().CreateTimer(0.04), SceneTreeTimer.SignalName.Timeout);
         }
 
         foreach (int i in tumbling)
         {
             row.Shown[i] = row.Faces[i];
+            row.Angle[i] = 0;
+            row.Offset[i] = Vector2.Zero;
+            row.Rolling[i] = false;
         }
 
-        row.Rolling = false;
-        QueueRedraw();
+        // Land with a small pop that settles back to normal size.
+        Tween pop = CreateTween();
+        pop.TweenMethod(Callable.From<float>(amount =>
+        {
+            foreach (int i in tumbling)
+            {
+                row.Pop[i] = amount;
+            }
+
+            QueueRedraw();
+        }), 1.0f, 0.0f, 0.18);
+        await ToSignal(pop, Tween.SignalName.Finished);
     }
 
-    private void DrawDie(Rect2 rect, int face, bool success, bool clickable)
+    /// <summary>Draws a die centered on the current transform's origin.</summary>
+    private void DrawDie(int face, bool success, bool clickable)
     {
+        var rect = new Rect2(-DieSize / 2, -DieSize / 2, DieSize, DieSize);
+        if (success)
+        {
+            DrawRect(rect.Grow(2), Palette.TrimBright with { A = 0.35f });
+        }
+
         DrawRect(rect, success ? Palette.TrimBright : Palette.Text);
+        DrawRect(new Rect2(rect.Position.X, rect.End.Y - 2, rect.Size.X, 2), success ? Palette.Trim : Palette.TextDim);
         DrawRect(rect, clickable ? Palette.Heal : Palette.Ink, filled: false, width: clickable ? 1.5f : 1);
         foreach (Vector2 pip in Pips[Math.Clamp(face, 0, 6)])
         {
@@ -149,7 +180,7 @@ public partial class DiceTray : Control
     }
 
     private static Rect2 DieRect(int row, int index) =>
-        new(new Vector2(index * (DieSize + Gap) + 1, row * RowHeight + 11), new Vector2(DieSize, DieSize));
+        new(new Vector2(index * (DieSize + Gap) + 3, row * RowHeight + 11), new Vector2(DieSize, DieSize));
 
     private sealed class Row(string caption, int[] faces, int successFace)
     {
@@ -161,6 +192,12 @@ public partial class DiceTray : Control
 
         public int SuccessFace { get; } = successFace;
 
-        public bool Rolling { get; set; }
+        public bool[] Rolling { get; } = new bool[faces.Length];
+
+        public float[] Angle { get; } = new float[faces.Length];
+
+        public Vector2[] Offset { get; } = new Vector2[faces.Length];
+
+        public float[] Pop { get; } = new float[faces.Length];
     }
 }

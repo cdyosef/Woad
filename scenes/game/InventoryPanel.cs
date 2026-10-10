@@ -47,13 +47,13 @@ public partial class InventoryPanel : Control
         Size = new Vector2(176, 168);
         MouseFilter = MouseFilterEnum.Ignore;
 
-        AddChild(UiTheme.Label(new(8, 4), new(160, 12), "BELT", color: Palette.Trim));
+        AddChild(UiTheme.Heading(UiTheme.Label(new(8, 4), new(160, 12), "BELT", color: Palette.Trim), 1));
         for (int i = 0; i < _belt.Length; i++)
         {
             _belt[i] = AddSlot(new Vector2(8 + i * 82, 16));
         }
 
-        AddChild(UiTheme.Label(new(8, 37), new(160, 12), "BACKPACK", color: Palette.Trim));
+        AddChild(UiTheme.Heading(UiTheme.Label(new(8, 36), new(160, 12), "BACKPACK", color: Palette.Trim), 1));
         for (int i = 0; i < _backpack.Length; i++)
         {
             _backpack[i] = AddSlot(new Vector2(8 + i % 2 * 82, 49 + i / 2 * 18));
