@@ -51,11 +51,15 @@ project. Everyone working on the project should use the same editor version. To 
 
 ```
 project.godot, Woad.csproj   Godot game project (repo root): scenes, UI, input, presentation
+scenes/main/                 Main.tscn, the entry scene: owns content and saves, swaps screens
+scenes/menu/                 Main menu, character list, character editor, party setup
 scenes/game/                 The game screen: board, tokens, dice tray, panels, event playback
-scenes/ui/                   Shared UI pieces: palette, theme, card slots, hearts
+scenes/ui/                   Shared UI pieces: palette, theme, portraits, card slots, hearts
+scenes/debug/                Synthetic mouse/keyboard driver used by the debug UI tests
 src/Woad.Core/               Pure C# rules engine: no Godot references allowed
   Rules/GameSession*.cs        Executes commands (Commands/) and returns events (Events/)
   Model/                       Run state the game draws from: heroes, monsters, rooms, cards
+  Characters/                  Saved characters, point-buy, levels, JSON character storage
   Content/Data/                Cards, monsters and dungeon themes as JSON (embedded in the DLL)
 tests/Woad.Core.Tests/       xUnit tests for Woad.Core
 docs/                        Design documents
@@ -72,18 +76,21 @@ dotnet test Woad.sln    # run the rules-engine tests
 ```
 
 Run the game with F5 in the Godot editor. You can also run it from a terminal with
-`Godot_v4.7.2-stable_mono_win64 --path .`. For now it opens straight into a demo room with
-two hot-seat heroes, Aria and Bran.
+`Godot_v4.7.2-stable_mono_win64 --path .`. Create a character from **Characters**, then choose
+**Play** to seat 1–4 characters and start a run. Every run currently uses the same demo room.
 
 ### Smoke tests
 
 `tools/smoke-test.ps1` builds everything, runs the rules tests, and then runs the game headless
-in two debug modes. Pass the mode after `--` on the Godot command line:
+in three debug modes. Pass the mode after `--` on the Godot command line:
 
 | Flag | What it does |
 | --- | --- |
-| `--uitest` | Plays the first two turns by pushing real mouse clicks through the UI and checks each result. Exits 1 on failure. |
-| `--autoplay` | A bot plays the room until it's cleared or everyone is down, narrating to the console. Add `--fast` for 8× speed. |
+| `--menutest` | Creates two characters, seats them, starts and leaves a run, and deletes one, using synthetic clicks and typing. Saves go to a throwaway temp folder. |
+| `--uitest` | Starts a run with a fixed debug party and plays the first two turns by pushing real mouse clicks through the UI, checking each result. |
+| `--autoplay` | Starts a run with the debug party and lets a bot play until the room is cleared or everyone is down, narrating to the console. Add `--fast` for 8× speed. |
+
+Each test exits with code 1 on its first failed check.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools\smoke-test.ps1
@@ -91,5 +98,6 @@ powershell -ExecutionPolicy Bypass -File tools\smoke-test.ps1
 
 ## Save data
 
-Characters are saved as JSON under Godot's user data folder: `%APPDATA%\Godot\app_userdata\Woad\`
-on Windows.
+Each character is saved as one JSON file under Godot's user data folder. On Windows that's
+`%APPDATA%\Godot\app_userdata\Woad\characters\`. Files that can't be read are skipped and listed on
+the Characters screen. Cards that no longer exist in the game are dropped, with a warning.

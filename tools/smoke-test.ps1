@@ -1,11 +1,12 @@
 <#
 .SYNOPSIS
-    Builds Woad, runs the rules-engine tests, then runs the game headless twice: once pushing
-    real mouse clicks through the UI (--uitest) and once letting a bot play the room (--autoplay).
+    Builds Woad, runs the rules-engine tests, then runs the game headless three times: clicking
+    through the menus (--menutest), pushing real mouse clicks through a run (--uitest) and
+    letting a bot play the room (--autoplay).
 
 .PARAMETER Godot
-    Path to a Godot .NET console executable. Defaults to $env:GODOT, then any Godot .NET
-    console build on PATH.
+    Path to a Godot .NET console executable. Defaults to $env:GODOT, then the version Woad.csproj
+    pins (on PATH or in winget's package folder), then any Godot .NET console build on PATH.
 
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File tools\smoke-test.ps1
@@ -19,11 +20,20 @@ $ErrorActionPreference = 'Stop'
 $root = Resolve-Path (Join-Path $PSScriptRoot '..')
 
 if (-not $Godot) {
-    $Godot = (Get-Command 'Godot_v*_mono_win64_console.exe', 'godot-mono' -ErrorAction SilentlyContinue | Select-Object -First 1).Source
+    $version = (Select-String -Path "$root\Woad.csproj" -Pattern 'Godot\.NET\.Sdk/(\d+\.\d+\.\d+)').Matches[0].Groups[1].Value -replace '\.0$', ''
+    $pinned = "Godot_v$version-stable_mono_win64_console.exe"
+    $wingetPackages = Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet\Packages'
+    $Godot = @(
+        (Get-Command $pinned -ErrorAction SilentlyContinue).Source
+        if (Test-Path $wingetPackages) { (Get-ChildItem $wingetPackages -Recurse -Filter $pinned -ErrorAction SilentlyContinue | Select-Object -First 1).FullName }
+        (Get-Command 'Godot_v*_mono_win64_console.exe', 'godot-mono' -ErrorAction SilentlyContinue | Select-Object -First 1).Source
+    ) | Where-Object { $_ } | Select-Object -First 1
 }
 if (-not $Godot) {
     throw 'No Godot .NET console executable found. Pass -Godot or set $env:GODOT.'
 }
+
+Write-Host "Using $Godot"
 
 function Invoke-Step([string]$Name, [scriptblock]$Command) {
     Write-Host "==> $Name" -ForegroundColor Cyan
@@ -35,7 +45,8 @@ function Invoke-Step([string]$Name, [scriptblock]$Command) {
 
 Invoke-Step 'Build' { dotnet build "$root\Woad.sln" -v q -nologo }
 Invoke-Step 'Rules tests' { dotnet test "$root\Woad.sln" --no-build -nologo }
-Invoke-Step 'UI click test' { & $Godot --headless --path $root --quit-after 6000 -- --uitest }
+Invoke-Step 'Menu click test' { & $Godot --headless --path $root --quit-after 20000 -- --menutest }
+Invoke-Step 'Run click test' { & $Godot --headless --path $root --quit-after 6000 -- --uitest }
 Invoke-Step 'Autoplay' { & $Godot --headless --path $root --quit-after 40000 -- --autoplay --fast }
 
 Write-Host 'All smoke tests passed.' -ForegroundColor Green

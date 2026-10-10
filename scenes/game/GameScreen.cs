@@ -41,9 +41,12 @@ public partial class GameScreen : Control
     private Button _confirm = null!;
     private Button _roll = null!;
     private Button _endTurn = null!;
-    private Button _newRun = null!;
+    private Button _menu = null!;
+    private Button _playAgain = null!;
+    private Button _leave = null!;
 
     private bool _busy;
+    private bool _confirmingLeave;
     private bool _autoplay;
     private int _autoplayCommandsLeft = 400;
     private bool _trayShowsMovement;
@@ -54,17 +57,32 @@ public partial class GameScreen : Control
 
     private Room ShownRoom => _session.State.RoomOf(ActiveHero ?? _session.State.Heroes[0]);
 
+    /// <summary>The party, seed and dungeon to play. Set before adding the screen to the tree.</summary>
+    public RunSetup Setup { get; set; } = null!;
+
+    public ContentCatalog Content { get; init; } = ContentCatalog.LoadDefault();
+
+    /// <summary>The player chose to leave the run (abandoning it, or after it ended).</summary>
+    public event Action? ExitRequested;
+
+    internal bool IsBusy => _busy;
+
+    internal GameSession Session => _session;
+
+    internal Button MenuButton => _menu;
+
     public override void _Ready()
     {
-        Theme = UiTheme.Create();
+        Size = new Vector2(640, 360);
         _autoplay = OS.GetCmdlineUserArgs().Contains("--autoplay");
         if (_autoplay && OS.GetCmdlineUserArgs().Contains("--fast"))
         {
             Engine.TimeScale = 8;
         }
+
         _narrator = new EventNarrator(NameOf, CardNameOf);
         BuildLayout();
-        StartNewRun();
+        StartRun(Setup);
 
         if (OS.GetCmdlineUserArgs().Contains("--uitest"))
         {
@@ -81,8 +99,9 @@ public partial class GameScreen : Control
         }
     }
 
-    private async void StartNewRun()
+    private async void StartRun(RunSetup setup)
     {
+        Setup = setup;
         foreach (TokenView token in _tokens.Values)
         {
             token.QueueFree();
@@ -96,7 +115,8 @@ public partial class GameScreen : Control
         _targeting = false;
         _dice.Clear();
 
-        _session = DemoRun.Create((ulong)DateTime.UtcNow.Ticks);
+        _confirmingLeave = false;
+        _session = new GameSession(Content, setup);
         SyncBoard();
         await PlayEvents(_session.Begin());
     }
@@ -117,6 +137,7 @@ public partial class GameScreen : Control
             return false;
         }
 
+        _confirmingLeave = false;
         if (command is UseCard)
         {
             _targeting = false;
@@ -493,7 +514,11 @@ public partial class GameScreen : Control
             && (pending || (_trayShowsMovement && turn!.MovementRoll is not null && !turn.HasMoved));
         _dice.Rerollable = canReroll;
         _luckHint.Visible = canReroll;
-        _newRun.Visible = state.Phase == RunPhase.Ended && !_busy;
+
+        bool ended = state.Phase == RunPhase.Ended && !_busy;
+        _playAgain.Visible = _leave.Visible = ended;
+        _menu.Disabled = _busy;
+        _menu.Text = _confirmingLeave ? "Leave?" : "Menu";
 
         UpdateHighlights();
     }
@@ -814,7 +839,21 @@ public partial class GameScreen : Control
         AddChild(_heroPanel);
 
         AddChild(new Panel { Position = new Vector2(SideWidth, 0), Size = new Vector2(BoardView.Pixels, StripHeight) });
-        _header = RichLabel(new Vector2(SideWidth + 6, 4), new Vector2(BoardView.Pixels - 12, 14));
+        _header = RichLabel(new Vector2(SideWidth + 6, 4), new Vector2(BoardView.Pixels - 56, 14));
+        _menu = UiTheme.Button(new Vector2(SideWidth + BoardView.Pixels - 48, 4), new Vector2(42, 15), "Menu");
+        _menu.Pressed += () =>
+        {
+            if (_confirmingLeave || _session.State.Phase == RunPhase.Ended)
+            {
+                ExitRequested?.Invoke();
+                return;
+            }
+
+            _confirmingLeave = true;
+            Log("Click Leave? again to abandon this run. Nothing will be saved.", Palette.TrimBright);
+            RefreshPanels();
+        };
+        AddChild(_menu);
         _hoverInfo = UiTheme.Label(new Vector2(SideWidth + 6, 19), new Vector2(BoardView.Pixels - 12, 14), color: Palette.TextDim);
         _hoverInfo.AutowrapMode = TextServer.AutowrapMode.Off;
         _hoverInfo.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
@@ -865,10 +904,15 @@ public partial class GameScreen : Control
         _banner = new TurnBanner { Position = BoardOrigin, Size = new Vector2(BoardView.Pixels, BoardView.Pixels) };
         AddChild(_banner);
 
-        _newRun = UiTheme.Button(BoardOrigin + new Vector2(94, 196), new Vector2(100, 22), "New run");
-        _newRun.Visible = false;
-        _newRun.Pressed += StartNewRun;
-        AddChild(_newRun);
+        _playAgain = UiTheme.Button(BoardOrigin + new Vector2(40, 196), new Vector2(100, 22), "Play again");
+        _playAgain.Visible = false;
+        _playAgain.Pressed += () => StartRun(Setup with { Seed = (ulong)DateTime.UtcNow.Ticks });
+        AddChild(_playAgain);
+
+        _leave = UiTheme.Button(BoardOrigin + new Vector2(148, 196), new Vector2(100, 22), "Leave");
+        _leave.Visible = false;
+        _leave.Pressed += () => ExitRequested?.Invoke();
+        AddChild(_leave);
     }
 
     private void ExecuteForActiveHero(Func<int, GameCommand> command)

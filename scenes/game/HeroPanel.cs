@@ -23,6 +23,7 @@ public partial class HeroPanel : Panel
     ];
 
     private readonly Dictionary<EquipSlot, CardSlot> _slots = [];
+    private PortraitView _crest = null!;
     private Label _name = null!;
     private Label _seat = null!;
     private HeartsView _hearts = null!;
@@ -36,7 +37,8 @@ public partial class HeroPanel : Panel
     {
         Size = new Vector2(176, 360);
 
-        _name = Add(UiTheme.Label(new(8, 4), new(112, 16), fontSize: UiTheme.HeadingSize));
+        _crest = Add(new PortraitView { Position = new(8, 5), Size = new(13, 16) });
+        _name = Add(UiTheme.Label(new(26, 4), new(94, 16), fontSize: UiTheme.HeadingSize));
         _seat = Add(UiTheme.Label(new(120, 8), new(48, 12), color: Palette.TextDim));
         _seat.HorizontalAlignment = HorizontalAlignment.Right;
         _hearts = Add(new HeartsView { Position = new(8, 24), Size = new(160, 9) });
@@ -69,6 +71,7 @@ public partial class HeroPanel : Panel
     {
         if (hero is null)
         {
+            _crest.Visible = false;
             _name.Text = "Run over";
             _seat.Text = _stats.Text = _record.Text = _turn.Text = "";
             _hearts.ShowHearts(0, 0);
@@ -80,6 +83,8 @@ public partial class HeroPanel : Panel
             return;
         }
 
+        _crest.Visible = true;
+        _crest.PortraitId = hero.Portrait;
         _name.Text = hero.Name;
         _name.AddThemeColorOverride("font_color", Palette.Seat(hero.Seat));
         _seat.Text = $"Player {hero.Seat + 1}";
@@ -88,7 +93,7 @@ public partial class HeroPanel : Panel
         Stats stats = hero.EffectiveStats;
         string speed = stats.Speed >= 0 ? $"+{stats.Speed}" : stats.Speed.ToString();
         _stats.Text = $"Move {stats.MoveDice}d6{speed}     Luck {hero.LuckRemaining}/{stats.Luck}\n" +
-                      $"Attack {stats.AttackDice} dice   Defense {stats.DefenseDice} dice";
+                      $"Attack {UiTheme.Count(stats.AttackDice, "die", "dice")}   Defense {UiTheme.Count(stats.DefenseDice, "die", "dice")}";
         _record.Text = $"Kills {hero.Kills}     Treasure {hero.TreasureValue}g";
 
         foreach ((EquipSlot slot, CardSlot view) in _slots)

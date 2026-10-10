@@ -29,7 +29,7 @@ public sealed class Hero
     private readonly List<CardInstance> _belt = [];
     private readonly List<CardInstance> _backpack = [];
 
-    internal Hero(int id, int seat, string name, Stats baseStats, string roomId, GridPosition position)
+    internal Hero(int id, int seat, string name, Stats baseStats, string roomId, GridPosition position, Guid? characterId = null, string portrait = "")
     {
         Id = id;
         Seat = seat;
@@ -37,9 +37,16 @@ public sealed class Hero
         BaseStats = baseStats;
         RoomId = roomId;
         Position = position;
+        CharacterId = characterId;
+        Portrait = portrait;
     }
 
     public int Id { get; }
+
+    /// <summary>The saved character playing this hero, if any.</summary>
+    public Guid? CharacterId { get; }
+
+    public string Portrait { get; }
 
     /// <summary>Turn order, starting at 0.</summary>
     public int Seat { get; }

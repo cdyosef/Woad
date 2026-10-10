@@ -28,6 +28,13 @@ public static class UiTheme
         theme.SetColor("font_hover_pressed_color", "Button", Palette.TrimBright);
         theme.SetColor("font_disabled_color", "Button", Palette.TextDim);
 
+        theme.SetStylebox("normal", "LineEdit", Box(Palette.PanelDark, Palette.Trim));
+        theme.SetStylebox("focus", "LineEdit", Box(Palette.PanelDark, Palette.TrimBright));
+        theme.SetColor("font_color", "LineEdit", Palette.Text);
+        theme.SetColor("font_placeholder_color", "LineEdit", Palette.TextDim);
+        theme.SetColor("caret_color", "LineEdit", Palette.TrimBright);
+        theme.SetFontSize("font_size", "LineEdit", 10);
+
         theme.SetStylebox("panel", "Panel", Box(Palette.Panel, Palette.Trim, 2));
         theme.SetStylebox("panel", "TooltipPanel", Box(Palette.PanelDark, Palette.Trim));
         theme.SetColor("font_color", "TooltipLabel", Palette.Text);
@@ -35,6 +42,9 @@ public static class UiTheme
 
         return theme;
     }
+
+    /// <summary>"1 die", "2 dice", "1 step", "3 steps".</summary>
+    public static string Count(int amount, string singular, string plural) => $"{amount} {(amount == 1 ? singular : plural)}";
 
     public static StyleBoxFlat Box(Color fill, Color border, int borderWidth = 1)
     {

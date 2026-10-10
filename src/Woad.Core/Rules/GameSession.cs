@@ -227,7 +227,7 @@ public sealed partial class GameSession
                 throw new ArgumentException($"Seat {seat + 1} starts on a blocked tile {start}.", nameof(setup));
             }
 
-            var hero = new Hero(state.NextId(), seat, heroSetup.Name, heroSetup.BaseStats, startRoom.Id, start);
+            var hero = new Hero(state.NextId(), seat, heroSetup.Name, heroSetup.BaseStats, startRoom.Id, start, heroSetup.CharacterId, heroSetup.Portrait);
             state.AddHero(hero);
 
             foreach (string cardId in heroSetup.CardIds)

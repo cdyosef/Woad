@@ -1,0 +1,107 @@
+using Woad.Core.Characters;
+using Woad.Core.Content;
+
+namespace Woad.Core.Tests.Characters;
+
+public sealed class JsonCharacterRepositoryTests : IDisposable
+{
+    private static readonly ContentCatalog Content = ContentCatalog.LoadDefault();
+
+    private readonly string _folder = Path.Combine(Path.GetTempPath(), "woad-tests", Guid.NewGuid().ToString("N"));
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_folder))
+        {
+            Directory.Delete(_folder, recursive: true);
+        }
+    }
+
+    private JsonCharacterRepository Repository() => new(_folder, Content);
+
+    private static Character NewCharacter(string name, int minutes = 0) =>
+        Character.Create(name, "moss", new StatAllocation { Hearts = 1, Luck = 1 }, Content, new DateTimeOffset(2026, 10, 10, 12, minutes, 0, TimeSpan.Zero));
+
+    [Fact]
+    public async Task AnEmptyOrMissingFolderHasNoCharacters()
+    {
+        CharacterLoadResult result = await Repository().LoadAllAsync();
+
+        Assert.Empty(result.Characters);
+        Assert.Empty(result.Problems);
+    }
+
+    [Fact]
+    public async Task SavedCharactersLoadBackExactly()
+    {
+        Character original = NewCharacter("Morgan");
+        original.GainXp(12);
+        await Repository().SaveAsync(original);
+
+        Character loaded = Assert.Single((await Repository().LoadAllAsync()).Characters);
+
+        Assert.Equal(original.Id, loaded.Id);
+        Assert.Equal(original.Name, loaded.Name);
+        Assert.Equal(original.Portrait, loaded.Portrait);
+        Assert.Equal(original.CreatedUtc, loaded.CreatedUtc);
+        Assert.Equal(original.Xp, loaded.Xp);
+        Assert.Equal(2, loaded.Level);
+        Assert.Equal(original.Allocation, loaded.Allocation);
+        Assert.Equal(original.UnspentPoints, loaded.UnspentPoints);
+        Assert.Equal(original.Equipped, loaded.Equipped);
+        Assert.Equal(original.Belt, loaded.Belt);
+        Assert.Equal(original.Backpack, loaded.Backpack);
+    }
+
+    [Fact]
+    public async Task SavingAgainOverwritesWithoutLeavingTemporaryFiles()
+    {
+        Character character = NewCharacter("Morgan");
+        await Repository().SaveAsync(character);
+        character.Rename("Morgana");
+        await Repository().SaveAsync(character);
+
+        Assert.Equal("Morgana", Assert.Single((await Repository().LoadAllAsync()).Characters).Name);
+        Assert.Single(Directory.GetFiles(_folder));
+    }
+
+    [Fact]
+    public async Task CharactersLoadOldestFirstAndCanBeDeleted()
+    {
+        Character newer = NewCharacter("Wren", minutes: 5);
+        Character older = NewCharacter("Ash", minutes: 1);
+        await Repository().SaveAsync(newer);
+        await Repository().SaveAsync(older);
+
+        Assert.Equal(["Ash", "Wren"], (await Repository().LoadAllAsync()).Characters.Select(character => character.Name));
+
+        await Repository().DeleteAsync(older.Id);
+        Assert.Equal(["Wren"], (await Repository().LoadAllAsync()).Characters.Select(character => character.Name));
+    }
+
+    [Fact]
+    public async Task BrokenFilesAreReportedAndSkipped()
+    {
+        await Repository().SaveAsync(NewCharacter("Morgan"));
+        await File.WriteAllTextAsync(Path.Combine(_folder, "broken.json"), "{ not json");
+
+        CharacterLoadResult result = await Repository().LoadAllAsync();
+
+        Assert.Single(result.Characters);
+        Assert.Contains(result.Problems, problem => problem.StartsWith("broken.json"));
+    }
+
+    [Fact]
+    public async Task CardsThatNoLongerExistAreDroppedWithAWarning()
+    {
+        Character character = NewCharacter("Morgan");
+        await Repository().SaveAsync(character);
+        string path = Path.Combine(_folder, $"{character.Id:N}.json");
+        await File.WriteAllTextAsync(path, (await File.ReadAllTextAsync(path)).Replace("\"health_potion\"", "\"retired_card\""));
+
+        CharacterLoadResult result = await Repository().LoadAllAsync();
+
+        Assert.Empty(Assert.Single(result.Characters).Belt);
+        Assert.Contains(result.Problems, problem => problem.Contains("retired_card"));
+    }
+}

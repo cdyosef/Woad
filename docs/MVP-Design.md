@@ -55,8 +55,17 @@ Stats are expressed directly as dice and points. Gear cards add to them.
 | Defense | d6 rolled when attacked | 1 | 3 per die |
 | Luck | Rerolls of a single die, per floor | 0 | 2 per reroll |
 
-- **Creation:** name, portrait, and 6 points to spend. At creation, at most +1 Attack and +1 Defense die *(tunable)*.
-- **Progression:** XP from monster kills and floors reached. Each level grants 1 point.
+- **Creation:** name (1–16 letters, numbers, spaces, apostrophes or hyphens), portrait, and 6 points to
+  spend. Unspent points are kept for later. While at level 1, a character can buy at most +1 Attack and
+  +1 Defense die *(tunable)*. Points already spent can't be refunded.
+- **Progression:** XP from monster kills and floors reached. Level 2 takes 10 XP, level 3 takes 30, then
+  60, 100 and so on (10 × 1, 3, 6, 10…). Each level grants 1 point. XP is awarded from M5 on.
+- **Portraits:** for now, eight placeholder heraldic crests (a color and a sigil). The art pass replaces
+  them with real portraits under the same ids.
+- **Characters screen:** lists saved characters with their stats, gear and record. You can create,
+  edit (rename, change portrait, spend points) or delete them; delete asks for a second click.
+- **Party setup:** click characters to seat them; the order you pick them is the turn order. An
+  optional seed replays a specific run.
 
 ### Equipment slots
 
@@ -182,9 +191,14 @@ file under `Themes/`.
 
 - **Location:** one JSON file per character at `user://characters/{id}.json`. On Windows that is
   `%APPDATA%\Godot\app_userdata\Woad\characters\`.
-- **Contents:** schema version, id, name, portrait, level, XP, stat points, equipment, backpack, gold,
-  runs played and wins.
-- **When saved:** on creation, on edit and when a run ends.
+- **Contents:** schema version, id, name, portrait, creation time, XP (level is derived from it), stat
+  points spent and unspent, equipped cards, belt, backpack, gold, runs played and wins.
+- **Writes:** each save goes to a temporary file first and then replaces the old one, so a crash can't
+  leave a half-written character.
+- **When saved:** on creation and on edit. Saving run results arrives with M5.
+- **Damaged or outdated files:** unreadable files are skipped and reported on the Characters screen.
+  Cards that no longer exist are dropped with a warning. A newer schema version is reported, not
+  overwritten.
 - **Code seam:** the game talks to `ICharacterRepository`. The MVP ships a JSON implementation, and
   online play will swap in a server-backed one.
 
@@ -243,7 +257,7 @@ Woad (Godot project, repo root)          Woad.Core (src/, pure C#, no Godot)
 | M0 | Scaffold ✅ | Godot 4.7 + .NET 10 project builds, tests pass, and the 640×360 layout runs |
 | M1 | Core rules ✅ | Room grid, pathing, dice, turn loop, combat, cards/slots/backpack, monster AI: all unit tested |
 | M2 | Playable room ✅ | One room in Godot: mouse move/attack, dice tray, hot-seat turns, enemy phase |
-| M3 | Characters | Main menu, point-buy creation, character list, JSON save/load, run setup for 1–4 players |
+| M3 | Characters ✅ | Main menu, point-buy creation, character list, JSON save/load, run setup for 1–4 players |
 | M4 | Dungeon | 3 procedural floors, room templates, doors, splitting up, fog, minimap, stairs, boss, exit |
 | M5 | Loot & scoring | Loot deck, chests, drops, downed loot piles, results screen, rewards persisted |
 | M6 | Theme pass | Original placeholder art for the first theme, gothic UI frames, SFX, dice animation |

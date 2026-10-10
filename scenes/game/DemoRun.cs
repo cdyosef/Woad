@@ -5,12 +5,12 @@ using Woad.Core.Rules;
 namespace Woad.Scenes.Game;
 
 /// <summary>
-/// The fixed room and two heroes used to play-test M2, until character creation (M3) and
-/// dungeon generation (M4) replace them.
+/// The single hand-made room every run uses until dungeon generation (M4), plus the two fixed
+/// heroes the debug modes play with.
 /// </summary>
 public static class DemoRun
 {
-    // C chest, # wall, ~ pit; s slime, b bat, a archer guard, k skeleton; 1-2 hero starts.
+    // C chest, # wall, ~ pit; s slime, b bat, a archer guard, k skeleton; 1-4 hero starts.
     private const string EntryHall = """
         C...a....
         .s.....b.
@@ -20,25 +20,22 @@ public static class DemoRun
         .........
         .~.....~.
         ........C
-        ...1.2...
+        ..31.24..
         """;
 
-    public static GameSession Create(ulong seed)
+    public static RunSetup CreateSetup(IReadOnlyList<HeroSetup> heroes, ulong seed) => new()
     {
-        ContentCatalog content = ContentCatalog.LoadDefault();
-        var setup = new RunSetup
-        {
-            Seed = seed,
-            ThemeId = "emerald_keep",
-            Heroes =
-            [
-                new HeroSetup("Aria", GameRules.HeroBaseStats with { Luck = 1 }, [.. GameRules.StarterKit, "bomb"]),
-                new HeroSetup("Bran", GameRules.HeroBaseStats with { Hearts = 5 }, [.. GameRules.StarterKit, "boomerang"]),
-            ],
-            Rooms = [new RoomSetup("entry_hall", RoomTemplate.Parse(EntryHall, content))],
-            StartRoomId = "entry_hall",
-        };
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = heroes,
+        Rooms = [new RoomSetup("entry_hall", RoomTemplate.Parse(EntryHall, ContentCatalog.LoadDefault()))],
+        StartRoomId = "entry_hall",
+    };
 
-        return new GameSession(content, setup);
-    }
+    /// <summary>Aria (with a bomb and Luck) and Bran (with a boomerang), for --uitest and --autoplay.</summary>
+    public static RunSetup DebugSetup(ulong seed) => CreateSetup(
+    [
+        new HeroSetup("Aria", GameRules.HeroBaseStats with { Luck = 1 }, [.. GameRules.StarterKit, "bomb"], Portrait: "ember"),
+        new HeroSetup("Bran", GameRules.HeroBaseStats with { Hearts = 5 }, [.. GameRules.StarterKit, "boomerang"], Portrait: "woad"),
+    ], seed);
 }
