@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Pure C# rules engine. Must never reference Godot so it can be unit tested
+    and later run on an authoritative multiplayer server.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Woad.Core</RootNamespace>
+  </PropertyGroup>
+
+</Project>

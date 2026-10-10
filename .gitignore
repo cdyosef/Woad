@@ -1,0 +1,25 @@
+# Godot
+.godot/
+/android/
+.mono/
+data_*/
+mono_crash.*.json
+
+# .NET
+bin/
+obj/
+TestResults/
+*.user
+*.suo
+.vs/
+.idea/
+
+# Export output
+/export/
+
+# Claude Code (local only)
+.claude/worktrees/
+.claude/settings.local.json
+
+# Backups Godot writes when it upgrades the project file
+*.csproj.old

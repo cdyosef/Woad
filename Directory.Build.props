@@ -1,0 +1,9 @@
+<Project>
+
+  <!-- Shared by the Godot game project, Woad.Core and the test projects. -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

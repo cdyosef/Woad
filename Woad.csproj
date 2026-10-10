@@ -1,0 +1,20 @@
+<Project Sdk="Godot.NET.Sdk/4.7.2">
+
+  <!-- Godot game project: scenes, input and presentation. Game rules live in src/Woad.Core. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <RootNamespace>Woad</RootNamespace>
+  </PropertyGroup>
+
+  <!-- Godot.NET.Sdk globs every .cs under this folder; the other projects compile themselves. -->
+  <ItemGroup>
+    <Compile Remove="src/**" />
+    <Compile Remove="tests/**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="src/Woad.Core/Woad.Core.csproj" />
+  </ItemGroup>
+
+</Project>
