@@ -82,3 +82,12 @@ public sealed record HeroEscaped(int HeroId, int TreasureValue) : GameEvent;
 
 /// <summary>The last monster in a room was defeated. A trap room's doors open again.</summary>
 public sealed record RoomCleared(string RoomId) : GameEvent;
+
+/// <summary>A pot broke. It held a card (<paramref name="CardId"/>), a heart (<paramref name="HeartsRestored"/>), or nothing.</summary>
+public sealed record PotSmashed(int HeroId, GridPosition Pot, int? CardId, bool AddedToBackpack, int HeartsRestored) : GameEvent;
+
+/// <summary>A defeated monster left a card on the floor where it fell.</summary>
+public sealed record LootDropped(string RoomId, GridPosition Position, int CardId) : GameEvent;
+
+/// <summary>A hero earned XP (from a kill, a new floor or escaping).</summary>
+public sealed record XpGained(int HeroId, int Amount, int Total) : GameEvent;

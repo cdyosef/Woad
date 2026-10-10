@@ -24,6 +24,7 @@ public partial class GameScreen : Control
     private EventNarrator _narrator = null!;
 
     private bool _busy;
+    private bool _finished;
     private bool _autoplay;
     private int _autoplayCommands;
     private bool _confirmingLeave;
@@ -36,17 +37,23 @@ public partial class GameScreen : Control
 
     public ContentCatalog Content { get; init; } = ContentCatalog.LoadDefault();
 
-    /// <summary>Builds a fresh run for "Play again" from a new seed; without it the same dungeon is replayed.</summary>
-    public Func<ulong, RunSetup>? NewRun { get; init; }
-
-    /// <summary>The player chose to leave the run (abandoning it, or after it ended).</summary>
+    /// <summary>The player abandoned the run. Nothing is saved.</summary>
     public event Action? ExitRequested;
+
+    /// <summary>The run ended; raised once, shortly after the final events have played.</summary>
+    public event Action<IReadOnlyList<HeroRunResult>>? RunFinished;
 
     internal bool IsBusy => _busy;
 
     internal GameSession Session => _session;
 
     internal Button MenuButton => _menu;
+
+    internal Button RollButton => _roll;
+
+    /// <summary>The middle of a board tile, in screen (640x360) coordinates.</summary>
+    internal Vector2 TileCenter(GridPosition tile) =>
+        _board.GetGlobalRect().Position + BoardView.TileOrigin(tile) + new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f);
 
     private Hero? ActiveHero => _session.State.ActiveHero;
 
@@ -92,6 +99,7 @@ public partial class GameScreen : Control
         _selectedCardId = null;
         _targeting = false;
         _confirmingLeave = false;
+        _finished = false;
         _dice.Clear();
 
         _session = new GameSession(Content, setup);
@@ -187,10 +195,33 @@ public partial class GameScreen : Control
             RefreshPanels();
         }
 
-        if (_autoplay)
+        if (_session.State.Phase == RunPhase.Ended)
+        {
+            FinishRun();
+        }
+        else if (_autoplay)
         {
             AutoplayNext();
         }
+    }
+
+    /// <summary>Hands the results over (to be saved and shown) once, after a moment to take in the ending.</summary>
+    private async void FinishRun()
+    {
+        if (_finished)
+        {
+            return;
+        }
+
+        _finished = true;
+        if (_autoplay)
+        {
+            AutoplayNext();
+            return;
+        }
+
+        await Pause(1.2);
+        RunFinished?.Invoke(RunResults.For(_session.State));
     }
 
     private async Task Play(GameEvent gameEvent)
@@ -324,10 +355,40 @@ public partial class GameScreen : Control
                 _board.QueueRedraw();
                 break;
 
+            case PotSmashed smashed:
+                _board.QueueRedraw();
+                if (smashed.HeartsRestored > 0 && _figures.TryGetValue(smashed.HeroId, out Figure? smasher))
+                {
+                    smasher.Hearts += smashed.HeartsRestored;
+                    if (_tokens.TryGetValue(smashed.HeroId, out TokenView? token))
+                    {
+                        token.SetHearts(smasher.Hearts);
+                    }
+
+                    _board.FloatText(smashed.Pot, $"+{smashed.HeartsRestored} heart", Palette.Heal);
+                }
+                else
+                {
+                    _board.FloatText(smashed.Pot, smashed.CardId is null ? "empty" : "coins!", smashed.CardId is null ? Palette.TextDim : Palette.Loot);
+                }
+
+                await Pause(0.3);
+                break;
+
+            case LootDropped dropped:
+                _board.QueueRedraw();
+                _board.FloatText(dropped.Position, "loot!", Palette.Loot);
+                await Pause(0.15);
+                break;
+
+            case XpGained gained when _figures.TryGetValue(gained.HeroId, out Figure? earner) && earner.RoomId == _shownRoomId:
+                _board.FloatText(earner.Position, $"+{gained.Amount} XP", Palette.TrimBright);
+                break;
+
             case RunEnded ended:
                 string title = ended.WinnerHeroIds.Count == 0
                     ? "The dungeon claims you"
-                    : $"{string.Join(" & ", ended.WinnerHeroIds.Select(NameOf))} wins!";
+                    : $"{string.Join(" & ", ended.WinnerHeroIds.Select(NameOf))} {(ended.WinnerHeroIds.Count == 1 ? "wins" : "win")}!";
                 await _banner.Flash(title, Palette.TrimBright, 1.2);
                 break;
         }
@@ -351,6 +412,8 @@ public partial class GameScreen : Control
         MonsterTurnSkipped skipped => FigureRoom(skipped.MonsterId),
         MonsterSpawned spawned => spawned.RoomId,
         RoomCleared cleared => cleared.RoomId,
+        PotSmashed smashed => FigureRoom(smashed.HeroId),
+        LootDropped dropped => dropped.RoomId,
         _ => null,
     };
 

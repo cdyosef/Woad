@@ -40,6 +40,10 @@ public partial class GameScreen
         {
             Execute(new OpenChest(hero.Id, tile));
         }
+        else if (room.Layout[tile] == TileKind.Pot)
+        {
+            Execute(new SmashPot(hero.Id, tile));
+        }
         else if (tile == hero.Position)
         {
             UseOwnTile(hero, room);
@@ -146,6 +150,7 @@ public partial class GameScreen
         {
             TileKind.Chest when room.IsChestOpened(tile) => "An empty chest.",
             TileKind.Chest => "A closed chest. Stand next to it and click it to open it.",
+            TileKind.Pot => "A clay pot. Stand next to it and click to smash it: coins, a heart, or nothing.",
             TileKind.Wall => "A stone pillar.",
             TileKind.Pit => "A bottomless pit. Only flyers cross it.",
             TileKind.StairsDown => $"Stairs down to floor {room.Floor + 1}. Stand on them and click again to descend (1 step).",

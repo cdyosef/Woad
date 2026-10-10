@@ -196,6 +196,13 @@ public partial class BoardView : Control
 
                 break;
 
+            case TileKind.Pot:
+                Vector2 belly = rect.GetCenter() + new Vector2(0, 3);
+                DrawCircle(belly, 9, Palette.Pot, antialiased: true);
+                DrawRect(new Rect2(belly.X - 5, belly.Y - 13, 10, 5), Palette.PotRim);
+                DrawArc(belly, 9, 0, Mathf.Tau, 24, Palette.Ink, 1, antialiased: true);
+                break;
+
             case TileKind.Chest:
                 bool open = _room!.IsChestOpened(tile);
                 var body = new Rect2(rect.Position + new Vector2(6, 10), new Vector2(20, 14));

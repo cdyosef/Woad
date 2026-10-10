@@ -52,6 +52,9 @@ public sealed record PickUpLoot(int HeroId) : GameCommand(HeroId);
 
 public sealed record EndTurn(int HeroId) : GameCommand(HeroId);
 
+/// <summary>Smash an adjacent pot: it may hold coins or a heart. Uses the action.</summary>
+public sealed record SmashPot(int HeroId, GridPosition Pot) : GameCommand(HeroId);
+
 /// <summary>Go down the stairs you're standing on to the next floor (costs 1 movement).</summary>
 public sealed record TakeStairs(int HeroId) : GameCommand(HeroId);
 

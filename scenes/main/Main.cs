@@ -10,9 +10,10 @@ using Woad.Scenes.Ui;
 namespace Woad.Scenes;
 
 /// <summary>
-/// The app's root: owns the content and the character store, and swaps between screens.
-/// Debug flags: <c>--uitest</c> and <c>--autoplay</c> jump straight into a run with the debug
-/// party; <c>--menutest</c> clicks through the menus using a throwaway save folder.
+/// The app's root: owns the content and the character store, swaps between screens, and saves
+/// each character's results when a run ends. Debug flags: <c>--uitest</c>, <c>--floortest</c> and
+/// <c>--autoplay</c> jump straight into a run with the debug party; <c>--menutest</c> and
+/// <c>--resultstest</c> click through the menus using a throwaway save folder.
 /// </summary>
 public partial class Main : Control
 {
@@ -29,9 +30,9 @@ public partial class Main : Control
         _content = ContentCatalog.LoadDefault();
 
         string[] args = OS.GetCmdlineUserArgs();
-        bool menuTest = args.Contains("--menutest");
-        string saveFolder = menuTest
-            ? Path.Combine(Path.GetTempPath(), "woad-menutest", Guid.NewGuid().ToString("N"))
+        bool throwawaySaves = args.Contains("--menutest") || args.Contains("--resultstest");
+        string saveFolder = throwawaySaves
+            ? Path.Combine(Path.GetTempPath(), "woad-uitest", Guid.NewGuid().ToString("N"))
             : ProjectSettings.GlobalizePath("user://characters");
         _characters = new JsonCharacterRepository(saveFolder, _content);
 
@@ -46,14 +47,18 @@ public partial class Main : Control
         }
         else if (args.Contains("--autoplay"))
         {
-            ShowGame(DemoRun.DebugHeroes, seed);
+            ShowGame(DungeonGenerator.CreateRun(_content, ThemeId, DemoRun.DebugHeroes, seed), []);
+        }
+        else if (args.Contains("--resultstest"))
+        {
+            RunResultsTest(saveFolder);
         }
         else
         {
             ShowMainMenu();
         }
 
-        if (menuTest)
+        if (args.Contains("--menutest"))
         {
             RunMenuTest(saveFolder);
         }
@@ -100,17 +105,60 @@ public partial class Main : Control
         var screen = new RunSetupScreen { Repository = _characters };
         screen.BackRequested += ShowMainMenu;
         screen.NewCharacterRequested += () => ShowEditor(null, ShowRunSetup);
-        screen.StartRequested += ShowGame;
+        screen.StartRequested += StartRun;
         Show(screen);
     }
 
-    /// <summary>Generates a dungeon for the party and starts playing it.</summary>
-    private void ShowGame(IReadOnlyList<HeroSetup> heroes, ulong seed)
-    {
-        RunSetup NewRun(ulong runSeed) => DungeonGenerator.CreateRun(_content, ThemeId, heroes, runSeed);
+    /// <summary>Generates a dungeon for the party (carrying their current gear) and starts playing it.</summary>
+    private void StartRun(IReadOnlyList<Character> party, ulong seed) =>
+        ShowGame(DungeonGenerator.CreateRun(_content, ThemeId, [.. party.Select(character => character.ToHeroSetup())], seed), party);
 
-        var game = new GameScreen { Setup = NewRun(seed), Content = _content, NewRun = NewRun };
+    private void ShowGame(RunSetup setup, IReadOnlyList<Character> party)
+    {
+        var game = new GameScreen { Setup = setup, Content = _content };
         game.ExitRequested += ShowRunSetup;
+        game.RunFinished += results => FinishRun(results, setup, party);
         Show(game);
+    }
+
+    /// <summary>Saves what each character earned, then shows the results.</summary>
+    private async void FinishRun(IReadOnlyList<HeroRunResult> results, RunSetup setup, IReadOnlyList<Character> party)
+    {
+        var rows = new List<ResultRow>();
+        string? saveProblem = null;
+        foreach (HeroRunResult result in results)
+        {
+            Character? character = party.FirstOrDefault(member => member.Id == result.CharacterId);
+            RunReward? reward = character?.ApplyRunResult(result);
+            if (character is not null)
+            {
+                try
+                {
+                    await _characters.SaveAsync(character);
+                }
+                catch (IOException exception)
+                {
+                    saveProblem = exception.Message;
+                }
+            }
+
+            rows.Add(new ResultRow(result, character, reward));
+        }
+
+        var screen = new ResultsScreen { Rows = rows, Content = _content, SaveProblem = saveProblem };
+        screen.DoneRequested += ShowRunSetup;
+        screen.PlayAgainRequested += () =>
+        {
+            ulong seed = (ulong)DateTime.UtcNow.Ticks;
+            if (party.Count > 0)
+            {
+                StartRun(party, seed);
+            }
+            else
+            {
+                ShowGame(DungeonGenerator.CreateRun(_content, setup.ThemeId, setup.Heroes, seed), party);
+            }
+        };
+        Show(screen);
     }
 }

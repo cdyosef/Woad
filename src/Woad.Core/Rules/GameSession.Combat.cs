@@ -176,10 +176,21 @@ public sealed partial class GameSession
         room.RemoveMonster(monster);
         killer.Kills++;
         events.Add(new MonsterDefeated(monster.Id, killer.Id));
+        GrantXp(killer, definition.Xp, events);
 
         if (definition.SplitsInto is { } splitId)
         {
             Split(room, monster.Position, Content.GetMonster(splitId), definition.SplitCount, events);
+        }
+
+        if (definition.DropChance > 0 && _random.Loot.NextInt(0, 100) < definition.DropChance)
+        {
+            for (int i = 0; i < definition.Drops; i++)
+            {
+                var card = new CardInstance(State.NextId(), State.LootDeck.Draw(room.Floor), broughtInByHeroId: null);
+                room.AddLoot(monster.Position, [card]);
+                events.Add(new LootDropped(room.Id, monster.Position, card.Id));
+            }
         }
 
         if (room.Monsters.Count == 0)
@@ -194,6 +205,15 @@ public sealed partial class GameSession
                     events.Add(new HeroHealed(hero.Id, healed, hero.Hearts));
                 }
             }
+        }
+    }
+
+    private static void GrantXp(Hero hero, int amount, List<GameEvent> events)
+    {
+        if (amount > 0)
+        {
+            hero.Xp += amount;
+            events.Add(new XpGained(hero.Id, amount, hero.Xp));
         }
     }
 

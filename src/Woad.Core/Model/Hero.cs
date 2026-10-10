@@ -67,6 +67,9 @@ public sealed class Hero
 
     public int Kills { get; internal set; }
 
+    /// <summary>XP earned this run, added to the character when the run ends.</summary>
+    public int Xp { get; internal set; }
+
     /// <summary>The deepest floor reached. Reaching a new one restores Luck and recharges cards.</summary>
     public int DeepestFloor { get; internal set; } = 1;
 

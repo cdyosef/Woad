@@ -23,6 +23,7 @@
   { "id": "health_potion", "name": "Health Potion", "type": "potion", "usage": "singleUse", "effect": { "kind": "heal", "amount": 3 }, "value": 2, "text": "Single use. Restore 3 hearts." },
 
   // Treasure
+  { "id": "loose_coins", "name": "Loose Coins", "type": "treasure", "value": 2, "text": "Worth 2 gold. Found in pots." },
   { "id": "coin_pouch", "name": "Coin Pouch", "type": "treasure", "value": 5, "text": "Worth 5 gold." },
   { "id": "emerald", "name": "Emerald", "type": "treasure", "value": 15, "text": "Worth 15 gold." },
   { "id": "golden_idol", "name": "Golden Idol", "type": "treasure", "value": 40, "text": "Worth 40 gold." }

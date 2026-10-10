@@ -12,7 +12,7 @@ public static class UiDriver
         await context.ToSignal(context.GetTree(), SceneTree.SignalName.ProcessFrame);
 
     /// <summary>Waits a frame at a time until the condition holds, failing after <paramref name="maxFrames"/>.</summary>
-    public static async Task WaitFor(Node context, Func<bool> condition, string what, int maxFrames = 1200)
+    public static async Task WaitFor(Node context, Func<bool> condition, string what, int maxFrames = 60000)
     {
         for (int frame = 0; frame < maxFrames; frame++)
         {

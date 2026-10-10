@@ -5,6 +5,21 @@ public sealed record LootDeckEntry
     public required string Card { get; init; }
 
     public int Copies { get; init; } = 1;
+
+    /// <summary>The first floor this card can be found on; deeper floors hide better loot.</summary>
+    public int MinFloor { get; init; } = 1;
+}
+
+/// <summary>What smashing one of the theme's pots can turn up. Chances are percentages.</summary>
+public sealed record PotDefinition
+{
+    /// <summary>The treasure card a pot can hold.</summary>
+    public required string Treasure { get; init; }
+
+    public int TreasureChance { get; init; }
+
+    /// <summary>Chance the smasher finds a heart and recovers 1 heart.</summary>
+    public int HeartChance { get; init; }
 }
 
 /// <summary>What a room is for in a generated floor.</summary>
@@ -58,6 +73,8 @@ public sealed record ThemeDefinition
     public int Floors { get; init; } = 3;
 
     public IReadOnlyList<LootDeckEntry> LootDeck { get; init; } = [];
+
+    public PotDefinition? Pots { get; init; }
 
     public IReadOnlyList<RosterEntry> Roster { get; init; } = [];
 

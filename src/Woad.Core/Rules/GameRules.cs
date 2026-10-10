@@ -19,6 +19,14 @@ public static class GameRules
     /// <summary>Hearts restored to each hero in a room when its last monster falls.</summary>
     public const int HeartsOnRoomClear = 1;
 
+    /// <summary>Hearts a heart found in a pot restores.</summary>
+    public const int HeartsFromPot = 1;
+
+    /// <summary>XP for reaching a floor for the first time (on top of each monster's own XP).</summary>
+    public const int XpPerNewFloor = 5;
+
+    public const int XpForEscaping = 10;
+
     public const int BeltCapacity = 2;
 
     public const int BackpackCapacity = 6;

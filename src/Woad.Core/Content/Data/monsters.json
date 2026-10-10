@@ -1,9 +1,9 @@
 [
-  { "id": "slime", "name": "Slime", "glyph": "s", "hearts": 1, "move": 2, "attackDice": 1, "defenseDice": 1, "splitsInto": "slimeling", "splitCount": 2, "xp": 2, "threat": 1 },
+  { "id": "slime", "name": "Slime", "glyph": "s", "hearts": 1, "move": 2, "attackDice": 1, "defenseDice": 1, "splitsInto": "slimeling", "splitCount": 2, "xp": 2, "threat": 1, "dropChance": 10 },
   { "id": "slimeling", "name": "Slimeling", "glyph": "l", "hearts": 1, "move": 2, "attackDice": 1, "defenseDice": 0, "xp": 1 },
-  { "id": "bat", "name": "Bat", "glyph": "b", "hearts": 1, "move": 4, "attackDice": 1, "defenseDice": 0, "flying": true, "erratic": true, "xp": 2, "threat": 1 },
-  { "id": "spear_guard", "name": "Spear Guard", "glyph": "g", "hearts": 2, "move": 3, "attackDice": 2, "defenseDice": 1, "attackPattern": "reach", "attackRange": 2, "xp": 4, "threat": 2 },
-  { "id": "archer_guard", "name": "Archer Guard", "glyph": "a", "hearts": 2, "move": 2, "attackDice": 2, "defenseDice": 1, "attackPattern": "ranged", "attackRange": 5, "keepsDistance": true, "xp": 4, "threat": 2 },
-  { "id": "skeleton", "name": "Skeleton", "glyph": "k", "hearts": 2, "move": 3, "attackDice": 2, "defenseDice": 1, "reassembles": true, "xp": 5, "threat": 2 },
-  { "id": "iron_warden", "name": "Iron Warden", "glyph": "W", "hearts": 10, "move": 3, "attackDice": 3, "defenseDice": 2, "sweep": { "radius": 2, "every": 2 }, "stunImmune": true, "boss": true, "xp": 25 }
+  { "id": "bat", "name": "Bat", "glyph": "b", "hearts": 1, "move": 4, "attackDice": 1, "defenseDice": 0, "flying": true, "erratic": true, "xp": 2, "threat": 1, "dropChance": 15 },
+  { "id": "spear_guard", "name": "Spear Guard", "glyph": "g", "hearts": 2, "move": 3, "attackDice": 2, "defenseDice": 1, "attackPattern": "reach", "attackRange": 2, "xp": 4, "threat": 2, "dropChance": 25 },
+  { "id": "archer_guard", "name": "Archer Guard", "glyph": "a", "hearts": 2, "move": 2, "attackDice": 2, "defenseDice": 1, "attackPattern": "ranged", "attackRange": 5, "keepsDistance": true, "xp": 4, "threat": 2, "dropChance": 25 },
+  { "id": "skeleton", "name": "Skeleton", "glyph": "k", "hearts": 2, "move": 3, "attackDice": 2, "defenseDice": 1, "reassembles": true, "xp": 5, "threat": 2, "dropChance": 30 },
+  { "id": "iron_warden", "name": "Iron Warden", "glyph": "W", "hearts": 10, "move": 3, "attackDice": 3, "defenseDice": 2, "sweep": { "radius": 2, "every": 2 }, "stunImmune": true, "boss": true, "xp": 25, "dropChance": 100, "drops": 3 }
 ]

@@ -181,6 +181,50 @@ public sealed class Character
         return gained;
     }
 
+    /// <summary>
+    /// Records a finished run: XP (and any levels it brings), gold, runs played and wins, and the
+    /// gear the hero came home with. Returns what changed, for the results screen.
+    /// </summary>
+    public RunReward ApplyRunResult(HeroRunResult result)
+    {
+        if (result.CharacterId != Id)
+        {
+            throw new ArgumentException($"That result belongs to another character, not {Name}.", nameof(result));
+        }
+
+        List<string> before = [.. _equipped, .. _belt, .. _backpack];
+        List<string> after = [.. result.Equipped, .. result.Belt, .. result.Backpack];
+
+        int levels = GainXp(result.Xp);
+        Gold += result.Gold;
+        RunsPlayed++;
+        if (result.Won)
+        {
+            Wins++;
+        }
+
+        _equipped.Clear();
+        _equipped.AddRange(result.Equipped);
+        _belt.Clear();
+        _belt.AddRange(result.Belt);
+        _backpack.Clear();
+        _backpack.AddRange(result.Backpack);
+
+        return new RunReward(levels, Without(after, before), Without(before, after));
+    }
+
+    /// <summary>The cards in <paramref name="cards"/> left over after taking out one of each in <paramref name="removed"/>.</summary>
+    private static List<string> Without(IEnumerable<string> cards, IEnumerable<string> removed)
+    {
+        List<string> remaining = [.. cards];
+        foreach (string card in removed)
+        {
+            remaining.Remove(card);
+        }
+
+        return remaining;
+    }
+
     /// <summary>The hero this character plays as in a run, carrying everything they own.</summary>
     public HeroSetup ToHeroSetup() => new(Name, BaseStats, [.. _equipped, .. _belt, .. _backpack], Id, Portrait);
 

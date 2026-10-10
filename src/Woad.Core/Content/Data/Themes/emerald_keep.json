@@ -12,24 +12,28 @@
     { "monster": "skeleton", "weight": 2, "minFloor": 2 }
   ],
 
+  // Chests and monster drops deal from this deck; minFloor keeps the best cards for deeper floors.
   "lootDeck": [
     { "card": "health_potion", "copies": 4 },
     { "card": "bomb", "copies": 3 },
     { "card": "flame_scroll", "copies": 2 },
-    { "card": "frost_wand" },
     { "card": "boomerang" },
-    { "card": "knights_sword" },
-    { "card": "short_bow" },
-    { "card": "tower_shield" },
     { "card": "leather_cap", "copies": 2 },
-    { "card": "chain_mail" },
-    { "card": "dash_boots" },
     { "card": "coin_pouch", "copies": 6 },
-    { "card": "emerald", "copies": 3 },
-    { "card": "golden_idol" }
+    { "card": "frost_wand", "minFloor": 2 },
+    { "card": "knights_sword", "minFloor": 2 },
+    { "card": "short_bow", "minFloor": 2 },
+    { "card": "tower_shield", "minFloor": 2 },
+    { "card": "chain_mail", "minFloor": 2 },
+    { "card": "dash_boots", "minFloor": 2 },
+    { "card": "emerald", "copies": 3, "minFloor": 2 },
+    { "card": "golden_idol", "minFloor": 3 }
   ],
 
-  // Legend: . floor  # wall  ~ pit  C chest  > stairs down  * exit
+  // Smashing a pot: 35% loose coins, 25% a heart, otherwise nothing.
+  "pots": { "treasure": "loose_coins", "treasureChance": 35, "heartChance": 25 },
+
+  // Legend: . floor  # wall  ~ pit  C chest  P pot  > stairs down  * exit
   //         1-4 hero starts  M monster spawn point  & boss
   // Doorway tiles (middle of each edge) must stay '.'. Rooms are rotated and mirrored when used.
   "rooms": [
@@ -38,13 +42,13 @@
       "roles": ["arrival"],
       "layout": [
         "##.....##",
-        "#.......#",
+        "#P.....P#",
         ".........",
         "..1...2..",
         ".........",
         "..3...4..",
         ".........",
-        "#.......#",
+        "#P.....P#",
         "##.....##"
       ]
     },
@@ -53,7 +57,7 @@
       "roles": ["arrival"],
       "layout": [
         "~~~...~~~",
-        "~.......~",
+        "~P.....P~",
         "...#.#...",
         ".1.....2.",
         ".........",
@@ -98,7 +102,7 @@
       "roles": ["combat"],
       "layout": [
         "###...###",
-        "#M.....M#",
+        "#M.P.P.M#",
         "#..#.#..#",
         ".........",
         "..M...M..",
@@ -112,7 +116,7 @@
       "id": "chest_shrine",
       "roles": ["combat"],
       "layout": [
-        ".........",
+        "P.......P",
         ".M.....M.",
         "..#...#..",
         "...#.#...",
@@ -149,7 +153,7 @@
         "....M....",
         ".........",
         "..#...#..",
-        "#.......#",
+        "#P.....P#",
         "##.....##"
       ]
     },
@@ -164,7 +168,7 @@
         "....M....",
         ".~.....~.",
         ".~~...~~.",
-        ".........",
+        ".P.....P.",
         "........."
       ]
     },
@@ -204,7 +208,7 @@
       "layout": [
         "##.....##",
         "#.#.*.#.#",
-        "#.......#",
+        "#P.....P#",
         "..M.&.M..",
         ".........",
         "..#...#..",

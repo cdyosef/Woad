@@ -169,9 +169,27 @@ public sealed class ContentCatalog
                     errors.Add($"Theme '{theme.Id}' loot deck references unknown card '{entry.Card}'.");
                 }
 
-                if (entry.Copies < 1)
+                if (entry.Copies < 1 || entry.MinFloor < 1)
                 {
-                    errors.Add($"Theme '{theme.Id}' loot deck entry '{entry.Card}' needs at least 1 copy.");
+                    errors.Add($"Theme '{theme.Id}' loot deck entry '{entry.Card}' needs at least 1 copy and a minFloor of at least 1.");
+                }
+            }
+
+            if (!theme.LootDeck.Any(entry => entry.MinFloor <= 1))
+            {
+                errors.Add($"Theme '{theme.Id}' loot deck has no cards for floor 1.");
+            }
+
+            if (theme.Pots is { } pots)
+            {
+                if (!cardIds.Contains(pots.Treasure))
+                {
+                    errors.Add($"Theme '{theme.Id}' pots reference unknown card '{pots.Treasure}'.");
+                }
+
+                if (pots.TreasureChance < 0 || pots.HeartChance < 0 || pots.TreasureChance + pots.HeartChance > 100)
+                {
+                    errors.Add($"Theme '{theme.Id}' pot chances must be percentages that add up to at most 100.");
                 }
             }
 
@@ -305,6 +323,11 @@ public sealed class ContentCatalog
         {
             errors.Add($"{name} sweep needs a radius and every of at least 1.");
         }
+
+        if (monster.DropChance is < 0 or > 100 || monster.Drops < 1)
+        {
+            errors.Add($"{name} dropChance must be 0-100 and drops at least 1.");
+        }
     }
 
     private static List<ThemeRoom> ParseRooms(ThemeDefinition theme, Dictionary<char, MonsterDefinition> glyphs, List<string> errors)
@@ -387,9 +410,10 @@ public sealed class ContentCatalog
             errors.Add($"{name}: {position} can't be reached from the doors.");
         }
 
-        foreach (GridPosition chest in template.TilesOf(TileKind.Chest).Where(chest => !chest.OrthogonalNeighbors().Any(reach.CanReach)))
+        foreach (GridPosition item in template.TilesOf(TileKind.Chest).Concat(template.TilesOf(TileKind.Pot))
+                     .Where(item => !item.OrthogonalNeighbors().Any(reach.CanReach)))
         {
-            errors.Add($"{name}: the chest at {chest} can't be reached.");
+            errors.Add($"{name}: the {template.Layout[item].ToString().ToLowerInvariant()} at {item} can't be reached.");
         }
     }
 

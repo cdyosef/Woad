@@ -20,4 +20,9 @@ public sealed class RoomLayout
     /// <summary>Tiles outside the room read as walls, so callers never need a bounds check.</summary>
     public TileKind this[GridPosition position] =>
         position.IsInRoom ? _tiles[position.Y * RoomGrid.Size + position.X] : TileKind.Wall;
+
+    /// <summary>A separate copy, so a run can change its rooms (e.g. smash pots) without touching the template.</summary>
+    internal RoomLayout Copy() => new(_tiles);
+
+    internal void Set(GridPosition position, TileKind tile) => _tiles[position.Y * RoomGrid.Size + position.X] = tile;
 }

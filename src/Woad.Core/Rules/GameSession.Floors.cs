@@ -51,6 +51,11 @@ public sealed partial class GameSession
         }
 
         events.Add(new HeroDescended(hero.Id, room.Id, arrival.Id, arrival.Floor, landing, firstTime));
+        if (firstTime)
+        {
+            GrantXp(hero, GameRules.XpPerNewFloor, events);
+        }
+
         return null;
     }
 
@@ -70,6 +75,7 @@ public sealed partial class GameSession
 
         hero.Status = HeroStatus.Escaped;
         events.Add(new HeroEscaped(hero.Id, hero.TreasureValue));
+        GrantXp(hero, GameRules.XpForEscaping, events);
         EndRunIfOver(events);
         if (State.Phase == RunPhase.InProgress)
         {

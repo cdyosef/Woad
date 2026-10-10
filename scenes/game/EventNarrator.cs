@@ -37,8 +37,12 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         HeroDescended descended => $"{nameOf(descended.HeroId)} descends to floor {descended.Floor}.",
         HeroEscaped escaped => $"{nameOf(escaped.HeroId)} escapes the dungeon with {escaped.TreasureValue}g of treasure!",
         RoomCleared => "The room falls silent.",
+        PotSmashed { CardId: int cardId } smashed => $"{nameOf(smashed.HeroId)} smashes a pot and finds {cardNameOf(cardId)}!",
+        PotSmashed { HeartsRestored: > 0 } smashed => $"{nameOf(smashed.HeroId)} smashes a pot and finds a heart!",
+        PotSmashed smashed => $"{nameOf(smashed.HeroId)} smashes a pot. Empty.",
+        LootDropped dropped => $"It dropped {cardNameOf(dropped.CardId)}!",
         RunEnded { WinnerHeroIds.Count: 0 } => "The run is over. Nobody escaped.",
-        RunEnded ended => $"{Names(ended.WinnerHeroIds)} wins the run!",
+        RunEnded ended => $"{Names(ended.WinnerHeroIds)} {(ended.WinnerHeroIds.Count == 1 ? "wins" : "win")} the run!",
         _ => null,
     };
 

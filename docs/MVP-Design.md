@@ -59,7 +59,7 @@ Stats are expressed directly as dice and points. Gear cards add to them.
   spend. Unspent points are kept for later. While at level 1, a character can buy at most +1 Attack and
   +1 Defense die *(tunable)*. Points already spent can't be refunded.
 - **Progression:** XP from monster kills and floors reached. Level 2 takes 10 XP, level 3 takes 30, then
-  60, 100 and so on (10 × 1, 3, 6, 10…). Each level grants 1 point. XP is awarded from M5 on.
+  60, 100 and so on (10 × 1, 3, 6, 10…). Each level grants 1 point.
 - **Portraits:** for now, eight placeholder heraldic crests (a color and a sigil). The art pass replaces
   them with real portraits under the same ids.
 - **Characters screen:** lists saved characters with their stats, gear and record. You can create,
@@ -193,9 +193,16 @@ file under `Themes/`.
 
 ## Loot, downed players and winning
 
-- **Sources:** chests draw from the theme's loot deck, with rarity weighted by floor. Monsters have a drop
-  chance, and pots can hold coins or hearts.
+- **Chests** deal from the theme's loot deck. Some cards are marked with a minimum floor (better
+  weapons and armor from floor 2, the Golden Idol on floor 3). Those stay in the deck until a chest on a
+  deep enough floor turns them up.
+- **Monster drops:** each monster has a drop chance *(tunable)*: slimes 10%, bats 15%, guards 25%,
+  skeletons 30%. The Iron Warden always drops 3 cards. Drops land as a loot pile where the monster fell.
+- **Pots** block movement until a hero beside them smashes one (uses the action). In the Emerald Keep:
+  35% Loose Coins (2 gold), 25% a heart, otherwise nothing *(tunable)*.
 - **Found items:** cards found during a run are tagged as found.
+- **XP** *(tunable)*: each monster's XP goes to whoever defeats it (slime 2, guards 4, skeleton 5, Iron
+  Warden 25). Reaching a floor for the first time gives 5, and escaping gives 10.
 - **Downed players:** a player reduced to 0 hearts is downed for the rest of the run. Everything they found
   this run drops as a loot pile that anyone can pick up (an action). They keep the gear they brought in and
   their XP.
@@ -203,7 +210,12 @@ file under `Themes/`.
 - **End of the run:** when every player has escaped or been downed.
 - **Winner:** the escaped player with the highest treasure value. Ties go to the player with more kills.
 - **Rewards:** everyone keeps their XP. Escaped players keep everything they carried out, and treasure
-  becomes the character's gold. Spending gold comes after the MVP.
+  becomes the character's gold. Downed players keep only the gear they brought in that they still hold.
+  Single-use cards used up during the run are gone. Spending gold comes after the MVP.
+- **Results screen:** when a run ends, results are saved automatically and the game moves to a results
+  screen. It shows the winner(s), and for each hero how the run ended, kills, XP and any level-up, and
+  the cards found and lost. **Play again** starts the same party in a new dungeon. Abandoning a run
+  from the Menu saves nothing.
 
 ## Persistence
 
@@ -213,7 +225,8 @@ file under `Themes/`.
   points spent and unspent, equipped cards, belt, backpack, gold, runs played and wins.
 - **Writes:** each save goes to a temporary file first and then replaces the old one, so a crash can't
   leave a half-written character.
-- **When saved:** on creation and on edit. Saving run results arrives with M5.
+- **When saved:** on creation, on edit, and when a run ends (XP, levels, gold, runs and wins, and the
+  gear brought home).
 - **Damaged or outdated files:** unreadable files are skipped and reported on the Characters screen.
   Cards that no longer exist are dropped with a warning. A newer schema version is reported, not
   overwritten.
@@ -277,7 +290,7 @@ Woad (Godot project, repo root)          Woad.Core (src/, pure C#, no Godot)
 | M2 | Playable room ✅ | One room in Godot: mouse move/attack, dice tray, hot-seat turns, enemy phase |
 | M3 | Characters ✅ | Main menu, point-buy creation, character list, JSON save/load, run setup for 1–4 players |
 | M4 | Dungeon ✅ | 3 procedural floors, room templates, doors, splitting up, fog, minimap, stairs, boss, exit |
-| M5 | Loot & scoring | Loot deck, chests, drops, downed loot piles, results screen, rewards persisted |
+| M5 | Loot & scoring ✅ | Loot deck, chests, drops, downed loot piles, results screen, rewards persisted |
 | M6 | Theme pass | Original placeholder art for the first theme, gothic UI frames, SFX, dice animation |
 
 ## Out of scope for the MVP

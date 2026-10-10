@@ -16,18 +16,19 @@ internal static class TestRun
     public static RoomTemplate Room(string text) => RoomTemplate.Parse(text, TestContent.Catalog);
 
     /// <summary>A begun run in a single room "A".</summary>
-    public static GameSession Start(string room, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null) =>
-        Start([new RoomSetup("A", Room(room))], dice, heroes, stats, cards);
+    public static GameSession Start(string room, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null) =>
+        Start([new RoomSetup("A", Room(room))], dice, heroes, stats, cards, loot);
 
     /// <summary>A begun run starting in the first room. Every hero gets the same stats and cards.</summary>
-    public static GameSession Start(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null)
+    /// <param name="loot">Scripts the loot stream (pots, drops, deck shuffles); seeded when omitted.</param>
+    public static GameSession Start(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null)
     {
-        GameSession session = Create(rooms, dice, heroes, stats, cards);
+        GameSession session = Create(rooms, dice, heroes, stats, cards, loot);
         session.Begin();
         return session;
     }
 
-    public static GameSession Create(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null)
+    public static GameSession Create(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null)
     {
         var setup = new RunSetup
         {
@@ -40,7 +41,10 @@ internal static class TestRun
             StartRoomId = rooms[0].Id,
         };
 
-        return new GameSession(TestContent.Catalog, setup, new GameRandom(Seed) { Dice = dice ?? new ScriptedDice() });
+        var random = loot is null
+            ? new GameRandom(Seed) { Dice = dice ?? new ScriptedDice() }
+            : new GameRandom(Seed) { Dice = dice ?? new ScriptedDice(), Loot = loot };
+        return new GameSession(TestContent.Catalog, setup, random);
     }
 }
 

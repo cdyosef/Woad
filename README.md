@@ -83,7 +83,7 @@ its seed.
 ### Smoke tests
 
 `tools/smoke-test.ps1` builds everything, runs the rules tests (including bots playing whole
-generated dungeons), and then runs the game headless in four debug modes. Pass the mode after `--`
+generated dungeons), and then runs the game headless in five debug modes. Pass the mode after `--`
 on the Godot command line:
 
 | Flag | What it does |
@@ -91,6 +91,7 @@ on the Godot command line:
 | `--menutest` | Creates two characters, seats them, starts and leaves a run, and deletes one, using synthetic clicks and typing. Saves go to a throwaway temp folder. |
 | `--uitest` | Puts a fixed debug party in a single room and plays two turns by pushing real mouse clicks through the UI (cards, targeting, Luck, moving, equipping), checking each result. |
 | `--floortest` | Clicks through a door and down the stairs in a tiny three-room setup, checking that the view follows the hero. |
+| `--resultstest` | Two saved characters click their way out of the exit; checks that their results are saved and shown. Uses a throwaway save folder. |
 | `--autoplay` | The debug party plays a generated dungeon with the rules-engine bot until the run ends, narrating to the console. Add `--fast` for 8× speed. |
 
 Each test exits with code 1 on its first failed check.

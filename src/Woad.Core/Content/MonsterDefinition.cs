@@ -71,4 +71,10 @@ public sealed record MonsterDefinition
 
     /// <summary>How much of a room's difficulty budget this monster uses up when generated.</summary>
     public int Threat { get; init; } = 1;
+
+    /// <summary>Percent chance of dropping loot from the theme's deck when defeated.</summary>
+    public int DropChance { get; init; }
+
+    /// <summary>Cards dropped when the drop chance comes up.</summary>
+    public int Drops { get; init; } = 1;
 }

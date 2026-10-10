@@ -88,7 +88,7 @@ public partial class HeroPanel : Panel
         string speed = stats.Speed >= 0 ? $"+{stats.Speed}" : stats.Speed.ToString();
         _stats.Text = $"Move {stats.MoveDice}d6{speed}     Luck {hero.LuckRemaining}/{stats.Luck}\n" +
                       $"Attack {UiTheme.Count(stats.AttackDice, "die", "dice")}   Defense {UiTheme.Count(stats.DefenseDice, "die", "dice")}";
-        _record.Text = $"Kills {hero.Kills}     Treasure {hero.TreasureValue}g";
+        _record.Text = $"Kills {hero.Kills}   Treasure {hero.TreasureValue}g   XP {hero.Xp}";
 
         foreach ((EquipSlot slot, CardSlot view) in _slots)
         {

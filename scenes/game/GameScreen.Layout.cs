@@ -35,8 +35,6 @@ public partial class GameScreen
     private Button _roll = null!;
     private Button _endTurn = null!;
     private Button _menu = null!;
-    private Button _playAgain = null!;
-    private Button _leave = null!;
     private GridPosition? _hovered;
 
     private void RefreshPanels()
@@ -70,9 +68,7 @@ public partial class GameScreen
         _dice.Rerollable = canReroll;
         _luckHint.Visible = canReroll;
 
-        bool ended = state.Phase == RunPhase.Ended && !_busy;
-        _playAgain.Visible = _leave.Visible = ended;
-        _menu.Disabled = _busy;
+        _menu.Disabled = _busy || state.Phase == RunPhase.Ended;
         _menu.Text = _confirmingLeave ? "Leave?" : "Menu";
 
         UpdateHighlights();
@@ -97,7 +93,7 @@ public partial class GameScreen
         if (!turn.HasActed && turn.PendingAttack is null)
         {
             interactive.AddRange(hero.Position.OrthogonalNeighbors()
-                .Where(tile => room.Layout[tile] == TileKind.Chest && !room.IsChestOpened(tile)));
+                .Where(tile => (room.Layout[tile] == TileKind.Chest && !room.IsChestOpened(tile)) || room.Layout[tile] == TileKind.Pot));
         }
 
         if (OwnTileIsUsable(hero, room, turn))
@@ -222,7 +218,7 @@ public partial class GameScreen
         _menu = UiTheme.Button(new Vector2(SideWidth + BoardView.Pixels - 48, 4), new Vector2(42, 15), "Menu");
         _menu.Pressed += () =>
         {
-            if (_confirmingLeave || _session.State.Phase == RunPhase.Ended)
+            if (_confirmingLeave)
             {
                 ExitRequested?.Invoke();
                 return;
@@ -282,20 +278,6 @@ public partial class GameScreen
 
         _banner = new TurnBanner { Position = BoardOrigin, Size = new Vector2(BoardView.Pixels, BoardView.Pixels) };
         AddChild(_banner);
-
-        _playAgain = UiTheme.Button(BoardOrigin + new Vector2(40, 196), new Vector2(100, 22), "Play again");
-        _playAgain.Visible = false;
-        _playAgain.Pressed += () =>
-        {
-            ulong seed = (ulong)DateTime.UtcNow.Ticks;
-            StartRun(NewRun?.Invoke(seed) ?? Setup with { Seed = seed });
-        };
-        AddChild(_playAgain);
-
-        _leave = UiTheme.Button(BoardOrigin + new Vector2(148, 196), new Vector2(100, 22), "Leave");
-        _leave.Visible = false;
-        _leave.Pressed += () => ExitRequested?.Invoke();
-        AddChild(_leave);
     }
 
     private RichTextLabel RichLabel(Vector2 position, Vector2 size)

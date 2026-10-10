@@ -81,6 +81,7 @@ public sealed partial class GameSession
             PickUpLoot c => Handle(c, events),
             EndTurn c => Handle(c, events),
             TakeStairs c => Handle(c, events),
+            SmashPot c => Handle(c, events),
             Escape c => Handle(c, events),
             _ => $"Unknown command {command.GetType().Name}.",
         };
@@ -201,7 +202,7 @@ public sealed partial class GameSession
         {
             var room = new Room(
                 roomSetup.Id,
-                roomSetup.Template.Layout,
+                roomSetup.Template.Layout.Copy(),
                 new Dictionary<Direction, string>(roomSetup.Doors ?? new Dictionary<Direction, string>()),
                 roomSetup.Floor,
                 roomSetup.MapPosition,

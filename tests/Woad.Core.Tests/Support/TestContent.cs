@@ -40,12 +40,19 @@ internal static class TestContent
           { "id": "flyer", "name": "Flyer", "glyph": "f", "hearts": 1, "move": 4, "attackDice": 1, "defenseDice": 0, "flying": true },
           { "id": "bat", "name": "Bat", "glyph": "b", "hearts": 1, "move": 4, "attackDice": 1, "defenseDice": 0, "flying": true, "erratic": true },
           { "id": "bones", "name": "Bones", "glyph": "k", "hearts": 2, "move": 2, "attackDice": 1, "defenseDice": 0, "reassembles": true },
-          { "id": "boss", "name": "Boss", "glyph": "W", "hearts": 10, "move": 0, "attackDice": 1, "defenseDice": 0, "sweep": { "radius": 2, "every": 2 }, "stunImmune": true, "boss": true }
+          { "id": "boss", "name": "Boss", "glyph": "W", "hearts": 10, "move": 0, "attackDice": 1, "defenseDice": 0, "sweep": { "radius": 2, "every": 2 }, "stunImmune": true, "boss": true, "xp": 25 },
+          { "id": "hoarder", "name": "Hoarder", "glyph": "h", "hearts": 1, "move": 0, "attackDice": 0, "defenseDice": 0, "dropChance": 100, "drops": 2, "xp": 7 }
         ]
         """;
 
+    /// <summary>Gems only from floor 2. Pots: rolls 0-49 give a coin, 50-79 a heart, 80-99 nothing.</summary>
     public const string ThemeJson = """
-        { "id": "test_theme", "name": "Test Theme", "lootDeck": [ { "card": "coin", "copies": 2 }, { "card": "gem" } ] }
+        {
+          "id": "test_theme",
+          "name": "Test Theme",
+          "lootDeck": [ { "card": "coin", "copies": 2 }, { "card": "gem", "minFloor": 2 } ],
+          "pots": { "treasure": "coin", "treasureChance": 50, "heartChance": 30 }
+        }
         """;
 
     public static ContentCatalog Catalog { get; } = ContentCatalog.Parse(CardsJson, MonstersJson, [ThemeJson]);

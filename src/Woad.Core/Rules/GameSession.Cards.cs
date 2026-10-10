@@ -248,7 +248,7 @@ public sealed partial class GameSession
 
         SpendAction();
         room.OpenChest(command.Chest);
-        var card = new CardInstance(State.NextId(), State.LootDeck.Draw(), broughtInByHeroId: null);
+        var card = new CardInstance(State.NextId(), State.LootDeck.Draw(room.Floor), broughtInByHeroId: null);
         bool fits = hero.Backpack.Count < GameRules.BackpackCapacity;
         if (fits)
         {
@@ -260,6 +260,57 @@ public sealed partial class GameSession
         }
 
         events.Add(new ChestOpened(hero.Id, command.Chest, card.Id, fits));
+        return null;
+    }
+
+    private string? Handle(SmashPot command, List<GameEvent> events)
+    {
+        Hero hero = ActiveHero;
+        Room room = ActiveRoom;
+        if (room.Layout[command.Pot] != TileKind.Pot)
+        {
+            return "There's no pot there.";
+        }
+
+        if (hero.Position.ManhattanDistanceTo(command.Pot) != 1)
+        {
+            return "Stand next to the pot to smash it.";
+        }
+
+        if (CheckCanAct() is { } error)
+        {
+            return error;
+        }
+
+        SpendAction();
+        room.Layout.Set(command.Pot, TileKind.Floor);
+
+        PotDefinition? pots = Content.GetTheme(State.ThemeId).Pots;
+        int roll = _random.Loot.NextInt(0, 100);
+        int? cardId = null;
+        bool addedToBackpack = false;
+        int hearts = 0;
+        if (pots is not null && roll < pots.TreasureChance)
+        {
+            var card = new CardInstance(State.NextId(), Content.GetCard(pots.Treasure), broughtInByHeroId: null);
+            cardId = card.Id;
+            addedToBackpack = hero.Backpack.Count < GameRules.BackpackCapacity;
+            if (addedToBackpack)
+            {
+                hero.AddToBackpack(card);
+            }
+            else
+            {
+                room.AddLoot(command.Pot, [card]);
+            }
+        }
+        else if (pots is not null && roll < pots.TreasureChance + pots.HeartChance)
+        {
+            hearts = Math.Min(GameRules.HeartsFromPot, hero.MaxHearts - hero.Hearts);
+            hero.Hearts += hearts;
+        }
+
+        events.Add(new PotSmashed(hero.Id, command.Pot, cardId, addedToBackpack, hearts));
         return null;
     }
 

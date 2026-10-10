@@ -48,9 +48,22 @@ public static class SimpleBot
             return new OpenChest(hero.Id, chest);
         }
 
-        if (!turn.HasActed && room.LootAt(hero.Position).Count > 0 && hero.Backpack.Count < GameRules.BackpackCapacity)
+        bool backpackHasRoom = hero.Backpack.Count < GameRules.BackpackCapacity;
+        if (!turn.HasActed && room.LootAt(hero.Position).Count > 0 && backpackHasRoom)
         {
             return new PickUpLoot(hero.Id);
+        }
+
+        if (!turn.HasActed && !fighting && Beside(room, hero, TileKind.Pot) is { } pot)
+        {
+            return new SmashPot(hero.Id, pot);
+        }
+
+        // Already acted but standing on loot or beside a pot: wait here for next turn's action.
+        if (turn.HasActed && !fighting
+            && ((room.LootAt(hero.Position).Count > 0 && backpackHasRoom) || Beside(room, hero, TileKind.Pot) is not null))
+        {
+            return new EndTurn(hero.Id);
         }
 
         if (standingOn == TileKind.Exit && !room.Monsters.Any(monster => monster.Definition.Boss))
@@ -76,8 +89,9 @@ public static class SimpleBot
         }
 
         GridPosition? goal = fighting ? BesideNearestMonster(room, hero)
-            : door is { } exitSide ? exitSide.DoorTile()
-            : WayOut(room);
+            : (backpackHasRoom ? Nearest(room, hero, room.LootPositions) : null)
+              ?? Nearest(room, hero, room.TilesOfKind(TileKind.Pot).SelectMany(tile => tile.OrthogonalNeighbors()))
+              ?? (door is { } exitSide ? exitSide.DoorTile() : WayOut(room));
 
         if (goal is { } tile && StepAlongPath(session, hero, room, tile) is { } destination)
         {
@@ -136,6 +150,25 @@ public static class SimpleBot
             .Where(tile => room.Layout[tile] == TileKind.Chest && !room.IsChestOpened(tile))
             .Select(tile => (GridPosition?)tile)
             .FirstOrDefault();
+
+    private static GridPosition? Beside(Room room, Hero hero, TileKind kind) =>
+        hero.Position.OrthogonalNeighbors()
+            .Where(tile => room.Layout[tile] == kind)
+            .Select(tile => (GridPosition?)tile)
+            .FirstOrDefault();
+
+    /// <summary>The closest of the given tiles the hero could walk to (ignoring this turn's movement), if any.</summary>
+    private static GridPosition? Nearest(Room room, Hero hero, IEnumerable<GridPosition> tiles)
+    {
+        PathSearch search = PathSearch.Run(hero.Position, tile => room.Layout[tile].IsWalkable() && room.MonsterAt(tile) is null);
+        return tiles
+            .Where(tile => tile != hero.Position && search.CanReach(tile))
+            .OrderBy(tile => search.Distances[tile])
+            .ThenBy(tile => tile.Y)
+            .ThenBy(tile => tile.X)
+            .Select(tile => (GridPosition?)tile)
+            .FirstOrDefault();
+    }
 
     private static GridPosition? WayOut(Room room) =>
         room.TilesOfKind(TileKind.Exit).Concat(room.TilesOfKind(TileKind.StairsDown)).Select(tile => (GridPosition?)tile).FirstOrDefault();

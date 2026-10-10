@@ -18,6 +18,9 @@ public enum TileKind
 
     /// <summary>The way out of the dungeon. Opens once the boss in its room is defeated.</summary>
     Exit,
+
+    /// <summary>A pot. Blocks movement until a hero beside it smashes it, finding coins, a heart or nothing.</summary>
+    Pot,
 }
 
 public static class TileKindExtensions

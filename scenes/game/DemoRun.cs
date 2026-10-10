@@ -35,7 +35,6 @@ public static class DemoRun
     {
         ContentCatalog content = ContentCatalog.LoadDefault();
         RoomTemplate Room(string text) => RoomTemplate.Parse(text, content);
-        const string empty = ".........\n.........\n.........\n.........\n.........\n.........\n.........\n.........\n.........";
         return new RunSetup
         {
             Seed = seed,
@@ -53,6 +52,21 @@ public static class DemoRun
             StartRoomId = "a",
         };
     }
+
+    /// <summary>
+    /// For --resultstest: one empty room with an open exit two steps from seats 1 and 2, so a run can be
+    /// finished in a few clicks.
+    /// </summary>
+    public static RunSetup ExitRoom(IReadOnlyList<HeroSetup> heroes, ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = heroes,
+        Rooms = [new RoomSetup("exit_hall", RoomTemplate.Parse(
+            ".........\n.........\n.........\n....*....\n...1.2...\n.........\n.........\n.........\n.........",
+            ContentCatalog.LoadDefault()), Role: RoomRole.Boss)],
+        StartRoomId = "exit_hall",
+    };
 
     /// <summary>The debug party in the single hand-made room, for --uitest.</summary>
     public static RunSetup SingleRoom(ulong seed) => new()

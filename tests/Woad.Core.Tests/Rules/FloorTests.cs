@@ -83,6 +83,7 @@ public class FloorTests
         Assert.Equal(2, hero.LuckRemaining);
         Assert.Equal(2, hero.Card("wand").ChargesRemaining);
         Assert.Equal(2, hero.DeepestFloor);
+        Assert.Equal(GameRules.XpPerNewFloor, hero.Xp);
     }
 
     [Fact]

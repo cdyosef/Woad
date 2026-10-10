@@ -24,8 +24,8 @@ public partial class RunSetupScreen : MenuScreen
 
     public event Action? NewCharacterRequested;
 
-    /// <summary>The chosen heroes in seat order, and the seed for the dungeon and dice.</summary>
-    public event Action<IReadOnlyList<HeroSetup>, ulong>? StartRequested;
+    /// <summary>The chosen characters in seat order, and the seed for the dungeon and dice.</summary>
+    public event Action<IReadOnlyList<Character>, ulong>? StartRequested;
 
     internal Button StartButton { get; private set; } = null!;
 
@@ -141,6 +141,6 @@ public partial class RunSetupScreen : MenuScreen
             return;
         }
 
-        StartRequested?.Invoke([.. _party.Select(character => character.ToHeroSetup())], seed);
+        StartRequested?.Invoke([.. _party], seed);
     }
 }

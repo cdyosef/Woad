@@ -7,7 +7,7 @@ public sealed record MonsterSpawn(GridPosition Position, MonsterDefinition Monst
 
 /// <summary>
 /// A handcrafted 9x9 room written as text, one row per line:
-/// <c>.</c> floor, <c>#</c> wall, <c>~</c> pit, <c>C</c> chest, <c>&gt;</c> stairs down,
+/// <c>.</c> floor, <c>#</c> wall, <c>~</c> pit, <c>C</c> chest, <c>P</c> pot, <c>&gt;</c> stairs down,
 /// <c>*</c> exit, <c>1</c>-<c>4</c> hero start for that seat, <c>M</c> a spot the dungeon
 /// generator may put a monster, <c>&amp;</c> where the boss stands, and any monster's glyph
 /// (e.g. <c>s</c> for a slime) to place that exact monster.
@@ -15,7 +15,7 @@ public sealed record MonsterSpawn(GridPosition Position, MonsterDefinition Monst
 public sealed class RoomTemplate
 {
     /// <summary>Characters with a fixed meaning; monster glyphs can't use them.</summary>
-    public const string ReservedCharacters = ".#~C>*M&0123456789";
+    public const string ReservedCharacters = ".#~CP>*M&0123456789";
 
     private RoomTemplate(
         RoomLayout layout,
@@ -71,6 +71,7 @@ public sealed class RoomTemplate
                 '#' => TileKind.Wall,
                 '~' => TileKind.Pit,
                 'C' => TileKind.Chest,
+                'P' => TileKind.Pot,
                 '>' => TileKind.StairsDown,
                 '*' => TileKind.Exit,
                 _ => TileKind.Floor,
@@ -78,7 +79,7 @@ public sealed class RoomTemplate
 
             switch (glyph)
             {
-                case '.' or '#' or '~' or 'C' or '>' or '*':
+                case '.' or '#' or '~' or 'C' or 'P' or '>' or '*':
                     break;
                 case >= '1' and <= '4':
                     heroStarts[glyph - '1'] = position;

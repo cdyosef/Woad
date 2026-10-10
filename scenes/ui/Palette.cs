@@ -33,6 +33,8 @@ public static class Palette
     public static readonly Color Chest = new("8a5a2b");
     public static readonly Color ChestOpen = new("4a3018");
     public static readonly Color Loot = new("f0c94a");
+    public static readonly Color Pot = new("a8643c");
+    public static readonly Color PotRim = new("7a4528");
 
     public static readonly Color Reachable = new("6fb7ff", 0.30f);
     public static readonly Color Target = new("ffa94d", 0.40f);
