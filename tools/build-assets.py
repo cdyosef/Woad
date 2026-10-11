@@ -690,19 +690,29 @@ def dungeon_theme():
     return song.samples
 
 
+BOSS_BEAT = [  # double kicks under a hard backbeat, a crash every four bars, fills into each new section
+    "c.kks.h.k.kks.hh", "k.kks.h.k.kks.hh", "k.kks.h.k.kks.hh", "k.kks.h.k.kks.hh",
+    "c.kks.h.k.kks.hh", "k.kks.h.k.kks.hh", "k.kks.h.k.kks.hh", "k.kks.h.s.sssskk",
+    "c.kks.h.k.kks.hh", "k.kks.h.k.kks.hh", "k.kks.h.k.kks.hh", "k.kks.h.k.kks.hh",
+    "c.kks.h.k.kks.hh", "k.kks.h.k.kks.hh", "k.kks.h.k.kks.hh", "s.s.s.sssssskkss",
+]
+
+
 def boss_theme():
-    """The Iron Warden: fast, driving E minor."""
+    """The Iron Warden: fast, relentless E minor with a galloping bass."""
     chords = ["Em", "Em", "C", "D", "Em", "Em", "C", "B", "Am", "Am", "Em", "Em", "C", "D", "B", "B"]
-    song = Song(bpm=150, beats=64)
-    song.voice("E5/0.5 E5/0.5 G5/0.5 E5/0.5 B5/1 A5/1 | G5/1 F#5/1 E5/2 |"
-               "E5/0.5 E5/0.5 G5/0.5 E5/0.5 C6/1 B5/1 | A5/1 F#5/1 D5/2 |"
-               "E5/0.5 E5/0.5 G5/0.5 E5/0.5 B5/1 A5/1 | G5/1 A5/1 B5/2 | C6/1 B5/1 A5/1 G5/1 | F#5/2 D#5/2 |"
-               "A5/1.5 G5/0.5 E5/2 | C6/1 B5/1 A5/2 | G5/1.5 F#5/0.5 E5/2 | B4/1 E5/1 G5/2 |"
-               "C6/1.5 B5/0.5 G5/2 | D6/1.5 C6/0.5 A5/2 | B5/1 A5/1 F#5/1 D#5/1 | B4/2 -/2",
-               pulse(0.25), 0.1, transpose=-12)
-    song.arpeggio(chords, [0, 1, 2, 3] * 2, pulse(0.125), 0.035)
-    song.bass(chords, [(0, 0.5), (12, 0.5)] * 4, 0.22)
-    song.drums(16, "k.h.s.h.k.hks.hh", 0.13)
+    song = Song(bpm=168, beats=64)
+    melody = ("E5/0.5 E5/0.5 G5/0.5 E5/0.5 B5/1 A5/1 | G5/1 F#5/1 E5/2 |"
+              "E5/0.5 E5/0.5 G5/0.5 E5/0.5 C6/1 B5/1 | A5/1 F#5/1 D5/2 |"
+              "E5/0.5 E5/0.5 G5/0.5 E5/0.5 B5/1 A5/1 | G5/1 A5/1 B5/2 | C6/1 B5/1 A5/1 G5/1 | F#5/2 D#5/2 |"
+              "A5/1.5 G5/0.5 E5/2 | C6/1 B5/1 A5/2 | G5/1.5 F#5/0.5 E5/2 | B4/1 E5/1 G5/2 |"
+              "C6/1.5 B5/0.5 G5/2 | D6/1.5 C6/0.5 A5/2 | B5/1 A5/1 F#5/1 D#5/1 | B4/2 -/2")
+    song.voice(melody, pulse(0.25), 0.1, transpose=-12)
+    song.voice(melody, pulse(0.125), 0.045)  # the same line an octave up, for a hard edge
+    song.arpeggio(chords, [0, 1, 2, 3, 2, 1] * 2 + [0, 1, 2, 3], pulse(0.125), 0.03, step=0.25)
+    song.bass(chords, [(0, 0.25), (0, 0.25), (12, 0.5)] * 4, 0.2)  # gallop: da-da-DUM
+    for bar, pattern in enumerate(BOSS_BEAT):
+        song.drum_bar(bar, pattern, 0.14)
     return song.samples
 
 
