@@ -27,7 +27,6 @@ public partial class Main : Control
     public override void _Ready()
     {
         Theme = UiTheme.Create();
-        AddChild(new Sfx());
         _content = ContentCatalog.LoadDefault();
 
         string[] args = OS.GetCmdlineUserArgs();
@@ -36,6 +35,10 @@ public partial class Main : Control
             ? Path.Combine(Path.GetTempPath(), "woad-uitest", Guid.NewGuid().ToString("N"))
             : ProjectSettings.GlobalizePath("user://characters");
         _characters = new JsonCharacterRepository(saveFolder, _content);
+
+        AudioSettings.Load(throwawaySaves ? Path.Combine(saveFolder, "settings.cfg") : "user://settings.cfg");
+        AddChild(new Sfx());
+        AddChild(new Music());
 
         ulong seed = (ulong)DateTime.UtcNow.Ticks;
         if (args.Contains("--uitest"))
@@ -69,6 +72,7 @@ public partial class Main : Control
     {
         Theme = null;
         GameArt.Release();
+        UiTheme.Release();
     }
 
     private void Show(Control screen)
@@ -88,7 +92,15 @@ public partial class Main : Control
         var menu = new MainMenu();
         menu.PlayRequested += ShowRunSetup;
         menu.CharactersRequested += ShowCharacters;
-        Show(menu);
+        menu.SettingsRequested += ShowSettings;
+        ShowMenu(menu);
+    }
+
+    /// <summary>Shows one of the menu screens, which share the title music.</summary>
+    private void ShowMenu(Control screen)
+    {
+        Music.Play("title");
+        Show(screen);
     }
 
     private void ShowCharacters()
@@ -97,14 +109,21 @@ public partial class Main : Control
         screen.BackRequested += ShowMainMenu;
         screen.NewRequested += () => ShowEditor(null, ShowCharacters);
         screen.EditRequested += character => ShowEditor(character, ShowCharacters);
-        Show(screen);
+        ShowMenu(screen);
+    }
+
+    private void ShowSettings()
+    {
+        var screen = new SettingsScreen();
+        screen.BackRequested += ShowMainMenu;
+        ShowMenu(screen);
     }
 
     private void ShowEditor(Character? editing, Action whenClosed)
     {
         var editor = new CharacterEditor { Repository = _characters, Content = _content, Editing = editing };
         editor.Closed += whenClosed;
-        Show(editor);
+        ShowMenu(editor);
     }
 
     private void ShowRunSetup()
@@ -113,7 +132,7 @@ public partial class Main : Control
         screen.BackRequested += ShowMainMenu;
         screen.NewCharacterRequested += () => ShowEditor(null, ShowRunSetup);
         screen.StartRequested += StartRun;
-        Show(screen);
+        ShowMenu(screen);
     }
 
     /// <summary>Generates a dungeon for the party (carrying their current gear) and starts playing it.</summary>
@@ -152,6 +171,7 @@ public partial class Main : Control
             rows.Add(new ResultRow(result, character, reward));
         }
 
+        Music.Play(results.Any(result => result.Won) ? "victory" : "defeat", loop: false);
         var screen = new ResultsScreen { Rows = rows, Content = _content, SaveProblem = saveProblem };
         screen.DoneRequested += ShowRunSetup;
         screen.PlayAgainRequested += () =>

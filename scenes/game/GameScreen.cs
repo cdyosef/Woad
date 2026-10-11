@@ -106,6 +106,7 @@ public partial class GameScreen : Control
         _board.ThemeId = setup.ThemeId;
         ReloadFigures();
         ShowRoom(_session.State.RoomOf(_session.State.Heroes[0]).Id);
+        UpdateMusic();
         await PlayEvents(_session.Begin());
     }
 
@@ -194,6 +195,7 @@ public partial class GameScreen : Control
             ReloadFigures();
             ShowRoom(ActiveHero is { } hero ? hero.RoomId : _shownRoomId);
             RefreshPanels();
+            UpdateMusic();
         }
 
         if (_session.State.Phase == RunPhase.Ended)
@@ -282,6 +284,7 @@ public partial class GameScreen : Control
                 break;
 
             case HeroEnteredRoom entered:
+                UpdateMusic();
                 await ChangeRoom(entered.HeroId, entered.RoomId, entered.Position);
                 if (_session.State.Rooms[entered.RoomId].IsSealed && entered.FirstVisit)
                 {
@@ -388,6 +391,7 @@ public partial class GameScreen : Control
                 break;
 
             case RunEnded ended:
+                Music.Stop();
                 string title = ended.WinnerHeroIds.Count == 0
                     ? "The dungeon claims you"
                     : $"{string.Join(" & ", ended.WinnerHeroIds.Select(NameOf))} {(ended.WinnerHeroIds.Count == 1 ? "wins" : "win")}!";
@@ -450,6 +454,25 @@ public partial class GameScreen : Control
                 Sfx.Play("click");
                 break;
         }
+    }
+
+    /// <summary>
+    /// Boss music while a hero still in the dungeon shares a room with a living boss, the dungeon
+    /// theme otherwise, and nothing once the run is over (the results screen plays its own tune).
+    /// Checked after each batch of events, so the boss music ends once its defeat has played out.
+    /// </summary>
+    private void UpdateMusic()
+    {
+        GameState state = _session.State;
+        if (state.Phase == RunPhase.Ended)
+        {
+            Music.Stop();
+            return;
+        }
+
+        bool bossFight = state.Heroes.Any(hero => hero.Status == HeroStatus.Active
+            && state.RoomOf(hero).Monsters.Any(monster => monster.Definition.Boss));
+        Music.Play(bossFight ? "boss" : "dungeon");
     }
 
     /// <summary>The room an event happens in, so the view can cut there before playing it.</summary>

@@ -265,8 +265,11 @@ file under `Themes/`.
   font for readability.
 - **Dice:** dice jitter and spin as they tumble, then land with a small pop. Successful faces glow gold.
 - **Sound:** synthesized 8-bit effects for buttons, dice, footsteps, hits, blocks, defeats, healing,
-  coins, chests, pots, doors, stairs, turns, the monsters' phase, being downed and victory. There's
-  no music yet.
+  coins, chests, pots, doors, stairs, turns, the monsters' phase, being downed and victory.
+- **Music:** synthesized chiptune songs that crossfade with the action: a title theme for the menus,
+  a dungeon theme during a run, a boss theme while a hero shares a room with a living boss, and a
+  short victory or defeat tune on the results screen. **Settings** on the main menu has music and
+  sound-effect volume sliders, saved between sessions.
 - **Where it comes from:** `tools/build-assets.py` generates all of it into `assets/` (see the
   README). Theme art lives under `assets/themes/<theme>/`, so a new dungeon is a new theme folder.
   Missing art falls back to plain shapes.

@@ -9,9 +9,13 @@ public partial class MainMenu : MenuScreen
 
     public event Action? CharactersRequested;
 
+    public event Action? SettingsRequested;
+
     internal Button PlayButton { get; private set; } = null!;
 
     internal Button CharactersButton { get; private set; } = null!;
+
+    internal Button SettingsButton { get; private set; } = null!;
 
     public override void _Ready()
     {
@@ -26,7 +30,9 @@ public partial class MainMenu : MenuScreen
         PlayButton.Pressed += () => PlayRequested?.Invoke();
         CharactersButton = Add(UiTheme.Button(new Vector2(240, 198), new Vector2(160, 26), "Characters"));
         CharactersButton.Pressed += () => CharactersRequested?.Invoke();
-        Button quit = Add(UiTheme.Button(new Vector2(240, 232), new Vector2(160, 26), "Quit"));
+        SettingsButton = Add(UiTheme.Button(new Vector2(240, 232), new Vector2(160, 26), "Settings"));
+        SettingsButton.Pressed += () => SettingsRequested?.Invoke();
+        Button quit = Add(UiTheme.Button(new Vector2(240, 266), new Vector2(160, 26), "Quit"));
         quit.Pressed += () => Sfx.QuitGame(this);
 
         Label footer = Add(UiTheme.Label(new Vector2(0, 326), new Vector2(Width, 12), "Early build: The Emerald Keep, local hot-seat for 1-4 players", color: Palette.TextDim));
