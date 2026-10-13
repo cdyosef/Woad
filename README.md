@@ -80,6 +80,9 @@ Run the game with F5 in the Godot editor. You can also run it from a terminal wi
 **Play** to seat 1–4 characters and start a run. Each run generates a new three-floor dungeon from
 its seed.
 
+GitHub runs the build and the rules tests on every push and pull request (`.github/workflows/tests.yml`);
+the results show on the repository's **Actions** tab and on each pull request.
+
 ### Smoke tests
 
 `tools/smoke-test.ps1` builds everything, runs the rules tests (including bots playing whole
