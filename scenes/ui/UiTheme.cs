@@ -88,6 +88,10 @@ public static class UiTheme
     /// <summary>"1 die", "2 dice", "1 step", "3 steps".</summary>
     public static string Count(int amount, string singular, string plural) => $"{amount} {(amount == 1 ? singular : plural)}";
 
+    /// <summary>Dice with a fixed bonus: "2d6+1", "1d6", "1d6-1".</summary>
+    public static string Dice(int dice, int bonus) =>
+        $"{dice}d6{(bonus > 0 ? $"+{bonus}" : bonus < 0 ? bonus.ToString() : "")}";
+
     /// <summary>A nine-patch from a generated frame texture, or the flat fallback when the art is missing.</summary>
     public static StyleBox Frame(string textureName, StyleBox fallback)
     {

@@ -9,13 +9,17 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
     {
         RoundStarted round => $"Round {round.Round} begins.",
         MovementRolled rolled => $"{nameOf(rolled.HeroId)} rolls {rolled.Roll.Total} and can move {Count(rolled.MovementPoints, "step")}.",
+        AttackRolled attack => $"{nameOf(attack.AttackerId)} attacks {Names(attack.TargetIds)} with {attack.Total}.",
         DieRerolled { MovementPoints: int points } rerolled =>
             $"{nameOf(rerolled.HeroId)} turns a {rerolled.OldFace} into a {rerolled.NewFace}: {Count(points, "step")}.",
         DieRerolled rerolled => $"{nameOf(rerolled.HeroId)} turns a {rerolled.OldFace} into a {rerolled.NewFace}.",
         HeroEnteredRoom entered => $"{nameOf(entered.HeroId)} enters a new room.",
-        AttackRolled attack => $"{nameOf(attack.AttackerId)} attacks {Names(attack.TargetIds)}: {Count(attack.Hits, "hit")}.",
-        Damaged { Amount: 0 } damaged => $"{nameOf(damaged.TargetId)} blocks every hit.",
-        Damaged damaged => $"{nameOf(damaged.TargetId)} takes {damaged.Amount} damage.",
+        PowerDiceEarned earned => $"{nameOf(earned.HeroId)} rolled a 6 and earns a Power Die!",
+        PowerDieAdded added => $"{nameOf(added.HeroId)} adds a Power Die: {added.Face}, for {added.Total}.",
+        PowerDiceBanked banked => $"{nameOf(banked.OwnerId)} banks {PowerDice(banked.Count)} ({banked.Banked} banked).",
+        PowerDiceSpent spent => $"{nameOf(spent.OwnerId)} spends {PowerDice(spent.Count)}.",
+        Damaged { Amount: 0 } damaged => $"{nameOf(damaged.TargetId)} blocks it.",
+        Damaged damaged => $"{nameOf(damaged.TargetId)} is hit and loses {Count(damaged.Amount, "heart")}.",
         MonsterDefeated defeated => $"{nameOf(defeated.MonsterId)} is defeated!",
         MonsterCollapsed collapsed => $"{nameOf(collapsed.MonsterId)} collapses into a heap of bones...",
         MonsterReassembled risen => $"{nameOf(risen.MonsterId)} pulls itself back together!",
@@ -49,4 +53,6 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
     private string Names(IEnumerable<int> ids) => string.Join(" and ", ids.Select(nameOf));
 
     private static string Count(int amount, string noun) => $"{amount} {noun}{(amount == 1 ? "" : "s")}";
+
+    private static string PowerDice(int amount) => $"{amount} Power {(amount == 1 ? "Die" : "Dice")}";
 }

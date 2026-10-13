@@ -5,7 +5,7 @@ using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Game;
 
-/// <summary>Left panel: the active hero's hearts, stats, equipment and what's left of their turn.</summary>
+/// <summary>Left panel: the active hero's hearts, stats, equipment and what's left of their turn (see <see cref="Pool"/>).</summary>
 public partial class HeroPanel : Panel
 {
     private static readonly (EquipSlot Slot, string Caption)[] Slots =
@@ -27,6 +27,9 @@ public partial class HeroPanel : Panel
     private Label _turn = null!;
 
     public event Action<int>? CardSelected;
+
+    /// <summary>The dice left this turn, kept up to date by the game screen.</summary>
+    public DicePoolView Pool { get; } = new() { Position = new(8, 203), Size = new(160, 44) };
 
     public override void _Ready()
     {
@@ -58,7 +61,9 @@ public partial class HeroPanel : Panel
         }
 
         Add(UiTheme.Heading(UiTheme.Label(new(8, 189), new(160, 12), "THIS TURN", color: Palette.Trim), 1));
-        _turn = Add(UiTheme.Label(new(8, 203), new(160, 36)));
+        Add(Pool);
+        _turn = Add(UiTheme.Label(new(72, 190), new(96, 12), color: Palette.TextDim));
+        _turn.HorizontalAlignment = HorizontalAlignment.Right;
     }
 
     public void ShowHero(Hero? hero, TurnState? turn, int? selectedCardId)
@@ -66,6 +71,7 @@ public partial class HeroPanel : Panel
         if (hero is null)
         {
             _crest.Visible = false;
+            Pool.Visible = false;
             _name.Text = "Run over";
             _seat.Text = _stats.Text = _record.Text = _turn.Text = "";
             _hearts.ShowHearts(0, 0);
@@ -85,9 +91,8 @@ public partial class HeroPanel : Panel
         _hearts.ShowHearts(hero.Hearts, hero.MaxHearts);
 
         Stats stats = hero.EffectiveStats;
-        string speed = stats.Speed >= 0 ? $"+{stats.Speed}" : stats.Speed.ToString();
-        _stats.Text = $"Move {stats.MoveDice}d6{speed}     Luck {hero.LuckRemaining}/{stats.Luck}\n" +
-                      $"Attack {UiTheme.Count(stats.AttackDice, "die", "dice")}   Defense {UiTheme.Count(stats.DefenseDice, "die", "dice")}";
+        _stats.Text = $"Move {UiTheme.Dice(stats.MoveDice, stats.Speed)}     Luck {hero.LuckRemaining}/{stats.Luck}\n" +
+                      $"Attack {UiTheme.Dice(stats.AttackDice, stats.Weapon)}   Defense {UiTheme.Dice(stats.DefenseDice, stats.Armor)}";
         _record.Text = $"Kills {hero.Kills}   Treasure {hero.TreasureValue}g   XP {hero.Xp}";
 
         foreach ((EquipSlot slot, CardSlot view) in _slots)
@@ -96,17 +101,18 @@ public partial class HeroPanel : Panel
             view.ShowCard(card, "(empty)", card is not null && card.Id == selectedCardId);
         }
 
+        Pool.Visible = turn is not null;
         _turn.Text = turn is null
             ? ""
-            : $"Move: {MoveStatus(turn)}\n" +
-              $"Action: {(turn.HasActed ? "used" : "ready")}\n" +
-              $"Belt item: {(turn.UsedBeltItem ? "used" : "ready (free)")}";
+            : (turn.HasActed, turn.UsedBeltItem) switch
+            {
+                (false, false) => "action + belt ready",
+                (false, true) => "action ready",
+                (true, false) => "belt item ready",
+                _ => "action, belt used",
+            };
     }
 
-    private static string MoveStatus(TurnState turn) =>
-        turn.MovementLocked ? "done"
-        : turn.MovementRoll is null ? "roll first"
-        : $"{turn.MovementPoints} step{(turn.MovementPoints == 1 ? "" : "s")} left";
 
     private T Add<T>(T node) where T : Node
     {

@@ -83,12 +83,13 @@ public class LootAndXpTests
     [Fact]
     public void PotsBlockTheWayUntilSmashed()
     {
-        GameSession session = TestRun.Start(PotBeside, new ScriptedDice(1), loot: new ScriptedDice(90));
+        GameSession session = TestRun.Start(PotBeside, new ScriptedDice(1, 1), cards: ["boots"], loot: new ScriptedDice(90));
         Hero hero = session.HeroInSeat();
-        session.Do(new RollMovement(hero.Id));
+        session.Do(new RollMovement(hero.Id, Dice: 1));
 
         Assert.DoesNotContain(Pot, session.GetReachableTiles().Keys);
         session.Do(new SmashPot(hero.Id, Pot));
+        session.Do(new RollMovement(hero.Id, Dice: 1));
         Assert.Contains(Pot, session.GetReachableTiles().Keys);
     }
 

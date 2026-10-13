@@ -65,6 +65,13 @@ public partial class GameScreen
             Check(bran.Equipment.GetValueOrDefault(EquipSlot.OffHand) == boomerang, "Equip puts the card in its slot");
             Check(bran.Backpack.Any(card => card.Definition.Id == "buckler"), "the old card goes to the backpack");
 
+            CardInstance buckler = bran.Backpack.Single(card => card.Definition.Id == "buckler");
+            await Click(this, _inventory.BackpackSlot(bran.Backpack.ToList().IndexOf(buckler)));
+            Button equip = _inventory.ActionButton(CardAction.Equip);
+            Check(equip.Disabled && equip.TooltipText.Contains("in a fight"), "a greyed-out Equip says why (gear in a fight takes the action)");
+            await Click(this, equip);
+            Check(_messages[^1].Contains("in a fight"), "clicking a greyed-out button logs the reason");
+
             await Click(this, _endTurn);
             await WaitUntilIdle();
             Check(_session.State.Round == 2 || _session.State.Phase != RunPhase.InProgress, "the round advances after the enemy phase");
@@ -121,7 +128,20 @@ public partial class GameScreen
         }
     }
 
-    internal Task WaitUntilIdle() => WaitFor(this, () => !_busy, "event playback to finish");
+    /// <summary>
+    /// Waits for event playback to finish. The tests roll real dice, so any Power Die a lucky 6 earns
+    /// is added by clicking Add Power Die, keeping the scripted clicks on track.
+    /// </summary>
+    internal async Task WaitUntilIdle()
+    {
+        await WaitFor(this, () => !_busy, "event playback to finish");
+        while (_session.State.Turn?.UnsettledPowerDice > 0)
+        {
+            Check(_addPower.Visible, "a 6 offers to add or bank a Power Die");
+            await Click(this, _addPower);
+            await WaitFor(this, () => !_busy, "the Power Die to roll");
+        }
+    }
 
     private Task ClickTile(GridPosition tile) =>
         ClickAt(this, _board.GetGlobalRect().Position + BoardView.TileOrigin(tile) + new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f));

@@ -10,6 +10,9 @@ public sealed class DiceRoll(IReadOnlyList<int> faces)
 
     public int Total => Faces.Sum();
 
+    /// <summary>This roll with one more die added.</summary>
+    public DiceRoll With(int face) => new([.. Faces, face]);
+
     public int CountSuccesses(int minimumFace = DefaultSuccessFace) => Faces.Count(face => face >= minimumFace);
 
     public override string ToString() => $"[{string.Join(", ", Faces)}] = {Total}";

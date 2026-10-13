@@ -5,8 +5,9 @@ using Woad.Scenes.Ui;
 namespace Woad.Scenes.Game;
 
 /// <summary>
-/// Shows the dice of the latest roll and the defense rolls answering it. Dice tumble (jittering and
-/// spinning) before they land with a small pop; successful faces glow gold. When Luck allows, dice
+/// Shows the dice of the latest roll and the defense rolls answering it, each with its fixed bonus
+/// (weapon, armor or Speed) and total. Dice tumble (jittering and spinning) before they land with a
+/// small pop; the side that wins an attack glows gold. Power Dice are purple. When Luck allows, dice
 /// in the first row can be clicked to reroll them.
 /// </summary>
 public partial class DiceTray : Control
@@ -44,8 +45,9 @@ public partial class DiceTray : Control
     }
 
     /// <summary>Tumbles and then shows a roll. A new group replaces what the tray showed before.</summary>
-    /// <param name="successFace">Faces at or above this are highlighted; 0 highlights nothing.</param>
-    public async Task ShowRoll(string caption, DiceRoll roll, int successFace, bool newGroup)
+    /// <param name="bonus">The fixed value added to the dice (weapon, armor or Speed).</param>
+    /// <param name="powerDice">How many of the last faces are Power Dice.</param>
+    public async Task ShowRoll(string caption, DiceRoll roll, int bonus, bool newGroup, int powerDice = 0)
     {
         if (newGroup)
         {
@@ -56,9 +58,33 @@ public partial class DiceTray : Control
             _rows.RemoveAt(1);
         }
 
-        var row = new Row(caption, [.. roll.Faces], successFace);
+        var row = new Row(caption, [.. roll.Faces], bonus, roll.Faces.Count - powerDice);
         _rows.Add(row);
         await Tumble(row, Enumerable.Range(0, row.Faces.Length));
+    }
+
+    /// <summary>Rolls a Power Die into the first row (the attack or move being made).</summary>
+    public async Task AddPowerDie(int face)
+    {
+        if (_rows.Count == 0)
+        {
+            return;
+        }
+
+        Row old = _rows[0];
+        var row = new Row(old.Caption, [.. old.Faces, face], old.Bonus, old.PowerFrom) { Won = old.Won };
+        _rows[0] = row;
+        await Tumble(row, [row.Faces.Length - 1]);
+    }
+
+    /// <summary>Lights up the winner of the attack just resolved: the attack row on a hit, else the latest defense.</summary>
+    public void ShowOutcome(bool hit)
+    {
+        if (_rows.Count > 0)
+        {
+            _rows[hit ? 0 : ^1].Won = true;
+            QueueRedraw();
+        }
     }
 
     public async Task Reroll(int dieIndex, int newFace)
@@ -81,19 +107,21 @@ public partial class DiceTray : Control
             float top = r * RowHeight;
             DrawString(font, new Vector2(0, top + 8), row.Caption, fontSize: UiTheme.FontSize, modulate: Palette.TextDim);
 
-            if (row.Faces.Length == 0)
-            {
-                DrawString(font, new Vector2(0, top + 21), "no dice", fontSize: UiTheme.FontSize, modulate: Palette.TextDim);
-            }
-
             for (int i = 0; i < row.Faces.Length; i++)
             {
-                int face = row.Shown[i];
-                bool success = row.SuccessFace > 0 && !row.Rolling[i] && face >= row.SuccessFace;
                 float scale = 1 + 0.35f * row.Pop[i];
                 DrawSetTransform(DieRect(r, i).GetCenter() + row.Offset[i], row.Angle[i], new Vector2(scale, scale));
-                DrawDie(face, success, r == 0 && _rerollable);
+                DrawDie(row.Shown[i], row.Won, r == 0 && _rerollable, power: i >= row.PowerFrom);
                 DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+            }
+
+            if (!row.Rolling.Any(rolling => rolling))
+            {
+                float x = row.Faces.Length == 0 ? 0 : DieRect(r, row.Faces.Length - 1).End.X + 4;
+                string sum = (row.Faces.Length == 0 ? "no dice " : "")
+                    + (row.Bonus == 0 ? "" : row.Bonus > 0 ? $"+{row.Bonus} " : $"{row.Bonus} ")
+                    + $"= {row.Faces.Sum() + row.Bonus}";
+                DrawString(font, new Vector2(x, top + 21), sum, fontSize: UiTheme.FontSize, modulate: row.Won ? Palette.TrimBright : Palette.Text);
             }
         }
     }
@@ -162,7 +190,7 @@ public partial class DiceTray : Control
     }
 
     /// <summary>Draws a die centered on the current transform's origin.</summary>
-    private void DrawDie(int face, bool success, bool clickable)
+    private void DrawDie(int face, bool success, bool clickable, bool power)
     {
         var rect = new Rect2(-DieSize / 2, -DieSize / 2, DieSize, DieSize);
         if (success)
@@ -170,7 +198,7 @@ public partial class DiceTray : Control
             DrawRect(rect.Grow(2), Palette.TrimBright with { A = 0.35f });
         }
 
-        DrawRect(rect, success ? Palette.TrimBright : Palette.Text);
+        DrawRect(rect, power ? Palette.Power : success ? Palette.TrimBright : Palette.Text);
         DrawRect(new Rect2(rect.Position.X, rect.End.Y - 2, rect.Size.X, 2), success ? Palette.Trim : Palette.TextDim);
         DrawRect(rect, clickable ? Palette.Heal : Palette.Ink, filled: false, width: clickable ? 1.5f : 1);
         foreach (Vector2 pip in Pips[Math.Clamp(face, 0, 6)])
@@ -182,15 +210,21 @@ public partial class DiceTray : Control
     private static Rect2 DieRect(int row, int index) =>
         new(new Vector2(index * (DieSize + Gap) + 3, row * RowHeight + 11), new Vector2(DieSize, DieSize));
 
-    private sealed class Row(string caption, int[] faces, int successFace)
+    private sealed class Row(string caption, int[] faces, int bonus, int powerFrom)
     {
+        /// <summary>Faces from this index on are Power Dice.</summary>
+        public int PowerFrom { get; } = powerFrom;
+
         public string Caption { get; } = caption;
 
         public int[] Faces { get; } = faces;
 
         public int[] Shown { get; } = [.. faces];
 
-        public int SuccessFace { get; } = successFace;
+        public int Bonus { get; } = bonus;
+
+        /// <summary>This side won the attack; its dice glow.</summary>
+        public bool Won { get; set; }
 
         public bool[] Rolling { get; } = new bool[faces.Length];
 

@@ -64,16 +64,37 @@ public sealed partial class GameSession
 
     private string? Handle(RollMovement command, List<GameEvent> events)
     {
-        if (Turn.MovementRoll is not null)
+        int left = MoveDiceLeft;
+        if (left < 1)
         {
-            return "You've already rolled for movement this turn.";
+            return "You've used all your Move dice this turn.";
         }
 
-        Stats stats = ActiveHero.EffectiveStats;
-        DiceRoll roll = _dice.Roll(Math.Max(0, stats.MoveDice));
+        int dice = command.Dice ?? left;
+        if (dice < 1 || dice > left)
+        {
+            return $"Choose 1 to {left} Move dice.";
+        }
+
+        Hero hero = ActiveHero;
+        if (CheckBankedPowerDice(hero, command.PowerDice) is { } powerError)
+        {
+            return powerError;
+        }
+
+        int speed = SpeedBonusLeft;
+        int bonus = command.UseSpeed || speed < 0 ? speed : 0;
+        Turn.EndMove();
+        Turn.MoveDiceUsed += dice;
+        Turn.SpeedUsed |= bonus != 0;
+        SpendBankedPowerDice(hero, command.PowerDice, events);
+
+        DiceRoll roll = _dice.Roll(dice + command.PowerDice);
         Turn.MovementRoll = roll;
-        Turn.MovementPoints = MovementPointsFor(roll, stats);
-        events.Add(new MovementRolled(command.HeroId, roll, Turn.MovementPoints));
+        Turn.MovementBonus = bonus;
+        Turn.MovementPoints = Math.Max(0, roll.Total + bonus);
+        events.Add(new MovementRolled(command.HeroId, roll, bonus, Turn.MovementPoints, command.PowerDice));
+        EarnPowerDice(hero, Sixes(roll.Faces), events);
         return null;
     }
 
@@ -144,14 +165,9 @@ public sealed partial class GameSession
 
     private string? CheckCanMove(int cost)
     {
-        if (Turn.MovementLocked)
-        {
-            return "You moved and then acted, so your move is over.";
-        }
-
         if (Turn.MovementRoll is null)
         {
-            return "Roll for movement first.";
+            return MoveDiceLeft > 0 ? "Roll to move first." : "You've used all your Move dice this turn.";
         }
 
         return Turn.MovementPoints < cost ? "Not enough movement left." : null;
@@ -166,6 +182,4 @@ public sealed partial class GameSession
 
     private bool CanHeroStop(Room room, Hero hero, GridPosition position) =>
         !State.ActiveHeroesIn(room).Any(other => other != hero && other.Position == position);
-
-    private static int MovementPointsFor(DiceRoll roll, Stats stats) => Math.Max(0, roll.Total + stats.Speed);
 }

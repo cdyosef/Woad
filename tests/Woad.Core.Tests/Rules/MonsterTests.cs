@@ -36,7 +36,7 @@ public class MonsterTests
     }
 
     [Fact]
-    public void HeroesBlockOnFivesAndSixes()
+    public void HeroesBlockWhenTheirDefenseIsAtLeastAsHigh()
     {
         GameSession session = TestRun.Start("""
             .........
@@ -48,13 +48,13 @@ public class MonsterTests
             .........
             .........
             .........
-            """, new ScriptedDice(6, 5));
+            """, new ScriptedDice(5, 5));
         Hero hero = session.HeroInSeat();
 
         IReadOnlyList<GameEvent> events = session.EndRound();
 
         Assert.DoesNotContain(events, gameEvent => gameEvent is MonsterMoved);
-        Assert.Equal(1, events.SingleOf<DefenseRolled>().Blocks);
+        Assert.Equal(5, events.SingleOf<DefenseRolled>().Total);
         Assert.Equal(new Damaged(hero.Id, 0, 4), events.SingleOf<Damaged>());
     }
 
@@ -77,7 +77,8 @@ public class MonsterTests
         IReadOnlyList<GameEvent> events = session.EndRound();
 
         Assert.Equal([new GridPosition(4, 1), new GridPosition(4, 2)], events.SingleOf<MonsterMoved>().Path);
-        Assert.Equal(2, hero.Hearts);
+        Assert.Equal(10, events.SingleOf<AttackRolled>().Total);
+        Assert.Equal(3, hero.Hearts);
     }
 
     [Fact]
@@ -93,7 +94,7 @@ public class MonsterTests
             .........
             .........
             .........
-            """, new ScriptedDice(1, 1));
+            """, new ScriptedDice(1, 1, 1));
         Hero hero = session.HeroInSeat();
         Monster archer = session.OnlyMonster();
 
@@ -116,7 +117,7 @@ public class MonsterTests
             .........
             .........
             .........
-            """, new ScriptedDice(1, 1));
+            """, new ScriptedDice(1, 1, 1));
 
         IReadOnlyList<GameEvent> events = session.EndRound();
 
@@ -139,7 +140,7 @@ public class MonsterTests
             .........
             """;
 
-        GameSession flying = TestRun.Start(room.Replace('X', 'f'), new ScriptedDice(1));
+        GameSession flying = TestRun.Start(room.Replace('X', 'f'), new ScriptedDice(1, 1));
         Assert.Equal(
             [new GridPosition(4, 1), new GridPosition(4, 2), new GridPosition(4, 3)],
             flying.EndRound().SingleOf<MonsterMoved>().Path);
@@ -224,7 +225,7 @@ public class MonsterTests
                 .........
                 """), new Dictionary<Direction, string> { [Direction.West] = "A" }),
         ];
-        GameSession session = TestRun.Start(rooms, new ScriptedDice(1, 1));
+        GameSession session = TestRun.Start(rooms, new ScriptedDice(1, 1, 1));
         Hero hero = session.HeroInSeat();
 
         Assert.DoesNotContain(session.EndRound(), gameEvent => gameEvent is MonsterMoved);

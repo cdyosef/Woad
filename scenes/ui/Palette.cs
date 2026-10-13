@@ -24,6 +24,9 @@ public static class Palette
     public static readonly Color HeartEmpty = new("3a2a30");
     public static readonly Color Ink = new("15121d");
 
+    /// <summary>Power Dice, earned by rolling a 6.</summary>
+    public static readonly Color Power = new("b58cf0");
+
     public static readonly Color FloorLight = new("3f6b58");
     public static readonly Color FloorDark = new("375f4e");
     public static readonly Color Grout = new("2c4d40");

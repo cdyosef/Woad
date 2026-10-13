@@ -12,7 +12,7 @@ public sealed partial class GameSession
     /// <summary>Monsters the active hero could attack with their weapon right now.</summary>
     public IReadOnlyList<Monster> GetAttackableMonsters()
     {
-        if (State.Turn is not { PendingAttack: null, HasActed: false })
+        if (State.Turn is not { PendingAttack: null } || AttackDiceLeft < 1)
         {
             return [];
         }
@@ -24,9 +24,16 @@ public sealed partial class GameSession
 
     private string? Handle(AttackMonster command, List<GameEvent> events)
     {
-        if (CheckCanAct() is { } error)
+        int left = AttackDiceLeft;
+        if (left < 1)
         {
-            return error;
+            return "You've used all your Attack dice this turn.";
+        }
+
+        int dice = command.Dice ?? left;
+        if (dice < 1 || dice > left)
+        {
+            return $"Choose 1 to {left} Attack dice.";
         }
 
         Hero hero = ActiveHero;
@@ -41,8 +48,17 @@ public sealed partial class GameSession
             return "That monster is out of reach.";
         }
 
-        SpendAction();
-        RollHeroAttack(hero, hero.EffectiveStats.AttackDice, [monster.Id], DamageSource.Weapon, events);
+        if (CheckBankedPowerDice(hero, command.PowerDice) is { } powerError)
+        {
+            return powerError;
+        }
+
+        int bonus = command.UseWeapon ? WeaponBonusLeft : 0;
+        Turn.EndMove();
+        Turn.AttackDiceUsed += dice;
+        Turn.WeaponUsed |= bonus > 0;
+        SpendBankedPowerDice(hero, command.PowerDice, events);
+        RollHeroAttack(hero, dice, bonus, [monster.Id], DamageSource.Weapon, events, command.PowerDice);
         return null;
     }
 
@@ -68,7 +84,7 @@ public sealed partial class GameSession
 
         int[] faces = [.. roll.Faces];
         int oldFace = faces[command.DieIndex];
-        faces[command.DieIndex] = _dice.Roll(1).Faces[0];
+        faces[command.DieIndex] = RollOneDie();
         var rerolled = new DiceRoll(faces);
         hero.LuckRemaining--;
 
@@ -76,19 +92,16 @@ public sealed partial class GameSession
         {
             attack.Roll = rerolled;
             events.Add(new DieRerolled(hero.Id, command.DieIndex, oldFace, faces[command.DieIndex], rerolled, null));
-            if (hero.LuckRemaining == 0)
-            {
-                Turn.PendingAttack = null;
-                ResolveHeroAttack(attack, events);
-            }
         }
         else
         {
             Turn.MovementRoll = rerolled;
-            Turn.MovementPoints = MovementPointsFor(rerolled, hero.EffectiveStats);
+            Turn.MovementPoints = Math.Max(0, rerolled.Total + Turn.MovementBonus);
             events.Add(new DieRerolled(hero.Id, command.DieIndex, oldFace, faces[command.DieIndex], rerolled, Turn.MovementPoints));
         }
 
+        // A reroll that comes up 6 earns a Power Die; spending the last Luck resolves the attack.
+        EarnPowerDice(hero, faces[command.DieIndex] == GameRules.PowerDieFace ? 1 : 0, events);
         return null;
     }
 
@@ -107,51 +120,47 @@ public sealed partial class GameSession
     private static bool CanHeroAttack(Hero hero, Room room, Monster monster) =>
         Targeting.CanAttack(room.Layout, Targeting.HeroPattern(hero.AttackRange), hero.AttackRange, hero.Position, monster.Position);
 
-    private static int Hits(DiceRoll roll) => roll.CountSuccesses(GameRules.HitFace);
-
-    /// <summary>Rolls a hero's attack. With Luck left, it waits for rerolls or confirmation; otherwise it resolves now.</summary>
-    private void RollHeroAttack(Hero hero, int dice, IReadOnlyList<int> targetIds, DamageSource source, List<GameEvent> events)
+    /// <summary>
+    /// Rolls a hero's attack. It waits while there's something to decide: Luck rerolls (until
+    /// confirmed) or Power Dice earned by sixes. Otherwise it resolves now.
+    /// </summary>
+    /// <param name="bonus">The weapon's fixed value added to the roll, or 0.</param>
+    /// <param name="powerDice">Banked Power Dice rolled in with the dice (already taken from the bank).</param>
+    private void RollHeroAttack(Hero hero, int dice, int bonus, IReadOnlyList<int> targetIds, DamageSource source, List<GameEvent> events, int powerDice = 0)
     {
-        DiceRoll roll = _dice.Roll(Math.Max(0, dice));
-        events.Add(new AttackRolled(hero.Id, roll, Hits(roll), targetIds));
+        DiceRoll roll = _dice.Roll(Math.Max(0, dice) + powerDice);
+        events.Add(new AttackRolled(hero.Id, roll, bonus, roll.Total + bonus, targetIds, powerDice));
 
-        var attack = new PendingAttack(hero.Id, roll, targetIds, source);
-        if (hero.LuckRemaining > 0 && roll.Faces.Count > 0)
-        {
-            Turn.PendingAttack = attack;
-        }
-        else
-        {
-            ResolveHeroAttack(attack, events);
-        }
+        Turn.PendingAttack = new PendingAttack(hero.Id, roll, bonus, targetIds, source);
+        EarnPowerDice(hero, Sixes(roll.Faces), events);
     }
 
+    /// <summary>Each target defends against the attack's total separately.</summary>
     private void ResolveHeroAttack(PendingAttack attack, List<GameEvent> events)
     {
-        int hits = Hits(attack.Roll);
-        if (hits == 0)
-        {
-            return;
-        }
-
         Hero hero = State.GetHero(attack.AttackerId);
         Room room = State.RoomOf(hero);
         foreach (int targetId in attack.TargetIds)
         {
             if (room.FindMonster(targetId) is { } monster)
             {
-                DamageMonster(hero, room, monster, hits, attack.Source, events);
+                DamageMonster(hero, room, monster, attack.Total, attack.Source, events);
             }
         }
     }
 
-    private void DamageMonster(Hero attacker, Room room, Monster monster, int hits, DamageSource source, List<GameEvent> events)
-    {
-        DiceRoll defense = _dice.Roll(monster.Collapsed ? 0 : monster.Definition.DefenseDice);
-        int blocks = defense.CountSuccesses(GameRules.MonsterBlockFace);
-        events.Add(new DefenseRolled(monster.Id, defense, blocks));
+    /// <summary>An attack hits, for 1 heart, when its total beats the defense total; ties go to the defender.</summary>
+    private static int DamageFor(int attackTotal, int defenseTotal) =>
+        attackTotal > defenseTotal ? GameRules.DamagePerHit : 0;
 
-        int damage = Math.Max(0, hits - blocks);
+    private void DamageMonster(Hero attacker, Room room, Monster monster, int attackTotal, DamageSource source, List<GameEvent> events)
+    {
+        // A collapsed heap of bones has no defense at all.
+        bool collapsed = monster.Collapsed;
+        int armor = collapsed ? 0 : monster.Definition.Armor;
+        DiceRoll defense = RollDefense(monster.Id, monster.Power, collapsed ? 0 : monster.Definition.DefenseDice, armor, attackTotal, canSpend: !collapsed, events);
+
+        int damage = DamageFor(attackTotal, defense.Total + armor);
         monster.Hearts = Math.Max(0, monster.Hearts - damage);
         events.Add(new Damaged(monster.Id, damage, monster.Hearts));
 
@@ -234,29 +243,91 @@ public sealed partial class GameSession
         }
     }
 
-    private void MonsterAttack(Room room, Monster monster, IReadOnlyList<Hero> targets, List<GameEvent> events)
+    /// <summary>
+    /// A monster's turn of attacks on one hero: its Attack dice split into the attacks likeliest to
+    /// land the most hits (see <see cref="PlanAttacks"/>), its weapon value added to the first.
+    /// It stops once the hero is downed.
+    /// </summary>
+    private void MonsterAttacks(Room room, Monster monster, Hero target, List<GameEvent> events)
     {
-        DiceRoll roll = _dice.Roll(monster.Definition.AttackDice);
-        int hits = Hits(roll);
-        events.Add(new AttackRolled(monster.Id, roll, hits, targets.Select(hero => hero.Id).ToList()));
-        if (hits == 0)
+        MonsterDefinition definition = monster.Definition;
+        IReadOnlyList<int> attacks = PlanAttacks(definition, target.EffectiveStats);
+        for (int i = 0; i < attacks.Count && target.IsActive; i++)
+        {
+            RollMonsterAttack(room, monster, attacks[i], i == 0 ? definition.Weapon : 0, [target], events);
+        }
+    }
+
+    /// <summary>One attack roll that every target defends against separately (a sweep hits them all with the same roll).</summary>
+    private void RollMonsterAttack(Room room, Monster monster, int dice, int bonus, IReadOnlyList<Hero> targets, List<GameEvent> events)
+    {
+        if (dice < 1)
         {
             return;
         }
 
-        foreach (Hero hero in targets)
+        (DiceRoll roll, int powerDice) = RollMonsterDice(dice);
+        int total = roll.Total + bonus;
+        events.Add(new AttackRolled(monster.Id, roll, bonus, total, targets.Select(hero => hero.Id).ToList(), powerDice));
+        foreach (Hero hero in targets.Where(hero => hero.IsActive))
         {
-            DamageHero(room, hero, hits, events);
+            DamageHero(room, hero, total, events);
         }
     }
 
-    private void DamageHero(Room room, Hero hero, int hits, List<GameEvent> events)
+    /// <summary>
+    /// How a monster splits its Attack dice against a hero: the split with the most expected hits,
+    /// counting its weapon on the biggest attack. On a tie it keeps fewer, bigger attacks.
+    /// </summary>
+    internal static IReadOnlyList<int> PlanAttacks(MonsterDefinition monster, Stats target)
     {
-        DiceRoll defense = _dice.Roll(Math.Max(0, hero.EffectiveStats.DefenseDice));
-        int blocks = defense.CountSuccesses(GameRules.HeroBlockFace);
-        events.Add(new DefenseRolled(hero.Id, defense, blocks));
+        int defenseDice = Math.Max(0, target.DefenseDice);
+        int armor = Math.Max(0, target.Armor);
+        IReadOnlyList<int> best = [];
+        double bestHits = -1;
+        foreach (IReadOnlyList<int> split in Splits(monster.AttackDice, monster.AttackDice))
+        {
+            double hits = split.Select((dice, i) => DiceOdds.ChanceToBeat(dice, i == 0 ? monster.Weapon : 0, defenseDice, armor)).Sum();
+            if (hits > bestHits + 1e-9)
+            {
+                best = split;
+                bestHits = hits;
+            }
+        }
 
-        int damage = Math.Max(0, hits - blocks);
+        return best;
+    }
+
+    /// <summary>Ways to split <paramref name="dice"/> into attacks of at most <paramref name="largest"/> dice, biggest first, fewest attacks first.</summary>
+    private static IEnumerable<IReadOnlyList<int>> Splits(int dice, int largest)
+    {
+        if (dice < 1)
+        {
+            yield break;
+        }
+
+        for (int first = Math.Min(dice, largest); first >= 1; first--)
+        {
+            if (first == dice)
+            {
+                yield return [first];
+                continue;
+            }
+
+            foreach (IReadOnlyList<int> rest in Splits(dice - first, first))
+            {
+                yield return [first, .. rest];
+            }
+        }
+    }
+
+    private void DamageHero(Room room, Hero hero, int attackTotal, List<GameEvent> events)
+    {
+        Stats stats = hero.EffectiveStats;
+        int armor = Math.Max(0, stats.Armor);
+        DiceRoll defense = RollDefense(hero.Id, hero.Power, Math.Max(0, stats.DefenseDice), armor, attackTotal, canSpend: true, events);
+
+        int damage = DamageFor(attackTotal, defense.Total + armor);
         hero.Hearts = Math.Max(0, hero.Hearts - damage);
         events.Add(new Damaged(hero.Id, damage, hero.Hearts));
 

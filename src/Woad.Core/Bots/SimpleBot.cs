@@ -23,6 +23,12 @@ public static class SimpleBot
         TileKind standingOn = room.Layout[hero.Position];
         bool fighting = room.Monsters.Count > 0;
 
+        // Sixes: add the Power Die to an attack, bank the ones from moves.
+        if (turn.UnsettledPowerDice > 0)
+        {
+            return turn.PendingAttack is not null ? new AddPowerDie(hero.Id) : new BankPowerDie(hero.Id);
+        }
+
         if (turn.PendingAttack is not null)
         {
             return new ConfirmAttack(hero.Id);
@@ -38,7 +44,8 @@ public static class SimpleBot
             return new UseCard(hero.Id, bomb.Id, session.GetCardTargets(bomb.Id)[0]);
         }
 
-        if (!turn.HasActed && session.GetAttackableMonsters().FirstOrDefault() is { } target)
+        // One all-out attack: every Attack die left plus the weapon.
+        if (session.GetAttackableMonsters().FirstOrDefault() is { } target)
         {
             return new AttackMonster(hero.Id, target.Id);
         }
@@ -71,7 +78,7 @@ public static class SimpleBot
             return new Escape(hero.Id);
         }
 
-        bool canStep = !turn.MovementLocked && turn.MovementRoll is not null && turn.MovementPoints > 0;
+        bool canStep = turn.MovementPoints > 0;
         Direction? door = fighting ? null : NextDoor(state, room);
         if (door is { } side && hero.Position == side.DoorTile() && canStep && session.GetUsableDoors().Contains(side))
         {
@@ -83,7 +90,8 @@ public static class SimpleBot
             return new TakeStairs(hero.Id);
         }
 
-        if (turn.MovementRoll is null && !turn.MovementLocked)
+        // One move with every Move die left plus Speed.
+        if (turn.MovementRoll is null && session.MoveDiceLeft > 0)
         {
             return new RollMovement(hero.Id);
         }

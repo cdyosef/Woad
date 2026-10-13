@@ -18,10 +18,10 @@ cooperate to survive the dungeon but compete for treasure: the richest player to
 | Players | 1–4, local hot-seat, mouse only |
 | Play mode | Semi-co-op: no direct PvP damage; the escaped player with the most treasure wins |
 | Rooms | 9×9 grids; players may split up into different rooms |
-| Dice | d6 pools for movement, attack and defense; dice also resolve chance |
+| Dice | d6 pools for movement, attack and defense. Each Attack or Move die is an action of its own, or several can be rolled together for a stronger one. Every 6 earns a Power Die to add or bank |
 | Cards | Abilities and items (weapons, shields, armor, boots, spells, tools, bombs, potions, treasure); single-use or persistent; equipped into body slots |
 | Card source | Starter kit, then loot from chests and monsters drawn from the dungeon's loot deck |
-| Turn | Move + 1 action, in either order |
+| Turn | Spend your Attack and Move dice on attacks and moves, plus 1 other action and 1 free belt item, in any order |
 | Combat | On the room grid; an enemy phase follows each round of player turns |
 | Characters | Created before play: name, portrait, classless point-buy of dice stats |
 | Death | Roguelite: keep XP, level and the gear you brought in; lose what you found this run |
@@ -49,10 +49,12 @@ Stats are expressed directly as dice and points. Gear cards add to them.
 | Stat | Meaning | Base *(tunable)* | Point cost *(tunable)* |
 | --- | --- | --- | --- |
 | Hearts | Maximum HP | 4 | 1 per heart |
-| Move dice | d6 rolled for movement | 1 | Gear only (e.g. boots) |
-| Speed | Flat tiles added to the movement roll | 2 | 2 per point |
-| Attack | d6 rolled when attacking | 1 | 3 per die |
-| Defense | d6 rolled when attacked | 1 | 3 per die |
+| Move dice | d6 for moving each turn; each move uses one or more | 1 | Gear only (e.g. boots) |
+| Speed | Tiles added to one move per turn | 2 | 2 per point |
+| Attack | d6 for attacking each turn; each attack uses one or more | 1 | 3 per die |
+| Defense | d6 rolled, all of them, whenever you're attacked | 1 | 3 per die |
+| Weapon | Fixed value added to one attack per turn | 0 | Gear only (weapons) |
+| Armor | Fixed value added to every defense | 0 | Gear only (shields, armor) |
 | Luck | Rerolls of a single die, per floor | 0 | 2 per reroll |
 
 - **Creation:** name (1–16 letters, numbers, spaces, apostrophes or hyphens), portrait, and 6 points to
@@ -88,18 +90,21 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 
 | Type | Usage | Examples (placeholder names) |
 | --- | --- | --- |
-| Weapon | Persistent | Wooden Sword (+1 Attack), Knight's Sword (+2 Attack), Short Bow (ranged 4) |
-| Shield | Persistent | Buckler (+1 Defense), Tower Shield (+2 Defense, −1 Speed) |
-| Armor | Persistent | Leather Cap (+1 Heart), Chain Mail (+1 Defense) |
+| Weapon | Persistent | Wooden Sword (weapon 1), Knight's Sword (weapon 2), Short Bow (weapon 1, ranged 4) |
+| Shield | Persistent | Buckler (armor 2), Tower Shield (armor 3, −1 Speed) |
+| Armor | Persistent | Leather Cap (+1 Heart), Chain Mail (armor 1) |
 | Boots | Persistent | Dash Boots (+1 Move die) |
-| Spell | Charges or single-use | Flame Scroll (3 Attack dice at range 3), Frost Wand (2 charges: freeze for a round) |
+| Spell | Charges or single-use | Flame Scroll (a 3-dice attack at range 3), Frost Wand (2 charges: freeze for a round) |
 | Tool | Persistent | Boomerang (stun a monster within 4), Grapple Hook (pull yourself up to 4 tiles in a line; not built yet) |
-| Bomb | Single-use | Bomb (range 3, 2 Attack dice against every monster in a 3×3 area) |
+| Bomb | Single-use | Bomb (range 3, a 2-dice attack on every monster in a 3×3 area) |
 | Potion | Single-use | Health Potion (restore 3 hearts) |
 | Treasure | Kept for score | Coin Pouch (5g), Emerald (15g), Golden Idol (40g) |
 
 - **Starter kit** (new characters): Wooden Sword, Buckler, Health Potion.
-- **Equipping or swapping gear** takes your action.
+- **Equipping, belting or stowing gear** is free while no monsters are in your room, as often as you like.
+  In a fight, each one takes your action (and ends the move in progress).
+- **Greyed-out card buttons explain themselves:** hovering shows why, and clicking one writes the reason
+  in the message log.
 - **Using a belt item** doesn't take your action (once per turn). Using an item from the backpack takes your action.
 - **Only single-use cards** (potions, bombs, scrolls) go on the belt. Reusable cards with an effect (boomerang,
   wand) must be equipped to use.
@@ -119,22 +124,51 @@ every room that holds at least one player. Rooms with no players stay paused.
 **Player turn:**
 
 1. A turn banner shows the active player. The view jumps to their room.
-2. **Move** (optional): click Roll, then move up to Move dice + Speed tiles. Reachable tiles are
-   highlighted, and you click one to go there. Steps are orthogonal; walls and monsters block, allies don't.
-   Unused steps are lost.
-3. **Action** (optional, before or after moving, but not in the middle of a move): attack, use a card,
-   open a chest or pick up loot, or equip/swap gear.
-4. End turn.
+2. In any order:
+   - **Moves:** each move rolls one or more of your unused Move dice, plus your Speed on one move per
+     turn, for that many steps. Reachable tiles are highlighted, and you click one to go there. Steps are
+     orthogonal; walls and monsters block, allies don't. Doing anything else (attacking, acting or
+     starting another move) ends the move, and its unused steps are lost. A negative Speed always applies
+     to your first move.
+   - **Attacks:** each attack uses one or more of your unused Attack dice, plus your weapon's value on
+     one attack per turn (only alongside at least one die). See [Combat](#combat).
+   - **One other action:** use a card from your backpack or an equipped one, open a chest, pick up loot,
+     smash a pot, or (in a fight) equip, belt or stow gear. Outside a fight, gear changes are free.
+   - **One belt item**, free.
+3. End turn. Your dice come back next turn.
+
+On screen, the dice you have left this turn sit under **This turn**: Attack dice and your weapon, Move
+dice and your Speed. All of them start selected, so clicking a monster (or **Roll to move**) uses
+everything. Click dice to deselect some and split them across several attacks or moves.
 
 **Doors** sit at the middle tile of each room edge. Stepping through costs 1 step and places you at the
 facing door of the next room.
 
 ## Combat
 
-- The attacker rolls Attack dice; each **5–6** is a hit.
-- The defender rolls Defense dice. Each block cancels one hit: players block on **5–6** and monsters on
-  **6** *(tunable)*.
-- Each remaining hit removes 1 heart.
+- The attacker rolls the Attack dice they chose and adds them up, plus their weapon's value if they
+  used it.
+- The defender rolls all their Defense dice and adds their armor.
+- If the attack total is higher, the defender loses **1 heart**. Ties go to the defender.
+- Rolling dice together makes one attack more likely to land; splitting them gives more chances.
+- **Card attacks** (Flame Scroll, bomb) roll their own dice and don't use your Attack dice. A bomb's
+  single roll is compared with each monster's defense in the blast.
+
+### Power Dice
+
+- **Earning:** every **6** rolled earns a Power Die, on any roll by a hero or a monster: attacks,
+  moves and defense.
+- **Using one:** a Power Die is one more d6 rolled into a roll and added to it. If it also shows a 6,
+  it earns another.
+- **The bank:** each hero and monster can bank up to **3** *(tunable)*, kept until used (across turns
+  and floors). A 6 rolled with a full bank is rolled into that roll straight away instead.
+- **Your attacks and moves:** after a 6 you choose **Add Power Die** (roll it in now) or **Bank it**.
+  Nothing else can happen until you choose. Banked dice show in the dice pool's POWER row, unselected;
+  select them to roll them into your next attack or move.
+- **Defense:** sixes are banked automatically. While a defense is losing and the banked dice could still
+  make up the gap, they're rolled in one at a time to try to block.
+- **Monsters** roll the sixes on their attacks straight in, and bank and spend on defense like heroes.
+- A Luck reroll that comes up 6 earns a Power Die too.
 - **Melee** needs an orthogonally adjacent target. **Ranged** needs line of sight; walls block it.
 - **Line of sight** runs between tile centers. Only walls block it, not pits, chests or other figures, and
   grazing a wall's corner is allowed.
@@ -146,12 +180,17 @@ facing door of the next room.
 
 | Monster | Hearts | Move | Attack | Defense | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Slime | 1 | 2 | 1 | 1 | When defeated, splits into two Slimelings (1 heart, 0 defense, don't split) |
-| Bat | 1 | 4 | 1 | 0 | Flies over pits; moves erratically |
-| Spear Guard | 2 | 3 | 2 | 1 | Reach 2 in a straight line |
-| Archer Guard | 2 | 2 | 2 | 1 | Ranged 5; keeps its distance |
-| Skeleton | 2 | 3 | 2 | 1 | Rises again once unless finished by a bomb or spell |
-| **Boss: Iron Warden** | 10 | 3 | 3 | 2 | Every other turn, a flail sweep hits every tile within 2 |
+| Slime | 1 | 2 | 1d6 | 1d6 | When defeated, splits into two Slimelings (1 heart, 1d6 attack, no defense, don't split) |
+| Bat | 1 | 4 | 1d6 | none | Flies over pits; moves erratically |
+| Spear Guard | 2 | 3 | 1d6+1 | 1d6+1 | Reach 2 in a straight line |
+| Archer Guard | 2 | 2 | 1d6+1 | 1d6+1 | Ranged 5; keeps its distance |
+| Skeleton | 2 | 3 | 1d6+1 | 1d6+1 | Rises again once unless finished by a bomb or spell |
+| **Boss: Iron Warden** | 8 | 3 | 2d6+1 | 1d6+1 | Every other turn, a flail sweep: one roll with all its dice against every hero within 2 |
+
+Monsters follow the same dice rules; the +1s are weapon and armor values. Each turn a monster splits its
+Attack dice into whichever attacks are likeliest to land the most hits on its target (its weapon goes on
+the first), so a 2-dice monster makes two quick attacks against an unarmored hero but one big one against
+a well-armored hero.
 
 **Monster AI:** each monster heads for the closest tile it can attack from and stops as soon as it can
 attack. Among the heroes it can reach, it attacks the one with the fewest hearts. Ranged monsters back away
@@ -317,7 +356,8 @@ integration.
 These defaults were not covered in the kickoff questions:
 
 1. Movement and melee are **orthogonal only** (no diagonals).
-2. Base stats and point costs as in [Stats](#stats). Movement is 1d6 + 2 at the start, and boots add dice.
+2. Base stats and point costs as in [Stats](#stats). Movement is 1d6 + 2 at the start, and boots add dice. Starting heroes attack with 1d6 + 1 (Wooden Sword)
+   and defend with 1d6 + 2 (Buckler).
 3. The **belt** holds 2 consumables, and using one doesn't take your action.
 4. **No friendly fire at all**, including bombs.
 5. Downed players **sit out** the rest of the run. There is no revive in the MVP.

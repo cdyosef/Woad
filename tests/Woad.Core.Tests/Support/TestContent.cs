@@ -12,10 +12,10 @@ internal static class TestContent
 
     public const string CardsJson = """
         [
-          { "id": "sword", "name": "Sword", "type": "weapon", "slot": "mainHand", "modifiers": { "attackDice": 1 } },
-          { "id": "big_sword", "name": "Big Sword", "type": "weapon", "slot": "mainHand", "modifiers": { "attackDice": 2 } },
-          { "id": "bow", "name": "Bow", "type": "weapon", "slot": "mainHand", "twoHanded": true, "modifiers": { "attackDice": 1 }, "attackRange": 4 },
-          { "id": "shield", "name": "Shield", "type": "shield", "slot": "offHand", "modifiers": { "defenseDice": 1 } },
+          { "id": "sword", "name": "Sword", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 1 } },
+          { "id": "big_sword", "name": "Big Sword", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 2 } },
+          { "id": "bow", "name": "Bow", "type": "weapon", "slot": "mainHand", "twoHanded": true, "modifiers": { "weapon": 1 }, "attackRange": 4 },
+          { "id": "shield", "name": "Shield", "type": "shield", "slot": "offHand", "modifiers": { "armor": 1 } },
           { "id": "cap", "name": "Cap", "type": "armor", "slot": "head", "modifiers": { "hearts": 1 } },
           { "id": "boots", "name": "Boots", "type": "boots", "slot": "feet", "modifiers": { "moveDice": 1 } },
           { "id": "potion", "name": "Potion", "type": "potion", "usage": "singleUse", "effect": { "kind": "heal", "amount": 3 } },
@@ -41,7 +41,9 @@ internal static class TestContent
           { "id": "bat", "name": "Bat", "glyph": "b", "hearts": 1, "move": 4, "attackDice": 1, "defenseDice": 0, "flying": true, "erratic": true },
           { "id": "bones", "name": "Bones", "glyph": "k", "hearts": 2, "move": 2, "attackDice": 1, "defenseDice": 0, "reassembles": true },
           { "id": "boss", "name": "Boss", "glyph": "W", "hearts": 10, "move": 0, "attackDice": 1, "defenseDice": 0, "sweep": { "radius": 2, "every": 2 }, "stunImmune": true, "boss": true, "xp": 25 },
-          { "id": "hoarder", "name": "Hoarder", "glyph": "h", "hearts": 1, "move": 0, "attackDice": 0, "defenseDice": 0, "dropChance": 100, "drops": 2, "xp": 7 }
+          { "id": "hoarder", "name": "Hoarder", "glyph": "h", "hearts": 1, "move": 0, "attackDice": 0, "defenseDice": 0, "dropChance": 100, "drops": 2, "xp": 7 },
+          { "id": "knight", "name": "Knight", "glyph": "K", "hearts": 1, "move": 0, "attackDice": 0, "defenseDice": 1, "armor": 2 },
+          { "id": "duelist", "name": "Duelist", "glyph": "D", "hearts": 1, "move": 0, "attackDice": 2, "defenseDice": 0, "weapon": 2 }
         ]
         """;
 

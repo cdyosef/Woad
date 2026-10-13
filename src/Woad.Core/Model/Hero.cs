@@ -59,6 +59,8 @@ public sealed class Hero
 
     public int LuckRemaining { get; internal set; }
 
+    public PowerBank Power { get; } = new();
+
     public HeroStatus Status { get; internal set; }
 
     public string RoomId { get; internal set; }

@@ -34,7 +34,13 @@ public partial class GameScreen
         Room room = ShownRoom;
         if (room.MonsterAt(tile) is { } monster)
         {
-            Execute(new AttackMonster(hero.Id, monster.Id));
+            if (_session.AttackDiceLeft > 0 && SelectedAttackDice < 1)
+            {
+                Log("Select at least one Attack die.", Palette.TextDim);
+                return;
+            }
+
+            Execute(new AttackMonster(hero.Id, monster.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
         }
         else if (room.Layout[tile] == TileKind.Chest)
         {
@@ -48,9 +54,9 @@ public partial class GameScreen
         {
             UseOwnTile(hero, room);
         }
-        else if (turn.MovementRoll is null && !turn.MovementLocked)
+        else if (turn.MovementPoints == 0)
         {
-            Log("Roll to move first.", Palette.TextDim);
+            Log(_session.MoveDiceLeft > 0 ? "Roll to move first." : "No Move dice left this turn.", Palette.TextDim);
         }
         else
         {
@@ -107,6 +113,11 @@ public partial class GameScreen
             return "";
         }
 
+        if (turn.UnsettledPowerDice > 0)
+        {
+            return "You rolled a 6! Add a Power Die to this roll, or bank it for later.";
+        }
+
         if (turn.PendingAttack is not null)
         {
             return "Click a die to reroll it with Luck, or Confirm the attack.";
@@ -117,12 +128,14 @@ public partial class GameScreen
             return "Click an orange tile to aim. Right-click cancels.";
         }
 
-        if (turn.MovementRoll is null && !turn.MovementLocked)
+        if (turn.MovementPoints == 0)
         {
-            return "Roll to move, or act first: attack a red-outlined monster or use a card.";
+            return _session.MoveDiceLeft > 0 || _session.AttackDiceLeft > 0
+                ? "Click your dice to choose some, then Roll to move or click a red-outlined monster to attack."
+                : "Out of dice. Use your action or belt item, or end your turn.";
         }
 
-        return "Click a blue tile to move. Gold outlines can be clicked. End your turn when you're done.";
+        return "Click a blue tile to move. Doing anything else ends this move.";
     }
 
     private string DescribeTile(GridPosition tile)
@@ -131,13 +144,15 @@ public partial class GameScreen
         if (room.MonsterAt(tile) is { } monster)
         {
             MonsterDefinition definition = monster.Definition;
-            return $"{definition.Name}: {monster.Hearts}/{definition.Hearts} hearts, move {definition.Move}, " +
-                   $"attack {definition.AttackDice}, defense {definition.DefenseDice}{Traits(monster)}";
+            string power = monster.Power.Banked > 0 ? $", {PowerDiceText(monster.Power.Banked)} banked" : "";
+            return $"{definition.Name}: {monster.Hearts}/{definition.Hearts} hearts{power}, move {definition.Move}, " +
+                   $"attack {UiTheme.Dice(definition.AttackDice, definition.Weapon)}, defense {UiTheme.Dice(definition.DefenseDice, definition.Armor)}{Traits(monster)}";
         }
 
         if (_session.State.ActiveHeroesIn(room).FirstOrDefault(hero => hero.Position == tile) is { } standing)
         {
-            return $"{standing.Name}: {standing.Hearts}/{standing.MaxHearts} hearts";
+            string power = standing.Power.Banked > 0 ? $", {PowerDiceText(standing.Power.Banked)} banked" : "";
+            return $"{standing.Name}: {standing.Hearts}/{standing.MaxHearts} hearts{power}";
         }
 
         if (room.LootAt(tile) is { Count: > 0 } loot)
@@ -167,6 +182,8 @@ public partial class GameScreen
 
         return terrain;
     }
+
+    private static string PowerDiceText(int count) => $"{count} Power {(count == 1 ? "Die" : "Dice")}";
 
     private string DescribeDoor(Room room, Direction side)
     {

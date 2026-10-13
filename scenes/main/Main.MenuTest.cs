@@ -84,7 +84,7 @@ public partial class Main
             string[] names = [.. game.Session.State.Heroes.Select(hero => hero.Name)];
             Check(names.SequenceEqual(["Wren", "Morgan"]), "seat order follows the order characters were picked");
             var morgan = game.Session.State.Heroes[1];
-            Check(morgan.MaxHearts == 6 && morgan.EffectiveStats.AttackDice == 3, "the hero has the character's stats plus gear");
+            Check(morgan.MaxHearts == 6 && morgan.EffectiveStats.AttackDice == 2 && morgan.EffectiveStats.Weapon == 1, "the hero has the character's stats plus gear");
             Check(morgan.Portrait == "moss", "the hero has the chosen portrait");
             Check(Music.Current == "dungeon", "a run plays the dungeon music");
 

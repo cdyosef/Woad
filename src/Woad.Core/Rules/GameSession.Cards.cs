@@ -83,7 +83,7 @@ public sealed partial class GameSession
                 break;
 
             case CardEffectKind.Attack:
-                RollHeroAttack(hero, effect.Amount, targets.Select(monster => monster.Id).ToList(), SourceOf(card.Definition), events);
+                RollHeroAttack(hero, effect.Amount, 0, targets.Select(monster => monster.Id).ToList(), SourceOf(card.Definition), events);
                 break;
 
             case CardEffectKind.Stun:
@@ -97,36 +97,163 @@ public sealed partial class GameSession
         return null;
     }
 
-    private string? Handle(EquipCard command, List<GameEvent> events)
+    /// <summary>
+    /// Whether equipping, belting and stowing are free right now: they are while no monsters are in
+    /// the hero's room. In a fight each one takes the turn's action.
+    /// </summary>
+    public bool GearIsFree => State.Turn is not null && ActiveRoom.Monsters.Count == 0;
+
+    /// <summary>Why the active hero can't equip the card right now, or null if they can.</summary>
+    public string? CheckEquip(int cardId)
     {
-        Hero hero = ActiveHero;
-        if (hero.FindCard(command.CardId) is not var (card, location))
-        {
-            return "You don't have that card.";
-        }
-
-        if (card.Definition.Slot is null)
-        {
-            return $"The {card.Definition.Name} can't be equipped.";
-        }
-
-        if (location != CardLocation.Backpack)
-        {
-            return $"The {card.Definition.Name} is already equipped.";
-        }
-
-        if (CheckCanAct() is { } error)
+        if (CheckCardQuery(cardId, out CardInstance? card, out CardLocation location) is { } error)
         {
             return error;
         }
 
+        if (card!.Definition.Slot is null)
+        {
+            return $"The {card.Definition.Name} isn't worn or held, so it can't be equipped.";
+        }
+
+        if (location != CardLocation.Backpack)
+        {
+            return $"The {card.Definition.Name} is already {(location == CardLocation.Belt ? "on your belt" : "equipped")}.";
+        }
+
+        Hero hero = ActiveHero;
         IReadOnlyList<CardInstance> displaced = hero.CardsDisplacedBy(card.Definition);
         if (hero.Backpack.Count - 1 + displaced.Count > GameRules.BackpackCapacity)
         {
             return "There's no room in your backpack for what you'd take off.";
         }
 
-        SpendAction();
+        return CheckGearAction();
+    }
+
+    /// <summary>Why the active hero can't move the card to their belt right now, or null if they can.</summary>
+    public string? CheckBelt(int cardId)
+    {
+        if (CheckCardQuery(cardId, out CardInstance? card, out CardLocation location) is { } error)
+        {
+            return error;
+        }
+
+        if (card!.Definition.Usage != CardUsage.SingleUse)
+        {
+            return "Only single-use cards (potions, bombs, scrolls) go on your belt.";
+        }
+
+        if (location != CardLocation.Backpack)
+        {
+            return $"The {card.Definition.Name} is already on your belt.";
+        }
+
+        if (ActiveHero.Belt.Count >= GameRules.BeltCapacity)
+        {
+            return $"Your belt is full ({GameRules.BeltCapacity} cards). Stow one to make room.";
+        }
+
+        return CheckGearAction();
+    }
+
+    /// <summary>Why the active hero can't put the card in their backpack right now, or null if they can.</summary>
+    public string? CheckStow(int cardId)
+    {
+        if (CheckCardQuery(cardId, out CardInstance? card, out CardLocation location) is { } error)
+        {
+            return error;
+        }
+
+        if (location == CardLocation.Backpack)
+        {
+            return $"The {card!.Definition.Name} is already in your backpack.";
+        }
+
+        if (ActiveHero.Backpack.Count >= GameRules.BackpackCapacity)
+        {
+            return "Your backpack is full.";
+        }
+
+        return CheckGearAction();
+    }
+
+    /// <summary>Why the active hero can't use the card right now (including having nothing to aim at), or null if they can.</summary>
+    public string? CheckUse(int cardId)
+    {
+        if (CheckCardQuery(cardId, out CardInstance? card, out CardLocation location) is { } error)
+        {
+            return error;
+        }
+
+        if (CheckCardUsable(card!, location) is { } usable)
+        {
+            return usable;
+        }
+
+        if (GetCardTargets(cardId).Count > 0)
+        {
+            return null;
+        }
+
+        return card!.Definition.Effect!.Kind == CardEffectKind.Heal
+            ? "You're already at full hearts."
+            : "There's no monster in range and in sight.";
+    }
+
+    /// <summary>The card must be the active hero's, with no roll waiting on a decision.</summary>
+    private string? CheckCardQuery(int cardId, out CardInstance? card, out CardLocation location)
+    {
+        card = null;
+        location = default;
+        if (State.Turn is not { } turn)
+        {
+            return "It isn't anyone's turn.";
+        }
+
+        if (turn.UnsettledPowerDice > 0)
+        {
+            return "Add or bank your Power Die first.";
+        }
+
+        if (turn.PendingAttack is not null)
+        {
+            return "Finish the attack first.";
+        }
+
+        if (ActiveHero.FindCard(cardId) is not var (held, where))
+        {
+            return "You don't have that card.";
+        }
+
+        card = held;
+        location = where;
+        return null;
+    }
+
+    private string? CheckGearAction() =>
+        GearIsFree || !Turn.HasActed ? null : "Changing gear in a fight takes your action, which you've used.";
+
+    /// <summary>Gear changes are free outside a fight; in one they take the action (and end the move in progress).</summary>
+    private void SpendGearAction()
+    {
+        if (!GearIsFree)
+        {
+            SpendAction();
+        }
+    }
+
+    private string? Handle(EquipCard command, List<GameEvent> events)
+    {
+        if (CheckEquip(command.CardId) is { } error)
+        {
+            return error;
+        }
+
+        Hero hero = ActiveHero;
+        CardInstance card = hero.FindCard(command.CardId)!.Value.Card;
+        IReadOnlyList<CardInstance> displaced = hero.CardsDisplacedBy(card.Definition);
+        SpendGearAction();
         hero.Remove(card);
         foreach (CardInstance old in displaced)
         {
@@ -143,33 +270,14 @@ public sealed partial class GameSession
 
     private string? Handle(BeltCard command, List<GameEvent> events)
     {
-        Hero hero = ActiveHero;
-        if (hero.FindCard(command.CardId) is not var (card, location))
-        {
-            return "You don't have that card.";
-        }
-
-        if (card.Definition.Usage != CardUsage.SingleUse)
-        {
-            return "Only single-use cards fit on your belt.";
-        }
-
-        if (location != CardLocation.Backpack)
-        {
-            return $"The {card.Definition.Name} is already on your belt.";
-        }
-
-        if (hero.Belt.Count >= GameRules.BeltCapacity)
-        {
-            return "Your belt is full.";
-        }
-
-        if (CheckCanAct() is { } error)
+        if (CheckBelt(command.CardId) is { } error)
         {
             return error;
         }
 
-        SpendAction();
+        Hero hero = ActiveHero;
+        CardInstance card = hero.FindCard(command.CardId)!.Value.Card;
+        SpendGearAction();
         hero.Remove(card);
         hero.AddToBelt(card);
         events.Add(new CardBelted(hero.Id, card.Id));
@@ -178,28 +286,14 @@ public sealed partial class GameSession
 
     private string? Handle(StowCard command, List<GameEvent> events)
     {
-        Hero hero = ActiveHero;
-        if (hero.FindCard(command.CardId) is not var (card, location))
-        {
-            return "You don't have that card.";
-        }
-
-        if (location == CardLocation.Backpack)
-        {
-            return $"The {card.Definition.Name} is already in your backpack.";
-        }
-
-        if (hero.Backpack.Count >= GameRules.BackpackCapacity)
-        {
-            return "Your backpack is full.";
-        }
-
-        if (CheckCanAct() is { } error)
+        if (CheckStow(command.CardId) is { } error)
         {
             return error;
         }
 
-        SpendAction();
+        Hero hero = ActiveHero;
+        CardInstance card = hero.FindCard(command.CardId)!.Value.Card;
+        SpendGearAction();
         hero.Remove(card);
         hero.AddToBackpack(card);
         hero.ClampHearts();
@@ -354,7 +448,9 @@ public sealed partial class GameSession
         CardDefinition definition = card.Definition;
         if (definition.Effect is null)
         {
-            return $"The {definition.Name} can't be used.";
+            return definition.Type == CardType.Treasure
+                ? "Treasure isn't used: carry it out of the dungeon to win."
+                : $"The {definition.Name} has nothing to use; equip it for its bonus.";
         }
 
         if (definition.Usage != CardUsage.SingleUse && location != CardLocation.Equipped)
@@ -364,15 +460,15 @@ public sealed partial class GameSession
 
         if (definition.Usage == CardUsage.Charges && card.ChargesRemaining < 1)
         {
-            return $"The {definition.Name} has no charges left.";
+            return $"The {definition.Name} has no charges left. They refill on a new floor.";
         }
 
         if (location == CardLocation.Belt)
         {
-            return Turn.UsedBeltItem ? "You've already used a belt item this turn." : null;
+            return Turn.UsedBeltItem ? "You've already used your free belt item this turn." : null;
         }
 
-        return CheckCanAct();
+        return Turn.HasActed ? "Using a backpack card takes your action, which you've used." : null;
     }
 
     private string? CheckEffectTarget(Hero hero, Room room, CardEffect effect, GridPosition? target, out IReadOnlyList<Monster> targets)

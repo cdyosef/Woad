@@ -15,7 +15,26 @@ public sealed record TurnStarted(int HeroId) : GameEvent;
 
 public sealed record TurnEnded(int HeroId) : GameEvent;
 
-public sealed record MovementRolled(int HeroId, DiceRoll Roll, int MovementPoints) : GameEvent;
+/// <summary>
+/// A move began: the dice rolled, the Speed added (<paramref name="Bonus"/>) and the steps it gives.
+/// The last <paramref name="PowerDice"/> faces of the roll are Power Dice.
+/// </summary>
+public sealed record MovementRolled(int HeroId, DiceRoll Roll, int Bonus, int MovementPoints, int PowerDice = 0) : GameEvent;
+
+/// <summary>Sixes earned Power Dice the hero now chooses to add or bank (<paramref name="Unsettled"/> in all).</summary>
+public sealed record PowerDiceEarned(int HeroId, int Unsettled) : GameEvent;
+
+/// <summary>
+/// A Power Die was rolled into a hero's pending attack or move (by choice, or because their bank was
+/// full). <paramref name="Total"/> is the attack's new total, or the move's new steps.
+/// </summary>
+public sealed record PowerDieAdded(int HeroId, int Face, DiceRoll Roll, int Total) : GameEvent;
+
+/// <summary>Power Dice went into a hero's or monster's bank, which now holds <paramref name="Banked"/>.</summary>
+public sealed record PowerDiceBanked(int OwnerId, int Count, int Banked) : GameEvent;
+
+/// <summary>Banked Power Dice were rolled into an attack, move or defense; the bank now holds <paramref name="Banked"/>.</summary>
+public sealed record PowerDiceSpent(int OwnerId, int Count, int Banked) : GameEvent;
 
 /// <summary>A Luck reroll. <paramref name="MovementPoints"/> is the new total when it was a movement die.</summary>
 public sealed record DieRerolled(int HeroId, int DieIndex, int OldFace, int NewFace, DiceRoll Roll, int? MovementPoints) : GameEvent;
@@ -24,12 +43,21 @@ public sealed record HeroMoved(int HeroId, IReadOnlyList<GridPosition> Path, int
 
 public sealed record HeroEnteredRoom(int HeroId, string FromRoomId, string RoomId, GridPosition Position, bool FirstVisit) : GameEvent;
 
-/// <summary>Attack dice were rolled by a hero or monster against one or more targets.</summary>
-public sealed record AttackRolled(int AttackerId, DiceRoll Roll, int Hits, IReadOnlyList<int> TargetIds) : GameEvent;
+/// <summary>
+/// A hero or monster rolled an attack against one or more targets. <paramref name="Bonus"/> is the
+/// weapon's fixed value, and <paramref name="Total"/> the roll plus it. The last
+/// <paramref name="PowerDice"/> faces of the roll are Power Dice (banked ones spent, or a monster's sixes).
+/// </summary>
+public sealed record AttackRolled(int AttackerId, DiceRoll Roll, int Bonus, int Total, IReadOnlyList<int> TargetIds, int PowerDice = 0) : GameEvent;
 
-public sealed record DefenseRolled(int DefenderId, DiceRoll Roll, int Blocks) : GameEvent;
+/// <summary>
+/// A target answered an attack: its defense dice plus its armor make <paramref name="Total"/>. The
+/// last <paramref name="PowerDice"/> faces are Power Dice it added (sixes with a full bank, or banked
+/// dice spent to block).
+/// </summary>
+public sealed record DefenseRolled(int DefenderId, DiceRoll Roll, int Armor, int Total, int PowerDice = 0) : GameEvent;
 
-/// <summary>Hits that got past defense. <paramref name="Amount"/> is 0 when everything was blocked.</summary>
+/// <summary>An attack's result: 1 heart when its total beat the defense, otherwise 0 (blocked).</summary>
 public sealed record Damaged(int TargetId, int Amount, int HeartsLeft) : GameEvent;
 
 public sealed record MonsterDefeated(int MonsterId, int? KillerHeroId) : GameEvent;

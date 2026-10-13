@@ -152,7 +152,7 @@ public class FloorTests
             .........
             .........
             .........
-            """, new ScriptedDice(6, 1));
+            """, new ScriptedDice(5, 1));
         Hero hero = session.HeroInSeat();
         hero.Hearts = 2;
 
@@ -180,7 +180,7 @@ public class FloorTests
                 """), new Dictionary<Direction, string> { [Direction.East] = "next" }, Trap: true),
             new("next", TestRun.Room(Empty), new Dictionary<Direction, string> { [Direction.West] = "trap" }),
         ];
-        GameSession session = TestRun.Start(rooms, new ScriptedDice(3, 6, 1));
+        GameSession session = TestRun.Start(rooms, new ScriptedDice(3, 5, 1));
         Hero hero = session.HeroInSeat();
         session.Do(new RollMovement(hero.Id));
         session.Do(new MoveHero(hero.Id, Direction.East.DoorTile()));

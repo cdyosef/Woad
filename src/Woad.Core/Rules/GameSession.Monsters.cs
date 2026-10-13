@@ -64,7 +64,8 @@ public sealed partial class GameSession
             List<Hero> swept = heroes.Where(hero => hero.Position.ChebyshevDistanceTo(monster.Position) <= sweep.Radius).ToList();
             if (swept.Count > 0)
             {
-                MonsterAttack(room, monster, swept, events);
+                // One swing with every Attack die, which each hero in reach defends against.
+                RollMonsterAttack(room, monster, definition.AttackDice, definition.Weapon, swept, events);
                 return;
             }
         }
@@ -79,7 +80,7 @@ public sealed partial class GameSession
 
         if (ChooseTarget(room, monster, monster.Position, heroes) is { } target)
         {
-            MonsterAttack(room, monster, [target], events);
+            MonsterAttacks(room, monster, target, events);
         }
     }
 

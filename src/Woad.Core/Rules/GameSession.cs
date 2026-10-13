@@ -34,6 +34,18 @@ public sealed partial class GameSession
 
     public GameState State { get; }
 
+    /// <summary>Attack dice the active hero hasn't used this turn.</summary>
+    public int AttackDiceLeft => State.Turn is { } turn ? Math.Max(0, ActiveHero.EffectiveStats.AttackDice - turn.AttackDiceUsed) : 0;
+
+    /// <summary>Move dice the active hero hasn't used this turn.</summary>
+    public int MoveDiceLeft => State.Turn is { } turn ? Math.Max(0, ActiveHero.EffectiveStats.MoveDice - turn.MoveDiceUsed) : 0;
+
+    /// <summary>The weapon value the active hero can still add to an attack this turn (0 once used).</summary>
+    public int WeaponBonusLeft => State.Turn is { WeaponUsed: false } ? Math.Max(0, ActiveHero.EffectiveStats.Weapon) : 0;
+
+    /// <summary>The Speed the active hero can still add to a move this turn (0 once used; may be negative).</summary>
+    public int SpeedBonusLeft => State.Turn is { SpeedUsed: false } ? ActiveHero.EffectiveStats.Speed : 0;
+
     private Hero ActiveHero => State.ActiveHero!;
 
     private TurnState Turn => State.Turn!;
@@ -72,6 +84,8 @@ public sealed partial class GameSession
             AttackMonster c => Handle(c, events),
             RerollDie c => Handle(c, events),
             ConfirmAttack c => Handle(c, events),
+            AddPowerDie c => Handle(c, events),
+            BankPowerDie c => Handle(c, events),
             UseCard c => Handle(c, events),
             EquipCard c => Handle(c, events),
             BeltCard c => Handle(c, events),
@@ -101,7 +115,12 @@ public sealed partial class GameSession
             return "It isn't that hero's turn.";
         }
 
-        if (Turn.PendingAttack is not null && command is not (RerollDie or ConfirmAttack))
+        if (Turn.UnsettledPowerDice > 0 && command is not (AddPowerDie or BankPowerDie or RerollDie))
+        {
+            return "You rolled a 6: add your Power Die to the roll or bank it first.";
+        }
+
+        if (Turn.PendingAttack is not null && command is not (RerollDie or ConfirmAttack or AddPowerDie or BankPowerDie))
         {
             return "Finish the attack first: reroll a die with Luck or confirm it.";
         }
@@ -172,15 +191,11 @@ public sealed partial class GameSession
 
     private string? CheckCanAct() => Turn.HasActed ? "You've already used your action this turn." : null;
 
-    /// <summary>Marks the action as used. Acting after moving ends the move; unused steps are lost.</summary>
+    /// <summary>Marks the turn's other action as used. Acting ends the move in progress; unused steps are lost.</summary>
     private void SpendAction()
     {
         Turn.HasActed = true;
-        if (Turn.HasMoved)
-        {
-            Turn.MovementLocked = true;
-            Turn.MovementPoints = 0;
-        }
+        Turn.EndMove();
     }
 
     private bool IsOccupied(Room room, GridPosition position) => IsOccupied(State, room, position);

@@ -14,23 +14,27 @@ public enum CardAction
     Drop,
 }
 
-/// <summary>Which card buttons make sense right now. The rules engine still has the final say.</summary>
-public sealed record CardActions(bool Use, bool Equip, bool Belt, bool Stow, bool Drop)
+/// <summary>
+/// What each card button would do right now: <see cref="Blocked"/> holds why an action can't be
+/// taken (from the rules engine's own checks), and <see cref="Hints"/> what an allowed one costs.
+/// </summary>
+public sealed record CardActions(IReadOnlyDictionary<CardAction, string> Blocked, IReadOnlyDictionary<CardAction, string> Hints)
 {
-    public static CardActions None { get; } = new(false, false, false, false, false);
+    public static CardActions None { get; } = Unavailable("Select a card first.");
 
-    public bool Allows(CardAction action) => action switch
-    {
-        CardAction.Use => Use,
-        CardAction.Equip => Equip,
-        CardAction.Belt => Belt,
-        CardAction.Stow => Stow,
-        CardAction.Drop => Drop,
-        _ => false,
-    };
+    public static CardActions Unavailable(string reason) =>
+        new(Enum.GetValues<CardAction>().ToDictionary(action => action, _ => reason), new Dictionary<CardAction, string>());
+
+    public bool Allows(CardAction action) => !Blocked.ContainsKey(action);
+
+    public string Explain(CardAction action) =>
+        Blocked.TryGetValue(action, out string? reason) ? reason : Hints.GetValueOrDefault(action, "");
 }
 
-/// <summary>Top of the right panel: belt, backpack, the selected card's text and what you can do with it.</summary>
+/// <summary>
+/// Top of the right panel: belt, backpack, the selected card's text and what you can do with it.
+/// Greyed-out buttons explain themselves on hover, and clicking one reports why it's unavailable.
+/// </summary>
 public partial class InventoryPanel : Control
 {
     private readonly CardSlot[] _belt = new CardSlot[GameRules.BeltCapacity];
@@ -41,6 +45,9 @@ public partial class InventoryPanel : Control
     public event Action<int>? CardSelected;
 
     public event Action<CardAction>? ActionRequested;
+
+    /// <summary>A greyed-out button was clicked; the game says why it's unavailable.</summary>
+    public event Action<CardAction>? BlockedActionClicked;
 
     public override void _Ready()
     {
@@ -68,6 +75,13 @@ public partial class InventoryPanel : Control
             CardAction action = actions[i];
             Button button = UiTheme.Button(new(8 + i * 32, 147), new(30, 16), action.ToString());
             button.Pressed += () => ActionRequested?.Invoke(action);
+            button.GuiInput += input =>
+            {
+                if (button.Disabled && input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left })
+                {
+                    BlockedActionClicked?.Invoke(action);
+                }
+            };
             AddChild(button);
             _actions[action] = button;
         }
@@ -101,6 +115,7 @@ public partial class InventoryPanel : Control
         foreach ((CardAction action, Button button) in _actions)
         {
             button.Disabled = !actions.Allows(action);
+            button.TooltipText = actions.Explain(action);
         }
     }
 

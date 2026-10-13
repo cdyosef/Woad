@@ -8,8 +8,12 @@ namespace Woad.Core.Commands;
 /// </summary>
 public abstract record GameCommand(int HeroId);
 
-/// <summary>Roll Move dice; the total plus Speed is this turn's movement.</summary>
-public sealed record RollMovement(int HeroId) : GameCommand(HeroId);
+/// <summary>
+/// Start a move: roll <paramref name="Dice"/> of this turn's unused Move dice (null for all of them),
+/// plus Speed if <paramref name="UseSpeed"/> and it isn't used yet this turn. The total is the
+/// move's steps. Starting a move ends the previous one. A negative Speed always applies to the first move.
+/// </summary>
+public sealed record RollMovement(int HeroId, int? Dice = null, bool UseSpeed = true, int PowerDice = 0) : GameCommand(HeroId);
 
 /// <summary>Walk to a reachable tile in the current room, spending one movement point per step.</summary>
 public sealed record MoveHero(int HeroId, GridPosition Destination) : GameCommand(HeroId);
@@ -17,10 +21,21 @@ public sealed record MoveHero(int HeroId, GridPosition Destination) : GameComman
 /// <summary>Step through the door on the given side (costs 1 movement); you must be standing in the doorway.</summary>
 public sealed record GoThroughDoor(int HeroId, Direction Door) : GameCommand(HeroId);
 
-/// <summary>Attack with the main-hand weapon (or bare hands). Uses the turn's action.</summary>
-public sealed record AttackMonster(int HeroId, int MonsterId) : GameCommand(HeroId);
+/// <summary>
+/// Attack with <paramref name="Dice"/> of this turn's unused Attack dice (null for all of them),
+/// plus the weapon's value if <paramref name="UseWeapon"/> and it isn't used yet this turn. The
+/// total must beat the monster's armor plus its defense roll. Ends the move in progress.
+/// <paramref name="PowerDice"/> banked Power Dice are rolled in too (RollMovement takes them the same way).
+/// </summary>
+public sealed record AttackMonster(int HeroId, int MonsterId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0) : GameCommand(HeroId);
 
-/// <summary>Spend 1 Luck to reroll one die of the pending attack, or of the movement roll before any steps.</summary>
+/// <summary>Roll a Power Die just earned (by a 6) into the pending attack or the move in progress.</summary>
+public sealed record AddPowerDie(int HeroId) : GameCommand(HeroId);
+
+/// <summary>Bank a Power Die just earned (by a 6) for a later roll, if the bank has room.</summary>
+public sealed record BankPowerDie(int HeroId) : GameCommand(HeroId);
+
+/// <summary>Spend 1 Luck to reroll one die of the pending attack, or of the move in progress before any steps.</summary>
 public sealed record RerollDie(int HeroId, int DieIndex) : GameCommand(HeroId);
 
 /// <summary>Accept the pending attack roll and resolve it.</summary>
