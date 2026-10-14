@@ -116,9 +116,9 @@ public static class SimpleBot
         }
 
         GridPosition? goal = fighting ? BesideNearestMonster(room, hero)
-            : Nearest(room, hero, lootTiles)
-              ?? Nearest(room, hero, OpenableChests(room, hero).SelectMany(tile => tile.OrthogonalNeighbors()))
-              ?? Nearest(room, hero, room.TilesOfKind(TileKind.Pot).SelectMany(tile => tile.OrthogonalNeighbors()))
+            : Nearest(state, room, hero, lootTiles)
+              ?? Nearest(state, room, hero, OpenableChests(room, hero).SelectMany(tile => tile.OrthogonalNeighbors()))
+              ?? Nearest(state, room, hero, room.TilesOfKind(TileKind.Pot).SelectMany(tile => tile.OrthogonalNeighbors()))
               ?? (door is { } exitSide ? exitSide.DoorTile() : WayOut(room));
 
         if (goal is { } tile && StepAlongPath(session, hero, room, tile) is { } destination)
@@ -126,9 +126,9 @@ public static class SimpleBot
             return new MoveHero(hero.Id, destination);
         }
 
-        // Nowhere to go (say, a teammate holds the Boss Key): at least keep out of the doorway.
+        // Not using this doorway (say, a teammate holds the Boss Key): at least keep out of it.
         bool InDoorway(GridPosition at) => room.Doors.Keys.Any(side => side.DoorTile() == at);
-        if (!fighting && goal is null && InDoorway(hero.Position)
+        if (!fighting && door?.DoorTile() != hero.Position && InDoorway(hero.Position)
             && StepToward(session, hero, at => InDoorway(at) ? 1 : 0) is { } aside)
         {
             return new MoveHero(hero.Id, aside);
@@ -209,12 +209,16 @@ public static class SimpleBot
             .Select(tile => (GridPosition?)tile)
             .FirstOrDefault();
 
-    /// <summary>The closest of the given tiles the hero could walk to (ignoring this turn's movement), if any.</summary>
-    private static GridPosition? Nearest(Room room, Hero hero, IEnumerable<GridPosition> tiles)
+    /// <summary>
+    /// The closest of the given tiles the hero could walk to (ignoring this turn's movement), if any.
+    /// Tiles a teammate stands on are skipped: the hero couldn't stop there.
+    /// </summary>
+    private static GridPosition? Nearest(GameState state, Room room, Hero hero, IEnumerable<GridPosition> tiles)
     {
         PathSearch search = PathSearch.Run(hero.Position, tile => Walkable(room, tile));
         return tiles
             .Where(tile => tile != hero.Position && search.CanReach(tile))
+            .Where(tile => !state.ActiveHeroesIn(room).Any(other => other.Position == tile))
             .OrderBy(tile => search.Distances[tile])
             .ThenBy(tile => tile.Y)
             .ThenBy(tile => tile.X)

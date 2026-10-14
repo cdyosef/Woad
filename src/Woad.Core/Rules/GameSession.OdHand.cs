@@ -225,7 +225,6 @@ public sealed partial class GameSession
     {
         Hero hero = ActiveHero;
         int bonus = command.UseTools ? ToolsBonusLeft : 0;
-        Turn.EndMove();
         Turn.OdHandDiceUsed += dice;
         Turn.ToolsUsed |= bonus > 0;
         SpendBankedPowerDice(hero, command.PowerDice, events);

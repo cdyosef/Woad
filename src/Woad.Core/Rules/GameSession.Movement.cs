@@ -86,15 +86,17 @@ public sealed partial class GameSession
 
         int speed = SpeedBonusLeft;
         int bonus = command.UseSpeed || speed < 0 ? speed : 0;
-        Turn.EndMove();
         Turn.MoveDiceUsed += dice;
         Turn.SpeedUsed |= bonus != 0;
         SpendBankedPowerDice(hero, command.PowerDice, events);
 
+        // Steps left from an earlier move carry over into this one.
         DiceRoll roll = _dice.Roll(dice + command.PowerDice);
+        Turn.CarriedSteps = Turn.MovementPoints;
         Turn.MovementRoll = roll;
         Turn.MovementBonus = bonus;
-        Turn.MovementPoints = Math.Max(0, roll.Total + bonus);
+        Turn.HasMoved = false;
+        Turn.CountSteps();
         events.Add(new MovementRolled(command.HeroId, roll, bonus, Turn.MovementPoints, command.PowerDice));
         EarnPowerDice(hero, Sixes(roll.Faces), events);
         return null;

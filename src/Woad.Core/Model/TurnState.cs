@@ -107,8 +107,11 @@ public sealed class TurnState
     /// <summary>Speed added to the move in progress.</summary>
     public int MovementBonus { get; internal set; }
 
-    /// <summary>Steps left in the move in progress.</summary>
+    /// <summary>Steps left this turn: the move in progress plus any carried over from earlier moves.</summary>
     public int MovementPoints { get; internal set; }
+
+    /// <summary>Steps left over from earlier moves this turn when the move in progress was rolled.</summary>
+    public int CarriedSteps { get; internal set; }
 
     /// <summary>At least one step has been taken in the move in progress (its dice can't be rerolled now).</summary>
     public bool HasMoved { get; internal set; }
@@ -127,12 +130,16 @@ public sealed class TurnState
     /// </summary>
     public int UnsettledPowerDice { get; internal set; }
 
-    /// <summary>Ends the move in progress; its unused steps are lost.</summary>
+    /// <summary>Sets the steps from the move's roll (after a reroll or an added Power Die), plus the carried-over steps.</summary>
+    internal void CountSteps() => MovementPoints = CarriedSteps + Math.Max(0, MovementRoll!.Total + MovementBonus);
+
+    /// <summary>Ends movement for the turn so far (a sprung trap or a fall); every unused step is lost.</summary>
     internal void EndMove()
     {
         MovementRoll = null;
         MovementBonus = 0;
         MovementPoints = 0;
+        CarriedSteps = 0;
         HasMoved = false;
     }
 }

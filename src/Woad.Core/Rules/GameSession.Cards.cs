@@ -243,7 +243,7 @@ public sealed partial class GameSession
     private string? CheckGearAction() =>
         GearIsFree || !Turn.HasActed ? null : "Changing gear in a fight takes your action, which you've used.";
 
-    /// <summary>Gear changes are free outside a fight; in one they take the action (and end the move in progress).</summary>
+    /// <summary>Gear changes are free outside a fight; in one they take the action.</summary>
     private void SpendGearAction()
     {
         if (!GearIsFree)

@@ -5,7 +5,13 @@ namespace Woad.Core.Rules;
 /// <summary>Tunable rule numbers. See docs/MVP-Design.md.</summary>
 public static class GameRules
 {
-    public const int MaxHeroes = 4;
+    public const int MaxHeroes = 8;
+
+    /// <summary>Rooms are built for up to this many heroes; bigger parties make every monster tougher.</summary>
+    public const int FullParty = 4;
+
+    /// <summary>Extra hearts a boss gets in a party bigger than <see cref="FullParty"/>: 3 for each hero beyond it.</summary>
+    public static int ExtraMonsterHearts(int partySize, bool boss) => boss ? 3 * Math.Max(0, partySize - FullParty) : 0;
 
     /// <summary>Hearts an attack takes when its total beats the defense total (ties go to the defender).</summary>
     public const int DamagePerHit = 1;

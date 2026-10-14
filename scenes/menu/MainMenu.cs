@@ -35,7 +35,7 @@ public partial class MainMenu : MenuScreen
         Button quit = Add(UiTheme.Button(new Vector2(240, 266), new Vector2(160, 26), "Quit"));
         quit.Pressed += () => Sfx.QuitGame(this);
 
-        Label footer = Add(UiTheme.Label(new Vector2(0, 326), new Vector2(Width, 12), "Early build: The Emerald Keep, local hot-seat for 1-4 players", color: Palette.TextDim));
+        Label footer = Add(UiTheme.Label(new Vector2(0, 326), new Vector2(Width, 12), "Early build: The Emerald Keep, local hot-seat for 1-8 players", color: Palette.TextDim));
         footer.HorizontalAlignment = HorizontalAlignment.Center;
     }
 }

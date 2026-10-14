@@ -15,6 +15,8 @@ public partial class ResultsScreen : MenuScreen
 {
     private const float RowHeight = 64;
 
+    private Control _rows = null!;
+
     public IReadOnlyList<ResultRow> Rows { get; init; } = [];
 
     public ContentCatalog Content { get; init; } = null!;
@@ -41,9 +43,18 @@ public partial class ResultsScreen : MenuScreen
         Add(UiTheme.Label(new Vector2(380, 20), new Vector2(236, 14), note, color: SaveProblem is null ? Palette.TextDim : Palette.Danger))
             .HorizontalAlignment = HorizontalAlignment.Right;
 
+        // Four rows fit; a bigger party scrolls.
+        var scroll = Add(new ScrollContainer
+        {
+            Position = new Vector2(20, 44),
+            Size = new Vector2(612, 4 * RowHeight - 2),
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+        });
+        _rows = new Control { CustomMinimumSize = new Vector2(600, Rows.Count * RowHeight - 6), MouseFilter = MouseFilterEnum.Pass };
+        scroll.AddChild(_rows);
         for (int i = 0; i < Rows.Count; i++)
         {
-            AddRow(Rows[i], 44 + i * RowHeight);
+            AddRow(Rows[i], i * RowHeight);
         }
 
         PlayAgainButton = Add(UiTheme.Button(new Vector2(408, 316), new Vector2(102, 26), "Play again"));
@@ -55,17 +66,17 @@ public partial class ResultsScreen : MenuScreen
     private void AddRow(ResultRow row, float top)
     {
         HeroRunResult result = row.Result;
-        Add(new Panel { Position = new Vector2(20, top), Size = new Vector2(600, RowHeight - 6), MouseFilter = MouseFilterEnum.Ignore });
-        Add(new PortraitView { Position = new Vector2(30, top + 9), Size = new Vector2(30, 36) }).PortraitId = result.Portrait;
+        Put(new Panel { Position = new Vector2(0, top), Size = new Vector2(600, RowHeight - 6), MouseFilter = MouseFilterEnum.Ignore });
+        Put(new PortraitView { Position = new Vector2(10, top + 9), Size = new Vector2(30, 36) }).PortraitId = result.Portrait;
 
-        Add(UiTheme.Label(new Vector2(70, top + 5), new Vector2(200, 18), result.Name, 14, Palette.Seat(result.Seat)));
+        Put(UiTheme.Label(new Vector2(50, top + 5), new Vector2(200, 18), result.Name, 14, Palette.Seat(result.Seat)));
         string outcome = result.Status switch
         {
             HeroStatus.Escaped => $"Escaped with {result.Gold} gold",
             HeroStatus.Downed => $"Downed on floor {result.DeepestFloor}",
             _ => "Left the run",
         };
-        Add(UiTheme.Label(new Vector2(70, top + 24), new Vector2(240, 12),
+        Put(UiTheme.Label(new Vector2(50, top + 24), new Vector2(240, 12),
             $"{outcome}   {UiTheme.Count(result.Kills, "kill", "kills")}", color: result.Status == HeroStatus.Escaped ? Palette.Heal : Palette.Danger));
 
         string growth = $"+{result.Xp} XP";
@@ -76,13 +87,20 @@ public partial class ResultsScreen : MenuScreen
                 : $"   Level {character.Level}, {character.Xp}/{Progression.XpForLevel(character.Level + 1)} XP";
         }
 
-        Add(UiTheme.Label(new Vector2(70, top + 38), new Vector2(240, 12), growth, color: Palette.TrimBright));
+        Put(UiTheme.Label(new Vector2(50, top + 38), new Vector2(240, 12), growth, color: Palette.TrimBright));
 
         if (row.Reward is { } reward)
         {
             string gear = $"Found: {Names(reward.CardsGained)}\nLost: {Names(reward.CardsLost)}";
-            Add(UiTheme.Label(new Vector2(320, top + 8), new Vector2(292, 44), gear));
+            Put(UiTheme.Label(new Vector2(300, top + 8), new Vector2(292, 44), gear));
         }
+    }
+
+    /// <summary>Adds a control to the scrolling list of rows.</summary>
+    private T Put<T>(T control) where T : Control
+    {
+        _rows.AddChild(control);
+        return control;
     }
 
     private string Names(IReadOnlyList<string> cardIds) =>

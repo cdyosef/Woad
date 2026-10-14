@@ -5,12 +5,13 @@ namespace Woad.Core.Model;
 
 public sealed class Monster
 {
-    internal Monster(int id, MonsterDefinition definition, GridPosition position)
+    /// <param name="extraHearts">Hearts on top of the definition's, for a big party (see <see cref="Rules.GameRules.ExtraMonsterHearts"/>).</param>
+    internal Monster(int id, MonsterDefinition definition, GridPosition position, int extraHearts = 0)
     {
         Id = id;
         Definition = definition;
         Position = position;
-        Hearts = definition.Hearts;
+        MaxHearts = Hearts = definition.Hearts + extraHearts;
     }
 
     public int Id { get; }
@@ -20,6 +21,9 @@ public sealed class Monster
     public GridPosition Position { get; internal set; }
 
     public int Hearts { get; internal set; }
+
+    /// <summary>Starting hearts: the definition's, plus more in a big party.</summary>
+    public int MaxHearts { get; }
 
     /// <summary>Power Dice banked from sixes on defense rolls, spent to save itself from hits.</summary>
     public PowerBank Power { get; } = new();

@@ -284,9 +284,11 @@ public partial class GameScreen
     {
         GameState state = _session.State;
         string dim = Palette.Hex(Palette.TextDim);
+        // A big party doesn't fit by name: everyone but the active hero is shown by initial.
+        bool compact = state.Heroes.Count > GameRules.FullParty;
         IEnumerable<string> heroes = state.Heroes.Select(hero =>
         {
-            string name = Escape(hero.Name);
+            string name = Escape(compact && hero != ActiveHero ? hero.Name[..1].ToUpperInvariant() : hero.Name);
             string color = Palette.Hex(Palette.Seat(hero.Seat));
             return hero.Status switch
             {
@@ -298,7 +300,7 @@ public partial class GameScreen
         });
 
         int floor = _shownRoomId.Length > 0 ? ShownRoom.Floor : 1;
-        return $"[color={Palette.Hex(Palette.Trim)}]ROUND {state.Round}   FLOOR {floor}[/color]   {string.Join("  ", heroes)}";
+        return $"[color={Palette.Hex(Palette.Trim)}]ROUND {state.Round}   FLOOR {floor}[/color]   {string.Join(compact ? " " : "  ", heroes)}";
     }
 
     private string NameOf(int entityId) => _names.GetValueOrDefault(entityId, "Someone");

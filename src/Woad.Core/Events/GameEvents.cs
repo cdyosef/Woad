@@ -67,7 +67,7 @@ public sealed record MonsterCollapsed(int MonsterId) : GameEvent;
 
 public sealed record MonsterReassembled(int MonsterId, int Hearts) : GameEvent;
 
-public sealed record MonsterSpawned(int MonsterId, string MonsterDefinitionId, string RoomId, GridPosition Position) : GameEvent;
+public sealed record MonsterSpawned(int MonsterId, string MonsterDefinitionId, string RoomId, GridPosition Position, int Hearts) : GameEvent;
 
 public sealed record MonsterMoved(int MonsterId, IReadOnlyList<GridPosition> Path) : GameEvent;
 

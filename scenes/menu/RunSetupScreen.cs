@@ -5,7 +5,7 @@ using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Menu;
 
-/// <summary>Pick 1-4 saved characters; the order they're picked in is the turn order.</summary>
+/// <summary>Pick 1-8 saved characters; the order they're picked in is the turn order.</summary>
 public partial class RunSetupScreen : MenuScreen
 {
     private readonly List<CharacterRow> _rosterRows = [];
@@ -57,7 +57,9 @@ public partial class RunSetupScreen : MenuScreen
         for (int i = 0; i < _seats.Length; i++)
         {
             int seat = i;
-            _seats[i] = Add(new SeatButton { Seat = i, Position = new Vector2(338, 52 + i * 44), Size = new Vector2(280, 40) });
+            // Two columns of four: seats 1-4 on the left, 5-8 on the right.
+            var position = new Vector2(338 + i / 4 * 142, 52 + i % 4 * 44);
+            _seats[i] = Add(new SeatButton { Seat = i, Position = position, Size = new Vector2(138, 40) });
             _seats[i].Pressed += () =>
             {
                 if (seat < _party.Count)

@@ -44,7 +44,11 @@ public static class Palette
     public static readonly Color Blast = new("ff7a3d", 0.45f);
     public static readonly Color Interact = new("f0c94a", 0.9f);
 
-    private static readonly Color[] Seats = [new("e05d5d"), new("5d8de0"), new("6fcf7a"), new("e0c95d")];
+    private static readonly Color[] Seats =
+    [
+        new("e05d5d"), new("5d8de0"), new("6fcf7a"), new("e0c95d"),
+        new("e0955d"), new("b07de0"), new("5dd0d0"), new("e07db8"),
+    ];
 
     public static Color Seat(int seat) => Seats[seat % Seats.Length];
 

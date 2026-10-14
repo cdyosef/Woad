@@ -105,7 +105,7 @@ public sealed partial class GameSession
         else if (Turn.MovementRoll is { } roll)
         {
             Turn.MovementRoll = roll.With(face);
-            Turn.MovementPoints = Math.Max(0, Turn.MovementRoll.Total + Turn.MovementBonus);
+            Turn.CountSteps();
             events.Add(new PowerDieAdded(hero.Id, face, Turn.MovementRoll, Turn.MovementPoints));
         }
 

@@ -57,6 +57,32 @@ public class SetupAndTurnFlowTests
         Assert.Equal(1, session.HeroInSeat(1).Position.ManhattanDistanceTo(new GridPosition(4, 4)));
     }
 
+    [Theory]
+    [InlineData(4, 10)]
+    [InlineData(5, 13)]
+    [InlineData(6, 16)]
+    [InlineData(8, 22)]
+    public void BigPartiesFaceATougherBoss(int heroes, int bossHearts)
+    {
+        GameSession session = TestRun.Start("""
+            B.......W
+            .........
+            .........
+            .........
+            .........
+            .........
+            .........
+            .........
+            .........
+            """, heroes: heroes);
+
+        Assert.Equal(heroes, session.State.Heroes.Select(hero => hero.Position).Distinct().Count());
+        Monster brute = session.RoomById().Monsters.Single(monster => monster.Definition.Id == "brute");
+        Monster boss = session.RoomById().Monsters.Single(monster => monster.Definition.Boss);
+        Assert.Equal((2, 2), (brute.Hearts, brute.MaxHearts));
+        Assert.Equal((bossHearts, bossHearts), (boss.Hearts, boss.MaxHearts));
+    }
+
     [Fact]
     public void SetupRejectsBadRuns()
     {

@@ -44,7 +44,7 @@ public partial class GameScreen
             foreach (Monster monster in room.Monsters)
             {
                 _names[monster.Id] = monster.Definition.Name;
-                _figures[monster.Id] = MonsterFigure(monster.Id, monster.Definition, room.Id, monster.Position, monster.Hearts);
+                _figures[monster.Id] = MonsterFigure(monster.Id, monster.Definition, room.Id, monster.Position, monster.Hearts, monster.MaxHearts);
                 _figures[monster.Id].Stunned = monster.StunnedTurns > 0;
                 _figures[monster.Id].Collapsed = monster.Collapsed;
             }
@@ -230,7 +230,7 @@ public partial class GameScreen
     private async Task SpawnFigure(MonsterSpawned spawned)
     {
         var definition = Content.GetMonster(spawned.MonsterDefinitionId);
-        Figure figure = MonsterFigure(spawned.MonsterId, definition, spawned.RoomId, spawned.Position, definition.Hearts);
+        Figure figure = MonsterFigure(spawned.MonsterId, definition, spawned.RoomId, spawned.Position, spawned.Hearts, spawned.Hearts);
         _figures[figure.Id] = figure;
         if (spawned.RoomId == _shownRoomId)
         {
@@ -249,7 +249,7 @@ public partial class GameScreen
         await ToSignal(tween, Tween.SignalName.Finished);
     }
 
-    private static Figure MonsterFigure(int id, MonsterDefinition definition, string roomId, GridPosition position, int hearts) => new()
+    private static Figure MonsterFigure(int id, MonsterDefinition definition, string roomId, GridPosition position, int hearts, int maxHearts) => new()
     {
         Id = id,
         IsHero = false,
@@ -257,7 +257,7 @@ public partial class GameScreen
         RoomId = roomId,
         Position = position,
         Hearts = hearts,
-        MaxHearts = definition.Hearts,
+        MaxHearts = maxHearts,
         Glyph = char.ToUpperInvariant(definition.Glyph).ToString(),
         Fill = Palette.Monster(definition.Id),
     };

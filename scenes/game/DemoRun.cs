@@ -27,6 +27,14 @@ public static class DemoRun
         new HeroSetup("Bran", GameRules.HeroBaseStats with { Hearts = 5 }, [.. GameRules.StarterKit, "boomerang"], Portrait: "woad"),
     ];
 
+    /// <summary>The debug heroes, then plain heroes up to <paramref name="size"/> (for --autoplay --party N).</summary>
+    public static IReadOnlyList<HeroSetup> DebugParty(int size)
+    {
+        string[] names = ["Cael", "Dara", "Edda", "Finn", "Gwen", "Hugo"];
+        string[] portraits = ["moss", "gilt", "violet", "bone", "blood", "frost"];
+        return [.. DebugHeroes.Take(size), .. names.Take(size - DebugHeroes.Count).Select((name, i) => new HeroSetup(name, GameRules.HeroBaseStats, GameRules.StarterKit, Portrait: portraits[i]))];
+    }
+
     /// <summary>
     /// Three empty rooms for --floortest: Aria starts in the east doorway of "a", which leads to "b",
     /// whose stairs (one step from the doorway) go down to floor 2's arrival room "c".

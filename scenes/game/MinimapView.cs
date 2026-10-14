@@ -101,7 +101,8 @@ public partial class MinimapView : Control
             int index = 0;
             foreach (Hero hero in group)
             {
-                DrawCircle(cell.Position + new Vector2(5 + index * 6, 4), 2.2f, Palette.Seat(hero.Seat), antialiased: true);
+                // Up to 4 dots a row; a fifth hero or more starts a second row.
+                DrawCircle(cell.Position + new Vector2(5 + index % 4 * 6, 4 + index / 4 * 5), 2.2f, Palette.Seat(hero.Seat), antialiased: true);
                 index++;
             }
         }

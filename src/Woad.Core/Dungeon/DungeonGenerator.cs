@@ -116,6 +116,7 @@ public static class DungeonGenerator
             var bossLinks = links.Where(link => link.A == farthest || link.B == farthest).ToList();
             var keep = bossLinks.OrderBy(link => distance[link.A == farthest ? link.B : link.A]).First();
             links.RemoveAll(link => bossLinks.Contains(link) && link != keep);
+            ReconnectAround(cells, links, loops, start, farthest, bossLinks.Where(link => link != keep).ToList());
         }
 
         // More hidden links between neighbors: secret doors and cracked walls, never into the boss room.
@@ -387,6 +388,54 @@ public static class DungeonGenerator
         }
 
         return spawns;
+    }
+
+    /// <summary>
+    /// Taking the boss room's other doors away can cut off rooms that were only reached through it,
+    /// or leave them reachable only by an extra door that may turn out secret. Links each such group
+    /// back with a plain door to a reachable neighbor (never the boss room): an extra door already
+    /// there becomes a plain one. Failing that, it gives back one of the removed doors.
+    /// </summary>
+    private static void ReconnectAround(
+        List<GridPosition> cells,
+        List<(GridPosition A, GridPosition B)> links,
+        HashSet<(GridPosition, GridPosition)> loops,
+        GridPosition start,
+        GridPosition bossRoom,
+        List<(GridPosition A, GridPosition B)> removed)
+    {
+        while (true)
+        {
+            Dictionary<GridPosition, int> reached = Distances(links.Where(link => !loops.Contains(link)).ToList(), start);
+            List<GridPosition> cutOff = cells.Where(cell => !reached.ContainsKey(cell)).OrderBy(cell => cell.Y).ThenBy(cell => cell.X).ToList();
+            if (cutOff.Count == 0)
+            {
+                return;
+            }
+
+            (GridPosition A, GridPosition B)? bridge = cutOff
+                .SelectMany(cell => cell.OrthogonalNeighbors().Select(neighbor => (A: neighbor, B: cell)))
+                .Where(pair => reached.ContainsKey(pair.A) && pair.A != bossRoom)
+                .Select(pair => ((GridPosition A, GridPosition B)?)pair)
+                .FirstOrDefault()
+                ?? removed.Where(link => cutOff.Contains(link.A) || cutOff.Contains(link.B))
+                    .Select(link => ((GridPosition A, GridPosition B)?)link)
+                    .FirstOrDefault();
+            if (bridge is not { } link)
+            {
+                return;
+            }
+
+            if (Linked(links, link.A, link.B))
+            {
+                loops.Remove((link.A, link.B));
+                loops.Remove((link.B, link.A));
+            }
+            else
+            {
+                links.Add(link);
+            }
+        }
     }
 
     private static bool InMap(GridPosition cell) => cell.X is >= 0 and < MapSize && cell.Y is >= 0 and < MapSize;

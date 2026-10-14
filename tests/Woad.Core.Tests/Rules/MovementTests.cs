@@ -68,7 +68,7 @@ public class MovementTests
     }
 
     [Fact]
-    public void EachMoveDieCanBeAMoveOfItsOwn()
+    public void EachMoveDieCanBeAMoveOfItsOwnAndLeftoverStepsCarryOver()
     {
         GameSession session = TestRun.Start(Open, new ScriptedDice(3, 2), cards: ["boots"]);
         Hero hero = session.HeroInSeat();
@@ -79,13 +79,14 @@ public class MovementTests
 
         var second = session.Do(new RollMovement(hero.Id, Dice: 1)).SingleOf<MovementRolled>();
 
-        Assert.Equal((0, 2), (second.Bonus, second.MovementPoints));
-        Assert.Equal(2, session.State.Turn!.MovementPoints);
+        // 4 steps left from the first move, plus the second roll of 2.
+        Assert.Equal((0, 6), (second.Bonus, second.MovementPoints));
+        Assert.Equal(6, session.State.Turn!.MovementPoints);
         Assert.Equal(0, session.MoveDiceLeft);
     }
 
     [Fact]
-    public void YouCanMoveAttackAndMoveAgain()
+    public void StepsLeftAfterAnAttackCanStillBeWalked()
     {
         GameSession session = TestRun.Start("""
             .........
@@ -97,15 +98,14 @@ public class MovementTests
             .........
             .........
             .........
-            """, new ScriptedDice(1, 5, 2), cards: ["boots"]);
+            """, new ScriptedDice(1, 5, 2));
         Hero hero = session.HeroInSeat();
 
-        session.Do(new RollMovement(hero.Id, Dice: 1));
+        session.Do(new RollMovement(hero.Id));
         session.Do(new MoveHero(hero.Id, new GridPosition(4, 3)));
         session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id));
-        Assert.Equal(0, session.State.Turn!.MovementPoints);
+        Assert.Equal(2, session.State.Turn!.MovementPoints);
 
-        session.Do(new RollMovement(hero.Id, Dice: 1));
         session.Do(new MoveHero(hero.Id, new GridPosition(6, 3)));
 
         Assert.Equal(new GridPosition(6, 3), hero.Position);
@@ -120,7 +120,9 @@ public class MovementTests
         Assert.Equal(3, session.Do(new RollMovement(hero.Id, Dice: 1, UseSpeed: false)).SingleOf<MovementRolled>().MovementPoints);
         Assert.Equal(2, session.SpeedBonusLeft);
 
-        Assert.Equal(4, session.Do(new RollMovement(hero.Id, Dice: 1)).SingleOf<MovementRolled>().MovementPoints);
+        // The 3 unused steps carry over, plus 2 rolled and the saved Speed of 2.
+        var second = session.Do(new RollMovement(hero.Id, Dice: 1)).SingleOf<MovementRolled>();
+        Assert.Equal((2, 7), (second.Bonus, second.MovementPoints));
     }
 
     [Fact]
@@ -195,7 +197,7 @@ public class MovementTests
     }
 
     [Fact]
-    public void ActingEndsTheMoveInProgress()
+    public void ActingKeepsTheStepsLeft()
     {
         // A monster in the room makes changing gear cost the action.
         GameSession session = TestRun.Start("""
@@ -215,9 +217,9 @@ public class MovementTests
 
         session.Do(new EquipCard(hero.Id, hero.Card("big_sword").Id));
 
-        Assert.Contains("used all your Move dice", session.Refuse(new MoveHero(hero.Id, new GridPosition(4, 2))));
-        Assert.Equal(0, session.State.Turn!.MovementPoints);
-        Assert.Empty(session.GetReachableTiles());
+        Assert.True(session.State.Turn!.HasActed);
+        session.Do(new MoveHero(hero.Id, new GridPosition(4, 2)));
+        Assert.Equal(3, session.State.Turn!.MovementPoints);
     }
 
     [Fact]
