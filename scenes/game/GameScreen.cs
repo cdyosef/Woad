@@ -2,6 +2,7 @@ using Godot;
 using Woad.Core.Bots;
 using Woad.Core.Commands;
 using Woad.Core.Content;
+using Woad.Core.Dice;
 using Woad.Core.Events;
 using Woad.Core.Grid;
 using Woad.Core.Model;
@@ -45,11 +46,16 @@ public partial class GameScreen : Control
 
     internal bool IsBusy => _busy;
 
+    /// <summary>The player can't act: events are playing, or a companion is taking its turn.</summary>
+    private bool Locked => _busy || ActiveHero is { IsCompanion: true };
+
     internal GameSession Session => _session;
 
     internal Button MenuButton => _menu;
 
     internal Button RollButton => _roll;
+
+    internal Button EndTurnButton => _endTurn;
 
     /// <summary>The middle of a board tile, in screen (640x360) coordinates.</summary>
     internal Vector2 TileCenter(GridPosition tile) =>
@@ -78,6 +84,10 @@ public partial class GameScreen : Control
         else if (args.Contains("--floortest"))
         {
             RunFloorTest();
+        }
+        else if (args.Contains("--hazardtest"))
+        {
+            RunHazardTest();
         }
     }
 
@@ -173,6 +183,25 @@ public partial class GameScreen : Control
         }
     }
 
+    // ---- Companions: the game plays their turns ---------------------------------------------
+
+    /// <summary>Plays a companion's next command, at a pace the players can follow.</summary>
+    private async void CompanionNext()
+    {
+        await Pause(0.2);
+        if (_busy || _session.State.Phase != RunPhase.InProgress || ActiveHero is not { IsCompanion: true } companion)
+        {
+            return;
+        }
+
+        GameCommand command = CompanionBot.NextCommand(_session);
+        if (!await ExecuteAsync(command))
+        {
+            GD.PushError($"A companion's command was refused: {command}");
+            await ExecuteAsync(new EndTurn(companion.Id));
+        }
+    }
+
     // ---- Event playback -------------------------------------------------------------------
 
     private async Task PlayEvents(IReadOnlyList<GameEvent> events)
@@ -206,6 +235,10 @@ public partial class GameScreen : Control
         else if (_autoplay)
         {
             AutoplayNext();
+        }
+        else if (ActiveHero is { IsCompanion: true })
+        {
+            CompanionNext();
         }
     }
 
@@ -255,6 +288,7 @@ public partial class GameScreen : Control
         {
             case TurnStarted turn:
                 _selectedCardId = null;
+                _showingOrders = false;
                 _targeting = false;
                 _trayShowsMovement = false;
                 _dice.Clear();
@@ -305,6 +339,47 @@ public partial class GameScreen : Control
                 await _banner.Flash($"Fell to floor {fell.Floor}", Palette.Danger, 0.5);
                 break;
 
+            case FellIntoPit fell when fell.RoomId == _shownRoomId:
+                _board.FloatText(fell.Pit, "falls!", Palette.Danger);
+                await Pause(0.3);
+                break;
+
+            case ClimbedOut climbed:
+                await Walk(climbed.HeroId, [climbed.Position]);
+                break;
+
+            case MonsterShoved shoved:
+                _dice.ShowOutcome(true);
+                await Walk(shoved.MonsterId, [shoved.To]);
+                break;
+
+            case ShoveResisted resisted:
+                _dice.ShowOutcome(false);
+                if (_figures.TryGetValue(resisted.MonsterId, out Figure? firm) && firm.RoomId == _shownRoomId)
+                {
+                    _board.FloatText(firm.Position, "holds firm", Palette.TextDim);
+                }
+
+                await Pause(0.25);
+                break;
+
+            case MonsterTrapped trapped:
+                _board.QueueRedraw();
+                _board.FloatText(trapped.Position, "trap!", Palette.Danger);
+                await Pause(0.3);
+                break;
+
+            case MonsterFell fell:
+                // It's gone from this room; the room below shows it once someone gets there.
+                await RemoveFigure(fell.MonsterId);
+                break;
+
+            case PitJumped jump:
+                await _dice.ShowRoll($"{NameOf(jump.HeroId)} jumps ({jump.Difficulty}+)", new DiceRoll([jump.Roll]), 0, newGroup: true);
+                _dice.ShowOutcome(jump.Cleared);
+                await Walk(jump.HeroId, [jump.Cleared ? jump.To : new GridPosition((jump.From.X + jump.To.X) / 2, (jump.From.Y + jump.To.Y) / 2)]);
+                break;
+
             case OdHandRolled rolled:
                 _trayShowsMovement = false;
                 string goal = rolled.Difficulty > 0 ? $" ({rolled.Difficulty}+)" : "";
@@ -348,7 +423,7 @@ public partial class GameScreen : Control
             case AttackRolled attack:
                 _trayShowsMovement = false;
                 await Lunge(attack.AttackerId, attack.TargetIds.FirstOrDefault());
-                await _dice.ShowRoll($"{NameOf(attack.AttackerId)} attacks", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice);
+                await _dice.ShowRoll($"{NameOf(attack.AttackerId)} {(attack.Shove ? "shoves" : "attacks")}", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice);
                 break;
 
             case DefenseRolled defense:
@@ -517,6 +592,18 @@ public partial class GameScreen : Control
             case HeroFell:
                 Sfx.Play("stairs", 0.7f);
                 break;
+            case FellIntoPit:
+                Sfx.Play("stairs", 0.6f);
+                break;
+            case MonsterShoved or PitJumped { Cleared: true }:
+                Sfx.Play("block", 1.3f);
+                break;
+            case ShoveResisted:
+                Sfx.Play("block", 0.8f);
+                break;
+            case MonsterTrapped:
+                Sfx.Play("hit");
+                break;
             case WallBroken:
                 Sfx.Play("pot", 0.6f);
                 break;
@@ -581,6 +668,13 @@ public partial class GameScreen : Control
         PotSmashed smashed => FigureRoom(smashed.HeroId),
         OdHandRolled rolled => FigureRoom(rolled.HeroId),
         TrapSprung sprung => FigureRoom(sprung.HeroId),
+        FellIntoPit fell => fell.RoomId,
+        ClimbedOut climbed => FigureRoom(climbed.HeroId),
+        MonsterShoved shoved => FigureRoom(shoved.MonsterId),
+        ShoveResisted resisted => FigureRoom(resisted.MonsterId),
+        MonsterTrapped trapped => FigureRoom(trapped.MonsterId),
+        MonsterFell fell => fell.FromRoomId,
+        PitJumped jump => FigureRoom(jump.HeroId),
         SecretsFound found => found.RoomId,
         WallBroken broken => broken.RoomId,
         KeysAppeared keys => keys.RoomId,

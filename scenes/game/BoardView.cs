@@ -20,6 +20,8 @@ public partial class BoardView : Control
     private HashSet<GridPosition> _targets = [];
     private HashSet<GridPosition> _attackable = [];
     private HashSet<GridPosition> _interactive = [];
+    private HashSet<GridPosition> _hazards = [];
+    private HashSet<GridPosition> _jumps = [];
     private HashSet<GridPosition> _blast = [];
 
     public event Action<GridPosition>? TileClicked;
@@ -45,12 +47,18 @@ public partial class BoardView : Control
         QueueRedraw();
     }
 
+    /// <param name="hazards">Reachable tiles that hurt: pits and found traps (tinted red over the blue).</param>
+    /// <param name="jumps">Tiles a pit jump would land on.</param>
     public void SetHighlights(
         IEnumerable<GridPosition> reachable,
         IEnumerable<GridPosition> attackable,
         IEnumerable<GridPosition> targets,
-        IEnumerable<GridPosition> interactive)
+        IEnumerable<GridPosition> interactive,
+        IEnumerable<GridPosition>? hazards = null,
+        IEnumerable<GridPosition>? jumps = null)
     {
+        _hazards = [.. hazards ?? []];
+        _jumps = [.. jumps ?? []];
         _reachable = [.. reachable];
         _attackable = [.. attackable];
         _targets = [.. targets];
@@ -167,6 +175,8 @@ public partial class BoardView : Control
         }
 
         DrawOverlay(_reachable, Palette.Reachable);
+        DrawOverlay(_hazards, Palette.Hazard);
+        DrawOverlay(_jumps, Palette.Jump);
         DrawOverlay(_targets, Palette.Target);
         DrawOverlay(_blast, Palette.Blast);
 
@@ -226,10 +236,18 @@ public partial class BoardView : Control
         return true;
     }
 
-    /// <summary>Pits join into one chasm: a crumbling lip only along edges that border solid ground.</summary>
+    /// <summary>
+    /// Pits join into one chasm: a crumbling lip only along edges that border solid ground. Where a
+    /// room lies underneath, its floor shows far below; with nothing below the pit is black.
+    /// </summary>
     private void DrawChasm(GridPosition tile, Rect2 rect)
     {
         DrawRect(rect, Palette.Pit);
+        if (_room!.BelowRoomId is not null && GameArt.Tile(ThemeId, (tile.X + tile.Y) % 2 == 0 ? "floor_b" : "floor_a") is { } below)
+        {
+            DrawTextureRect(below, rect, tile: false, Palette.FloorBelow);
+        }
+
         Color[] lip = [new Color("2a3a33"), new Color("1a2420"), new Color("0e1412")];
         foreach (Direction side in Enum.GetValues<Direction>())
         {
@@ -279,7 +297,7 @@ public partial class BoardView : Control
                 break;
 
             case TileKind.Pit:
-                DrawRect(rect.Grow(-2), Palette.Pit);
+                DrawRect(rect.Grow(-2), _room!.BelowRoomId is null ? Palette.Pit : Palette.FloorDark * Palette.FloorBelow);
                 DrawRect(new Rect2(rect.Position + new Vector2(2, 2), new Vector2(TileSize - 4, 4)), Palette.Wall);
                 break;
 

@@ -29,7 +29,8 @@ public sealed class Character
         IEnumerable<string> backpack,
         int gold,
         int runsPlayed,
-        int wins)
+        int wins,
+        bool isCompanion = false)
     {
         Id = id;
         Name = name;
@@ -44,9 +45,13 @@ public sealed class Character
         Gold = gold;
         RunsPlayed = runsPlayed;
         Wins = wins;
+        IsCompanion = isCompanion;
     }
 
     public Guid Id { get; }
+
+    /// <summary>A companion joins a player's party and is played by the game, following that player's orders.</summary>
+    public bool IsCompanion { get; }
 
     public string Name { get; private set; }
 
@@ -79,8 +84,10 @@ public sealed class Character
     public Stats BaseStats => PointBuy.ToStats(Allocation);
 
     /// <summary>A new level 1 character with the starter kit. Points not spent are kept for later.</summary>
+    /// <param name="isCompanion">Make a companion instead of a player's hero; it can't be changed later.</param>
     /// <exception cref="ArgumentException">The name, portrait or allocation isn't allowed.</exception>
-    public static Character Create(string name, string portrait, StatAllocation allocation, ContentCatalog content, DateTimeOffset createdUtc)
+    public static Character Create(
+        string name, string portrait, StatAllocation allocation, ContentCatalog content, DateTimeOffset createdUtc, bool isCompanion = false)
     {
         string trimmed = name.Trim();
         if (CheckName(trimmed) is { } nameError)
@@ -100,7 +107,7 @@ public sealed class Character
 
         var character = new Character(
             Guid.NewGuid(), trimmed, portrait, createdUtc, xp: 0, allocation,
-            PointBuy.CreationPoints - PointBuy.Cost(allocation), [], [], [], gold: 0, runsPlayed: 0, wins: 0);
+            PointBuy.CreationPoints - PointBuy.Cost(allocation), [], [], [], gold: 0, runsPlayed: 0, wins: 0, isCompanion);
 
         foreach (string cardId in GameRules.StarterKit)
         {
@@ -226,7 +233,8 @@ public sealed class Character
     }
 
     /// <summary>The hero this character plays as in a run, carrying everything they own.</summary>
-    public HeroSetup ToHeroSetup() => new(Name, BaseStats, [.. _equipped, .. _belt, .. _backpack], Id, Portrait);
+    /// <param name="ownerSeat">For a companion, the seat of the player it belongs to.</param>
+    public HeroSetup ToHeroSetup(int? ownerSeat = null) => new(Name, BaseStats, [.. _equipped, .. _belt, .. _backpack], Id, Portrait, ownerSeat);
 
     /// <summary>Puts a card where a new hero would: an empty matching slot, then the belt, then the backpack.</summary>
     private void Place(CardDefinition card, ContentCatalog content)

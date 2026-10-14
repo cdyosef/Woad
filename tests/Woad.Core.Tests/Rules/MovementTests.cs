@@ -153,7 +153,7 @@ public class MovementTests
     }
 
     [Fact]
-    public void WallsPitsAndMonstersBlockTheWay()
+    public void WallsAndMonstersBlockTheWayAndAPitEndsIt()
     {
         GameSession session = TestRun.Start("""
             .........
@@ -169,7 +169,7 @@ public class MovementTests
         session.Do(new RollMovement(session.HeroInSeat().Id));
 
         Assert.Equal(
-            new[] { new GridPosition(4, 5), new GridPosition(4, 6), new GridPosition(3, 6), new GridPosition(5, 6), new GridPosition(4, 7) }.ToHashSet(),
+            new[] { new GridPosition(4, 3), new GridPosition(4, 5), new GridPosition(4, 6), new GridPosition(3, 6), new GridPosition(5, 6), new GridPosition(4, 7) }.ToHashSet(),
             session.GetReachableTiles().Keys.ToHashSet());
     }
 

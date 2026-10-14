@@ -203,7 +203,7 @@ public class DungeonSecretsTests
     }
 
     [Fact]
-    public void RevealedTrapsAreWalkedAround()
+    public void AFoundTrapCanBeSteppedOnButNotWalkedPast()
     {
         var features = new RoomFeatures { Traps = new Dictionary<GridPosition, TrapSetup> { [new(4, 3)] = new(TrapKind.Spikes, 4) } };
         GameSession session = TestRun.Start([new RoomSetup("A", TestRun.Room(Open), Features: features)], new ScriptedDice(4, 3));
@@ -211,9 +211,17 @@ public class DungeonSecretsTests
         session.Do(new Search(hero.Id));
         session.Do(new RollMovement(hero.Id));
 
-        Assert.DoesNotContain(new GridPosition(4, 3), session.GetReachableTiles().Keys);
+        // Paths go around it...
         var moved = session.Do(new MoveHero(hero.Id, new GridPosition(4, 2))).SingleOf<HeroMoved>();
         Assert.DoesNotContain(new GridPosition(4, 3), moved.Path);
+
+        // ...but stepping onto it on purpose springs it again and stops you there.
+        Assert.Contains(new GridPosition(4, 3), session.GetReachableTiles().Keys);
+        IReadOnlyList<GameEvent> events = session.Do(new MoveHero(hero.Id, new GridPosition(4, 3)));
+        Assert.Equal(new TrapSprung(hero.Id, TrapKind.Spikes, new GridPosition(4, 3)), events.SingleOf<TrapSprung>());
+        Assert.Equal(new GridPosition(4, 3), hero.Position);
+        Assert.Equal(GameRules.HeroBaseStats.Hearts - 1, hero.Hearts);
+        Assert.Equal(0, session.State.Turn!.MovementPoints);
     }
 
     [Fact]
@@ -506,6 +514,14 @@ public class DungeonSecretsTests
                 }
 
                 Assert.True(floor.All(room => reached.Contains(room.Id)), $"Seed {seed}, floor {floor.Key}: {string.Join(", ", floor.Where(room => !reached.Contains(room.Id)).Select(room => room.Id))} cut off.");
+
+                // Found traps are walked around, so none sits beside a chest or pot where it could wall it off.
+                foreach (Room room in floor)
+                {
+                    IEnumerable<GridPosition> besideLoot = room.TilesOfKind(TileKind.Chest).Concat(room.TilesOfKind(TileKind.Pot))
+                        .SelectMany(tile => tile.OrthogonalNeighbors()).Where(tile => tile.IsInRoom);
+                    Assert.DoesNotContain(besideLoot, tile => room.TrapAt(tile) is not null);
+                }
             }
         }
     }

@@ -4,7 +4,7 @@ using Woad.Core.Content;
 
 namespace Woad.Scenes.Ui;
 
-/// <summary>A selectable roster entry: crest, name, level and base stats.</summary>
+/// <summary>A selectable roster entry: crest, name (tagged if a companion), level and base stats.</summary>
 public partial class CharacterRow : Button
 {
     public CharacterRow()
@@ -34,6 +34,11 @@ public partial class CharacterRow : Button
         PortraitView.DrawCrest(this, new Rect2(7, 5, 24, 29), Portraits.Get(Character.Portrait));
         Font font = GetThemeDefaultFont();
         DrawString(font, new Vector2(40, 17), Character.Name, fontSize: 12, modulate: ButtonPressed ? Palette.TrimBright : Palette.Text);
+        if (Character.IsCompanion)
+        {
+            float nameWidth = font.GetStringSize(Character.Name, fontSize: 12).X;
+            DrawString(font, new Vector2(46 + nameWidth, 17), "companion", fontSize: UiTheme.FontSize, modulate: Palette.Power);
+        }
 
         Stats stats = Character.BaseStats;
         DrawString(font, new Vector2(40, 31),

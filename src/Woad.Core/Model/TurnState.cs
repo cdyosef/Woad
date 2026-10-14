@@ -9,6 +9,12 @@ public enum DamageSource
     Spell,
     Bomb,
     Monster,
+
+    /// <summary>A shove: the roll pushes the monster instead of hurting it.</summary>
+    Shove,
+
+    /// <summary>A fall or a trap a monster was shoved into. Bones broken this way stay down.</summary>
+    Fall,
 }
 
 public enum OdHandCheckKind

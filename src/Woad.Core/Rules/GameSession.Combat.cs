@@ -128,7 +128,7 @@ public sealed partial class GameSession
     private void RollHeroAttack(Hero hero, int dice, int bonus, IReadOnlyList<int> targetIds, DamageSource source, List<GameEvent> events, int powerDice = 0)
     {
         DiceRoll roll = _dice.Roll(Math.Max(0, dice) + powerDice);
-        events.Add(new AttackRolled(hero.Id, roll, bonus, roll.Total + bonus, targetIds, powerDice));
+        events.Add(new AttackRolled(hero.Id, roll, bonus, roll.Total + bonus, targetIds, powerDice, source == DamageSource.Shove));
 
         Turn.PendingRoll = new PendingRoll(hero.Id, roll, bonus, targetIds, source);
         EarnPowerDice(hero, Sixes(roll.Faces), events);
@@ -202,18 +202,27 @@ public sealed partial class GameSession
             }
         }
 
-        DropKeys(room, monster.Position, events);
-        if (room.Monsters.Count == 0)
+        DropKey(room, monster.Position, events);
+        ClearRoomIfEmpty(room, events);
+    }
+
+    /// <summary>Once a room's last monster is gone: perhaps a key appears, and everyone in it recovers a heart.</summary>
+    private void ClearRoomIfEmpty(Room room, List<GameEvent> events)
+    {
+        if (room.Monsters.Count > 0)
         {
-            events.Add(new RoomCleared(room.Id));
-            foreach (Hero hero in State.ActiveHeroesIn(room))
+            return;
+        }
+
+        RoomClearedKey(room, events);
+        events.Add(new RoomCleared(room.Id));
+        foreach (Hero hero in State.ActiveHeroesIn(room))
+        {
+            int healed = Math.Min(GameRules.HeartsOnRoomClear, hero.MaxHearts - hero.Hearts);
+            if (healed > 0)
             {
-                int healed = Math.Min(GameRules.HeartsOnRoomClear, hero.MaxHearts - hero.Hearts);
-                if (healed > 0)
-                {
-                    hero.Hearts += healed;
-                    events.Add(new HeroHealed(hero.Id, healed, hero.Hearts));
-                }
+                hero.Hearts += healed;
+                events.Add(new HeroHealed(hero.Id, healed, hero.Hearts));
             }
         }
     }
@@ -238,7 +247,8 @@ public sealed partial class GameSession
 
         foreach (GridPosition position in tiles)
         {
-            Monster monster = CreateMonster(State.NextId(), piece, position, State.Heroes.Count);
+            int strength = GameRules.PartyStrength(State.Heroes.Count(hero => !hero.IsCompanion), State.Heroes.Count(hero => hero.IsCompanion));
+            Monster monster = CreateMonster(State.NextId(), piece, position, strength);
             room.AddMonster(monster);
             events.Add(new MonsterSpawned(monster.Id, piece.Id, room.Id, position, monster.Hearts));
         }

@@ -76,6 +76,29 @@ public static class DemoRun
         StartRoomId = "exit_hall",
     };
 
+    /// <summary>
+    /// For --hazardtest: Aria above a slimeling at the edge of a row of pits, with a room under them on
+    /// floor 2, so a shove drops the slimeling and a jump crosses (or drops Aria).
+    /// </summary>
+    public static RunSetup Hazards(ulong seed)
+    {
+        ContentCatalog content = ContentCatalog.LoadDefault();
+        RoomTemplate Room(string text) => RoomTemplate.Parse(text, content);
+        return new RunSetup
+        {
+            Seed = seed,
+            ThemeId = "emerald_keep",
+            Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 9 } }],
+            Rooms =
+            [
+                new RoomSetup("ledge", Room(".........\n.........\n.........\n.~~~~~~~.\n....l....\n....1....\n.........\n.........\n........."), MapPosition: new(2, 2)),
+                new RoomSetup("below", Room(".........\n.........\n.........\n.........\n.........\n.........\n.........\n.........\n........."),
+                    Floor: 2, MapPosition: new(2, 2), Role: RoomRole.Arrival),
+            ],
+            StartRoomId = "ledge",
+        };
+    }
+
     /// <summary>The debug party in the single hand-made room, for --uitest.</summary>
     public static RunSetup SingleRoom(ulong seed) => new()
     {

@@ -242,6 +242,10 @@ public sealed partial class GameSession
         {
             ResolveCheck(roll, check, events);
         }
+        else if (roll.Source == DamageSource.Shove)
+        {
+            ResolveShove(roll, events);
+        }
         else
         {
             ResolveHeroAttack(roll, events);

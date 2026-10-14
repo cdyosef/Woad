@@ -7,9 +7,17 @@ namespace Woad.Core.Rules;
 
 /// <summary>
 /// A hero joining a run: a saved character's name, stats and the cards they bring in.
-/// <paramref name="CharacterId"/> links the hero back to the character for saving results.
+/// <paramref name="CharacterId"/> links the hero back to the character for saving results. A
+/// companion names the seat of the player it belongs to in <paramref name="OwnerSeat"/>; the game
+/// plays its turns, following that player's orders.
 /// </summary>
-public sealed record HeroSetup(string Name, Stats BaseStats, IReadOnlyList<string> CardIds, Guid? CharacterId = null, string Portrait = "");
+public sealed record HeroSetup(
+    string Name,
+    Stats BaseStats,
+    IReadOnlyList<string> CardIds,
+    Guid? CharacterId = null,
+    string Portrait = "",
+    int? OwnerSeat = null);
 
 /// <summary>
 /// One room of the dungeon and the rooms its doors lead to. <paramref name="MapPosition"/> is

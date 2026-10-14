@@ -1,4 +1,5 @@
 using Woad.Core.Grid;
+using Woad.Core.Model;
 
 namespace Woad.Core.Commands;
 
@@ -106,3 +107,23 @@ public sealed record TakeStairs(int HeroId) : GameCommand(HeroId);
 
 /// <summary>Leave the dungeon through the exit you're standing on, once its boss is defeated. Ends your turn.</summary>
 public sealed record Escape(int HeroId) : GameCommand(HeroId);
+
+/// <summary>
+/// Give one of your companions a standing order. Free, at any point in your turn. An order to hold
+/// keeps the companion on the tile it stands on now.
+/// </summary>
+public sealed record OrderCompanion(int HeroId, int CompanionId, CompanionOrder Order) : GameCommand(HeroId);
+
+/// <summary>
+/// Shove an adjacent monster one tile straight away from you: roll like an attack (Rumble dice and
+/// the weapon); beating its defense pushes it, perhaps onto a trap or into a pit. Bosses can't be
+/// shoved, and the tile behind it must be open floor, a trap or a pit.
+/// </summary>
+public sealed record Shove(int HeroId, int MonsterId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0) : GameCommand(HeroId);
+
+/// <summary>
+/// Jump a pit: <paramref name="Landing"/> is two tiles away in a straight line with a pit between.
+/// Costs 2 steps and a roll of one die needing <see cref="Rules.GameRules.JumpDifficulty"/>; a miss
+/// drops you into the pit.
+/// </summary>
+public sealed record JumpPit(int HeroId, GridPosition Landing) : GameCommand(HeroId);

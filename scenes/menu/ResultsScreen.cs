@@ -74,6 +74,7 @@ public partial class ResultsScreen : MenuScreen
         {
             HeroStatus.Escaped => $"Escaped with {result.Gold} gold",
             HeroStatus.Downed => $"Downed on floor {result.DeepestFloor}",
+            HeroStatus.Active => $"Left behind on floor {result.DeepestFloor}",
             _ => "Left the run",
         };
         Put(UiTheme.Label(new Vector2(50, top + 24), new Vector2(240, 12),

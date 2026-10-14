@@ -63,9 +63,14 @@ public sealed partial class GameSession
             return "The exit is sealed until the boss here is defeated.";
         }
 
-        hero.Status = HeroStatus.Escaped;
-        events.Add(new HeroEscaped(hero.Id, hero.TreasureValue));
-        GrantXp(hero, GameRules.XpForEscaping, events);
+        // The hero's companions in the room leave with them.
+        foreach (Hero leaving in State.ActiveHeroesIn(room).Where(other => other == hero || other.OwnerId == hero.Id).ToList())
+        {
+            leaving.Status = HeroStatus.Escaped;
+            events.Add(new HeroEscaped(leaving.Id, leaving.TreasureValue));
+            GrantXp(leaving, GameRules.XpForEscaping, events);
+        }
+
         EndRunIfOver(events);
         if (State.Phase == RunPhase.InProgress)
         {

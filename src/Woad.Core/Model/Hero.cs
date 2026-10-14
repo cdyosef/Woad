@@ -51,6 +51,21 @@ public sealed class Hero
     /// <summary>Turn order, starting at 0.</summary>
     public int Seat { get; }
 
+    /// <summary>For a companion, the hero (a player) it belongs to; null for a player's own hero.</summary>
+    public int? OwnerId { get; internal init; }
+
+    /// <summary>The game plays a companion's turns, following its owner's orders.</summary>
+    public bool IsCompanion => OwnerId is not null;
+
+    /// <summary>"Player 2": counting players only, in seat order; 0 for a companion.</summary>
+    public int PlayerNumber { get; internal init; }
+
+    /// <summary>A companion's standing order (see <see cref="CompanionOrder"/>).</summary>
+    public CompanionOrder Order { get; internal set; }
+
+    /// <summary>Where a companion ordered to hold stands guard: the room and tile it was in at the time.</summary>
+    public (string RoomId, GridPosition Position)? HoldAt { get; internal set; }
+
     public string Name { get; }
 
     public Stats BaseStats { get; }

@@ -119,9 +119,10 @@ public sealed partial class GameSession
             return "You can't reach that tile.";
         }
 
-        // A hidden trap stops the walk where it goes off.
+        // A trap stops the walk where it goes off: a hidden one wherever it is, a found one only when
+        // walked onto on purpose (paths never go past one). Walking into a pit is a fall.
         IReadOnlyList<GridPosition> path = search.PathTo(command.Destination);
-        int sprung = path.ToList().FindIndex(tile => room.TrapAt(tile) is { Revealed: false });
+        int sprung = path.ToList().FindIndex(tile => room.TrapAt(tile) is not null);
         if (sprung >= 0)
         {
             path = path.Take(sprung + 1).ToList();
@@ -135,6 +136,10 @@ public sealed partial class GameSession
         {
             Turn.EndMove();
             SpringTrap(hero, room, room.TrapAt(hero.Position)!, hero.Position, events);
+        }
+        else if (room.Layout[hero.Position] == TileKind.Pit)
+        {
+            FallIntoPit(hero, room, hero.Position, events);
         }
 
         return null;
@@ -209,12 +214,16 @@ public sealed partial class GameSession
         return Turn.MovementPoints < cost ? "Not enough movement left." : null;
     }
 
-    /// <summary>Heroes walk through allies but not monsters, walls, pits, chests or traps they know of.</summary>
+    /// <summary>
+    /// Heroes walk through allies but not monsters, walls or chests. They may step onto a trap they
+    /// know of or into a pit, but that's where the walk ends: no path goes past one.
+    /// </summary>
     private PathSearch HeroPathSearch(Hero hero, Room room) =>
         PathSearch.Run(
             hero.Position,
-            position => room.Layout[position].IsWalkable() && room.MonsterAt(position) is null && room.TrapAt(position) is not { Revealed: true },
-            Turn.MovementPoints);
+            position => (room.Layout[position].IsWalkable() || room.Layout[position] == TileKind.Pit) && room.MonsterAt(position) is null,
+            Turn.MovementPoints,
+            canPass: position => room.Layout[position] != TileKind.Pit && room.TrapAt(position) is not { Revealed: true });
 
     private bool CanHeroStop(Room room, Hero hero, GridPosition position) =>
         !State.ActiveHeroesIn(room).Any(other => other != hero && other.Position == position);

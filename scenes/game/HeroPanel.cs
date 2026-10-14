@@ -87,7 +87,7 @@ public partial class HeroPanel : Panel
         _crest.PortraitId = hero.Portrait;
         _name.Text = hero.Name;
         _name.AddThemeColorOverride("font_color", Palette.Seat(hero.Seat));
-        _seat.Text = $"Player {hero.Seat + 1}";
+        _seat.Text = hero.IsCompanion ? "Companion" : $"Player {hero.PlayerNumber}";
         _hearts.ShowHearts(hero.Hearts, hero.MaxHearts);
 
         Stats stats = hero.EffectiveStats;

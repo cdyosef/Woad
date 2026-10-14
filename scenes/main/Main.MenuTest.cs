@@ -1,6 +1,7 @@
 using Godot;
 using Woad.Core.Characters;
 using Woad.Core.Content;
+using Woad.Core.Model;
 using Woad.Scenes.Game;
 using Woad.Scenes.Menu;
 using Woad.Scenes.Ui;
@@ -9,8 +10,9 @@ using static Woad.Scenes.Debug.UiDriver;
 namespace Woad.Scenes;
 
 /// <summary>
-/// Debug mode (<c>-- --menutest</c>): creates two characters, seats them, starts a run, leaves it
-/// and deletes a character, all with synthetic clicks and typing against a throwaway save folder.
+/// Debug mode (<c>-- --menutest</c>): creates two characters and a companion, seats them, starts a
+/// run, orders the companion, leaves the run and deletes a character, all with synthetic clicks and
+/// typing against a throwaway save folder.
 /// </summary>
 public partial class Main
 {
@@ -52,6 +54,15 @@ public partial class Main
             list = await LoadedList();
             Check(list.CharacterCount == 2, "a second character is listed");
 
+            await Click(this, list.NewButton);
+            editor = await Screen<CharacterEditor>();
+            await Click(this, editor.NameEdit);
+            await Type(this, "Pip");
+            await Click(this, editor.CompanionButton);
+            await Click(this, editor.SaveButton);
+            list = await LoadedList();
+            Check(list.CharacterCount == 3, "a companion is listed too");
+
             await Click(this, list.BackButton);
             menu = await Screen<MainMenu>();
             await Click(this, menu.SettingsButton);
@@ -74,16 +85,33 @@ public partial class Main
             RunSetupScreen setup = await Screen<RunSetupScreen>();
             await WaitFor(this, () => setup.IsLoaded, "the roster to load");
             Check(setup.StartButton.Disabled, "Start needs at least one player");
+            await Click(this, setup.RosterRow(2));
+            Check(setup.PartySize == 0, "a companion can't be seated before a player");
             await Click(this, setup.RosterRow(1));
+            await Click(this, setup.RosterRow(2));
             await Click(this, setup.RosterRow(0));
-            Check(setup.PartySize == 2, "clicking characters seats them");
+            Check(setup.PartySize == 3, "clicking characters seats them");
 
             await Click(this, setup.StartButton);
             GameScreen game = await Screen<GameScreen>();
             await game.WaitUntilIdle();
             string[] names = [.. game.Session.State.Heroes.Select(hero => hero.Name)];
-            Check(names.SequenceEqual(["Wren", "Morgan"]), "seat order follows the order characters were picked");
-            var morgan = game.Session.State.Heroes[1];
+            Check(names.SequenceEqual(["Wren", "Pip", "Morgan"]), "seat order follows the order characters were picked");
+            var wren = game.Session.State.Heroes[0];
+            var pip = game.Session.State.Heroes[1];
+            var morgan = game.Session.State.Heroes[2];
+            Check(pip.OwnerId == wren.Id, "a companion belongs to the player seated before it");
+
+            Check(game.OrdersButton.Visible, "a player with a companion gets the Orders button");
+            await Click(this, game.OrdersButton);
+            await Click(this, game.OrderButton(0, CompanionOrder.Hold));
+            await game.WaitUntilIdle();
+            Check(pip.Order == CompanionOrder.Hold, "the Hold button orders the companion to hold");
+            var post = pip.Position;
+            await Click(this, game.EndTurnButton);
+            await WaitFor(this, () => game.Session.State.ActiveHero == morgan && !game.IsBusy, "the companion's turn to play out");
+            Check(pip.Position == post, "a holding companion stays put on its own turn");
+            Check(!game.OrdersButton.Visible, "a player without companions has no Orders button");
             Check(morgan.MaxHearts == 6 && morgan.EffectiveStats.AttackDice == 2 && morgan.EffectiveStats.Weapon == 1, "the hero has the character's stats plus gear");
             Check(morgan.Portrait == "moss", "the hero has the chosen portrait");
             Check(Music.Current == "dungeon", "a run plays the dungeon music");
@@ -102,10 +130,10 @@ public partial class Main
             list = await LoadedList();
             await Click(this, list.Row(1));
             await Click(this, list.DeleteButton);
-            Check(list.CharacterCount == 2, "the first Delete click only asks for confirmation");
+            Check(list.CharacterCount == 3, "the first Delete click only asks for confirmation");
             await Click(this, list.DeleteButton);
-            await WaitFor(this, () => list.IsLoaded && list.CharacterCount == 1, "the list to reload after deleting");
-            Check(Directory.GetFiles(saveFolder, "*.json").Length == 1, "deleting removes the save file");
+            await WaitFor(this, () => list.IsLoaded && list.CharacterCount == 2, "the list to reload after deleting");
+            Check(Directory.GetFiles(saveFolder, "*.json").Length == 2, "deleting removes the save file");
 
             GD.Print("Menu test passed.");
             Sfx.QuitGame(this);

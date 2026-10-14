@@ -11,8 +11,8 @@ namespace Woad.Core.Bots;
 /// whatever is in its room, heals when hurt, loots what it passes and opens the room's chests (with
 /// a key if locked), then explores: unexplored rooms first, then the stairs, then the exit. Locked
 /// doors on its way take a key or a picked lock; the Boss Door waits until it has the Boss Key.
-/// It never searches, steals or bombs walls. Every command it returns should be accepted; a
-/// refusal means a bug in the bot or the rules.
+/// It never searches, steals or bombs walls. Companions' turns go to <see cref="CompanionBot"/>.
+/// Every command it returns should be accepted; a refusal means a bug in the bot or the rules.
 /// </summary>
 public static class SimpleBot
 {
@@ -20,6 +20,11 @@ public static class SimpleBot
     {
         GameState state = session.State;
         Hero hero = state.ActiveHero ?? throw new InvalidOperationException("No hero is taking a turn.");
+        if (hero.IsCompanion)
+        {
+            return CompanionBot.NextCommand(session);
+        }
+
         TurnState turn = state.Turn!;
         Room room = state.RoomOf(hero);
         TileKind standingOn = room.Layout[hero.Position];
@@ -143,7 +148,7 @@ public static class SimpleBot
     }
 
     /// <summary>The closest walkable tile a monster can be hit from in melee (diagonals too), if any can be reached.</summary>
-    private static GridPosition? BesideNearestMonster(Room room, Hero hero)
+    internal static GridPosition? BesideNearestMonster(Room room, Hero hero)
     {
         PathSearch search = PathSearch.Run(hero.Position, tile => Walkable(room, tile));
         return room.Monsters
@@ -158,7 +163,7 @@ public static class SimpleBot
     }
 
     /// <summary>Walks the shortest route to the goal as far as this turn's movement allows.</summary>
-    private static GridPosition? StepAlongPath(GameSession session, Hero hero, Room room, GridPosition goal)
+    internal static GridPosition? StepAlongPath(GameSession session, Hero hero, Room room, GridPosition goal)
     {
         IReadOnlyDictionary<GridPosition, int> reachable = session.GetReachableTiles();
         PathSearch search = PathSearch.Run(hero.Position, tile => Walkable(room, tile));
@@ -180,10 +185,10 @@ public static class SimpleBot
     }
 
     /// <summary>Where the bot can walk: like the rules, around monsters and the traps it knows of.</summary>
-    private static bool Walkable(Room room, GridPosition tile) =>
+    internal static bool Walkable(Room room, GridPosition tile) =>
         room.Layout[tile].IsWalkable() && room.MonsterAt(tile) is null && room.TrapAt(tile) is not { Revealed: true };
 
-    private static CardInstance? UsableBeltCard(GameSession session, Hero hero, CardEffectKind kind) =>
+    internal static CardInstance? UsableBeltCard(GameSession session, Hero hero, CardEffectKind kind) =>
         hero.Belt.FirstOrDefault(card => card.Definition.Effect?.Kind == kind && session.GetCardTargets(card.Id).Count > 0);
 
     /// <summary>An adjacent chest the bot means to open: unlocked, or locked with a key in hand.</summary>
@@ -230,15 +235,18 @@ public static class SimpleBot
         room.TilesOfKind(TileKind.Exit).Concat(room.TilesOfKind(TileKind.StairsDown)).Select(tile => (GridPosition?)tile).FirstOrDefault();
 
     /// <summary>The reachable tile that gets closest to the goal, if it gets any closer than where the hero stands.</summary>
-    private static GridPosition? StepToward(GameSession session, Hero hero, Func<GridPosition, int> distanceToGoal)
+    internal static GridPosition? StepToward(GameSession session, Hero hero, Func<GridPosition, int> distanceToGoal)
     {
+        // Pits and found traps can be walked into, but a bot never does.
+        Room room = session.State.RoomOf(hero);
         IReadOnlyDictionary<GridPosition, int> reachable = session.GetReachableTiles();
-        if (reachable.Count == 0)
+        if (!reachable.Keys.Any(tile => Walkable(room, tile)))
         {
             return null;
         }
 
         GridPosition best = reachable.Keys
+            .Where(tile => Walkable(room, tile))
             .OrderBy(distanceToGoal)
             .ThenBy(tile => reachable[tile])
             .ThenBy(tile => tile.Y)

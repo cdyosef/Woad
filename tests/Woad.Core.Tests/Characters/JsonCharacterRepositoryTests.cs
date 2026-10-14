@@ -23,6 +23,19 @@ public sealed class JsonCharacterRepositoryTests : IDisposable
         Character.Create(name, "moss", new StatAllocation { Hearts = 1, Luck = 1 }, Content, new DateTimeOffset(2026, 10, 10, 12, minutes, 0, TimeSpan.Zero));
 
     [Fact]
+    public async Task CompanionsStayCompanionsAndOlderFilesLoadAsHeroes()
+    {
+        Character companion = Character.Create("Pip", "bone", StatAllocation.None, Content, DateTimeOffset.UnixEpoch, isCompanion: true);
+        await Repository().SaveAsync(companion);
+        Assert.True(Assert.Single((await Repository().LoadAllAsync()).Characters).IsCompanion);
+
+        // Files from before companions have no flag at all.
+        string path = Directory.GetFiles(_folder, "*.json").Single();
+        File.WriteAllText(path, File.ReadAllText(path).Replace("\"isCompanion\": true", "\"unused\": 0"));
+        Assert.False(Assert.Single((await Repository().LoadAllAsync()).Characters).IsCompanion);
+    }
+
+    [Fact]
     public async Task AnEmptyOrMissingFolderHasNoCharacters()
     {
         CharacterLoadResult result = await Repository().LoadAllAsync();

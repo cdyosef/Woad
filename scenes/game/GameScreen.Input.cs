@@ -12,7 +12,7 @@ public partial class GameScreen
 {
     private void OnTileClicked(GridPosition tile)
     {
-        if (_busy || ActiveHero is not { } hero || _session.State.Turn is not { } turn || hero.RoomId != _shownRoomId)
+        if (Locked || ActiveHero is not { } hero || _session.State.Turn is not { } turn || hero.RoomId != _shownRoomId)
         {
             return;
         }
@@ -32,6 +32,27 @@ public partial class GameScreen
         }
 
         Room room = ShownRoom;
+        if (_shoving)
+        {
+            if (room.MonsterAt(tile) is { } shoved)
+            {
+                if (_session.AttackDiceLeft > 0 && SelectedAttackDice < 1)
+                {
+                    Log("Select at least one Rumble die.", Palette.TextDim);
+                    return;
+                }
+
+                Execute(new Shove(hero.Id, shoved.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
+            }
+            else
+            {
+                _shoving = false;
+                RefreshPanels();
+            }
+
+            return;
+        }
+
         if (_stealing)
         {
             int? victim = room.MonsterAt(tile)?.Id ?? _session.State.ActiveHeroesIn(room).FirstOrDefault(other => other.Position == tile && other != hero)?.Id;
@@ -64,13 +85,19 @@ public partial class GameScreen
         }
         else if (room.TrapAt(tile) is { Revealed: true } trap && tile != hero.Position)
         {
-            if (trap.Kind == TrapKind.TrapDoor && turn.MovementPoints > 0)
+            // Beside a found trap: jump down a trap door or disarm the trap. Further off: step onto it.
+            bool beside = hero.Position.ManhattanDistanceTo(tile) == 1;
+            if (trap.Kind == TrapKind.TrapDoor && beside && turn.MovementPoints > 0)
             {
                 Execute(new JumpDown(hero.Id, tile));
             }
-            else
+            else if (beside || !_session.GetReachableTiles().ContainsKey(tile))
             {
                 ExecuteOdHand((heroId, dice, tools, power) => new Disarm(heroId, tile, dice, tools, power));
+            }
+            else
+            {
+                Execute(new MoveHero(hero.Id, tile));
             }
         }
         else if (room.Layout[tile] == TileKind.Pot)
@@ -80,6 +107,10 @@ public partial class GameScreen
         else if (tile == hero.Position)
         {
             UseOwnTile(hero, room);
+        }
+        else if (!_session.GetReachableTiles().ContainsKey(tile) && _session.GetJumpLandings().Contains(tile))
+        {
+            Execute(new JumpPit(hero.Id, tile));
         }
         else if (turn.MovementPoints == 0)
         {
@@ -190,7 +221,7 @@ public partial class GameScreen
     /// <summary>What to do next, shown in the top strip when the mouse isn't over a tile.</summary>
     private string Hint()
     {
-        if (_busy || ActiveHero is not { } hero || _session.State.Turn is not { } turn)
+        if (Locked || ActiveHero is not { } hero || _session.State.Turn is not { } turn)
         {
             return "";
         }
@@ -208,6 +239,11 @@ public partial class GameScreen
         if (_stealing)
         {
             return "Steal: click a monster or hero next to you (orange). Right-click to cancel.";
+        }
+
+        if (_shoving)
+        {
+            return "Shove: click a monster next to you (orange) to push it a tile. Right-click to cancel.";
         }
 
         if (_targeting)
@@ -239,7 +275,8 @@ public partial class GameScreen
         if (_session.State.ActiveHeroesIn(room).FirstOrDefault(hero => hero.Position == tile) is { } standing)
         {
             string power = standing.Power.Banked > 0 ? $", {PowerDiceText(standing.Power.Banked)} banked" : "";
-            return $"{standing.Name}: {standing.Hearts}/{standing.MaxHearts} hearts{power}";
+            string companion = standing.OwnerId is int ownerId ? $" ({NameOf(ownerId)}'s companion, {Describe(standing.Order)})" : "";
+            return $"{standing.Name}{companion}: {standing.Hearts}/{standing.MaxHearts} hearts{power}";
         }
 
         if (room.HasLootAt(tile))
@@ -261,8 +298,8 @@ public partial class GameScreen
         if (room.TrapAt(tile) is { Revealed: true } trap)
         {
             return trap.Kind == TrapKind.TrapDoor
-                ? $"A trap door to the floor below. Next to it: click to jump down (1 step), or disarm it with Od Hand ({trap.Difficulty}+)."
-                : $"Spikes: they stab whoever steps here. Next to it: click to disarm with Od Hand ({trap.Difficulty}+).";
+                ? $"A trap door to the floor below. Next to it: click to jump down safely (1 step), or disarm it ({trap.Difficulty}+). Walk onto it and you fall, losing a heart."
+                : $"Spikes: whoever steps here loses a heart and stops. Next to it: click to disarm with Od Hand ({trap.Difficulty}+).";
         }
 
         bool bossAlive = room.Monsters.Any(other => other.Definition.Boss);
@@ -273,7 +310,9 @@ public partial class GameScreen
             TileKind.CrackedWall => "A cracked wall. A bomb's blast would break it, and something may be sealed inside.",
             TileKind.Pot => "A clay pot. Stand next to it and click to smash it: coins, a heart, or nothing.",
             TileKind.Wall => "A stone pillar.",
-            TileKind.Pit => "A bottomless pit. Only flyers cross it.",
+            TileKind.Pit when room.BelowRoomId is not null =>
+                "A pit: the room below shows far down. Fall in (or be shoved) and you drop to it, losing a heart. Jump it: 2 steps, 4+ on a die.",
+            TileKind.Pit => "A bottomless pit. Fall in and you lose a heart climbing out; a monster shoved in is gone. Jump it: 2 steps, 4+ on a die.",
             TileKind.StairsDown => $"Stairs down to floor {room.Floor + 1}. Stand on them and click again to descend (1 step).",
             TileKind.Exit when bossAlive => "The way out, sealed until the boss here falls.",
             TileKind.Exit => "The way out! Stand on it and click again to escape with your treasure.",
@@ -284,6 +323,10 @@ public partial class GameScreen
         if (_session.GetReachableTiles().TryGetValue(tile, out int steps))
         {
             terrain = $"{UiTheme.Count(steps, "step", "steps")} away. {terrain}";
+        }
+        else if (_session.GetJumpLandings().Contains(tile))
+        {
+            terrain = $"Click to jump the pit to here: 2 steps, 4+ on a die, or you fall in. {terrain}";
         }
 
         return terrain;
@@ -381,7 +424,7 @@ public partial class GameScreen
 
     private void SelectCard(int cardId)
     {
-        if (_busy)
+        if (Locked)
         {
             return;
         }
@@ -395,6 +438,7 @@ public partial class GameScreen
     private void CancelSelection()
     {
         _stealing = false;
+        _shoving = false;
         _selectedCardId = null;
         _targeting = false;
         _board.SetBlast([]);
@@ -403,7 +447,7 @@ public partial class GameScreen
 
     private void OnCardAction(CardAction action)
     {
-        if (_busy || _selectedCardId is not int cardId || ActiveHero is not { } hero || hero.FindCard(cardId) is not var (card, _))
+        if (Locked || _selectedCardId is not int cardId || ActiveHero is not { } hero || hero.FindCard(cardId) is not var (card, _))
         {
             return;
         }

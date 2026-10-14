@@ -21,7 +21,9 @@ public sealed class PathSearch
     /// <param name="start">Where the search begins. It is never tested with <paramref name="canEnter"/>.</param>
     /// <param name="canEnter">Whether a tile may be stepped onto or through.</param>
     /// <param name="maxSteps">Tiles further away than this are not explored.</param>
-    public static PathSearch Run(GridPosition start, Func<GridPosition, bool> canEnter, int maxSteps = int.MaxValue)
+    /// <param name="canPass">Whether a walk can go on past a tile it entered; false makes it a place to
+    /// stop (a trap or a pit). The start can always be left. Null: every tile can be passed.</param>
+    public static PathSearch Run(GridPosition start, Func<GridPosition, bool> canEnter, int maxSteps = int.MaxValue, Func<GridPosition, bool>? canPass = null)
     {
         var distances = new Dictionary<GridPosition, int> { [start] = 0 };
         var parents = new Dictionary<GridPosition, GridPosition>();
@@ -32,7 +34,7 @@ public sealed class PathSearch
         {
             GridPosition current = frontier.Dequeue();
             int distance = distances[current];
-            if (distance >= maxSteps)
+            if (distance >= maxSteps || (current != start && canPass?.Invoke(current) == false))
             {
                 continue;
             }

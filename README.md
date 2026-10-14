@@ -78,7 +78,8 @@ dotnet test Woad.sln    # run the rules-engine tests
 Run the game with F5 in the Godot editor. You can also run it from a terminal with
 `Godot_v4.7.2-stable_mono_win64 --path .`. Create a character from **Characters**, then choose
 **Play** to seat 1–8 characters and start a run. Each run generates a new three-floor dungeon from
-its seed.
+its seed. A character created as a **Companion** joins the player seated before it; the game plays it,
+following that player's orders.
 
 GitHub runs the build and the rules tests on every push and pull request (`.github/workflows/tests.yml`);
 the results show on the repository's **Actions** tab and on each pull request.
@@ -86,14 +87,15 @@ the results show on the repository's **Actions** tab and on each pull request.
 ### Smoke tests
 
 `tools/smoke-test.ps1` builds everything, runs the rules tests (including bots playing whole
-generated dungeons), and then runs the game headless in five debug modes. Pass the mode after `--`
+generated dungeons), and then runs the game headless in six debug modes. Pass the mode after `--`
 on the Godot command line:
 
 | Flag | What it does |
 | --- | --- |
-| `--menutest` | Creates two characters, seats them, starts and leaves a run, and deletes one, using synthetic clicks and typing. Saves go to a throwaway temp folder. |
+| `--menutest` | Creates two characters and a companion, seats them, starts a run, orders the companion to hold, leaves the run, and deletes a character, using synthetic clicks and typing. Saves go to a throwaway temp folder. |
 | `--uitest` | Puts a fixed debug party in a single room and plays two turns by pushing real mouse clicks through the UI (cards, targeting, Luck, moving, equipping), checking each result. |
 | `--floortest` | Clicks through a door and down the stairs in a tiny three-room setup, checking that the view follows the hero. |
+| `--hazardtest` | Shoves a slimeling into a pit that leads to the room below, then jumps the pit, checking that the hero lands beyond it or drops below and that the view follows. |
 | `--resultstest` | Two saved characters click their way out of the exit; checks that their results are saved and shown. Uses a throwaway save folder. |
 | `--autoplay` | The debug party plays a generated dungeon with the rules-engine bot until the run ends, narrating to the console. Add `--fast` for 8× speed, and `--party N` for a party of N (up to 8). |
 
