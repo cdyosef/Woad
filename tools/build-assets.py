@@ -31,6 +31,18 @@ def rgba(color):
     return (int(color[0:2], 16), int(color[2:4], 16), int(color[4:6], 16), alpha)
 
 
+def stored_zlib(data):
+    """A zlib stream of uncompressed (stored) blocks. Unlike zlib.compress, the bytes don't depend on
+    which zlib build Python uses, so every machine writes identical files."""
+    out = bytearray(b"\x78\x01")
+    for start in range(0, max(len(data), 1), 65535):
+        block = data[start:start + 65535]
+        final = start + 65535 >= len(data)
+        out += bytes([1 if final else 0]) + struct.pack("<HH", len(block), 0xFFFF ^ len(block)) + block
+    out += struct.pack(">I", zlib.adler32(data) & 0xFFFFFFFF)
+    return bytes(out)
+
+
 def write_png(path, pixels):
     """Writes rows of (r, g, b, a) tuples as an RGBA PNG."""
     height, width = len(pixels), len(pixels[0])
@@ -41,7 +53,7 @@ def write_png(path, pixels):
 
     png = (b"\x89PNG\r\n\x1a\n"
            + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0))
-           + chunk(b"IDAT", zlib.compress(raw, 9))
+           + chunk(b"IDAT", stored_zlib(raw))
            + chunk(b"IEND", b""))
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(png)
@@ -261,6 +273,101 @@ OBJECTS = {
 
 HEART_ROWS = [".oo.oo.", "orrorro", "orlrrro", "orrrrro", ".orrro.", "..oro..", "...o..."]
 
+# A chest bound in iron with a gold lock plate: it holds better loot, and takes a key or a picked lock.
+OBJECTS["chest_locked"] = sprite([
+    "................", "................", "................",
+    "..oooooooooooo..",
+    ".owwwwwwwwwwwwo.",
+    ".owddddddddddwo.",
+    ".owddddddddddwo.",
+    ".oggggggggggggo.",
+    ".oggggoyyoggggo.",
+    ".owdddoyyodddwo.",
+    ".owddddddddddwo.",
+    ".owddddddddddwo.",
+    ".oggggggggggggo.",
+    ".oooooooooooooo.",
+    "................", "................",
+], {**WOOD, "g": "#9aa4ad", "y": "#f0c94a"})
+
+# ---- Stat and key icons (12x12) -------------------------------------------------------------
+
+ICONS = {
+    "icon_rumble": sprite([  # a fist
+        "............",
+        ".oo.oo.oo...",
+        "ossossossoo.",
+        "osssssssssso",
+        "oslslslsssso",
+        "osssssssssso",
+        "oooooooossso",
+        ".ossssssssso",
+        ".osssssssso.",
+        "..osssssso..",
+        "..oooooooo..",
+        "............",
+    ], {"o": OUTLINE, "s": "#f0c8a0", "l": "#fff0d8"}),
+    "icon_wend": sprite([  # a boot
+        "............",
+        "...oooooo...",
+        "...ogggggo..",
+        "...obbbbbo..",
+        "...obbbbbo..",
+        "...obbbbbo..",
+        "...obbbbboo.",
+        "...obbbbbbbo",
+        "..obbbbbbbbo",
+        "..oddddddddo",
+        "..oooooooooo",
+        "............",
+    ], {"o": OUTLINE, "g": "#e2c47a", "b": "#8a5a2b", "d": "#3a2414"}),
+    "icon_odhand": sprite([  # a hamsa
+        "...o.oo.o...",
+        "..obobbobo..",
+        "..obobbobo..",
+        "o.obbbbbbo.o",
+        "obobbbbbbobo",
+        "obbbbwwbbbbo",
+        ".obbwkkwbbo.",
+        ".obbbwwbbbo.",
+        "..obbbbbbo..",
+        "...obbbbo...",
+        "....oooo....",
+        "............",
+    ], {"o": OUTLINE, "b": "#5d8de0", "w": "#e8e0c8", "k": "#15121d"}),
+    "icon_power": sprite([  # the Violet crest's four-pointed star, for Power Dice
+        ".....o......",
+        "....olo.....",
+        "....olo.....",
+        "...oslso....",
+        ".oosslssoo..",
+        "olllllwlllo.",
+        ".oosslssoo..",
+        "...oslso....",
+        "....olo.....",
+        "....olo.....",
+        ".....o......",
+        "............",
+    ], {"o": OUTLINE, "s": "#9a5fd8", "l": "#c9a6f0", "w": "#f4ecff"}),
+}
+
+KEY_ROWS = [
+    "............",
+    "............",
+    ".ooo........",
+    "oyyyo.......",
+    "oy.yoooooooo",
+    "oyyyyyyyyyyo",
+    "oy.yooooyoyo",
+    "oyyyo...o.o.",
+    ".ooo........",
+    "............",
+    "............",
+    "............",
+]
+ICONS["icon_key"] = sprite(KEY_ROWS, {"o": "#5a4424", "y": "#f0c94a"})
+ICONS["icon_boss_key"] = sprite(KEY_ROWS, {"o": "#e2c47a", "y": "#d8434a"})
+
 
 # ---- Procedural tiles (16x16) ---------------------------------------------------------------
 
@@ -302,6 +409,53 @@ def wall_tile():
         tile[15][i] = outline
         tile[i][0] = outline if i > 5 else tile[i][0]
         tile[i][15] = outline if i > 5 else tile[i][15]
+    return tile
+
+
+def cracked_wall_tile():
+    """A wall block split by dark cracks: a bomb's blast breaks it."""
+    tile = wall_tile()
+    crack = rgba("#0b100e")
+    for x, y in [(4, 2), (5, 3), (5, 4), (6, 5), (6, 6), (7, 7), (7, 8), (8, 9), (8, 10), (9, 11), (9, 12), (10, 13),
+                 (8, 8), (9, 8), (10, 7), (6, 10), (5, 11)]:
+        tile[y][x] = crack
+    return tile
+
+
+def spikes_tile():
+    """Steel spikes poking up through the floor (drawn over it): a trap someone found."""
+    return sprite([
+        "................",
+        "..o....o....o...",
+        ".oso..oso..oso..",
+        ".oso..oso..oso..",
+        "olssoolssoolsso.",
+        "olssoolssoolsso.",
+        "ooooooooooooooo.",
+        "................",
+        "....o....o......",
+        "...oso..oso.....",
+        "...oso..oso.....",
+        "..olsso.olsso...",
+        "..olsso.olsso...",
+        "..ooooo.ooooo...",
+        "................",
+        "................",
+    ], {"o": OUTLINE, "s": "#9aa4ad", "l": "#e8eef2"})
+
+
+def trapdoor_tile():
+    """A wooden hatch in the floor (drawn over it): a trap door someone found."""
+    tile = blank()
+    outline, wood, seam, iron = rgba("#2a1a10"), rgba("#8a5a2b"), rgba("#5a3a1a"), rgba("#9aa4ad")
+    for y in range(2, 14):
+        for x in range(2, 14):
+            edge = y in (2, 13) or x in (2, 13)
+            tile[y][x] = outline if edge else (seam if x in (5, 8, 11) else wood)
+    for y in (4, 11):
+        for x in range(3, 7):
+            tile[y][x] = iron
+    tile[8][10] = tile[8][11] = iron
     return tile
 
 
@@ -760,6 +914,9 @@ def main():
     write_png(theme / "tiles" / "floor_a.png", floor_tile(1, "#6fa48a", "#5a8f78", "#3d6555", "#4f7f6a"))
     write_png(theme / "tiles" / "floor_b.png", floor_tile(2, "#68a084", "#548a72", "#3a6152", "#4a7863"))
     write_png(theme / "tiles" / "wall.png", wall_tile())
+    write_png(theme / "tiles" / "cracked_wall.png", cracked_wall_tile())
+    write_png(theme / "tiles" / "spikes.png", spikes_tile())
+    write_png(theme / "tiles" / "trapdoor.png", trapdoor_tile())
     write_png(theme / "tiles" / "pit.png", pit_tile())
     write_png(theme / "tiles" / "stairs.png", stairs_tile())
     write_png(theme / "tiles" / "exit_open.png", exit_tile(sealed=False))
@@ -778,6 +935,8 @@ def main():
     write_png(ui / "frame_disabled.png", frame("#4a4030", "#2a2418", "#120f1c"))
     write_png(ui / "heart_full.png", sprite(HEART_ROWS, {"o": "#2a0a10", "r": "#d8434a", "l": "#ffb0a0"}))
     write_png(ui / "heart_empty.png", sprite(HEART_ROWS, {"o": "#2a0a10", "r": "#3a2a30", "l": "#4a3a40"}))
+    for name, pixels in ICONS.items():
+        write_png(ui / f"{name}.png", pixels)
 
     build_font(ASSETS / "fonts", "woad_gothic")
     build_sounds(ASSETS / "audio")

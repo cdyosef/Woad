@@ -1,4 +1,5 @@
 using Woad.Core.Dice;
+using Woad.Core.Grid;
 
 namespace Woad.Core.Model;
 
@@ -10,35 +11,68 @@ public enum DamageSource
     Monster,
 }
 
-/// <summary>A hero's attack whose dice are rolled but not yet resolved, waiting for Luck rerolls.</summary>
-public sealed class PendingAttack
+public enum OdHandCheckKind
 {
-    internal PendingAttack(int attackerId, DiceRoll roll, int bonus, IReadOnlyList<int> targetIds, DamageSource source)
+    /// <summary>Pick the lock of the door the hero stands in.</summary>
+    PickDoor,
+
+    /// <summary>Pick the lock of an adjacent chest.</summary>
+    PickChest,
+
+    /// <summary>Search the whole room for secrets.</summary>
+    Search,
+
+    /// <summary>Disarm a revealed trap on an adjacent tile, an adjacent chest or the door the hero stands in.</summary>
+    Disarm,
+
+    /// <summary>Steal from an adjacent monster or hero (a contest against their roll).</summary>
+    Steal,
+}
+
+/// <summary>
+/// What an Od Hand roll is for. <see cref="Difficulty"/> is the total it must reach (0 for a steal,
+/// which is a contest). <see cref="Target"/> is the tile involved; <see cref="TargetId"/> who is robbed.
+/// </summary>
+public sealed record OdHandCheck(OdHandCheckKind Kind, int Difficulty, GridPosition Target = default, int TargetId = 0);
+
+/// <summary>
+/// A hero's roll whose dice are rolled but not yet resolved, waiting for Luck rerolls or Power Dice
+/// choices: an attack, or an Od Hand <see cref="Check"/>.
+/// </summary>
+public sealed class PendingRoll
+{
+    internal PendingRoll(int heroId, DiceRoll roll, int bonus, IReadOnlyList<int> targetIds, DamageSource source, OdHandCheck? check = null)
     {
-        AttackerId = attackerId;
+        HeroId = heroId;
         Roll = roll;
         Bonus = bonus;
         TargetIds = targetIds;
         Source = source;
+        Check = check;
     }
 
-    public int AttackerId { get; }
+    public int HeroId { get; }
 
     public DiceRoll Roll { get; internal set; }
 
-    /// <summary>The weapon's fixed value added to the roll, or 0.</summary>
+    /// <summary>The weapon's or tools' fixed value added to the roll, or 0.</summary>
     public int Bonus { get; }
 
     public int Total => Roll.Total + Bonus;
 
+    /// <summary>Monsters an attack is aimed at (empty for Od Hand checks).</summary>
     public IReadOnlyList<int> TargetIds { get; }
 
     public DamageSource Source { get; }
+
+    /// <summary>The Od Hand check this roll is for, or null for an attack.</summary>
+    public OdHandCheck? Check { get; }
 }
 
 /// <summary>
-/// What the active hero has spent so far this turn: Attack and Move dice (each attack or move
-/// uses one or more), the weapon and Speed (once each), the one other action and the free belt item.
+/// What the active hero has spent so far this turn: Rumble, Wend and Od Hand dice (each attack, move
+/// or check uses one or more), the weapon, Speed and tools (once each), the one other action, the free
+/// belt item, the free loot and the one steal.
 /// </summary>
 public sealed class TurnState
 {
@@ -55,6 +89,17 @@ public sealed class TurnState
 
     /// <summary>Speed has been added to a move this turn.</summary>
     public bool SpeedUsed { get; internal set; }
+
+    public int OdHandDiceUsed { get; internal set; }
+
+    /// <summary>The tools' value has been added to an Od Hand roll this turn.</summary>
+    public bool ToolsUsed { get; internal set; }
+
+    /// <summary>The once-per-turn free loot (picking up or opening a chest) has been used.</summary>
+    public bool UsedFreeLoot { get; internal set; }
+
+    /// <summary>The hero has tried to steal this turn (once per turn).</summary>
+    public bool HasStolen { get; internal set; }
 
     /// <summary>The roll of the move in progress; null when no move is under way.</summary>
     public DiceRoll? MovementRoll { get; internal set; }
@@ -74,7 +119,7 @@ public sealed class TurnState
     /// <summary>The once-per-turn free belt item has been used.</summary>
     public bool UsedBeltItem { get; internal set; }
 
-    public PendingAttack? PendingAttack { get; internal set; }
+    public PendingRoll? PendingRoll { get; internal set; }
 
     /// <summary>
     /// Power Dice just earned by sixes on the pending attack or the move in progress, waiting for

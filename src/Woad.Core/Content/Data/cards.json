@@ -1,25 +1,26 @@
 [
   // Weapons (main hand)
-  { "id": "wooden_sword", "name": "Wooden Sword", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 1 }, "value": 2, "text": "Weapon 1: adds 1 to one attack a turn." },
-  { "id": "knights_sword", "name": "Knight's Sword", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 2 }, "value": 10, "text": "Weapon 2: adds 2 to one attack a turn." },
+  { "id": "wooden_sword", "name": "Wooden Sword", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 1 }, "value": 2, "text": "Weapon 1: adds 1 to one Rumble roll a turn." },
+  { "id": "knights_sword", "name": "Knight's Sword", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 2 }, "value": 10, "text": "Weapon 2: adds 2 to one Rumble roll a turn." },
   { "id": "short_bow", "name": "Short Bow", "type": "weapon", "slot": "mainHand", "twoHanded": true, "modifiers": { "weapon": 1 }, "attackRange": 4, "value": 8, "text": "Two-handed. Weapon 1. Attack at range 4." },
 
   // Shields (off hand)
   { "id": "buckler", "name": "Buckler", "type": "shield", "slot": "offHand", "modifiers": { "armor": 2 }, "value": 2, "text": "Armor 2: adds 2 to every defense." },
-  { "id": "tower_shield", "name": "Tower Shield", "type": "shield", "slot": "offHand", "modifiers": { "armor": 3, "speed": -1 }, "value": 10, "text": "Armor 3, -1 Speed." },
+  { "id": "tower_shield", "name": "Tower Shield", "type": "shield", "slot": "offHand", "modifiers": { "armor": 3, "speed": -1 }, "value": 10, "text": "Armor 3, -1 Wend." },
 
   // Armor and boots
   { "id": "leather_cap", "name": "Leather Cap", "type": "armor", "slot": "head", "modifiers": { "hearts": 1 }, "value": 3, "text": "+1 Heart." },
   { "id": "chain_mail", "name": "Chain Mail", "type": "armor", "slot": "body", "modifiers": { "armor": 1 }, "value": 8, "text": "Armor 1: adds 1 to every defense." },
-  { "id": "dash_boots", "name": "Dash Boots", "type": "boots", "slot": "feet", "modifiers": { "moveDice": 1 }, "value": 10, "text": "+1 Move die." },
+  { "id": "dash_boots", "name": "Dash Boots", "type": "boots", "slot": "feet", "modifiers": { "moveDice": 1 }, "value": 10, "text": "+1 Wend die." },
 
   // Spells and tools
-  { "id": "flame_scroll", "name": "Flame Scroll", "type": "spell", "usage": "singleUse", "effect": { "kind": "attack", "amount": 3, "range": 3 }, "value": 4, "text": "Single use. Attack a monster within 3 with 3 dice of fire (not your own)." },
+  { "id": "flame_scroll", "name": "Flame Scroll", "type": "spell", "usage": "singleUse", "effect": { "kind": "attack", "amount": 3, "range": 3 }, "value": 4, "text": "Single use. A 3-dice attack of fire on a monster within 3 (not your Rumble dice)." },
   { "id": "frost_wand", "name": "Frost Wand", "type": "spell", "slot": "offHand", "usage": "charges", "charges": 2, "effect": { "kind": "stun", "amount": 1, "range": 3 }, "value": 8, "text": "2 charges per floor. Freeze a monster within 3: it skips its next turn." },
   { "id": "boomerang", "name": "Boomerang", "type": "tool", "slot": "offHand", "effect": { "kind": "stun", "amount": 1, "range": 4 }, "value": 6, "text": "Stun a monster within 4: it skips its next turn." },
+  { "id": "lockpicks", "name": "Lockpicks", "type": "tool", "slot": "offHand", "modifiers": { "tools": 2 }, "value": 6, "text": "Tools 2: adds 2 to one Od Hand roll a turn (picking locks, searching, disarming, stealing)." },
 
   // Consumables
-  { "id": "bomb", "name": "Bomb", "type": "bomb", "usage": "singleUse", "effect": { "kind": "attack", "amount": 2, "range": 3, "areaRadius": 1 }, "value": 1, "text": "Single use. Throw up to 3 tiles: a 2-dice attack on every monster in a 3x3 blast." },
+  { "id": "bomb", "name": "Bomb", "type": "bomb", "usage": "singleUse", "effect": { "kind": "attack", "amount": 2, "range": 3, "areaRadius": 1 }, "value": 1, "text": "Single use. Throw up to 3 tiles: a 2-dice attack on every monster in a 3x3 blast. Breaks cracked walls." },
   { "id": "health_potion", "name": "Health Potion", "type": "potion", "usage": "singleUse", "effect": { "kind": "heal", "amount": 3 }, "value": 2, "text": "Single use. Restore 3 hearts." },
 
   // Treasure

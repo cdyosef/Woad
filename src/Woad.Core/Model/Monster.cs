@@ -24,6 +24,9 @@ public sealed class Monster
     /// <summary>Power Dice banked from sixes on defense rolls, spent to save itself from hits.</summary>
     public PowerBank Power { get; } = new();
 
+    /// <summary>Someone has already stolen from it; it guards what's left.</summary>
+    public bool Robbed { get; internal set; }
+
     /// <summary>Turns this monster will skip.</summary>
     public int StunnedTurns { get; internal set; }
 

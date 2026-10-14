@@ -40,20 +40,10 @@ public sealed partial class GameSession
         arrival.Explored = true;
 
         bool firstTime = arrival.Floor > hero.DeepestFloor;
-        if (firstTime)
-        {
-            hero.DeepestFloor = arrival.Floor;
-            hero.LuckRemaining = Math.Max(0, hero.EffectiveStats.Luck);
-            foreach (CardInstance card in hero.AllCards.Where(card => card.Definition.Usage == CardUsage.Charges))
-            {
-                card.ChargesRemaining = card.Definition.Charges;
-            }
-        }
-
         events.Add(new HeroDescended(hero.Id, room.Id, arrival.Id, arrival.Floor, landing, firstTime));
         if (firstTime)
         {
-            GrantXp(hero, GameRules.XpPerNewFloor, events);
+            ReachNewFloor(hero, arrival.Floor, events);
         }
 
         return null;

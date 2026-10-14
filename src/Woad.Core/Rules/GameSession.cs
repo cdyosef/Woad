@@ -86,6 +86,12 @@ public sealed partial class GameSession
             ConfirmAttack c => Handle(c, events),
             AddPowerDie c => Handle(c, events),
             BankPowerDie c => Handle(c, events),
+            UnlockDoor c => Handle(c, events),
+            PickLock c => Handle(c, events),
+            Search c => Handle(c, events),
+            Disarm c => Handle(c, events),
+            Steal c => Handle(c, events),
+            JumpDown c => Handle(c, events),
             UseCard c => Handle(c, events),
             EquipCard c => Handle(c, events),
             BeltCard c => Handle(c, events),
@@ -100,7 +106,21 @@ public sealed partial class GameSession
             _ => $"Unknown command {command.GetType().Name}.",
         };
 
-        return error is null ? CommandResult.Accept(events) : CommandResult.Reject(error);
+        if (error is not null)
+        {
+            return CommandResult.Reject(error);
+        }
+
+        // A hero downed on their own turn (by a trap) hands the turn on.
+        if (State.Phase == RunPhase.InProgress && State.Turn is { } turn && !State.GetHero(turn.HeroId).IsActive)
+        {
+            State.Turn.PendingRoll = null;
+            State.Turn.UnsettledPowerDice = 0;
+            events.Add(new TurnEnded(turn.HeroId));
+            AdvanceTurn(State.GetHero(turn.HeroId).Seat, events);
+        }
+
+        return CommandResult.Accept(events);
     }
 
     private string? CheckActor(GameCommand command)
@@ -120,9 +140,9 @@ public sealed partial class GameSession
             return "You rolled a 6: add your Power Die to the roll or bank it first.";
         }
 
-        if (Turn.PendingAttack is not null && command is not (RerollDie or ConfirmAttack or AddPowerDie or BankPowerDie))
+        if (Turn.PendingRoll is not null && command is not (RerollDie or ConfirmAttack or AddPowerDie or BankPowerDie))
         {
-            return "Finish the attack first: reroll a die with Luck or confirm it.";
+            return "Finish the roll first: reroll a die with Luck or confirm it.";
         }
 
         return null;
@@ -229,10 +249,12 @@ public sealed partial class GameSession
                 room.AddMonster(new Monster(state.NextId(), spawn.Monster, spawn.Position));
             }
 
+            AddFeatures(room, roomSetup.Features ?? RoomFeatures.None);
             state.AddRoom(room);
         }
 
         ValidateDoors(state);
+        AddPassages(state, setup.Passages);
 
         if (!state.Rooms.TryGetValue(setup.StartRoomId, out Room? startRoom))
         {
@@ -293,6 +315,64 @@ public sealed partial class GameSession
                 {
                     throw new ArgumentException($"Room '{room.Id}' {side} door must lead to a room with a matching {side.Opposite()} door back.");
                 }
+            }
+        }
+    }
+
+    private static void AddFeatures(Room room, RoomFeatures features)
+    {
+        foreach ((GridPosition tile, TrapSetup trap) in features.Traps)
+        {
+            room.SetTrap(tile, new Trap(trap.Kind, trap.Difficulty));
+        }
+
+        foreach ((GridPosition chest, int difficulty) in features.LockedChests)
+        {
+            room.LockChest(chest, difficulty);
+        }
+
+        foreach ((GridPosition chest, TrapSetup trap) in features.ChestTraps)
+        {
+            room.SetChestTrap(chest, new Trap(trap.Kind, trap.Difficulty));
+        }
+
+        if (features.BossKeyChest is { } bossKeyChest)
+        {
+            room.PutBossKeyInChest(bossKeyChest);
+        }
+
+        room.BossKeyAt = features.BossKeyOnFloor;
+
+        foreach ((GridPosition tile, CacheSetup cache) in features.Caches)
+        {
+            room.HideCache(tile, new Cache(cache.Difficulty, cache.Keys, cache.Cards, cache.BehindWall));
+        }
+
+        foreach ((GridPosition tile, int keys) in features.Keys)
+        {
+            room.AddKeys(tile, keys);
+        }
+    }
+
+    /// <summary>One shared <see cref="Passage"/> per pair of doors, open unless the setup says otherwise.</summary>
+    private static void AddPassages(GameState state, IReadOnlyList<PassageSetup> setups)
+    {
+        foreach (Room room in state.Rooms.Values)
+        {
+            foreach ((Direction side, string targetId) in room.Doors)
+            {
+                if (room.PassageOn(side) is not null)
+                {
+                    continue;
+                }
+
+                Room target = state.Rooms[targetId];
+                PassageSetup? setup = setups.FirstOrDefault(passage =>
+                    (passage.RoomId == room.Id && passage.Side == side) || (passage.RoomId == target.Id && passage.Side == side.Opposite()));
+                Trap? trap = setup?.Trap is { } darts ? new Trap(darts.Kind, darts.Difficulty) : null;
+                var passage = new Passage(room.Id, side, target.Id, setup?.Kind ?? PassageKind.Open, setup?.Difficulty ?? 0, trap);
+                room.AddPassage(side, passage);
+                target.AddPassage(side.Opposite(), passage);
             }
         }
     }

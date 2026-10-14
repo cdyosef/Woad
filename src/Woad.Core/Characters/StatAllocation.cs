@@ -6,6 +6,7 @@ public enum StatKind
     Speed,
     AttackDice,
     DefenseDice,
+    OdHandDice,
     Luck,
 }
 
@@ -22,6 +23,8 @@ public sealed record StatAllocation
 
     public int DefenseDice { get; init; }
 
+    public int OdHandDice { get; init; }
+
     public int Luck { get; init; }
 
     public int this[StatKind stat] => stat switch
@@ -30,6 +33,7 @@ public sealed record StatAllocation
         StatKind.Speed => Speed,
         StatKind.AttackDice => AttackDice,
         StatKind.DefenseDice => DefenseDice,
+        StatKind.OdHandDice => OdHandDice,
         StatKind.Luck => Luck,
         _ => throw new ArgumentOutOfRangeException(nameof(stat)),
     };
@@ -40,6 +44,7 @@ public sealed record StatAllocation
         StatKind.Speed => this with { Speed = value },
         StatKind.AttackDice => this with { AttackDice = value },
         StatKind.DefenseDice => this with { DefenseDice = value },
+        StatKind.OdHandDice => this with { OdHandDice = value },
         StatKind.Luck => this with { Luck = value },
         _ => throw new ArgumentOutOfRangeException(nameof(stat)),
     };

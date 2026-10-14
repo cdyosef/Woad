@@ -15,9 +15,10 @@ public partial class CharacterEditor : MenuScreen
     private static readonly (StatKind Stat, string Name)[] StatRows =
     [
         (StatKind.Hearts, "Hearts"),
-        (StatKind.Speed, "Speed"),
-        (StatKind.AttackDice, "Attack"),
+        (StatKind.Speed, "Wend"),
+        (StatKind.AttackDice, "Rumble"),
         (StatKind.DefenseDice, "Defense"),
+        (StatKind.OdHandDice, "Od Hand"),
         (StatKind.Luck, "Luck"),
     ];
 
@@ -107,13 +108,13 @@ public partial class CharacterEditor : MenuScreen
         for (int i = 0; i < StatRows.Length; i++)
         {
             (StatKind stat, string name) = StatRows[i];
-            float y = 166 + i * 24;
+            float y = 164 + i * 21;
             Add(UiTheme.Label(new Vector2(24, y + 4), new Vector2(60, 12), name));
             Add(UiTheme.Label(new Vector2(84, y + 4), new Vector2(60, 12), $"{PointBuy.CostPerStep(stat)} pt each", color: Palette.TextDim));
-            Button minus = Add(UiTheme.Button(new Vector2(150, y), new Vector2(20, 20), "-"));
+            Button minus = Add(UiTheme.Button(new Vector2(150, y), new Vector2(20, 19), "-"));
             Label value = Add(UiTheme.Label(new Vector2(172, y + 4), new Vector2(28, 12)));
             value.HorizontalAlignment = HorizontalAlignment.Center;
-            Button plus = Add(UiTheme.Button(new Vector2(202, y), new Vector2(20, 20), "+"));
+            Button plus = Add(UiTheme.Button(new Vector2(202, y), new Vector2(20, 19), "+"));
             minus.Pressed += () => Step(stat, -1);
             plus.Pressed += () => Step(stat, +1);
             _statControls[stat] = (minus, value, plus);
@@ -125,7 +126,7 @@ public partial class CharacterEditor : MenuScreen
         _previewHearts = Add(new HeartsView { Position = new Vector2(424, 88), Size = new Vector2(180, 9) });
         _previewStats = Add(UiTheme.Label(new Vector2(370, 120), new Vector2(240, 140)));
 
-        _error = Add(UiTheme.Label(new Vector2(24, 296), new Vector2(320, 14), color: Palette.Danger));
+        _error = Add(UiTheme.Label(new Vector2(24, 298), new Vector2(320, 14), color: Palette.Danger));
         SaveButton = Add(UiTheme.Button(new Vector2(420, 316), new Vector2(96, 26), Editing is null ? "Create" : "Save"));
         SaveButton.Pressed += Save;
         Button cancel = Add(UiTheme.Button(new Vector2(522, 316), new Vector2(96, 26), "Cancel"));
@@ -174,11 +175,12 @@ public partial class CharacterEditor : MenuScreen
             ? "Starts with: " + string.Join(", ", GameRules.StarterKit.Select(id => Content.GetCard(id).Name))
             : $"Level {_level}";
         _previewStats.Text =
-            $"Move {stats.MoveDice}d6{speed}   Luck {UiTheme.Count(stats.Luck, "reroll", "rerolls")}\n" +
-            $"Attack {UiTheme.Count(stats.AttackDice, "die", "dice")}   Defense {UiTheme.Count(stats.DefenseDice, "die", "dice")}\n" +
+            $"Wend {stats.MoveDice}d6{speed}   Luck {UiTheme.Count(stats.Luck, "reroll", "rerolls")}\n" +
+            $"Rumble {UiTheme.Count(stats.AttackDice, "die", "dice")}   Defense {UiTheme.Count(stats.DefenseDice, "die", "dice")}\n" +
+            $"Od Hand {UiTheme.Count(stats.OdHandDice, "die", "dice")}\n" +
             "(before gear bonuses)\n\n" +
             gear + "\n\n" +
-            (_level <= 1 ? $"At level 1 you can buy at most {PointBuy.LevelOneDiceLimit} extra Attack and Defense die. Unspent points are kept." : "");
+            (_level <= 1 ? $"At level 1 you can buy at most {PointBuy.LevelOneDiceLimit} extra Rumble, Defense and Od Hand die each. Unspent points are kept." : "");
     }
 
     private async void Save()

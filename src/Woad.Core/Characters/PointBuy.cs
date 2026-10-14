@@ -9,7 +9,7 @@ public static class PointBuy
     /// <summary>Points a new character has to spend.</summary>
     public const int CreationPoints = 6;
 
-    /// <summary>Extra Attack or Defense dice a level 1 character may buy.</summary>
+    /// <summary>Extra Rumble, Defense or Od Hand dice a level 1 character may buy (each).</summary>
     public const int LevelOneDiceLimit = 1;
 
     public static IReadOnlyList<StatKind> AllStats { get; } = Enum.GetValues<StatKind>();
@@ -20,6 +20,7 @@ public static class PointBuy
         StatKind.Speed => 2,
         StatKind.AttackDice => 3,
         StatKind.DefenseDice => 3,
+        StatKind.OdHandDice => 3,
         StatKind.Luck => 2,
         _ => throw new ArgumentOutOfRangeException(nameof(stat)),
     };
@@ -33,6 +34,7 @@ public static class PointBuy
         Speed = allocation.Speed,
         AttackDice = allocation.AttackDice,
         DefenseDice = allocation.DefenseDice,
+        OdHandDice = allocation.OdHandDice,
         Luck = allocation.Luck,
     };
 
@@ -50,9 +52,10 @@ public static class PointBuy
             return "Not enough points.";
         }
 
-        if (level <= 1 && (allocation.AttackDice > LevelOneDiceLimit || allocation.DefenseDice > LevelOneDiceLimit))
+        if (level <= 1 && (allocation.AttackDice > LevelOneDiceLimit || allocation.DefenseDice > LevelOneDiceLimit
+                           || allocation.OdHandDice > LevelOneDiceLimit))
         {
-            return $"At level 1 you can add at most {LevelOneDiceLimit} Attack and {LevelOneDiceLimit} Defense die.";
+            return $"At level 1 you can add at most {LevelOneDiceLimit} Rumble, Defense and Od Hand die each.";
         }
 
         return null;

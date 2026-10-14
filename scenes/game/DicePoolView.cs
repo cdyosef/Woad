@@ -5,31 +5,40 @@ namespace Woad.Scenes.Game;
 
 public enum DicePool
 {
-    Attack,
-    Move,
+    Rumble,
+    Wend,
+    OdHand,
     Power,
 }
 
 /// <summary>
-/// The dice the active hero has left this turn, in three rows: Attack dice plus the weapon's value,
-/// Move dice plus Speed, and banked Power Dice. Selected tokens (bright, gold-edged) are what the
-/// next attack or move will use (selected Power Dice go into whichever comes first); clicking a token
-/// selects or deselects it.
+/// The dice the active hero has left this turn, one row per pool, each led by its symbol: Rumble
+/// (a fist) dice plus the weapon's value, Wend (a boot) dice plus the flat Wend bonus, Od Hand (a hamsa) dice plus
+/// the tools' value, and banked Power Dice. Selected tokens (bright, gold-edged) are what the next
+/// attack, move or Od Hand roll will use (selected Power Dice go into whichever comes first);
+/// clicking a token selects or deselects it. Hovering a row explains it.
 /// </summary>
 public partial class DicePoolView : Control
 {
-    private const float LabelWidth = 38;
+    private const float LabelWidth = 17;
     private const float Token = 12;
     private const float Gap = 3;
     private const float RowHeight = 15;
 
-    private readonly Row[] _rows = [new("ATTACK"), new("MOVE"), new("POWER") { IsPower = true }];
+    private readonly Row[] _rows =
+    [
+        new("icon_rumble", "Rumble: your attack dice this turn, plus your weapon's value on one attack. Click dice to hold some back."),
+        new("icon_wend", "Wend: your move dice this turn, plus your flat Wend bonus on one move. Click dice to hold some back."),
+        new("icon_odhand", "Od Hand: dice for picking locks, searching, disarming traps and stealing, plus your tools' value once a turn."),
+        new("icon_power", "Power Dice, earned by rolling a 6. Click to add banked ones to your next roll.") { IsPower = true },
+    ];
+
     private bool _enabled;
 
     /// <summary>A token was clicked: a die (its index) or the bonus token (index -1).</summary>
     public event Action<DicePool, int>? TokenClicked;
 
-    /// <param name="bonus">The weapon or Speed still available this turn (0 when used or none).</param>
+    /// <param name="bonus">The weapon, Speed or tools still available this turn (0 when used or none).</param>
     /// <param name="note">Text drawn after the tokens, such as the steps left in a move.</param>
     public void ShowPool(DicePool pool, int dice, int selected, int bonus, bool bonusSelected, string note = "")
     {
@@ -47,6 +56,14 @@ public partial class DicePoolView : Control
         set { _enabled = value; QueueRedraw(); }
     }
 
+    public override string _GetTooltip(Vector2 atPosition)
+    {
+        int row = (int)(atPosition.Y / RowHeight);
+        return row >= 0 && row < _rows.Length ? _rows[row].Help : "";
+    }
+
+    public override void _Ready() => TooltipText = " ";
+
     public override void _Draw()
     {
         Font font = ThemeDB.FallbackFont;
@@ -54,7 +71,14 @@ public partial class DicePoolView : Control
         {
             Row row = _rows[r];
             float top = r * RowHeight;
-            DrawString(font, new Vector2(0, top + 10), row.Caption, fontSize: UiTheme.FontSize, modulate: Palette.Trim);
+            if (GameArt.Ui(row.Icon) is { } icon)
+            {
+                DrawTextureRect(icon, new Rect2(0, top, 12, 12), tile: false);
+            }
+            else if (row.IsPower)
+            {
+                DrawString(font, new Vector2(1, top + 10), "6!", fontSize: UiTheme.FontSize, modulate: Palette.Power);
+            }
 
             for (int i = 0; i < row.Dice; i++)
             {
@@ -133,14 +157,16 @@ public partial class DicePoolView : Control
     }
 
     private static Rect2 TokenRect(int row, int index) =>
-        new(new Vector2(LabelWidth + index * (Token + Gap), row * RowHeight + 1), new Vector2(Token, Token));
+        new(new Vector2(LabelWidth + index * (Token + Gap), row * RowHeight), new Vector2(Token, Token));
 
     private static Rect2 BonusRect(int row, Row data) =>
-        new(new Vector2(LabelWidth + data.Dice * (Token + Gap), row * RowHeight + 1), new Vector2(18, Token));
+        new(new Vector2(LabelWidth + data.Dice * (Token + Gap), row * RowHeight), new Vector2(18, Token));
 
-    private sealed class Row(string caption)
+    private sealed class Row(string icon, string help)
     {
-        public string Caption { get; } = caption;
+        public string Icon { get; } = icon;
+
+        public string Help { get; } = help;
 
         public bool IsPower { get; init; }
 

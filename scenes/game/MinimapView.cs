@@ -48,17 +48,26 @@ public partial class MinimapView : Control
         }
 
         List<Room> rooms = _state.Rooms.Values.Where(room => room.Floor == _floor).ToList();
+        IEnumerable<KeyValuePair<Direction, string>> Seen(Room room) =>
+            room.Doors.Where(door => room.PassageOn(door.Key) is not { IsHidden: true });
         var known = rooms.Where(room => room.Explored)
-            .SelectMany(room => room.Doors.Values.Append(room.Id))
+            .SelectMany(room => Seen(room).Select(door => door.Value).Append(room.Id))
             .ToHashSet();
 
         foreach (Room room in rooms.Where(room => room.Explored))
         {
-            foreach ((Direction side, string targetId) in room.Doors.Where(door => door.Key is Direction.East or Direction.South || !_state.Rooms[door.Value].Explored))
+            foreach ((Direction side, string targetId) in Seen(room).Where(door => door.Key is Direction.East or Direction.South || !_state.Rooms[door.Value].Explored))
             {
                 Vector2 from = Center(room.MapPosition);
                 Vector2 to = Center(_state.Rooms[targetId].MapPosition);
-                DrawLine(from, to, Palette.TrimDim, 2);
+                Color color = room.PassageOn(side) switch
+                {
+                    { IsLocked: true, NeedsBossKey: true } => Palette.Heart,
+                    { IsLocked: true } => Palette.Loot.Darkened(0.4f),
+                    { IsBlocked: true } => Palette.WallTop,
+                    _ => Palette.TrimDim,
+                };
+                DrawLine(from, to, color, 2);
             }
         }
 

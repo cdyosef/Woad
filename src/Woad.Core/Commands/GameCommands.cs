@@ -59,11 +59,42 @@ public sealed record StowCard(int HeroId, int CardId) : GameCommand(HeroId);
 /// <summary>Drop a card onto your tile as loot. Free.</summary>
 public sealed record DropCard(int HeroId, int CardId) : GameCommand(HeroId);
 
-/// <summary>Open an adjacent chest and draw from the loot deck. Uses the action.</summary>
+/// <summary>
+/// Open an adjacent chest and draw from the loot deck. A locked chest takes a key (or pick it first).
+/// Looting: the first loot each turn is free, after that it uses the action.
+/// </summary>
 public sealed record OpenChest(int HeroId, GridPosition Chest) : GameCommand(HeroId);
 
-/// <summary>Take loot from your tile into the backpack, as much as fits. Uses the action.</summary>
+/// <summary>Take cards (as many as fit), keys and the Boss Key from your tile. Looting, like opening a chest.</summary>
 public sealed record PickUpLoot(int HeroId) : GameCommand(HeroId);
+
+/// <summary>Open the locked door you stand in with a key, or the Boss Door with the Boss Key. Free.</summary>
+public sealed record UnlockDoor(int HeroId, Direction Door) : GameCommand(HeroId);
+
+/// <summary>
+/// An Od Hand roll: <paramref name="Dice"/> of this turn's unused Od Hand dice (null for all), plus
+/// the tools' value if <paramref name="UseTools"/> and it isn't used yet, plus banked Power Dice.
+/// </summary>
+public abstract record OdHandCommand(int HeroId, int? Dice, bool UseTools, int PowerDice) : GameCommand(HeroId);
+
+/// <summary>Pick the lock of the door you stand in (<paramref name="Target"/> is your own tile) or of an adjacent chest.</summary>
+public sealed record PickLock(int HeroId, GridPosition Target, int? Dice = null, bool UseTools = true, int PowerDice = 0)
+    : OdHandCommand(HeroId, Dice, UseTools, PowerDice);
+
+/// <summary>Search the room: reveals every secret door, trap and stash whose difficulty the total reaches.</summary>
+public sealed record Search(int HeroId, int? Dice = null, bool UseTools = true, int PowerDice = 0)
+    : OdHandCommand(HeroId, Dice, UseTools, PowerDice);
+
+/// <summary>Disarm a revealed trap: on an adjacent tile, in an adjacent chest, or on the door you stand in (your own tile).</summary>
+public sealed record Disarm(int HeroId, GridPosition Target, int? Dice = null, bool UseTools = true, int PowerDice = 0)
+    : OdHandCommand(HeroId, Dice, UseTools, PowerDice);
+
+/// <summary>Steal from an adjacent monster or hero, once per turn: beat their roll to take a key or a card.</summary>
+public sealed record Steal(int HeroId, int TargetId, int? Dice = null, bool UseTools = true, int PowerDice = 0)
+    : OdHandCommand(HeroId, Dice, UseTools, PowerDice);
+
+/// <summary>Jump through a trap door you've found, next to you, to a room on the floor below (costs 1 step, no harm).</summary>
+public sealed record JumpDown(int HeroId, GridPosition TrapDoor) : GameCommand(HeroId);
 
 public sealed record EndTurn(int HeroId) : GameCommand(HeroId);
 

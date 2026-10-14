@@ -328,7 +328,8 @@ public class CardTests
         Assert.Equal([coin], session.RoomById().LootAt(hero.Position));
 
         Assert.Equal([coin.Id], session.Do(new PickUpLoot(hero.Id)).SingleOf<LootPickedUp>().CardIds);
-        Assert.True(session.State.Turn.HasActed);
+        Assert.True(session.State.Turn.UsedFreeLoot);
+        Assert.False(session.State.Turn.HasActed);
         Assert.Equal([coin], hero.Backpack);
         Assert.Empty(session.RoomById().LootAt(hero.Position));
     }
@@ -355,7 +356,7 @@ public class CardTests
         var opened = session.Do(new OpenChest(hero.Id, new GridPosition(4, 3))).SingleOf<ChestOpened>();
 
         CardInstance loot = Assert.Single(hero.Backpack);
-        Assert.Equal(loot.Id, opened.CardId);
+        Assert.Equal([loot.Id], opened.CardIds);
         Assert.True(opened.AddedToBackpack);
         Assert.Contains(loot.Definition.Id, new[] { "coin", "gem" });
         Assert.Null(loot.BroughtInByHeroId);

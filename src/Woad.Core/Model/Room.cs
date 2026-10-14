@@ -8,6 +8,14 @@ public sealed class Room
     private readonly List<Monster> _monsters = [];
     private readonly Dictionary<GridPosition, List<CardInstance>> _loot = [];
     private readonly HashSet<GridPosition> _openedChests = [];
+    private readonly Dictionary<Direction, Passage> _passages = [];
+    private readonly Dictionary<GridPosition, Trap> _traps = [];
+    private readonly Dictionary<GridPosition, Trap> _chestTraps = [];
+    private readonly Dictionary<GridPosition, int> _chestLocks = [];
+    private readonly HashSet<GridPosition> _superiorChests = [];
+    private readonly HashSet<GridPosition> _bossKeyChests = [];
+    private readonly Dictionary<GridPosition, Cache> _caches = [];
+    private readonly Dictionary<GridPosition, int> _keys = [];
 
     internal Room(
         string id,
@@ -65,6 +73,40 @@ public sealed class Room
 
     public bool IsChestOpened(GridPosition position) => _openedChests.Contains(position);
 
+    /// <summary>The door on each side that has one (secret ones too, found or not).</summary>
+    public IReadOnlyDictionary<Direction, Passage> Passages => _passages;
+
+    public Passage? PassageOn(Direction side) => _passages.GetValueOrDefault(side);
+
+    /// <summary>Traps on floor tiles, hidden or revealed.</summary>
+    public IReadOnlyDictionary<GridPosition, Trap> Traps => _traps;
+
+    public Trap? TrapAt(GridPosition position) => _traps.GetValueOrDefault(position);
+
+    public Trap? ChestTrapAt(GridPosition position) => _chestTraps.GetValueOrDefault(position);
+
+    /// <summary>The Od Hand needed to pick a chest's lock, or null when it isn't locked.</summary>
+    public int? ChestLockAt(GridPosition position) => _chestLocks.TryGetValue(position, out int difficulty) ? difficulty : null;
+
+    /// <summary>A chest that was locked holds better loot.</summary>
+    public bool IsSuperiorChest(GridPosition position) => _superiorChests.Contains(position);
+
+    public bool HoldsBossKey(GridPosition position) => _bossKeyChests.Contains(position);
+
+    /// <summary>Hidden stashes not yet found.</summary>
+    public IReadOnlyDictionary<GridPosition, Cache> Caches => _caches;
+
+    /// <summary>Keys lying on the floor, by tile.</summary>
+    public IReadOnlyDictionary<GridPosition, int> Keys => _keys;
+
+    public int KeysAt(GridPosition position) => _keys.GetValueOrDefault(position);
+
+    /// <summary>Where the Boss Key lies on the floor, if it does.</summary>
+    public GridPosition? BossKeyAt { get; internal set; }
+
+    /// <summary>Anything on the tile to pick up: cards, keys or the Boss Key.</summary>
+    public bool HasLootAt(GridPosition position) => LootAt(position).Count > 0 || KeysAt(position) > 0 || BossKeyAt == position;
+
     public IEnumerable<GridPosition> TilesOfKind(TileKind kind) => RoomGrid.AllPositions().Where(position => Layout[position] == kind);
 
     public Monster? MonsterAt(GridPosition position) => _monsters.FirstOrDefault(monster => monster.Position == position);
@@ -75,7 +117,67 @@ public sealed class Room
 
     internal void RemoveMonster(Monster monster) => _monsters.Remove(monster);
 
-    internal void OpenChest(GridPosition position) => _openedChests.Add(position);
+    internal void OpenChest(GridPosition position)
+    {
+        _openedChests.Add(position);
+        _bossKeyChests.Remove(position);
+    }
+
+    internal void AddPassage(Direction side, Passage passage) => _passages[side] = passage;
+
+    internal void SetTrap(GridPosition position, Trap? trap)
+    {
+        if (trap is null)
+        {
+            _traps.Remove(position);
+        }
+        else
+        {
+            _traps[position] = trap;
+        }
+    }
+
+    internal void SetChestTrap(GridPosition position, Trap? trap)
+    {
+        if (trap is null)
+        {
+            _chestTraps.Remove(position);
+        }
+        else
+        {
+            _chestTraps[position] = trap;
+        }
+    }
+
+    internal void LockChest(GridPosition position, int difficulty)
+    {
+        _chestLocks[position] = difficulty;
+        _superiorChests.Add(position);
+    }
+
+    internal void UnlockChest(GridPosition position) => _chestLocks.Remove(position);
+
+    internal void PutBossKeyInChest(GridPosition position) => _bossKeyChests.Add(position);
+
+    internal void HideCache(GridPosition position, Cache cache) => _caches[position] = cache;
+
+    internal void RemoveCache(GridPosition position) => _caches.Remove(position);
+
+    internal void AddKeys(GridPosition position, int count)
+    {
+        if (count > 0)
+        {
+            _keys[position] = KeysAt(position) + count;
+        }
+    }
+
+    /// <summary>Takes every key on the tile.</summary>
+    internal int TakeKeys(GridPosition position)
+    {
+        int count = KeysAt(position);
+        _keys.Remove(position);
+        return count;
+    }
 
     internal void AddLoot(GridPosition position, IEnumerable<CardInstance> cards)
     {

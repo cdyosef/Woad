@@ -7,7 +7,7 @@ public sealed record MonsterSpawn(GridPosition Position, MonsterDefinition Monst
 
 /// <summary>
 /// A handcrafted 9x9 room written as text, one row per line:
-/// <c>.</c> floor, <c>#</c> wall, <c>~</c> pit, <c>C</c> chest, <c>P</c> pot, <c>&gt;</c> stairs down,
+/// <c>.</c> floor, <c>#</c> wall, <c>X</c> cracked wall, <c>~</c> pit, <c>C</c> chest, <c>P</c> pot, <c>&gt;</c> stairs down,
 /// <c>*</c> exit, <c>1</c>-<c>4</c> hero start for that seat, <c>M</c> a spot the dungeon
 /// generator may put a monster, <c>&amp;</c> where the boss stands, and any monster's glyph
 /// (e.g. <c>s</c> for a slime) to place that exact monster.
@@ -15,7 +15,7 @@ public sealed record MonsterSpawn(GridPosition Position, MonsterDefinition Monst
 public sealed class RoomTemplate
 {
     /// <summary>Characters with a fixed meaning; monster glyphs can't use them.</summary>
-    public const string ReservedCharacters = ".#~CP>*M&0123456789";
+    public const string ReservedCharacters = ".#X~CP>*M&0123456789";
 
     private RoomTemplate(
         RoomLayout layout,
@@ -69,6 +69,7 @@ public sealed class RoomTemplate
             tiles[position.Y * RoomGrid.Size + position.X] = glyph switch
             {
                 '#' => TileKind.Wall,
+                'X' => TileKind.CrackedWall,
                 '~' => TileKind.Pit,
                 'C' => TileKind.Chest,
                 'P' => TileKind.Pot,
@@ -79,7 +80,7 @@ public sealed class RoomTemplate
 
             switch (glyph)
             {
-                case '.' or '#' or '~' or 'C' or 'P' or '>' or '*':
+                case '.' or '#' or 'X' or '~' or 'C' or 'P' or '>' or '*':
                     break;
                 case >= '1' and <= '4':
                     heroStarts[glyph - '1'] = position;
@@ -129,6 +130,13 @@ public sealed class RoomTemplate
             HeroStarts.ToDictionary(start => start.Key, start => Map(start.Value)),
             SpawnPoints.Select(Map).ToList(),
             BossSpawn is { } boss ? Map(boss) : null);
+    }
+
+    /// <summary>The same room with one tile changed (e.g. a wall turned into a cracked wall).</summary>
+    public RoomTemplate WithTile(GridPosition position, TileKind tile)
+    {
+        TileKind[] tiles = RoomGrid.AllPositions().Select(at => at == position ? tile : Layout[at]).ToArray();
+        return new RoomTemplate(new RoomLayout(tiles), Monsters, HeroStarts, SpawnPoints, BossSpawn);
     }
 
     /// <summary>The same room with a different set of monsters.</summary>

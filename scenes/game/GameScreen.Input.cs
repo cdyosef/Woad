@@ -32,6 +32,22 @@ public partial class GameScreen
         }
 
         Room room = ShownRoom;
+        if (_stealing)
+        {
+            int? victim = room.MonsterAt(tile)?.Id ?? _session.State.ActiveHeroesIn(room).FirstOrDefault(other => other.Position == tile && other != hero)?.Id;
+            if (victim is int targetId)
+            {
+                ExecuteOdHand((heroId, dice, tools, power) => new Steal(heroId, targetId, dice, tools, power));
+            }
+            else
+            {
+                _stealing = false;
+                RefreshPanels();
+            }
+
+            return;
+        }
+
         if (room.MonsterAt(tile) is { } monster)
         {
             if (_session.AttackDiceLeft > 0 && SelectedAttackDice < 1)
@@ -44,7 +60,18 @@ public partial class GameScreen
         }
         else if (room.Layout[tile] == TileKind.Chest)
         {
-            Execute(new OpenChest(hero.Id, tile));
+            ClickChest(hero, room, tile);
+        }
+        else if (room.TrapAt(tile) is { Revealed: true } trap && tile != hero.Position)
+        {
+            if (trap.Kind == TrapKind.TrapDoor && turn.MovementPoints > 0)
+            {
+                Execute(new JumpDown(hero.Id, tile));
+            }
+            else
+            {
+                ExecuteOdHand((heroId, dice, tools, power) => new Disarm(heroId, tile, dice, tools, power));
+            }
         }
         else if (room.Layout[tile] == TileKind.Pot)
         {
@@ -64,10 +91,47 @@ public partial class GameScreen
         }
     }
 
-    /// <summary>Clicking the tile you stand on: pick up loot, take the stairs, escape, or go through the door.</summary>
+    /// <summary>A chest: disarm a trap you found, pick the lock if you've no key, otherwise open it (using a key if locked).</summary>
+    private void ClickChest(Hero hero, Room room, GridPosition chest)
+    {
+        if (room.ChestTrapAt(chest) is { Revealed: true })
+        {
+            ExecuteOdHand((heroId, dice, tools, power) => new Disarm(heroId, chest, dice, tools, power));
+        }
+        else if (room.ChestLockAt(chest) is not null && hero.Keys < 1)
+        {
+            ExecuteOdHand((heroId, dice, tools, power) => new PickLock(heroId, chest, dice, tools, power));
+        }
+        else
+        {
+            Execute(new OpenChest(hero.Id, chest));
+        }
+    }
+
+    /// <summary>Runs an Od Hand command with the selected Od Hand dice, tools and Power Dice.</summary>
+    private void ExecuteOdHand(Func<int, int?, bool, int, GameCommand> command)
+    {
+        if (ActiveHero is not { } hero)
+        {
+            return;
+        }
+
+        if (_session.OdHandDiceLeft > 0 && SelectedOdHandDice < 1)
+        {
+            Log("Select at least one Od Hand die.", Palette.TextDim);
+            return;
+        }
+
+        Execute(command(hero.Id, SelectedOdHandDice, !_toolsHeld, SelectedPowerDice));
+    }
+
+    /// <summary>
+    /// Clicking the tile you stand on: pick up loot, take the stairs, escape, or use the door: disarm
+    /// its trap, unlock it (a key, or the Boss Key), pick its lock, or go through.
+    /// </summary>
     private void UseOwnTile(Hero hero, Room room)
     {
-        if (room.LootAt(hero.Position).Count > 0)
+        if (room.HasLootAt(hero.Position))
         {
             Execute(new PickUpLoot(hero.Id));
         }
@@ -81,12 +145,30 @@ public partial class GameScreen
         }
         else if (DoorAt(room, hero.Position) is { } side)
         {
-            Execute(new GoThroughDoor(hero.Id, side));
+            Passage? passage = room.PassageOn(side);
+            if (passage?.Trap is { Revealed: true })
+            {
+                ExecuteOdHand((heroId, dice, tools, power) => new Disarm(heroId, hero.Position, dice, tools, power));
+            }
+            else if (passage is { IsLocked: true } && (passage.NeedsBossKey || hero.Keys > 0))
+            {
+                Execute(new UnlockDoor(hero.Id, side));
+            }
+            else if (passage is { IsLocked: true })
+            {
+                ExecuteOdHand((heroId, dice, tools, power) => new PickLock(heroId, hero.Position, dice, tools, power));
+            }
+            else
+            {
+                Execute(new GoThroughDoor(hero.Id, side));
+            }
         }
     }
 
+    /// <summary>The door whose doorway is this tile, unless it's a secret door nobody has found.</summary>
     private static Direction? DoorAt(Room room, GridPosition tile) =>
-        room.Doors.Keys.Where(side => side.DoorTile() == tile).Select(side => (Direction?)side).FirstOrDefault();
+        room.Doors.Keys.Where(side => side.DoorTile() == tile && room.PassageOn(side) is not { IsHidden: true })
+            .Select(side => (Direction?)side).FirstOrDefault();
 
     private void OnTileHovered(GridPosition? tile)
     {
@@ -118,9 +200,14 @@ public partial class GameScreen
             return "You rolled a 6! Add a Power Die to this roll, or bank it for later.";
         }
 
-        if (turn.PendingAttack is not null)
+        if (turn.PendingRoll is not null)
         {
-            return "Click a die to reroll it with Luck, or Confirm the attack.";
+            return "Click a die to reroll it with Luck, or Confirm the roll.";
+        }
+
+        if (_stealing)
+        {
+            return "Steal: click a monster or hero next to you (orange). Right-click to cancel.";
         }
 
         if (_targeting)
@@ -131,7 +218,7 @@ public partial class GameScreen
         if (turn.MovementPoints == 0)
         {
             return _session.MoveDiceLeft > 0 || _session.AttackDiceLeft > 0
-                ? "Click your dice to choose some, then Roll to move or click a red-outlined monster to attack."
+                ? "Choose dice, then Wend to move, click a red-outlined monster to attack, or Search the room."
                 : "Out of dice. Use your action or belt item, or end your turn.";
         }
 
@@ -155,16 +242,35 @@ public partial class GameScreen
             return $"{standing.Name}: {standing.Hearts}/{standing.MaxHearts} hearts{power}";
         }
 
-        if (room.LootAt(tile) is { Count: > 0 } loot)
+        if (room.HasLootAt(tile))
         {
-            return "Loot: " + string.Join(", ", loot.Select(card => card.Definition.Name)) + ". Stand on it and click to pick it up.";
+            IEnumerable<string> things = room.LootAt(tile).Select(card => card.Definition.Name);
+            if (room.KeysAt(tile) > 0)
+            {
+                things = things.Append(UiTheme.Count(room.KeysAt(tile), "key", "keys"));
+            }
+
+            if (room.BossKeyAt == tile)
+            {
+                things = things.Append("the Boss Key");
+            }
+
+            return "Loot: " + string.Join(", ", things) + ". Stand on it and click to pick it up (your first loot each turn is free).";
+        }
+
+        if (room.TrapAt(tile) is { Revealed: true } trap)
+        {
+            return trap.Kind == TrapKind.TrapDoor
+                ? $"A trap door to the floor below. Next to it: click to jump down (1 step), or disarm it with Od Hand ({trap.Difficulty}+)."
+                : $"Spikes: they stab whoever steps here. Next to it: click to disarm with Od Hand ({trap.Difficulty}+).";
         }
 
         bool bossAlive = room.Monsters.Any(other => other.Definition.Boss);
         string terrain = room.Layout[tile] switch
         {
             TileKind.Chest when room.IsChestOpened(tile) => "An empty chest.",
-            TileKind.Chest => "A closed chest. Stand next to it and click it to open it.",
+            TileKind.Chest => DescribeChest(room, tile),
+            TileKind.CrackedWall => "A cracked wall. A bomb's blast would break it, and something may be sealed inside.",
             TileKind.Pot => "A clay pot. Stand next to it and click to smash it: coins, a heart, or nothing.",
             TileKind.Wall => "A stone pillar.",
             TileKind.Pit => "A bottomless pit. Only flyers cross it.",
@@ -185,6 +291,14 @@ public partial class GameScreen
 
     private static string PowerDiceText(int count) => $"{count} Power {(count == 1 ? "Die" : "Dice")}";
 
+    private static string DescribeChest(Room room, GridPosition chest)
+    {
+        string trap = room.ChestTrapAt(chest) is { Revealed: true } needle ? $" A needle trap guards it (disarm {needle.Difficulty}+)." : "";
+        return room.ChestLockAt(chest) is int difficulty
+            ? $"A locked chest with better loot. Open it with a key, or pick the lock with Od Hand ({difficulty}+).{trap}"
+            : $"A closed chest. Stand next to it and click it to open it.{trap}";
+    }
+
     private string DescribeDoor(Room room, Direction side)
     {
         if (room.IsSealed)
@@ -192,8 +306,25 @@ public partial class GameScreen
             return "A sealed door. It opens when every monster here is defeated.";
         }
 
+        Passage? passage = room.PassageOn(side);
+        string darts = passage?.Trap is { Revealed: true } trap ? $" Darts are rigged in its frame (disarm {trap.Difficulty}+)." : "";
+        if (passage is { IsBlocked: true })
+        {
+            return "A doorway walled up with cracked stone. A bomb's blast would open it.";
+        }
+
+        if (passage is { IsLocked: true, NeedsBossKey: true })
+        {
+            return "The Boss Door. Only the Boss Key opens it: find it somewhere on this floor.";
+        }
+
+        if (passage is { IsLocked: true })
+        {
+            return $"A locked door. Stand in it and click to use a key, or to pick the lock with Od Hand ({passage.Difficulty}+).{darts}";
+        }
+
         bool explored = _session.State.Rooms[room.Doors[side]].Explored;
-        return $"A door to {(explored ? "a room you've seen" : "an unexplored room")}. Stand in it and click again to go through (1 step).";
+        return $"A door to {(explored ? "a room you've seen" : "an unexplored room")}. Stand in it and click again to go through (1 step).{darts}";
     }
 
     private static string Traits(Monster monster)
@@ -218,6 +349,11 @@ public partial class GameScreen
         if (definition.Sweep is { } sweep)
         {
             traits.Add($"sweeps everyone within {sweep.Radius} every {sweep.Every} turns");
+        }
+
+        if (monster.Robbed)
+        {
+            traits.Add("robbed");
         }
 
         if (definition.Flying)
@@ -258,6 +394,7 @@ public partial class GameScreen
 
     private void CancelSelection()
     {
+        _stealing = false;
         _selectedCardId = null;
         _targeting = false;
         _board.SetBlast([]);

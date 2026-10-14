@@ -36,7 +36,7 @@ public partial class Main
             await Click(this, editor.PlusButton(StatKind.Hearts));
             await Click(this, editor.PlusButton(StatKind.AttackDice));
             Check(editor.PointsLeft == 1, "point-buy spends 1 + 1 + 3 of 6 points");
-            Check(editor.PlusButton(StatKind.AttackDice).Disabled, "level 1 allows only one extra Attack die");
+            Check(editor.PlusButton(StatKind.AttackDice).Disabled, "level 1 allows only one extra Rumble die");
             Check(editor.PlusButton(StatKind.DefenseDice).Disabled, "you can't spend points you don't have");
             await Click(this, editor.SaveButton);
 

@@ -35,6 +35,8 @@ public partial class GameScreen
     private Button _addPower = null!;
     private Button _bankPower = null!;
     private Button _roll = null!;
+    private Button _search = null!;
+    private Button _steal = null!;
     private Button _endTurn = null!;
     private Button _menu = null!;
     private GridPosition? _hovered;
@@ -45,6 +47,11 @@ public partial class GameScreen
     private bool _weaponHeld;
     private bool _speedHeld;
     private int _powerDiceSelected;
+    private int _odHandDiceHeld;
+    private bool _toolsHeld;
+
+    /// <summary>Steal was pressed: the next click on an adjacent monster or hero tries to rob them.</summary>
+    private bool _stealing;
 
     private void RefreshPanels()
     {
@@ -67,11 +74,16 @@ public partial class GameScreen
 
         bool idle = !_busy && turn is not null;
         bool choosingPower = turn?.UnsettledPowerDice > 0;
-        bool pending = turn?.PendingAttack is not null || choosingPower;
+        bool pending = turn?.PendingRoll is not null || choosingPower;
         UpdatePool(idle && !pending);
         _roll.Disabled = !(idle && !pending && _session.MoveDiceLeft > 0);
+        _search.Disabled = !(idle && !pending) || _session.CheckSearch() is not null;
+        _search.TooltipText = _session.State.Turn is null ? "" : _session.CheckSearch() ?? "Search the room with your selected Od Hand dice: finds secret doors, traps and stashes your total reaches.";
+        _steal.Disabled = !(idle && !pending) || _session.OdHandDiceLeft < 1 || turn!.HasStolen;
+        _stealing &= !_steal.Disabled;
+        _steal.Text = _stealing ? "Cancel" : "Steal";
         _endTurn.Disabled = !(idle && !pending);
-        _confirm.Visible = turn?.PendingAttack is not null && !choosingPower;
+        _confirm.Visible = turn?.PendingRoll is not null && !choosingPower;
         _confirm.Disabled = _busy;
         _addPower.Visible = _bankPower.Visible = choosingPower;
         _addPower.Disabled = _bankPower.Disabled = _busy;
@@ -103,11 +115,21 @@ public partial class GameScreen
         }
 
         Room room = ShownRoom;
-        var interactive = new List<GridPosition>();
-        if (!turn.HasActed && turn.PendingAttack is null)
+        if (_stealing)
         {
-            interactive.AddRange(hero.Position.OrthogonalNeighbors()
-                .Where(tile => (room.Layout[tile] == TileKind.Chest && !room.IsChestOpened(tile)) || room.Layout[tile] == TileKind.Pot));
+            IEnumerable<GridPosition> victims = room.Monsters.Where(monster => _session.CheckSteal(monster.Id) is null).Select(monster => monster.Position)
+                .Concat(_session.State.ActiveHeroesIn(room).Where(other => _session.CheckSteal(other.Id) is null).Select(other => other.Position));
+            _board.SetHighlights([], [], victims, []);
+            return;
+        }
+
+        var interactive = new List<GridPosition>();
+        if (turn.PendingRoll is null && turn.UnsettledPowerDice == 0)
+        {
+            interactive.AddRange(hero.Position.OrthogonalNeighbors().Where(tile =>
+                (room.Layout[tile] == TileKind.Chest && (_session.CheckOpenChest(tile) is null || _session.CheckPickLock(tile) is null || _session.CheckDisarm(tile) is null))
+                || (room.Layout[tile] == TileKind.Pot && !turn.HasActed)
+                || _session.CheckDisarm(tile) is null));
         }
 
         if (OwnTileIsUsable(hero, room, turn))
@@ -125,18 +147,23 @@ public partial class GameScreen
     /// <summary>Whether clicking the hero's own tile would do something: loot, stairs, exit or a door.</summary>
     private bool OwnTileIsUsable(Hero hero, Room room, TurnState turn)
     {
-        if (turn.PendingAttack is not null)
+        if (turn.PendingRoll is not null)
         {
             return false;
         }
 
         bool canStep = turn.MovementPoints > 0;
+        if (DoorAt(room, hero.Position) is { } side && room.PassageOn(side) is { IsLocked: true } locked)
+        {
+            return locked.NeedsBossKey ? hero.HasBossKey : hero.Keys > 0 || _session.CheckPickLock(hero.Position) is null;
+        }
+
         return room.Layout[hero.Position] switch
         {
-            _ when room.LootAt(hero.Position).Count > 0 => !turn.HasActed,
+            _ when room.HasLootAt(hero.Position) => _session.CheckPickUp() is null,
             TileKind.StairsDown => canStep,
             TileKind.Exit => !room.Monsters.Any(monster => monster.Definition.Boss),
-            _ => DoorAt(room, hero.Position) is not null && _session.GetUsableDoors().Count > 0,
+            _ => _session.CheckDisarm(hero.Position) is null || (DoorAt(room, hero.Position) is not null && _session.GetUsableDoors().Count > 0),
         };
     }
 
@@ -152,8 +179,10 @@ public partial class GameScreen
         int weapon = _session.WeaponBonusLeft;
         int speed = _session.SpeedBonusLeft;
         string steps = turn?.MovementRoll is null ? "" : UiTheme.Count(turn.MovementPoints, "step", "steps") + " left";
-        pool.ShowPool(DicePool.Attack, _session.AttackDiceLeft, SelectedAttackDice, weapon, weapon > 0 && !_weaponHeld);
-        pool.ShowPool(DicePool.Move, _session.MoveDiceLeft, SelectedMoveDice, speed, speed < 0 || (speed > 0 && !_speedHeld), steps);
+        int tools = _session.ToolsBonusLeft;
+        pool.ShowPool(DicePool.Rumble, _session.AttackDiceLeft, SelectedAttackDice, weapon, weapon > 0 && !_weaponHeld);
+        pool.ShowPool(DicePool.Wend, _session.MoveDiceLeft, SelectedMoveDice, speed, speed < 0 || (speed > 0 && !_speedHeld), steps);
+        pool.ShowPool(DicePool.OdHand, _session.OdHandDiceLeft, SelectedOdHandDice, tools, tools > 0 && !_toolsHeld);
         pool.ShowPool(DicePool.Power, ActiveHero?.Power.Banked ?? 0, SelectedPowerDice, 0, false);
     }
 
@@ -163,6 +192,8 @@ public partial class GameScreen
     private int SelectedAttackDice => Math.Clamp(_session.AttackDiceLeft - _attackDiceHeld, 0, _session.AttackDiceLeft);
 
     private int SelectedMoveDice => Math.Clamp(_session.MoveDiceLeft - _moveDiceHeld, 0, _session.MoveDiceLeft);
+
+    private int SelectedOdHandDice => Math.Clamp(_session.OdHandDiceLeft - _odHandDiceHeld, 0, _session.OdHandDiceLeft);
 
     /// <summary>Clicking a selected die deselects one; clicking an unselected one selects it again. Bonus tokens toggle.</summary>
     private void OnPoolTokenClicked(DicePool pool, int index)
@@ -174,17 +205,23 @@ public partial class GameScreen
 
         switch (pool)
         {
-            case DicePool.Attack when index < 0:
+            case DicePool.Rumble when index < 0:
                 _weaponHeld = !_weaponHeld;
                 break;
-            case DicePool.Attack:
+            case DicePool.Rumble:
                 _attackDiceHeld += index < SelectedAttackDice ? 1 : -1;
                 break;
-            case DicePool.Move when index < 0:
+            case DicePool.Wend when index < 0:
                 _speedHeld = _session.SpeedBonusLeft > 0 && !_speedHeld;
                 break;
-            case DicePool.Move:
+            case DicePool.Wend:
                 _moveDiceHeld += index < SelectedMoveDice ? 1 : -1;
+                break;
+            case DicePool.OdHand when index < 0:
+                _toolsHeld = !_toolsHeld;
+                break;
+            case DicePool.OdHand:
+                _odHandDiceHeld += index < SelectedOdHandDice ? 1 : -1;
                 break;
             case DicePool.Power:
                 _powerDiceSelected += index < SelectedPowerDice ? -1 : 1;
@@ -197,8 +234,8 @@ public partial class GameScreen
     /// <summary>Selects everything again, after each command and at the start of a turn.</summary>
     private void ResetPool()
     {
-        _attackDiceHeld = _moveDiceHeld = _powerDiceSelected = 0;
-        _weaponHeld = _speedHeld = false;
+        _attackDiceHeld = _moveDiceHeld = _odHandDiceHeld = _powerDiceSelected = 0;
+        _weaponHeld = _speedHeld = _toolsHeld = _stealing = false;
     }
 
     /// <summary>The card buttons' states, with the rules engine's reason for each one that's unavailable.</summary>
@@ -214,7 +251,7 @@ public partial class GameScreen
             return CardActions.Unavailable("Wait for the action to finish.");
         }
 
-        string? Drop() => turn.PendingAttack is not null || turn.UnsettledPowerDice > 0 ? "Finish the roll first." : null;
+        string? Drop() => turn.PendingRoll is not null || turn.UnsettledPowerDice > 0 ? "Finish the roll first." : null;
         var blocked = new Dictionary<CardAction, string>();
         foreach ((CardAction action, string? reason) in new[]
         {
@@ -373,7 +410,8 @@ public partial class GameScreen
         _bankPower.Pressed += () => ExecuteForActiveHero(heroId => new BankPowerDie(heroId));
         right.AddChild(_bankPower);
 
-        _roll = UiTheme.Button(new Vector2(8, 303), new Vector2(160, 20), "Roll to move");
+        _roll = UiTheme.Button(new Vector2(8, 303), new Vector2(52, 20), "Wend");
+        _roll.TooltipText = "Roll your selected Wend dice (plus your Wend bonus) to move.";
         _roll.Pressed += () =>
         {
             if (SelectedMoveDice < 1)
@@ -385,6 +423,24 @@ public partial class GameScreen
             ExecuteForActiveHero(heroId => new RollMovement(heroId, SelectedMoveDice, !_speedHeld, SelectedPowerDice));
         };
         right.AddChild(_roll);
+
+        _search = UiTheme.Button(new Vector2(62, 303), new Vector2(52, 20), "Search");
+        _search.Pressed += () => ExecuteOdHand((heroId, dice, tools, power) => new Search(heroId, dice, tools, power));
+        right.AddChild(_search);
+
+        _steal = UiTheme.Button(new Vector2(116, 303), new Vector2(52, 20), "Steal");
+        _steal.TooltipText = "Steal with your selected Od Hand dice: click it, then an adjacent monster or hero. Once a turn.";
+        _steal.Pressed += () =>
+        {
+            _stealing = !_stealing;
+            if (_stealing)
+            {
+                Log("Click a monster or hero next to you to steal from them. Right-click to cancel.", Palette.Target with { A = 1 });
+            }
+
+            RefreshPanels();
+        };
+        right.AddChild(_steal);
 
         _endTurn = UiTheme.Button(new Vector2(8, 329), new Vector2(160, 22), "End turn");
         _endTurn.Pressed += () =>

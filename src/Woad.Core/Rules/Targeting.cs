@@ -26,6 +26,17 @@ public static class Targeting
     /// <summary>Heroes attack in melee unless their weapon reaches further, which makes it a ranged attack.</summary>
     public static AttackPattern HeroPattern(int attackRange) => attackRange > 1 ? AttackPattern.Ranged : AttackPattern.Melee;
 
+    /// <summary>
+    /// Whether a hero on <paramref name="from"/> can hit <paramref name="to"/>. Heroes can also strike
+    /// a diagonal neighbor, unless walls close off both corners between them.
+    /// </summary>
+    public static bool CanHeroAttack(RoomLayout layout, int attackRange, GridPosition from, GridPosition to) =>
+        IsOpenDiagonal(layout, from, to) || CanAttack(layout, HeroPattern(attackRange), attackRange, from, to);
+
+    private static bool IsOpenDiagonal(RoomLayout layout, GridPosition from, GridPosition to) =>
+        Math.Abs(to.X - from.X) == 1 && Math.Abs(to.Y - from.Y) == 1
+        && !(layout[new GridPosition(to.X, from.Y)].BlocksSight() && layout[new GridPosition(from.X, to.Y)].BlocksSight());
+
     /// <summary>Card targets must be within range and in sight. Range 0 means your own tile.</summary>
     public static bool InRangeAndSight(RoomLayout layout, GridPosition from, GridPosition to, int range) =>
         to.IsInRoom && from.ManhattanDistanceTo(to) <= range && LineOfSight.IsClear(layout, from, to);

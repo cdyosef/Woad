@@ -164,7 +164,7 @@ public class CombatTests
     }
 
     [Fact]
-    public void MeleeNeedsAnOrthogonallyAdjacentMonster()
+    public void MeleeReachesTheEightSurroundingTilesOnly()
     {
         GameSession session = TestRun.Start("""
             .........
@@ -177,12 +177,30 @@ public class CombatTests
             .........
             .........
             """);
+        Monster diagonal = session.RoomById().Monsters.Single(monster => monster.Position == new GridPosition(5, 3));
+        Monster twoAway = session.RoomById().Monsters.Single(monster => monster.Position == new GridPosition(4, 2));
+
+        Assert.Equal([diagonal], session.GetAttackableMonsters());
+        Assert.Contains("out of reach", session.Refuse(new AttackMonster(session.HeroInSeat().Id, twoAway.Id)));
+    }
+
+    [Fact]
+    public void ADiagonalAttackIsBlockedWhenWallsCloseBothCorners()
+    {
+        GameSession session = TestRun.Start("""
+            .........
+            .........
+            .........
+            ....#m...
+            ....1#...
+            .........
+            .........
+            .........
+            .........
+            """);
 
         Assert.Empty(session.GetAttackableMonsters());
-        foreach (Monster monster in session.RoomById().Monsters)
-        {
-            Assert.Contains("out of reach", session.Refuse(new AttackMonster(session.HeroInSeat().Id, monster.Id)));
-        }
+        Assert.Contains("out of reach", session.Refuse(new AttackMonster(session.HeroInSeat().Id, session.OnlyMonster().Id)));
     }
 
     [Fact]
@@ -285,8 +303,8 @@ public class CombatTests
 
         IReadOnlyList<GameEvent> events = session.Do(new AttackMonster(hero.Id, grunt.Id));
         Assert.IsType<AttackRolled>(Assert.Single(events));
-        Assert.NotNull(session.State.Turn!.PendingAttack);
-        Assert.Contains("Finish the attack", session.Refuse(new EndTurn(hero.Id)));
+        Assert.NotNull(session.State.Turn!.PendingRoll);
+        Assert.Contains("Finish the roll", session.Refuse(new EndTurn(hero.Id)));
 
         var rerolled = session.Do(new RerollDie(hero.Id, 0)).SingleOf<DieRerolled>();
         Assert.Equal((1, 5, (int?)null), (rerolled.OldFace, rerolled.NewFace, rerolled.MovementPoints));
@@ -294,7 +312,7 @@ public class CombatTests
 
         events = session.Do(new ConfirmAttack(hero.Id));
         Assert.Contains(new MonsterDefeated(grunt.Id, hero.Id), events);
-        Assert.Null(session.State.Turn.PendingAttack);
+        Assert.Null(session.State.Turn.PendingRoll);
     }
 
     [Fact]
@@ -308,7 +326,7 @@ public class CombatTests
         IReadOnlyList<GameEvent> events = session.Do(new RerollDie(hero.Id, 0));
 
         Assert.Contains(new MonsterDefeated(grunt.Id, hero.Id), events);
-        Assert.Null(session.State.Turn!.PendingAttack);
+        Assert.Null(session.State.Turn!.PendingRoll);
         Assert.Contains("no Luck", session.Refuse(new RerollDie(hero.Id, 0)));
     }
 

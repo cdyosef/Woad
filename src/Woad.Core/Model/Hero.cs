@@ -61,6 +61,12 @@ public sealed class Hero
 
     public PowerBank Power { get; } = new();
 
+    /// <summary>Small keys carried: each opens one locked door or chest. They don't take backpack space.</summary>
+    public int Keys { get; internal set; }
+
+    /// <summary>Carrying the Boss Key, the only way through the Boss Door.</summary>
+    public bool HasBossKey { get; internal set; }
+
     public HeroStatus Status { get; internal set; }
 
     public string RoomId { get; internal set; }

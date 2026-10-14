@@ -12,7 +12,7 @@ public sealed partial class GameSession
     /// <summary>Monsters the active hero could attack with their weapon right now.</summary>
     public IReadOnlyList<Monster> GetAttackableMonsters()
     {
-        if (State.Turn is not { PendingAttack: null } || AttackDiceLeft < 1)
+        if (State.Turn is not { PendingRoll: null } || AttackDiceLeft < 1)
         {
             return [];
         }
@@ -70,7 +70,7 @@ public sealed partial class GameSession
             return "You have no Luck left this floor.";
         }
 
-        PendingAttack? attack = Turn.PendingAttack;
+        PendingRoll? attack = Turn.PendingRoll;
         DiceRoll? roll = attack?.Roll ?? (Turn.HasMoved ? null : Turn.MovementRoll);
         if (roll is null)
         {
@@ -107,18 +107,18 @@ public sealed partial class GameSession
 
     private string? Handle(ConfirmAttack command, List<GameEvent> events)
     {
-        if (Turn.PendingAttack is not { } attack)
+        if (Turn.PendingRoll is not { } pending)
         {
-            return "There's no attack waiting to be confirmed.";
+            return "There's no roll waiting to be confirmed.";
         }
 
-        Turn.PendingAttack = null;
-        ResolveHeroAttack(attack, events);
+        Turn.PendingRoll = null;
+        ResolvePendingRoll(pending, events);
         return null;
     }
 
     private static bool CanHeroAttack(Hero hero, Room room, Monster monster) =>
-        Targeting.CanAttack(room.Layout, Targeting.HeroPattern(hero.AttackRange), hero.AttackRange, hero.Position, monster.Position);
+        Targeting.CanHeroAttack(room.Layout, hero.AttackRange, hero.Position, monster.Position);
 
     /// <summary>
     /// Rolls a hero's attack. It waits while there's something to decide: Luck rerolls (until
@@ -131,14 +131,14 @@ public sealed partial class GameSession
         DiceRoll roll = _dice.Roll(Math.Max(0, dice) + powerDice);
         events.Add(new AttackRolled(hero.Id, roll, bonus, roll.Total + bonus, targetIds, powerDice));
 
-        Turn.PendingAttack = new PendingAttack(hero.Id, roll, bonus, targetIds, source);
+        Turn.PendingRoll = new PendingRoll(hero.Id, roll, bonus, targetIds, source);
         EarnPowerDice(hero, Sixes(roll.Faces), events);
     }
 
     /// <summary>Each target defends against the attack's total separately.</summary>
-    private void ResolveHeroAttack(PendingAttack attack, List<GameEvent> events)
+    private void ResolveHeroAttack(PendingRoll attack, List<GameEvent> events)
     {
-        Hero hero = State.GetHero(attack.AttackerId);
+        Hero hero = State.GetHero(attack.HeroId);
         Room room = State.RoomOf(hero);
         foreach (int targetId in attack.TargetIds)
         {
@@ -197,11 +197,13 @@ public sealed partial class GameSession
             for (int i = 0; i < definition.Drops; i++)
             {
                 var card = new CardInstance(State.NextId(), State.LootDeck.Draw(room.Floor), broughtInByHeroId: null);
-                room.AddLoot(monster.Position, [card]);
-                events.Add(new LootDropped(room.Id, monster.Position, card.Id));
+                GridPosition spot = SafeTile(room, monster.Position);
+                room.AddLoot(spot, [card]);
+                events.Add(new LootDropped(room.Id, spot, card.Id));
             }
         }
 
+        DropKeys(room, monster.Position, events);
         if (room.Monsters.Count == 0)
         {
             events.Add(new RoomCleared(room.Id));
@@ -347,8 +349,9 @@ public sealed partial class GameSession
             hero.Remove(card);
         }
 
-        room.AddLoot(hero.Position, dropped);
+        room.AddLoot(SafeTile(room, hero.Position), dropped);
         events.Add(new HeroDowned(hero.Id, hero.Position, dropped.Select(card => card.Id).ToList()));
+        DropHeroKeys(room, hero, events);
         EndRunIfOver(events);
     }
 }

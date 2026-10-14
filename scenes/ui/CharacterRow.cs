@@ -37,7 +37,7 @@ public partial class CharacterRow : Button
 
         Stats stats = Character.BaseStats;
         DrawString(font, new Vector2(40, 31),
-            $"Level {Character.Level}   Hearts {stats.Hearts}   Attack {stats.AttackDice}   Defense {stats.DefenseDice}   Luck {stats.Luck}",
+            $"Level {Character.Level}   Hearts {stats.Hearts}   Rumble {stats.AttackDice}   Defense {stats.DefenseDice}   Od Hand {stats.OdHandDice}   Luck {stats.Luck}",
             fontSize: UiTheme.FontSize, modulate: Palette.TextDim);
 
         if (Character.UnspentPoints > 0)

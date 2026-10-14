@@ -1,5 +1,6 @@
 using Woad.Core.Dice;
 using Woad.Core.Grid;
+using Woad.Core.Model;
 
 namespace Woad.Core.Events;
 
@@ -92,8 +93,54 @@ public sealed record CardStowed(int HeroId, int CardId) : GameEvent;
 
 public sealed record CardDropped(int HeroId, int CardId, GridPosition Position) : GameEvent;
 
-/// <summary>A chest gave a card; it went to the backpack, or onto the hero's tile when the backpack was full.</summary>
-public sealed record ChestOpened(int HeroId, GridPosition Chest, int CardId, bool AddedToBackpack) : GameEvent;
+/// <summary>
+/// A chest gave cards (two from a chest that was locked); those that didn't fit in the backpack went
+/// onto the hero's tile (<paramref name="AddedToBackpack"/> is false if any did).
+/// </summary>
+public sealed record ChestOpened(int HeroId, GridPosition Chest, IReadOnlyList<int> CardIds, bool AddedToBackpack) : GameEvent;
+
+/// <summary>An Od Hand roll for a check, against <paramref name="Difficulty"/> (0 for a steal, a contest).</summary>
+public sealed record OdHandRolled(int HeroId, OdHandCheckKind Kind, DiceRoll Roll, int Bonus, int Total, int Difficulty, int PowerDice = 0) : GameEvent;
+
+/// <summary>An Od Hand check fell short (or a steal was out-rolled); nothing happens.</summary>
+public sealed record CheckFailed(int HeroId, OdHandCheckKind Kind) : GameEvent;
+
+/// <summary>A door opened: with a key, the Boss Key, or a picked lock.</summary>
+public sealed record DoorUnlocked(int HeroId, string RoomId, Direction Side, bool Picked, bool BossDoor) : GameEvent;
+
+/// <summary>A chest's lock opened, with a key or picked. It still has to be opened.</summary>
+public sealed record ChestUnlocked(int HeroId, GridPosition Chest, bool Picked) : GameEvent;
+
+/// <summary>A search turned things up: secret doors (by side), traps (tiles, chests and doors) and stashes.</summary>
+public sealed record SecretsFound(int HeroId, string RoomId, IReadOnlyList<Direction> Doors, IReadOnlyList<GridPosition> Traps, IReadOnlyList<GridPosition> Stashes) : GameEvent;
+
+public sealed record TrapDisarmed(int HeroId, GridPosition Target) : GameEvent;
+
+/// <summary>A hero set off a trap at <paramref name="Position"/> (its tile, chest or doorway).</summary>
+public sealed record TrapSprung(int HeroId, TrapKind Kind, GridPosition Position) : GameEvent;
+
+/// <summary>A hero dropped through a trap door into another room (<paramref name="Jumped"/> on purpose, unhurt).</summary>
+public sealed record HeroFell(int HeroId, string FromRoomId, string RoomId, int Floor, GridPosition Position, bool FirstTimeOnFloor, bool Jumped) : GameEvent;
+
+/// <summary>Keys appeared on the floor: dropped by a monster, from a cleared room or a found stash.</summary>
+public sealed record KeysAppeared(string RoomId, GridPosition Position, int Count) : GameEvent;
+
+/// <summary>A hero gained keys (picked up, from a pot or stolen); <paramref name="Total"/> is how many they carry.</summary>
+public sealed record KeysFound(int HeroId, int Count, int Total) : GameEvent;
+
+/// <summary>A key opened a lock; <paramref name="Left"/> is how many the hero still carries.</summary>
+public sealed record KeyUsed(int HeroId, int Left) : GameEvent;
+
+public sealed record BossKeyFound(int HeroId) : GameEvent;
+
+/// <summary>The Boss Key fell to the floor (its carrier was downed).</summary>
+public sealed record BossKeyDropped(string RoomId, GridPosition Position) : GameEvent;
+
+/// <summary>A bomb broke a cracked wall: a block inside the room, or the one in a doorway (<paramref name="Door"/>).</summary>
+public sealed record WallBroken(string RoomId, GridPosition Position, Direction? Door) : GameEvent;
+
+/// <summary>A steal worked: a card (<paramref name="CardId"/>) or a key changed hands.</summary>
+public sealed record Stole(int ThiefId, int VictimId, int? CardId, bool Key) : GameEvent;
 
 public sealed record LootPickedUp(int HeroId, IReadOnlyList<int> CardIds) : GameEvent;
 

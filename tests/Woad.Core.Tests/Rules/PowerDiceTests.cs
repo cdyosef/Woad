@@ -43,7 +43,7 @@ public class PowerDiceTests
 
         IReadOnlyList<GameEvent> events = session.Do(new AttackMonster(hero.Id, knight.Id));
         Assert.Equal(new PowerDiceEarned(hero.Id, 1), events[^1]);
-        Assert.NotNull(session.State.Turn!.PendingAttack);
+        Assert.NotNull(session.State.Turn!.PendingRoll);
         Assert.Contains("Power Die", session.Refuse(new EndTurn(hero.Id)));
 
         events = session.Do(new AddPowerDie(hero.Id));
@@ -113,7 +113,7 @@ public class PowerDiceTests
         Assert.DoesNotContain(events, gameEvent => gameEvent is PowerDiceEarned);
         Assert.Contains("no Power Die to bank", session.Refuse(new BankPowerDie(hero.Id)));
         Assert.Equal(1, events.SingleOf<Damaged>().Amount);
-        Assert.Null(session.State.Turn!.PendingAttack);
+        Assert.Null(session.State.Turn!.PendingRoll);
     }
 
     [Fact]

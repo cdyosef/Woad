@@ -23,6 +23,7 @@ internal static class TestContent
           { "id": "scroll", "name": "Scroll", "type": "spell", "usage": "singleUse", "effect": { "kind": "attack", "amount": 3, "range": 3 } },
           { "id": "wand", "name": "Wand", "type": "spell", "slot": "offHand", "usage": "charges", "charges": 2, "effect": { "kind": "stun", "amount": 1, "range": 3 } },
           { "id": "boomerang", "name": "Boomerang", "type": "tool", "slot": "offHand", "effect": { "kind": "stun", "amount": 1, "range": 4 } },
+          { "id": "picks", "name": "Picks", "type": "tool", "slot": "offHand", "modifiers": { "tools": 2 } },
           { "id": "coin", "name": "Coin", "type": "treasure", "value": 5 },
           { "id": "gem", "name": "Gem", "type": "treasure", "value": 15 }
         ]
@@ -47,13 +48,17 @@ internal static class TestContent
         ]
         """;
 
-    /// <summary>Gems only from floor 2. Pots: rolls 0-49 give a coin, 50-79 a heart, 80-99 nothing.</summary>
+    /// <summary>
+    /// Gems only from floor 2. Pots: rolls 0-49 give a coin, 50-79 a heart, 80-99 nothing. Keys never
+    /// turn up by chance, so scripted loot rolls stay as they are; tests place keys themselves.
+    /// </summary>
     public const string ThemeJson = """
         {
           "id": "test_theme",
           "name": "Test Theme",
           "lootDeck": [ { "card": "coin", "copies": 2 }, { "card": "gem", "minFloor": 2 } ],
-          "pots": { "treasure": "coin", "treasureChance": 50, "heartChance": 30 }
+          "pots": { "treasure": "coin", "treasureChance": 50, "heartChance": 30 },
+          "keys": { "monster": 0, "pot": 0, "roomCleared": 0, "steal": 50 }
         }
         """;
 

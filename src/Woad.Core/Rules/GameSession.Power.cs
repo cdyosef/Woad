@@ -85,10 +85,10 @@ public sealed partial class GameSession
         {
             events.Add(new PowerDiceEarned(hero.Id, Turn.UnsettledPowerDice));
         }
-        else if (Turn.PendingAttack is { } attack && hero.LuckRemaining < 1)
+        else if (Turn.PendingRoll is { } pending && hero.LuckRemaining < 1)
         {
-            Turn.PendingAttack = null;
-            ResolveHeroAttack(attack, events);
+            Turn.PendingRoll = null;
+            ResolvePendingRoll(pending, events);
         }
     }
 
@@ -97,7 +97,7 @@ public sealed partial class GameSession
     {
         Turn.UnsettledPowerDice--;
         int face = RollOneDie();
-        if (Turn.PendingAttack is { } attack)
+        if (Turn.PendingRoll is { } attack)
         {
             attack.Roll = attack.Roll.With(face);
             events.Add(new PowerDieAdded(hero.Id, face, attack.Roll, attack.Total));

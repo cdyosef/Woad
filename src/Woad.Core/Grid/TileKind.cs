@@ -21,6 +21,9 @@ public enum TileKind
 
     /// <summary>A pot. Blocks movement until a hero beside it smashes it, finding coins, a heart or nothing.</summary>
     Pot,
+
+    /// <summary>A cracked block: like a wall until a bomb's blast breaks it into floor.</summary>
+    CrackedWall,
 }
 
 public static class TileKindExtensions
@@ -28,5 +31,5 @@ public static class TileKindExtensions
     public static bool IsWalkable(this TileKind tile, bool flying = false) =>
         tile is TileKind.Floor or TileKind.StairsDown or TileKind.Exit || (flying && tile == TileKind.Pit);
 
-    public static bool BlocksSight(this TileKind tile) => tile == TileKind.Wall;
+    public static bool BlocksSight(this TileKind tile) => tile is TileKind.Wall or TileKind.CrackedWall;
 }

@@ -148,6 +148,30 @@ public static class UiTheme
         return label;
     }
 
+    /// <summary>A small text label that can hold inline icons (see <see cref="Icon"/>) and colors.</summary>
+    public static RichTextLabel RichLabel(Vector2 position, Vector2 size)
+    {
+        var label = new RichTextLabel
+        {
+            Position = position,
+            Size = size,
+            BbcodeEnabled = true,
+            ScrollActive = false,
+            AutowrapMode = TextServer.AutowrapMode.Off,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        };
+        label.AddThemeFontSizeOverride("normal_font_size", FontSize);
+        label.AddThemeConstantOverride("line_separation", 2);
+        return label;
+    }
+
+    /// <summary>An inline icon from assets/ui for a <see cref="RichLabel"/>, or the fallback word without the art.</summary>
+    public static string Icon(string name, string fallback)
+    {
+        string path = $"res://assets/ui/{name}.png";
+        return ResourceLoader.Exists(path) ? $"[img=11x11]{path}[/img]" : fallback;
+    }
+
     public static Button Button(Vector2 position, Vector2 size, string text)
     {
         var button = new Button

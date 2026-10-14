@@ -21,14 +21,14 @@ internal static class TestRun
 
     /// <summary>A begun run starting in the first room. Every hero gets the same stats and cards.</summary>
     /// <param name="loot">Scripts the loot stream (pots, drops, deck shuffles); seeded when omitted.</param>
-    public static GameSession Start(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null)
+    public static GameSession Start(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, IReadOnlyList<PassageSetup>? passages = null)
     {
-        GameSession session = Create(rooms, dice, heroes, stats, cards, loot);
+        GameSession session = Create(rooms, dice, heroes, stats, cards, loot, passages);
         session.Begin();
         return session;
     }
 
-    public static GameSession Create(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null)
+    public static GameSession Create(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, IReadOnlyList<PassageSetup>? passages = null)
     {
         var setup = new RunSetup
         {
@@ -39,6 +39,7 @@ internal static class TestRun
                 .ToList(),
             Rooms = rooms,
             StartRoomId = rooms[0].Id,
+            Passages = passages ?? [],
         };
 
         var random = loot is null

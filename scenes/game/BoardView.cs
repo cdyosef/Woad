@@ -5,7 +5,10 @@ using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Game;
 
-/// <summary>Draws one room's terrain, loot and move/target highlights, and reports clicks on tiles.</summary>
+/// <summary>
+/// Draws one room's terrain, doors (open, locked, the Boss Door, walled up), revealed traps, loot and
+/// keys, and the move/target highlights, and reports clicks on tiles.
+/// </summary>
 public partial class BoardView : Control
 {
     public const int TileSize = 32;
@@ -124,14 +127,43 @@ public partial class BoardView : Control
             DrawTile(tile, _room.Layout[tile]);
         }
 
-        foreach ((Direction side, _) in _room.Doors)
+        foreach ((GridPosition tile, Trap trap) in _room.Traps)
         {
-            DrawDoor(side, _room.IsSealed);
+            if (trap.Revealed)
+            {
+                DrawTrap(tile, trap.Kind);
+            }
+        }
+
+        foreach ((Direction side, string _) in _room.Doors)
+        {
+            if (_room.PassageOn(side) is not { IsHidden: true })
+            {
+                DrawDoor(side, _room.PassageOn(side), _room.IsSealed);
+            }
+        }
+
+        foreach (GridPosition chest in _room.TilesOfKind(TileKind.Chest))
+        {
+            if (_room.ChestTrapAt(chest) is { Revealed: true })
+            {
+                DrawWarning(chest);
+            }
         }
 
         foreach (GridPosition tile in _room.LootPositions)
         {
             DrawLoot(tile, _room.LootAt(tile).Count);
+        }
+
+        foreach ((GridPosition tile, int count) in _room.Keys)
+        {
+            DrawKey(tile, "icon_key", count);
+        }
+
+        if (_room.BossKeyAt is { } bossKey)
+        {
+            DrawKey(bossKey, "icon_boss_key", 1);
         }
 
         DrawOverlay(_reachable, Palette.Reachable);
@@ -166,9 +198,10 @@ public partial class BoardView : Control
         string? feature = kind switch
         {
             TileKind.Wall => "wall",
+            TileKind.CrackedWall => "cracked_wall",
             TileKind.Pit => "pit",
             TileKind.StairsDown => "stairs",
-            TileKind.Chest => _room!.IsChestOpened(tile) ? "chest_open" : "chest",
+            TileKind.Chest => _room!.IsChestOpened(tile) ? "chest_open" : _room.ChestLockAt(tile) is not null ? "chest_locked" : "chest",
             TileKind.Pot => "pot",
             TileKind.Exit => _room!.Monsters.Any(monster => monster.Definition.Boss) ? "exit_sealed" : "exit_open",
             _ => null,
@@ -180,7 +213,7 @@ public partial class BoardView : Control
             return true;
         }
 
-        if (kind is not (TileKind.Wall or TileKind.StairsDown))
+        if (kind is not (TileKind.Wall or TileKind.CrackedWall or TileKind.StairsDown))
         {
             DrawTextureRect(floor, rect, tile: false);
         }
@@ -234,10 +267,15 @@ public partial class BoardView : Control
 
         switch (kind)
         {
-            case TileKind.Wall:
+            case TileKind.Wall or TileKind.CrackedWall:
                 DrawRect(rect, Palette.Wall);
                 DrawRect(new Rect2(rect.Position, new Vector2(TileSize, 8)), Palette.WallTop);
                 DrawRect(rect, Palette.Ink, filled: false, width: 1);
+                if (kind == TileKind.CrackedWall)
+                {
+                    DrawPolyline([rect.Position + new Vector2(9, 4), rect.Position + new Vector2(14, 14), rect.Position + new Vector2(12, 20), rect.Position + new Vector2(19, 28)], Palette.Ink, 2);
+                }
+
                 break;
 
             case TileKind.Pit:
@@ -281,14 +319,17 @@ public partial class BoardView : Control
                 bool open = _room!.IsChestOpened(tile);
                 var body = new Rect2(rect.Position + new Vector2(6, 10), new Vector2(20, 14));
                 DrawRect(body, open ? Palette.ChestOpen : Palette.Chest);
-                DrawRect(new Rect2(body.Position + new Vector2(0, 5), new Vector2(20, 2)), open ? Palette.TrimDim : Palette.TrimBright);
+                DrawRect(new Rect2(body.Position + new Vector2(0, 5), new Vector2(20, 2)), open ? Palette.TrimDim : _room.ChestLockAt(tile) is not null ? Palette.TextDim : Palette.TrimBright);
                 DrawRect(body, Palette.Ink, filled: false, width: 1);
                 break;
         }
     }
 
-    /// <summary>A bar on the board's edge marking a door: gold when open, red while a trap room is sealed.</summary>
-    private void DrawDoor(Direction side, bool sealedShut)
+    /// <summary>
+    /// A bar on the board's edge marking a door: gold when open, red while a trap room is sealed,
+    /// grey and cracked when walled up, with a lock (or the Boss Key's mark) when locked.
+    /// </summary>
+    private void DrawDoor(Direction side, Passage? passage, bool sealedShut)
     {
         Rect2 tile = TileRect(side.DoorTile());
         Rect2 bar = side switch
@@ -298,7 +339,64 @@ public partial class BoardView : Control
             Direction.West => new Rect2(0, tile.Position.Y + 4, 4, TileSize - 8),
             _ => new Rect2(Pixels - 4, tile.Position.Y + 4, 4, TileSize - 8),
         };
-        DrawRect(bar, sealedShut ? Palette.Danger : Palette.TrimBright);
+        Color color = passage switch
+        {
+            { IsBlocked: true } => Palette.WallTop,
+            { IsLocked: true, NeedsBossKey: true } => Palette.Heart,
+            { IsLocked: true } => Palette.TrimDim,
+            _ when sealedShut => Palette.Danger,
+            _ => Palette.TrimBright,
+        };
+        DrawRect(bar, color);
+        if (passage is { IsLocked: true } && GameArt.Ui(passage.NeedsBossKey ? "icon_boss_key" : "icon_key") is { } lockIcon)
+        {
+            DrawTextureRect(lockIcon, new Rect2(tile.GetCenter() - new Vector2(8, 8), new Vector2(16, 16)), tile: false);
+        }
+
+        if (passage?.Trap is { Revealed: true })
+        {
+            DrawWarning(side.DoorTile());
+        }
+    }
+
+    /// <summary>A revealed trap on a floor tile: spikes or a trap door.</summary>
+    private void DrawTrap(GridPosition tile, TrapKind kind)
+    {
+        Rect2 rect = TileRect(tile);
+        if (GameArt.Tile(ThemeId, kind == TrapKind.TrapDoor ? "trapdoor" : "spikes") is { } art)
+        {
+            DrawTextureRect(art, rect, tile: false);
+            return;
+        }
+
+        DrawRect(rect.Grow(-5), kind == TrapKind.TrapDoor ? Palette.Chest : Palette.TextDim, filled: kind == TrapKind.TrapDoor);
+        DrawRect(rect.Grow(-5), Palette.Ink, filled: false, width: 1);
+    }
+
+    /// <summary>A small red "!" in a tile's corner: a trap someone found on a chest or door.</summary>
+    private void DrawWarning(GridPosition tile)
+    {
+        Vector2 corner = TileOrigin(tile) + new Vector2(TileSize - 9, 1);
+        DrawRect(new Rect2(corner, new Vector2(8, 10)), Palette.Danger);
+        DrawString(ThemeDB.FallbackFont, corner + new Vector2(2, 8), "!", fontSize: 8, modulate: Palette.Text);
+    }
+
+    private void DrawKey(GridPosition tile, string icon, int count)
+    {
+        Vector2 origin = TileOrigin(tile) + new Vector2(3, 3);
+        if (GameArt.Ui(icon) is { } art)
+        {
+            DrawTextureRect(art, new Rect2(origin, new Vector2(18, 18)), tile: false);
+        }
+        else
+        {
+            DrawCircle(origin + new Vector2(6, 9), 4, icon == "icon_boss_key" ? Palette.Heart : Palette.Loot);
+        }
+
+        if (count > 1)
+        {
+            DrawString(ThemeDB.FallbackFont, origin + new Vector2(16, 18), count.ToString(), fontSize: 8, modulate: Palette.Loot);
+        }
     }
 
     private void DrawLoot(GridPosition tile, int count)

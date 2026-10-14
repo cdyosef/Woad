@@ -22,6 +22,22 @@ public sealed record PotDefinition
     public int HeartChance { get; init; }
 }
 
+/// <summary>Percent chances of finding a small key.</summary>
+public sealed record KeyChances
+{
+    /// <summary>A defeated monster leaves a key where it fell.</summary>
+    public int Monster { get; init; } = 15;
+
+    /// <summary>A smashed pot holds a key (checked before its other contents).</summary>
+    public int Pot { get; init; } = 10;
+
+    /// <summary>A key appears somewhere in a room when its last monster falls.</summary>
+    public int RoomCleared { get; init; } = 35;
+
+    /// <summary>A successful steal from a monster takes a key rather than a card.</summary>
+    public int Steal { get; init; } = 40;
+}
+
 /// <summary>What a room is for in a generated floor.</summary>
 public enum RoomRole
 {
@@ -75,6 +91,8 @@ public sealed record ThemeDefinition
     public IReadOnlyList<LootDeckEntry> LootDeck { get; init; } = [];
 
     public PotDefinition? Pots { get; init; }
+
+    public KeyChances Keys { get; init; } = new();
 
     public IReadOnlyList<RosterEntry> Roster { get; init; } = [];
 
