@@ -31,6 +31,7 @@ public partial class CharacterEditor : MenuScreen
     private int _level;
     private string _portrait = Portraits.All[0].Id;
     private bool _saving;
+    private bool _isCompanion;
 
     private Label _points = null!;
     private Label _error = null!;
@@ -38,6 +39,8 @@ public partial class CharacterEditor : MenuScreen
     private Label _previewName = null!;
     private HeartsView _previewHearts = null!;
     private Label _previewStats = null!;
+    private Button _heroType = null!;
+    private Button _companionType = null!;
 
     public ContentCatalog Content { get; init; } = null!;
 
@@ -52,6 +55,8 @@ public partial class CharacterEditor : MenuScreen
     internal LineEdit NameEdit { get; private set; } = null!;
 
     internal Button SaveButton { get; private set; } = null!;
+
+    internal Button CompanionButton => _companionType;
 
     internal int PointsLeft => _budget - PointBuy.Cost(_allocation);
 
@@ -88,6 +93,12 @@ public partial class CharacterEditor : MenuScreen
             Text = Editing?.Name ?? "",
         });
         NameEdit.TextChanged += _ => Refresh();
+
+        // A new character is a hero or a companion for good; an existing one just says which.
+        _heroType = Add(TypeButton(new Vector2(232, 60), 50, "Hero", companion: false));
+        _companionType = Add(TypeButton(new Vector2(286, 60), 64, "Companion", companion: true));
+        _companionType.TooltipText = "Companions join a player's party. The game plays them, following that player's orders.";
+        _isCompanion = Editing?.IsCompanion ?? false;
 
         Caption(new Vector2(24, 92), "PORTRAIT");
         for (int i = 0; i < Portraits.All.Count; i++)
@@ -136,6 +147,18 @@ public partial class CharacterEditor : MenuScreen
         NameEdit.GrabFocus();
     }
 
+    private Button TypeButton(Vector2 position, float width, string text, bool companion)
+    {
+        Button button = UiTheme.Button(position, new Vector2(width, 22), text);
+        button.ToggleMode = true;
+        button.Pressed += () =>
+        {
+            _isCompanion = companion;
+            Refresh();
+        };
+        return button;
+    }
+
     private void Step(StatKind stat, int delta)
     {
         StatAllocation next = _allocation.With(stat, _allocation[stat] + delta);
@@ -161,6 +184,10 @@ public partial class CharacterEditor : MenuScreen
             portrait.Selected = portrait.PortraitId == _portrait;
         }
 
+        _heroType.SetPressedNoSignal(!_isCompanion);
+        _companionType.SetPressedNoSignal(_isCompanion);
+        _heroType.Disabled = _companionType.Disabled = Editing is not null;
+
         string name = NameEdit.Text.Trim();
         string? nameError = Character.CheckName(name);
         _error.Text = name.Length == 0 ? "" : nameError ?? "";
@@ -179,6 +206,7 @@ public partial class CharacterEditor : MenuScreen
             $"Rumble {UiTheme.Count(stats.AttackDice, "die", "dice")}   Defense {UiTheme.Count(stats.DefenseDice, "die", "dice")}\n" +
             $"Od Hand {UiTheme.Count(stats.OdHandDice, "die", "dice")}\n" +
             "(before gear bonuses)\n\n" +
+            (_isCompanion ? "A companion: joins a player's party and follows their orders.\n" : "") +
             gear + "\n\n" +
             (_level <= 1 ? $"At level 1 you can buy at most {PointBuy.LevelOneDiceLimit} extra Rumble, Defense and Od Hand die each. Unspent points are kept." : "");
     }
@@ -197,7 +225,7 @@ public partial class CharacterEditor : MenuScreen
             Character character;
             if (Editing is null)
             {
-                character = Character.Create(NameEdit.Text, _portrait, _allocation, Content, DateTimeOffset.UtcNow);
+                character = Character.Create(NameEdit.Text, _portrait, _allocation, Content, DateTimeOffset.UtcNow, _isCompanion);
             }
             else
             {

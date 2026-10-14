@@ -48,8 +48,9 @@ public sealed record HeroEnteredRoom(int HeroId, string FromRoomId, string RoomI
 /// A hero or monster rolled an attack against one or more targets. <paramref name="Bonus"/> is the
 /// weapon's fixed value, and <paramref name="Total"/> the roll plus it. The last
 /// <paramref name="PowerDice"/> faces of the roll are Power Dice (banked ones spent, or a monster's sixes).
+/// A <paramref name="Shove"/> pushes its target instead of hurting it.
 /// </summary>
-public sealed record AttackRolled(int AttackerId, DiceRoll Roll, int Bonus, int Total, IReadOnlyList<int> TargetIds, int PowerDice = 0) : GameEvent;
+public sealed record AttackRolled(int AttackerId, DiceRoll Roll, int Bonus, int Total, IReadOnlyList<int> TargetIds, int PowerDice = 0, bool Shove = false) : GameEvent;
 
 /// <summary>
 /// A target answered an attack: its defense dice plus its armor make <paramref name="Total"/>. The
@@ -166,3 +167,27 @@ public sealed record LootDropped(string RoomId, GridPosition Position, int CardI
 
 /// <summary>A hero earned XP (from a kill, a new floor or escaping).</summary>
 public sealed record XpGained(int HeroId, int Amount, int Total) : GameEvent;
+
+/// <summary>A player gave their companion a standing order.</summary>
+public sealed record CompanionOrdered(int OwnerId, int CompanionId, CompanionOrder Order) : GameEvent;
+
+/// <summary>A hero walked, fell or was shoved into a pit, or a monster was. A bottomless pit has no room below.</summary>
+public sealed record FellIntoPit(int EntityId, string RoomId, GridPosition Pit, bool Bottomless) : GameEvent;
+
+/// <summary>A hero who fell into a bottomless pit climbed back out.</summary>
+public sealed record ClimbedOut(int HeroId, GridPosition Position) : GameEvent;
+
+/// <summary>A hero's shove pushed a monster from one tile to the next.</summary>
+public sealed record MonsterShoved(int HeroId, int MonsterId, GridPosition From, GridPosition To) : GameEvent;
+
+/// <summary>A shove didn't beat the monster's defense: it stands its ground.</summary>
+public sealed record ShoveResisted(int HeroId, int MonsterId) : GameEvent;
+
+/// <summary>A monster was shoved onto a trap, which went off (and is now revealed).</summary>
+public sealed record MonsterTrapped(int MonsterId, TrapKind Kind, GridPosition Position) : GameEvent;
+
+/// <summary>A monster fell through a pit or trap door into the room below.</summary>
+public sealed record MonsterFell(int MonsterId, string FromRoomId, string RoomId, GridPosition Position) : GameEvent;
+
+/// <summary>A hero tried to jump a pit: <paramref name="Roll"/> against the difficulty; cleared or fell in.</summary>
+public sealed record PitJumped(int HeroId, GridPosition From, GridPosition To, int Roll, int Difficulty, bool Cleared) : GameEvent;

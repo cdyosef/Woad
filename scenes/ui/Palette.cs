@@ -40,6 +40,15 @@ public static class Palette
     public static readonly Color PotRim = new("7a4528");
 
     public static readonly Color Reachable = new("6fb7ff", 0.30f);
+
+    /// <summary>Reachable tiles that hurt: pits and found traps.</summary>
+    public static readonly Color Hazard = new("ff4a3d", 0.38f);
+
+    /// <summary>Where a pit jump would land.</summary>
+    public static readonly Color Jump = new("b58cf0", 0.42f);
+
+    /// <summary>Tints the floor seen far down a pit that leads to the room below.</summary>
+    public static readonly Color FloorBelow = new(0.30f, 0.38f, 0.36f);
     public static readonly Color Target = new("ffa94d", 0.40f);
     public static readonly Color Blast = new("ff7a3d", 0.45f);
     public static readonly Color Interact = new("f0c94a", 0.9f);

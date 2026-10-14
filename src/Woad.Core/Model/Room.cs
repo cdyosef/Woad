@@ -46,6 +46,12 @@ public sealed class Room
 
     public RoomRole Role { get; }
 
+    /// <summary>
+    /// The room right underneath, on the next floor at the same map cell (never the boss room): where
+    /// its pits and trap doors lead. Null when nothing is below, and its pits are bottomless.
+    /// </summary>
+    public string? BelowRoomId { get; internal set; }
+
     /// <summary>A trap room's doors stay shut while any monster is left in it.</summary>
     public bool Trap { get; }
 

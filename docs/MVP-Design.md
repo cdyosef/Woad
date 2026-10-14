@@ -36,7 +36,7 @@ cooperate to survive the dungeon but compete for treasure: the richest player to
 
 1. **Main menu**: Play, Characters, Quit.
 2. **Characters**: create, view or delete saved characters.
-3. **Run setup**: pick 1–8 saved characters and a seat order, plus an optional seed.
+3. **Run setup**: pick 1–8 saved characters (players and their companions) and a seat order, plus an optional seed.
 4. **Dungeon**: three floors, played in rounds.
 5. **Results**: winner, treasure totals, XP gained, items kept or lost. Characters are saved.
 6. Back to the main menu.
@@ -219,9 +219,20 @@ when the total reaches its number:
 - **Cracked walls** are walls a bomb's blast breaks. Some stand inside rooms with a stash sealed inside;
   some wall up a doorway between rooms.
 - **Traps** start hidden. **Spikes** (1 heart) stop you where you step on them and stay armed. **Trap doors**
-  drop you into a random room on the floor below (1 heart); found ones can be jumped down safely (1 step).
+  drop you into the room underneath (1 heart); found ones can be jumped down safely (1 step).
   **Needles** in chests and **darts** in door frames hit the next hero to open or pass (1 heart). Found
-  traps are shown and walked around; Od Hand disarms them. Traps never cut a room in two.
+  traps are shown, and paths go around them; you can still step onto one on purpose (it springs again
+  and stops you). Od Hand disarms them. Traps never cut a room in two, and never sit beside a chest or pot.
+- **Pits:** where a room lies underneath, its floor shows far down the pit; with nothing below (as on
+  the last floor) the pit is black. You can walk into a pit: you lose a heart and drop into the room
+  below, on the tile under the pit (or the nearest free one), or climb back out of a bottomless pit.
+  **Jump** a 1-tile pit to the tile beyond: 2 steps and a roll of 4+ on one die; miss and you fall in.
+- **Shove:** roll Rumble dice (and the weapon) at an adjacent monster as for an attack; beat its
+  defense and it's pushed one tile straight away from you (diagonally too) instead of hurt. Onto a
+  trap, the trap goes off on it (spikes: 1 heart; trap door: it falls). Into a pit, it drops to the
+  room below and loses a heart, or, bottomless, is gone for good (it counts as your kill). Bosses can't
+  be shoved, and the tile behind must be free floor, a trap or a pit. Flyers don't fall. Monsters
+  don't shove yet.
 - **Hidden stashes** hold a key or a card, spilled onto the floor when found.
 
 ### Monsters (first theme)
@@ -250,8 +261,10 @@ file under `Themes/`.
 
 ## Dungeon
 
-- **3 floors**, each 6–8 rooms, laid out by a random walk on a 5×5 room map. A few extra doors
-  between neighboring rooms add loops.
+- **3 floors**, each 6–8 rooms, laid out by a random walk on a 5×5 room map that all floors share,
+  so a pit or trap door drops into the room underneath (never into the boss room). A floor's Arrival
+  room is under the stairs that lead to it. Above the last floor, rooms with nothing underneath get
+  layouts without pits. A few extra doors between neighboring rooms add loops.
 - **Room roles:** the walk's first room is the Arrival room, which has no monsters. The room farthest
   from it holds the Stairs down (floors 1–2) or the Boss and Exit (floor 3), behind the Boss Door. A dead
   end becomes the Treasure room (chests, one guard; on floor 3 it holds the Boss Key), and the rest are
@@ -300,7 +313,7 @@ file under `Themes/`.
   this run drops as a loot pile that anyone can pick up (an action). They keep the gear they brought in and
   their XP.
 - **Exit:** beating the boss opens the exit, and stepping onto it escapes.
-- **End of the run:** when every player has escaped or been downed.
+- **End of the run:** when every player has escaped or been downed. Companions don't keep a run going (see [Companions](#companions)).
 - **Winner:** the escaped player with the highest treasure value. Ties go to the player with more kills.
 - **Rewards:** everyone keeps their XP. Escaped players keep everything they carried out, and treasure
   becomes the character's gold. Downed players keep only the gear they brought in that they still hold.
@@ -309,6 +322,32 @@ file under `Themes/`.
   screen. It shows the winner(s), and for each hero how the run ended, kills, XP and any level-up, and
   the cards found and lost. **Play again** starts the same party in a new dungeon. Abandoning a run
   from the Menu saves nothing.
+
+## Companions
+
+Companions are saved characters the game plays, following their owner's orders. Recruiting them
+from a tavern for gold and rescuing captives in the dungeon come later; for now they're made in the
+character editor (choose **Companion** when creating; it can't be changed afterwards). You level
+them up there like any character.
+
+- **Seating:** a companion joins the player seated most recently and takes its turn right after
+  theirs (and their other companions'). A companion can't be seated without a player before it. Freeing
+  a player's seat frees their companions too.
+- **Standing orders:** on your turn, **Orders** (beside End turn) sets each companion's order. It
+  costs nothing and lasts until changed.
+  - **Follow** (the default): stays within 2 steps of you, through doors and down the stairs, attacks
+    what comes within reach and goes after monsters closing in on you.
+  - **Hold:** stays on the tile it stood on when told, attacking what comes within reach.
+  - **Fight:** goes after the monsters in the room; follows you once it's clear.
+  - **Stay back:** keeps away from monsters near you, striking only when one is right next to it.
+- **What companions don't do:** loot, open chests, smash pots, unlock, search or steal. They keep
+  out of doorways, the stairs, the exit, loot and the spots beside unopened chests when they have
+  nowhere to be. If their owner is downed or gone, they follow the first player still in.
+- **Monster scaling:** a companion counts as half a hero (rounded up) when sizing rooms and the boss.
+- **End of the run:** the run ends once every player is downed or out. When a player escapes, their
+  companions in the same room escape with them. Companions still inside are left behind: like a
+  downed hero, they lose what they found and keep the gear they brought and their XP.
+- **Downed:** a downed companion sits out the rest of the run, like a hero. Reviving comes later.
 
 ## Persistence
 

@@ -141,6 +141,59 @@ public partial class GameScreen
     }
 
     /// <summary>
+    /// Debug mode (<c>-- --hazardtest</c>, with <see cref="DemoRun.Hazards"/>): shoves a slimeling into a
+    /// pit that leads to the room below, then jumps the pit, landing beyond it or dropping below.
+    /// </summary>
+    private async void RunHazardTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            Room ledge = _session.State.Rooms["ledge"];
+            Check(ledge.BelowRoomId == "below", "the pits lead to the room underneath");
+
+            // A slimeling has no defense, so any shove pushes it into the pit; its heart goes in the fall.
+            await Click(this, _shove);
+            Check(_shoving, "Shove waits for a monster to be clicked");
+            await ClickTile(new GridPosition(4, 4));
+            await ConfirmIfHeld();
+            Check(ledge.Monsters.Count == 0 && aria.Kills == 1, "the shoved slimeling falls into the pit and dies of the fall");
+
+            // Step to the pit's edge, then jump it: land beyond, or fall to the room below.
+            await Click(this, _roll);
+            await WaitUntilIdle();
+            await ClickTile(new GridPosition(4, 4));
+            await WaitUntilIdle();
+            Check(aria.Position == new GridPosition(4, 4), "the hero walks to the pit's edge");
+            Check(_session.GetJumpLandings().Contains(new GridPosition(4, 2)), "a jump across the pit is on offer");
+            await ClickTile(new GridPosition(4, 2));
+            await WaitUntilIdle();
+            Check((aria.RoomId, aria.Position) == ("ledge", new GridPosition(4, 2)) || aria.RoomId == "below", "the jump clears the pit or drops the hero below");
+            Check(_shownRoomId == aria.RoomId, "the view follows the hero");
+
+            GD.Print("Hazard test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Hazard test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
+    /// <summary>Confirms a roll that Luck is holding open.</summary>
+    private async Task ConfirmIfHeld()
+    {
+        await WaitUntilIdle();
+        if (_session.State.Turn?.PendingRoll is not null)
+        {
+            await Click(this, _confirm);
+            await WaitUntilIdle();
+        }
+    }
+
+    /// <summary>
     /// Waits for event playback to finish. The tests roll real dice, so any Power Die a lucky 6 earns
     /// is added by clicking Add Power Die, keeping the scripted clicks on track.
     /// </summary>

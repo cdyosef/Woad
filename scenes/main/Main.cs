@@ -11,7 +11,7 @@ namespace Woad.Scenes;
 
 /// <summary>
 /// The app's root: owns the content and the character store, swaps between screens, and saves
-/// each character's results when a run ends. Debug flags: <c>--uitest</c>, <c>--floortest</c> and
+/// each character's results when a run ends. Debug flags: <c>--uitest</c>, <c>--floortest</c>, <c>--hazardtest</c> and
 /// <c>--autoplay</c> jump straight into a run with the debug party; <c>--menutest</c> and
 /// <c>--resultstest</c> click through the menus using a throwaway save folder.
 /// </summary>
@@ -44,6 +44,10 @@ public partial class Main : Control
         if (args.Contains("--uitest"))
         {
             Show(new GameScreen { Setup = DemoRun.SingleRoom(seed), Content = _content });
+        }
+        else if (args.Contains("--hazardtest"))
+        {
+            Show(new GameScreen { Setup = DemoRun.Hazards(seed), Content = _content });
         }
         else if (args.Contains("--floortest"))
         {
@@ -139,7 +143,7 @@ public partial class Main : Control
 
     /// <summary>Generates a dungeon for the party (carrying their current gear) and starts playing it.</summary>
     private void StartRun(IReadOnlyList<Character> party, ulong seed) =>
-        ShowGame(DungeonGenerator.CreateRun(_content, ThemeId, [.. party.Select(character => character.ToHeroSetup())], seed), party);
+        ShowGame(DungeonGenerator.CreateRun(_content, ThemeId, Party.ToHeroSetups(party), seed), party);
 
     private void ShowGame(RunSetup setup, IReadOnlyList<Character> party)
     {

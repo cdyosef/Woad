@@ -103,6 +103,9 @@ public sealed partial class GameSession
             TakeStairs c => Handle(c, events),
             SmashPot c => Handle(c, events),
             Escape c => Handle(c, events),
+            OrderCompanion c => Handle(c, events),
+            Shove c => Handle(c, events),
+            JumpPit c => Handle(c, events),
             _ => $"Unknown command {command.GetType().Name}.",
         };
 
@@ -133,6 +136,11 @@ public sealed partial class GameSession
         if (command.HeroId != Turn.HeroId)
         {
             return "It isn't that hero's turn.";
+        }
+
+        if (command is OrderCompanion)
+        {
+            return null;
         }
 
         if (Turn.UnsettledPowerDice > 0 && command is not (AddPowerDie or BankPowerDie or RerollDie))
@@ -185,15 +193,27 @@ public sealed partial class GameSession
         events.Add(new TurnStarted(hero.Id));
     }
 
-    /// <summary>Ends the run once nobody is left in the dungeon. The richest escaped hero wins; kills break ties.</summary>
+    /// <summary>
+    /// Ends the run once no player is left in the dungeon (companions don't keep it going). Companions
+    /// still inside are left behind and lose what they found. The richest escaped player wins; kills
+    /// break ties.
+    /// </summary>
     private void EndRunIfOver(List<GameEvent> events)
     {
-        if (State.Heroes.Any(hero => hero.IsActive))
+        if (State.Heroes.Any(hero => hero.IsActive && !hero.IsCompanion))
         {
             return;
         }
 
-        List<Hero> escaped = State.Heroes.Where(hero => hero.Status == HeroStatus.Escaped).ToList();
+        foreach (Hero companion in State.Heroes.Where(hero => hero.IsActive))
+        {
+            foreach (CardInstance found in companion.AllCards.Where(card => card.BroughtInByHeroId != companion.Id).ToList())
+            {
+                companion.Remove(found);
+            }
+        }
+
+        List<Hero> escaped = State.Heroes.Where(hero => hero.Status == HeroStatus.Escaped && !hero.IsCompanion).ToList();
         List<int> winners = [];
         if (escaped.Count > 0)
         {
@@ -242,7 +262,7 @@ public sealed partial class GameSession
                 roomSetup.Template.HeroStarts.OrderBy(start => start.Key).Select(start => start.Value).ToList());
             foreach (MonsterSpawn spawn in roomSetup.Template.Monsters)
             {
-                room.AddMonster(CreateMonster(state.NextId(), spawn.Monster, spawn.Position, setup.Heroes.Count));
+                room.AddMonster(CreateMonster(state.NextId(), spawn.Monster, spawn.Position, GameRules.PartyStrength(setup.Heroes)));
             }
 
             AddFeatures(room, roomSetup.Features ?? RoomFeatures.None);
@@ -251,6 +271,11 @@ public sealed partial class GameSession
 
         ValidateDoors(state);
         AddPassages(state, setup.Passages);
+        foreach (Room room in state.Rooms.Values)
+        {
+            room.BelowRoomId = state.Rooms.Values
+                .FirstOrDefault(below => below.Floor == room.Floor + 1 && below.MapPosition == room.MapPosition && below.Role != RoomRole.Boss)?.Id;
+        }
 
         if (!state.Rooms.TryGetValue(setup.StartRoomId, out Room? startRoom))
         {
@@ -274,7 +299,22 @@ public sealed partial class GameSession
                 throw new ArgumentException($"Seat {seat + 1} starts on a blocked tile {start}.", nameof(setup));
             }
 
-            var hero = new Hero(state.NextId(), seat, heroSetup.Name, heroSetup.BaseStats, startRoom.Id, start, heroSetup.CharacterId, heroSetup.Portrait);
+            int? ownerId = null;
+            if (heroSetup.OwnerSeat is int ownerSeat)
+            {
+                if (ownerSeat < 0 || ownerSeat >= seat || setup.Heroes[ownerSeat].OwnerSeat is not null)
+                {
+                    throw new ArgumentException($"The companion in seat {seat + 1} must belong to a player seated before it.", nameof(setup));
+                }
+
+                ownerId = state.Heroes[ownerSeat].Id;
+            }
+
+            var hero = new Hero(state.NextId(), seat, heroSetup.Name, heroSetup.BaseStats, startRoom.Id, start, heroSetup.CharacterId, heroSetup.Portrait)
+            {
+                OwnerId = ownerId,
+                PlayerNumber = ownerId is null ? state.Heroes.Count(other => !other.IsCompanion) + 1 : 0,
+            };
             state.AddHero(hero);
 
             foreach (string cardId in heroSetup.CardIds)

@@ -76,11 +76,11 @@ public sealed partial class GameSession
             return error;
         }
 
-        Fall(hero, room, jumped: true, events);
+        Fall(hero, room, command.TrapDoor, jumped: true, events);
         return null;
     }
 
-    /// <summary>Hidden traps go off under heroes; revealed ones are walked around (see HeroPathSearch).</summary>
+    /// <summary>A trap goes off under a hero: hidden, or found and walked onto anyway (see HeroPathSearch).</summary>
     private void SpringTrap(Hero hero, Room room, Trap trap, GridPosition position, List<GameEvent> events)
     {
         trap.Revealed = true;
@@ -88,7 +88,7 @@ public sealed partial class GameSession
         HurtHero(room, hero, 1, events);
         if (trap.Kind == TrapKind.TrapDoor && hero.IsActive)
         {
-            Fall(hero, room, jumped: false, events);
+            Fall(hero, room, position, jumped: false, events);
         }
     }
 
@@ -103,23 +103,30 @@ public sealed partial class GameSession
     }
 
     /// <summary>
-    /// Drops a hero into a random room on the floor below (not the boss room), or another room on
-    /// this floor when it's the last. Ends their move.
+    /// Drops a hero through the hole (a pit or trap door) at <paramref name="hole"/> into the room
+    /// underneath, landing on the tile below it or the nearest free one. Ends their movement. A trap
+    /// door with no room under it (only in hand-built runs) drops them into a random room on the next
+    /// floor instead, or another room on this floor when it's the last.
     /// </summary>
-    private void Fall(Hero hero, Room from, bool jumped, List<GameEvent> events)
+    private void Fall(Hero hero, Room from, GridPosition hole, bool jumped, List<GameEvent> events)
     {
-        List<Room> below = State.Rooms.Values.Where(room => room.Floor == from.Floor + 1 && room.Role != RoomRole.Boss).ToList();
-        List<Room> candidates = below.Count > 0
-            ? below
-            : State.Rooms.Values.Where(room => room.Floor == from.Floor && room.Role != RoomRole.Boss && room != from).ToList();
-        candidates.Sort((a, b) => string.CompareOrdinal(a.Id, b.Id));
-        if (candidates.Count == 0)
+        Room? target = from.BelowRoomId is { } belowId ? State.Rooms[belowId] : null;
+        if (target is null)
         {
-            return;
+            List<Room> below = State.Rooms.Values.Where(room => room.Floor == from.Floor + 1 && room.Role != RoomRole.Boss).ToList();
+            List<Room> candidates = below.Count > 0
+                ? below
+                : State.Rooms.Values.Where(room => room.Floor == from.Floor && room.Role != RoomRole.Boss && room != from).ToList();
+            candidates.Sort((a, b) => string.CompareOrdinal(a.Id, b.Id));
+            if (candidates.Count == 0)
+            {
+                return;
+            }
+
+            target = _random.Behavior.Pick(candidates);
         }
 
-        Room target = _random.Behavior.Pick(candidates);
-        if (Landing(target) is not { } landing)
+        if (LandingNear(target, hole) is not { } landing)
         {
             return;
         }
@@ -198,18 +205,21 @@ public sealed partial class GameSession
         }
     }
 
-    /// <summary>After a monster falls: perhaps a key where it fell, and perhaps one more when the room is cleared.</summary>
-    private void DropKeys(Room room, GridPosition fallenAt, List<GameEvent> events)
+    /// <summary>A defeated monster may leave a key where it fell.</summary>
+    private void DropKey(Room room, GridPosition fallenAt, List<GameEvent> events)
     {
-        KeyChances chances = Content.GetTheme(State.ThemeId).Keys;
-        if (Chance(chances.Monster))
+        if (Chance(Content.GetTheme(State.ThemeId).Keys.Monster))
         {
             GridPosition spot = SafeTile(room, fallenAt);
             room.AddKeys(spot, 1);
             events.Add(new KeysAppeared(room.Id, spot, 1));
         }
+    }
 
-        if (room.Monsters.Count == 0 && Chance(chances.RoomCleared))
+    /// <summary>A cleared room may turn up a key on a free tile.</summary>
+    private void RoomClearedKey(Room room, List<GameEvent> events)
+    {
+        if (Chance(Content.GetTheme(State.ThemeId).Keys.RoomCleared))
         {
             List<GridPosition> free = RoomGrid.AllPositions()
                 .Where(tile => room.Layout[tile] == TileKind.Floor && !IsOccupied(room, tile) && room.TrapAt(tile) is null && !room.HasLootAt(tile))
@@ -244,12 +254,12 @@ public sealed partial class GameSession
 
     /// <summary>
     /// Where something dropped at <paramref name="near"/> lands: there, unless a trap is on it (a
-    /// monster or hero standing on one); then the nearest walkable tile without a trap, so loot is
-    /// never left where nobody may step.
+    /// monster or hero standing on one) or it's a pit; then the nearest walkable tile without a trap,
+    /// so loot is never left where nobody would step.
     /// </summary>
     private static GridPosition SafeTile(Room room, GridPosition near)
     {
-        if (room.TrapAt(near) is null)
+        if (room.TrapAt(near) is null && room.Layout[near].IsWalkable())
         {
             return near;
         }

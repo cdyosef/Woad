@@ -10,6 +10,9 @@ public partial class RunSetupScreen : MenuScreen
 {
     private readonly List<CharacterRow> _rosterRows = [];
     private readonly List<Character> _party = [];
+
+    /// <summary>The player most recently seated: new companions join them.</summary>
+    private Character? _lastPlayer;
     private readonly SeatButton[] _seats = new SeatButton[GameRules.MaxHeroes];
     private List<Character> _roster = [];
 
@@ -64,7 +67,7 @@ public partial class RunSetupScreen : MenuScreen
             {
                 if (seat < _party.Count)
                 {
-                    _party.RemoveAt(seat);
+                    Unseat(_party[seat]);
                     Refresh();
                 }
             };
@@ -105,15 +108,59 @@ public partial class RunSetupScreen : MenuScreen
     {
         if (_party.Contains(character))
         {
-            _party.Remove(character);
+            Unseat(character);
         }
-        else if (_party.Count < GameRules.MaxHeroes)
+        else if (_party.Count >= GameRules.MaxHeroes)
+        {
+            _hint.Text = $"The party is full: at most {GameRules.MaxHeroes}.";
+            return;
+        }
+        else if (!character.IsCompanion)
         {
             _party.Add(character);
+            _lastPlayer = character;
+        }
+        else if (_lastPlayer is null)
+        {
+            _hint.Text = "Seat a player first: a companion joins the player seated most recently.";
+            return;
+        }
+        else
+        {
+            // Right after its owner and the owner's other companions, so it takes its turn after theirs.
+            int owner = _party.IndexOf(_lastPlayer);
+            int end = owner + 1;
+            while (end < _party.Count && _party[end].IsCompanion)
+            {
+                end++;
+            }
+
+            _party.Insert(end, character);
         }
 
         Refresh();
     }
+
+    /// <summary>Frees a seat. A player leaving takes their companions along.</summary>
+    private void Unseat(Character character)
+    {
+        int index = _party.IndexOf(character);
+        int count = 1;
+        while (!character.IsCompanion && index + count < _party.Count && _party[index + count].IsCompanion)
+        {
+            count++;
+        }
+
+        _party.RemoveRange(index, count);
+        if (character == _lastPlayer)
+        {
+            _lastPlayer = _party.LastOrDefault(seated => !seated.IsCompanion);
+        }
+    }
+
+    /// <summary>The player a seated companion belongs to: the nearest player seated before it.</summary>
+    private Character? OwnerOf(Character companion) =>
+        _party.Take(_party.IndexOf(companion)).LastOrDefault(seated => !seated.IsCompanion);
 
     private void Refresh()
     {
@@ -124,13 +171,18 @@ public partial class RunSetupScreen : MenuScreen
 
         for (int i = 0; i < _seats.Length; i++)
         {
-            _seats[i].ShowCharacter(i < _party.Count ? _party[i] : null);
+            Character? seated = i < _party.Count ? _party[i] : null;
+            int playerNumber = _party.Take(i + 1).Count(member => !member.IsCompanion);
+            _seats[i].ShowCharacter(seated, seated is { IsCompanion: true } companion ? OwnerOf(companion)?.Name : null, playerNumber);
         }
 
         StartButton.Disabled = _party.Count == 0;
+        int companions = _party.Count(seated => seated.IsCompanion);
+        int players = _party.Count - companions;
         _hint.Text = _party.Count == 0
             ? "Click characters to seat them. Players take turns at the same mouse."
-            : $"{_party.Count} player{(_party.Count == 1 ? "" : "s")}. Click a seat to free it.";
+            : $"{UiTheme.Count(players, "player", "players")}{(companions > 0 ? ", " + UiTheme.Count(companions, "companion", "companions") : "")}. " +
+              "A companion joins the player seated most recently. Click a seat to free it.";
     }
 
     private void Start()

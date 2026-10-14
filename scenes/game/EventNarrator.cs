@@ -10,11 +10,22 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
     {
         RoundStarted round => $"Round {round.Round} begins.",
         MovementRolled rolled => $"{nameOf(rolled.HeroId)} rolls {rolled.Roll.Total} and can move {Count(rolled.MovementPoints, "step")}.",
+        AttackRolled { Shove: true } shove => $"{nameOf(shove.AttackerId)} shoves {Names(shove.TargetIds)} with {shove.Total}.",
         AttackRolled attack => $"{nameOf(attack.AttackerId)} attacks {Names(attack.TargetIds)} with {attack.Total}.",
         DieRerolled { MovementPoints: int points } rerolled =>
             $"{nameOf(rerolled.HeroId)} turns a {rerolled.OldFace} into a {rerolled.NewFace}: {Count(points, "step")}.",
         DieRerolled rerolled => $"{nameOf(rerolled.HeroId)} turns a {rerolled.OldFace} into a {rerolled.NewFace}.",
         HeroEnteredRoom entered => $"{nameOf(entered.HeroId)} enters a new room.",
+        CompanionOrdered ordered => $"{nameOf(ordered.OwnerId)} tells {nameOf(ordered.CompanionId)} to {Command(ordered.Order)}.",
+        FellIntoPit { Bottomless: true } fell => $"{nameOf(fell.EntityId)} falls into the pit!",
+        FellIntoPit fell => $"{nameOf(fell.EntityId)} falls through the pit to the room below!",
+        ClimbedOut climbed => $"{nameOf(climbed.HeroId)} claws their way back out.",
+        MonsterShoved shoved => $"{nameOf(shoved.MonsterId)} is pushed back!",
+        ShoveResisted resisted => $"{nameOf(resisted.MonsterId)} holds its ground.",
+        MonsterTrapped trapped => $"{nameOf(trapped.MonsterId)} is shoved onto a {(trapped.Kind == TrapKind.TrapDoor ? "trap door" : "spike trap")}!",
+        MonsterFell fell => $"{nameOf(fell.MonsterId)} drops to the floor below.",
+        PitJumped { Cleared: true } jump => $"{nameOf(jump.HeroId)} leaps the pit ({jump.Roll}).",
+        PitJumped jump => $"{nameOf(jump.HeroId)} misjudges the jump ({jump.Roll}, needed {jump.Difficulty})...",
         PowerDiceEarned earned => $"{nameOf(earned.HeroId)} rolled a 6 and earns a Power Die!",
         PowerDieAdded added => $"{nameOf(added.HeroId)} adds a Power Die: {added.Face}, for {added.Total}.",
         PowerDiceBanked banked => $"{nameOf(banked.OwnerId)} banks {PowerDice(banked.Count)} ({banked.Banked} banked).",
@@ -115,6 +126,14 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         TrapKind.Needle => "needle in the lock",
         TrapKind.Darts => "dart trap",
         _ => "trap",
+    };
+
+    private static string Command(CompanionOrder order) => order switch
+    {
+        CompanionOrder.Hold => "hold here",
+        CompanionOrder.Fight => "fight",
+        CompanionOrder.StayBack => "stay back",
+        _ => "follow",
     };
 
     private static string Count(int amount, string noun) => $"{amount} {noun}{(amount == 1 ? "" : "s")}";

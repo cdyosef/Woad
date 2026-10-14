@@ -4,10 +4,12 @@ using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Menu;
 
-/// <summary>One of the eight seats: shows who sits there, in that seat's player color.</summary>
+/// <summary>One of the eight seats: shows who sits there (and whose companion), in that seat's color.</summary>
 public partial class SeatButton : Button
 {
     private Character? _character;
+    private string? _owner;
+    private int _playerNumber;
 
     public SeatButton()
     {
@@ -17,9 +19,13 @@ public partial class SeatButton : Button
 
     public int Seat { get; init; }
 
-    public void ShowCharacter(Character? character)
+    /// <param name="owner">For a companion, the name of the player it belongs to.</param>
+    /// <param name="playerNumber">For a player, which player they are, counting players only.</param>
+    public void ShowCharacter(Character? character, string? owner = null, int playerNumber = 0)
     {
         _character = character;
+        _owner = owner;
+        _playerNumber = playerNumber;
         Disabled = character is null;
         QueueRedraw();
     }
@@ -29,8 +35,13 @@ public partial class SeatButton : Button
         Color seatColor = Palette.Seat(Seat);
         DrawRect(new Rect2(2, 2, 4, Size.Y - 4), _character is null ? Palette.TrimDim : seatColor);
         Font font = GetThemeDefaultFont();
-        string level = _character is null ? "" : $"   level {_character.Level}";
-        DrawString(font, new Vector2(12, 14), $"Player {Seat + 1}{level}", fontSize: UiTheme.FontSize, modulate: _character is null ? Palette.TextDim : seatColor);
+        string heading = (_character, _owner) switch
+        {
+            (null, _) => $"Seat {Seat + 1}",
+            ({ IsCompanion: true }, { } owner) => $"with {owner}",
+            ({ } seated, _) => $"Player {_playerNumber}   level {seated.Level}",
+        };
+        DrawString(font, new Vector2(12, 14), heading, fontSize: UiTheme.FontSize, modulate: _character is null ? Palette.TextDim : seatColor);
         if (_character is null)
         {
             DrawString(font, new Vector2(12, 30), "(empty)", fontSize: UiTheme.FontSize, modulate: Palette.TextDim);

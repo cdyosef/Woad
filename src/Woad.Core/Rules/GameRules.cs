@@ -7,8 +7,18 @@ public static class GameRules
 {
     public const int MaxHeroes = 8;
 
-    /// <summary>Rooms are built for up to this many heroes; bigger parties make every monster tougher.</summary>
+    /// <summary>Rooms are built for up to this many heroes; a bigger party faces a tougher boss.</summary>
     public const int FullParty = 4;
+
+    /// <summary>
+    /// How many heroes a party counts as when sizing its monsters: each player counts 1, each
+    /// companion half (rounded up), as companions don't loot or unlock and can't carry on alone.
+    /// </summary>
+    public static int PartyStrength(int players, int companions) => players + (companions + 1) / 2;
+
+    /// <inheritdoc cref="PartyStrength(int, int)"/>
+    public static int PartyStrength(IReadOnlyList<HeroSetup> heroes) =>
+        PartyStrength(heroes.Count(hero => hero.OwnerSeat is null), heroes.Count(hero => hero.OwnerSeat is not null));
 
     /// <summary>Extra hearts a boss gets in a party bigger than <see cref="FullParty"/>: 3 for each hero beyond it.</summary>
     public static int ExtraMonsterHearts(int partySize, bool boss) => boss ? 3 * Math.Max(0, partySize - FullParty) : 0;
@@ -36,6 +46,12 @@ public static class GameRules
 
     /// <summary>Power Dice a hero or monster can bank. A 6 rolled with a full bank is added to its roll instead.</summary>
     public const int MaxBankedPowerDice = 3;
+
+    /// <summary>A pit jump needs this on one die.</summary>
+    public const int JumpDifficulty = 4;
+
+    /// <summary>Hearts lost falling into a pit (or through a sprung trap door, like any trap).</summary>
+    public const int FallDamage = 1;
 
     /// <summary>Hearts restored to each hero in a room when its last monster falls.</summary>
     public const int HeartsOnRoomClear = 1;

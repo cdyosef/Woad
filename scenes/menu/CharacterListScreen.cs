@@ -151,7 +151,8 @@ public partial class CharacterListScreen : MenuScreen
             : "";
         string speed = stats.Speed >= 0 ? $"+{stats.Speed}" : stats.Speed.ToString();
 
-        return $"Level {character.Level}   {character.Xp}/{nextLevelXp} XP{points}\n" +
+        return (character.IsCompanion ? "Companion: joins a player's party and follows their orders.\n" : "") +
+               $"Level {character.Level}   {character.Xp}/{nextLevelXp} XP{points}\n" +
                $"Hearts {stats.Hearts}   Wend {stats.MoveDice}d6{speed}   Luck {stats.Luck}\n" +
                $"Rumble {UiTheme.Count(stats.AttackDice, "die", "dice")}   Defense {UiTheme.Count(stats.DefenseDice, "die", "dice")}   Od Hand {UiTheme.Count(stats.OdHandDice, "die", "dice")}\n\n" +
                $"Equipped: {CardNames(character.Equipped)}\n" +

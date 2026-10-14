@@ -16,26 +16,27 @@ internal static class TestRun
     public static RoomTemplate Room(string text) => RoomTemplate.Parse(text, TestContent.Catalog);
 
     /// <summary>A begun run in a single room "A".</summary>
-    public static GameSession Start(string room, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null) =>
-        Start([new RoomSetup("A", Room(room))], dice, heroes, stats, cards, loot);
+    /// <param name="owners">Per seat: null for a player, or the seat of the player a companion belongs to.</param>
+    public static GameSession Start(string room, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, int?[]? owners = null) =>
+        Start([new RoomSetup("A", Room(room))], dice, heroes, stats, cards, loot, owners: owners);
 
     /// <summary>A begun run starting in the first room. Every hero gets the same stats and cards.</summary>
     /// <param name="loot">Scripts the loot stream (pots, drops, deck shuffles); seeded when omitted.</param>
-    public static GameSession Start(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, IReadOnlyList<PassageSetup>? passages = null)
+    public static GameSession Start(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, IReadOnlyList<PassageSetup>? passages = null, int?[]? owners = null)
     {
-        GameSession session = Create(rooms, dice, heroes, stats, cards, loot, passages);
+        GameSession session = Create(rooms, dice, heroes, stats, cards, loot, passages, owners);
         session.Begin();
         return session;
     }
 
-    public static GameSession Create(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, IReadOnlyList<PassageSetup>? passages = null)
+    public static GameSession Create(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, IReadOnlyList<PassageSetup>? passages = null, int?[]? owners = null)
     {
         var setup = new RunSetup
         {
             Seed = Seed,
             ThemeId = TestContent.ThemeId,
             Heroes = Enumerable.Range(1, heroes)
-                .Select(number => new HeroSetup($"Hero {number}", stats ?? GameRules.HeroBaseStats, cards ?? []))
+                .Select(number => new HeroSetup($"Hero {number}", stats ?? GameRules.HeroBaseStats, cards ?? [], OwnerSeat: owners?[number - 1]))
                 .ToList(),
             Rooms = rooms,
             StartRoomId = rooms[0].Id,

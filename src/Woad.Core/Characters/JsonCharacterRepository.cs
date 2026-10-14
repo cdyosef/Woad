@@ -88,6 +88,7 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
         Gold = character.Gold,
         RunsPlayed = character.RunsPlayed,
         Wins = character.Wins,
+        IsCompanion = character.IsCompanion,
     };
 
     /// <summary>Rebuilds a character, dropping cards that no longer exist in the game's content.</summary>
@@ -119,7 +120,7 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
         return new Character(
             file.Id, file.Name, file.Portrait, file.CreatedUtc, Math.Max(0, file.Xp), file.Allocation,
             Math.Max(0, file.UnspentPoints), Known(file.Equipped), Known(file.Belt), Known(file.Backpack),
-            Math.Max(0, file.Gold), Math.Max(0, file.RunsPlayed), Math.Max(0, file.Wins));
+            Math.Max(0, file.Gold), Math.Max(0, file.RunsPlayed), Math.Max(0, file.Wins), file.IsCompanion);
     }
 
     /// <summary>The on-disk shape of a character, kept separate so the model can change without breaking saves.</summary>
@@ -152,5 +153,8 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
         public int RunsPlayed { get; init; }
 
         public int Wins { get; init; }
+
+        /// <summary>Missing in files saved before companions existed, which were all heroes.</summary>
+        public bool IsCompanion { get; init; }
     }
 }

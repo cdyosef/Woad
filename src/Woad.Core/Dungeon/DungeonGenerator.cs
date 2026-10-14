@@ -8,11 +8,13 @@ namespace Woad.Core.Dungeon;
 
 /// <summary>
 /// Builds a run's dungeon from its seed. For each floor a random walk lays out 6-8 rooms on a 5x5
-/// map. The arrival room is where the walk starts, the farthest room gets the stairs (or the boss
-/// on the last floor, behind the Boss Door, its only way in), and a dead end becomes the treasure
-/// room (on the last floor, home of the Boss Key). Each room gets a randomly turned layout from the
-/// theme and monsters bought with a difficulty budget that grows with floor depth and party size,
-/// then its secrets: traps, locked and trapped chests, hidden stashes and cracked walls. Some doors
+/// map. The floors share that map, so pits and trap doors drop into the room underneath (rooms with
+/// nothing below avoid layouts with pits, except on the last floor). The arrival room is where the
+/// walk starts (below floor 1, under the stairs that lead down to it), the farthest room gets the
+/// stairs (or the boss on the last floor, behind the Boss Door, its only way in), and a dead end
+/// becomes the treasure room (on the last floor, home of the Boss Key). Each room gets a randomly
+/// turned layout from the theme and monsters bought with a difficulty budget that grows with floor
+/// depth and party size, then its secrets: traps, locked and trapped chests, hidden stashes and cracked walls. Some doors
 /// are locked or trapped, and some extra links between rooms are secret doors or cracked walls.
 /// The same seed and party size always build the same dungeon.
 /// </summary>
@@ -42,12 +44,23 @@ public static class DungeonGenerator
             throw new InvalidOperationException($"Theme '{themeId}' has no boss.");
         }
 
+        // Every floor's map first, so each room knows what lies under it: pits and trap doors lead
+        // to the room below. A floor's arrival room is under the stairs that lead to it.
         var random = new Pcg32(seed, Stream);
         var rooms = new List<RoomSetup>();
         var passages = new List<PassageSetup>();
+        var plans = new List<FloorPlan>();
         for (int floor = 1; floor <= theme.Floors; floor++)
         {
-            GenerateFloor(floor, floor == theme.Floors, theme, content, layouts, heroes.Count, random, rooms, passages);
+            plans.Add(PlanFloor(floor, floor == theme.Floors, plans.Count > 0 ? plans[^1].Farthest : null, random, passages));
+        }
+
+        foreach (FloorPlan plan in plans)
+        {
+            HashSet<GridPosition> below = plan.Floor < plans.Count
+                ? [.. plans[plan.Floor].Cells.Where(cell => plans[plan.Floor].Roles[cell] != RoomRole.Boss)]
+                : [];
+            BuildFloor(plan, below, theme, content, layouts, GameRules.PartyStrength(heroes), random, rooms);
         }
 
         return new RunSetup
@@ -64,20 +77,22 @@ public static class DungeonGenerator
     /// <summary>A room's id: its floor and map cell, e.g. "f2-31".</summary>
     public static string RoomId(int floor, GridPosition cell) => $"f{floor}-{cell.X}{cell.Y}";
 
-    private static void GenerateFloor(
-        int floor,
-        bool lastFloor,
-        ThemeDefinition theme,
-        ContentCatalog content,
-        IReadOnlyList<ThemeRoom> layouts,
-        int partySize,
-        IRandomSource random,
-        List<RoomSetup> rooms,
-        List<PassageSetup> passages)
+    /// <summary>One floor's map: its rooms' cells, the links between them and each room's role.</summary>
+    private sealed record FloorPlan(
+        int Floor,
+        bool LastFloor,
+        List<GridPosition> Cells,
+        List<(GridPosition A, GridPosition B)> Links,
+        Dictionary<GridPosition, RoomRole> Roles,
+        GridPosition Farthest);
+
+    /// <summary>Lays out a floor's rooms and plans its doors (added to <paramref name="passages"/>).</summary>
+    /// <param name="underStairs">The arrival room's cell (under the stairs above), or null to pick one.</param>
+    private static FloorPlan PlanFloor(int floor, bool lastFloor, GridPosition? underStairs, IRandomSource random, List<PassageSetup> passages)
     {
         // Lay out cells with a random walk; every new cell is linked to the one it grew from.
         int roomCount = random.NextInt(MinRooms, MaxRooms + 1);
-        var start = new GridPosition(random.NextInt(0, MapSize), random.NextInt(0, MapSize));
+        GridPosition start = underStairs ?? new GridPosition(random.NextInt(0, MapSize), random.NextInt(0, MapSize));
         var cells = new List<GridPosition> { start };
         var links = new List<(GridPosition A, GridPosition B)>();
         while (cells.Count < roomCount)
@@ -142,6 +157,25 @@ public static class DungeonGenerator
             }
         }
 
+        return new FloorPlan(floor, lastFloor, cells, links, roles, farthest);
+    }
+
+    /// <summary>
+    /// Fills in a planned floor's rooms: layouts, monsters and secrets. <paramref name="below"/> holds
+    /// the cells with a room under them on the next floor; only those rooms get trap doors, and above
+    /// the last floor, rooms with nothing below avoid layouts with pits (which would be bottomless).
+    /// </summary>
+    private static void BuildFloor(
+        FloorPlan plan,
+        HashSet<GridPosition> below,
+        ThemeDefinition theme,
+        ContentCatalog content,
+        IReadOnlyList<ThemeRoom> layouts,
+        int partySize,
+        IRandomSource random,
+        List<RoomSetup> rooms)
+    {
+        (int floor, bool lastFloor, List<GridPosition> cells, List<(GridPosition A, GridPosition B)> links, Dictionary<GridPosition, RoomRole> roles, _) = plan;
         GridPosition? trap = null;
         List<GridPosition> combat = cells.Where(cell => roles[cell] == RoomRole.Combat).ToList();
         if (floor >= 2 && combat.Count > 0)
@@ -152,12 +186,19 @@ public static class DungeonGenerator
         foreach (GridPosition cell in cells)
         {
             RoomRole role = roles[cell];
+            bool roomBelow = below.Contains(cell);
             List<ThemeRoom> candidates = layouts.Where(layout => layout.Roles.Contains(role)).ToList();
+            List<ThemeRoom> pitless = candidates.Where(layout => !layout.Template.TilesOf(TileKind.Pit).Any()).ToList();
+            if (!lastFloor && !roomBelow && pitless.Count > 0)
+            {
+                candidates = pitless;
+            }
+
             RoomTemplate template = random.Pick(candidates).Template.Transformed(random.NextInt(0, 4), random.CoinFlip());
             bool isTrap = cell == trap;
             IEnumerable<MonsterSpawn> monsters = PlaceMonsters(template, role, floor, partySize, isTrap, theme, content, random);
             template = template.WithMonsters(template.Monsters.Concat(monsters));
-            (template, RoomFeatures features) = PlaceSecrets(template, role, floor, lastFloor, random);
+            (template, RoomFeatures features) = PlaceSecrets(template, role, floor, lastFloor, roomBelow, random);
 
             var doors = new Dictionary<Direction, string>();
             foreach (Direction side in Enum.GetValues<Direction>())
@@ -202,11 +243,12 @@ public static class DungeonGenerator
     }
 
     /// <summary>
-    /// A room's secrets. Traps go on open floor away from doorways and starts; chests may be locked
+    /// A room's secrets. Traps go on open floor away from doorways, starts, chests and pots; chests may be locked
     /// (better loot) or trapped; a stash may be hidden on the floor or sealed in a cracked wall. The
     /// last floor's treasure room holds the Boss Key, in a chest if it has one.
     /// </summary>
-    private static (RoomTemplate Template, RoomFeatures Features) PlaceSecrets(RoomTemplate template, RoomRole role, int floor, bool lastFloor, IRandomSource random)
+    private static (RoomTemplate Template, RoomFeatures Features) PlaceSecrets(
+        RoomTemplate template, RoomRole role, int floor, bool lastFloor, bool roomBelow, IRandomSource random)
     {
         var traps = new Dictionary<GridPosition, TrapSetup>();
         var lockedChests = new Dictionary<GridPosition, int>();
@@ -215,8 +257,10 @@ public static class DungeonGenerator
         GridPosition? bossKeyChest = null;
         GridPosition? bossKeyOnFloor = null;
 
+        // Nothing goes beside a chest or pot either: found traps there could wall it off.
         HashSet<GridPosition> reserved = [.. Enum.GetValues<Direction>().Select(side => side.DoorTile()), .. template.HeroStarts.Values,
-            .. template.SpawnPoints, .. template.Monsters.Select(spawn => spawn.Position)];
+            .. template.SpawnPoints, .. template.Monsters.Select(spawn => spawn.Position),
+            .. template.TilesOf(TileKind.Chest).Concat(template.TilesOf(TileKind.Pot)).SelectMany(tile => tile.OrthogonalNeighbors())];
         List<GridPosition> open = template.TilesOf(TileKind.Floor).Where(tile => !reserved.Contains(tile)).ToList();
         GridPosition? TakeOpenTile()
         {
@@ -266,7 +310,7 @@ public static class DungeonGenerator
         {
             if (TakeOpenTile() is { } tile && StaysConnected(template, [.. traps.Keys, tile]))
             {
-                bool trapDoor = !lastFloor && random.NextInt(0, 100) < 30;
+                bool trapDoor = roomBelow && random.NextInt(0, 100) < 30;
                 traps[tile] = new TrapSetup(trapDoor ? TrapKind.TrapDoor : TrapKind.Spikes, GameRules.TrapDifficulty(floor));
             }
         }
