@@ -7,14 +7,29 @@ public static class GameRules
 {
     public const int MaxHeroes = 4;
 
-    /// <summary>An attack die showing this or higher is a hit.</summary>
-    public const int HitFace = 5;
+    /// <summary>Hearts an attack takes when its total beats the defense total (ties go to the defender).</summary>
+    public const int DamagePerHit = 1;
 
-    /// <summary>A hero's defense die showing this or higher blocks one hit.</summary>
-    public const int HeroBlockFace = 5;
+    /// <summary>Od Hand total to pick a locked door. Kept low enough that one die plus a Power Die can always do it.</summary>
+    public static int DoorLockDifficulty(int floor) => 4 + Math.Min(floor, 2);
 
-    /// <summary>A monster's defense die showing this or higher blocks one hit.</summary>
-    public const int MonsterBlockFace = 6;
+    /// <summary>Od Hand total to pick a locked chest (which holds better loot).</summary>
+    public static int ChestLockDifficulty(int floor) => 5 + floor;
+
+    /// <summary>Search total to find a secret door.</summary>
+    public static int SecretDifficulty(int floor) => 4 + floor;
+
+    /// <summary>Search total to spot a trap, and Od Hand total to disarm it.</summary>
+    public static int TrapDifficulty(int floor) => 3 + floor;
+
+    /// <summary>Search total to find a hidden stash of keys or loot.</summary>
+    public static int StashDifficulty(int floor) => 5 + floor;
+
+    /// <summary>A die showing this earns a Power Die.</summary>
+    public const int PowerDieFace = 6;
+
+    /// <summary>Power Dice a hero or monster can bank. A 6 rolled with a full bank is added to its roll instead.</summary>
+    public const int MaxBankedPowerDice = 3;
 
     /// <summary>Hearts restored to each hero in a room when its last monster falls.</summary>
     public const int HeartsOnRoomClear = 1;
@@ -42,6 +57,7 @@ public static class GameRules
         Speed = 2,
         AttackDice = 1,
         DefenseDice = 1,
+        OdHandDice = 1,
         Luck = 0,
     };
 }

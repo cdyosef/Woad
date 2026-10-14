@@ -50,7 +50,7 @@ public class MovementTests
     {
         GameSession session = TestRun.Start(Open);
 
-        Assert.Contains("Roll for movement", session.Refuse(new MoveHero(session.HeroInSeat().Id, new GridPosition(4, 3))));
+        Assert.Contains("Roll to move first", session.Refuse(new MoveHero(session.HeroInSeat().Id, new GridPosition(4, 3))));
         Assert.Empty(session.GetReachableTiles());
     }
 
@@ -63,8 +63,74 @@ public class MovementTests
         var rolled = session.Do(new RollMovement(heroId)).SingleOf<MovementRolled>();
 
         Assert.Equal([3, 4], rolled.Roll.Faces);
-        Assert.Equal(9, rolled.MovementPoints);
-        Assert.Contains("already rolled", session.Refuse(new RollMovement(heroId)));
+        Assert.Equal((2, 9), (rolled.Bonus, rolled.MovementPoints));
+        Assert.Contains("used all your Move dice", session.Refuse(new RollMovement(heroId)));
+    }
+
+    [Fact]
+    public void EachMoveDieCanBeAMoveOfItsOwn()
+    {
+        GameSession session = TestRun.Start(Open, new ScriptedDice(3, 2), cards: ["boots"]);
+        Hero hero = session.HeroInSeat();
+
+        var first = session.Do(new RollMovement(hero.Id, Dice: 1)).SingleOf<MovementRolled>();
+        Assert.Equal(5, first.MovementPoints);
+        session.Do(new MoveHero(hero.Id, new GridPosition(4, 3)));
+
+        var second = session.Do(new RollMovement(hero.Id, Dice: 1)).SingleOf<MovementRolled>();
+
+        Assert.Equal((0, 2), (second.Bonus, second.MovementPoints));
+        Assert.Equal(2, session.State.Turn!.MovementPoints);
+        Assert.Equal(0, session.MoveDiceLeft);
+    }
+
+    [Fact]
+    public void YouCanMoveAttackAndMoveAgain()
+    {
+        GameSession session = TestRun.Start("""
+            .........
+            .........
+            ....d....
+            .........
+            ....1....
+            .........
+            .........
+            .........
+            .........
+            """, new ScriptedDice(1, 5, 2), cards: ["boots"]);
+        Hero hero = session.HeroInSeat();
+
+        session.Do(new RollMovement(hero.Id, Dice: 1));
+        session.Do(new MoveHero(hero.Id, new GridPosition(4, 3)));
+        session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id));
+        Assert.Equal(0, session.State.Turn!.MovementPoints);
+
+        session.Do(new RollMovement(hero.Id, Dice: 1));
+        session.Do(new MoveHero(hero.Id, new GridPosition(6, 3)));
+
+        Assert.Equal(new GridPosition(6, 3), hero.Position);
+    }
+
+    [Fact]
+    public void SpeedCanBeSavedForALaterMove()
+    {
+        GameSession session = TestRun.Start(Open, new ScriptedDice(3, 2), cards: ["boots"]);
+        Hero hero = session.HeroInSeat();
+
+        Assert.Equal(3, session.Do(new RollMovement(hero.Id, Dice: 1, UseSpeed: false)).SingleOf<MovementRolled>().MovementPoints);
+        Assert.Equal(2, session.SpeedBonusLeft);
+
+        Assert.Equal(4, session.Do(new RollMovement(hero.Id, Dice: 1)).SingleOf<MovementRolled>().MovementPoints);
+    }
+
+    [Fact]
+    public void NegativeSpeedAlwaysSlowsTheFirstMove()
+    {
+        GameSession session = TestRun.Start(Open, new ScriptedDice(3), stats: GameRules.HeroBaseStats with { Speed = -1 });
+
+        var rolled = session.Do(new RollMovement(session.HeroInSeat().Id, UseSpeed: false)).SingleOf<MovementRolled>();
+
+        Assert.Equal((-1, 2), (rolled.Bonus, rolled.MovementPoints));
     }
 
     [Fact]
@@ -129,16 +195,27 @@ public class MovementTests
     }
 
     [Fact]
-    public void ActingAfterMovingEndsTheMove()
+    public void ActingEndsTheMoveInProgress()
     {
-        GameSession session = TestRun.Start(Open, new ScriptedDice(3), cards: ["sword", "big_sword"]);
+        // A monster in the room makes changing gear cost the action.
+        GameSession session = TestRun.Start("""
+            .........
+            .........
+            .........
+            .........
+            ....1....
+            .........
+            .........
+            .........
+            d........
+            """, new ScriptedDice(3), cards: ["sword", "big_sword"]);
         Hero hero = session.HeroInSeat();
         session.Do(new RollMovement(hero.Id));
         session.Do(new MoveHero(hero.Id, new GridPosition(4, 3)));
 
         session.Do(new EquipCard(hero.Id, hero.Card("big_sword").Id));
 
-        Assert.Contains("move is over", session.Refuse(new MoveHero(hero.Id, new GridPosition(4, 2))));
+        Assert.Contains("used all your Move dice", session.Refuse(new MoveHero(hero.Id, new GridPosition(4, 2))));
         Assert.Equal(0, session.State.Turn!.MovementPoints);
         Assert.Empty(session.GetReachableTiles());
     }
@@ -159,14 +236,14 @@ public class MovementTests
     [Fact]
     public void LuckRerollsAMovementDieBeforeTheFirstStep()
     {
-        GameSession session = TestRun.Start(Open, new ScriptedDice(1, 6), stats: GameRules.HeroBaseStats with { Luck = 2 });
+        GameSession session = TestRun.Start(Open, new ScriptedDice(1, 5), stats: GameRules.HeroBaseStats with { Luck = 2 });
         Hero hero = session.HeroInSeat();
         session.Do(new RollMovement(hero.Id));
 
         var rerolled = session.Do(new RerollDie(hero.Id, 0)).SingleOf<DieRerolled>();
 
-        Assert.Equal((1, 6, (int?)8), (rerolled.OldFace, rerolled.NewFace, rerolled.MovementPoints));
-        Assert.Equal(8, session.State.Turn!.MovementPoints);
+        Assert.Equal((1, 5, (int?)7), (rerolled.OldFace, rerolled.NewFace, rerolled.MovementPoints));
+        Assert.Equal(7, session.State.Turn!.MovementPoints);
         Assert.Equal(1, hero.LuckRemaining);
 
         session.Do(new MoveHero(hero.Id, new GridPosition(4, 3)));
@@ -222,7 +299,7 @@ public class MovementTests
     [Fact]
     public void ThereMustBeADoorOnThatSide()
     {
-        GameSession session = TestRun.Start(TwoRooms(EmptyRoom), new ScriptedDice(6));
+        GameSession session = TestRun.Start(TwoRooms(EmptyRoom), new ScriptedDice(5));
         Hero hero = session.HeroInSeat();
         session.Do(new RollMovement(hero.Id));
         session.Do(new MoveHero(hero.Id, Direction.North.DoorTile()));

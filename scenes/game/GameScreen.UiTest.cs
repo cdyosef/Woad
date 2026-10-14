@@ -32,7 +32,7 @@ public partial class GameScreen
             Check(targets.Count > 0, "the bomb has targets from the starting tile");
             await ClickTile(targets[0]);
             await WaitUntilIdle();
-            if (_session.State.Turn!.PendingAttack is not null)
+            if (_session.State.Turn!.PendingRoll is not null)
             {
                 Check(_confirm.Visible, "a Luck-held attack shows the Confirm button");
                 await Click(this, _confirm);
@@ -51,6 +51,18 @@ public partial class GameScreen
             await WaitUntilIdle();
             Check(aria.Position == destination, "clicking a highlighted tile moves the hero");
 
+            // Search spends the Od Hand die, not the action.
+            await Click(this, _search);
+            await WaitUntilIdle();
+            if (_session.State.Turn!.PendingRoll is not null)
+            {
+                Check(_confirm.Visible, "with Luck left, a search waits to be confirmed like an attack");
+                await Click(this, _confirm);
+                await WaitUntilIdle();
+            }
+
+            Check(_session.State.Turn!.OdHandDiceUsed == 1 && !_session.State.Turn.HasActed, "Search rolls Od Hand without using the action");
+
             // End turn hands over to the second seat.
             await Click(this, _endTurn);
             await WaitUntilIdle();
@@ -64,6 +76,13 @@ public partial class GameScreen
             await WaitUntilIdle();
             Check(bran.Equipment.GetValueOrDefault(EquipSlot.OffHand) == boomerang, "Equip puts the card in its slot");
             Check(bran.Backpack.Any(card => card.Definition.Id == "buckler"), "the old card goes to the backpack");
+
+            CardInstance buckler = bran.Backpack.Single(card => card.Definition.Id == "buckler");
+            await Click(this, _inventory.BackpackSlot(bran.Backpack.ToList().IndexOf(buckler)));
+            Button equip = _inventory.ActionButton(CardAction.Equip);
+            Check(equip.Disabled && equip.TooltipText.Contains("in a fight"), "a greyed-out Equip says why (gear in a fight takes the action)");
+            await Click(this, equip);
+            Check(_messages[^1].Contains("in a fight"), "clicking a greyed-out button logs the reason");
 
             await Click(this, _endTurn);
             await WaitUntilIdle();
@@ -121,7 +140,20 @@ public partial class GameScreen
         }
     }
 
-    internal Task WaitUntilIdle() => WaitFor(this, () => !_busy, "event playback to finish");
+    /// <summary>
+    /// Waits for event playback to finish. The tests roll real dice, so any Power Die a lucky 6 earns
+    /// is added by clicking Add Power Die, keeping the scripted clicks on track.
+    /// </summary>
+    internal async Task WaitUntilIdle()
+    {
+        await WaitFor(this, () => !_busy, "event playback to finish");
+        while (_session.State.Turn?.UnsettledPowerDice > 0)
+        {
+            Check(_addPower.Visible, "a 6 offers to add or bank a Power Die");
+            await Click(this, _addPower);
+            await WaitFor(this, () => !_busy, "the Power Die to roll");
+        }
+    }
 
     private Task ClickTile(GridPosition tile) =>
         ClickAt(this, _board.GetGlobalRect().Position + BoardView.TileOrigin(tile) + new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f));

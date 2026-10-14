@@ -296,9 +296,9 @@ public sealed class ContentCatalog
             errors.Add($"{name} needs at least 1 heart.");
         }
 
-        if (monster.Move < 0 || monster.AttackDice < 0 || monster.DefenseDice < 0)
+        if (monster.Move < 0 || monster.AttackDice < 0 || monster.DefenseDice < 0 || monster.Weapon < 0 || monster.Armor < 0)
         {
-            errors.Add($"{name} move, attackDice and defenseDice can't be negative.");
+            errors.Add($"{name} move, attackDice, defenseDice, weapon and armor can't be negative.");
         }
 
         if (monster.AttackRange < 1)

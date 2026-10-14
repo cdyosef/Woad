@@ -36,7 +36,7 @@ public partial class Main
             await Click(this, editor.PlusButton(StatKind.Hearts));
             await Click(this, editor.PlusButton(StatKind.AttackDice));
             Check(editor.PointsLeft == 1, "point-buy spends 1 + 1 + 3 of 6 points");
-            Check(editor.PlusButton(StatKind.AttackDice).Disabled, "level 1 allows only one extra Attack die");
+            Check(editor.PlusButton(StatKind.AttackDice).Disabled, "level 1 allows only one extra Rumble die");
             Check(editor.PlusButton(StatKind.DefenseDice).Disabled, "you can't spend points you don't have");
             await Click(this, editor.SaveButton);
 
@@ -84,7 +84,7 @@ public partial class Main
             string[] names = [.. game.Session.State.Heroes.Select(hero => hero.Name)];
             Check(names.SequenceEqual(["Wren", "Morgan"]), "seat order follows the order characters were picked");
             var morgan = game.Session.State.Heroes[1];
-            Check(morgan.MaxHearts == 6 && morgan.EffectiveStats.AttackDice == 3, "the hero has the character's stats plus gear");
+            Check(morgan.MaxHearts == 6 && morgan.EffectiveStats.AttackDice == 2 && morgan.EffectiveStats.Weapon == 1, "the hero has the character's stats plus gear");
             Check(morgan.Portrait == "moss", "the hero has the chosen portrait");
             Check(Music.Current == "dungeon", "a run plays the dungeon music");
 

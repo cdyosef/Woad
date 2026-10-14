@@ -18,6 +18,7 @@
     { "card": "bomb", "copies": 3 },
     { "card": "flame_scroll", "copies": 2 },
     { "card": "boomerang" },
+    { "card": "lockpicks", "copies": 2 },
     { "card": "leather_cap", "copies": 2 },
     { "card": "coin_pouch", "copies": 6 },
     { "card": "frost_wand", "minFloor": 2 },

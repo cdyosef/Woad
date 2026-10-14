@@ -45,8 +45,8 @@ public class CardTests
         Assert.Equal("shield", hero.Equipment[EquipSlot.OffHand].Definition.Id);
         Assert.Equal(["potion", "bomb"], hero.Belt.Select(card => card.Definition.Id));
         Assert.Equal(["potion", "coin"], hero.Backpack.Select(card => card.Definition.Id));
-        Assert.Equal(2, hero.EffectiveStats.AttackDice);
-        Assert.Equal(2, hero.EffectiveStats.DefenseDice);
+        Assert.Equal((1, 1), (hero.EffectiveStats.AttackDice, hero.EffectiveStats.Weapon));
+        Assert.Equal((1, 1), (hero.EffectiveStats.DefenseDice, hero.EffectiveStats.Armor));
         Assert.Equal(5, hero.TreasureValue);
     }
 
@@ -63,8 +63,60 @@ public class CardTests
         Assert.Equal<GameEvent>([new CardStowed(hero.Id, sword.Id), new CardEquipped(hero.Id, bigSword.Id)], events);
         Assert.Same(bigSword, hero.Equipment[EquipSlot.MainHand]);
         Assert.Equal([sword], hero.Backpack);
-        Assert.Equal(3, hero.EffectiveStats.AttackDice);
+        Assert.Equal(2, hero.EffectiveStats.Weapon);
+        Assert.False(session.State.Turn!.HasActed);
+    }
+
+    [Fact]
+    public void ChangingGearIsFreeWithNoMonstersInTheRoom()
+    {
+        GameSession session = TestRun.Start(Open, new ScriptedDice(3), cards: ["sword", "shield", "big_sword", "potion", "potion", "potion"]);
+        Hero hero = session.HeroInSeat();
+        session.Do(new RollMovement(hero.Id));
+
+        Assert.True(session.GearIsFree);
+        session.Do(new EquipCard(hero.Id, hero.Card("big_sword").Id));
+        session.Do(new EquipCard(hero.Id, hero.Card("sword").Id));
+        session.Do(new StowCard(hero.Id, hero.Belt[0].Id));
+        session.Do(new BeltCard(hero.Id, hero.Backpack[^1].Id));
+
+        Assert.Equal("sword", hero.Equipment[EquipSlot.MainHand].Definition.Id);
+        Assert.False(session.State.Turn!.HasActed);
+        Assert.Equal(5, session.State.Turn.MovementPoints);
+    }
+
+    [Fact]
+    public void InAFightChangingGearTakesTheAction()
+    {
+        GameSession session = TestRun.Start(CagedSpearman, cards: ["sword", "big_sword"]);
+        Hero hero = session.HeroInSeat();
+
+        Assert.False(session.GearIsFree);
+        session.Do(new EquipCard(hero.Id, hero.Card("big_sword").Id));
+
         Assert.True(session.State.Turn!.HasActed);
+        string reason = session.Refuse(new EquipCard(hero.Id, hero.Card("sword").Id));
+        Assert.Contains("in a fight takes your action", reason);
+        Assert.Equal(reason, session.CheckEquip(hero.Card("sword").Id));
+    }
+
+    [Fact]
+    public void TheChecksExplainWhyACardCantBeUsedOrMoved()
+    {
+        GameSession session = TestRun.Start(CagedSpearman, cards: ["sword", "shield", "potion", "bomb", "boomerang", "coin", "potion"]);
+        Hero hero = session.HeroInSeat();
+        int potion = hero.Belt[0].Id;
+
+        Assert.Contains("carry it out", session.CheckUse(hero.Card("coin").Id));
+        Assert.Contains("full hearts", session.CheckUse(potion));
+        Assert.Contains("Equip the Boomerang", session.CheckUse(hero.Card("boomerang").Id));
+        Assert.Contains("isn't worn or held", session.CheckEquip(potion));
+        Assert.Contains("Only single-use", session.CheckBelt(hero.Card("sword").Id));
+        Assert.Contains("belt is full", session.CheckBelt(hero.Backpack[^1].Id));
+        Assert.Contains("already in your backpack", session.CheckStow(hero.Card("coin").Id));
+
+        Assert.Null(session.CheckEquip(hero.Card("boomerang").Id));
+        Assert.Null(session.CheckStow(potion));
     }
 
     [Fact]
@@ -80,7 +132,7 @@ public class CardTests
         Assert.Same(bow, hero.Equipment[EquipSlot.OffHand]);
         Assert.Equal(["sword", "shield"], hero.Backpack.Select(card => card.Definition.Id));
         Assert.Equal(4, hero.AttackRange);
-        Assert.Equal(2, hero.EffectiveStats.AttackDice);
+        Assert.Equal((1, 0), (hero.EffectiveStats.Weapon, hero.EffectiveStats.Armor));
     }
 
     [Fact]
@@ -106,7 +158,6 @@ public class CardTests
         session.Do(new BeltCard(hero.Id, packedPotion.Id));
 
         Assert.Equal(["potion", "potion"], hero.Belt.Select(card => card.Definition.Id));
-        Assert.True(session.State.Turn!.HasActed);
     }
 
     [Fact]
@@ -121,7 +172,7 @@ public class CardTests
         Assert.Equal(new HeroHealed(hero.Id, 3, 4), events.SingleOf<HeroHealed>());
         Assert.Single(events.OfType<CardConsumed>());
         Assert.False(session.State.Turn!.HasActed);
-        Assert.Contains("already used a belt item", session.Refuse(new UseCard(hero.Id, hero.Belt[0].Id)));
+        Assert.Contains("already used your free belt item", session.Refuse(new UseCard(hero.Id, hero.Belt[0].Id)));
     }
 
     [Fact]
@@ -170,10 +221,11 @@ public class CardTests
 
         IReadOnlyList<GameEvent> events = session.Do(new UseCard(hero.Id, hero.Card("bomb").Id, new GridPosition(4, 1)));
 
-        Assert.Equal(2, events.OfType<MonsterDefeated>().Count());
-        Assert.Equal(new GridPosition(6, 1), session.OnlyMonster().Position);
+        // One roll (10) against each brute's own defense: a heart from each in the blast.
+        Assert.Equal(10, events.SingleOf<AttackRolled>().Total);
+        Assert.Equal([1, 1], events.OfType<Damaged>().Select(damaged => damaged.Amount));
+        Assert.Equal([1, 1, 2], session.RoomById().Monsters.Select(monster => monster.Hearts));
         Assert.Empty(hero.Belt);
-        Assert.Equal(2, hero.Kills);
     }
 
     [Fact]
@@ -276,7 +328,8 @@ public class CardTests
         Assert.Equal([coin], session.RoomById().LootAt(hero.Position));
 
         Assert.Equal([coin.Id], session.Do(new PickUpLoot(hero.Id)).SingleOf<LootPickedUp>().CardIds);
-        Assert.True(session.State.Turn.HasActed);
+        Assert.True(session.State.Turn.UsedFreeLoot);
+        Assert.False(session.State.Turn.HasActed);
         Assert.Equal([coin], hero.Backpack);
         Assert.Empty(session.RoomById().LootAt(hero.Position));
     }
@@ -303,7 +356,7 @@ public class CardTests
         var opened = session.Do(new OpenChest(hero.Id, new GridPosition(4, 3))).SingleOf<ChestOpened>();
 
         CardInstance loot = Assert.Single(hero.Backpack);
-        Assert.Equal(loot.Id, opened.CardId);
+        Assert.Equal([loot.Id], opened.CardIds);
         Assert.True(opened.AddedToBackpack);
         Assert.Contains(loot.Definition.Id, new[] { "coin", "gem" });
         Assert.Null(loot.BroughtInByHeroId);

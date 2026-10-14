@@ -127,6 +127,7 @@ public partial class GameScreen : Control
         }
 
         _confirmingLeave = false;
+        ResetPool();
         if (command is UseCard)
         {
             _targeting = false;
@@ -257,6 +258,7 @@ public partial class GameScreen : Control
                 _targeting = false;
                 _trayShowsMovement = false;
                 _dice.Clear();
+                ResetPool();
                 RefreshPanels();
                 Hero hero = _session.State.GetHero(turn.HeroId);
                 await _banner.Flash($"{hero.Name}'s turn", Palette.Seat(hero.Seat));
@@ -268,7 +270,7 @@ public partial class GameScreen : Control
 
             case MovementRolled rolled:
                 _trayShowsMovement = true;
-                await _dice.ShowRoll($"{NameOf(rolled.HeroId)} rolls to move", rolled.Roll, 0, newGroup: true);
+                await _dice.ShowRoll($"{NameOf(rolled.HeroId)} rolls to move", rolled.Roll, rolled.Bonus, newGroup: true, rolled.PowerDice);
                 break;
 
             case DieRerolled rerolled:
@@ -298,18 +300,71 @@ public partial class GameScreen : Control
                 await _banner.Flash($"Floor {descended.Floor}", Palette.TrimBright, 0.5);
                 break;
 
+            case HeroFell fell:
+                await ChangeRoom(fell.HeroId, fell.RoomId, fell.Position);
+                await _banner.Flash($"Fell to floor {fell.Floor}", Palette.Danger, 0.5);
+                break;
+
+            case OdHandRolled rolled:
+                _trayShowsMovement = false;
+                string goal = rolled.Difficulty > 0 ? $" ({rolled.Difficulty}+)" : "";
+                await _dice.ShowRoll($"{NameOf(rolled.HeroId)} {OdHandCaption(rolled.Kind)}{goal}", rolled.Roll, rolled.Bonus, newGroup: true, rolled.PowerDice);
+                break;
+
+            case DoorUnlocked or ChestUnlocked or TrapDisarmed or Stole:
+                _dice.ShowOutcome(true);
+                _board.QueueRedraw();
+                break;
+
+            case CheckFailed failed when _figures.TryGetValue(failed.HeroId, out Figure? fumbler) && fumbler.RoomId == _shownRoomId:
+                _board.FloatText(fumbler.Position, "failed", Palette.TextDim);
+                break;
+
+            case TrapSprung sprung when _figures.TryGetValue(sprung.HeroId, out Figure? victim) && victim.RoomId == _shownRoomId:
+                _board.QueueRedraw();
+                _board.FloatText(sprung.Position, "trap!", Palette.Danger);
+                await Pause(0.3);
+                break;
+
+            case SecretsFound found:
+                _board.QueueRedraw();
+                foreach (GridPosition spot in found.Traps.Concat(found.Stashes).Concat(found.Doors.Select(side => side.DoorTile())))
+                {
+                    _board.FloatText(spot, "found!", Palette.TrimBright);
+                }
+
+                await Pause(0.3);
+                break;
+
+            case WallBroken or KeysAppeared or BossKeyDropped:
+                _board.QueueRedraw();
+                await Pause(0.15);
+                break;
+
+            case BossKeyFound found:
+                await _banner.Flash($"{NameOf(found.HeroId)} has the Boss Key!", Palette.TrimBright, 0.6);
+                break;
+
             case AttackRolled attack:
                 _trayShowsMovement = false;
                 await Lunge(attack.AttackerId, attack.TargetIds.FirstOrDefault());
-                await _dice.ShowRoll($"{NameOf(attack.AttackerId)} attacks", attack.Roll, GameRules.HitFace, newGroup: true);
+                await _dice.ShowRoll($"{NameOf(attack.AttackerId)} attacks", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice);
                 break;
 
             case DefenseRolled defense:
-                int blockFace = IsHero(defense.DefenderId) ? GameRules.HeroBlockFace : GameRules.MonsterBlockFace;
-                await _dice.ShowRoll($"{NameOf(defense.DefenderId)} defends", defense.Roll, blockFace, newGroup: false);
+                await _dice.ShowRoll($"{NameOf(defense.DefenderId)} defends", defense.Roll, defense.Armor, newGroup: false, defense.PowerDice);
+                break;
+
+            case PowerDiceEarned earned when _figures.TryGetValue(earned.HeroId, out Figure? lucky) && lucky.RoomId == _shownRoomId:
+                _board.FloatText(lucky.Position, "6! Power Die", Palette.Power);
+                break;
+
+            case PowerDieAdded added:
+                await _dice.AddPowerDie(added.Face);
                 break;
 
             case Damaged damaged:
+                _dice.ShowOutcome(damaged.Amount > 0);
                 await ShowDamage(damaged);
                 break;
 
@@ -410,8 +465,11 @@ public partial class GameScreen : Control
             case EnemyPhaseStarted:
                 Sfx.Play("monsters");
                 break;
-            case MovementRolled or AttackRolled or DefenseRolled or DieRerolled:
+            case MovementRolled or AttackRolled or DefenseRolled or DieRerolled or PowerDieAdded:
                 Sfx.PlayVaried("dice");
+                break;
+            case PowerDiceEarned:
+                Sfx.Play("coin", 1.3f);
                 break;
             case Damaged { Amount: > 0 }:
                 Sfx.Play("hit");
@@ -438,8 +496,35 @@ public partial class GameScreen : Control
                 Sfx.Play("pot");
                 Sfx.Play(smashed.CardId is not null ? "coin" : smashed.HeartsRestored > 0 ? "heal" : "click");
                 break;
-            case HeroEnteredRoom:
+            case HeroEnteredRoom or DoorUnlocked:
                 Sfx.Play("door");
+                break;
+            case OdHandRolled:
+                Sfx.PlayVaried("dice");
+                break;
+            case ChestUnlocked or TrapDisarmed:
+                Sfx.Play("click");
+                break;
+            case CheckFailed:
+                Sfx.Play("block", 0.8f);
+                break;
+            case SecretsFound { Doors.Count: > 0 } or SecretsFound { Traps.Count: > 0 } or SecretsFound { Stashes.Count: > 0 }:
+                Sfx.Play("heal");
+                break;
+            case TrapSprung:
+                Sfx.Play("hit");
+                break;
+            case HeroFell:
+                Sfx.Play("stairs", 0.7f);
+                break;
+            case WallBroken:
+                Sfx.Play("pot", 0.6f);
+                break;
+            case KeysFound or Stole:
+                Sfx.Play("coin");
+                break;
+            case BossKeyFound:
+                Sfx.Play("treasure");
                 break;
             case HeroDescended:
                 Sfx.Play("stairs");
@@ -494,8 +579,21 @@ public partial class GameScreen : Control
         MonsterSpawned spawned => spawned.RoomId,
         RoomCleared cleared => cleared.RoomId,
         PotSmashed smashed => FigureRoom(smashed.HeroId),
+        OdHandRolled rolled => FigureRoom(rolled.HeroId),
+        TrapSprung sprung => FigureRoom(sprung.HeroId),
+        SecretsFound found => found.RoomId,
+        WallBroken broken => broken.RoomId,
+        KeysAppeared keys => keys.RoomId,
         LootDropped dropped => dropped.RoomId,
         _ => null,
+    };
+
+    private static string OdHandCaption(OdHandCheckKind kind) => kind switch
+    {
+        OdHandCheckKind.PickDoor or OdHandCheckKind.PickChest => "picks the lock",
+        OdHandCheckKind.Search => "searches",
+        OdHandCheckKind.Disarm => "disarms",
+        _ => "steals",
     };
 
     private async Task Pause(double seconds) =>

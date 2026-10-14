@@ -1,5 +1,6 @@
 using Woad.Core.Dice;
 using Woad.Core.Grid;
+using Woad.Core.Model;
 
 namespace Woad.Core.Events;
 
@@ -15,7 +16,26 @@ public sealed record TurnStarted(int HeroId) : GameEvent;
 
 public sealed record TurnEnded(int HeroId) : GameEvent;
 
-public sealed record MovementRolled(int HeroId, DiceRoll Roll, int MovementPoints) : GameEvent;
+/// <summary>
+/// A move began: the dice rolled, the Speed added (<paramref name="Bonus"/>) and the steps it gives.
+/// The last <paramref name="PowerDice"/> faces of the roll are Power Dice.
+/// </summary>
+public sealed record MovementRolled(int HeroId, DiceRoll Roll, int Bonus, int MovementPoints, int PowerDice = 0) : GameEvent;
+
+/// <summary>Sixes earned Power Dice the hero now chooses to add or bank (<paramref name="Unsettled"/> in all).</summary>
+public sealed record PowerDiceEarned(int HeroId, int Unsettled) : GameEvent;
+
+/// <summary>
+/// A Power Die was rolled into a hero's pending attack or move (by choice, or because their bank was
+/// full). <paramref name="Total"/> is the attack's new total, or the move's new steps.
+/// </summary>
+public sealed record PowerDieAdded(int HeroId, int Face, DiceRoll Roll, int Total) : GameEvent;
+
+/// <summary>Power Dice went into a hero's or monster's bank, which now holds <paramref name="Banked"/>.</summary>
+public sealed record PowerDiceBanked(int OwnerId, int Count, int Banked) : GameEvent;
+
+/// <summary>Banked Power Dice were rolled into an attack, move or defense; the bank now holds <paramref name="Banked"/>.</summary>
+public sealed record PowerDiceSpent(int OwnerId, int Count, int Banked) : GameEvent;
 
 /// <summary>A Luck reroll. <paramref name="MovementPoints"/> is the new total when it was a movement die.</summary>
 public sealed record DieRerolled(int HeroId, int DieIndex, int OldFace, int NewFace, DiceRoll Roll, int? MovementPoints) : GameEvent;
@@ -24,12 +44,21 @@ public sealed record HeroMoved(int HeroId, IReadOnlyList<GridPosition> Path, int
 
 public sealed record HeroEnteredRoom(int HeroId, string FromRoomId, string RoomId, GridPosition Position, bool FirstVisit) : GameEvent;
 
-/// <summary>Attack dice were rolled by a hero or monster against one or more targets.</summary>
-public sealed record AttackRolled(int AttackerId, DiceRoll Roll, int Hits, IReadOnlyList<int> TargetIds) : GameEvent;
+/// <summary>
+/// A hero or monster rolled an attack against one or more targets. <paramref name="Bonus"/> is the
+/// weapon's fixed value, and <paramref name="Total"/> the roll plus it. The last
+/// <paramref name="PowerDice"/> faces of the roll are Power Dice (banked ones spent, or a monster's sixes).
+/// </summary>
+public sealed record AttackRolled(int AttackerId, DiceRoll Roll, int Bonus, int Total, IReadOnlyList<int> TargetIds, int PowerDice = 0) : GameEvent;
 
-public sealed record DefenseRolled(int DefenderId, DiceRoll Roll, int Blocks) : GameEvent;
+/// <summary>
+/// A target answered an attack: its defense dice plus its armor make <paramref name="Total"/>. The
+/// last <paramref name="PowerDice"/> faces are Power Dice it added (sixes with a full bank, or banked
+/// dice spent to block).
+/// </summary>
+public sealed record DefenseRolled(int DefenderId, DiceRoll Roll, int Armor, int Total, int PowerDice = 0) : GameEvent;
 
-/// <summary>Hits that got past defense. <paramref name="Amount"/> is 0 when everything was blocked.</summary>
+/// <summary>An attack's result: 1 heart when its total beat the defense, otherwise 0 (blocked).</summary>
 public sealed record Damaged(int TargetId, int Amount, int HeartsLeft) : GameEvent;
 
 public sealed record MonsterDefeated(int MonsterId, int? KillerHeroId) : GameEvent;
@@ -64,8 +93,54 @@ public sealed record CardStowed(int HeroId, int CardId) : GameEvent;
 
 public sealed record CardDropped(int HeroId, int CardId, GridPosition Position) : GameEvent;
 
-/// <summary>A chest gave a card; it went to the backpack, or onto the hero's tile when the backpack was full.</summary>
-public sealed record ChestOpened(int HeroId, GridPosition Chest, int CardId, bool AddedToBackpack) : GameEvent;
+/// <summary>
+/// A chest gave cards (two from a chest that was locked); those that didn't fit in the backpack went
+/// onto the hero's tile (<paramref name="AddedToBackpack"/> is false if any did).
+/// </summary>
+public sealed record ChestOpened(int HeroId, GridPosition Chest, IReadOnlyList<int> CardIds, bool AddedToBackpack) : GameEvent;
+
+/// <summary>An Od Hand roll for a check, against <paramref name="Difficulty"/> (0 for a steal, a contest).</summary>
+public sealed record OdHandRolled(int HeroId, OdHandCheckKind Kind, DiceRoll Roll, int Bonus, int Total, int Difficulty, int PowerDice = 0) : GameEvent;
+
+/// <summary>An Od Hand check fell short (or a steal was out-rolled); nothing happens.</summary>
+public sealed record CheckFailed(int HeroId, OdHandCheckKind Kind) : GameEvent;
+
+/// <summary>A door opened: with a key, the Boss Key, or a picked lock.</summary>
+public sealed record DoorUnlocked(int HeroId, string RoomId, Direction Side, bool Picked, bool BossDoor) : GameEvent;
+
+/// <summary>A chest's lock opened, with a key or picked. It still has to be opened.</summary>
+public sealed record ChestUnlocked(int HeroId, GridPosition Chest, bool Picked) : GameEvent;
+
+/// <summary>A search turned things up: secret doors (by side), traps (tiles, chests and doors) and stashes.</summary>
+public sealed record SecretsFound(int HeroId, string RoomId, IReadOnlyList<Direction> Doors, IReadOnlyList<GridPosition> Traps, IReadOnlyList<GridPosition> Stashes) : GameEvent;
+
+public sealed record TrapDisarmed(int HeroId, GridPosition Target) : GameEvent;
+
+/// <summary>A hero set off a trap at <paramref name="Position"/> (its tile, chest or doorway).</summary>
+public sealed record TrapSprung(int HeroId, TrapKind Kind, GridPosition Position) : GameEvent;
+
+/// <summary>A hero dropped through a trap door into another room (<paramref name="Jumped"/> on purpose, unhurt).</summary>
+public sealed record HeroFell(int HeroId, string FromRoomId, string RoomId, int Floor, GridPosition Position, bool FirstTimeOnFloor, bool Jumped) : GameEvent;
+
+/// <summary>Keys appeared on the floor: dropped by a monster, from a cleared room or a found stash.</summary>
+public sealed record KeysAppeared(string RoomId, GridPosition Position, int Count) : GameEvent;
+
+/// <summary>A hero gained keys (picked up, from a pot or stolen); <paramref name="Total"/> is how many they carry.</summary>
+public sealed record KeysFound(int HeroId, int Count, int Total) : GameEvent;
+
+/// <summary>A key opened a lock; <paramref name="Left"/> is how many the hero still carries.</summary>
+public sealed record KeyUsed(int HeroId, int Left) : GameEvent;
+
+public sealed record BossKeyFound(int HeroId) : GameEvent;
+
+/// <summary>The Boss Key fell to the floor (its carrier was downed).</summary>
+public sealed record BossKeyDropped(string RoomId, GridPosition Position) : GameEvent;
+
+/// <summary>A bomb broke a cracked wall: a block inside the room, or the one in a doorway (<paramref name="Door"/>).</summary>
+public sealed record WallBroken(string RoomId, GridPosition Position, Direction? Door) : GameEvent;
+
+/// <summary>A steal worked: a card (<paramref name="CardId"/>) or a key changed hands.</summary>
+public sealed record Stole(int ThiefId, int VictimId, int? CardId, bool Key) : GameEvent;
 
 public sealed record LootPickedUp(int HeroId, IReadOnlyList<int> CardIds) : GameEvent;
 

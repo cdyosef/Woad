@@ -1,0 +1,26 @@
+# Builds the game and the rules engine, then runs the rules tests, on every push and pull request.
+# The Godot smoke tests (tools/smoke-test.ps1) still run locally; they need the Godot editor.
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET (version pinned by global.json)
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Build
+        run: dotnet build Woad.sln -nologo
+
+      - name: Rules tests
+        run: dotnet test Woad.sln --no-build -nologo --logger "console;verbosity=normal"

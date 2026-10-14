@@ -8,9 +8,11 @@ namespace Woad.Core.Bots;
 
 /// <summary>
 /// A simple automatic player for smoke tests and the game's <c>--autoplay</c> mode. It fights
-/// whatever is in its room, heals when hurt and loots what it passes, then explores: unexplored
-/// rooms first, then the stairs, then the exit. Every command it returns should be accepted;
-/// a refusal means a bug in the bot or the rules.
+/// whatever is in its room, heals when hurt, loots what it passes and opens the room's chests (with
+/// a key if locked), then explores: unexplored rooms first, then the stairs, then the exit. Locked
+/// doors on its way take a key or a picked lock; the Boss Door waits until it has the Boss Key.
+/// It never searches, steals or bombs walls. Every command it returns should be accepted; a
+/// refusal means a bug in the bot or the rules.
 /// </summary>
 public static class SimpleBot
 {
@@ -23,7 +25,13 @@ public static class SimpleBot
         TileKind standingOn = room.Layout[hero.Position];
         bool fighting = room.Monsters.Count > 0;
 
-        if (turn.PendingAttack is not null)
+        // Sixes: add the Power Die to an attack, bank the ones from moves.
+        if (turn.UnsettledPowerDice > 0)
+        {
+            return turn.PendingRoll is not null ? new AddPowerDie(hero.Id) : new BankPowerDie(hero.Id);
+        }
+
+        if (turn.PendingRoll is not null)
         {
             return new ConfirmAttack(hero.Id);
         }
@@ -38,18 +46,19 @@ public static class SimpleBot
             return new UseCard(hero.Id, bomb.Id, session.GetCardTargets(bomb.Id)[0]);
         }
 
-        if (!turn.HasActed && session.GetAttackableMonsters().FirstOrDefault() is { } target)
+        // One all-out attack: every Attack die left plus the weapon.
+        if (session.GetAttackableMonsters().FirstOrDefault() is { } target)
         {
             return new AttackMonster(hero.Id, target.Id);
         }
 
-        if (!turn.HasActed && ClosedChestBeside(room, hero) is { } chest)
+        if (ClosedChestBeside(room, hero) is { } chest && session.CheckOpenChest(chest) is null)
         {
             return new OpenChest(hero.Id, chest);
         }
 
         bool backpackHasRoom = hero.Backpack.Count < GameRules.BackpackCapacity;
-        if (!turn.HasActed && room.LootAt(hero.Position).Count > 0 && backpackHasRoom)
+        if (session.CheckPickUp() is null)
         {
             return new PickUpLoot(hero.Id);
         }
@@ -59,9 +68,10 @@ public static class SimpleBot
             return new SmashPot(hero.Id, pot);
         }
 
-        // Already acted but standing on loot or beside a pot: wait here for next turn's action.
-        if (turn.HasActed && !fighting
-            && ((room.LootAt(hero.Position).Count > 0 && backpackHasRoom) || Beside(room, hero, TileKind.Pot) is not null))
+        // Out of free loot and action, but standing on loot or beside a chest or pot: wait for next turn.
+        bool lootedOut = turn.UsedFreeLoot && turn.HasActed;
+        if (!fighting && ((lootedOut && (WorthPickingUp(room, hero) || ClosedChestBeside(room, hero) is not null))
+                          || (turn.HasActed && Beside(room, hero, TileKind.Pot) is not null)))
         {
             return new EndTurn(hero.Id);
         }
@@ -71,8 +81,18 @@ public static class SimpleBot
             return new Escape(hero.Id);
         }
 
-        bool canStep = !turn.MovementLocked && turn.MovementRoll is not null && turn.MovementPoints > 0;
-        Direction? door = fighting ? null : NextDoor(state, room);
+        bool canStep = turn.MovementPoints > 0;
+        Direction? door = fighting ? null : NextDoor(state, room, hero);
+        if (door is { } lockedSide && hero.Position == lockedSide.DoorTile() && room.PassageOn(lockedSide) is { IsLocked: true } locked)
+        {
+            if (locked.NeedsBossKey || hero.Keys > 0)
+            {
+                return new UnlockDoor(hero.Id, lockedSide);
+            }
+
+            return session.CheckPickLock(hero.Position) is null ? new PickLock(hero.Id, hero.Position) : new EndTurn(hero.Id);
+        }
+
         if (door is { } side && hero.Position == side.DoorTile() && canStep && session.GetUsableDoors().Contains(side))
         {
             return new GoThroughDoor(hero.Id, side);
@@ -83,19 +103,35 @@ public static class SimpleBot
             return new TakeStairs(hero.Id);
         }
 
-        if (turn.MovementRoll is null && !turn.MovementLocked)
+        // One move with every Move die left plus Speed.
+        if (turn.MovementRoll is null && session.MoveDiceLeft > 0)
         {
             return new RollMovement(hero.Id);
         }
 
+        IEnumerable<GridPosition> lootTiles = room.LootPositions.Where(_ => backpackHasRoom).Concat(room.Keys.Keys);
+        if (room.BossKeyAt is { } bossKey)
+        {
+            lootTiles = lootTiles.Append(bossKey);
+        }
+
         GridPosition? goal = fighting ? BesideNearestMonster(room, hero)
-            : (backpackHasRoom ? Nearest(room, hero, room.LootPositions) : null)
+            : Nearest(room, hero, lootTiles)
+              ?? Nearest(room, hero, OpenableChests(room, hero).SelectMany(tile => tile.OrthogonalNeighbors()))
               ?? Nearest(room, hero, room.TilesOfKind(TileKind.Pot).SelectMany(tile => tile.OrthogonalNeighbors()))
               ?? (door is { } exitSide ? exitSide.DoorTile() : WayOut(room));
 
         if (goal is { } tile && StepAlongPath(session, hero, room, tile) is { } destination)
         {
             return new MoveHero(hero.Id, destination);
+        }
+
+        // Nowhere to go (say, a teammate holds the Boss Key): at least keep out of the doorway.
+        bool InDoorway(GridPosition at) => room.Doors.Keys.Any(side => side.DoorTile() == at);
+        if (!fighting && goal is null && InDoorway(hero.Position)
+            && StepToward(session, hero, at => InDoorway(at) ? 1 : 0) is { } aside)
+        {
+            return new MoveHero(hero.Id, aside);
         }
 
         if (fighting && StepToward(session, hero, tile => room.Monsters.Min(monster => monster.Position.ManhattanDistanceTo(tile))) is { } closer)
@@ -106,12 +142,13 @@ public static class SimpleBot
         return new EndTurn(hero.Id);
     }
 
-    /// <summary>The closest walkable tile next to a monster (for a melee attack), if any can be reached.</summary>
+    /// <summary>The closest walkable tile a monster can be hit from in melee (diagonals too), if any can be reached.</summary>
     private static GridPosition? BesideNearestMonster(Room room, Hero hero)
     {
-        PathSearch search = PathSearch.Run(hero.Position, tile => room.Layout[tile].IsWalkable() && room.MonsterAt(tile) is null);
+        PathSearch search = PathSearch.Run(hero.Position, tile => Walkable(room, tile));
         return room.Monsters
-            .SelectMany(monster => monster.Position.OrthogonalNeighbors())
+            .SelectMany(monster => monster.Position.SurroundingTiles()
+                .Where(tile => tile.IsInRoom && Targeting.CanHeroAttack(room.Layout, 1, tile, monster.Position)))
             .Where(search.CanReach)
             .OrderBy(tile => search.Distances[tile])
             .ThenBy(tile => tile.Y)
@@ -124,7 +161,7 @@ public static class SimpleBot
     private static GridPosition? StepAlongPath(GameSession session, Hero hero, Room room, GridPosition goal)
     {
         IReadOnlyDictionary<GridPosition, int> reachable = session.GetReachableTiles();
-        PathSearch search = PathSearch.Run(hero.Position, tile => room.Layout[tile].IsWalkable() && room.MonsterAt(tile) is null);
+        PathSearch search = PathSearch.Run(hero.Position, tile => Walkable(room, tile));
         if (reachable.Count == 0 || goal == hero.Position || !search.CanReach(goal))
         {
             return null;
@@ -142,14 +179,29 @@ public static class SimpleBot
         return null;
     }
 
+    /// <summary>Where the bot can walk: like the rules, around monsters and the traps it knows of.</summary>
+    private static bool Walkable(Room room, GridPosition tile) =>
+        room.Layout[tile].IsWalkable() && room.MonsterAt(tile) is null && room.TrapAt(tile) is not { Revealed: true };
+
     private static CardInstance? UsableBeltCard(GameSession session, Hero hero, CardEffectKind kind) =>
         hero.Belt.FirstOrDefault(card => card.Definition.Effect?.Kind == kind && session.GetCardTargets(card.Id).Count > 0);
 
+    /// <summary>An adjacent chest the bot means to open: unlocked, or locked with a key in hand.</summary>
     private static GridPosition? ClosedChestBeside(Room room, Hero hero) =>
         hero.Position.OrthogonalNeighbors()
-            .Where(tile => room.Layout[tile] == TileKind.Chest && !room.IsChestOpened(tile))
+            .Where(OpenableChests(room, hero).Contains)
             .Select(tile => (GridPosition?)tile)
             .FirstOrDefault();
+
+    /// <summary>Unopened chests the bot can open: locked ones only while it has a key.</summary>
+    private static List<GridPosition> OpenableChests(Room room, Hero hero) =>
+        room.TilesOfKind(TileKind.Chest)
+            .Where(tile => !room.IsChestOpened(tile) && (room.ChestLockAt(tile) is null || hero.Keys > 0))
+            .ToList();
+
+    private static bool WorthPickingUp(Room room, Hero hero) =>
+        room.KeysAt(hero.Position) > 0 || room.BossKeyAt == hero.Position
+        || (room.LootAt(hero.Position).Count > 0 && hero.Backpack.Count < GameRules.BackpackCapacity);
 
     private static GridPosition? Beside(Room room, Hero hero, TileKind kind) =>
         hero.Position.OrthogonalNeighbors()
@@ -160,7 +212,7 @@ public static class SimpleBot
     /// <summary>The closest of the given tiles the hero could walk to (ignoring this turn's movement), if any.</summary>
     private static GridPosition? Nearest(Room room, Hero hero, IEnumerable<GridPosition> tiles)
     {
-        PathSearch search = PathSearch.Run(hero.Position, tile => room.Layout[tile].IsWalkable() && room.MonsterAt(tile) is null);
+        PathSearch search = PathSearch.Run(hero.Position, tile => Walkable(room, tile));
         return tiles
             .Where(tile => tile != hero.Position && search.CanReach(tile))
             .OrderBy(tile => search.Distances[tile])
@@ -195,7 +247,7 @@ public static class SimpleBot
     /// The door to head for: toward the nearest unexplored room on this floor, or once everything
     /// is explored, toward the room with the stairs or the exit. Null when this room is the goal.
     /// </summary>
-    private static Direction? NextDoor(GameState state, Room start)
+    private static Direction? NextDoor(GameState state, Room start, Hero hero)
     {
         if (start.IsSealed)
         {
@@ -206,6 +258,7 @@ public static class SimpleBot
         var frontier = new Queue<Room>([start]);
         Room? unexplored = null;
         Room? wayDown = null;
+        Room? bossKey = null;
         while (frontier.Count > 0)
         {
             Room room = frontier.Dequeue();
@@ -219,8 +272,22 @@ public static class SimpleBot
                 wayDown = room;
             }
 
+            // Without the Boss Key the boss room is out of reach: go where the key is (on the floor or in a chest).
+            bool keyHere = room.BossKeyAt is not null || room.TilesOfKind(TileKind.Chest).Any(chest => room.HoldsBossKey(chest));
+            if (!hero.HasBossKey && keyHere && bossKey is null)
+            {
+                bossKey = room;
+            }
+
             foreach ((Direction side, string nextId) in room.Doors.OrderBy(door => door.Key))
             {
+                // Secret doors and cracked walls are out of the bot's reach; the Boss Door needs the Boss Key.
+                if (room.PassageOn(side) is { } passage
+                    && (passage.IsHidden || passage.IsBlocked || (passage.IsLocked && passage.NeedsBossKey && !hero.HasBossKey)))
+                {
+                    continue;
+                }
+
                 if (!firstStep.ContainsKey(nextId))
                 {
                     firstStep[nextId] = firstStep[room.Id] ?? side;
@@ -229,7 +296,7 @@ public static class SimpleBot
             }
         }
 
-        Room? goal = unexplored ?? wayDown;
+        Room? goal = unexplored ?? bossKey ?? wayDown;
         return goal is null || goal == start ? null : firstStep[goal.Id];
     }
 }

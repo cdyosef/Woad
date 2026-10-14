@@ -18,10 +18,11 @@ cooperate to survive the dungeon but compete for treasure: the richest player to
 | Players | 1–4, local hot-seat, mouse only |
 | Play mode | Semi-co-op: no direct PvP damage; the escaped player with the most treasure wins |
 | Rooms | 9×9 grids; players may split up into different rooms |
-| Dice | d6 pools for movement, attack and defense; dice also resolve chance |
+| Dice | d6 pools for movement, attack and defense. Each Attack or Move die is an action of its own, or several can be rolled together for a stronger one. Every 6 earns a Power Die to add or bank |
 | Cards | Abilities and items (weapons, shields, armor, boots, spells, tools, bombs, potions, treasure); single-use or persistent; equipped into body slots |
 | Card source | Starter kit, then loot from chests and monsters drawn from the dungeon's loot deck |
-| Turn | Move + 1 action, in either order |
+| Turn | Spend your Rumble, Wend and Od Hand dice on attacks, moves and Od Hand checks, plus 1 other action, 1 free loot and 1 free belt item, in any order |
+| Secrets | Keys and locked doors and chests, a Boss Key to the Boss Door, secret doors, cracked walls broken by bombs, traps and trap doors |
 | Combat | On the room grid; an enemy phase follows each round of player turns |
 | Characters | Created before play: name, portrait, classless point-buy of dice stats |
 | Death | Roguelite: keep XP, level and the gear you brought in; lose what you found this run |
@@ -49,10 +50,14 @@ Stats are expressed directly as dice and points. Gear cards add to them.
 | Stat | Meaning | Base *(tunable)* | Point cost *(tunable)* |
 | --- | --- | --- | --- |
 | Hearts | Maximum HP | 4 | 1 per heart |
-| Move dice | d6 rolled for movement | 1 | Gear only (e.g. boots) |
-| Speed | Flat tiles added to the movement roll | 2 | 2 per point |
-| Attack | d6 rolled when attacking | 1 | 3 per die |
-| Defense | d6 rolled when attacked | 1 | 3 per die |
+| Wend (boot) | d6 for moving each turn; each move uses one or more | 1 | Gear only (e.g. boots) |
+| Wend bonus | Tiles added to one move per turn (shown as the "+2" in "Wend 1d6+2"; the editor calls it Wend) | 2 | 2 per point |
+| Rumble (fist) | d6 for attacking each turn; each attack uses one or more | 1 | 3 per die |
+| Od Hand (hamsa) | d6 each turn for picking locks, searching, disarming traps and stealing | 1 | 3 per die |
+| Tools | Fixed value added to one Od Hand roll per turn | 0 | Gear only (Lockpicks) |
+| Defense | d6 rolled, all of them, whenever you're attacked | 1 | 3 per die |
+| Weapon | Fixed value added to one attack per turn | 0 | Gear only (weapons) |
+| Armor | Fixed value added to every defense | 0 | Gear only (shields, armor) |
 | Luck | Rerolls of a single die, per floor | 0 | 2 per reroll |
 
 - **Creation:** name (1–16 letters, numbers, spaces, apostrophes or hyphens), portrait, and 6 points to
@@ -88,26 +93,31 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 
 | Type | Usage | Examples (placeholder names) |
 | --- | --- | --- |
-| Weapon | Persistent | Wooden Sword (+1 Attack), Knight's Sword (+2 Attack), Short Bow (ranged 4) |
-| Shield | Persistent | Buckler (+1 Defense), Tower Shield (+2 Defense, −1 Speed) |
-| Armor | Persistent | Leather Cap (+1 Heart), Chain Mail (+1 Defense) |
+| Weapon | Persistent | Wooden Sword (weapon 1), Knight's Sword (weapon 2), Short Bow (weapon 1, ranged 4) |
+| Shield | Persistent | Buckler (armor 2), Tower Shield (armor 3, −1 Wend) |
+| Armor | Persistent | Leather Cap (+1 Heart), Chain Mail (armor 1) |
 | Boots | Persistent | Dash Boots (+1 Move die) |
-| Spell | Charges or single-use | Flame Scroll (3 Attack dice at range 3), Frost Wand (2 charges: freeze for a round) |
+| Spell | Charges or single-use | Flame Scroll (a 3-dice attack at range 3), Frost Wand (2 charges: freeze for a round) |
 | Tool | Persistent | Boomerang (stun a monster within 4), Grapple Hook (pull yourself up to 4 tiles in a line; not built yet) |
-| Bomb | Single-use | Bomb (range 3, 2 Attack dice against every monster in a 3×3 area) |
+| Bomb | Single-use | Bomb (range 3, a 2-dice attack on every monster in a 3×3 area) |
 | Potion | Single-use | Health Potion (restore 3 hearts) |
 | Treasure | Kept for score | Coin Pouch (5g), Emerald (15g), Golden Idol (40g) |
 
 - **Starter kit** (new characters): Wooden Sword, Buckler, Health Potion.
-- **Equipping or swapping gear** takes your action.
+- **Equipping, belting or stowing gear** is free while no monsters are in your room, as often as you like.
+  In a fight, each one takes your action (and ends the move in progress).
+- **Greyed-out card buttons explain themselves:** hovering shows why, and clicking one writes the reason
+  in the message log.
 - **Using a belt item** doesn't take your action (once per turn). Using an item from the backpack takes your action.
 - **Only single-use cards** (potions, bombs, scrolls) go on the belt. Reusable cards with an effect (boomerang,
   wand) must be equipped to use.
-- **Dropping a card** onto your tile is free. Picking up loot from your tile takes your action and fills the
-  backpack as far as it can.
+- **Dropping a card** onto your tile is free.
+- **Looting** (picking up what's on your tile, or opening a chest) is free once per turn; after that it
+  takes your action. Picking up fills the backpack as far as it can, and takes every key there too.
 - **Chest loot** goes to the backpack, or onto your tile if the backpack is full.
-- **Targeted cards** need line of sight and must have a target: a bomb must catch at least one monster in its
-  blast, and potions only heal yourself and can't be used at full hearts.
+- **Targeted cards** need line of sight and must have a target: a bomb must catch at least one monster or
+  cracked wall in its blast, and potions only heal yourself and can't be used at full hearts.
+- **Lockpicks** (tool, off hand): Tools 2. In the loot deck.
 - **Stuns:** a stunned monster skips its next turn and can't be stunned again during the following round.
   Bosses can't be stunned.
 
@@ -119,39 +129,116 @@ every room that holds at least one player. Rooms with no players stay paused.
 **Player turn:**
 
 1. A turn banner shows the active player. The view jumps to their room.
-2. **Move** (optional): click Roll, then move up to Move dice + Speed tiles. Reachable tiles are
-   highlighted, and you click one to go there. Steps are orthogonal; walls and monsters block, allies don't.
-   Unused steps are lost.
-3. **Action** (optional, before or after moving, but not in the middle of a move): attack, use a card,
-   open a chest or pick up loot, or equip/swap gear.
-4. End turn.
+2. In any order:
+   - **Moves (Wend):** each move rolls one or more of your unused Wend dice, plus your Wend bonus on one move per
+     turn, for that many steps. Reachable tiles are highlighted, and you click one to go there. Steps are
+     orthogonal; walls and monsters block, allies don't. Doing anything else (attacking, acting or
+     starting another move) ends the move, and its unused steps are lost. A negative Wend bonus always applies
+     to your first move.
+   - **Attacks (Rumble):** each attack uses one or more of your unused Rumble dice, plus your weapon's
+     value on one attack per turn (only alongside at least one die). See [Combat](#combat).
+   - **Od Hand checks:** each uses one or more of your unused Od Hand dice, plus your tools' value once a
+     turn. See [Od Hand](#od-hand). They don't use your action.
+   - **One other action:** use a card from your backpack or an equipped one, smash a pot, loot (after your
+     free loot), or (in a fight) equip, belt or stow gear. Outside a fight, gear changes are free.
+   - **One free loot** and **one free belt item**.
+3. End turn. Your dice come back next turn.
+
+On screen, the dice you have left this turn sit under **This turn**, a row each led by its symbol:
+Rumble (a fist) and your weapon, Wend (a boot) and your Wend bonus, Od Hand (a hamsa) and your tools, and
+your banked Power Dice. All but the Power Dice start selected, so clicking a monster, **Wend** or
+**Search** uses everything in that row. Click dice to deselect some and split them across several rolls.
 
 **Doors** sit at the middle tile of each room edge. Stepping through costs 1 step and places you at the
 facing door of the next room.
 
 ## Combat
 
-- The attacker rolls Attack dice; each **5–6** is a hit.
-- The defender rolls Defense dice. Each block cancels one hit: players block on **5–6** and monsters on
-  **6** *(tunable)*.
-- Each remaining hit removes 1 heart.
-- **Melee** needs an orthogonally adjacent target. **Ranged** needs line of sight; walls block it.
-- **Line of sight** runs between tile centers. Only walls block it, not pits, chests or other figures, and
-  grazing a wall's corner is allowed.
-- **Luck** rerolls one of your own movement or attack dice. A movement die can be rerolled any time before
-  your first step. With Luck left, an attack waits for you to reroll or confirm; spending your last Luck
-  resolves it. Luck doesn't apply to defense rolls.
+- The attacker rolls the Rumble dice they chose and adds them up, plus their weapon's value if they
+  used it.
+- The defender rolls all their Defense dice and adds their armor.
+- If the attack total is higher, the defender loses **1 heart**. Ties go to the defender.
+- Rolling dice together makes one attack more likely to land; splitting them gives more chances.
+- **Card attacks** (Flame Scroll, bomb) roll their own dice and don't use your Rumble dice. A bomb's
+  single roll is compared with each monster's defense in the blast.
+- **Melee** needs an adjacent target. Heroes can strike diagonally too, unless walls close off both corners between them; monsters strike orthogonally only. **Ranged** needs line of sight; walls block it.
+- **Line of sight** runs between tile centers. Only walls (cracked ones too) block it, not pits, chests or
+  other figures, and grazing a wall's corner is allowed.
+- **Luck** rerolls one of your own Wend, Rumble or Od Hand dice. A Wend die can be rerolled any time before
+  your first step. With Luck left, an attack or Od Hand roll waits for you to reroll or confirm; spending
+  your last Luck resolves it. Luck doesn't apply to defense rolls.
+
+### Power Dice
+
+- **Earning:** every **6** rolled earns a Power Die, on any roll by a hero or a monster: attacks,
+  moves and defense.
+- **Using one:** a Power Die is one more d6 rolled into a roll and added to it. If it also shows a 6,
+  it earns another.
+- **The bank:** each hero and monster can bank up to **3** *(tunable)*, kept until used (across turns
+  and floors). A 6 rolled with a full bank is rolled into that roll straight away instead.
+- **Your attacks and moves:** after a 6 you choose **Add Power Die** (roll it in now) or **Bank it**.
+  Nothing else can happen until you choose. Banked dice show in the dice pool's POWER row, unselected;
+  select them to roll them into your next attack or move.
+- **Defense:** sixes are banked automatically. While a defense is losing and the banked dice could still
+  make up the gap, they're rolled in one at a time to try to block.
+- **Monsters** roll the sixes on their attacks straight in, and bank and spend on defense like heroes.
+- A Luck reroll that comes up 6 earns a Power Die too. Od Hand rolls earn and use Power Dice like
+  attacks and moves.
+
+## Od Hand
+
+Od Hand dice work like Rumble and Wend dice: choose how many to roll (plus your tools' value once a
+turn), sixes earn Power Dice, and Luck can reroll them. None of it takes your action. A check succeeds
+when the total reaches its number:
+
+| Check | How | Number *(tunable)* |
+| --- | --- | --- |
+| **Pick a lock** | Stand in a locked doorway (or next to a locked chest) without a key and click it | Doors 4 + floor (at most 6); chests 5 + floor |
+| **Search** | **Search** button: reveals everything in the room your total reaches | Secret doors 4 + floor; traps 3 + floor; stashes 5 + floor |
+| **Disarm** | Click a trap you've found: on a tile or chest next to you, or your own doorway | 3 + floor |
+| **Steal** | **Steal** button, then an adjacent monster or hero; once a turn | Beat their roll: a monster's defense dice, a hero's Od Hand dice and tools |
+
+- **Stealing from a monster** (once per monster): a key (40% *(tunable)*) or a card from the loot deck.
+- **Stealing from a hero:** one of their keys or backpack cards at random. Not equipped gear, belt items
+  or the Boss Key.
+- Door locks are kept low enough that one die (and its Power Dice) can always open them, so a locked door
+  never strands the party.
+
+## Keys, locks and secrets
+
+- **Keys** are a counter, like gold, and don't take backpack space. They turn up when a monster falls
+  (15%), in pots (10%), on the floor when a room is cleared (35%), in hidden stashes, and by stealing.
+  A key opens one locked door or chest; using it is free. Downed heroes drop their keys.
+- **Locked doors** (some doors on each floor): use a key or pick the lock. Once open, they stay open.
+- **Locked chests** (iron-bound): use a key or pick the lock, then open as usual. They hold **two** cards,
+  dealt as if from a floor deeper.
+- **The Boss Door** is the only way into the boss room. Only the **Boss Key** opens it, and it can't be
+  picked. The Boss Key lies in a chest in the last floor's treasure room, and a downed hero drops it.
+- **Secret doors** link some neighboring rooms. They're hidden (not drawn, not on the map) until a search
+  finds them; then they're ordinary doors.
+- **Cracked walls** are walls a bomb's blast breaks. Some stand inside rooms with a stash sealed inside;
+  some wall up a doorway between rooms.
+- **Traps** start hidden. **Spikes** (1 heart) stop you where you step on them and stay armed. **Trap doors**
+  drop you into a random room on the floor below (1 heart); found ones can be jumped down safely (1 step).
+  **Needles** in chests and **darts** in door frames hit the next hero to open or pass (1 heart). Found
+  traps are shown and walked around; Od Hand disarms them. Traps never cut a room in two.
+- **Hidden stashes** hold a key or a card, spilled onto the floor when found.
 
 ### Monsters (first theme)
 
 | Monster | Hearts | Move | Attack | Defense | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Slime | 1 | 2 | 1 | 1 | When defeated, splits into two Slimelings (1 heart, 0 defense, don't split) |
-| Bat | 1 | 4 | 1 | 0 | Flies over pits; moves erratically |
-| Spear Guard | 2 | 3 | 2 | 1 | Reach 2 in a straight line |
-| Archer Guard | 2 | 2 | 2 | 1 | Ranged 5; keeps its distance |
-| Skeleton | 2 | 3 | 2 | 1 | Rises again once unless finished by a bomb or spell |
-| **Boss: Iron Warden** | 10 | 3 | 3 | 2 | Every other turn, a flail sweep hits every tile within 2 |
+| Slime | 1 | 2 | 1d6 | 1d6 | When defeated, splits into two Slimelings (1 heart, 1d6 attack, no defense, don't split) |
+| Bat | 1 | 4 | 1d6 | none | Flies over pits; moves erratically |
+| Spear Guard | 2 | 3 | 1d6+1 | 1d6+1 | Reach 2 in a straight line |
+| Archer Guard | 2 | 2 | 1d6+1 | 1d6+1 | Ranged 5; keeps its distance |
+| Skeleton | 2 | 3 | 1d6+1 | 1d6+1 | Rises again once unless finished by a bomb or spell |
+| **Boss: Iron Warden** | 8 | 3 | 2d6+1 | 1d6+1 | Every other turn, a flail sweep: one roll with all its dice against every hero within 2 |
+
+Monsters follow the same dice rules; the +1s are weapon and armor values. Each turn a monster splits its
+Attack dice into whichever attacks are likeliest to land the most hits on its target (its weapon goes on
+the first), so a 2-dice monster makes two quick attacks against an unarmored hero but one big one against
+a well-armored hero.
 
 **Monster AI:** each monster heads for the closest tile it can attack from and stops as soon as it can
 attack. Among the heroes it can reach, it attacks the one with the fewest hearts. Ranged monsters back away
@@ -166,8 +253,9 @@ file under `Themes/`.
 - **3 floors**, each 6–8 rooms, laid out by a random walk on a 5×5 room map. A few extra doors
   between neighboring rooms add loops.
 - **Room roles:** the walk's first room is the Arrival room, which has no monsters. The room farthest
-  from it holds the Stairs down (floors 1–2) or the Boss and Exit (floor 3). A dead end becomes the
-  Treasure room (chests, one guard), and the rest are Combat rooms.
+  from it holds the Stairs down (floors 1–2) or the Boss and Exit (floor 3), behind the Boss Door. A dead
+  end becomes the Treasure room (chests, one guard; on floor 3 it holds the Boss Key), and the rest are
+  Combat rooms.
 - **Room layouts** are handcrafted 9×9 text templates in the theme file (walls, pits, chests, stairs,
   exit, hero starts, monster spawn points, the boss). Each use is randomly rotated and mirrored. When
   content loads, every layout is checked: doorways are plain floor, and everything can be reached
@@ -177,7 +265,12 @@ file under `Themes/`.
   Budgets *(tunable)*: combat and stairs rooms get floor + party size − 1, plus 1 in a trap room;
   treasure rooms 1; arrival rooms 0; the boss room the boss plus party-size worth of guards.
 - **Doors** are gold bars on the board's edges. Stand in the doorway and click it again to go through
-  (1 step). If someone is standing in the far doorway, you land on the nearest free tile.
+  (1 step). If someone is standing in the far doorway, you land on the nearest free tile. Locked doors are
+  dark with a key mark, the Boss Door red, and walled-up doorways grey. See
+  [Keys, locks and secrets](#keys-locks-and-secrets).
+- **Secrets:** some doors are locked or trapped; some extra links between rooms are secret doors or
+  cracked walls (never into the boss room); rooms get hidden traps (more on deeper floors), locked and
+  trapped chests, and sometimes a hidden stash or a cracked wall with something inside.
 - **Fog:** rooms stay hidden until someone enters. The minimap shows the floor's explored rooms,
   outlines of rooms seen through their doors, and every player's location.
 - **Trap rooms** (one per floor from floor 2): nobody can leave through the doors while monsters
@@ -316,8 +409,9 @@ integration.
 
 These defaults were not covered in the kickoff questions:
 
-1. Movement and melee are **orthogonal only** (no diagonals).
-2. Base stats and point costs as in [Stats](#stats). Movement is 1d6 + 2 at the start, and boots add dice.
+1. Movement and monster melee are **orthogonal only**. Heroes can also attack diagonally.
+2. Base stats and point costs as in [Stats](#stats). Movement is 1d6 + 2 at the start, and boots add dice. Starting heroes attack with 1d6 + 1 (Wooden Sword)
+   and defend with 1d6 + 2 (Buckler).
 3. The **belt** holds 2 consumables, and using one doesn't take your action.
 4. **No friendly fire at all**, including bombs.
 5. Downed players **sit out** the rest of the run. There is no revive in the MVP.

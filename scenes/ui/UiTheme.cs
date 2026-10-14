@@ -88,6 +88,10 @@ public static class UiTheme
     /// <summary>"1 die", "2 dice", "1 step", "3 steps".</summary>
     public static string Count(int amount, string singular, string plural) => $"{amount} {(amount == 1 ? singular : plural)}";
 
+    /// <summary>Dice with a fixed bonus: "2d6+1", "1d6", "1d6-1".</summary>
+    public static string Dice(int dice, int bonus) =>
+        $"{dice}d6{(bonus > 0 ? $"+{bonus}" : bonus < 0 ? bonus.ToString() : "")}";
+
     /// <summary>A nine-patch from a generated frame texture, or the flat fallback when the art is missing.</summary>
     public static StyleBox Frame(string textureName, StyleBox fallback)
     {
@@ -142,6 +146,30 @@ public static class UiTheme
         }
 
         return label;
+    }
+
+    /// <summary>A small text label that can hold inline icons (see <see cref="Icon"/>) and colors.</summary>
+    public static RichTextLabel RichLabel(Vector2 position, Vector2 size)
+    {
+        var label = new RichTextLabel
+        {
+            Position = position,
+            Size = size,
+            BbcodeEnabled = true,
+            ScrollActive = false,
+            AutowrapMode = TextServer.AutowrapMode.Off,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        };
+        label.AddThemeFontSizeOverride("normal_font_size", FontSize);
+        label.AddThemeConstantOverride("line_separation", 2);
+        return label;
+    }
+
+    /// <summary>An inline icon from assets/ui for a <see cref="RichLabel"/>, or the fallback word without the art.</summary>
+    public static string Icon(string name, string fallback)
+    {
+        string path = $"res://assets/ui/{name}.png";
+        return ResourceLoader.Exists(path) ? $"[img=11x11]{path}[/img]" : fallback;
     }
 
     public static Button Button(Vector2 position, Vector2 size, string text)

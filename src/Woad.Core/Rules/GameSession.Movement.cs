@@ -12,7 +12,7 @@ public sealed partial class GameSession
     /// <summary>Tiles the active hero can walk to right now, with the steps each costs.</summary>
     public IReadOnlyDictionary<GridPosition, int> GetReachableTiles()
     {
-        if (State.Turn is not { PendingAttack: null } || CheckCanMove(1) is not null)
+        if (State.Turn is not { PendingRoll: null } || CheckCanMove(1) is not null)
         {
             return new Dictionary<GridPosition, int>();
         }
@@ -27,7 +27,7 @@ public sealed partial class GameSession
     /// <summary>Doors the active hero is standing in and could step through right now.</summary>
     public IReadOnlyList<Direction> GetUsableDoors()
     {
-        if (State.Turn is not { PendingAttack: null } || CheckCanMove(1) is not null)
+        if (State.Turn is not { PendingRoll: null } || CheckCanMove(1) is not null)
         {
             return [];
         }
@@ -39,7 +39,9 @@ public sealed partial class GameSession
         }
 
         return ActiveRoom.Doors
-            .Where(door => hero.Position == door.Key.DoorTile() && DoorLanding(State.Rooms[door.Value], door.Key) is not null)
+            .Where(door => hero.Position == door.Key.DoorTile()
+                           && ActiveRoom.PassageOn(door.Key) is not { IsOpen: false }
+                           && DoorLanding(State.Rooms[door.Value], door.Key) is not null)
             .Select(door => door.Key)
             .ToList();
     }
@@ -64,16 +66,37 @@ public sealed partial class GameSession
 
     private string? Handle(RollMovement command, List<GameEvent> events)
     {
-        if (Turn.MovementRoll is not null)
+        int left = MoveDiceLeft;
+        if (left < 1)
         {
-            return "You've already rolled for movement this turn.";
+            return "You've used all your Move dice this turn.";
         }
 
-        Stats stats = ActiveHero.EffectiveStats;
-        DiceRoll roll = _dice.Roll(Math.Max(0, stats.MoveDice));
+        int dice = command.Dice ?? left;
+        if (dice < 1 || dice > left)
+        {
+            return $"Choose 1 to {left} Move dice.";
+        }
+
+        Hero hero = ActiveHero;
+        if (CheckBankedPowerDice(hero, command.PowerDice) is { } powerError)
+        {
+            return powerError;
+        }
+
+        int speed = SpeedBonusLeft;
+        int bonus = command.UseSpeed || speed < 0 ? speed : 0;
+        Turn.EndMove();
+        Turn.MoveDiceUsed += dice;
+        Turn.SpeedUsed |= bonus != 0;
+        SpendBankedPowerDice(hero, command.PowerDice, events);
+
+        DiceRoll roll = _dice.Roll(dice + command.PowerDice);
         Turn.MovementRoll = roll;
-        Turn.MovementPoints = MovementPointsFor(roll, stats);
-        events.Add(new MovementRolled(command.HeroId, roll, Turn.MovementPoints));
+        Turn.MovementBonus = bonus;
+        Turn.MovementPoints = Math.Max(0, roll.Total + bonus);
+        events.Add(new MovementRolled(command.HeroId, roll, bonus, Turn.MovementPoints, command.PowerDice));
+        EarnPowerDice(hero, Sixes(roll.Faces), events);
         return null;
     }
 
@@ -94,11 +117,24 @@ public sealed partial class GameSession
             return "You can't reach that tile.";
         }
 
+        // A hidden trap stops the walk where it goes off.
         IReadOnlyList<GridPosition> path = search.PathTo(command.Destination);
-        hero.Position = command.Destination;
+        int sprung = path.ToList().FindIndex(tile => room.TrapAt(tile) is { Revealed: false });
+        if (sprung >= 0)
+        {
+            path = path.Take(sprung + 1).ToList();
+        }
+
+        hero.Position = path[^1];
         Turn.MovementPoints -= path.Count;
         Turn.HasMoved = true;
         events.Add(new HeroMoved(hero.Id, path, Turn.MovementPoints));
+        if (sprung >= 0)
+        {
+            Turn.EndMove();
+            SpringTrap(hero, room, room.TrapAt(hero.Position)!, hero.Position, events);
+        }
+
         return null;
     }
 
@@ -106,9 +142,21 @@ public sealed partial class GameSession
     {
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
-        if (!room.Doors.TryGetValue(command.Door, out string? targetId))
+        if (!room.Doors.TryGetValue(command.Door, out string? targetId) || room.PassageOn(command.Door) is { IsHidden: true })
         {
             return "There's no door on that side.";
+        }
+
+        if (room.PassageOn(command.Door) is { IsBlocked: true })
+        {
+            return "A cracked wall blocks this doorway. A bomb could break it.";
+        }
+
+        if (room.PassageOn(command.Door) is { IsLocked: true } locked)
+        {
+            return locked.NeedsBossKey
+                ? "The Boss Door opens only with the Boss Key."
+                : $"The door is locked: use a key, or pick the lock with Od Hand ({locked.Difficulty}+).";
         }
 
         if (hero.Position != command.Door.DoorTile())
@@ -139,33 +187,33 @@ public sealed partial class GameSession
         bool firstVisit = !target.Explored;
         target.Explored = true;
         events.Add(new HeroEnteredRoom(hero.Id, room.Id, target.Id, arrival, firstVisit));
+        if (room.PassageOn(command.Door) is { Trap: { } darts } trapped)
+        {
+            trapped.Trap = null;
+            Turn.EndMove();
+            SpringTrap(hero, target, darts, arrival, events);
+        }
+
         return null;
     }
 
     private string? CheckCanMove(int cost)
     {
-        if (Turn.MovementLocked)
-        {
-            return "You moved and then acted, so your move is over.";
-        }
-
         if (Turn.MovementRoll is null)
         {
-            return "Roll for movement first.";
+            return MoveDiceLeft > 0 ? "Roll to move first." : "You've used all your Move dice this turn.";
         }
 
         return Turn.MovementPoints < cost ? "Not enough movement left." : null;
     }
 
-    /// <summary>Heroes walk through allies but not monsters, walls, pits or chests.</summary>
+    /// <summary>Heroes walk through allies but not monsters, walls, pits, chests or traps they know of.</summary>
     private PathSearch HeroPathSearch(Hero hero, Room room) =>
         PathSearch.Run(
             hero.Position,
-            position => room.Layout[position].IsWalkable() && room.MonsterAt(position) is null,
+            position => room.Layout[position].IsWalkable() && room.MonsterAt(position) is null && room.TrapAt(position) is not { Revealed: true },
             Turn.MovementPoints);
 
     private bool CanHeroStop(Room room, Hero hero, GridPosition position) =>
         !State.ActiveHeroesIn(room).Any(other => other != hero && other.Position == position);
-
-    private static int MovementPointsFor(DiceRoll roll, Stats stats) => Math.Max(0, roll.Total + stats.Speed);
 }

@@ -36,9 +36,17 @@ public sealed record MonsterDefinition
     /// <summary>Tiles moved per turn. Monsters don't roll for movement.</summary>
     public required int Move { get; init; }
 
+    /// <summary>d6 for attacking each turn, split into one or more attacks.</summary>
     public required int AttackDice { get; init; }
 
+    /// <summary>d6 rolled, all of them, whenever attacked.</summary>
     public required int DefenseDice { get; init; }
+
+    /// <summary>Fixed value added to one attack per turn, like a hero's weapon.</summary>
+    public int Weapon { get; init; }
+
+    /// <summary>Fixed defense added to every defense roll.</summary>
+    public int Armor { get; init; }
 
     public AttackPattern AttackPattern { get; init; } = AttackPattern.Melee;
 

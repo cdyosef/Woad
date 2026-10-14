@@ -27,8 +27,8 @@ public class PointBuyAndProgressionTests
     [Theory]
     [InlineData(6, 0, 0, null)]
     [InlineData(7, 0, 0, "Not enough points")]
-    [InlineData(0, 2, 0, "at most 1 Attack")]
-    [InlineData(0, 0, 2, "at most 1 Attack")]
+    [InlineData(0, 2, 0, "at most 1 Rumble")]
+    [InlineData(0, 0, 2, "at most 1 Rumble")]
     [InlineData(-1, 0, 0, "below")]
     public void CreationSpendingIsLimited(int hearts, int attack, int defense, string? problem)
     {

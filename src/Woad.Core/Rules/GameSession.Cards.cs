@@ -14,7 +14,7 @@ public sealed partial class GameSession
     /// </summary>
     public IReadOnlyList<GridPosition> GetCardTargets(int cardId)
     {
-        if (State.Turn is not { PendingAttack: null }
+        if (State.Turn is not { PendingRoll: null }
             || ActiveHero.FindCard(cardId) is not { } held
             || CheckCardUsable(held.Card, held.Location) is not null)
         {
@@ -30,7 +30,7 @@ public sealed partial class GameSession
         }
 
         return RoomGrid.AllPositions()
-            .Where(position => CheckEffectTarget(hero, room, effect, position, out _) is null)
+            .Where(position => CheckEffectTarget(hero, room, effect, position, out _, IsBomb(held.Card.Definition)) is null)
             .ToList();
     }
 
@@ -49,7 +49,7 @@ public sealed partial class GameSession
         }
 
         CardEffect effect = card.Definition.Effect!;
-        if (CheckEffectTarget(hero, room, effect, command.Target, out IReadOnlyList<Monster> targets) is { } targetError)
+        if (CheckEffectTarget(hero, room, effect, command.Target, out IReadOnlyList<Monster> targets, IsBomb(card.Definition)) is { } targetError)
         {
             return targetError;
         }
@@ -83,7 +83,16 @@ public sealed partial class GameSession
                 break;
 
             case CardEffectKind.Attack:
-                RollHeroAttack(hero, effect.Amount, targets.Select(monster => monster.Id).ToList(), SourceOf(card.Definition), events);
+                if (IsBomb(card.Definition))
+                {
+                    BreakWalls(room, CrackedWallsIn(room, command.Target!.Value, effect.AreaRadius), events);
+                }
+
+                if (targets.Count > 0)
+                {
+                    RollHeroAttack(hero, effect.Amount, 0, targets.Select(monster => monster.Id).ToList(), SourceOf(card.Definition), events);
+                }
+
                 break;
 
             case CardEffectKind.Stun:
@@ -97,36 +106,163 @@ public sealed partial class GameSession
         return null;
     }
 
-    private string? Handle(EquipCard command, List<GameEvent> events)
+    /// <summary>
+    /// Whether equipping, belting and stowing are free right now: they are while no monsters are in
+    /// the hero's room. In a fight each one takes the turn's action.
+    /// </summary>
+    public bool GearIsFree => State.Turn is not null && ActiveRoom.Monsters.Count == 0;
+
+    /// <summary>Why the active hero can't equip the card right now, or null if they can.</summary>
+    public string? CheckEquip(int cardId)
     {
-        Hero hero = ActiveHero;
-        if (hero.FindCard(command.CardId) is not var (card, location))
-        {
-            return "You don't have that card.";
-        }
-
-        if (card.Definition.Slot is null)
-        {
-            return $"The {card.Definition.Name} can't be equipped.";
-        }
-
-        if (location != CardLocation.Backpack)
-        {
-            return $"The {card.Definition.Name} is already equipped.";
-        }
-
-        if (CheckCanAct() is { } error)
+        if (CheckCardQuery(cardId, out CardInstance? card, out CardLocation location) is { } error)
         {
             return error;
         }
 
+        if (card!.Definition.Slot is null)
+        {
+            return $"The {card.Definition.Name} isn't worn or held, so it can't be equipped.";
+        }
+
+        if (location != CardLocation.Backpack)
+        {
+            return $"The {card.Definition.Name} is already {(location == CardLocation.Belt ? "on your belt" : "equipped")}.";
+        }
+
+        Hero hero = ActiveHero;
         IReadOnlyList<CardInstance> displaced = hero.CardsDisplacedBy(card.Definition);
         if (hero.Backpack.Count - 1 + displaced.Count > GameRules.BackpackCapacity)
         {
             return "There's no room in your backpack for what you'd take off.";
         }
 
-        SpendAction();
+        return CheckGearAction();
+    }
+
+    /// <summary>Why the active hero can't move the card to their belt right now, or null if they can.</summary>
+    public string? CheckBelt(int cardId)
+    {
+        if (CheckCardQuery(cardId, out CardInstance? card, out CardLocation location) is { } error)
+        {
+            return error;
+        }
+
+        if (card!.Definition.Usage != CardUsage.SingleUse)
+        {
+            return "Only single-use cards (potions, bombs, scrolls) go on your belt.";
+        }
+
+        if (location != CardLocation.Backpack)
+        {
+            return $"The {card.Definition.Name} is already on your belt.";
+        }
+
+        if (ActiveHero.Belt.Count >= GameRules.BeltCapacity)
+        {
+            return $"Your belt is full ({GameRules.BeltCapacity} cards). Stow one to make room.";
+        }
+
+        return CheckGearAction();
+    }
+
+    /// <summary>Why the active hero can't put the card in their backpack right now, or null if they can.</summary>
+    public string? CheckStow(int cardId)
+    {
+        if (CheckCardQuery(cardId, out CardInstance? card, out CardLocation location) is { } error)
+        {
+            return error;
+        }
+
+        if (location == CardLocation.Backpack)
+        {
+            return $"The {card!.Definition.Name} is already in your backpack.";
+        }
+
+        if (ActiveHero.Backpack.Count >= GameRules.BackpackCapacity)
+        {
+            return "Your backpack is full.";
+        }
+
+        return CheckGearAction();
+    }
+
+    /// <summary>Why the active hero can't use the card right now (including having nothing to aim at), or null if they can.</summary>
+    public string? CheckUse(int cardId)
+    {
+        if (CheckCardQuery(cardId, out CardInstance? card, out CardLocation location) is { } error)
+        {
+            return error;
+        }
+
+        if (CheckCardUsable(card!, location) is { } usable)
+        {
+            return usable;
+        }
+
+        if (GetCardTargets(cardId).Count > 0)
+        {
+            return null;
+        }
+
+        return card!.Definition.Effect!.Kind == CardEffectKind.Heal
+            ? "You're already at full hearts."
+            : "There's no monster in range and in sight.";
+    }
+
+    /// <summary>The card must be the active hero's, with no roll waiting on a decision.</summary>
+    private string? CheckCardQuery(int cardId, out CardInstance? card, out CardLocation location)
+    {
+        card = null;
+        location = default;
+        if (State.Turn is not { } turn)
+        {
+            return "It isn't anyone's turn.";
+        }
+
+        if (turn.UnsettledPowerDice > 0)
+        {
+            return "Add or bank your Power Die first.";
+        }
+
+        if (turn.PendingRoll is not null)
+        {
+            return "Finish the attack first.";
+        }
+
+        if (ActiveHero.FindCard(cardId) is not var (held, where))
+        {
+            return "You don't have that card.";
+        }
+
+        card = held;
+        location = where;
+        return null;
+    }
+
+    private string? CheckGearAction() =>
+        GearIsFree || !Turn.HasActed ? null : "Changing gear in a fight takes your action, which you've used.";
+
+    /// <summary>Gear changes are free outside a fight; in one they take the action (and end the move in progress).</summary>
+    private void SpendGearAction()
+    {
+        if (!GearIsFree)
+        {
+            SpendAction();
+        }
+    }
+
+    private string? Handle(EquipCard command, List<GameEvent> events)
+    {
+        if (CheckEquip(command.CardId) is { } error)
+        {
+            return error;
+        }
+
+        Hero hero = ActiveHero;
+        CardInstance card = hero.FindCard(command.CardId)!.Value.Card;
+        IReadOnlyList<CardInstance> displaced = hero.CardsDisplacedBy(card.Definition);
+        SpendGearAction();
         hero.Remove(card);
         foreach (CardInstance old in displaced)
         {
@@ -143,33 +279,14 @@ public sealed partial class GameSession
 
     private string? Handle(BeltCard command, List<GameEvent> events)
     {
-        Hero hero = ActiveHero;
-        if (hero.FindCard(command.CardId) is not var (card, location))
-        {
-            return "You don't have that card.";
-        }
-
-        if (card.Definition.Usage != CardUsage.SingleUse)
-        {
-            return "Only single-use cards fit on your belt.";
-        }
-
-        if (location != CardLocation.Backpack)
-        {
-            return $"The {card.Definition.Name} is already on your belt.";
-        }
-
-        if (hero.Belt.Count >= GameRules.BeltCapacity)
-        {
-            return "Your belt is full.";
-        }
-
-        if (CheckCanAct() is { } error)
+        if (CheckBelt(command.CardId) is { } error)
         {
             return error;
         }
 
-        SpendAction();
+        Hero hero = ActiveHero;
+        CardInstance card = hero.FindCard(command.CardId)!.Value.Card;
+        SpendGearAction();
         hero.Remove(card);
         hero.AddToBelt(card);
         events.Add(new CardBelted(hero.Id, card.Id));
@@ -178,28 +295,14 @@ public sealed partial class GameSession
 
     private string? Handle(StowCard command, List<GameEvent> events)
     {
-        Hero hero = ActiveHero;
-        if (hero.FindCard(command.CardId) is not var (card, location))
-        {
-            return "You don't have that card.";
-        }
-
-        if (location == CardLocation.Backpack)
-        {
-            return $"The {card.Definition.Name} is already in your backpack.";
-        }
-
-        if (hero.Backpack.Count >= GameRules.BackpackCapacity)
-        {
-            return "Your backpack is full.";
-        }
-
-        if (CheckCanAct() is { } error)
+        if (CheckStow(command.CardId) is { } error)
         {
             return error;
         }
 
-        SpendAction();
+        Hero hero = ActiveHero;
+        CardInstance card = hero.FindCard(command.CardId)!.Value.Card;
+        SpendGearAction();
         hero.Remove(card);
         hero.AddToBackpack(card);
         hero.ClampHearts();
@@ -217,50 +320,149 @@ public sealed partial class GameSession
 
         hero.Remove(card);
         hero.ClampHearts();
-        ActiveRoom.AddLoot(hero.Position, [card]);
-        events.Add(new CardDropped(hero.Id, card.Id, hero.Position));
+        GridPosition spot = SafeTile(ActiveRoom, hero.Position);
+        ActiveRoom.AddLoot(spot, [card]);
+        events.Add(new CardDropped(hero.Id, card.Id, spot));
         return null;
     }
 
-    private string? Handle(OpenChest command, List<GameEvent> events)
+    /// <summary>Why the active hero can't open the chest right now, or null if they can.</summary>
+    public string? CheckOpenChest(GridPosition chest)
     {
+        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
+        {
+            return "Finish the roll first.";
+        }
+
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
-        if (room.Layout[command.Chest] != TileKind.Chest)
+        if (room.Layout[chest] != TileKind.Chest)
         {
             return "There's no chest there.";
         }
 
-        if (room.IsChestOpened(command.Chest))
+        if (room.IsChestOpened(chest))
         {
             return "That chest is already open.";
         }
 
-        if (hero.Position.ManhattanDistanceTo(command.Chest) != 1)
+        if (hero.Position.ManhattanDistanceTo(chest) != 1)
         {
             return "Stand next to the chest to open it.";
         }
 
-        if (CheckCanAct() is { } error)
+        if (room.ChestLockAt(chest) is int difficulty && hero.Keys < 1)
+        {
+            return $"The chest is locked: use a key, or pick the lock with Od Hand ({difficulty}+).";
+        }
+
+        return CheckLoot();
+    }
+
+    /// <summary>Why the active hero can't pick up what's on their tile, or null if they can.</summary>
+    public string? CheckPickUp()
+    {
+        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
+        {
+            return "Finish the roll first.";
+        }
+
+        Hero hero = ActiveHero;
+        Room room = ActiveRoom;
+        if (!room.HasLootAt(hero.Position))
+        {
+            return "There's nothing here to pick up.";
+        }
+
+        bool onlyCards = room.KeysAt(hero.Position) == 0 && room.BossKeyAt != hero.Position;
+        if (onlyCards && hero.Backpack.Count >= GameRules.BackpackCapacity)
+        {
+            return "Your backpack is full.";
+        }
+
+        return CheckLoot();
+    }
+
+    /// <summary>The first loot each turn is free; after that, looting takes the action.</summary>
+    private string? CheckLoot() =>
+        !Turn.UsedFreeLoot || !Turn.HasActed ? null : "You've used your free loot and your action this turn.";
+
+    private void SpendLoot()
+    {
+        if (!Turn.UsedFreeLoot)
+        {
+            Turn.UsedFreeLoot = true;
+        }
+        else
+        {
+            SpendAction();
+        }
+    }
+
+    private string? Handle(OpenChest command, List<GameEvent> events)
+    {
+        if (CheckOpenChest(command.Chest) is { } error)
         {
             return error;
         }
 
-        SpendAction();
-        room.OpenChest(command.Chest);
-        var card = new CardInstance(State.NextId(), State.LootDeck.Draw(room.Floor), broughtInByHeroId: null);
-        bool fits = hero.Backpack.Count < GameRules.BackpackCapacity;
-        if (fits)
+        Hero hero = ActiveHero;
+        Room room = ActiveRoom;
+        SpendLoot();
+        if (room.ChestLockAt(command.Chest) is not null)
         {
-            hero.AddToBackpack(card);
-        }
-        else
-        {
-            room.AddLoot(hero.Position, [card]);
+            hero.Keys--;
+            room.UnlockChest(command.Chest);
+            events.Add(new KeyUsed(hero.Id, hero.Keys));
+            events.Add(new ChestUnlocked(hero.Id, command.Chest, Picked: false));
         }
 
-        events.Add(new ChestOpened(hero.Id, command.Chest, card.Id, fits));
+        if (room.ChestTrapAt(command.Chest) is { } trap)
+        {
+            room.SetChestTrap(command.Chest, null);
+            SpringTrap(hero, room, trap, command.Chest, events);
+            if (!hero.IsActive)
+            {
+                return null;
+            }
+        }
+
+        // A chest that was locked holds two cards, dealt as if from a floor deeper.
+        bool superior = room.IsSuperiorChest(command.Chest);
+        bool bossKey = room.HoldsBossKey(command.Chest);
+        room.OpenChest(command.Chest);
+        List<CardInstance> cards = Enumerable.Range(0, superior ? 2 : 1)
+            .Select(_ => new CardInstance(State.NextId(), State.LootDeck.Draw(superior ? room.Floor + 1 : room.Floor), broughtInByHeroId: null))
+            .ToList();
+        bool allFit = GiveCards(hero, room, cards);
+        events.Add(new ChestOpened(hero.Id, command.Chest, cards.Select(card => card.Id).ToList(), allFit));
+        if (bossKey)
+        {
+            hero.HasBossKey = true;
+            events.Add(new BossKeyFound(hero.Id));
+        }
+
         return null;
+    }
+
+    /// <summary>Puts cards in the backpack while there's room; the rest go on the hero's tile. True if all fit.</summary>
+    private static bool GiveCards(Hero hero, Room room, IReadOnlyList<CardInstance> cards)
+    {
+        bool allFit = true;
+        foreach (CardInstance card in cards)
+        {
+            if (hero.Backpack.Count < GameRules.BackpackCapacity)
+            {
+                hero.AddToBackpack(card);
+            }
+            else
+            {
+                room.AddLoot(SafeTile(room, hero.Position), [card]);
+                allFit = false;
+            }
+        }
+
+        return allFit;
     }
 
     private string? Handle(SmashPot command, List<GameEvent> events)
@@ -285,7 +487,15 @@ public sealed partial class GameSession
         SpendAction();
         room.Layout.Set(command.Pot, TileKind.Floor);
 
-        PotDefinition? pots = Content.GetTheme(State.ThemeId).Pots;
+        ThemeDefinition theme = Content.GetTheme(State.ThemeId);
+        if (Chance(theme.Keys.Pot))
+        {
+            events.Add(new PotSmashed(hero.Id, command.Pot, null, false, 0));
+            GiveKeys(hero, 1, events);
+            return null;
+        }
+
+        PotDefinition? pots = theme.Pots;
         int roll = _random.Loot.NextInt(0, 100);
         int? cardId = null;
         bool addedToBackpack = false;
@@ -316,34 +526,47 @@ public sealed partial class GameSession
 
     private string? Handle(PickUpLoot command, List<GameEvent> events)
     {
-        Hero hero = ActiveHero;
-        Room room = ActiveRoom;
-        if (room.LootAt(hero.Position).Count == 0)
-        {
-            return "There's nothing here to pick up.";
-        }
-
-        int space = GameRules.BackpackCapacity - hero.Backpack.Count;
-        if (space < 1)
-        {
-            return "Your backpack is full.";
-        }
-
-        if (CheckCanAct() is { } error)
+        if (CheckPickUp() is { } error)
         {
             return error;
         }
 
-        SpendAction();
-        IReadOnlyList<CardInstance> taken = room.TakeLoot(hero.Position, space);
+        Hero hero = ActiveHero;
+        Room room = ActiveRoom;
+        SpendLoot();
+        IReadOnlyList<CardInstance> taken = room.TakeLoot(hero.Position, GameRules.BackpackCapacity - hero.Backpack.Count);
         foreach (CardInstance card in taken)
         {
             hero.AddToBackpack(card);
         }
 
-        events.Add(new LootPickedUp(hero.Id, taken.Select(card => card.Id).ToList()));
+        if (taken.Count > 0)
+        {
+            events.Add(new LootPickedUp(hero.Id, taken.Select(card => card.Id).ToList()));
+        }
+
+        GiveKeys(hero, room.TakeKeys(hero.Position), events);
+        if (room.BossKeyAt == hero.Position)
+        {
+            room.BossKeyAt = null;
+            hero.HasBossKey = true;
+            events.Add(new BossKeyFound(hero.Id));
+        }
+
         return null;
     }
+
+    private static void GiveKeys(Hero hero, int count, List<GameEvent> events)
+    {
+        if (count > 0)
+        {
+            hero.Keys += count;
+            events.Add(new KeysFound(hero.Id, count, hero.Keys));
+        }
+    }
+
+    /// <summary>A percent chance from the loot stream. A chance of 0 draws nothing, so turning a feature off doesn't shift other rolls.</summary>
+    private bool Chance(int percent) => percent > 0 && _random.Loot.NextInt(0, 100) < percent;
 
     /// <summary>
     /// Reusable cards must be equipped to use. Belt items are free once per turn; anything
@@ -354,7 +577,9 @@ public sealed partial class GameSession
         CardDefinition definition = card.Definition;
         if (definition.Effect is null)
         {
-            return $"The {definition.Name} can't be used.";
+            return definition.Type == CardType.Treasure
+                ? "Treasure isn't used: carry it out of the dungeon to win."
+                : $"The {definition.Name} has nothing to use; equip it for its bonus.";
         }
 
         if (definition.Usage != CardUsage.SingleUse && location != CardLocation.Equipped)
@@ -364,18 +589,21 @@ public sealed partial class GameSession
 
         if (definition.Usage == CardUsage.Charges && card.ChargesRemaining < 1)
         {
-            return $"The {definition.Name} has no charges left.";
+            return $"The {definition.Name} has no charges left. They refill on a new floor.";
         }
 
         if (location == CardLocation.Belt)
         {
-            return Turn.UsedBeltItem ? "You've already used a belt item this turn." : null;
+            return Turn.UsedBeltItem ? "You've already used your free belt item this turn." : null;
         }
 
-        return CheckCanAct();
+        return Turn.HasActed ? "Using a backpack card takes your action, which you've used." : null;
     }
 
-    private string? CheckEffectTarget(Hero hero, Room room, CardEffect effect, GridPosition? target, out IReadOnlyList<Monster> targets)
+    private static bool IsBomb(CardDefinition card) => card.Type == CardType.Bomb;
+
+    /// <param name="breaksWalls">A bomb: its blast may be aimed at cracked walls alone.</param>
+    private string? CheckEffectTarget(Hero hero, Room room, CardEffect effect, GridPosition? target, out IReadOnlyList<Monster> targets, bool breaksWalls = false)
     {
         targets = [];
         switch (effect.Kind)
@@ -401,7 +629,12 @@ public sealed partial class GameSession
                 }
 
                 targets = room.Monsters.Where(monster => monster.Position.ChebyshevDistanceTo(attackTile) <= effect.AreaRadius).ToList();
-                return targets.Count == 0 ? "There are no monsters there." : null;
+                if (targets.Count == 0 && breaksWalls && CrackedWallsIn(room, attackTile, effect.AreaRadius).Count > 0)
+                {
+                    return null;
+                }
+
+                return targets.Count == 0 ? (breaksWalls ? "There are no monsters or cracked walls there." : "There are no monsters there.") : null;
 
             case CardEffectKind.Stun:
                 if (target is not { } stunTile || room.MonsterAt(stunTile) is not { Collapsed: false } monster)

@@ -21,7 +21,7 @@ public readonly record struct GridPosition(int X, int Y)
         _ => throw new ArgumentOutOfRangeException(nameof(direction)),
     };
 
-    /// <summary>Up, right, down, left. Movement and melee are orthogonal only.</summary>
+    /// <summary>Up, right, down, left. Movement is orthogonal only; heroes can also attack diagonally.</summary>
     public IEnumerable<GridPosition> OrthogonalNeighbors()
     {
         foreach (Direction direction in Directions)
