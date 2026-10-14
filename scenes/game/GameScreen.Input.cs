@@ -232,7 +232,7 @@ public partial class GameScreen
         {
             MonsterDefinition definition = monster.Definition;
             string power = monster.Power.Banked > 0 ? $", {PowerDiceText(monster.Power.Banked)} banked" : "";
-            return $"{definition.Name}: {monster.Hearts}/{definition.Hearts} hearts{power}, move {definition.Move}, " +
+            return $"{definition.Name}: {monster.Hearts}/{monster.MaxHearts} hearts{power}, move {definition.Move}, " +
                    $"attack {UiTheme.Dice(definition.AttackDice, definition.Weapon)}, defense {UiTheme.Dice(definition.DefenseDice, definition.Armor)}{Traits(monster)}";
         }
 

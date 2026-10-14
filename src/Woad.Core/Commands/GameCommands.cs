@@ -11,7 +11,7 @@ public abstract record GameCommand(int HeroId);
 /// <summary>
 /// Start a move: roll <paramref name="Dice"/> of this turn's unused Move dice (null for all of them),
 /// plus Speed if <paramref name="UseSpeed"/> and it isn't used yet this turn. The total is the
-/// move's steps. Starting a move ends the previous one. A negative Speed always applies to the first move.
+/// move's steps, added to any left over from earlier moves. A negative Speed always applies to the first move.
 /// </summary>
 public sealed record RollMovement(int HeroId, int? Dice = null, bool UseSpeed = true, int PowerDice = 0) : GameCommand(HeroId);
 
@@ -24,7 +24,7 @@ public sealed record GoThroughDoor(int HeroId, Direction Door) : GameCommand(Her
 /// <summary>
 /// Attack with <paramref name="Dice"/> of this turn's unused Attack dice (null for all of them),
 /// plus the weapon's value if <paramref name="UseWeapon"/> and it isn't used yet this turn. The
-/// total must beat the monster's armor plus its defense roll. Ends the move in progress.
+/// total must beat the monster's armor plus its defense roll. Steps left in the move stay usable afterwards.
 /// <paramref name="PowerDice"/> banked Power Dice are rolled in too (RollMovement takes them the same way).
 /// </summary>
 public sealed record AttackMonster(int HeroId, int MonsterId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0) : GameCommand(HeroId);

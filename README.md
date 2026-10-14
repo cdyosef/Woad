@@ -1,6 +1,6 @@
 # Woad
 
-A turn-based roguelite dungeon-crawler board game for 1–4 local players, built with Godot 4.7 and C# on .NET 10.
+A turn-based roguelite dungeon-crawler board game for 1–8 local players, built with Godot 4.7 and C# on .NET 10.
 
 The design is in [docs/MVP-Design.md](docs/MVP-Design.md).
 
@@ -77,7 +77,7 @@ dotnet test Woad.sln    # run the rules-engine tests
 
 Run the game with F5 in the Godot editor. You can also run it from a terminal with
 `Godot_v4.7.2-stable_mono_win64 --path .`. Create a character from **Characters**, then choose
-**Play** to seat 1–4 characters and start a run. Each run generates a new three-floor dungeon from
+**Play** to seat 1–8 characters and start a run. Each run generates a new three-floor dungeon from
 its seed.
 
 GitHub runs the build and the rules tests on every push and pull request (`.github/workflows/tests.yml`);
@@ -95,7 +95,7 @@ on the Godot command line:
 | `--uitest` | Puts a fixed debug party in a single room and plays two turns by pushing real mouse clicks through the UI (cards, targeting, Luck, moving, equipping), checking each result. |
 | `--floortest` | Clicks through a door and down the stairs in a tiny three-room setup, checking that the view follows the hero. |
 | `--resultstest` | Two saved characters click their way out of the exit; checks that their results are saved and shown. Uses a throwaway save folder. |
-| `--autoplay` | The debug party plays a generated dungeon with the rules-engine bot until the run ends, narrating to the console. Add `--fast` for 8× speed. |
+| `--autoplay` | The debug party plays a generated dungeon with the rules-engine bot until the run ends, narrating to the console. Add `--fast` for 8× speed, and `--party N` for a party of N (up to 8). |
 
 Each test exits with code 1 on its first failed check.
 

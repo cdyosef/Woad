@@ -5,7 +5,7 @@ Items under [Assumptions to confirm](#assumptions-to-confirm) were filled in by 
 
 ## Pitch
 
-Woad is a turn-based roguelite dungeon crawler played like a board game. One to four players share a
+Woad is a turn-based roguelite dungeon crawler played like a board game. One to eight players share a
 mouse and screen in hot-seat play. Every room is a 9×9 grid. Dice decide how far you move, how hard you
 hit and how well you block. Cards are your gear, magic and loot, slotted onto your character. Players
 cooperate to survive the dungeon but compete for treasure: the richest player to escape wins.
@@ -15,7 +15,7 @@ cooperate to survive the dungeon but compete for treasure: the richest player to
 | Area | Decision |
 | --- | --- |
 | Engine | Godot 4.7.2 (.NET build), C# on .NET 10 (`net10.0`) |
-| Players | 1–4, local hot-seat, mouse only |
+| Players | 1–8, local hot-seat, mouse only |
 | Play mode | Semi-co-op: no direct PvP damage; the escaped player with the most treasure wins |
 | Rooms | 9×9 grids; players may split up into different rooms |
 | Dice | d6 pools for movement, attack and defense. Each Attack or Move die is an action of its own, or several can be rolled together for a stronger one. Every 6 earns a Power Die to add or bank |
@@ -36,7 +36,7 @@ cooperate to survive the dungeon but compete for treasure: the richest player to
 
 1. **Main menu**: Play, Characters, Quit.
 2. **Characters**: create, view or delete saved characters.
-3. **Run setup**: pick 1–4 saved characters and a seat order, plus an optional seed.
+3. **Run setup**: pick 1–8 saved characters and a seat order, plus an optional seed.
 4. **Dungeon**: three floors, played in rounds.
 5. **Results**: winner, treasure totals, XP gained, items kept or lost. Characters are saved.
 6. Back to the main menu.
@@ -105,7 +105,7 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 
 - **Starter kit** (new characters): Wooden Sword, Buckler, Health Potion.
 - **Equipping, belting or stowing gear** is free while no monsters are in your room, as often as you like.
-  In a fight, each one takes your action (and ends the move in progress).
+  In a fight, each one takes your action.
 - **Greyed-out card buttons explain themselves:** hovering shows why, and clicking one writes the reason
   in the message log.
 - **Using a belt item** doesn't take your action (once per turn). Using an item from the backpack takes your action.
@@ -132,9 +132,9 @@ every room that holds at least one player. Rooms with no players stay paused.
 2. In any order:
    - **Moves (Wend):** each move rolls one or more of your unused Wend dice, plus your Wend bonus on one move per
      turn, for that many steps. Reachable tiles are highlighted, and you click one to go there. Steps are
-     orthogonal; walls and monsters block, allies don't. Doing anything else (attacking, acting or
-     starting another move) ends the move, and its unused steps are lost. A negative Wend bonus always applies
-     to your first move.
+     orthogonal; walls and monsters block, allies don't. Steps last the whole turn: you can attack,
+     act or roll another move in between, and any steps left over are added to the next move. Only a
+     sprung trap ends your movement early. A negative Wend bonus always applies to your first move.
    - **Attacks (Rumble):** each attack uses one or more of your unused Rumble dice, plus your weapon's
      value on one attack per turn (only alongside at least one die). See [Combat](#combat).
    - **Od Hand checks:** each uses one or more of your unused Od Hand dice, plus your tools' value once a
@@ -394,7 +394,7 @@ Woad (Godot project, repo root)          Woad.Core (src/, pure C#, no Godot)
 | M0 | Scaffold ✅ | Godot 4.7 + .NET 10 project builds, tests pass, and the 640×360 layout runs |
 | M1 | Core rules ✅ | Room grid, pathing, dice, turn loop, combat, cards/slots/backpack, monster AI: all unit tested |
 | M2 | Playable room ✅ | One room in Godot: mouse move/attack, dice tray, hot-seat turns, enemy phase |
-| M3 | Characters ✅ | Main menu, point-buy creation, character list, JSON save/load, run setup for 1–4 players |
+| M3 | Characters ✅ | Main menu, point-buy creation, character list, JSON save/load, run setup for 1–4 players (later 1–8) |
 | M4 | Dungeon ✅ | 3 procedural floors, room templates, doors, splitting up, fog, minimap, stairs, boss, exit |
 | M5 | Loot & scoring ✅ | Loot deck, chests, drops, downed loot piles, results screen, rewards persisted |
 | M6 | Theme pass ✅ | Original placeholder art for the first theme, gothic UI frames, SFX, dice animation |

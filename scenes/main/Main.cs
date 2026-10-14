@@ -51,7 +51,9 @@ public partial class Main : Control
         }
         else if (args.Contains("--autoplay"))
         {
-            ShowGame(DungeonGenerator.CreateRun(_content, ThemeId, DemoRun.DebugHeroes, seed), []);
+            int partyAt = Array.IndexOf(args, "--party");
+            int size = partyAt >= 0 && partyAt + 1 < args.Length && int.TryParse(args[partyAt + 1], out int n) ? Math.Clamp(n, 1, GameRules.MaxHeroes) : DemoRun.DebugHeroes.Count;
+            ShowGame(DungeonGenerator.CreateRun(_content, ThemeId, DemoRun.DebugParty(size), seed), []);
         }
         else if (args.Contains("--resultstest"))
         {

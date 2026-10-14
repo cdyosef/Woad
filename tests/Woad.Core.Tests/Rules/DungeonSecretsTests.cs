@@ -475,6 +475,41 @@ public class DungeonSecretsTests
         }
     }
 
+    [Fact]
+    public void EveryRoomCanBeReachedWithoutSecretsOrGoingThroughTheBossRoom()
+    {
+        ContentCatalog content = ContentCatalog.LoadDefault();
+        for (ulong seed = 1000; seed < 1300; seed++)
+        {
+            RunSetup setup = DungeonGenerator.CreateRun(content, "emerald_keep", [new HeroSetup("Bot", GameRules.HeroBaseStats, GameRules.StarterKit)], seed);
+            GameState state = new GameSession(content, setup).State;
+            foreach (IGrouping<int, Room> floor in state.Rooms.Values.GroupBy(room => room.Floor))
+            {
+                Room arrival = floor.Single(room => room.Role == RoomRole.Arrival);
+                var reached = new HashSet<string> { arrival.Id };
+                var frontier = new Queue<Room>([arrival]);
+                while (frontier.Count > 0)
+                {
+                    Room room = frontier.Dequeue();
+                    if (room.Role == RoomRole.Boss)
+                    {
+                        continue;
+                    }
+
+                    foreach (Passage passage in room.Passages.Values.Where(passage => passage.Kind is not (PassageKind.Secret or PassageKind.Cracked)))
+                    {
+                        if (reached.Add(passage.OtherRoom(room.Id)))
+                        {
+                            frontier.Enqueue(state.Rooms[passage.OtherRoom(room.Id)]);
+                        }
+                    }
+                }
+
+                Assert.True(floor.All(room => reached.Contains(room.Id)), $"Seed {seed}, floor {floor.Key}: {string.Join(", ", floor.Where(room => !reached.Contains(room.Id)).Select(room => room.Id))} cut off.");
+            }
+        }
+    }
+
     private static int Areas(Room room, Func<GridPosition, bool> allowed)
     {
         bool Open(GridPosition tile) => room.Layout[tile].IsWalkable() && allowed(tile);

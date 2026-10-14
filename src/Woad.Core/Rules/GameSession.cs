@@ -211,12 +211,8 @@ public sealed partial class GameSession
 
     private string? CheckCanAct() => Turn.HasActed ? "You've already used your action this turn." : null;
 
-    /// <summary>Marks the turn's other action as used. Acting ends the move in progress; unused steps are lost.</summary>
-    private void SpendAction()
-    {
-        Turn.HasActed = true;
-        Turn.EndMove();
-    }
+    /// <summary>Marks the turn's other action as used. Steps left in the move stay usable.</summary>
+    private void SpendAction() => Turn.HasActed = true;
 
     private bool IsOccupied(Room room, GridPosition position) => IsOccupied(State, room, position);
 
@@ -246,7 +242,7 @@ public sealed partial class GameSession
                 roomSetup.Template.HeroStarts.OrderBy(start => start.Key).Select(start => start.Value).ToList());
             foreach (MonsterSpawn spawn in roomSetup.Template.Monsters)
             {
-                room.AddMonster(new Monster(state.NextId(), spawn.Monster, spawn.Position));
+                room.AddMonster(CreateMonster(state.NextId(), spawn.Monster, spawn.Position, setup.Heroes.Count));
             }
 
             AddFeatures(room, roomSetup.Features ?? RoomFeatures.None);
@@ -376,6 +372,10 @@ public sealed partial class GameSession
             }
         }
     }
+
+    /// <summary>A new monster; a boss is toughened for a party bigger than <see cref="GameRules.FullParty"/>.</summary>
+    private static Monster CreateMonster(int id, MonsterDefinition definition, GridPosition position, int partySize) =>
+        new(id, definition, position, GameRules.ExtraMonsterHearts(partySize, definition.Boss));
 
     private static GridPosition FreeTileNearCenter(GameState state, Room room)
     {

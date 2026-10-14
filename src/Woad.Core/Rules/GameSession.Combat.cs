@@ -54,7 +54,6 @@ public sealed partial class GameSession
         }
 
         int bonus = command.UseWeapon ? WeaponBonusLeft : 0;
-        Turn.EndMove();
         Turn.AttackDiceUsed += dice;
         Turn.WeaponUsed |= bonus > 0;
         SpendBankedPowerDice(hero, command.PowerDice, events);
@@ -96,7 +95,7 @@ public sealed partial class GameSession
         else
         {
             Turn.MovementRoll = rerolled;
-            Turn.MovementPoints = Math.Max(0, rerolled.Total + Turn.MovementBonus);
+            Turn.CountSteps();
             events.Add(new DieRerolled(hero.Id, command.DieIndex, oldFace, faces[command.DieIndex], rerolled, Turn.MovementPoints));
         }
 
@@ -239,9 +238,9 @@ public sealed partial class GameSession
 
         foreach (GridPosition position in tiles)
         {
-            var monster = new Monster(State.NextId(), piece, position);
+            Monster monster = CreateMonster(State.NextId(), piece, position, State.Heroes.Count);
             room.AddMonster(monster);
-            events.Add(new MonsterSpawned(monster.Id, piece.Id, room.Id, position));
+            events.Add(new MonsterSpawned(monster.Id, piece.Id, room.Id, position, monster.Hearts));
         }
     }
 
