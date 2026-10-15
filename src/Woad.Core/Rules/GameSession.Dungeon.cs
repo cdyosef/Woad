@@ -147,20 +147,21 @@ public sealed partial class GameSession
     {
         trap.Revealed = true;
         events.Add(new TrapSprung(hero.Id, trap.Kind, position));
-        HurtHero(room, hero, 1, events);
+        HurtHero(room, hero, 1, TrapBane(trap.Kind), events);
         if (trap.Kind == TrapKind.TrapDoor && hero.IsActive)
         {
             Fall(hero, room, position, jumped: false, events);
         }
     }
 
-    private void HurtHero(Room room, Hero hero, int amount, List<GameEvent> events)
+    /// <summary>Damage from the dungeon itself (traps, falls, drowning); <paramref name="bane"/> is for the tombstone.</summary>
+    private void HurtHero(Room room, Hero hero, int amount, string bane, List<GameEvent> events)
     {
         hero.Hearts = Math.Max(0, hero.Hearts - amount);
         events.Add(new Damaged(hero.Id, amount, hero.Hearts));
         if (hero.Hearts == 0)
         {
-            DownHero(room, hero, events);
+            KeelOver(room, hero, bane, events);
         }
     }
 

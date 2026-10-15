@@ -240,7 +240,7 @@ public class MonsterTests
     }
 
     [Fact]
-    public void DownedHeroesDropWhatTheyFoundAndKeepWhatTheyBroughtIn()
+    public void AHeroAtZeroHeartsKeelsOverKeepingEverything()
     {
         GameSession session = TestRun.Start("""
             .........
@@ -260,11 +260,12 @@ public class MonsterTests
 
         IReadOnlyList<GameEvent> events = session.EndRound();
 
-        Assert.Equal(new HeroDowned(hero.Id, new GridPosition(4, 4), [gem.Id]).HeroId, events.SingleOf<HeroDowned>().HeroId);
-        Assert.Equal([gem.Id], events.SingleOf<HeroDowned>().DroppedCardIds);
-        Assert.Equal(HeroStatus.Downed, hero.Status);
-        Assert.Equal(["sword"], hero.AllCards.Select(card => card.Definition.Id));
-        Assert.Equal([gem], session.RoomById().LootAt(new GridPosition(4, 4)));
+        Monster monster = session.OnlyMonster();
+        Assert.Equal(new HeroKeeledOver(hero.Id, new GridPosition(4, 4), $"Slain by a {monster.Definition.Name}"), events.SingleOf<HeroKeeledOver>());
+        Assert.Equal(HeroStatus.KeelingOver, hero.Status);
+        Assert.Equal(["sword", "gem"], hero.AllCards.Select(card => card.Definition.Id));
+        Assert.Empty(session.RoomById().LootPositions);
+        Assert.Equal(RunPhase.InProgress, session.State.Phase);
     }
 
     [Fact]
@@ -280,10 +281,12 @@ public class MonsterTests
             .........
             .........
             .........
-            """, new ScriptedDice(5, 1));
+            """, new ScriptedDice(5, 1, 1, 3));
         session.HeroInSeat().Hearts = 1;
+        session.EndRound();
+        session.HeroInSeat().DeathMarks = 2;
 
-        Assert.Equal(new RunEnded([]).WinnerHeroIds, Assert.IsType<RunEnded>(session.EndRound()[^1]).WinnerHeroIds);
+        Assert.Equal(new RunEnded([]).WinnerHeroIds, Assert.IsType<RunEnded>(session.Do(new RollKeel(session.HeroInSeat().Id))[^1]).WinnerHeroIds);
         Assert.Equal(RunPhase.Ended, session.State.Phase);
         Assert.Null(session.State.Turn);
         Assert.Empty(session.State.WinnerIds);
@@ -291,7 +294,7 @@ public class MonsterTests
     }
 
     [Fact]
-    public void PlayContinuesWithoutTheDownedHero()
+    public void AHeroKeelingOverStillTakesTheirTurnButOnlyToRollTheKeelDie()
     {
         GameSession session = TestRun.Start("""
             .........
@@ -308,8 +311,12 @@ public class MonsterTests
 
         IReadOnlyList<GameEvent> events = session.EndRound();
 
-        Assert.Equal(HeroStatus.Downed, session.HeroInSeat(0).Status);
-        Assert.Equal(new TurnStarted(session.HeroInSeat(1).Id), events[^1]);
+        Hero fallen = session.HeroInSeat(0);
+        Assert.Equal(HeroStatus.KeelingOver, fallen.Status);
+        Assert.Equal(new TurnStarted(fallen.Id), events[^1]);
+        Assert.True(session.State.Turn!.KeelingOver);
+        Assert.Contains("roll the Keel Die", session.Refuse(new EndTurn(fallen.Id)));
+        Assert.Contains("roll the Keel Die", session.Refuse(new RollMovement(fallen.Id)));
     }
 
     [Fact]
@@ -325,12 +332,14 @@ public class MonsterTests
             .........
             .........
             2........
-            """, new ScriptedDice(5, 1), heroes: 2, cards: ["coin"]);
+            """, new ScriptedDice(5, 1, 1, 3), heroes: 2, cards: ["coin"]);
         Hero escaped = session.HeroInSeat(1);
         escaped.Status = HeroStatus.Escaped;
         session.HeroInSeat(0).Hearts = 1;
-
         session.EndRound();
+        session.HeroInSeat(0).DeathMarks = 2;
+
+        session.Do(new RollKeel(session.HeroInSeat(0).Id));
 
         Assert.Equal([escaped.Id], session.State.WinnerIds);
     }

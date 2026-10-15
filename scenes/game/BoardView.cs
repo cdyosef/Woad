@@ -159,6 +159,11 @@ public partial class BoardView : Control
             }
         }
 
+        foreach (Tombstone stone in _room.Tombstones)
+        {
+            DrawTombstone(stone.Position);
+        }
+
         foreach (GridPosition tile in _room.LootPositions)
         {
             DrawLoot(tile, _room.LootAt(tile).Count);
@@ -457,6 +462,26 @@ public partial class BoardView : Control
         {
             DrawString(ThemeDB.FallbackFont, origin + new Vector2(16, 18), count.ToString(), fontSize: 8, modulate: Palette.Loot);
         }
+    }
+
+    /// <summary>A headstone on a little mound of earth, "RIP" carved in it.</summary>
+    private void DrawTombstone(GridPosition tile)
+    {
+        Vector2 origin = TileOrigin(tile);
+        DrawSetTransform(origin + new Vector2(16, 26), 0, new Vector2(1, 0.35f));
+        DrawCircle(Vector2.Zero, 11, Palette.Grave, antialiased: true);
+        DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+
+        // Upright slab with a rounded top.
+        var body = new Rect2(origin + new Vector2(9, 11), new Vector2(14, 15));
+        DrawRect(body, Palette.Stone);
+        DrawCircle(origin + new Vector2(16, 11), 7, Palette.Stone, antialiased: true);
+        DrawArc(origin + new Vector2(16, 11), 7, Mathf.Pi, Mathf.Tau, 12, Palette.Ink, 1, antialiased: true);
+        DrawLine(body.Position, body.Position + new Vector2(0, body.Size.Y), Palette.Ink, 1);
+        DrawLine(body.End - new Vector2(0, body.Size.Y), body.End, Palette.Ink, 1);
+        DrawLine(body.Position + new Vector2(0, body.Size.Y), body.End, Palette.Ink, 1);
+        DrawRect(new Rect2(origin + new Vector2(18, 6), new Vector2(3, 18)), Palette.StoneShade);
+        DrawString(ThemeDB.FallbackFont, origin + new Vector2(9, 19), "RIP", HorizontalAlignment.Center, 14, 6, Palette.Ink);
     }
 
     private void DrawLoot(GridPosition tile, int count)

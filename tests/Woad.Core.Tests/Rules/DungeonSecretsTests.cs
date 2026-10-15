@@ -435,7 +435,7 @@ public class DungeonSecretsTests
     }
 
     [Fact]
-    public void AHeroDownedByATrapDropsTheirKeysBesideItAndTheTurnMovesOn()
+    public void AHeroKeelingOverFromATrapKeepsTheirKeysAndTheTurnMovesOn()
     {
         // The second hero starts at (4,3), the free tile nearest the center.
         var features = new RoomFeatures { Traps = new Dictionary<GridPosition, TrapSetup> { [new(3, 4)] = new(TrapKind.Spikes, 4) } };
@@ -448,10 +448,10 @@ public class DungeonSecretsTests
 
         IReadOnlyList<GameEvent> events = session.Do(new MoveHero(hero.Id, new GridPosition(3, 4)));
 
-        Assert.Equal(HeroStatus.Downed, hero.Status);
-        Room room = session.RoomById();
-        Assert.Null(room.TrapAt(room.BossKeyAt!.Value));
-        Assert.Equal(2, room.KeysAt(room.BossKeyAt.Value));
+        Assert.Equal(HeroStatus.KeelingOver, hero.Status);
+        Assert.Equal("Impaled on spikes", events.SingleOf<HeroKeeledOver>().Bane);
+        Assert.Equal((2, true), (hero.Keys, hero.HasBossKey));
+        Assert.Null(session.RoomById().BossKeyAt);
         Assert.Equal(new TurnStarted(session.HeroInSeat(1).Id), events[^1]);
     }
 

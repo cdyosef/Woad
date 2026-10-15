@@ -39,6 +39,9 @@ public static class Palette
     public static readonly Color ChestOpen = new("4a3018");
     public static readonly Color Loot = new("f0c94a");
     public static readonly Color Pot = new("a8643c");
+    public static readonly Color Stone = new("9aa0a6");
+    public static readonly Color StoneShade = new("6e747c", 0.6f);
+    public static readonly Color Grave = new("3b2c22", 0.85f);
     public static readonly Color PotRim = new("7a4528");
 
     public static readonly Color Reachable = new("6fb7ff", 0.30f);

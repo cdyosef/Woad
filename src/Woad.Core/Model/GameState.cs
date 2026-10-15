@@ -55,6 +55,10 @@ public sealed class GameState
     public IEnumerable<Hero> ActiveHeroesIn(Room room) =>
         _heroes.Where(hero => hero.IsActive && hero.RoomId == room.Id);
 
+    /// <summary>Heroes standing or Keeling Over in the room: everyone taking up a tile there.</summary>
+    public IEnumerable<Hero> HeroesIn(Room room) =>
+        _heroes.Where(hero => hero.IsInPlay && hero.RoomId == room.Id);
+
     /// <summary>Ids are shared by heroes, monsters and cards, so every id in a run is unique.</summary>
     internal int NextId() => _nextId++;
 

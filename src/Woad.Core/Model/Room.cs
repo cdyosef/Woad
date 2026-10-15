@@ -19,6 +19,7 @@ public sealed class Room
     private readonly HashSet<GridPosition> _bossKeyChests = [];
     private readonly Dictionary<GridPosition, Cache> _caches = [];
     private readonly Dictionary<GridPosition, int> _keys = [];
+    private readonly List<Tombstone> _tombstones = [];
 
     internal Room(
         string id,
@@ -128,6 +129,11 @@ public sealed class Room
     /// <summary>Anything on the tile to pick up: cards, keys or the Boss Key.</summary>
     public bool HasLootAt(GridPosition position) => LootAt(position).Count > 0 || KeysAt(position) > 0 || BossKeyAt == position;
 
+    /// <summary>Where heroes died, in the order they fell.</summary>
+    public IReadOnlyList<Tombstone> Tombstones => _tombstones;
+
+    public Tombstone? TombstoneAt(GridPosition position) => _tombstones.LastOrDefault(stone => stone.Position == position);
+
     public IEnumerable<GridPosition> TilesOfKind(TileKind kind) => RoomGrid.AllPositions().Where(position => Layout[position] == kind);
 
     public Monster? MonsterAt(GridPosition position) => _monsters.FirstOrDefault(monster => monster.Position == position);
@@ -224,6 +230,8 @@ public sealed class Room
         _keys.Remove(position);
         return count;
     }
+
+    internal void AddTombstone(Tombstone tombstone) => _tombstones.Add(tombstone);
 
     internal void AddLoot(GridPosition position, IEnumerable<CardInstance> cards)
     {

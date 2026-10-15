@@ -233,5 +233,5 @@ public sealed partial class GameSession
             stepCost: position => room.Layout[position].MoveCost());
 
     private bool CanHeroStop(Room room, Hero hero, GridPosition position) =>
-        !State.ActiveHeroesIn(room).Any(other => other != hero && other.Position == position);
+        !State.HeroesIn(room).Any(other => other != hero && other.Position == position);
 }

@@ -43,7 +43,7 @@ public class RunResultsTests
     }
 
     [Fact]
-    public void DownedHeroesKeepOnlyWhatTheyBroughtIn()
+    public void HeroesWhoDieKeepOnlyWhatTheyBroughtIn()
     {
         GameSession session = TestRun.Start("""
             .........
@@ -55,15 +55,17 @@ public class RunResultsTests
             .........
             .........
             .........
-            """, new ScriptedDice(5, 1), cards: ["sword"]);
+            """, new ScriptedDice(5, 1, 1, 3), cards: ["sword"]);
         Hero hero = session.HeroInSeat();
         hero.AddToBackpack(new CardInstance(session.State.NextId(), TestContent.Catalog.GetCard("big_sword"), broughtInByHeroId: null));
         hero.Hearts = 1;
         session.EndRound();
+        hero.DeathMarks = 2;
+        session.Do(new RollKeel(hero.Id));
 
         HeroRunResult result = Assert.Single(RunResults.For(session.State));
 
-        Assert.Equal(HeroStatus.Downed, result.Status);
+        Assert.Equal(HeroStatus.Dead, result.Status);
         Assert.False(result.Won);
         Assert.Equal(0, result.Gold);
         Assert.Equal(["sword"], result.Equipped);
@@ -122,7 +124,7 @@ public class RunResultsTests
         Character character = Character.Create("Morgan", "moss", StatAllocation.None, content, DateTimeOffset.UnixEpoch);
         var stranger = new HeroRunResult
         {
-            HeroId = 1, CharacterId = Guid.NewGuid(), Name = "Wren", Seat = 0, Portrait = "", Status = HeroStatus.Downed, Won = false,
+            HeroId = 1, CharacterId = Guid.NewGuid(), Name = "Wren", Seat = 0, Portrait = "", Status = HeroStatus.Dead, Won = false,
             Kills = 0, Xp = 0, Gold = 0, DeepestFloor = 1, Equipped = [], Belt = [], Backpack = [],
         };
 

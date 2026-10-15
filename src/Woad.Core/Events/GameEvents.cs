@@ -78,8 +78,39 @@ public sealed record MonsterTurnSkipped(int MonsterId) : GameEvent;
 
 public sealed record HeroHealed(int HeroId, int Amount, int Hearts) : GameEvent;
 
-/// <summary>A hero hit 0 hearts and dropped everything they found this run.</summary>
-public sealed record HeroDowned(int HeroId, GridPosition Position, IReadOnlyList<int> DroppedCardIds) : GameEvent;
+/// <summary>A hero hit 0 hearts and is Keeling Over where they lie. <paramref name="Bane"/> is what brought them down.</summary>
+public sealed record HeroKeeledOver(int HeroId, GridPosition Position, string Bane) : GameEvent;
+
+/// <summary>
+/// A hero Keeling Over rolled for their life: the Keel Die; the Power Die its 6 rolls or the Doom Die
+/// its 1 rolls (<paramref name="BonusDie"/>); the banked Power Dice spent; and the Doom Dice allies
+/// left them. Then the marks gained and the totals.
+/// </summary>
+public sealed record KeelRolled(
+    int HeroId,
+    int Keel,
+    int? BonusDie,
+    IReadOnlyList<int> PowerFaces,
+    IReadOnlyList<int> DoomFaces,
+    int LifeGained,
+    int DeathGained,
+    int LifeMarks,
+    int DeathMarks) : GameEvent;
+
+/// <summary>An ally's Od Hand roll roused a hero Keeling Over: marks of life earned, and Doom Dice added to their next Keel roll.</summary>
+public sealed record HeroRoused(int HeroId, int ByHeroId, int LifeGained, int DoomDiceAdded, int LifeMarks, int DoomDiceOwed) : GameEvent;
+
+/// <summary>A monster's hit on a hero Keeling Over: a mark of death.</summary>
+public sealed record KeelerStruck(int HeroId, int AttackerId, int DeathMarks) : GameEvent;
+
+/// <summary>Three marks of life: the hero stands back up.</summary>
+public sealed record HeroStoodUp(int HeroId, int Hearts) : GameEvent;
+
+/// <summary>
+/// Three marks of death: the hero died. A tombstone stands where they fell, holding everything they
+/// found this run.
+/// </summary>
+public sealed record HeroDied(int HeroId, Tombstone Tombstone, IReadOnlyList<int> DroppedCardIds) : GameEvent;
 
 public sealed record CardUsed(int HeroId, int CardId, GridPosition? Target) : GameEvent;
 

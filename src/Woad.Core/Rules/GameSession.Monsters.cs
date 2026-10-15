@@ -15,7 +15,7 @@ public sealed partial class GameSession
 
         foreach (Room room in State.Rooms.Values.OrderBy(room => room.Id, StringComparer.Ordinal).ToList())
         {
-            if (!State.ActiveHeroesIn(room).Any())
+            if (!State.HeroesIn(room).Any())
             {
                 continue;
             }
@@ -50,7 +50,10 @@ public sealed partial class GameSession
             return;
         }
 
-        List<Hero> heroes = State.ActiveHeroesIn(room).ToList();
+        // Monsters go after heroes still standing; those Keeling Over only when nobody standing is in reach.
+        List<Hero> standing = State.ActiveHeroesIn(room).ToList();
+        List<Hero> keeling = State.HeroesIn(room).Where(hero => hero.IsKeelingOver).ToList();
+        List<Hero> heroes = standing.Count > 0 ? standing : keeling;
         if (heroes.Count == 0)
         {
             return;
@@ -61,7 +64,7 @@ public sealed partial class GameSession
 
         if (definition.Sweep is { } sweep && monster.TurnsTaken % sweep.Every == 0)
         {
-            List<Hero> swept = heroes.Where(hero => hero.Position.ChebyshevDistanceTo(monster.Position) <= sweep.Radius).ToList();
+            List<Hero> swept = standing.Where(hero => hero.Position.ChebyshevDistanceTo(monster.Position) <= sweep.Radius).ToList();
             if (swept.Count > 0)
             {
                 // One swing with every Attack die, which each hero in reach defends against.
@@ -78,9 +81,13 @@ public sealed partial class GameSession
             events.Add(new MonsterMoved(monster.Id, path));
         }
 
-        if (ChooseTarget(room, monster, monster.Position, heroes) is { } target)
+        if (ChooseTarget(room, monster, monster.Position, standing) is { } target)
         {
             MonsterAttacks(room, monster, target, events);
+        }
+        else if (ChooseTarget(room, monster, monster.Position, keeling) is { } keeler)
+        {
+            StrikeKeeler(room, monster, keeler, events);
         }
     }
 
@@ -96,7 +103,7 @@ public sealed partial class GameSession
     private bool CanMonsterEnter(Room room, Monster monster, GridPosition position) =>
         room.Layout[position].IsWalkable(monster.Definition.Flying)
         && (room.MonsterAt(position) is not { } other || other == monster)
-        && !State.ActiveHeroesIn(room).Any(hero => hero.Position == position);
+        && !State.HeroesIn(room).Any(hero => hero.Position == position);
 
     /// <summary>Steps toward the nearest tile it can attack from, stopping as soon as it can attack.</summary>
     private IReadOnlyList<GridPosition> PlanAdvance(Room room, Monster monster, IReadOnlyList<Hero> heroes)

@@ -53,7 +53,7 @@ Stats are expressed directly as dice and points. Gear cards add to them.
 | Wend (boot) | d6 for moving each turn; each move uses one or more | 1 | Gear only (e.g. boots) |
 | Wend bonus | Tiles added to one move per turn (shown as the "+2" in "Wend 1d6+2"; the editor calls it Wend) | 2 | 2 per point |
 | Rumble (fist) | d6 for attacking each turn; each attack uses one or more | 1 | 3 per die |
-| Od Hand (hamsa) | d6 each turn for picking locks, searching, disarming traps and stealing | 1 | 3 per die |
+| Od Hand (hamsa) | d6 each turn for picking locks, searching, disarming traps, stealing and rousing allies Keeling Over | 1 | 3 per die |
 | Tools | Fixed value added to one Od Hand roll per turn | 0 | Gear only (Lockpicks) |
 | Defense | d6 rolled, all of them, whenever you're attacked | 1 | 3 per die |
 | Weapon | Fixed value added to one attack per turn | 0 | Gear only (weapons) |
@@ -205,6 +205,7 @@ when the total reaches its number:
 | **Search** | **Search** button: reveals everything in the room your total reaches | Secret doors 4 + floor; traps 3 + floor; stashes 5 + floor |
 | **Disarm** | Click a trap you've found: on a tile or chest next to you, or your own doorway | 3 + floor |
 | **Steal** | **Steal** button, then an adjacent monster or hero; once a turn | Beat their roll: a monster's defense dice, a hero's Od Hand dice and tools |
+| **Rouse** | Click an ally Keeling Over next to you (diagonals too) | Every 6 of the total is a mark of life; every die showing 1 is a Doom Die on their next Keel roll (see [Keeling Over](#loot-keeling-over-and-winning)) |
 
 - **Stealing from a monster** (once per monster): a key (40% *(tunable)*) or a card from the loot deck.
 - **Stealing from a hero:** one of their keys or backpack cards at random. Not equipped gear, belt items
@@ -216,13 +217,13 @@ when the total reaches its number:
 
 - **Keys** are a counter, like gold, and don't take backpack space. They turn up when a monster falls
   (15%), in pots (10%), on the floor when a room is cleared (35%), in hidden stashes, and by stealing.
-  A key opens one locked door or chest; using it is free. Downed heroes drop their keys.
+  A key opens one locked door or chest; using it is free. Heroes who die drop their keys at their tombstone.
 - **Locked doors** (some doors on each floor): use a key or pick the lock. Once open, they stay open.
 - **Locked chests** (iron-bound): use a key or pick the lock, then open as usual. They hold **two** cards,
   dealt as if from a floor deeper.
 - **The Boss Door** is the only way into the boss room. Only the **Boss Key** opens it, and it can't be
   picked. The Boss Key lies in the crimson-banded chest of the last floor's **vault**, guarded by the
-  **Key Warden** miniboss; the vault is always reachable through ordinary doors. A downed hero drops the key.
+  **Key Warden** miniboss; the vault is always reachable through ordinary doors. A hero who dies drops the key at their tombstone.
 - **Secret doors** link some neighboring rooms. They're hidden (not drawn, not on the map) until a search
   finds them; then they're ordinary doors.
 - **Cracked walls** are walls a bomb's blast breaks. Some stand inside rooms with a stash sealed inside;
@@ -255,8 +256,8 @@ when the total reaches its number:
 - **Friendly fire** (a switch on the party screen, off by default, kept for Play again): blasts also
   catch heroes and companions in range, the thrower included, and you can attack and shove other
   heroes and companions in reach just like monsters (click them; Shove works on them too). Each
-  defends with their own Defense dice and armor. A hero downed this way is downed as by a monster:
-  no kill or XP for the attacker. The top bar shows **FF** while it's on.
+  defends with their own Defense dice and armor. A hero brought to 0 hearts this way Keels Over as if by a
+  monster: no kill or XP for the attacker. The top bar shows **FF** while it's on.
 - **Hidden stashes** hold a key or a card, spilled onto the floor when found.
 
 ### Monsters (first theme)
@@ -327,7 +328,7 @@ file under `Themes/`.
   cuts to each room where something happens.
 - **Seeds:** every run has one. The same seed and party size always build the same dungeon.
 
-## Loot, downed players and winning
+## Loot, Keeling Over and winning
 
 - **Chests** deal from the theme's loot deck. Some cards are marked with a minimum floor (better
   weapons and armor from floor 2, the Golden Idol on floor 3). Those stay in the deck until a chest on a
@@ -339,14 +340,32 @@ file under `Themes/`.
 - **Found items:** cards found during a run are tagged as found.
 - **XP** *(tunable)*: each monster's XP goes to whoever defeats it (slime 2, guards 4, skeleton 5, Iron
   Warden 25). Reaching a floor for the first time gives 5, and escaping gives 10.
-- **Downed players:** a player reduced to 0 hearts is downed for the rest of the run. Everything they found
-  this run drops as a loot pile that anyone can pick up (an action). They keep the gear they brought in and
-  their XP.
+- **Keeling Over:** a hero or companion reduced to 0 hearts falls where they stand (X's for eyes) and
+  is **Keeling Over**. They keep everything they carry and still take their turns, but all they can do
+  is roll the **Keel Die** (the End turn button becomes **Roll Keel Die**):
+  - **6:** a mark of life, and a **Power Die** is rolled at once: another mark of life on a 6.
+  - **1:** a mark of death, and a **Doom Die** is rolled at once: another mark of death on a 1.
+  - **Banked Power Dice** can be added to the roll (select them first). Their 6s are marks of life;
+    their 1s do nothing.
+  - **Three marks of life:** they stand back up with 1 heart (and their turn ends). **Three marks of
+    death:** they die. Reaching both at once, life wins. Marks start over each time someone keels over.
+  - **Rousing:** a standing ally next to them (diagonals too) can click them to roll Od Hand dice for
+    them, like a search: not the action. Every 6 of the total (tools and Power Dice included) is a mark
+    of life, and every die showing 1 adds a Doom Die to their next Keel roll. Three marks stand them up
+    at once.
+  - **Monsters** go after heroes still standing. A monster with nobody standing in reach strikes at
+    someone Keeling Over (one attack with all its dice, defended as usual); a hit is a mark of death.
+  - **Death:** a hero who dies is out of the run. A **tombstone** marks the spot ("Here lies Bran" or
+    "RIP Bran", with what killed them: "Slain by a Goblin", "Drowned", "Impaled on spikes"...). It holds
+    everything they found this run and their keys, for anyone to pick up (looting, as usual); it doesn't
+    block movement or sight. They keep the gear they brought in and their XP.
 - **Exit:** beating the boss opens the exit, and stepping onto it escapes.
-- **End of the run:** when every player has escaped or been downed. Companions don't keep a run going (see [Companions](#companions)).
+- **End of the run:** when every player has escaped or died. A player Keeling Over keeps the run going:
+  the others, and the monsters, play on. Companions don't keep a run going (see [Companions](#companions)).
 - **Winner:** the escaped player with the highest treasure value. Ties go to the player with more kills.
 - **Rewards:** everyone keeps their XP. Escaped players keep everything they carried out, and treasure
-  becomes the character's gold. Downed players keep only the gear they brought in that they still hold.
+  becomes the character's gold. Players who died keep only the gear they brought in that they still hold.
+  Dying only loses the run: the character lives on in the roster.
   Single-use cards used up during the run are gone. Spending gold comes after the MVP.
 - **Results screen:** when a run ends, results are saved automatically and the game moves to a results
   screen. It shows the winner(s), and for each hero how the run ended, kills, XP and any level-up, and
@@ -370,14 +389,18 @@ them up there like any character.
   - **Hold:** stays on the tile it stood on when told, attacking what comes within reach.
   - **Fight:** goes after the monsters in the room; follows you once it's clear.
   - **Stay back:** keeps away from monsters near you, striking only when one is right next to it.
+  - **Tend:** goes to allies Keeling Over in the room, even mid-fight, and rouses them; otherwise follows.
+  - Under any order, a companion rouses an ally Keeling Over right beside it, and (except when holding)
+    goes to one once the room is clear. Keeling Over itself, it rolls its own Keel Die.
 - **What companions don't do:** loot, open chests, smash pots, unlock, search or steal. They keep
   out of doorways, the stairs, the exit, loot and the spots beside unopened chests when they have
-  nowhere to be. If their owner is downed or gone, they follow the first player still in.
+  nowhere to be. If their owner is dead or gone, they follow the first player still in.
 - **Monster scaling:** a companion counts as half a hero (rounded up) when sizing rooms and the boss.
-- **End of the run:** the run ends once every player is downed or out. When a player escapes, their
-  companions in the same room escape with them. Companions still inside are left behind: like a
-  downed hero, they lose what they found and keep the gear they brought and their XP.
-- **Downed:** a downed companion sits out the rest of the run, like a hero. Reviving comes later.
+- **End of the run:** the run ends once every player has died or escaped. When a player escapes, their
+  companions standing in the same room escape with them. Companions still inside (Keeling Over
+  included) are left behind: like a hero who died, they lose what they found and keep the gear they
+  brought and their XP.
+- **Keeling Over:** companions keel over and can die just like heroes (see [Keeling Over](#loot-keeling-over-and-winning)).
 
 ## Persistence
 
@@ -427,7 +450,7 @@ them up there like any character.
   font for readability.
 - **Dice:** dice jitter and spin as they tumble, then land with a small pop. Successful faces glow gold.
 - **Sound:** synthesized 8-bit effects for buttons, dice, footsteps, hits, blocks, defeats, healing,
-  coins, chests, pots, doors, stairs, turns, the monsters' phase, being downed and victory.
+  coins, chests, pots, doors, stairs, turns, the monsters' phase, keeling over, dying and victory.
 - **Music:** synthesized chiptune songs that crossfade with the action: a title theme for the menus,
   a dungeon theme during a run, a boss theme while a hero shares a room with a living boss, and a
   short victory or defeat tune on the results screen. **Settings** on the main menu has music and
@@ -465,7 +488,7 @@ Woad (Godot project, repo root)          Woad.Core (src/, pure C#, no Godot)
 | M2 | Playable room ✅ | One room in Godot: mouse move/attack, dice tray, hot-seat turns, enemy phase |
 | M3 | Characters ✅ | Main menu, point-buy creation, character list, JSON save/load, run setup for 1–4 players (later 1–8) |
 | M4 | Dungeon ✅ | 3 procedural floors, room templates, doors, splitting up, fog, minimap, stairs, boss, exit |
-| M5 | Loot & scoring ✅ | Loot deck, chests, drops, downed loot piles, results screen, rewards persisted |
+| M5 | Loot & scoring ✅ | Loot deck, chests, drops, tombstone loot, results screen, rewards persisted |
 | M6 | Theme pass ✅ | Original placeholder art for the first theme, gothic UI frames, SFX, dice animation |
 
 ## Out of scope for the MVP
@@ -483,7 +506,7 @@ These defaults were not covered in the kickoff questions:
    and defend with 1d6 + 2 (Buckler).
 3. The **belt** holds 2 consumables, and using one doesn't take your action.
 4. **No friendly fire at all**, including bombs.
-5. Downed players **sit out** the rest of the run. There is no revive in the MVP.
+5. Players at 0 hearts **Keel Over** and can be roused or stand up again; three marks of death kill them for the run.
 6. Monsters **can't follow** players into other rooms.
 7. Carried-out gear persists **without a cap**, and dungeon difficulty scales to compensate.
 8. **Saving a run in progress** is not part of the MVP. A run is about 45–60 minutes.

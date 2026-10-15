@@ -100,15 +100,18 @@ public class CompanionTests
             .........
             .........
             2........
-            """, new ScriptedDice(5, 1), heroes: 2, owners: PlayerAndCompanion);
+            """, new ScriptedDice(5, 1, 1, 3), heroes: 2, owners: PlayerAndCompanion);
         Hero player = session.HeroInSeat(0);
         Hero companion = session.HeroInSeat(1);
         companion.AddToBackpack(new CardInstance(session.State.NextId(), TestContent.Catalog.GetCard("coin"), broughtInByHeroId: null));
         player.Hearts = 1;
+        session.EndRound();
+        Assert.Equal(RunPhase.InProgress, session.State.Phase);
+        player.DeathMarks = 2;
 
-        IReadOnlyList<GameEvent> events = session.EndRound();
+        IReadOnlyList<GameEvent> events = session.Do(new RollKeel(player.Id));
 
-        Assert.Equal(HeroStatus.Downed, player.Status);
+        Assert.Equal(HeroStatus.Dead, player.Status);
         Assert.Equal(HeroStatus.Active, companion.Status);
         Assert.IsType<RunEnded>(events[^1]);
         HeroRunResult left = RunResults.For(session.State).Single(result => result.HeroId == companion.Id);
