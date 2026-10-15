@@ -63,7 +63,20 @@ public sealed record RoomFeatures
 
     /// <summary>Keys lying on the floor from the start.</summary>
     public IReadOnlyDictionary<GridPosition, int> Keys { get; init; } = new Dictionary<GridPosition, int>();
+
+    /// <summary>Locked gates in a wall dividing the room, and the Od Hand needed to pick each.</summary>
+    public IReadOnlyDictionary<GridPosition, int> Gates { get; init; } = new Dictionary<GridPosition, int>();
+
+    /// <summary>Secret ways through a wall dividing the room, and the search needed to find each.</summary>
+    public IReadOnlyDictionary<GridPosition, int> HiddenGates { get; init; } = new Dictionary<GridPosition, int>();
 }
+
+/// <summary>
+/// A breach: the cracked edge tiles <paramref name="TileA"/> of room <paramref name="RoomA"/> and
+/// <paramref name="TileB"/> of its neighbor <paramref name="RoomB"/>, facing each other. Breaking either
+/// breaks both, opening a way between the rooms.
+/// </summary>
+public sealed record BreachSetup(string RoomA, GridPosition TileA, string RoomB, GridPosition TileB);
 
 /// <summary>
 /// How the door on <paramref name="Side"/> of room <paramref name="RoomId"/> starts: locked,
@@ -88,6 +101,9 @@ public sealed record RunSetup
 
     /// <summary>Doors that aren't plain open doors (each listed from one side only).</summary>
     public IReadOnlyList<PassageSetup> Passages { get; init; } = [];
+
+    /// <summary>Cracked edge walls between neighboring rooms that a bomb can open.</summary>
+    public IReadOnlyList<BreachSetup> Breaches { get; init; } = [];
 
     /// <summary>Heroes can hurt each other: blasts catch them, and they can attack and shove one another.</summary>
     public bool FriendlyFire { get; init; }

@@ -12,7 +12,7 @@ public sealed partial class GameSession
     {
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
-        if (room.Layout[hero.Position] != TileKind.StairsDown)
+        if (room.Layout[hero.Position] is not (TileKind.StairsDown or TileKind.StairsUp))
         {
             return "Stand on the stairs first.";
         }
@@ -20,6 +20,11 @@ public sealed partial class GameSession
         if (CheckCanMove(1) is { } error)
         {
             return error;
+        }
+
+        if (room.Layout[hero.Position] == TileKind.StairsUp)
+        {
+            return ClimbStairs(hero, room, events);
         }
 
         Room? arrival = State.Rooms.Values.FirstOrDefault(other => other.Floor == room.Floor + 1 && other.Role == RoomRole.Arrival);
@@ -46,6 +51,26 @@ public sealed partial class GameSession
             ReachNewFloor(hero, arrival.Floor, events);
         }
 
+        return null;
+    }
+
+    /// <summary>Back up the stairs to the floor above: onto (or beside) the stairs down there. Costs 1 movement.</summary>
+    private string? ClimbStairs(Hero hero, Room room, List<GameEvent> events)
+    {
+        Room? above = State.Rooms.Values
+            .Where(other => other.Floor == room.Floor - 1 && other.TilesOfKind(TileKind.StairsDown).Any())
+            .OrderBy(other => other.MapPosition == room.MapPosition ? 0 : 1)
+            .FirstOrDefault();
+        if (above is null || LandingNear(above, above.TilesOfKind(TileKind.StairsDown).First()) is not { } landing)
+        {
+            return "The way up is blocked.";
+        }
+
+        hero.RoomId = above.Id;
+        hero.Position = landing;
+        Turn.MovementPoints -= 1;
+        Turn.HasMoved = true;
+        events.Add(new HeroAscended(hero.Id, room.Id, above.Id, above.Floor, landing));
         return null;
     }
 

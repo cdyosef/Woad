@@ -12,6 +12,9 @@ public sealed class Room
     private readonly Dictionary<GridPosition, Trap> _traps = [];
     private readonly Dictionary<GridPosition, Trap> _chestTraps = [];
     private readonly Dictionary<GridPosition, int> _chestLocks = [];
+    private readonly Dictionary<GridPosition, int> _gates = [];
+    private readonly Dictionary<GridPosition, int> _hiddenGates = [];
+    private readonly Dictionary<GridPosition, (string RoomId, GridPosition Tile)> _breaches = [];
     private readonly HashSet<GridPosition> _superiorChests = [];
     private readonly HashSet<GridPosition> _bossKeyChests = [];
     private readonly Dictionary<GridPosition, Cache> _caches = [];
@@ -94,6 +97,18 @@ public sealed class Room
     /// <summary>The Od Hand needed to pick a chest's lock, or null when it isn't locked.</summary>
     public int? ChestLockAt(GridPosition position) => _chestLocks.TryGetValue(position, out int difficulty) ? difficulty : null;
 
+    /// <summary>Locked gates in walls that divide the room, and the Od Hand needed to pick each.</summary>
+    public IReadOnlyDictionary<GridPosition, int> Gates => _gates;
+
+    /// <summary>Secret ways through walls that divide the room, not yet found, and the search each needs.</summary>
+    public IReadOnlyDictionary<GridPosition, int> HiddenGates => _hiddenGates;
+
+    /// <summary>
+    /// Edge tiles that open into a neighboring room once their cracked wall is broken: where each leads
+    /// (the room, and the facing tile there).
+    /// </summary>
+    public IReadOnlyDictionary<GridPosition, (string RoomId, GridPosition Tile)> Breaches => _breaches;
+
     /// <summary>A chest that was locked holds better loot.</summary>
     public bool IsSuperiorChest(GridPosition position) => _superiorChests.Contains(position);
 
@@ -162,6 +177,31 @@ public sealed class Room
     }
 
     internal void UnlockChest(GridPosition position) => _chestLocks.Remove(position);
+
+    /// <summary>A locked gate on a wall that divides the room: a <see cref="TileKind.Gate"/> tile until opened.</summary>
+    internal void LockGate(GridPosition position, int difficulty)
+    {
+        Layout.Set(position, TileKind.Gate);
+        _gates[position] = difficulty;
+    }
+
+    /// <summary>A secret way through a wall dividing the room: it looks like wall until a search finds it.</summary>
+    internal void HideGate(GridPosition position, int difficulty)
+    {
+        Layout.Set(position, TileKind.Wall);
+        _hiddenGates[position] = difficulty;
+    }
+
+    /// <summary>An unlocked gate, or a found secret way, becomes open floor.</summary>
+    internal void OpenGate(GridPosition position)
+    {
+        _gates.Remove(position);
+        _hiddenGates.Remove(position);
+        Layout.Set(position, TileKind.Floor);
+    }
+
+    /// <summary>A cracked edge tile that, once broken, opens into <paramref name="tile"/> of the neighboring room.</summary>
+    internal void AddBreach(GridPosition position, string roomId, GridPosition tile) => _breaches[position] = (roomId, tile);
 
     internal void PutBossKeyInChest(GridPosition position) => _bossKeyChests.Add(position);
 

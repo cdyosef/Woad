@@ -3,6 +3,7 @@ using Woad.Core.Commands;
 using Woad.Core.Content;
 using Woad.Core.Grid;
 using Woad.Core.Model;
+using Woad.Core.Rules;
 using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Game;
@@ -32,6 +33,21 @@ public partial class GameScreen
         }
 
         Room room = ShownRoom;
+        if (_leaping)
+        {
+            if (_session.GetLeapTargets().Contains(tile))
+            {
+                Execute(new Leap(hero.Id, tile));
+            }
+            else
+            {
+                _leaping = false;
+                RefreshPanels();
+            }
+
+            return;
+        }
+
         if (_shoving)
         {
             int? shovedId = room.MonsterAt(tile)?.Id ?? _session.State.ActiveHeroesIn(room).FirstOrDefault(other => other.Position == tile && other != hero)?.Id;
@@ -91,6 +107,18 @@ public partial class GameScreen
 
             Execute(new AttackAlly(hero.Id, ally.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
         }
+        else if (room.Layout[tile] == TileKind.Gate)
+        {
+            // A locked gate: a key opens it, otherwise pick the lock.
+            if (hero.Keys > 0)
+            {
+                Execute(new OpenGate(hero.Id, tile));
+            }
+            else
+            {
+                ExecuteOdHand((heroId, dice, tools, power) => new PickLock(heroId, tile, dice, tools, power));
+            }
+        }
         else if (room.Layout[tile] == TileKind.Chest)
         {
             ClickChest(hero, room, tile);
@@ -119,10 +147,6 @@ public partial class GameScreen
         else if (tile == hero.Position)
         {
             UseOwnTile(hero, room);
-        }
-        else if (!_session.GetReachableTiles().ContainsKey(tile) && _session.GetJumpLandings().Contains(tile))
-        {
-            Execute(new JumpPit(hero.Id, tile));
         }
         else if (turn.MovementPoints == 0)
         {
@@ -178,7 +202,11 @@ public partial class GameScreen
         {
             Execute(new PickUpLoot(hero.Id));
         }
-        else if (room.Layout[hero.Position] == TileKind.StairsDown)
+        else if (room.Breaches.ContainsKey(hero.Position) && room.Layout[hero.Position] != TileKind.CrackedWall)
+        {
+            Execute(new GoThroughBreach(hero.Id));
+        }
+        else if (room.Layout[hero.Position] is TileKind.StairsDown or TileKind.StairsUp)
         {
             Execute(new TakeStairs(hero.Id));
         }
@@ -258,6 +286,11 @@ public partial class GameScreen
             return "Shove: click a monster next to you (orange) to push it a tile. Right-click to cancel.";
         }
 
+        if (_leaping)
+        {
+            return $"Leap: click a purple tile up to {GameRules.MaxLeap} away. You roll a Wend die as you jump and carry half the roll. Right-click to cancel.";
+        }
+
         if (_targeting)
         {
             return "Click an orange tile to aim. Right-click cancels.";
@@ -319,26 +352,34 @@ public partial class GameScreen
         {
             TileKind.Chest when room.IsChestOpened(tile) => "An empty chest.",
             TileKind.Chest => DescribeChest(room, tile),
+            TileKind.CrackedWall when room.Breaches.ContainsKey(tile) => "A cracked wall in the edge of the room. A bomb's blast would break through into the room next door.",
             TileKind.CrackedWall => "A cracked wall. A bomb's blast would break it, and something may be sealed inside.",
             TileKind.Pot => "A clay pot. Stand next to it and click to smash it: coins, a heart, or nothing.",
             TileKind.Wall => "A stone pillar.",
             TileKind.Pit when room.BelowRoomId is not null =>
-                "A pit: the room below shows far down. Fall in (or be shoved) and you drop to it, losing a heart. Jump it: 2 steps, 4+ on a die.",
-            TileKind.Pit => "A bottomless pit. Fall in and you lose a heart climbing out; a monster shoved in is gone. Jump it: 2 steps, 4+ on a die.",
+                "A pit: the room below shows far down. Fall in (or be shoved) and you drop to it, losing a heart. Leap over it with a Wend die.",
+            TileKind.Pit => "A bottomless pit. Fall in and you lose a heart climbing out; a monster shoved in is gone. Leap over it with a Wend die.",
             TileKind.StairsDown => $"Stairs down to floor {room.Floor + 1}. Stand on them and click again to descend (1 step).",
+            TileKind.StairsUp => $"Stairs up to floor {room.Floor - 1}. Stand on them and click again to climb (1 step).",
+            TileKind.Rubble => "Rough ground: rubble. Each step onto it costs 2.",
+            TileKind.Gate => $"A locked gate. Next to it: click it to open it with a key, or to pick the lock with Od Hand ({room.Gates.GetValueOrDefault(tile)}+).",
+            _ when room.Breaches.ContainsKey(tile) => "A breach into the room next door: stand here and click again to go through (1 step).",
+            TileKind.ShallowWater => "Shallow water: wade through at 2 steps a tile.",
+            TileKind.DeepWater => "Deep water: swim at 2 steps a tile. End your turn here and a Rumble die keeps you afloat; with none left you drown back to shore and lose a heart. Monsters can't follow.",
             TileKind.Exit when bossAlive => "The way out, sealed until the boss here falls.",
             TileKind.Exit => "The way out! Stand on it and click again to escape with your treasure.",
             _ when DoorAt(room, tile) is { } side => DescribeDoor(room, side),
             _ => "",
         };
 
-        if (_session.GetReachableTiles().TryGetValue(tile, out int steps))
+        if (!_leaping && _session.GetReachableTiles().TryGetValue(tile, out int steps))
         {
             terrain = $"{UiTheme.Count(steps, "step", "steps")} away. {terrain}";
         }
-        else if (_session.GetJumpLandings().Contains(tile))
+        else if (_leaping && _session.GetLeapTargets().Contains(tile))
         {
-            terrain = $"Click to jump the pit to here: 2 steps, 4+ on a die, or you fall in. {terrain}";
+            int distance = ActiveHero!.Position.ChebyshevDistanceTo(tile);
+            terrain = $"Leap here: you need {distance * 2}+ on the die, or you come down short. {terrain}";
         }
 
         return terrain;
@@ -349,6 +390,11 @@ public partial class GameScreen
     private static string DescribeChest(Room room, GridPosition chest)
     {
         string trap = room.ChestTrapAt(chest) is { Revealed: true } needle ? $" A needle trap guards it (disarm {needle.Difficulty}+)." : "";
+        if (room.HoldsBossKey(chest))
+        {
+            return "The vault chest, banded in crimson: the Boss Key lies inside. Stand next to it and click it to open it.";
+        }
+
         return room.ChestLockAt(chest) is int difficulty
             ? $"A locked chest with better loot. Open it with a key, or pick the lock with Od Hand ({difficulty}+).{trap}"
             : $"A closed chest. Stand next to it and click it to open it.{trap}";
@@ -451,6 +497,7 @@ public partial class GameScreen
     {
         _stealing = false;
         _shoving = false;
+        _leaping = false;
         _selectedCardId = null;
         _targeting = false;
         _board.SetBlast([]);

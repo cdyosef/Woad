@@ -474,7 +474,8 @@ public class DungeonSecretsTests
         int bossKeys = state.Rooms.Values.Sum(room => (room.BossKeyAt is null ? 0 : 1) + room.TilesOfKind(TileKind.Chest).Count(room.HoldsBossKey));
         Assert.Equal(1, bossKeys);
         Room keyRoom = state.Rooms.Values.Single(room => room.BossKeyAt is not null || room.TilesOfKind(TileKind.Chest).Any(room.HoldsBossKey));
-        Assert.Equal((boss.Floor, RoomRole.Treasure), (keyRoom.Floor, keyRoom.Role));
+        Assert.Equal((boss.Floor, RoomRole.Vault), (keyRoom.Floor, keyRoom.Role));
+        Assert.True(Assert.Single(keyRoom.Monsters).Definition.Miniboss, "the vault's Boss Key is guarded by the miniboss");
 
         // Traps never split a room: it has as many separate areas with its traps as without.
         foreach (Room room in state.Rooms.Values)
@@ -513,7 +514,20 @@ public class DungeonSecretsTests
                     }
                 }
 
-                Assert.True(floor.All(room => reached.Contains(room.Id)), $"Seed {seed}, floor {floor.Key}: {string.Join(", ", floor.Where(room => !reached.Contains(room.Id)).Select(room => room.Id))} cut off.");
+                List<Room> needed = floor.Where(room => room.Role != RoomRole.Secret).ToList();
+                Assert.True(needed.All(room => reached.Contains(room.Id)), $"Seed {seed}, floor {floor.Key}: {string.Join(", ", needed.Where(room => !reached.Contains(room.Id)).Select(room => room.Id))} cut off.");
+
+                // A secret room hangs off one room by a secret door or cracked wall, holds nothing a run
+                // needs, and nothing falls into it.
+                foreach (Room secret in floor.Where(room => room.Role == RoomRole.Secret))
+                {
+                    Passage only = Assert.Single(secret.Passages.Values);
+                    Assert.Contains(only.Kind, new[] { PassageKind.Secret, PassageKind.Cracked });
+                    Assert.Equal(secret.Doors.Count, secret.Passages.Count);
+                    Assert.False(secret.BossKeyAt is not null || secret.TilesOfKind(TileKind.Chest).Any(secret.HoldsBossKey));
+                    Assert.Empty(secret.TilesOfKind(TileKind.StairsDown).Concat(secret.TilesOfKind(TileKind.Exit)));
+                    Assert.DoesNotContain(state.Rooms.Values, room => room.BelowRoomId == secret.Id);
+                }
 
                 // Found traps are walked around, so none sits beside a chest or pot where it could wall it off.
                 foreach (Room room in floor)

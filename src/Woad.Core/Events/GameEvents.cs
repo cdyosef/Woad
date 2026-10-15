@@ -112,8 +112,17 @@ public sealed record DoorUnlocked(int HeroId, string RoomId, Direction Side, boo
 /// <summary>A chest's lock opened, with a key or picked. It still has to be opened.</summary>
 public sealed record ChestUnlocked(int HeroId, GridPosition Chest, bool Picked) : GameEvent;
 
-/// <summary>A search turned things up: secret doors (by side), traps (tiles, chests and doors) and stashes.</summary>
-public sealed record SecretsFound(int HeroId, string RoomId, IReadOnlyList<Direction> Doors, IReadOnlyList<GridPosition> Traps, IReadOnlyList<GridPosition> Stashes) : GameEvent;
+/// <summary>
+/// A search turned things up: secret doors (by side), traps (tiles, chests and doors), stashes, and
+/// secret ways through a wall dividing the room (<paramref name="Gates"/>, now open).
+/// </summary>
+public sealed record SecretsFound(
+    int HeroId,
+    string RoomId,
+    IReadOnlyList<Direction> Doors,
+    IReadOnlyList<GridPosition> Traps,
+    IReadOnlyList<GridPosition> Stashes,
+    IReadOnlyList<GridPosition>? Gates = null) : GameEvent;
 
 public sealed record TrapDisarmed(int HeroId, GridPosition Target) : GameEvent;
 
@@ -154,6 +163,9 @@ public sealed record RunEnded(IReadOnlyList<int> WinnerHeroIds) : GameEvent;
 /// <summary>A hero went down the stairs. <paramref name="FirstTimeOnFloor"/> means Luck and charges were restored.</summary>
 public sealed record HeroDescended(int HeroId, string FromRoomId, string RoomId, int Floor, GridPosition Position, bool FirstTimeOnFloor) : GameEvent;
 
+/// <summary>A hero climbed the stairs back up to the floor above.</summary>
+public sealed record HeroAscended(int HeroId, string FromRoomId, string RoomId, int Floor, GridPosition Position) : GameEvent;
+
 public sealed record HeroEscaped(int HeroId, int TreasureValue) : GameEvent;
 
 /// <summary>The last monster in a room was defeated. A trap room's doors open again.</summary>
@@ -174,8 +186,8 @@ public sealed record CompanionOrdered(int OwnerId, int CompanionId, CompanionOrd
 /// <summary>A hero walked, fell or was shoved into a pit, or a monster was. A bottomless pit has no room below.</summary>
 public sealed record FellIntoPit(int EntityId, string RoomId, GridPosition Pit, bool Bottomless) : GameEvent;
 
-/// <summary>A hero who fell into a bottomless pit climbed back out.</summary>
-public sealed record ClimbedOut(int HeroId, GridPosition Position) : GameEvent;
+/// <summary>A hero who fell into a bottomless pit climbed back out, or a monster shoved into deep water scrambled out.</summary>
+public sealed record ClimbedOut(int EntityId, GridPosition Position) : GameEvent;
 
 /// <summary>A hero's shove pushed a monster (or, with friendly fire on, a hero) from one tile to the next.</summary>
 public sealed record Shoved(int HeroId, int TargetId, GridPosition From, GridPosition To) : GameEvent;
@@ -189,5 +201,18 @@ public sealed record MonsterTrapped(int MonsterId, TrapKind Kind, GridPosition P
 /// <summary>A monster fell through a pit or trap door into the room below.</summary>
 public sealed record MonsterFell(int MonsterId, string FromRoomId, string RoomId, GridPosition Position) : GameEvent;
 
-/// <summary>A hero tried to jump a pit: <paramref name="Roll"/> against the difficulty; cleared or fell in.</summary>
-public sealed record PitJumped(int HeroId, GridPosition From, GridPosition To, int Roll, int Difficulty, bool Cleared) : GameEvent;
+
+/// <summary>
+/// A hero leapt from <paramref name="From"/> toward <paramref name="Target"/>; the roll, halved, carried
+/// them to <paramref name="Landing"/> (short of the target if the roll fell short, or where they started on a 1).
+/// </summary>
+public sealed record Leaped(int HeroId, GridPosition From, GridPosition Target, int Roll, GridPosition Landing) : GameEvent;
+
+/// <summary>A hero ended their turn in deep water and spent a Rumble die to stay afloat.</summary>
+public sealed record StayedAfloat(int HeroId) : GameEvent;
+
+/// <summary>A hero ended their turn in deep water with no Rumble die to spare: they wash back to dry footing (and lose a heart).</summary>
+public sealed record Drowned(int HeroId, GridPosition From, GridPosition To) : GameEvent;
+
+/// <summary>A hero opened a locked gate inside a room: with a key, or <paramref name="Picked"/> with Od Hand.</summary>
+public sealed record GateOpened(int HeroId, string RoomId, GridPosition Gate, bool Picked) : GameEvent;

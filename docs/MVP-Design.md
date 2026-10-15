@@ -135,6 +135,13 @@ every room that holds at least one player. Rooms with no players stay paused.
      orthogonal; walls and monsters block, allies don't. Steps last the whole turn: you can attack,
      act or roll another move in between, and any steps left over are added to the next move. Only a
      sprung trap ends your movement early. A negative Wend bonus always applies to your first move.
+     **Rough ground** (rubble) and **water** cost 2 steps a tile. You can swim **deep water**, but if your
+     turn ends in it, one of your unused Rumble dice keeps you afloat; with none left you **drown**: you
+     lose a heart and wash back to the last shallow-water or dry tile you stood on.
+   - **Leaps (Wend):** press **Leap**, pick a tile up to 3 away in a straight line (diagonals too) and
+     commit; only then is one unused Wend die rolled. The leap carries half the roll, rounded down,
+     never past your target. It sails over pits, water, traps and figures, but not walls, chests or pots.
+     Coming down short over a pit drops you in; over water, you splash in; a 1 goes nowhere.
    - **Attacks (Rumble):** each attack uses one or more of your unused Rumble dice, plus your weapon's
      value on one attack per turn (only alongside at least one die). See [Combat](#combat).
    - **Od Hand checks:** each uses one or more of your unused Od Hand dice, plus your tools' value once a
@@ -157,7 +164,8 @@ facing door of the next room.
 - The attacker rolls the Rumble dice they chose and adds them up, plus their weapon's value if they
   used it.
 - The defender rolls all their Defense dice and adds their armor.
-- If the attack total is higher, the defender loses **1 heart**. Ties go to the defender.
+- If the attack total is higher, the defender loses **1 heart**. Ties go to the defender. The defender's line
+  in the dice tray, the log and the board say **Hit!** or **Miss!**.
 - Rolling dice together makes one attack more likely to land; splitting them gives more chances.
 - **Card attacks** (Flame Scroll, bomb) roll their own dice and don't use your Rumble dice. A bomb's
   single roll is compared with each monster's defense in the blast.
@@ -213,7 +221,8 @@ when the total reaches its number:
 - **Locked chests** (iron-bound): use a key or pick the lock, then open as usual. They hold **two** cards,
   dealt as if from a floor deeper.
 - **The Boss Door** is the only way into the boss room. Only the **Boss Key** opens it, and it can't be
-  picked. The Boss Key lies in a chest in the last floor's treasure room, and a downed hero drops it.
+  picked. The Boss Key lies in the crimson-banded chest of the last floor's **vault**, guarded by the
+  **Key Warden** miniboss; the vault is always reachable through ordinary doors. A downed hero drops the key.
 - **Secret doors** link some neighboring rooms. They're hidden (not drawn, not on the map) until a search
   finds them; then they're ordinary doors.
 - **Cracked walls** are walls a bomb's blast breaks. Some stand inside rooms with a stash sealed inside;
@@ -226,12 +235,22 @@ when the total reaches its number:
 - **Pits:** where a room lies underneath, its floor shows far down the pit; with nothing below (as on
   the last floor) the pit is black. You can walk into a pit: you lose a heart and drop into the room
   below, on the tile under the pit (or the nearest free one), or climb back out of a bottomless pit.
-  **Jump** a 1-tile pit to the tile beyond: 2 steps and a roll of 4+ on one die; miss and you fall in.
+  To cross one, find the bridge or **leap** it (see [Turn structure](#turn-structure)).
+- **Divided rooms:** some rooms have a wall across them with one way through. A **locked gate** opens
+  with a key or a picked lock (it may stand between you and a doorway, but can always be picked). A
+  **cracked wall** (with a stash inside) or a **secret way** (found by searching, with a stash beyond)
+  only ever closes off extras. Rooms you could drop into from above only get locked gates.
+- **Breaches:** some rooms that share an edge have a cracked wall in it, off the doorway. A bomb breaks
+  both sides; stand in the gap and click again to go through to the room next door (1 step).
+- **Secret rooms:** some floors have a room off one ordinary room, reached only through a secret door or
+  a cracked wall, with no other way in. It holds only extras (treasure, stashes), never anything a run
+  needs, and nothing drops into it from above.
 - **Shove:** roll Rumble dice (and the weapon) at an adjacent monster as for an attack; beat its
   defense and it's pushed one tile straight away from you (diagonally too) instead of hurt. Onto a
   trap, the trap goes off on it (spikes: 1 heart; trap door: it falls). Into a pit, it drops to the
   room below and loses a heart, or, bottomless, is gone for good (it counts as your kill). Bosses can't
-  be shoved, and the tile behind must be free floor, a trap or a pit. Flyers don't fall. Monsters
+  be shoved (nor the Key Warden), and the tile behind must be free floor, a trap, water or a pit. Flyers
+  don't fall; a monster shoved into deep water loses a heart and scrambles out. Monsters
   don't shove yet.
 - **Friendly fire** (a switch on the party screen, off by default, kept for Play again): blasts also
   catch heroes and companions in range, the thrower included, and you can attack and shove other
@@ -249,6 +268,7 @@ when the total reaches its number:
 | Spear Guard | 2 | 3 | 1d6+1 | 1d6+1 | Reach 2 in a straight line |
 | Archer Guard | 2 | 2 | 1d6+1 | 1d6+1 | Ranged 5; keeps its distance |
 | Skeleton | 2 | 3 | 1d6+1 | 1d6+1 | Rises again once unless finished by a bomb or spell |
+| **Miniboss: Key Warden** | 5 | 2 | 2d6+1 | 1d6+1 | Guards the Boss Key in the last floor's vault; can't be shoved |
 | **Boss: Iron Warden** | 8 | 3 | 2d6+1 | 1d6+1 | Every other turn, a flail sweep: one roll with all its dice against every hero within 2 |
 
 Monsters follow the same dice rules; the +1s are weapon and armor values. Each turn a monster splits its
@@ -272,8 +292,12 @@ file under `Themes/`.
   layouts without pits. A few extra doors between neighboring rooms add loops.
 - **Room roles:** the walk's first room is the Arrival room, which has no monsters. The room farthest
   from it holds the Stairs down (floors 1–2) or the Boss and Exit (floor 3), behind the Boss Door. A dead
-  end becomes the Treasure room (chests, one guard; on floor 3 it holds the Boss Key), and the rest are
-  Combat rooms.
+  end becomes the Treasure room (chests, one guard), on floor 3 another becomes the Vault (the Boss Key's
+  chest and the Key Warden), half the floors get a Secret room, and the rest are Combat rooms.
+- **Terrain:** some rooms get a patch of rubble; some have a wall dividing them, or a chasm (only where
+  pits lead somewhere, or on the last floor) or a deep stream across them with one crossing (a bridge or
+  a shallow ford); some neighbors get a breach in their shared edge. Every one is checked so that
+  doorways, stairs, the exit and monsters all stay reachable, on foot or through a locked gate.
 - **Room layouts** are handcrafted 9×9 text templates in the theme file (walls, pits, chests, stairs,
   exit, hero starts, monster spawn points, the boss). Each use is randomly rotated and mirrored. When
   content loads, every layout is checked: doorways are plain floor, and everything can be reached
@@ -295,7 +319,8 @@ file under `Themes/`.
   remain. Heroes outside can still come in to help.
 - **Clearing a room** restores 1 heart *(tunable)* to every hero in it.
 - **Stairs:** stand on them and click again to go down (1 step). You arrive in the next floor's
-  arrival room. Reaching a floor for the first time restores your Luck and recharges wands.
+  arrival room. Reaching a floor for the first time restores your Luck and recharges wands. Below the
+  first floor, the arrival room has **stairs up** that lead back to the stairs room above (1 step).
 - **Exit:** sealed until the boss in its room is defeated. Stand on it and click again to escape. Your
   turn ends, and you're out of the run with your treasure.
 - **Splitting up:** heroes can be on different rooms and floors. During the monsters' phase the view

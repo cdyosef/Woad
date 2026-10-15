@@ -10,7 +10,7 @@ namespace Woad.Core.Bots;
 /// Plays a companion's turn by its standing order (see <see cref="CompanionOrder"/>). Under any
 /// order it settles its rolls, drinks a potion when badly hurt and attacks what it can reach (staying
 /// back, only what's next to it). It follows its owner, or the first player still in the dungeon if
-/// the owner is gone: through open doors and down the stairs. It never loots, unlocks or searches;
+/// the owner is gone: through open doors and up or down the stairs. It never loots, unlocks or searches;
 /// that's left to the players.
 /// </summary>
 public static class CompanionBot
@@ -58,7 +58,7 @@ public static class CompanionBot
             return new GoThroughDoor(hero.Id, side);
         }
 
-        if (plan.Stairs && room.Layout[hero.Position] == TileKind.StairsDown && canStep)
+        if (plan.Stairs && room.Layout[hero.Position] is TileKind.StairsDown or TileKind.StairsUp && canStep)
         {
             return new TakeStairs(hero.Id);
         }
@@ -128,18 +128,14 @@ public static class CompanionBot
             return RouteTo(state, room, next => next.Id == leaderRoom.Id) is { } door ? new Plan { Door = door, Tile = door.DoorTile() } : Plan.Stay;
         }
 
-        if (leaderRoom.Floor < room.Floor)
-        {
-            return Plan.Stay;
-        }
-
-        // The leader went deeper: head down the stairs.
-        if (room.TilesOfKind(TileKind.StairsDown).Select(tile => (GridPosition?)tile).FirstOrDefault() is { } stairs)
+        // The leader is on another floor: head for the stairs down, or back up.
+        TileKind way = leaderRoom.Floor > room.Floor ? TileKind.StairsDown : TileKind.StairsUp;
+        if (room.TilesOfKind(way).Select(tile => (GridPosition?)tile).FirstOrDefault() is { } stairs)
         {
             return new Plan { Stairs = true, Tile = stairs };
         }
 
-        return RouteTo(state, room, next => next.TilesOfKind(TileKind.StairsDown).Any()) is { } toStairs
+        return RouteTo(state, room, next => next.TilesOfKind(way).Any()) is { } toStairs
             ? new Plan { Door = toStairs, Tile = toStairs.DoorTile() }
             : Plan.Stay;
     }
@@ -191,18 +187,22 @@ public static class CompanionBot
     }
 
     /// <summary>
-    /// A companion with nowhere to be steps off a doorway, the stairs, the exit, loot it won't pick up
-    /// and the spots beside unopened chests (unless told to hold there), so it doesn't stand in its
-    /// party's way.
+    /// A companion with nowhere to be steps off a doorway, the stairs, the exit, loot it won't pick up,
+    /// and the spots beside locked gates and unopened chests (unless told to hold there), so it doesn't
+    /// stand in its party's way.
     /// </summary>
     private static GameCommand? LeaveTheWay(GameSession session, Hero hero, Room room, Plan plan)
     {
+        // Beside a locked gate matters even mid-fight: the monsters may be beyond it.
+        bool BesideGate(GridPosition at) => at.OrthogonalNeighbors().Any(next => next.IsInRoom && room.Layout[next] == TileKind.Gate);
         bool InTheWay(GridPosition at) =>
-            room.Layout[at] is TileKind.StairsDown or TileKind.Exit
+            room.Layout[at] is TileKind.StairsDown or TileKind.StairsUp or TileKind.Exit
             || room.Doors.Keys.Any(side => side.DoorTile() == at)
             || room.HasLootAt(at)
+            || BesideGate(at)
             || at.OrthogonalNeighbors().Any(next => next.IsInRoom && room.Layout[next] == TileKind.Chest && !room.IsChestOpened(next));
-        if (plan.Door is not null || plan.Stairs || hero.Order == CompanionOrder.Hold || room.Monsters.Count > 0 || !InTheWay(hero.Position))
+        if (plan.Door is not null || plan.Stairs || hero.Order == CompanionOrder.Hold || !InTheWay(hero.Position)
+            || (room.Monsters.Count > 0 && !BesideGate(hero.Position)))
         {
             return null;
         }

@@ -339,6 +339,11 @@ public partial class GameScreen : Control
                 await _banner.Flash($"Floor {descended.Floor}", Palette.TrimBright, 0.5);
                 break;
 
+            case HeroAscended ascended:
+                await ChangeRoom(ascended.HeroId, ascended.RoomId, ascended.Position);
+                await _banner.Flash($"Back to floor {ascended.Floor}", Palette.TrimBright, 0.5);
+                break;
+
             case HeroFell fell:
                 await ChangeRoom(fell.HeroId, fell.RoomId, fell.Position);
                 await _banner.Flash($"Fell to floor {fell.Floor}", Palette.Danger, 0.5);
@@ -350,7 +355,7 @@ public partial class GameScreen : Control
                 break;
 
             case ClimbedOut climbed:
-                await Walk(climbed.HeroId, [climbed.Position]);
+                await Walk(climbed.EntityId, [climbed.Position]);
                 break;
 
             case Shoved shoved:
@@ -379,10 +384,29 @@ public partial class GameScreen : Control
                 await RemoveFigure(fell.MonsterId);
                 break;
 
-            case PitJumped jump:
-                await _dice.ShowRoll($"{NameOf(jump.HeroId)} jumps ({jump.Difficulty}+)", new DiceRoll([jump.Roll]), 0, newGroup: true);
-                _dice.ShowOutcome(jump.Cleared);
-                await Walk(jump.HeroId, [jump.Cleared ? jump.To : new GridPosition((jump.From.X + jump.To.X) / 2, (jump.From.Y + jump.To.Y) / 2)]);
+            case Leaped leap:
+                await _dice.ShowRoll($"{NameOf(leap.HeroId)} leaps ({leap.From.ChebyshevDistanceTo(leap.Target) * 2}+)", new DiceRoll([leap.Roll]), 0, newGroup: true);
+                _dice.ShowOutcome(leap.Landing == leap.Target);
+                await Walk(leap.HeroId, [leap.Landing]);
+                if (leap.Landing != leap.Target && _figures.TryGetValue(leap.HeroId, out Figure? leaper) && leaper.RoomId == _shownRoomId)
+                {
+                    _board.FloatText(leap.Landing, "short!", Palette.Danger);
+                }
+
+                break;
+
+            case StayedAfloat afloat when _figures.TryGetValue(afloat.HeroId, out Figure? swimmer) && swimmer.RoomId == _shownRoomId:
+                _board.FloatText(swimmer.Position, "-1 Rumble: afloat", Palette.Heal);
+                await Pause(0.3);
+                break;
+
+            case Drowned drowned:
+                if (_figures.TryGetValue(drowned.HeroId, out Figure? drowning) && drowning.RoomId == _shownRoomId)
+                {
+                    _board.FloatText(drowned.From, "drowning!", Palette.Danger);
+                }
+
+                await Walk(drowned.HeroId, [drowned.To]);
                 break;
 
             case OdHandRolled rolled:
@@ -391,7 +415,7 @@ public partial class GameScreen : Control
                 await _dice.ShowRoll($"{NameOf(rolled.HeroId)} {OdHandCaption(rolled.Kind)}{goal}", rolled.Roll, rolled.Bonus, newGroup: true, rolled.PowerDice);
                 break;
 
-            case DoorUnlocked or ChestUnlocked or TrapDisarmed or Stole:
+            case DoorUnlocked or ChestUnlocked or TrapDisarmed or Stole or GateOpened:
                 _dice.ShowOutcome(true);
                 _board.QueueRedraw();
                 break;
@@ -408,7 +432,7 @@ public partial class GameScreen : Control
 
             case SecretsFound found:
                 _board.QueueRedraw();
-                foreach (GridPosition spot in found.Traps.Concat(found.Stashes).Concat(found.Doors.Select(side => side.DoorTile())))
+                foreach (GridPosition spot in found.Traps.Concat(found.Stashes).Concat(found.Gates ?? []).Concat(found.Doors.Select(side => side.DoorTile())))
                 {
                     _board.FloatText(spot, "found!", Palette.TrimBright);
                 }
@@ -576,7 +600,7 @@ public partial class GameScreen : Control
                 Sfx.Play("pot");
                 Sfx.Play(smashed.CardId is not null ? "coin" : smashed.HeartsRestored > 0 ? "heal" : "click");
                 break;
-            case HeroEnteredRoom or DoorUnlocked:
+            case HeroEnteredRoom or DoorUnlocked or GateOpened:
                 Sfx.Play("door");
                 break;
             case OdHandRolled:
@@ -588,7 +612,7 @@ public partial class GameScreen : Control
             case CheckFailed:
                 Sfx.Play("block", 0.8f);
                 break;
-            case SecretsFound { Doors.Count: > 0 } or SecretsFound { Traps.Count: > 0 } or SecretsFound { Stashes.Count: > 0 }:
+            case SecretsFound { Doors.Count: > 0 } or SecretsFound { Traps.Count: > 0 } or SecretsFound { Stashes.Count: > 0 } or SecretsFound { Gates.Count: > 0 }:
                 Sfx.Play("heal");
                 break;
             case TrapSprung:
@@ -600,7 +624,7 @@ public partial class GameScreen : Control
             case FellIntoPit:
                 Sfx.Play("stairs", 0.6f);
                 break;
-            case Shoved or PitJumped { Cleared: true }:
+            case Shoved or Leaped:
                 Sfx.Play("block", 1.3f);
                 break;
             case ShoveResisted:
@@ -618,7 +642,7 @@ public partial class GameScreen : Control
             case BossKeyFound:
                 Sfx.Play("treasure");
                 break;
-            case HeroDescended:
+            case HeroDescended or HeroAscended:
                 Sfx.Play("stairs");
                 break;
             case HeroDowned:
@@ -674,12 +698,14 @@ public partial class GameScreen : Control
         OdHandRolled rolled => FigureRoom(rolled.HeroId),
         TrapSprung sprung => FigureRoom(sprung.HeroId),
         FellIntoPit fell => fell.RoomId,
-        ClimbedOut climbed => FigureRoom(climbed.HeroId),
+        ClimbedOut climbed => FigureRoom(climbed.EntityId),
         Shoved shoved => FigureRoom(shoved.TargetId),
         ShoveResisted resisted => FigureRoom(resisted.TargetId),
         MonsterTrapped trapped => FigureRoom(trapped.MonsterId),
         MonsterFell fell => fell.FromRoomId,
-        PitJumped jump => FigureRoom(jump.HeroId),
+        Leaped leap => FigureRoom(leap.HeroId),
+        StayedAfloat afloat => FigureRoom(afloat.HeroId),
+        Drowned drowned => FigureRoom(drowned.HeroId),
         SecretsFound found => found.RoomId,
         WallBroken broken => broken.RoomId,
         KeysAppeared keys => keys.RoomId,

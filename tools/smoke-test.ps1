@@ -2,7 +2,7 @@
 .SYNOPSIS
     Builds Woad, runs the rules-engine tests, then runs the game headless six times: clicking
     through the menus (--menutest), pushing real mouse clicks through a room (--uitest), through
-    a door and down stairs (--floortest), shoving a monster into a pit and jumping it (--hazardtest)
+    a door and down stairs (--floortest), shoving a monster into a pit and leaping over it (--hazardtest)
     and out of the exit to the saved results (--resultstest), and letting a bot play a generated
     dungeon (--autoplay).
 

@@ -195,4 +195,25 @@ public class FloorTests
         Assert.Equal(new RoomCleared("trap"), events[^1]);
         Assert.False(session.RoomById("trap").IsSealed);
     }
+
+    [Fact]
+    public void StairsUpLeadBackToTheStairsDownAbove()
+    {
+        GameSession session = TestRun.Start(
+        [
+            new RoomSetup("top", TestRun.Room(".........\n.........\n.........\n.........\n....>....\n.........\n.........\n.........\n.........")),
+            new RoomSetup("bottom", TestRun.Room(".........\n.........\n.........\n.........\n....<....\n.........\n.........\n.........\n........."), Floor: 2, Role: RoomRole.Arrival),
+        ], new ScriptedDice(3));
+        Hero hero = session.HeroInSeat();
+        hero.RoomId = "bottom";
+        hero.DeepestFloor = 2;
+        hero.Position = new GridPosition(4, 4);
+        session.Do(new RollMovement(hero.Id));
+
+        var climbed = session.Do(new TakeStairs(hero.Id)).SingleOf<HeroAscended>();
+
+        Assert.Equal(new HeroAscended(hero.Id, "bottom", "top", 1, new GridPosition(4, 4)), climbed);
+        Assert.Equal(("top", 2), (hero.RoomId, hero.DeepestFloor));
+        Assert.Equal(4, session.State.Turn!.MovementPoints);
+    }
 }

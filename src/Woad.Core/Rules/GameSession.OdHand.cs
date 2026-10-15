@@ -132,6 +132,17 @@ public sealed partial class GameSession
             return null;
         }
 
+        if (room.Gates.TryGetValue(target, out int gateLock))
+        {
+            if (hero.Position.ManhattanDistanceTo(target) != 1)
+            {
+                return "Stand next to the gate to pick its lock.";
+            }
+
+            check = new OdHandCheck(OdHandCheckKind.PickGate, gateLock, target);
+            return null;
+        }
+
         if (room.Layout[target] == TileKind.Chest && !room.IsChestOpened(target))
         {
             if (hero.Position.ManhattanDistanceTo(target) != 1)
@@ -271,6 +282,11 @@ public sealed partial class GameSession
                 events.Add(new ChestUnlocked(hero.Id, check.Target, Picked: true));
                 break;
 
+            case OdHandCheckKind.PickGate when success:
+                room.OpenGate(check.Target);
+                events.Add(new GateOpened(hero.Id, room.Id, check.Target, Picked: true));
+                break;
+
             case OdHandCheckKind.Disarm when success:
                 if (check.Target == hero.Position && DoorAt(room, check.Target) is { } trapped)
                 {
@@ -333,8 +349,14 @@ public sealed partial class GameSession
             }
         }
 
+        List<GridPosition> gates = room.HiddenGates.Where(gate => gate.Value <= total).Select(gate => gate.Key).ToList();
+        foreach (GridPosition gate in gates)
+        {
+            room.OpenGate(gate);
+        }
+
         List<KeyValuePair<GridPosition, Cache>> stashes = room.Caches.Where(cache => !cache.Value.BehindWall && cache.Value.Difficulty <= total).ToList();
-        events.Add(new SecretsFound(hero.Id, room.Id, doors, traps, stashes.Select(stash => stash.Key).ToList()));
+        events.Add(new SecretsFound(hero.Id, room.Id, doors, traps, stashes.Select(stash => stash.Key).ToList(), gates));
         foreach ((GridPosition tile, Cache cache) in stashes)
         {
             RevealCache(room, tile, cache, events);

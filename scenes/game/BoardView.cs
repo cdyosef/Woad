@@ -211,7 +211,14 @@ public partial class BoardView : Control
             TileKind.CrackedWall => "cracked_wall",
             TileKind.Pit => "pit",
             TileKind.StairsDown => "stairs",
-            TileKind.Chest => _room!.IsChestOpened(tile) ? "chest_open" : _room.ChestLockAt(tile) is not null ? "chest_locked" : "chest",
+            TileKind.StairsUp => "stairs_up",
+            TileKind.Rubble => "rubble",
+            TileKind.Gate => "gate",
+            TileKind.ShallowWater => "water_shallow",
+            TileKind.DeepWater => "water_deep",
+            TileKind.Chest => _room!.IsChestOpened(tile) ? "chest_open"
+                : _room.HoldsBossKey(tile) ? "chest_boss"
+                : _room.ChestLockAt(tile) is not null ? "chest_locked" : "chest",
             TileKind.Pot => "pot",
             TileKind.Exit => _room!.Monsters.Any(monster => monster.Definition.Boss) ? "exit_sealed" : "exit_open",
             _ => null,
@@ -223,7 +230,7 @@ public partial class BoardView : Control
             return true;
         }
 
-        if (kind is not (TileKind.Wall or TileKind.CrackedWall or TileKind.StairsDown))
+        if (kind is not (TileKind.Wall or TileKind.CrackedWall or TileKind.StairsDown or TileKind.StairsUp))
         {
             DrawTextureRect(floor, rect, tile: false);
         }
@@ -307,6 +314,41 @@ public partial class BoardView : Control
                 {
                     float inset = 4 + step * 3;
                     DrawRect(new Rect2(rect.Position.X + inset, rect.Position.Y + 5 + step * 6, TileSize - inset * 2, 3), Palette.WallTop);
+                }
+
+                break;
+
+            case TileKind.Rubble:
+                foreach ((float x, float y) in new[] { (5f, 6f), (16f, 4f), (22f, 14f), (9f, 18f), (18f, 24f) })
+                {
+                    DrawRect(new Rect2(rect.Position.X + x, rect.Position.Y + y, 6, 5), Palette.WallTop);
+                }
+
+                break;
+
+            case TileKind.Gate:
+                for (float x = 4; x < TileSize; x += 6)
+                {
+                    DrawRect(new Rect2(rect.Position.X + x, rect.Position.Y + 2, 2, TileSize - 4), Palette.Ink);
+                }
+
+                DrawRect(new Rect2(rect.Position.X + 12, rect.Position.Y + 12, 8, 8), Palette.Loot);
+                break;
+
+            case TileKind.ShallowWater:
+                DrawRect(rect, Palette.ShallowWater);
+                break;
+
+            case TileKind.DeepWater:
+                DrawRect(rect, Palette.DeepWater);
+                break;
+
+            case TileKind.StairsUp:
+                DrawRect(rect.Grow(-2), Palette.FloorDark);
+                for (int step = 0; step < 4; step++)
+                {
+                    float inset = 13 - step * 3;
+                    DrawRect(new Rect2(rect.Position.X + inset, rect.Position.Y + 5 + step * 6, TileSize - inset * 2, 3), Palette.Text);
                 }
 
                 break;

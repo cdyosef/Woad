@@ -25,6 +25,9 @@ public enum OdHandCheckKind
     /// <summary>Pick the lock of an adjacent chest.</summary>
     PickChest,
 
+    /// <summary>Pick the lock of an adjacent gate in a wall dividing the room.</summary>
+    PickGate,
+
     /// <summary>Search the whole room for secrets.</summary>
     Search,
 

@@ -83,6 +83,13 @@ public partial class DiceTray : Control
         if (_rows.Count > 0)
         {
             _rows[hit ? 0 : ^1].Won = true;
+
+            // Against a defense roll, the defender's line says how it went.
+            if (_rows.Count > 1)
+            {
+                _rows[^1].Verdict = hit ? "Hit!" : "Miss!";
+            }
+
             QueueRedraw();
         }
     }
@@ -106,6 +113,12 @@ public partial class DiceTray : Control
             Row row = _rows[r];
             float top = r * RowHeight;
             DrawString(font, new Vector2(0, top + 8), row.Caption, fontSize: UiTheme.FontSize, modulate: Palette.TextDim);
+            if (row.Verdict is { } verdict)
+            {
+                float after = font.GetStringSize(row.Caption, fontSize: UiTheme.FontSize).X + 4;
+                DrawString(font, new Vector2(after, top + 8), verdict, fontSize: UiTheme.FontSize, modulate: verdict == "Hit!" ? Palette.Danger : Palette.Heal);
+            }
+
 
             for (int i = 0; i < row.Faces.Length; i++)
             {
@@ -225,6 +238,9 @@ public partial class DiceTray : Control
 
         /// <summary>This side won the attack; its dice glow.</summary>
         public bool Won { get; set; }
+
+        /// <summary>On a defense line: "Hit!" when the attack got through, "Miss!" when it was blocked.</summary>
+        public string? Verdict { get; set; }
 
         public bool[] Rolling { get; } = new bool[faces.Length];
 

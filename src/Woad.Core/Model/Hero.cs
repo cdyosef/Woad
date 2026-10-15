@@ -37,6 +37,7 @@ public sealed class Hero
         BaseStats = baseStats;
         RoomId = roomId;
         Position = position;
+        Footing = position;
         CharacterId = characterId;
         Portrait = portrait;
     }
@@ -62,6 +63,12 @@ public sealed class Hero
 
     /// <summary>A companion's standing order (see <see cref="CompanionOrder"/>).</summary>
     public CompanionOrder Order { get; internal set; }
+
+    /// <summary>
+    /// The last tile in its room the hero stood on that isn't deep water: where they wash up if they
+    /// drown (see <see cref="Grid.TileKind.DeepWater"/>).
+    /// </summary>
+    public GridPosition Footing { get; internal set; }
 
     /// <summary>Where a companion ordered to hold stands guard: the room and tile it was in at the time.</summary>
     public (string RoomId, GridPosition Position)? HoldAt { get; internal set; }

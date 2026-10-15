@@ -54,6 +54,12 @@ public enum RoomRole
 
     /// <summary>The last floor's boss, guarding the exit.</summary>
     Boss,
+
+    /// <summary>The last floor's vault: the Boss Key's chest, guarded by the theme's miniboss.</summary>
+    Vault,
+
+    /// <summary>A hidden room behind a secret door or cracked wall, with extra treasure and no other way in.</summary>
+    Secret,
 }
 
 /// <summary>A monster the generator may place on this theme's floors.</summary>
@@ -97,6 +103,9 @@ public sealed record ThemeDefinition
     public IReadOnlyList<RosterEntry> Roster { get; init; } = [];
 
     public string? Boss { get; init; }
+
+    /// <summary>The miniboss guarding the Boss Key in the last floor's vault (placed on its '&').</summary>
+    public string? Miniboss { get; init; }
 
     public IReadOnlyList<ThemeRoomDefinition> Rooms { get; init; } = [];
 }

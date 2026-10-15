@@ -3,6 +3,7 @@
   "name": "The Emerald Keep",
   "floors": 3,
   "boss": "iron_warden",
+  "miniboss": "key_warden",
 
   "roster": [
     { "monster": "slime", "weight": 3 },
@@ -34,8 +35,11 @@
   // Smashing a pot: 35% loose coins, 25% a heart, otherwise nothing.
   "pots": { "treasure": "loose_coins", "treasureChance": 35, "heartChance": 25 },
 
-  // Legend: . floor  # wall  ~ pit  C chest  P pot  > stairs down  * exit
-  //         1-4 hero starts  M monster spawn point  & boss
+  // Legend: . floor  # wall  ~ pit  C chest  P pot  > stairs down  * exit  : rubble (2 steps)
+  //         , shallow water (2 steps)  = deep water (swim, 2 steps; monsters can't enter)
+  //         1-4 hero starts  M monster spawn point  & boss (in a vault: the miniboss)
+  // Roles: arrival, combat, treasure (also used for secret rooms), stairs, boss, vault (the last floor's
+  // Boss Key chest and its guard). Stairs up ('<') are added to lower floors' arrival rooms.
   // Doorway tiles (middle of each edge) must stay '.'. Rooms are rotated and mirrored when used.
   "rooms": [
     {
@@ -57,15 +61,15 @@
       "id": "moat_landing",
       "roles": ["arrival"],
       "layout": [
-        "~~~...~~~",
-        "~P.....P~",
+        ",,,...,,,",
+        ",P.....P,",
         "...#.#...",
         ".1.....2.",
         ".........",
         ".3.....4.",
         "...#.#...",
-        "~.......~",
-        "~~~...~~~"
+        ",.......,",
+        ",,,...,,,"
       ]
     },
     {
@@ -163,12 +167,12 @@
       "roles": ["treasure"],
       "layout": [
         ".........",
-        ".~~~.~~~.",
-        ".~C...C~.",
-        ".~.....~.",
+        ".===.===.",
+        ".=C...C=.",
+        ".=.....=.",
         "....M....",
-        ".~.....~.",
-        ".~~...~~.",
+        ".=.....=.",
+        ".==...==.",
         ".P.....P.",
         "........."
       ]
@@ -201,6 +205,21 @@
         "..~~.~~..",
         ".........",
         "M.......M"
+      ]
+    },
+    {
+      "id": "key_vault",
+      "roles": ["vault"],
+      "layout": [
+        "##.....##",
+        "#P#...#P#",
+        "..#.C.#..",
+        "....&....",
+        ".........",
+        "..#...#..",
+        ".........",
+        "#.......#",
+        "##.....##"
       ]
     },
     {

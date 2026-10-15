@@ -47,8 +47,11 @@ public static class GameRules
     /// <summary>Power Dice a hero or monster can bank. A 6 rolled with a full bank is added to its roll instead.</summary>
     public const int MaxBankedPowerDice = 3;
 
-    /// <summary>A pit jump needs this on one die.</summary>
-    public const int JumpDifficulty = 4;
+    /// <summary>The farthest a leap can be aimed (a 6, halved).</summary>
+    public const int MaxLeap = 3;
+
+    /// <summary>Hearts lost drowning: ending a turn in deep water with no Rumble die to spare.</summary>
+    public const int DrownDamage = 1;
 
     /// <summary>Hearts lost falling into a pit (or through a sprung trap door, like any trap).</summary>
     public const int FallDamage = 1;

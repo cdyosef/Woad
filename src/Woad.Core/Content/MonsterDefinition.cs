@@ -75,6 +75,9 @@ public sealed record MonsterDefinition
 
     public bool Boss { get; init; }
 
+    /// <summary>A vault guardian: tougher than most, can't be shoved, but doesn't seal the exit.</summary>
+    public bool Miniboss { get; init; }
+
     public int Xp { get; init; }
 
     /// <summary>How much of a room's difficulty budget this monster uses up when generated.</summary>
