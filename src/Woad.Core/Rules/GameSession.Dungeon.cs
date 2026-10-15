@@ -57,6 +57,68 @@ public sealed partial class GameSession
         return null;
     }
 
+    private string? Handle(OpenGate command, List<GameEvent> events)
+    {
+        Hero hero = ActiveHero;
+        Room room = ActiveRoom;
+        if (!room.Gates.ContainsKey(command.Gate))
+        {
+            return "There's no locked gate there.";
+        }
+
+        if (hero.Position.ManhattanDistanceTo(command.Gate) != 1)
+        {
+            return "Stand next to the gate first.";
+        }
+
+        if (hero.Keys < 1)
+        {
+            return $"You have no keys. Pick the lock with Od Hand ({room.Gates[command.Gate]}+).";
+        }
+
+        hero.Keys--;
+        events.Add(new KeyUsed(hero.Id, hero.Keys));
+        room.OpenGate(command.Gate);
+        events.Add(new GateOpened(hero.Id, room.Id, command.Gate, Picked: false));
+        return null;
+    }
+
+    private string? Handle(GoThroughBreach command, List<GameEvent> events)
+    {
+        Hero hero = ActiveHero;
+        Room room = ActiveRoom;
+        if (!room.Breaches.TryGetValue(hero.Position, out (string RoomId, GridPosition Tile) way) || room.Layout[hero.Position] == TileKind.CrackedWall)
+        {
+            return "Stand in a broken-open breach first.";
+        }
+
+        if (room.IsSealed)
+        {
+            return "The way out is sealed until every monster here is defeated.";
+        }
+
+        if (CheckCanMove(1) is { } error)
+        {
+            return error;
+        }
+
+        Room target = State.Rooms[way.RoomId];
+        GridPosition? arrival = IsOccupied(target, way.Tile) ? LandingNear(target, way.Tile) : way.Tile;
+        if (arrival is not { } landing)
+        {
+            return "There's no room on the other side.";
+        }
+
+        hero.RoomId = target.Id;
+        hero.Position = landing;
+        Turn.MovementPoints -= 1;
+        Turn.HasMoved = true;
+        bool firstVisit = !target.Explored;
+        target.Explored = true;
+        events.Add(new HeroEnteredRoom(hero.Id, room.Id, target.Id, landing, firstVisit));
+        return null;
+    }
+
     private string? Handle(JumpDown command, List<GameEvent> events)
     {
         Hero hero = ActiveHero;
@@ -186,6 +248,14 @@ public sealed partial class GameSession
             if (door is null && room.Caches.TryGetValue(tile, out Cache? cache))
             {
                 RevealCache(room, tile, cache, events);
+            }
+
+            // A breach breaks through to the facing tile of the room next door.
+            if (door is null && room.Breaches.TryGetValue(tile, out (string RoomId, GridPosition Tile) breach)
+                && State.Rooms[breach.RoomId] is { } beyond && beyond.Layout[breach.Tile] == TileKind.CrackedWall)
+            {
+                beyond.Layout.Set(breach.Tile, TileKind.Floor);
+                events.Add(new WallBroken(beyond.Id, breach.Tile, null));
             }
         }
     }

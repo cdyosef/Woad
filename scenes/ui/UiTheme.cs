@@ -172,6 +172,28 @@ public static class UiTheme
         return ResourceLoader.Exists(path) ? $"[img=11x11]{path}[/img]" : fallback;
     }
 
+    /// <summary>A button with almost no side padding, for short labels in a tight row.</summary>
+    public static Button CompactButton(Vector2 position, Vector2 size, string text)
+    {
+        Button button = Button(position, size, text);
+        (string State, string Texture, StyleBox Fallback)[] looks =
+        [
+            ("normal", "frame", Box(Palette.Panel, Palette.Trim)),
+            ("hover", "frame_hover", Box(Palette.PanelHover, Palette.TrimBright)),
+            ("pressed", "frame_pressed", Box(Palette.PanelPressed, Palette.TrimBright, 2)),
+            ("hover_pressed", "frame_pressed", Box(Palette.PanelPressed, Palette.TrimBright, 2)),
+            ("disabled", "frame_disabled", Box(Palette.PanelDark, Palette.TrimDim)),
+        ];
+        foreach ((string state, string texture, StyleBox fallback) in looks)
+        {
+            StyleBox box = Frame(texture, fallback);
+            box.ContentMarginLeft = box.ContentMarginRight = 1;
+            button.AddThemeStyleboxOverride(state, box);
+        }
+
+        return button;
+    }
+
     public static Button Button(Vector2 position, Vector2 size, string text)
     {
         var button = new Button

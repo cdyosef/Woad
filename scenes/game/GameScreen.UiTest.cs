@@ -142,7 +142,7 @@ public partial class GameScreen
 
     /// <summary>
     /// Debug mode (<c>-- --hazardtest</c>, with <see cref="DemoRun.Hazards"/>): shoves a slimeling into a
-    /// pit that leads to the room below, then jumps the pit, landing beyond it or dropping below.
+    /// pit that leads to the room below, then leaps over the pit, landing beyond it, short, or below.
     /// </summary>
     private async void RunHazardTest()
     {
@@ -160,16 +160,15 @@ public partial class GameScreen
             await ConfirmIfHeld();
             Check(ledge.Monsters.Count == 0 && aria.Kills == 1, "the shoved slimeling falls into the pit and dies of the fall");
 
-            // Step to the pit's edge, then jump it: land beyond, or fall to the room below.
-            await Click(this, _roll);
-            await WaitUntilIdle();
-            await ClickTile(new GridPosition(4, 4));
-            await WaitUntilIdle();
-            Check(aria.Position == new GridPosition(4, 4), "the hero walks to the pit's edge");
-            Check(_session.GetJumpLandings().Contains(new GridPosition(4, 2)), "a jump across the pit is on offer");
+            // Leap from (4,5) over the pit to (4,2): a 6 lands there, 4-5 come down in the pit and drop
+            // the hero below, 2-3 land just short at the edge, and a 1 goes nowhere.
+            await Click(this, _leap);
+            Check(_leaping && _session.GetLeapTargets().Contains(new GridPosition(4, 2)), "Leap offers the tile beyond the pit");
             await ClickTile(new GridPosition(4, 2));
             await WaitUntilIdle();
-            Check((aria.RoomId, aria.Position) == ("ledge", new GridPosition(4, 2)) || aria.RoomId == "below", "the jump clears the pit or drops the hero below");
+            Check(_session.State.Turn!.MoveDiceUsed == 1 || aria.RoomId == "below", "the leap spends the Wend die");
+            Check(aria.RoomId == "below" || aria.Position == new GridPosition(4, 2) || aria.Position == new GridPosition(4, 4) || aria.Position == new GridPosition(4, 5),
+                "the leap lands on target, short of it, or drops the hero through the pit");
             Check(_shownRoomId == aria.RoomId, "the view follows the hero");
 
             GD.Print("Hazard test passed.");

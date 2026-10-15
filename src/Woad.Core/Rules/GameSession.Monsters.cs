@@ -104,7 +104,8 @@ public sealed partial class GameSession
         var path = new List<GridPosition>();
         GridPosition current = monster.Position;
 
-        for (int step = 0; step < monster.Definition.Move; step++)
+        // Rough ground and shallow water cost 2 of its moves (flyers pay 1 everywhere).
+        for (int movesLeft = monster.Definition.Move; movesLeft > 0;)
         {
             if (ChooseTarget(room, monster, current, heroes) is not null)
             {
@@ -114,13 +115,15 @@ public sealed partial class GameSession
             GridPosition? next = monster.Definition.Erratic && _random.Behavior.CoinFlip()
                 ? RandomStep(room, monster, current)
                 : StepToward(room, monster, current, heroes);
-            if (next is null)
+            int cost = next is { } step ? StepCost(room, monster, step) : 0;
+            if (next is null || cost > movesLeft)
             {
                 break;
             }
 
             path.Add(next.Value);
             current = next.Value;
+            movesLeft -= cost;
         }
 
         return path;
@@ -128,7 +131,7 @@ public sealed partial class GameSession
 
     private GridPosition? StepToward(Room room, Monster monster, GridPosition from, IReadOnlyList<Hero> heroes)
     {
-        PathSearch search = PathSearch.Run(from, position => CanMonsterEnter(room, monster, position));
+        PathSearch search = PathSearch.Run(from, position => CanMonsterEnter(room, monster, position), stepCost: position => StepCost(room, monster, position));
 
         var attackSpot = search.Distances
             .Select(entry => (Tile: entry.Key, Steps: entry.Value, Target: ChooseTarget(room, monster, entry.Key, heroes)))
@@ -153,6 +156,8 @@ public sealed partial class GameSession
         return goal == from ? null : search.PathTo(goal)[0];
     }
 
+    private static int StepCost(Room room, Monster monster, GridPosition tile) => room.Layout[tile].MoveCost(monster.Definition.Flying);
+
     private GridPosition? RandomStep(Room room, Monster monster, GridPosition from)
     {
         List<GridPosition> options = from.OrthogonalNeighbors()
@@ -164,7 +169,7 @@ public sealed partial class GameSession
     /// <summary>Backs off to a tile it can still attack from, as far from the heroes as its move allows.</summary>
     private IReadOnlyList<GridPosition> PlanRetreat(Room room, Monster monster, IReadOnlyList<Hero> heroes)
     {
-        PathSearch search = PathSearch.Run(monster.Position, position => CanMonsterEnter(room, monster, position), monster.Definition.Move);
+        PathSearch search = PathSearch.Run(monster.Position, position => CanMonsterEnter(room, monster, position), monster.Definition.Move, stepCost: position => StepCost(room, monster, position));
 
         GridPosition best = search.Distances.Keys
             .OrderBy(tile => ChooseTarget(room, monster, tile, heroes) is null ? 1 : 0)

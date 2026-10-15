@@ -102,7 +102,7 @@ public sealed record EndTurn(int HeroId) : GameCommand(HeroId);
 /// <summary>Smash an adjacent pot: it may hold coins or a heart. Uses the action.</summary>
 public sealed record SmashPot(int HeroId, GridPosition Pot) : GameCommand(HeroId);
 
-/// <summary>Go down the stairs you're standing on to the next floor (costs 1 movement).</summary>
+/// <summary>Take the stairs you're standing on (costs 1 movement): down to the next floor, or back up to the one above.</summary>
 public sealed record TakeStairs(int HeroId) : GameCommand(HeroId);
 
 /// <summary>Leave the dungeon through the exit you're standing on, once its boss is defeated. Ends your turn.</summary>
@@ -118,19 +118,26 @@ public sealed record OrderCompanion(int HeroId, int CompanionId, CompanionOrder 
 /// Shove an adjacent monster (or, with friendly fire on, a hero or companion) one tile straight away
 /// from you: roll like an attack (Rumble dice and the weapon); beating its defense pushes it, perhaps
 /// onto a trap or into a pit. Bosses can't be shoved, and the tile behind must be open floor, a trap
-/// or a pit.
+/// or a pit; a monster shoved into deep water loses a heart and scrambles out.
 /// </summary>
 public sealed record Shove(int HeroId, int TargetId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0) : GameCommand(HeroId);
 
 /// <summary>
-/// Jump a pit: <paramref name="Landing"/> is two tiles away in a straight line with a pit between.
-/// Costs 2 steps and a roll of one die needing <see cref="Rules.GameRules.JumpDifficulty"/>; a miss
-/// drops you into the pit.
+/// Leap: spend one unused Wend die to jump in a straight line (diagonals too) toward <paramref name="Target"/>,
+/// up to <see cref="Rules.GameRules.MaxLeap"/> tiles away, over pits, water, traps and figures but not walls.
+/// Pick the target first; the die is rolled as you jump, and the leap carries half the roll (rounded down),
+/// never past the target. Coming down short over a pit drops you in; over water, you splash in.
 /// </summary>
-public sealed record JumpPit(int HeroId, GridPosition Landing) : GameCommand(HeroId);
+public sealed record Leap(int HeroId, GridPosition Target) : GameCommand(HeroId);
 
 /// <summary>
 /// With friendly fire on: attack another hero or companion in reach, exactly as you would a monster
 /// (Rumble dice and the weapon against their defense).
 /// </summary>
 public sealed record AttackAlly(int HeroId, int TargetId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0) : GameCommand(HeroId);
+
+/// <summary>Open the locked gate next to you (up, down, left or right) with a key. Free, like unlocking a door.</summary>
+public sealed record OpenGate(int HeroId, GridPosition Gate) : GameCommand(HeroId);
+
+/// <summary>Go through the broken-open breach you're standing on into the neighboring room (costs 1 movement).</summary>
+public sealed record GoThroughBreach(int HeroId) : GameCommand(HeroId);

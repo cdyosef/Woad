@@ -129,7 +129,12 @@ public sealed partial class GameSession
         }
 
         hero.Position = path[^1];
-        Turn.MovementPoints -= path.Count;
+        Turn.MovementPoints -= path.Sum(tile => room.Layout[tile].MoveCost());
+        foreach (GridPosition tile in path.Where(tile => room.Layout[tile].IsWalkable()))
+        {
+            hero.Footing = tile;
+        }
+
         Turn.HasMoved = true;
         events.Add(new HeroMoved(hero.Id, path, Turn.MovementPoints));
         if (sprung >= 0)
@@ -215,15 +220,17 @@ public sealed partial class GameSession
     }
 
     /// <summary>
-    /// Heroes walk through allies but not monsters, walls or chests. They may step onto a trap they
-    /// know of or into a pit, but that's where the walk ends: no path goes past one.
+    /// Heroes walk through allies but not monsters, walls or chests, and swim deep water. Rough ground
+    /// and water cost 2 steps a tile. They may step onto a trap they know of or into a pit, but that's
+    /// where the walk ends: no path goes past one.
     /// </summary>
     private PathSearch HeroPathSearch(Hero hero, Room room) =>
         PathSearch.Run(
             hero.Position,
-            position => (room.Layout[position].IsWalkable() || room.Layout[position] == TileKind.Pit) && room.MonsterAt(position) is null,
+            position => (room.Layout[position].IsWalkable() || room.Layout[position] is TileKind.Pit or TileKind.DeepWater) && room.MonsterAt(position) is null,
             Turn.MovementPoints,
-            canPass: position => room.Layout[position] != TileKind.Pit && room.TrapAt(position) is not { Revealed: true });
+            canPass: position => room.Layout[position] != TileKind.Pit && room.TrapAt(position) is not { Revealed: true },
+            stepCost: position => room.Layout[position].MoveCost());
 
     private bool CanHeroStop(Room room, Hero hero, GridPosition position) =>
         !State.ActiveHeroesIn(room).Any(other => other != hero && other.Position == position);

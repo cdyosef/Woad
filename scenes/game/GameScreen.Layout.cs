@@ -38,6 +38,7 @@ public partial class GameScreen
     private Button _search = null!;
     private Button _steal = null!;
     private Button _shove = null!;
+    private Button _leap = null!;
     private Button _endTurn = null!;
     private Button _menu = null!;
     private GridPosition? _hovered;
@@ -56,6 +57,9 @@ public partial class GameScreen
 
     /// <summary>Shove was pressed: the next click on an adjacent monster tries to push it.</summary>
     private bool _shoving;
+
+    /// <summary>Leap was pressed: the next click on a purple tile leaps toward it.</summary>
+    private bool _leaping;
 
     private void RefreshPanels()
     {
@@ -87,6 +91,9 @@ public partial class GameScreen
         _stealing &= !_steal.Disabled;
         _steal.Text = _stealing ? "Cancel" : "Steal";
         _shove.Disabled = !(idle && !pending) || _session.AttackDiceLeft < 1;
+        _leap.Disabled = !(idle && !pending) || _session.MoveDiceLeft < 1;
+        _leaping &= !_leap.Disabled;
+        _leap.Text = _leaping ? "Cancel" : "Leap";
         _shoving &= !_shove.Disabled;
         _shove.Text = _shoving ? "Cancel" : "Shove";
         _endTurn.Disabled = !(idle && !pending);
@@ -129,6 +136,12 @@ public partial class GameScreen
             return;
         }
 
+        if (_leaping)
+        {
+            _board.SetHighlights([], [], [], [], jumps: _session.GetLeapTargets());
+            return;
+        }
+
         if (_stealing)
         {
             IEnumerable<GridPosition> victims = room.Monsters.Where(monster => _session.CheckSteal(monster.Id) is null).Select(monster => monster.Position)
@@ -143,6 +156,7 @@ public partial class GameScreen
             interactive.AddRange(hero.Position.OrthogonalNeighbors().Where(tile =>
                 (room.Layout[tile] == TileKind.Chest && (_session.CheckOpenChest(tile) is null || _session.CheckPickLock(tile) is null || _session.CheckDisarm(tile) is null))
                 || (room.Layout[tile] == TileKind.Pot && !turn.HasActed)
+                || (room.Layout[tile] == TileKind.Gate && (hero.Keys > 0 || _session.CheckPickLock(tile) is null))
                 || _session.CheckDisarm(tile) is null));
         }
 
@@ -158,8 +172,7 @@ public partial class GameScreen
             _session.GetAttackableMonsters().Select(monster => monster.Position).Concat(_session.GetAttackableAllies().Select(ally => ally.Position)),
             [],
             interactive,
-            hazards: reachable.Where(tile => room.Layout[tile] == TileKind.Pit || room.TrapAt(tile) is { Revealed: true }),
-            jumps: _session.GetJumpLandings().Where(tile => !reachable.Contains(tile)));
+            hazards: reachable.Where(tile => room.Layout[tile] == TileKind.Pit || room.TrapAt(tile) is { Revealed: true }));
     }
 
     /// <summary>Whether clicking the hero's own tile would do something: loot, stairs, exit or a door.</summary>
@@ -179,7 +192,8 @@ public partial class GameScreen
         return room.Layout[hero.Position] switch
         {
             _ when room.HasLootAt(hero.Position) => _session.CheckPickUp() is null,
-            TileKind.StairsDown => canStep,
+            _ when room.Breaches.ContainsKey(hero.Position) => canStep && !room.IsSealed,
+            TileKind.StairsDown or TileKind.StairsUp => canStep,
             TileKind.Exit => !room.Monsters.Any(monster => monster.Definition.Boss),
             _ => _session.CheckDisarm(hero.Position) is null || (DoorAt(room, hero.Position) is not null && _session.GetUsableDoors().Count > 0),
         };
@@ -253,7 +267,7 @@ public partial class GameScreen
     private void ResetPool()
     {
         _attackDiceHeld = _moveDiceHeld = _odHandDiceHeld = _powerDiceSelected = 0;
-        _weaponHeld = _speedHeld = _toolsHeld = _stealing = _shoving = false;
+        _weaponHeld = _speedHeld = _toolsHeld = _stealing = _shoving = _leaping = false;
     }
 
     /// <summary>The card buttons' states, with the rules engine's reason for each one that's unavailable.</summary>
@@ -419,7 +433,7 @@ public partial class GameScreen
         _luckHint = UiTheme.Label(new Vector2(8, 263), new Vector2(160, 14), "Luck: click a die to reroll it.", color: Palette.Heal);
         right.AddChild(_luckHint);
 
-        _confirm = UiTheme.Button(new Vector2(8, 279), new Vector2(160, 18), "Confirm attack");
+        _confirm = UiTheme.Button(new Vector2(8, 279), new Vector2(160, 18), "Confirm roll");
         _confirm.Pressed += () => ExecuteForActiveHero(heroId => new ConfirmAttack(heroId));
         right.AddChild(_confirm);
 
@@ -431,8 +445,8 @@ public partial class GameScreen
         _bankPower.Pressed += () => ExecuteForActiveHero(heroId => new BankPowerDie(heroId));
         right.AddChild(_bankPower);
 
-        // Four buttons in a row: Wend, Search, Steal and Shove.
-        _roll = UiTheme.Button(new Vector2(8, 303), new Vector2(38, 20), "Wend");
+        // Five buttons in a row: Wend, Leap, Search, Steal and Shove.
+        _roll = UiTheme.CompactButton(new Vector2(8, 303), new Vector2(28, 20), "Wend");
         _roll.TooltipText = "Roll your selected Wend dice (plus your Wend bonus) to move.";
         _roll.Pressed += () =>
         {
@@ -446,16 +460,31 @@ public partial class GameScreen
         };
         right.AddChild(_roll);
 
-        _search = UiTheme.Button(new Vector2(48, 303), new Vector2(38, 20), "Search");
+        _leap = UiTheme.CompactButton(new Vector2(37, 303), new Vector2(28, 20), "Leap");
+        _leap.TooltipText = $"Leap with one Wend die: pick a tile up to {GameRules.MaxLeap} away in a straight line, then roll; you carry half the roll.";
+        _leap.Pressed += () =>
+        {
+            _leaping = !_leaping;
+            _stealing = _shoving = false;
+            if (_leaping)
+            {
+                Log("Click a purple tile to leap toward it. Right-click to cancel.", Palette.Power);
+            }
+
+            RefreshPanels();
+        };
+        right.AddChild(_leap);
+
+        _search = UiTheme.CompactButton(new Vector2(66, 303), new Vector2(36, 20), "Search");
         _search.Pressed += () => ExecuteOdHand((heroId, dice, tools, power) => new Search(heroId, dice, tools, power));
         right.AddChild(_search);
 
-        _steal = UiTheme.Button(new Vector2(88, 303), new Vector2(38, 20), "Steal");
+        _steal = UiTheme.CompactButton(new Vector2(103, 303), new Vector2(32, 20), "Steal");
         _steal.TooltipText = "Steal with your selected Od Hand dice: click it, then an adjacent monster or hero. Once a turn.";
         _steal.Pressed += () =>
         {
             _stealing = !_stealing;
-            _shoving = false;
+            _shoving = _leaping = false;
             if (_stealing)
             {
                 Log("Click a monster or hero next to you to steal from them. Right-click to cancel.", Palette.Target with { A = 1 });
@@ -465,12 +494,12 @@ public partial class GameScreen
         };
         right.AddChild(_steal);
 
-        _shove = UiTheme.Button(new Vector2(128, 303), new Vector2(40, 20), "Shove");
+        _shove = UiTheme.CompactButton(new Vector2(136, 303), new Vector2(32, 20), "Shove");
         _shove.TooltipText = "Shove with your selected Rumble dice: click it, then a monster next to you. Beat its defense to push it a tile, onto a trap or into a pit.";
         _shove.Pressed += () =>
         {
             _shoving = !_shoving;
-            _stealing = false;
+            _stealing = _leaping = false;
             if (_shoving)
             {
                 Log("Click a monster next to you to shove it. Right-click to cancel.", Palette.Target with { A = 1 });

@@ -171,12 +171,12 @@ public partial class GameScreen
         token.SetHearts(damaged.HeartsLeft);
         if (damaged.Amount > 0)
         {
-            _board.FloatText(figure.Position, $"-{damaged.Amount}", Palette.Danger);
+            _board.FloatText(figure.Position, $"Hit! -{damaged.Amount}", Palette.Danger);
             await Tint(token, new Color(1, 0.3f, 0.3f));
         }
         else
         {
-            _board.FloatText(figure.Position, "Blocked", Palette.Text);
+            _board.FloatText(figure.Position, "Miss!", Palette.Text);
             await Pause(0.25);
         }
     }

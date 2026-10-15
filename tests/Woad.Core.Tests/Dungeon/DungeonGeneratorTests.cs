@@ -21,13 +21,14 @@ public class DungeonGeneratorTests
 
     [Theory]
     [MemberData(nameof(Seeds))]
-    public void EveryFloorHasSixToEightConnectedRooms(ulong seed)
+    public void EveryFloorHasSixToEightConnectedRoomsPlusPerhapsASecretOne(ulong seed)
     {
         RunSetup run = Generate(seed);
 
         foreach (IGrouping<int, RoomSetup> floor in run.Rooms.GroupBy(room => room.Floor))
         {
-            Assert.InRange(floor.Count(), DungeonGenerator.MinRooms, DungeonGenerator.MaxRooms);
+            Assert.InRange(floor.Count(room => room.Role != RoomRole.Secret), DungeonGenerator.MinRooms, DungeonGenerator.MaxRooms);
+            Assert.InRange(floor.Count(room => room.Role == RoomRole.Secret), 0, 1);
 
             var reached = new HashSet<string> { floor.First().Id };
             var frontier = new Queue<RoomSetup>([floor.First()]);
@@ -57,6 +58,15 @@ public class DungeonGeneratorTests
             RoomRole wayOn = floor.Key == 3 ? RoomRole.Boss : RoomRole.Stairs;
             Assert.Single(floor, room => room.Role == wayOn);
             Assert.DoesNotContain(floor, room => room.Role == (floor.Key == 3 ? RoomRole.Stairs : RoomRole.Boss));
+            Assert.Equal(floor.Key == 3 ? 1 : 0, floor.Count(room => room.Role == RoomRole.Vault));
+
+            // Below the first floor, the arrival room has the stairs back up, under the stairs room above.
+            RoomSetup arrival = floor.Single(room => room.Role == RoomRole.Arrival);
+            Assert.Equal(floor.Key > 1 ? 1 : 0, arrival.Template.TilesOf(TileKind.StairsUp).Count());
+            if (floor.Key > 1)
+            {
+                Assert.Equal(run.Rooms.Single(room => room.Floor == floor.Key - 1 && room.Role == RoomRole.Stairs).MapPosition, arrival.MapPosition);
+            }
         }
 
         Assert.Equal(run.StartRoomId, run.Rooms.Single(room => room.Floor == 1 && room.Role == RoomRole.Arrival).Id);
@@ -132,6 +142,7 @@ public class DungeonGeneratorTests
     {
         IReadOnlyList<ThemeRoom> rooms = Content.RoomsFor("emerald_keep");
 
-        Assert.All(Enum.GetValues<RoomRole>(), role => Assert.Contains(rooms, room => room.Roles.Contains(role)));
+        // Secret rooms use treasure layouts.
+        Assert.All(Enum.GetValues<RoomRole>().Where(role => role != RoomRole.Secret), role => Assert.Contains(rooms, room => room.Roles.Contains(role)));
     }
 }

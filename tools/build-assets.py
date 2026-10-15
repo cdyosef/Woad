@@ -214,6 +214,27 @@ MONSTERS = {
         ".ooooo..",
     ], {"o": "#120e14", "h": "#5a5f6a", "v": "#1a1a20", "r": "#ff4040", "p": "#9aa0aa",
         "a": "#4a4f5a", "c": "#a83a46", "b": "#3a2a20", "k": "#2a2a30"}, mirror=True)),
+
+    # The vault's guardian: a gilded knight in crimson, a key emblem on its chest.
+    "key_warden": (sprite([
+        "........",
+        ".....ooo",
+        "....oggg",
+        "....ogvv",
+        "....ogvr",
+        "....oggg",
+        "..oooaaa",
+        ".oppoccc",
+        ".oppoccy",
+        "..ooocyy",
+        "...oaccc",
+        "...obbbb",
+        "...oaaoa",
+        "...oaao.",
+        "..okkko.",
+        "..ooooo.",
+    ], {"o": "#120e14", "g": "#d8b13f", "v": "#1a1a20", "r": "#ffcf40", "a": "#5a4f6a", "p": "#b0a6c0",
+        "c": "#7a2a3a", "y": "#f0c94a", "b": "#3a2a20", "k": "#2a2a30"}, mirror=True)),
 }
 
 # ---- Objects (16x16) ------------------------------------------------------------------------
@@ -289,6 +310,23 @@ OBJECTS["chest_locked"] = sprite([
     ".oooooooooooooo.",
     "................", "................",
 ], {**WOOD, "g": "#9aa4ad", "y": "#f0c94a"})
+
+# The Boss Key's chest in the vault: crimson bands and a gold lock.
+OBJECTS["chest_boss"] = sprite([
+    "................", "................", "................",
+    "..oooooooooooo..",
+    ".owwwwwwwwwwwwo.",
+    ".owddddddddddwo.",
+    ".owddddddddddwo.",
+    ".oggggggggggggo.",
+    ".oggggoyyoggggo.",
+    ".owdddoyyodddwo.",
+    ".owddddddddddwo.",
+    ".owddddddddddwo.",
+    ".oggggggggggggo.",
+    ".oooooooooooooo.",
+    "................", "................",
+], {**WOOD, "g": "#c8343e", "y": "#f0c94a", "w": "#c89040"})
 
 # ---- Stat and key icons (12x12) -------------------------------------------------------------
 
@@ -478,6 +516,62 @@ def stairs_tile():
     for step in range(5):
         y = 1 + step * 3
         inset = 1 + step
+        for x in range(inset, 16 - inset):
+            tile[y][x] = tread
+            tile[y + 1][x] = riser
+    return tile
+
+
+def rubble_tile():
+    """Broken stones scattered over the floor (drawn on top of it): rough ground, 2 steps a tile."""
+    tile = blank()
+    stone, light, dark = rgba("#8a8f86"), rgba("#b8bcb0"), rgba("#3a4038")
+    for left, top, width, height in [(1, 2, 4, 3), (7, 1, 3, 3), (11, 3, 4, 3), (3, 7, 3, 3),
+                                     (8, 6, 4, 4), (1, 11, 3, 3), (6, 12, 4, 3), (12, 10, 3, 4)]:
+        for y in range(top, top + height):
+            for x in range(left, left + width):
+                edge = y == top + height - 1 or x == left + width - 1
+                tile[y][x] = dark if edge else light if y == top else stone
+    return tile
+
+
+def water_tile(deep):
+    """Water, rippled with light crests: shallow shows a little floor through; deep is dark and opaque."""
+    base = rgba("#1d3a66" if deep else "#4a8ab8aa")
+    crest = rgba("#5f8fd0" if deep else "#c8e6f8d2")
+    tile = blank(color=base)
+    for row, offset in [(3, 1), (8, 5), (13, 2)]:
+        for x in range(16):
+            if (x + offset) % 8 in (0, 1, 2):
+                tile[row][x] = crest
+    return tile
+
+
+def gate_tile():
+    """An iron gate (drawn over the floor): dark bars and crossbars with a gold lock plate."""
+    tile = blank()
+    iron, shine, gold = rgba("#2a2a32"), rgba("#6a6a78"), rgba("#f0c94a")
+    for x in (2, 5, 8, 11, 14):
+        for y in range(1, 15):
+            tile[y][x] = shine if y < 3 else iron
+            if x + 1 < 16:
+                tile[y][x - 1] = iron
+    for y in (3, 11):
+        for x in range(1, 16):
+            tile[y][x] = iron
+    for y in range(6, 10):
+        for x in range(6, 10):
+            tile[y][x] = gold if (x, y) != (7, 8) else iron
+    return tile
+
+
+def stairs_up_tile():
+    """Steps leading up: treads that widen toward a lit landing at the top."""
+    tile = blank(color=rgba("#2a3a33"))
+    tread, riser = rgba("#c8dccf"), rgba("#6a8a7c")
+    for step in range(5):
+        y = 1 + step * 3
+        inset = 5 - step
         for x in range(inset, 16 - inset):
             tile[y][x] = tread
             tile[y + 1][x] = riser
@@ -919,6 +1013,11 @@ def main():
     write_png(theme / "tiles" / "trapdoor.png", trapdoor_tile())
     write_png(theme / "tiles" / "pit.png", pit_tile())
     write_png(theme / "tiles" / "stairs.png", stairs_tile())
+    write_png(theme / "tiles" / "stairs_up.png", stairs_up_tile())
+    write_png(theme / "tiles" / "rubble.png", rubble_tile())
+    write_png(theme / "tiles" / "gate.png", gate_tile())
+    write_png(theme / "tiles" / "water_shallow.png", water_tile(deep=False))
+    write_png(theme / "tiles" / "water_deep.png", water_tile(deep=True))
     write_png(theme / "tiles" / "exit_open.png", exit_tile(sealed=False))
     write_png(theme / "tiles" / "exit_sealed.png", exit_tile(sealed=True))
 

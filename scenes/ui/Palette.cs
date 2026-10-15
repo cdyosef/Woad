@@ -33,6 +33,8 @@ public static class Palette
     public static readonly Color Wall = new("1f2b27");
     public static readonly Color WallTop = new("4d6158");
     public static readonly Color Pit = new("05070a");
+    public static readonly Color ShallowWater = new("4a8ab8", 0.7f);
+    public static readonly Color DeepWater = new("1d3a66");
     public static readonly Color Chest = new("8a5a2b");
     public static readonly Color ChestOpen = new("4a3018");
     public static readonly Color Loot = new("f0c94a");

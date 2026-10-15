@@ -215,6 +215,11 @@ public sealed class ContentCatalog
             {
                 errors.Add($"Theme '{theme.Id}' boss '{boss}' must be a monster marked as a boss.");
             }
+
+            if (theme.Miniboss is { } miniboss && !monsters.Any(monster => monster.Id == miniboss && monster.Miniboss))
+            {
+                errors.Add($"Theme '{theme.Id}' miniboss '{miniboss}' must be a monster marked as a miniboss.");
+            }
         }
     }
 
@@ -391,6 +396,16 @@ public sealed class ContentCatalog
         if (bossRole != (exits == 1 && template.BossSpawn is not null))
         {
             errors.Add($"{name}: boss rooms need one '&' and one '*', and other rooms neither.");
+        }
+
+        if (room.Roles.Contains(RoomRole.Vault) && (template.BossSpawn is null || template.TilesOf(TileKind.Chest).Count() != 1))
+        {
+            errors.Add($"{name}: vault rooms need one '&' for the miniboss and exactly one chest, for the Boss Key.");
+        }
+
+        if (template.TilesOf(TileKind.StairsUp).Any())
+        {
+            errors.Add($"{name}: '<' stairs up are placed by the dungeon generator, not in layouts.");
         }
 
         if (room.Roles.Any(role => role is RoomRole.Combat or RoomRole.Stairs) && template.SpawnPoints.Count == 0)

@@ -182,49 +182,142 @@ public class HazardTests
     }
 
     [Theory]
-    [InlineData(4, true)]
-    [InlineData(3, false)]
-    public void JumpingAPitCostsTwoStepsAndARollOrYouFallIn(int roll, bool cleared)
+    [InlineData(6, 4, 2)]
+    [InlineData(4, 4, 2)]
+    [InlineData(3, 4, 3)]
+    [InlineData(1, 4, 4)]
+    public void ALeapCarriesHalfTheRollAndNeverPastTheTarget(int roll, int landingX, int landingY)
     {
-        GameSession session = TestRun.Start(PitAhead, new ScriptedDice(1, roll));
+        // Aiming two tiles north from (4,4), over the pit at (4,3) to (4,2).
+        GameSession session = TestRun.Start(PitAhead, new ScriptedDice(roll));
         Hero hero = session.HeroInSeat();
-        session.Do(new RollMovement(hero.Id));
-        Assert.Equal([new GridPosition(4, 2)], session.GetJumpLandings());
+        Assert.Contains(new GridPosition(4, 2), session.GetLeapTargets());
 
-        IReadOnlyList<GameEvent> events = session.Do(new JumpPit(hero.Id, new GridPosition(4, 2)));
+        IReadOnlyList<GameEvent> events = session.Do(new Leap(hero.Id, new GridPosition(4, 2)));
 
-        Assert.Equal(cleared, events.SingleOf<PitJumped>().Cleared);
-        if (cleared)
+        var landing = new GridPosition(landingX, landingY);
+        Assert.Equal(new Leaped(hero.Id, new GridPosition(4, 4), new GridPosition(4, 2), roll, landing), events.SingleOf<Leaped>());
+        Assert.Equal(1, session.State.Turn!.MoveDiceUsed);
+        if (landing == new GridPosition(4, 3))
         {
-            Assert.Equal(new GridPosition(4, 2), hero.Position);
-            Assert.Equal(1, session.State.Turn!.MovementPoints);
+            Assert.True(events.SingleOf<FellIntoPit>().Bottomless);
+            Assert.Equal(GameRules.HeroBaseStats.Hearts - GameRules.FallDamage, hero.Hearts);
         }
         else
         {
-            Assert.Contains(events, gameEvent => gameEvent is FellIntoPit);
-            Assert.Equal(GameRules.HeroBaseStats.Hearts - GameRules.FallDamage, hero.Hearts);
+            Assert.Equal(landing, hero.Position);
         }
     }
 
     [Fact]
-    public void AJumpNeedsAPitBetweenAndRoomToLand()
+    public void LeapsGoInStraightLinesUpToThreeTilesAndNotThroughWalls()
     {
         GameSession session = TestRun.Start("""
             .........
             .........
             ....#....
             ....~....
+            ...m1....
+            .........
+            .........
+            .........
+            .........
+            """);
+        Hero hero = session.HeroInSeat();
+
+        IReadOnlyList<GridPosition> targets = session.GetLeapTargets();
+
+        Assert.DoesNotContain(new GridPosition(4, 2), targets);
+        Assert.DoesNotContain(new GridPosition(4, 1), targets);
+        Assert.Contains(new GridPosition(2, 4), targets);
+        Assert.DoesNotContain(new GridPosition(3, 4), targets);
+        Assert.Contains(new GridPosition(7, 7), targets);
+        Assert.DoesNotContain(new GridPosition(8, 8), targets);
+        Assert.DoesNotContain(new GridPosition(6, 5), targets);
+        Assert.Contains("straight line", session.Refuse(new Leap(hero.Id, new GridPosition(6, 5))));
+    }
+
+    [Fact]
+    public void RoughGroundAndWaterCostTwoStepsAndMonstersCantSwim()
+    {
+        GameSession session = TestRun.Start("""
+            .........
+            .........
+            .........
+            ....=....
+            ....:....
+            ....1,...
+            .........
+            .........
+            .........
+            """, new ScriptedDice(3));
+        Hero hero = session.HeroInSeat();
+        session.Do(new RollMovement(hero.Id));
+
+        IReadOnlyDictionary<GridPosition, int> reachable = session.GetReachableTiles();
+
+        Assert.Equal(2, reachable[new GridPosition(4, 4)]);
+        Assert.Equal(4, reachable[new GridPosition(4, 3)]);
+        Assert.Equal(2, reachable[new GridPosition(5, 5)]);
+        session.Do(new MoveHero(hero.Id, new GridPosition(4, 3)));
+        Assert.Equal(1, session.State.Turn!.MovementPoints);
+        Assert.True(TileKind.DeepWater.MoveCost() == 2 && !TileKind.DeepWater.IsWalkable() && TileKind.DeepWater.IsWalkable(flying: true));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void EndingATurnInDeepWaterTakesARumbleDieOrYouDrownBackToShore(bool diceLeft)
+    {
+        GameSession session = TestRun.Start("""
+            .........
+            .........
+            .........
+            ....=....
             ....1....
             .........
             .........
             .........
             .........
-            """, new ScriptedDice(1));
+            """, new ScriptedDice(1, 5, 5), heroes: 2);
         Hero hero = session.HeroInSeat();
         session.Do(new RollMovement(hero.Id));
+        session.Do(new MoveHero(hero.Id, new GridPosition(4, 3)));
+        if (!diceLeft)
+        {
+            session.State.Turn!.AttackDiceUsed = hero.EffectiveStats.AttackDice;
+        }
 
-        Assert.Contains("nowhere to land", session.Refuse(new JumpPit(hero.Id, new GridPosition(4, 2))));
-        Assert.Contains("straight over a pit", session.Refuse(new JumpPit(hero.Id, new GridPosition(4, 6))));
+        IReadOnlyList<GameEvent> events = session.Do(new EndTurn(hero.Id));
+
+        if (diceLeft)
+        {
+            Assert.Equal(new StayedAfloat(hero.Id), events.SingleOf<StayedAfloat>());
+            Assert.Equal(new GridPosition(4, 3), hero.Position);
+            Assert.Equal(GameRules.HeroBaseStats.Hearts, hero.Hearts);
+        }
+        else
+        {
+            Assert.Equal(new Drowned(hero.Id, new GridPosition(4, 3), new GridPosition(4, 4)), events.SingleOf<Drowned>());
+            Assert.Equal(new GridPosition(4, 4), hero.Position);
+            Assert.Equal(GameRules.HeroBaseStats.Hearts - GameRules.DrownDamage, hero.Hearts);
+        }
+
+        Assert.Equal(new TurnStarted(session.HeroInSeat(1).Id), events[^1]);
+    }
+
+    [Fact]
+    public void AMonsterShovedIntoDeepWaterLosesAHeartAndScramblesOut()
+    {
+        GameSession session = TestRun.Start(DummyByThePit.Replace('~', '='), new ScriptedDice(3));
+        Hero hero = session.HeroInSeat();
+        Monster dummy = session.OnlyMonster();
+
+        IReadOnlyList<GameEvent> events = session.Do(new Shove(hero.Id, dummy.Id));
+
+        Assert.Equal(dummy.MaxHearts - 1, dummy.Hearts);
+        Assert.NotEqual(TileKind.DeepWater, session.RoomById().Layout[dummy.Position]);
+        Assert.Equal(new ClimbedOut(dummy.Id, dummy.Position), events.SingleOf<ClimbedOut>());
     }
 
     [Fact]

@@ -92,6 +92,8 @@ public sealed partial class GameSession
             Disarm c => Handle(c, events),
             Steal c => Handle(c, events),
             JumpDown c => Handle(c, events),
+            OpenGate c => Handle(c, events),
+            GoThroughBreach c => Handle(c, events),
             UseCard c => Handle(c, events),
             EquipCard c => Handle(c, events),
             BeltCard c => Handle(c, events),
@@ -106,7 +108,7 @@ public sealed partial class GameSession
             OrderCompanion c => Handle(c, events),
             Shove c => Handle(c, events),
             AttackAlly c => Handle(c, events),
-            JumpPit c => Handle(c, events),
+            Leap c => Handle(c, events),
             _ => $"Unknown command {command.GetType().Name}.",
         };
 
@@ -122,6 +124,11 @@ public sealed partial class GameSession
             State.Turn.UnsettledPowerDice = 0;
             events.Add(new TurnEnded(turn.HeroId));
             AdvanceTurn(State.GetHero(turn.HeroId).Seat, events);
+        }
+
+        foreach (Hero hero in State.Heroes.Where(hero => hero.IsActive && State.RoomOf(hero).Layout[hero.Position].IsWalkable()))
+        {
+            hero.Footing = hero.Position;
         }
 
         return CommandResult.Accept(events);
@@ -159,8 +166,15 @@ public sealed partial class GameSession
 
     private string? Handle(EndTurn command, List<GameEvent> events)
     {
+        Hero hero = ActiveHero;
+        KeepAfloat(hero, events);
+        if (State.Phase != RunPhase.InProgress || !hero.IsActive)
+        {
+            return null;
+        }
+
         events.Add(new TurnEnded(command.HeroId));
-        AdvanceTurn(ActiveHero.Seat, events);
+        AdvanceTurn(hero.Seat, events);
         return null;
     }
 
@@ -272,10 +286,11 @@ public sealed partial class GameSession
 
         ValidateDoors(state);
         AddPassages(state, setup.Passages);
+        AddBreaches(state, setup.Breaches);
         foreach (Room room in state.Rooms.Values)
         {
             room.BelowRoomId = state.Rooms.Values
-                .FirstOrDefault(below => below.Floor == room.Floor + 1 && below.MapPosition == room.MapPosition && below.Role != RoomRole.Boss)?.Id;
+                .FirstOrDefault(below => below.Floor == room.Floor + 1 && below.MapPosition == room.MapPosition && below.Role is not (RoomRole.Boss or RoomRole.Secret))?.Id;
         }
 
         if (!state.Rooms.TryGetValue(setup.StartRoomId, out Room? startRoom))
@@ -388,6 +403,33 @@ public sealed partial class GameSession
         foreach ((GridPosition tile, int keys) in features.Keys)
         {
             room.AddKeys(tile, keys);
+        }
+
+        foreach ((GridPosition tile, int difficulty) in features.Gates)
+        {
+            room.LockGate(tile, difficulty);
+        }
+
+        foreach ((GridPosition tile, int difficulty) in features.HiddenGates)
+        {
+            room.HideGate(tile, difficulty);
+        }
+    }
+
+    /// <summary>Each breach is a cracked wall on both rooms' facing edge tiles, leading into each other.</summary>
+    private static void AddBreaches(GameState state, IReadOnlyList<BreachSetup> breaches)
+    {
+        foreach (BreachSetup breach in breaches)
+        {
+            if (!state.Rooms.TryGetValue(breach.RoomA, out Room? a) || !state.Rooms.TryGetValue(breach.RoomB, out Room? b))
+            {
+                throw new ArgumentException($"A breach joins rooms that aren't in the run: {breach}.", nameof(breaches));
+            }
+
+            a.Layout.Set(breach.TileA, TileKind.CrackedWall);
+            b.Layout.Set(breach.TileB, TileKind.CrackedWall);
+            a.AddBreach(breach.TileA, b.Id, breach.TileB);
+            b.AddBreach(breach.TileB, a.Id, breach.TileA);
         }
     }
 

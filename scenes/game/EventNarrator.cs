@@ -19,19 +19,22 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         CompanionOrdered ordered => $"{nameOf(ordered.OwnerId)} tells {nameOf(ordered.CompanionId)} to {Command(ordered.Order)}.",
         FellIntoPit { Bottomless: true } fell => $"{nameOf(fell.EntityId)} falls into the pit!",
         FellIntoPit fell => $"{nameOf(fell.EntityId)} falls through the pit to the room below!",
-        ClimbedOut climbed => $"{nameOf(climbed.HeroId)} claws their way back out.",
+        ClimbedOut climbed => $"{nameOf(climbed.EntityId)} claws their way back out.",
         Shoved shoved => $"{nameOf(shoved.TargetId)} is pushed back!",
         ShoveResisted resisted => $"{nameOf(resisted.TargetId)} holds their ground.",
         MonsterTrapped trapped => $"{nameOf(trapped.MonsterId)} is shoved onto a {(trapped.Kind == TrapKind.TrapDoor ? "trap door" : "spike trap")}!",
         MonsterFell fell => $"{nameOf(fell.MonsterId)} drops to the floor below.",
-        PitJumped { Cleared: true } jump => $"{nameOf(jump.HeroId)} leaps the pit ({jump.Roll}).",
-        PitJumped jump => $"{nameOf(jump.HeroId)} misjudges the jump ({jump.Roll}, needed {jump.Difficulty})...",
+        Leaped { Roll: < 2 } leap => $"{nameOf(leap.HeroId)} stumbles on the leap ({leap.Roll}) and goes nowhere.",
+        Leaped leap when leap.Landing == leap.Target => $"{nameOf(leap.HeroId)} leaps ({leap.Roll}) and lands on target.",
+        Leaped leap => $"{nameOf(leap.HeroId)} leaps ({leap.Roll}) but comes down short!",
+        StayedAfloat afloat => $"{nameOf(afloat.HeroId)} treads water, spending a Rumble die to stay afloat.",
+        Drowned drowned => $"{nameOf(drowned.HeroId)} has no strength left to swim and is washed back to shore!",
         PowerDiceEarned earned => $"{nameOf(earned.HeroId)} rolled a 6 and earns a Power Die!",
         PowerDieAdded added => $"{nameOf(added.HeroId)} adds a Power Die: {added.Face}, for {added.Total}.",
         PowerDiceBanked banked => $"{nameOf(banked.OwnerId)} banks {PowerDice(banked.Count)} ({banked.Banked} banked).",
         PowerDiceSpent spent => $"{nameOf(spent.OwnerId)} spends {PowerDice(spent.Count)}.",
-        Damaged { Amount: 0 } damaged => $"{nameOf(damaged.TargetId)} blocks it.",
-        Damaged damaged => $"{nameOf(damaged.TargetId)} is hit and loses {Count(damaged.Amount, "heart")}.",
+        Damaged { Amount: 0 } damaged => $"Miss! {nameOf(damaged.TargetId)} blocks it.",
+        Damaged damaged => $"Hit! {nameOf(damaged.TargetId)} loses {Count(damaged.Amount, "heart")}.",
         MonsterDefeated defeated => $"{nameOf(defeated.MonsterId)} is defeated!",
         MonsterCollapsed collapsed => $"{nameOf(collapsed.MonsterId)} collapses into a heap of bones...",
         MonsterReassembled risen => $"{nameOf(risen.MonsterId)} pulls itself back together!",
@@ -52,10 +55,12 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         CheckFailed failed => $"{nameOf(failed.HeroId)} fails{(failed.Kind is OdHandCheckKind.PickDoor or OdHandCheckKind.PickChest ? ": the lock holds" : "")}.",
         DoorUnlocked { BossDoor: true } door => $"{nameOf(door.HeroId)} turns the Boss Key. The Boss Door swings open!",
         DoorUnlocked { Picked: true } door => $"{nameOf(door.HeroId)} picks the lock. The door opens.",
+        GateOpened { Picked: true } gate => $"{nameOf(gate.HeroId)} picks the gate's lock. It swings open.",
+        GateOpened gate => $"{nameOf(gate.HeroId)} unlocks the gate with a key.",
         DoorUnlocked door => $"{nameOf(door.HeroId)} unlocks the door.",
         ChestUnlocked { Picked: true } chest => $"{nameOf(chest.HeroId)} picks the chest's lock.",
         ChestUnlocked chest => $"{nameOf(chest.HeroId)} unlocks the chest with a key.",
-        SecretsFound { Doors.Count: 0, Traps.Count: 0, Stashes.Count: 0 } found => $"{nameOf(found.HeroId)} searches the room but finds nothing.",
+        SecretsFound { Doors.Count: 0, Traps.Count: 0, Stashes.Count: 0, Gates: null or { Count: 0 } } found => $"{nameOf(found.HeroId)} searches the room but finds nothing.",
         SecretsFound found => $"{nameOf(found.HeroId)} finds {Found(found)}!",
         TrapDisarmed disarmed => $"{nameOf(disarmed.HeroId)} disarms the trap.",
         TrapSprung { Kind: TrapKind.TrapDoor } sprung => $"The floor gives way under {nameOf(sprung.HeroId)}!",
@@ -75,6 +80,7 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         HeroDescended { FirstTimeOnFloor: true } descended =>
             $"{nameOf(descended.HeroId)} descends to floor {descended.Floor}. Luck and charges are restored.",
         HeroDescended descended => $"{nameOf(descended.HeroId)} descends to floor {descended.Floor}.",
+        HeroAscended ascended => $"{nameOf(ascended.HeroId)} climbs back up to floor {ascended.Floor}.",
         HeroEscaped escaped => $"{nameOf(escaped.HeroId)} escapes the dungeon with {escaped.TreasureValue}g of treasure!",
         RoomCleared => "The room falls silent.",
         PotSmashed { CardId: int cardId } smashed => $"{nameOf(smashed.HeroId)} smashes a pot and finds {cardNameOf(cardId)}!",
@@ -115,6 +121,11 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         if (found.Stashes.Count > 0)
         {
             parts.Add(found.Stashes.Count == 1 ? "a hidden stash" : $"{found.Stashes.Count} hidden stashes");
+        }
+
+        if (found.Gates is { Count: > 0 } gates)
+        {
+            parts.Add(gates.Count == 1 ? "a secret way through the wall" : $"{gates.Count} secret ways through the walls");
         }
 
         return string.Join(" and ", parts);

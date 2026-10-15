@@ -46,7 +46,7 @@ public sealed partial class GameSession
             return "Stand next to them to shove them.";
         }
 
-        if (monster is { Definition.Boss: true })
+        if (monster is { Definition.Boss: true } or { Definition.Miniboss: true })
         {
             return $"The {monster.Definition.Name} is too mighty to shove.";
         }
@@ -68,43 +68,119 @@ public sealed partial class GameSession
             .ToList();
     }
 
-    /// <summary>Tiles the active hero could jump to across a pit right now.</summary>
-    public IReadOnlyList<GridPosition> GetJumpLandings() =>
-        State.Turn is null ? [] : Enum.GetValues<Direction>()
-            .Select(side => ActiveHero.Position.Step(side).Step(side))
-            .Where(landing => CheckJump(landing) is null)
-            .ToList();
-
-    /// <summary>Why the active hero can't jump to <paramref name="landing"/> now, or null if they can.</summary>
-    public string? CheckJump(GridPosition landing)
+    /// <summary>Tiles the active hero could aim a leap at right now (see <see cref="Leap"/>).</summary>
+    public IReadOnlyList<GridPosition> GetLeapTargets()
     {
-        if (State.Turn is not { PendingRoll: null })
+        if (State.Turn is not { PendingRoll: null } || MoveDiceLeft < 1)
         {
-            return "Finish the roll first.";
-        }
-
-        if (CheckCanMove(2) is { } error)
-        {
-            return error;
+            return [];
         }
 
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
-        int dx = landing.X - hero.Position.X;
-        int dy = landing.Y - hero.Position.Y;
-        bool straight = (Math.Abs(dx) == 2 && dy == 0) || (Math.Abs(dy) == 2 && dx == 0);
-        var pit = new GridPosition(hero.Position.X + dx / 2, hero.Position.Y + dy / 2);
-        if (!straight || !landing.IsInRoom || room.Layout[pit] != TileKind.Pit)
+        var targets = new List<GridPosition>();
+        foreach ((int dx, int dy) in LeapDirections)
         {
-            return "Jump straight over a pit to the tile beyond it.";
+            for (int distance = 1; distance <= GameRules.MaxLeap; distance++)
+            {
+                var tile = new GridPosition(hero.Position.X + dx * distance, hero.Position.Y + dy * distance);
+                if (!tile.IsInRoom || BlocksLeap(room.Layout[tile]))
+                {
+                    break;
+                }
+
+                if (CanLandOn(room, tile))
+                {
+                    targets.Add(tile);
+                }
+            }
         }
 
-        if (!room.Layout[landing].IsWalkable() || IsOccupied(room, landing) || room.TrapAt(landing) is { Revealed: true })
+        return targets;
+    }
+
+    private static readonly (int Dx, int Dy)[] LeapDirections = [(0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1)];
+
+    /// <summary>A leap sails over pits, water, traps and figures, but not over walls, chests or pots.</summary>
+    private static bool BlocksLeap(TileKind tile) => tile is TileKind.Wall or TileKind.CrackedWall or TileKind.Chest or TileKind.Pot;
+
+    /// <summary>Where a leaping hero can come down: standing ground or water, with nobody on it.</summary>
+    private bool CanLandOn(Room room, GridPosition tile) =>
+        (room.Layout[tile].IsWalkable() || room.Layout[tile] == TileKind.DeepWater) && !IsOccupied(room, tile);
+
+    private string? Handle(Leap command, List<GameEvent> events)
+    {
+        if (MoveDiceLeft < 1)
         {
-            return "There's nowhere to land on the far side.";
+            return "Leaping takes a Wend die, and you have none left this turn.";
+        }
+
+        if (!GetLeapTargets().Contains(command.Target))
+        {
+            return $"Leap in a straight line (diagonals too), up to {GameRules.MaxLeap} tiles, onto open ground or water.";
+        }
+
+        Hero hero = ActiveHero;
+        Room room = ActiveRoom;
+        GridPosition from = hero.Position;
+        int aimed = from.ChebyshevDistanceTo(command.Target);
+        int dx = Math.Sign(command.Target.X - from.X);
+        int dy = Math.Sign(command.Target.Y - from.Y);
+
+        // Half the roll, rounded down, is how far the leap carries; it never overshoots the target.
+        // Coming down on someone, it falls back to the last free tile before them.
+        int roll = RollOneDie();
+        int distance = Math.Min(aimed, roll / 2);
+        GridPosition landing = from;
+        for (int d = distance; d > 0; d--)
+        {
+            var tile = new GridPosition(from.X + dx * d, from.Y + dy * d);
+            if (!IsOccupied(room, tile) || tile == from)
+            {
+                landing = tile;
+                break;
+            }
+        }
+
+        Turn.MoveDiceUsed++;
+        events.Add(new Leaped(hero.Id, from, command.Target, roll, landing));
+        hero.Position = landing;
+        if (room.Layout[landing] == TileKind.Pit)
+        {
+            FallIntoPit(hero, room, landing, events);
+        }
+        else if (landing != from && room.TrapAt(landing) is { } trap)
+        {
+            Turn.EndMove();
+            SpringTrap(hero, room, trap, landing, events);
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// At the end of a hero's turn in deep water, one of their unused Rumble dice keeps them afloat.
+    /// With none left they drown: they wash back to their last dry footing and lose a heart.
+    /// </summary>
+    private void KeepAfloat(Hero hero, List<GameEvent> events)
+    {
+        Room room = State.RoomOf(hero);
+        if (room.Layout[hero.Position] != TileKind.DeepWater)
+        {
+            return;
+        }
+
+        if (AttackDiceLeft > 0)
+        {
+            Turn.AttackDiceUsed++;
+            events.Add(new StayedAfloat(hero.Id));
+            return;
+        }
+
+        GridPosition from = hero.Position;
+        hero.Position = IsOccupied(room, hero.Footing) ? LandingNear(room, hero.Footing) ?? hero.Footing : hero.Footing;
+        events.Add(new Drowned(hero.Id, from, hero.Position));
+        HurtHero(room, hero, GameRules.DrownDamage, events);
     }
 
     private string? Handle(Shove command, List<GameEvent> events)
@@ -132,39 +208,6 @@ public sealed partial class GameSession
         Turn.WeaponUsed |= bonus > 0;
         SpendBankedPowerDice(hero, command.PowerDice, events);
         RollHeroAttack(hero, dice, bonus, [command.TargetId], DamageSource.Shove, events, command.PowerDice);
-        return null;
-    }
-
-    private string? Handle(JumpPit command, List<GameEvent> events)
-    {
-        if (CheckJump(command.Landing) is { } error)
-        {
-            return error;
-        }
-
-        Hero hero = ActiveHero;
-        Room room = ActiveRoom;
-        GridPosition from = hero.Position;
-        var pit = new GridPosition((from.X + command.Landing.X) / 2, (from.Y + command.Landing.Y) / 2);
-        int roll = RollOneDie();
-        bool cleared = roll >= GameRules.JumpDifficulty;
-        Turn.MovementPoints -= 2;
-        Turn.HasMoved = true;
-        events.Add(new PitJumped(hero.Id, from, command.Landing, roll, GameRules.JumpDifficulty, cleared));
-        if (!cleared)
-        {
-            hero.Position = pit;
-            FallIntoPit(hero, room, pit, events);
-            return null;
-        }
-
-        hero.Position = command.Landing;
-        if (room.TrapAt(command.Landing) is { } hidden)
-        {
-            Turn.EndMove();
-            SpringTrap(hero, room, hidden, command.Landing, events);
-        }
-
         return null;
     }
 
@@ -221,7 +264,7 @@ public sealed partial class GameSession
         }
 
         TileKind tile = room.Layout[to];
-        return tile.IsWalkable(flying) || tile == TileKind.Pit ? to : null;
+        return tile.IsWalkable(flying) || tile is TileKind.Pit or TileKind.DeepWater ? to : null;
     }
 
     /// <summary>A shove roll that beats the target's defense pushes it; then any trap or pit there takes it.</summary>
@@ -252,7 +295,17 @@ public sealed partial class GameSession
         GridPosition from = monster.Position;
         monster.Position = to;
         events.Add(new Shoved(hero.Id, monster.Id, from, to));
-        if (room.Layout[to] == TileKind.Pit && !monster.Definition.Flying)
+        if (room.Layout[to] == TileKind.DeepWater && !monster.Definition.Flying)
+        {
+            // Monsters don't swim: it loses a heart and scrambles out onto the nearest footing.
+            HurtMonster(hero, room, monster, events);
+            if (room.FindMonster(monster.Id) is not null && LandingNear(room, to) is { } shore)
+            {
+                monster.Position = shore;
+                events.Add(new ClimbedOut(monster.Id, shore));
+            }
+        }
+        else if (room.Layout[to] == TileKind.Pit && !monster.Definition.Flying)
         {
             MonsterFalls(hero, room, monster, from, to, events);
         }

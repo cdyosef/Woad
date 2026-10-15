@@ -131,6 +131,13 @@ public static class SimpleBot
             return new MoveHero(hero.Id, destination);
         }
 
+        // A locked gate in the way: of where it's going, or of a monster it can't otherwise reach.
+        GridPosition? gateGoal = goal ?? (fighting ? room.Monsters.MinBy(monster => monster.Position.ManhattanDistanceTo(hero.Position))!.Position : null);
+        if (gateGoal is { } beyond && ThroughGate(session, hero, room, beyond) is { } gateCommand)
+        {
+            return gateCommand;
+        }
+
         // Not using this doorway (say, a teammate holds the Boss Key): at least keep out of it.
         bool InDoorway(GridPosition at) => room.Doors.Keys.Any(side => side.DoorTile() == at);
         if (!fighting && door?.DoorTile() != hero.Position && InDoorway(hero.Position)
@@ -187,6 +194,37 @@ public static class SimpleBot
     /// <summary>Where the bot can walk: like the rules, around monsters and the traps it knows of.</summary>
     internal static bool Walkable(Room room, GridPosition tile) =>
         room.Layout[tile].IsWalkable() && room.MonsterAt(tile) is null && room.TrapAt(tile) is not { Revealed: true };
+
+    /// <summary>
+    /// When a locked gate stands between the hero and its goal: walk up to the gate, then open it with
+    /// a key or pick its lock. Null when no gate is in the way (or there's nothing to do about it now).
+    /// </summary>
+    private static GameCommand? ThroughGate(GameSession session, Hero hero, Room room, GridPosition goal)
+    {
+        PathSearch walk = PathSearch.Run(hero.Position, tile => Walkable(room, tile));
+        if (walk.CanReach(goal))
+        {
+            return null;
+        }
+
+        foreach (GridPosition gate in room.Gates.Keys.OrderBy(gate => gate.ManhattanDistanceTo(hero.Position)))
+        {
+            if (hero.Position.ManhattanDistanceTo(gate) == 1)
+            {
+                return hero.Keys > 0 ? new OpenGate(hero.Id, gate)
+                    : session.CheckPickLock(gate) is null ? new PickLock(hero.Id, gate)
+                    : null;
+            }
+
+            if (gate.OrthogonalNeighbors().Where(walk.CanReach).OrderBy(stand => walk.Distances[stand]).Select(stand => (GridPosition?)stand).FirstOrDefault() is { } spot
+                && StepAlongPath(session, hero, room, spot) is { } step)
+            {
+                return new MoveHero(hero.Id, step);
+            }
+        }
+
+        return null;
+    }
 
     /// <summary>Where to aim an attack card: at monsters, and with friendly fire on, never where the blast would catch a hero.</summary>
     private static GridPosition? SafeAim(GameSession session, Room room, CardInstance card)

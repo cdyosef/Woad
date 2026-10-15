@@ -78,7 +78,7 @@ public static class DemoRun
 
     /// <summary>
     /// For --hazardtest: Aria above a slimeling at the edge of a row of pits, with a room under them on
-    /// floor 2, so a shove drops the slimeling and a jump crosses (or drops Aria).
+    /// floor 2, so a shove drops the slimeling and a leap crosses (or drops Aria).
     /// </summary>
     public static RunSetup Hazards(ulong seed)
     {
