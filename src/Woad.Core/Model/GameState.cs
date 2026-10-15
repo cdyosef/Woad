@@ -25,6 +25,9 @@ public sealed class GameState
 
     public string ThemeId { get; }
 
+    /// <summary>Heroes can hurt each other (see <see cref="Rules.RunSetup.FriendlyFire"/>).</summary>
+    public bool FriendlyFire { get; internal init; }
+
     public int Round { get; internal set; }
 
     public RunPhase Phase { get; internal set; }

@@ -46,9 +46,9 @@ public static class SimpleBot
             return new UseCard(hero.Id, potion.Id);
         }
 
-        if (fighting && UsableBeltCard(session, hero, CardEffectKind.Attack) is { } bomb)
+        if (fighting && UsableBeltCard(session, hero, CardEffectKind.Attack) is { } bomb && SafeAim(session, room, bomb) is { } aim)
         {
-            return new UseCard(hero.Id, bomb.Id, session.GetCardTargets(bomb.Id)[0]);
+            return new UseCard(hero.Id, bomb.Id, aim);
         }
 
         // One all-out attack: every Attack die left plus the weapon.
@@ -187,6 +187,18 @@ public static class SimpleBot
     /// <summary>Where the bot can walk: like the rules, around monsters and the traps it knows of.</summary>
     internal static bool Walkable(Room room, GridPosition tile) =>
         room.Layout[tile].IsWalkable() && room.MonsterAt(tile) is null && room.TrapAt(tile) is not { Revealed: true };
+
+    /// <summary>Where to aim an attack card: at monsters, and with friendly fire on, never where the blast would catch a hero.</summary>
+    private static GridPosition? SafeAim(GameSession session, Room room, CardInstance card)
+    {
+        int radius = card.Definition.Effect!.AreaRadius;
+        bool Catches(GridPosition aim, GridPosition at) => at.ChebyshevDistanceTo(aim) <= radius;
+        return session.GetCardTargets(card.Id)
+            .Where(aim => room.Monsters.Any(monster => Catches(aim, monster.Position)))
+            .Where(aim => !session.State.FriendlyFire || !session.State.ActiveHeroesIn(room).Any(hero => Catches(aim, hero.Position)))
+            .Select(aim => (GridPosition?)aim)
+            .FirstOrDefault();
+    }
 
     internal static CardInstance? UsableBeltCard(GameSession session, Hero hero, CardEffectKind kind) =>
         hero.Belt.FirstOrDefault(card => card.Definition.Effect?.Kind == kind && session.GetCardTargets(card.Id).Count > 0);

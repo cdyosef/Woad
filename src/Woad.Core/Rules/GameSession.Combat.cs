@@ -61,6 +61,54 @@ public sealed partial class GameSession
         return null;
     }
 
+    /// <summary>With friendly fire on, the other heroes and companions the active hero could attack right now.</summary>
+    public IReadOnlyList<Hero> GetAttackableAllies()
+    {
+        if (!State.FriendlyFire || State.Turn is not { PendingRoll: null } || AttackDiceLeft < 1)
+        {
+            return [];
+        }
+
+        Hero hero = ActiveHero;
+        Room room = ActiveRoom;
+        return State.ActiveHeroesIn(room)
+            .Where(ally => ally != hero && Targeting.CanHeroAttack(room.Layout, hero.AttackRange, hero.Position, ally.Position))
+            .ToList();
+    }
+
+    private string? Handle(AttackAlly command, List<GameEvent> events)
+    {
+        if (!State.FriendlyFire)
+        {
+            return "Friendly fire is off: you can't attack your allies.";
+        }
+
+        int left = AttackDiceLeft;
+        int dice = command.Dice ?? left;
+        if (left < 1 || dice < 1 || dice > left)
+        {
+            return left < 1 ? "You've used all your Rumble dice this turn." : $"Choose 1 to {left} Rumble dice.";
+        }
+
+        Hero hero = ActiveHero;
+        if (GetAttackableAllies().FirstOrDefault(ally => ally.Id == command.TargetId) is not { } target)
+        {
+            return "They're out of reach.";
+        }
+
+        if (CheckBankedPowerDice(hero, command.PowerDice) is { } powerError)
+        {
+            return powerError;
+        }
+
+        int bonus = command.UseWeapon ? WeaponBonusLeft : 0;
+        Turn.AttackDiceUsed += dice;
+        Turn.WeaponUsed |= bonus > 0;
+        SpendBankedPowerDice(hero, command.PowerDice, events);
+        RollHeroAttack(hero, dice, bonus, [target.Id], DamageSource.Weapon, events, command.PowerDice);
+        return null;
+    }
+
     private string? Handle(RerollDie command, List<GameEvent> events)
     {
         Hero hero = ActiveHero;
@@ -134,7 +182,10 @@ public sealed partial class GameSession
         EarnPowerDice(hero, Sixes(roll.Faces), events);
     }
 
-    /// <summary>Each target defends against the attack's total separately.</summary>
+    /// <summary>
+    /// Each target defends against the attack's total separately. With friendly fire on, targets may
+    /// be heroes; one downed this way is downed as by a monster, with no kill for the attacker.
+    /// </summary>
     private void ResolveHeroAttack(PendingRoll attack, List<GameEvent> events)
     {
         Hero hero = State.GetHero(attack.HeroId);
@@ -144,6 +195,10 @@ public sealed partial class GameSession
             if (room.FindMonster(targetId) is { } monster)
             {
                 DamageMonster(hero, room, monster, attack.Total, attack.Source, events);
+            }
+            else if (State.ActiveHeroesIn(room).FirstOrDefault(ally => ally.Id == targetId) is { } ally)
+            {
+                DamageHero(room, ally, attack.Total, events);
             }
         }
     }

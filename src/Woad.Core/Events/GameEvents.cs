@@ -177,11 +177,11 @@ public sealed record FellIntoPit(int EntityId, string RoomId, GridPosition Pit, 
 /// <summary>A hero who fell into a bottomless pit climbed back out.</summary>
 public sealed record ClimbedOut(int HeroId, GridPosition Position) : GameEvent;
 
-/// <summary>A hero's shove pushed a monster from one tile to the next.</summary>
-public sealed record MonsterShoved(int HeroId, int MonsterId, GridPosition From, GridPosition To) : GameEvent;
+/// <summary>A hero's shove pushed a monster (or, with friendly fire on, a hero) from one tile to the next.</summary>
+public sealed record Shoved(int HeroId, int TargetId, GridPosition From, GridPosition To) : GameEvent;
 
-/// <summary>A shove didn't beat the monster's defense: it stands its ground.</summary>
-public sealed record ShoveResisted(int HeroId, int MonsterId) : GameEvent;
+/// <summary>A shove didn't beat the target's defense: it stands its ground.</summary>
+public sealed record ShoveResisted(int HeroId, int TargetId) : GameEvent;
 
 /// <summary>A monster was shoved onto a trap, which went off (and is now revealed).</summary>
 public sealed record MonsterTrapped(int MonsterId, TrapKind Kind, GridPosition Position) : GameEvent;

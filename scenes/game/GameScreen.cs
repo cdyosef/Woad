@@ -117,6 +117,11 @@ public partial class GameScreen : Control
         ReloadFigures();
         ShowRoom(_session.State.RoomOf(_session.State.Heroes[0]).Id);
         UpdateMusic();
+        if (setup.FriendlyFire)
+        {
+            Log("Friendly fire is on (FF): blasts, attacks and shoves can hit your allies.", Palette.Danger);
+        }
+
         await PlayEvents(_session.Begin());
     }
 
@@ -348,14 +353,14 @@ public partial class GameScreen : Control
                 await Walk(climbed.HeroId, [climbed.Position]);
                 break;
 
-            case MonsterShoved shoved:
+            case Shoved shoved:
                 _dice.ShowOutcome(true);
-                await Walk(shoved.MonsterId, [shoved.To]);
+                await Walk(shoved.TargetId, [shoved.To]);
                 break;
 
             case ShoveResisted resisted:
                 _dice.ShowOutcome(false);
-                if (_figures.TryGetValue(resisted.MonsterId, out Figure? firm) && firm.RoomId == _shownRoomId)
+                if (_figures.TryGetValue(resisted.TargetId, out Figure? firm) && firm.RoomId == _shownRoomId)
                 {
                     _board.FloatText(firm.Position, "holds firm", Palette.TextDim);
                 }
@@ -595,7 +600,7 @@ public partial class GameScreen : Control
             case FellIntoPit:
                 Sfx.Play("stairs", 0.6f);
                 break;
-            case MonsterShoved or PitJumped { Cleared: true }:
+            case Shoved or PitJumped { Cleared: true }:
                 Sfx.Play("block", 1.3f);
                 break;
             case ShoveResisted:
@@ -670,8 +675,8 @@ public partial class GameScreen : Control
         TrapSprung sprung => FigureRoom(sprung.HeroId),
         FellIntoPit fell => fell.RoomId,
         ClimbedOut climbed => FigureRoom(climbed.HeroId),
-        MonsterShoved shoved => FigureRoom(shoved.MonsterId),
-        ShoveResisted resisted => FigureRoom(resisted.MonsterId),
+        Shoved shoved => FigureRoom(shoved.TargetId),
+        ShoveResisted resisted => FigureRoom(resisted.TargetId),
         MonsterTrapped trapped => FigureRoom(trapped.MonsterId),
         MonsterFell fell => fell.FromRoomId,
         PitJumped jump => FigureRoom(jump.HeroId),

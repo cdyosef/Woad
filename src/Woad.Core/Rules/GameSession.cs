@@ -105,6 +105,7 @@ public sealed partial class GameSession
             Escape c => Handle(c, events),
             OrderCompanion c => Handle(c, events),
             Shove c => Handle(c, events),
+            AttackAlly c => Handle(c, events),
             JumpPit c => Handle(c, events),
             _ => $"Unknown command {command.GetType().Name}.",
         };
@@ -247,7 +248,7 @@ public sealed partial class GameSession
         }
 
         ThemeDefinition theme = content.GetTheme(setup.ThemeId);
-        var state = new GameState(setup.Seed, theme.Id, new LootDeck(theme, content, random.Loot));
+        var state = new GameState(setup.Seed, theme.Id, new LootDeck(theme, content, random.Loot)) { FriendlyFire = setup.FriendlyFire };
 
         foreach (RoomSetup roomSetup in setup.Rooms)
         {

@@ -27,8 +27,13 @@ public partial class RunSetupScreen : MenuScreen
 
     public event Action? NewCharacterRequested;
 
-    /// <summary>The chosen characters in seat order, and the seed for the dungeon and dice.</summary>
-    public event Action<IReadOnlyList<Character>, ulong>? StartRequested;
+    /// <summary>The chosen characters in seat order, the seed for the dungeon and dice, and whether friendly fire is on.</summary>
+    public event Action<IReadOnlyList<Character>, ulong, bool>? StartRequested;
+
+    /// <summary>Heroes can hurt each other this run (see <see cref="Woad.Core.Rules.RunSetup.FriendlyFire"/>).</summary>
+    public bool FriendlyFire { get; set; }
+
+    internal Button FriendlyFireButton { get; private set; } = null!;
 
     internal Button StartButton { get; private set; } = null!;
 
@@ -75,6 +80,14 @@ public partial class RunSetupScreen : MenuScreen
 
         Caption(new Vector2(338, 234), "SEED");
         _seed = Add(new LineEdit { Position = new Vector2(338, 246), Size = new Vector2(150, 22), PlaceholderText = "random" });
+        FriendlyFireButton = Add(UiTheme.Button(new Vector2(496, 246), new Vector2(122, 22), ""));
+        FriendlyFireButton.ToggleMode = true;
+        FriendlyFireButton.TooltipText = "With friendly fire on, blasts catch your allies, and you can attack and shove them.";
+        FriendlyFireButton.Pressed += () =>
+        {
+            FriendlyFire = !FriendlyFire;
+            Refresh();
+        };
         _hint = Add(UiTheme.Label(new Vector2(338, 274), new Vector2(280, 30), color: Palette.TextDim));
 
         Button back = Add(UiTheme.Button(new Vector2(20, 316), new Vector2(88, 26), "Back"));
@@ -177,6 +190,8 @@ public partial class RunSetupScreen : MenuScreen
         }
 
         StartButton.Disabled = _party.Count == 0;
+        FriendlyFireButton.SetPressedNoSignal(FriendlyFire);
+        FriendlyFireButton.Text = FriendlyFire ? "Friendly fire: on" : "Friendly fire: off";
         int companions = _party.Count(seated => seated.IsCompanion);
         int players = _party.Count - companions;
         _hint.Text = _party.Count == 0
@@ -195,6 +210,6 @@ public partial class RunSetupScreen : MenuScreen
             return;
         }
 
-        StartRequested?.Invoke([.. _party], seed);
+        StartRequested?.Invoke([.. _party], seed, FriendlyFire);
     }
 }

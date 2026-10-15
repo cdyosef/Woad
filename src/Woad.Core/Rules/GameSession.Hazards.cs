@@ -1,4 +1,5 @@
 using Woad.Core.Commands;
+using Woad.Core.Content;
 using Woad.Core.Dice;
 using Woad.Core.Events;
 using Woad.Core.Grid;
@@ -8,13 +9,17 @@ namespace Woad.Core.Rules;
 
 /// <summary>
 /// Pits and found traps as hazards to risk or use: heroes may walk onto them (and take the hit), jump
-/// pits, and shove monsters onto them. A pit drops whoever falls in to the room underneath; with no
-/// room below it's bottomless: a hero climbs back out, a monster is lost.
+/// pits, and shove monsters (with friendly fire on, each other too) onto them. A pit drops whoever
+/// falls in to the room underneath; with no room below it's bottomless: a hero climbs back out, a
+/// monster is lost.
 /// </summary>
 public sealed partial class GameSession
 {
-    /// <summary>Why the active hero can't shove this monster now, or null if they can.</summary>
-    public string? CheckShove(int monsterId)
+    /// <summary>
+    /// Why the active hero can't shove this monster now (or, with friendly fire on, this hero or
+    /// companion), or null if they can.
+    /// </summary>
+    public string? CheckShove(int targetId)
     {
         if (State.Turn is not { PendingRoll: null })
         {
@@ -28,27 +33,40 @@ public sealed partial class GameSession
 
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
-        if (room.FindMonster(monsterId) is not { } monster)
+        Monster? monster = room.FindMonster(targetId);
+        Hero? ally = State.FriendlyFire ? State.ActiveHeroesIn(room).FirstOrDefault(other => other.Id == targetId && other != hero) : null;
+        if (monster is null && ally is null)
         {
-            return "There's no such monster in this room.";
+            return "There's nobody here to shove.";
         }
 
-        if (!Targeting.CanHeroAttack(room.Layout, 1, hero.Position, monster.Position) || hero.Position.ChebyshevDistanceTo(monster.Position) != 1)
+        GridPosition at = monster?.Position ?? ally!.Position;
+        if (!Targeting.CanHeroAttack(room.Layout, 1, hero.Position, at) || hero.Position.ChebyshevDistanceTo(at) != 1)
         {
-            return "Stand next to a monster to shove it.";
+            return "Stand next to them to shove them.";
         }
 
-        if (monster.Definition.Boss)
+        if (monster is { Definition.Boss: true })
         {
             return $"The {monster.Definition.Name} is too mighty to shove.";
         }
 
-        return ShoveDestination(room, hero, monster) is null ? "There's nowhere to shove it: something is in the way." : null;
+        return ShoveDestination(room, hero, at, monster?.Definition.Flying ?? false) is null ? "There's nowhere to shove them: something is in the way." : null;
     }
 
-    /// <summary>Monsters the active hero could shove right now.</summary>
-    public IReadOnlyList<Monster> GetShoveableMonsters() =>
-        State.Turn is null ? [] : ActiveRoom.Monsters.Where(monster => CheckShove(monster.Id) is null).ToList();
+    /// <summary>Where the monsters (and, with friendly fire on, heroes) the active hero could shove right now stand.</summary>
+    public IReadOnlyList<GridPosition> GetShoveTargets()
+    {
+        if (State.Turn is null)
+        {
+            return [];
+        }
+
+        Room room = ActiveRoom;
+        return room.Monsters.Where(monster => CheckShove(monster.Id) is null).Select(monster => monster.Position)
+            .Concat(State.ActiveHeroesIn(room).Where(ally => CheckShove(ally.Id) is null).Select(ally => ally.Position))
+            .ToList();
+    }
 
     /// <summary>Tiles the active hero could jump to across a pit right now.</summary>
     public IReadOnlyList<GridPosition> GetJumpLandings() =>
@@ -91,7 +109,7 @@ public sealed partial class GameSession
 
     private string? Handle(Shove command, List<GameEvent> events)
     {
-        if (CheckShove(command.MonsterId) is { } error)
+        if (CheckShove(command.TargetId) is { } error)
         {
             return error;
         }
@@ -113,7 +131,7 @@ public sealed partial class GameSession
         Turn.AttackDiceUsed += dice;
         Turn.WeaponUsed |= bonus > 0;
         SpendBankedPowerDice(hero, command.PowerDice, events);
-        RollHeroAttack(hero, dice, bonus, [command.MonsterId], DamageSource.Shove, events, command.PowerDice);
+        RollHeroAttack(hero, dice, bonus, [command.TargetId], DamageSource.Shove, events, command.PowerDice);
         return null;
     }
 
@@ -152,11 +170,15 @@ public sealed partial class GameSession
 
     /// <summary>
     /// A hero in a pit loses a heart and falls to the room below, or, with nothing below, climbs out
-    /// onto the nearest free tile. Either way their movement ends.
+    /// onto the nearest free tile. Either way, if it's their turn, their movement ends.
     /// </summary>
     private void FallIntoPit(Hero hero, Room room, GridPosition pit, List<GameEvent> events)
     {
-        Turn.EndMove();
+        if (hero.Id == Turn.HeroId)
+        {
+            Turn.EndMove();
+        }
+
         events.Add(new FellIntoPit(hero.Id, room.Id, pit, Bottomless: room.BelowRoomId is null));
         HurtHero(room, hero, GameRules.FallDamage, events);
         if (!hero.IsActive)
@@ -186,28 +208,33 @@ public sealed partial class GameSession
             .FirstOrDefault();
 
     /// <summary>
-    /// Where a shove pushes the monster: one tile straight away from the hero (diagonally too). It
-    /// has to be open floor (traps included) or a pit, with nobody on it. Null when there's no room.
+    /// Where a shove pushes whoever stands at <paramref name="at"/>: one tile straight away from the
+    /// hero (diagonally too). It has to be open floor (traps included) or a pit, with nobody on it.
+    /// Null when there's no room.
     /// </summary>
-    private GridPosition? ShoveDestination(Room room, Hero hero, Monster monster)
+    private GridPosition? ShoveDestination(Room room, Hero hero, GridPosition at, bool flying)
     {
-        var to = new GridPosition(
-            monster.Position.X + Math.Sign(monster.Position.X - hero.Position.X),
-            monster.Position.Y + Math.Sign(monster.Position.Y - hero.Position.Y));
+        var to = new GridPosition(at.X + Math.Sign(at.X - hero.Position.X), at.Y + Math.Sign(at.Y - hero.Position.Y));
         if (!to.IsInRoom || IsOccupied(room, to))
         {
             return null;
         }
 
         TileKind tile = room.Layout[to];
-        return tile.IsWalkable(monster.Definition.Flying) || tile == TileKind.Pit ? to : null;
+        return tile.IsWalkable(flying) || tile == TileKind.Pit ? to : null;
     }
 
-    /// <summary>A shove roll that beats the monster's defense pushes it; then any trap or pit there takes it.</summary>
+    /// <summary>A shove roll that beats the target's defense pushes it; then any trap or pit there takes it.</summary>
     private void ResolveShove(PendingRoll shove, List<GameEvent> events)
     {
         Hero hero = State.GetHero(shove.HeroId);
         Room room = State.RoomOf(hero);
+        if (State.ActiveHeroesIn(room).FirstOrDefault(ally => ally.Id == shove.TargetIds[0]) is { } shovedAlly)
+        {
+            ShoveAlly(hero, room, shovedAlly, shove.Total, events);
+            return;
+        }
+
         if (room.FindMonster(shove.TargetIds[0]) is not { } monster)
         {
             return;
@@ -216,7 +243,7 @@ public sealed partial class GameSession
         bool collapsed = monster.Collapsed;
         int armor = collapsed ? 0 : monster.Definition.Armor;
         DiceRoll defense = RollDefense(monster.Id, monster.Power, collapsed ? 0 : monster.Definition.DefenseDice, armor, shove.Total, canSpend: !collapsed, events);
-        if (shove.Total <= defense.Total + armor || ShoveDestination(room, hero, monster) is not { } to)
+        if (shove.Total <= defense.Total + armor || ShoveDestination(room, hero, monster.Position, monster.Definition.Flying) is not { } to)
         {
             events.Add(new ShoveResisted(hero.Id, monster.Id));
             return;
@@ -224,7 +251,7 @@ public sealed partial class GameSession
 
         GridPosition from = monster.Position;
         monster.Position = to;
-        events.Add(new MonsterShoved(hero.Id, monster.Id, from, to));
+        events.Add(new Shoved(hero.Id, monster.Id, from, to));
         if (room.Layout[to] == TileKind.Pit && !monster.Definition.Flying)
         {
             MonsterFalls(hero, room, monster, from, to, events);
@@ -241,6 +268,34 @@ public sealed partial class GameSession
             {
                 HurtMonster(hero, room, monster, events);
             }
+        }
+    }
+
+    /// <summary>
+    /// With friendly fire on, a shove at another hero: they defend like against an attack, and if
+    /// pushed onto a trap it goes off under them, or into a pit they fall.
+    /// </summary>
+    private void ShoveAlly(Hero hero, Room room, Hero ally, int total, List<GameEvent> events)
+    {
+        Stats stats = ally.EffectiveStats;
+        int armor = Math.Max(0, stats.Armor);
+        DiceRoll defense = RollDefense(ally.Id, ally.Power, Math.Max(0, stats.DefenseDice), armor, total, canSpend: true, events);
+        if (total <= defense.Total + armor || ShoveDestination(room, hero, ally.Position, flying: false) is not { } to)
+        {
+            events.Add(new ShoveResisted(hero.Id, ally.Id));
+            return;
+        }
+
+        GridPosition from = ally.Position;
+        ally.Position = to;
+        events.Add(new Shoved(hero.Id, ally.Id, from, to));
+        if (room.Layout[to] == TileKind.Pit)
+        {
+            FallIntoPit(ally, room, to, events);
+        }
+        else if (room.TrapAt(to) is { } trap)
+        {
+            SpringTrap(ally, room, trap, to, events);
         }
     }
 

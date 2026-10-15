@@ -79,7 +79,7 @@ Run the game with F5 in the Godot editor. You can also run it from a terminal wi
 `Godot_v4.7.2-stable_mono_win64 --path .`. Create a character from **Characters**, then choose
 **Play** to seat 1–8 characters and start a run. Each run generates a new three-floor dungeon from
 its seed. A character created as a **Companion** joins the player seated before it; the game plays it,
-following that player's orders.
+following that player's orders. The party screen's **Friendly fire** switch lets heroes hurt each other.
 
 GitHub runs the build and the rules tests on every push and pull request (`.github/workflows/tests.yml`);
 the results show on the repository's **Actions** tab and on each pull request.
