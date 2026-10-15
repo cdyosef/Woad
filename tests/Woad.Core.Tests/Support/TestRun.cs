@@ -80,14 +80,15 @@ internal static class SessionTestExtensions
     public static CardInstance Card(this Hero hero, string definitionId) =>
         hero.AllCards.First(card => card.Definition.Id == definitionId);
 
-    /// <summary>Ends turns until the round changes (or the run ends) and returns every event.</summary>
+    /// <summary>Ends turns (rolling the Keel Die for anyone Keeling Over) until the round changes (or the run ends) and returns every event.</summary>
     public static IReadOnlyList<GameEvent> EndRound(this GameSession session)
     {
         var events = new List<GameEvent>();
         int round = session.State.Round;
         while (session.State.Phase == RunPhase.InProgress && session.State.Round == round)
         {
-            events.AddRange(session.Do(new EndTurn(session.State.ActiveHero!.Id)));
+            int heroId = session.State.ActiveHero!.Id;
+            events.AddRange(session.Do(session.State.Turn!.KeelingOver ? new RollKeel(heroId) : new EndTurn(heroId)));
         }
 
         return events;

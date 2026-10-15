@@ -99,6 +99,29 @@ public static class DemoRun
         };
     }
 
+    /// <summary>
+    /// For --keeltest: Aria and Bran (with a single heart) in an empty room, a hidden spike trap
+    /// between them, so Bran keels over on it right beside Aria.
+    /// </summary>
+    public static RunSetup Keeling(ulong seed)
+    {
+        ContentCatalog content = ContentCatalog.LoadDefault();
+        var spikes = new Dictionary<Woad.Core.Grid.GridPosition, TrapSetup> { [new(5, 4)] = new(Woad.Core.Model.TrapKind.Spikes, 9) };
+        return new RunSetup
+        {
+            Seed = seed,
+            ThemeId = "emerald_keep",
+            Heroes =
+            [
+                DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 9 } },
+                DebugHeroes[1] with { BaseStats = DebugHeroes[1].BaseStats with { Hearts = 1 } },
+            ],
+            Rooms = [new RoomSetup("crypt", RoomTemplate.Parse(".........\n.........\n.........\n.........\n....1.2..\n.........\n.........\n.........\n.........", content),
+                Features: new RoomFeatures { Traps = spikes })],
+            StartRoomId = "crypt",
+        };
+    }
+
     /// <summary>The debug party in the single hand-made room, for --uitest.</summary>
     public static RunSetup SingleRoom(ulong seed) => new()
     {

@@ -19,6 +19,7 @@ public partial class TokenView : Node2D
     private bool _active;
     private bool _stunned;
     private bool _collapsed;
+    private (int Life, int Death)? _keeling;
 
     public int EntityId { get; init; }
 
@@ -67,6 +68,12 @@ public partial class TokenView : Node2D
         set { _collapsed = value; QueueRedraw(); }
     }
 
+    /// <summary>Keeling Over: lying on their side with X eyes, marks of life and death shown instead of hearts. Null when standing.</summary>
+    public (int Life, int Death)? Keeling
+    {
+        set { _keeling = value; QueueRedraw(); }
+    }
+
     public override void _Draw()
     {
         if (Body is not null)
@@ -78,7 +85,14 @@ public partial class TokenView : Node2D
             DrawShape();
         }
 
-        DrawHeartPips();
+        if (_keeling is { } marks)
+        {
+            DrawMarks(marks.Life, marks.Death);
+        }
+        else
+        {
+            DrawHeartPips();
+        }
 
         if (_stunned)
         {
@@ -88,6 +102,12 @@ public partial class TokenView : Node2D
 
     private void DrawSprite()
     {
+        if (_keeling is not null)
+        {
+            DrawFallen();
+            return;
+        }
+
         // A shadow under the feet; the active hero's glows gold.
         DrawSetTransform(new Vector2(BoardView.TileSize / 2f, 26), 0, new Vector2(1, 0.35f));
         DrawCircle(Vector2.Zero, 11, _active ? Palette.TrimBright with { A = 0.85f } : new Color(0, 0, 0, 0.35f), antialiased: true);
@@ -108,9 +128,55 @@ public partial class TokenView : Node2D
         }
     }
 
+    /// <summary>
+    /// Keeling Over: the sprite tipped onto its side, head to the left, with an X over each eye
+    /// (the hero sprite's eyes are at pixels (6,5) and (9,5) of 16).
+    /// </summary>
+    private void DrawFallen()
+    {
+        const float pixel = BoardView.TileSize / 16f;
+        DrawSetTransform(new Vector2(BoardView.TileSize / 2f, 24), 0, new Vector2(1.2f, 0.3f));
+        DrawCircle(Vector2.Zero, 12, _active ? Palette.TrimBright with { A = 0.85f } : new Color(0, 0, 0, 0.35f), antialiased: true);
+
+        DrawSetTransform(new Vector2(BoardView.TileSize / 2f, 17), -Mathf.Pi / 2, Vector2.One);
+        float size = BoardView.TileSize;
+        var rect = new Rect2(-size / 2, -size / 2, size, size);
+        DrawTextureRect(Body!, rect, tile: false);
+        if (Tint is not null)
+        {
+            DrawTextureRect(Tint, rect, tile: false, modulate: Fill);
+        }
+
+        foreach (int eye in new[] { 6, 9 })
+        {
+            Vector2 at = rect.Position + new Vector2(eye + 0.5f, 5.5f) * pixel;
+            DrawLine(at - new Vector2(1, 1) * pixel, at + new Vector2(1, 1) * pixel, Palette.Ink, 1.2f, antialiased: true);
+            DrawLine(at + new Vector2(-1, 1) * pixel, at + new Vector2(1, -1) * pixel, Palette.Ink, 1.2f, antialiased: true);
+        }
+
+        DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+    }
+
+    /// <summary>Instead of hearts: three pips for marks of life (green) and three for marks of death (bone white on black).</summary>
+    private void DrawMarks(int life, int death)
+    {
+        const float top = 28;
+        for (int i = 0; i < 3; i++)
+        {
+            var lifePip = new Rect2(Center.X - 13 + i * 4, top, 3, 3);
+            DrawRect(lifePip, i < life ? Palette.Heal : Palette.Heal.Darkened(0.7f));
+            var deathPip = new Rect2(Center.X + 2 + i * 4, top, 3, 3);
+            DrawRect(deathPip, i < death ? Palette.Text : Palette.TextDim.Darkened(0.6f));
+            if (i < death)
+            {
+                DrawRect(deathPip, Palette.Ink, filled: false, width: 1);
+            }
+        }
+    }
+
     private void DrawShape()
     {
-        Color fill = _collapsed ? Fill.Darkened(0.55f) : Fill;
+        Color fill = _collapsed || _keeling is not null ? Fill.Darkened(0.55f) : Fill;
         if (_active)
         {
             DrawArc(Center, Radius + 3, 0, Mathf.Tau, 32, Palette.TrimBright, 1.5f, antialiased: true);
@@ -128,7 +194,7 @@ public partial class TokenView : Node2D
             DrawRect(body, Palette.Ink, filled: false, width: 1.5f);
         }
 
-        DrawString(ThemeDB.FallbackFont, new Vector2(0, Center.Y + 4), _collapsed ? "x" : Glyph, HorizontalAlignment.Center, BoardView.TileSize, 11, Palette.Ink);
+        DrawString(ThemeDB.FallbackFont, new Vector2(0, Center.Y + 4), _collapsed || _keeling is not null ? "x" : Glyph, HorizontalAlignment.Center, BoardView.TileSize, 11, Palette.Ink);
     }
 
     private void DrawHeartPips()

@@ -86,6 +86,12 @@ public partial class GameScreen
             return;
         }
 
+        if (_session.GetRousableAllies().FirstOrDefault(fallen => fallen.Position == tile) is { } fallen)
+        {
+            ExecuteOdHand((heroId, dice, tools, power) => new Rouse(heroId, fallen.Id, dice, tools, power));
+            return;
+        }
+
         if (room.MonsterAt(tile) is { } monster)
         {
             if (_session.AttackDiceLeft > 0 && SelectedAttackDice < 1)
@@ -266,6 +272,11 @@ public partial class GameScreen
             return "";
         }
 
+        if (turn.KeelingOver)
+        {
+            return $"{hero.Name} is Keeling Over (life {hero.LifeMarks}/3, death {hero.DeathMarks}/3). Roll the Keel Die: 6 is a mark of life, 1 a mark of death. Select Power Dice to add their 6s.";
+        }
+
         if (turn.UnsettledPowerDice > 0)
         {
             return "You rolled a 6! Add a Power Die to this roll, or bank it for later.";
@@ -324,6 +335,16 @@ public partial class GameScreen
             return $"{standing.Name}{companion}: {standing.Hearts}/{standing.MaxHearts} hearts{power}";
         }
 
+        if (_session.State.HeroesIn(room).FirstOrDefault(hero => hero.Position == tile && hero.IsKeelingOver) is { } fallen)
+        {
+            string doom = fallen.DoomDiceOwed > 0 ? $", {fallen.DoomDiceOwed} Doom {(fallen.DoomDiceOwed == 1 ? "Die" : "Dice")} waiting" : "";
+            string rouse = _session.GetRousableAllies().Contains(fallen)
+                ? " Click to rouse them with Od Hand: every 6 of the total is a mark of life, but each 1 rolled adds a Doom Die."
+                : " An ally beside them can rouse them with Od Hand.";
+            return $"{fallen.Name} is Keeling Over: life {fallen.LifeMarks}/3, death {fallen.DeathMarks}/3{doom}.{rouse}";
+        }
+
+        string grave = room.TombstoneAt(tile) is { } stone ? $"{stone.Inscription}. {stone.Epitaph}. " : "";
         if (room.HasLootAt(tile))
         {
             IEnumerable<string> things = room.LootAt(tile).Select(card => card.Definition.Name);
@@ -337,7 +358,7 @@ public partial class GameScreen
                 things = things.Append("the Boss Key");
             }
 
-            return "Loot: " + string.Join(", ", things) + ". Stand on it and click to pick it up (your first loot each turn is free).";
+            return grave + "Loot: " + string.Join(", ", things) + ". Stand on it and click to pick it up (your first loot each turn is free).";
         }
 
         if (room.TrapAt(tile) is { Revealed: true } trap)
@@ -372,6 +393,7 @@ public partial class GameScreen
             _ => "",
         };
 
+        terrain = grave + terrain;
         if (!_leaping && _session.GetReachableTiles().TryGetValue(tile, out int steps))
         {
             terrain = $"{UiTheme.Count(steps, "step", "steps")} away. {terrain}";

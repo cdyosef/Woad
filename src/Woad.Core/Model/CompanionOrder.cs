@@ -17,4 +17,9 @@ public enum CompanionOrder
 
     /// <summary>Keep away from monsters while staying near the owner; strike back only when cornered.</summary>
     StayBack,
+
+    /// <summary>
+    /// Go to allies Keeling Over in the room, even mid-fight, and rouse them; otherwise follow the owner.
+    /// </summary>
+    Tend,
 }

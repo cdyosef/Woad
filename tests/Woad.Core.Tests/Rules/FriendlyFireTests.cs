@@ -62,7 +62,7 @@ public class FriendlyFireTests
     }
 
     [Fact]
-    public void AlliesCanBeAttackedOnlyWithFriendlyFireOnAndADownedAllyIsNoKill()
+    public void AlliesCanBeAttackedOnlyWithFriendlyFireOnAndAFallenAllyIsNoKill()
     {
         GameSession off = TestRun.Start(AtTheEdge, heroes: 2);
         Assert.Contains("Friendly fire is off", off.Refuse(new AttackAlly(off.HeroInSeat(0).Id, off.HeroInSeat(1).Id)));
@@ -77,7 +77,8 @@ public class FriendlyFireTests
         IReadOnlyList<GameEvent> events = session.Do(new AttackAlly(attacker.Id, ally.Id));
 
         Assert.Equal(new Damaged(ally.Id, 1, 0), events.SingleOf<Damaged>());
-        Assert.Equal(HeroStatus.Downed, ally.Status);
+        Assert.Equal(HeroStatus.KeelingOver, ally.Status);
+        Assert.Equal($"Struck down by {attacker.Name}", ally.Bane);
         Assert.Equal(0, attacker.Kills);
         Assert.Equal(0, attacker.Xp);
     }

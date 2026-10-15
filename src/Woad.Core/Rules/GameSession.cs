@@ -109,6 +109,8 @@ public sealed partial class GameSession
             Shove c => Handle(c, events),
             AttackAlly c => Handle(c, events),
             Leap c => Handle(c, events),
+            Rouse c => Handle(c, events),
+            RollKeel c => Handle(c, events),
             _ => $"Unknown command {command.GetType().Name}.",
         };
 
@@ -117,8 +119,9 @@ public sealed partial class GameSession
             return CommandResult.Reject(error);
         }
 
-        // A hero downed on their own turn (by a trap) hands the turn on.
-        if (State.Phase == RunPhase.InProgress && State.Turn is { } turn && !State.GetHero(turn.HeroId).IsActive)
+        // A hero who keels over on their own turn (by a trap) hands the turn on.
+        if (State.Phase == RunPhase.InProgress && State.Turn is { } turn && State.GetHero(turn.HeroId) is var current
+            && (!current.IsInPlay || (current.IsKeelingOver && !turn.KeelingOver)))
         {
             State.Turn.PendingRoll = null;
             State.Turn.UnsettledPowerDice = 0;
@@ -151,6 +154,11 @@ public sealed partial class GameSession
             return null;
         }
 
+        if (Turn.KeelingOver && command is not RollKeel)
+        {
+            return "You're Keeling Over: all you can do is roll the Keel Die.";
+        }
+
         if (Turn.UnsettledPowerDice > 0 && command is not (AddPowerDie or BankPowerDie or RerollDie))
         {
             return "You rolled a 6: add your Power Die to the roll or bank it first.";
@@ -181,7 +189,7 @@ public sealed partial class GameSession
     /// <summary>Starts the next seated hero's turn, or the enemy phase and a new round after the last seat.</summary>
     private void AdvanceTurn(int fromSeat, List<GameEvent> events)
     {
-        Hero? next = State.Heroes.FirstOrDefault(hero => hero.IsActive && hero.Seat > fromSeat);
+        Hero? next = State.Heroes.FirstOrDefault(hero => hero.IsInPlay && hero.Seat > fromSeat);
         if (next is not null)
         {
             StartTurn(next, events);
@@ -199,12 +207,12 @@ public sealed partial class GameSession
     {
         State.Round++;
         events.Add(new RoundStarted(State.Round));
-        StartTurn(State.Heroes.First(hero => hero.IsActive), events);
+        StartTurn(State.Heroes.First(hero => hero.IsInPlay), events);
     }
 
     private void StartTurn(Hero hero, List<GameEvent> events)
     {
-        State.Turn = new TurnState(hero.Id);
+        State.Turn = new TurnState(hero.Id) { KeelingOver = hero.IsKeelingOver };
         events.Add(new TurnStarted(hero.Id));
     }
 
@@ -215,12 +223,12 @@ public sealed partial class GameSession
     /// </summary>
     private void EndRunIfOver(List<GameEvent> events)
     {
-        if (State.Heroes.Any(hero => hero.IsActive && !hero.IsCompanion))
+        if (State.Heroes.Any(hero => hero.IsInPlay && !hero.IsCompanion))
         {
             return;
         }
 
-        foreach (Hero companion in State.Heroes.Where(hero => hero.IsActive))
+        foreach (Hero companion in State.Heroes.Where(hero => hero.IsInPlay))
         {
             foreach (CardInstance found in companion.AllCards.Where(card => card.BroughtInByHeroId != companion.Id).ToList())
             {
@@ -252,7 +260,7 @@ public sealed partial class GameSession
     private bool IsOccupied(Room room, GridPosition position) => IsOccupied(State, room, position);
 
     private static bool IsOccupied(GameState state, Room room, GridPosition position) =>
-        room.MonsterAt(position) is not null || state.ActiveHeroesIn(room).Any(hero => hero.Position == position);
+        room.MonsterAt(position) is not null || state.HeroesIn(room).Any(hero => hero.Position == position);
 
     private static GameState CreateState(ContentCatalog content, RunSetup setup, GameRandom random)
     {

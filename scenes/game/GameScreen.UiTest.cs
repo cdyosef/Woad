@@ -181,6 +181,69 @@ public partial class GameScreen
         }
     }
 
+    /// <summary>
+    /// Debug mode (<c>-- --keeltest</c>, with <see cref="DemoRun.Keeling"/>): Bran walks onto a hidden
+    /// spike trap with his one heart and keels over beside Aria; Aria rouses him by clicking him, and
+    /// on his turn the End turn button rolls his Keel Die.
+    /// </summary>
+    private async void RunKeelTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            await Click(this, _endTurn);
+            await WaitUntilIdle();
+
+            Hero bran = ActiveHero!;
+            Check(bran.Name == "Bran", "Bran's turn comes next");
+            await Click(this, _roll);
+            await WaitUntilIdle();
+            await ClickTile(new GridPosition(5, 4));
+            await WaitUntilIdle();
+            Check(bran.IsKeelingOver && bran.Position == new GridPosition(5, 4), "Bran keels over on the spikes");
+            Check(_tokens.ContainsKey(bran.Id) && _figures[bran.Id].Keeling, "Bran's figure stays on the board, lying down");
+            Check(ActiveHero == aria, "the turn moves on to Aria");
+
+            // Clicking a fallen ally beside you rouses them with your Od Hand dice.
+            Check(_session.GetRousableAllies().Contains(bran), "Aria can rouse Bran");
+            await ClickTile(bran.Position);
+            await ConfirmIfHeld();
+            Check(_session.State.Turn!.OdHandDiceUsed == 1 && !_session.State.Turn.HasActed, "rousing uses Aria's Od Hand die, not her action");
+            Check(_messages.Any(message => message.Contains("tends Bran")), "the log tells how the rousing went");
+
+            await Click(this, _endTurn);
+            await WaitUntilIdle();
+            Check(ActiveHero == bran && _session.State.Turn!.KeelingOver, "Bran's turn comes while he's Keeling Over");
+            Check(_endTurn.Text == "Roll Keel Die" && _roll.Disabled, "Keeling Over, the only button is Roll Keel Die");
+            await Click(this, _endTurn);
+            await WaitUntilIdle();
+            Check(_messages.Any(message => message.Contains("rolls the Keel Die")), "the Keel Die is rolled");
+            Check(ActiveHero == aria || bran.IsActive, "the turn moves on after the Keel roll");
+
+            // Left alone, Bran rolls until three marks stand him up or kill him.
+            for (int turns = 0; bran.IsKeelingOver && turns < 200; turns++)
+            {
+                await Click(this, _endTurn);
+                await WaitUntilIdle();
+            }
+
+            Room crypt = _session.State.Rooms["crypt"];
+            Check(bran.Status == HeroStatus.Dead
+                    ? crypt.Tombstones.SingleOrDefault() is { } stone && stone.Inscription.Contains("Bran") && !_tokens.ContainsKey(bran.Id)
+                    : bran.IsActive && bran.Hearts == 1 && !_figures[bran.Id].Keeling,
+                "Bran either stands up with a heart or dies, leaving a tombstone");
+
+            GD.Print($"Keel test passed ({(bran.IsActive ? "Bran stood up" : "Bran died")}).");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Keel test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
     /// <summary>Confirms a roll that Luck is holding open.</summary>
     private async Task ConfirmIfHeld()
     {

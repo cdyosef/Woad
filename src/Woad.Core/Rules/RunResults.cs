@@ -5,7 +5,7 @@ namespace Woad.Core.Rules;
 
 /// <summary>
 /// What one hero takes home from a finished run. Escaped heroes keep everything they carried out
-/// and turn their treasure into gold; downed heroes keep only the gear they brought in. Everyone
+/// and turn their treasure into gold; heroes who died or were left behind keep only the gear they brought in. Everyone
 /// keeps the XP they earned.
 /// </summary>
 public sealed record HeroRunResult
@@ -32,6 +32,9 @@ public sealed record HeroRunResult
     public required int Gold { get; init; }
 
     public required int DeepestFloor { get; init; }
+
+    /// <summary>For a hero who died, what killed them ("Slain by a Goblin"); otherwise null.</summary>
+    public string? Epitaph { get; init; }
 
     /// <summary>Card ids of the gear the character goes home with (treasure is already counted as gold).</summary>
     public required IReadOnlyList<string> Equipped { get; init; }
@@ -67,6 +70,7 @@ public static class RunResults
             Xp = hero.Xp,
             Gold = hero.Status == HeroStatus.Escaped ? hero.TreasureValue : 0,
             DeepestFloor = hero.DeepestFloor,
+            Epitaph = hero.Status == HeroStatus.Dead ? hero.Bane : null,
             Equipped = Gear(hero.EquippedCards),
             Belt = Gear(hero.Belt),
             Backpack = Gear(hero.Backpack),

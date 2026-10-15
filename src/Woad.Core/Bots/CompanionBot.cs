@@ -8,7 +8,8 @@ namespace Woad.Core.Bots;
 
 /// <summary>
 /// Plays a companion's turn by its standing order (see <see cref="CompanionOrder"/>). Under any
-/// order it settles its rolls, drinks a potion when badly hurt and attacks what it can reach (staying
+/// order it rolls its Keel Die when Keeling Over, rouses allies Keeling Over beside it, settles its
+/// rolls, drinks a potion when badly hurt and attacks what it can reach (staying
 /// back, only what's next to it). It follows its owner, or the first player still in the dungeon if
 /// the owner is gone: through open doors and up or down the stairs. It never loots, unlocks or searches;
 /// that's left to the players.
@@ -27,7 +28,11 @@ public static class CompanionBot
         Hero hero = state.ActiveHero ?? throw new InvalidOperationException("No hero is taking a turn.");
         TurnState turn = state.Turn!;
         Room room = state.RoomOf(hero);
-        bool fighting = room.Monsters.Count > 0;
+        bool fighting = SimpleBot.Fighting(session, room, hero);
+        if (turn.KeelingOver)
+        {
+            return new RollKeel(hero.Id, hero.Power.Banked);
+        }
 
         if (turn.UnsettledPowerDice > 0)
         {
@@ -37,6 +42,11 @@ public static class CompanionBot
         if (turn.PendingRoll is not null)
         {
             return new ConfirmAttack(hero.Id);
+        }
+
+        if (session.GetRousableAllies().FirstOrDefault() is { } fallen)
+        {
+            return new Rouse(hero.Id, fallen.Id);
         }
 
         if (hero.Hearts <= hero.MaxHearts - 2 && SimpleBot.UsableBeltCard(session, hero, CardEffectKind.Heal) is { } potion)
@@ -88,6 +98,15 @@ public static class CompanionBot
     private static Plan MakePlan(GameSession session, Hero hero, Room room, bool fighting)
     {
         GameState state = session.State;
+
+        // Allies Keeling Over: tending companions go to them even mid-fight, the rest once it's quiet
+        // (holding ones stay put).
+        if ((hero.Order == CompanionOrder.Tend || (!fighting && hero.Order != CompanionOrder.Hold))
+            && SimpleBot.BesideFallen(state, room, hero) is { } kneel)
+        {
+            return kneel == hero.Position ? Plan.Stay : new Plan { Tile = kneel };
+        }
+
         switch (hero.Order)
         {
             case CompanionOrder.Hold when hero.HoldAt is { } post && post.RoomId == room.Id:
@@ -153,8 +172,8 @@ public static class CompanionBot
 
     /// <summary>The owner while they're in the dungeon, otherwise the first player who still is.</summary>
     private static Hero? Leader(GameState state, Hero companion) =>
-        state.Heroes.FirstOrDefault(hero => hero.Id == companion.OwnerId && hero.IsActive)
-        ?? state.Heroes.FirstOrDefault(hero => hero.IsActive && !hero.IsCompanion);
+        state.Heroes.FirstOrDefault(hero => hero.Id == companion.OwnerId && hero.IsInPlay)
+        ?? state.Heroes.FirstOrDefault(hero => hero.IsInPlay && !hero.IsCompanion);
 
     /// <summary>The door to take toward the nearest room matching <paramref name="isGoal"/>, through doors that are open.</summary>
     private static Direction? RouteTo(GameState state, Room start, Func<Room, bool> isGoal)

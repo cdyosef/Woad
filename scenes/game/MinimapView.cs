@@ -89,7 +89,7 @@ public partial class MinimapView : Control
             }
         }
 
-        foreach (IGrouping<string, Hero> group in _state.Heroes.Where(hero => hero.IsActive).GroupBy(hero => hero.RoomId))
+        foreach (IGrouping<string, Hero> group in _state.Heroes.Where(hero => hero.IsInPlay).GroupBy(hero => hero.RoomId))
         {
             Room room = _state.Rooms[group.Key];
             if (room.Floor != _floor)

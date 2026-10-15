@@ -8,12 +8,12 @@ public sealed partial class GameSession
 {
     /// <summary>The active companions belonging to <paramref name="owner"/>, in seat order.</summary>
     public IReadOnlyList<Hero> CompanionsOf(Hero owner) =>
-        State.Heroes.Where(hero => hero.IsActive && hero.OwnerId == owner.Id).ToList();
+        State.Heroes.Where(hero => hero.IsInPlay && hero.OwnerId == owner.Id).ToList();
 
     private string? Handle(OrderCompanion command, List<GameEvent> events)
     {
         Hero owner = ActiveHero;
-        if (State.Heroes.FirstOrDefault(hero => hero.Id == command.CompanionId) is not { IsActive: true } companion
+        if (State.Heroes.FirstOrDefault(hero => hero.Id == command.CompanionId) is not { IsInPlay: true } companion
             || companion.OwnerId != owner.Id)
         {
             return "That isn't one of your companions.";

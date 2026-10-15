@@ -80,10 +80,12 @@ public partial class GameScreen
             _hoverInfo.Text = Hint();
         }
 
-        bool idle = !Locked && turn is not null;
+        // Keeling Over, the only thing to do is roll the Keel Die (the End turn button), with any Power Dice selected.
+        bool keeling = !Locked && turn is { KeelingOver: true };
+        bool idle = !Locked && turn is not null && !keeling;
         bool choosingPower = turn?.UnsettledPowerDice > 0;
         bool pending = turn?.PendingRoll is not null || choosingPower;
-        UpdatePool(idle && !pending);
+        UpdatePool((idle && !pending) || keeling);
         _roll.Disabled = !(idle && !pending && _session.MoveDiceLeft > 0);
         _search.Disabled = !(idle && !pending) || _session.CheckSearch() is not null;
         _search.TooltipText = _session.State.Turn is null ? "" : _session.CheckSearch() ?? "Search the room with your selected Od Hand dice: finds secret doors, traps and stashes your total reaches.";
@@ -96,7 +98,11 @@ public partial class GameScreen
         _leap.Text = _leaping ? "Cancel" : "Leap";
         _shoving &= !_shove.Disabled;
         _shove.Text = _shoving ? "Cancel" : "Shove";
-        _endTurn.Disabled = !(idle && !pending);
+        _endTurn.Disabled = !((idle && !pending) || keeling);
+        _endTurn.Text = turn is { KeelingOver: true } ? "Roll Keel Die" : "End turn";
+        _endTurn.TooltipText = turn is { KeelingOver: true }
+            ? "Keeling Over: roll the Keel Die. A 6 is a mark of life and rolls a Power Die (another on a 6); a 1 is a mark of death and rolls a Doom Die (another on a 1). Select banked Power Dice to add them: their 6s are marks of life."
+            : "";
         _confirm.Visible = turn?.PendingRoll is not null && !choosingPower;
         _confirm.Disabled = Locked;
         _addPower.Visible = _bankPower.Visible = choosingPower;
@@ -160,6 +166,7 @@ public partial class GameScreen
                 || _session.CheckDisarm(tile) is null));
         }
 
+        interactive.AddRange(_session.GetRousableAllies().Select(fallen => fallen.Position));
         if (OwnTileIsUsable(hero, room, turn))
         {
             interactive.Add(hero.Position);
@@ -212,6 +219,17 @@ public partial class GameScreen
         int speed = _session.SpeedBonusLeft;
         string steps = turn?.MovementRoll is null ? "" : UiTheme.Count(turn.MovementPoints, "step", "steps") + " left";
         int tools = _session.ToolsBonusLeft;
+
+        // Keeling Over, only banked Power Dice can be added (to the Keel roll).
+        if (turn is { KeelingOver: true })
+        {
+            pool.ShowPool(DicePool.Rumble, 0, 0, 0, false);
+            pool.ShowPool(DicePool.Wend, 0, 0, 0, false);
+            pool.ShowPool(DicePool.OdHand, 0, 0, 0, false);
+            pool.ShowPool(DicePool.Power, ActiveHero?.Power.Banked ?? 0, SelectedPowerDice, 0, false);
+            return;
+        }
+
         pool.ShowPool(DicePool.Rumble, _session.AttackDiceLeft, SelectedAttackDice, weapon, weapon > 0 && !_weaponHeld);
         pool.ShowPool(DicePool.Wend, _session.MoveDiceLeft, SelectedMoveDice, speed, speed < 0 || (speed > 0 && !_speedHeld), steps);
         pool.ShowPool(DicePool.OdHand, _session.OdHandDiceLeft, SelectedOdHandDice, tools, tools > 0 && !_toolsHeld);
@@ -324,7 +342,9 @@ public partial class GameScreen
             string color = Palette.Hex(Palette.Seat(hero.Seat));
             return hero.Status switch
             {
-                HeroStatus.Downed => $"[color={dim}][s]{name}[/s][/color]",
+                HeroStatus.Dead => $"[color={dim}][s]{name}[/s][/color]",
+                HeroStatus.KeelingOver when hero == ActiveHero => $"[color={Palette.Hex(Palette.Danger)}][u]{name}[/u] (down)[/color]",
+                HeroStatus.KeelingOver => $"[color={Palette.Hex(Palette.Danger)}]{name}{(compact ? "" : " (down)")}[/color]",
                 HeroStatus.Escaped => $"[color={dim}]{name} (out)[/color]",
                 _ when hero == ActiveHero => $"[color={color}][u]{name}[/u][/color]",
                 _ => $"[color={color}]{name}[/color]",
@@ -513,7 +533,7 @@ public partial class GameScreen
         _endTurn.Pressed += () =>
         {
             CancelSelection();
-            ExecuteForActiveHero(heroId => new EndTurn(heroId));
+            ExecuteForActiveHero(heroId => _session.State.Turn is { KeelingOver: true } ? new RollKeel(heroId, SelectedPowerDice) : new EndTurn(heroId));
         };
         right.AddChild(_endTurn);
         BuildOrders(right);

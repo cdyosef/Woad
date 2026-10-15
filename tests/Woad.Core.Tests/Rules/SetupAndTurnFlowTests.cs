@@ -143,7 +143,7 @@ public class SetupAndTurnFlowTests
     public void HeroesWhoAreOutOfTheRunAreSkipped()
     {
         GameSession session = TestRun.Start(EmptyRoom, heroes: 3);
-        session.HeroInSeat(1).Status = HeroStatus.Downed;
+        session.HeroInSeat(1).Status = HeroStatus.Dead;
 
         IReadOnlyList<GameEvent> events = session.Do(new EndTurn(session.HeroInSeat(0).Id));
 
@@ -199,6 +199,12 @@ public class SetupAndTurnFlowTests
         for (int turn = 0; turn < 6 && session.State.Phase == RunPhase.InProgress; turn++)
         {
             Hero hero = session.State.ActiveHero!;
+            if (session.State.Turn!.KeelingOver)
+            {
+                log.AddRange(session.Do(new RollKeel(hero.Id)).Select(Describe));
+                continue;
+            }
+
             log.AddRange(session.Do(new RollMovement(hero.Id)).Select(Describe));
             SettlePowerDice(session, hero, log);
             if (session.GetAttackableMonsters().FirstOrDefault() is { } target)

@@ -56,6 +56,20 @@ public static class GameRules
     /// <summary>Hearts lost falling into a pit (or through a sprung trap door, like any trap).</summary>
     public const int FallDamage = 1;
 
+    /// <summary>Marks of life that stand a hero Keeling Over back up, and marks of death that kill them.</summary>
+    public const int MarksToRise = 3;
+
+    public const int MarksToDie = 3;
+
+    /// <summary>A Keel Die (or Doom Die) showing this earns a mark of death.</summary>
+    public const int DeathFace = 1;
+
+    /// <summary>Hearts a hero stands back up with after Keeling Over.</summary>
+    public const int HeartsOnRising = 1;
+
+    /// <summary>Every this much of an ally's Od Hand total rousing a hero Keeling Over earns them a mark of life.</summary>
+    public const int RousePerMark = 6;
+
     /// <summary>Hearts restored to each hero in a room when its last monster falls.</summary>
     public const int HeartsOnRoomClear = 1;
 

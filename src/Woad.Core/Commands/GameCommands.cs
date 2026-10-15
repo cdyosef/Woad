@@ -94,6 +94,19 @@ public sealed record Disarm(int HeroId, GridPosition Target, int? Dice = null, b
 public sealed record Steal(int HeroId, int TargetId, int? Dice = null, bool UseTools = true, int PowerDice = 0)
     : OdHandCommand(HeroId, Dice, UseTools, PowerDice);
 
+/// <summary>
+/// Rouse a hero Keeling Over next to you (diagonals too): every 6 of the total earns them a mark of
+/// life, and every die showing 1 adds a Doom Die to their next Keel roll.
+/// </summary>
+public sealed record Rouse(int HeroId, int TargetId, int? Dice = null, bool UseTools = true, int PowerDice = 0)
+    : OdHandCommand(HeroId, Dice, UseTools, PowerDice);
+
+/// <summary>
+/// Keeling Over, a hero's whole turn: roll the Keel Die, plus <paramref name="PowerDice"/> banked Power
+/// Dice whose sixes earn marks of life. Ends the turn.
+/// </summary>
+public sealed record RollKeel(int HeroId, int PowerDice = 0) : GameCommand(HeroId);
+
 /// <summary>Jump through a trap door you've found, next to you, to a room on the floor below (costs 1 step, no harm).</summary>
 public sealed record JumpDown(int HeroId, GridPosition TrapDoor) : GameCommand(HeroId);
 

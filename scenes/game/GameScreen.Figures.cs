@@ -1,8 +1,10 @@
 using Godot;
 using Woad.Core.Content;
+using Woad.Core.Dice;
 using Woad.Core.Events;
 using Woad.Core.Grid;
 using Woad.Core.Model;
+using Woad.Core.Rules;
 using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Game;
@@ -23,7 +25,7 @@ public partial class GameScreen
     private void ReloadFigures()
     {
         _figures.Clear();
-        foreach (Hero hero in _session.State.Heroes.Where(hero => hero.IsActive))
+        foreach (Hero hero in _session.State.Heroes.Where(hero => hero.IsInPlay))
         {
             _names[hero.Id] = hero.Name;
             _figures[hero.Id] = new Figure
@@ -36,6 +38,9 @@ public partial class GameScreen
                 MaxHearts = hero.MaxHearts,
                 Glyph = hero.Name[..1].ToUpperInvariant(),
                 Fill = Palette.Seat(hero.Seat),
+                Keeling = hero.IsKeelingOver,
+                LifeMarks = hero.LifeMarks,
+                DeathMarks = hero.DeathMarks,
             };
         }
 
@@ -99,6 +104,7 @@ public partial class GameScreen
         token.SetHearts(figure.Hearts, figure.MaxHearts);
         token.Stunned = figure.Stunned;
         token.Collapsed = figure.Collapsed;
+        token.Keeling = figure.Keeling ? (figure.LifeMarks, figure.DeathMarks) : null;
         token.Active = figure.Id == ActiveHero?.Id;
     }
 
@@ -197,6 +203,48 @@ public partial class GameScreen
         }
     }
 
+    /// <summary>Floats text over a figure, if it's in the room on show.</summary>
+    private void FloatOver(int entityId, string text, Color color)
+    {
+        if (_figures.TryGetValue(entityId, out Figure? figure) && figure.RoomId == _shownRoomId)
+        {
+            _board.FloatText(figure.Position, text, color);
+        }
+    }
+
+    /// <summary>
+    /// A Keel roll in the tray: the Keel Die with its Power Die (after a 6) and any banked Power Dice,
+    /// then on a second line the Doom Dice: the one a 1 rolls and those allies left.
+    /// </summary>
+    private async Task ShowKeelRoll(KeelRolled keel)
+    {
+        _trayShowsMovement = false;
+        bool six = keel.Keel == GameRules.PowerDieFace;
+        List<int> keelFaces = [keel.Keel, .. six && keel.BonusDie is int power ? [power] : Array.Empty<int>(), .. keel.PowerFaces];
+        await _dice.ShowRoll($"{NameOf(keel.HeroId)} rolls the Keel Die", new DiceRoll(keelFaces), 0, newGroup: true, keelFaces.Count - 1);
+
+        List<int> doomFaces = [.. !six && keel.BonusDie is int doom ? [doom] : Array.Empty<int>(), .. keel.DoomFaces];
+        if (doomFaces.Count > 0)
+        {
+            await _dice.ShowRoll("Doom Dice (1s are death)", new DiceRoll(doomFaces), 0, newGroup: false);
+        }
+
+        if (keel.LifeGained > 0)
+        {
+            FloatOver(keel.HeroId, $"+{keel.LifeGained} life", Palette.Heal);
+        }
+        else if (keel.DeathGained > 0)
+        {
+            FloatOver(keel.HeroId, $"+{keel.DeathGained} death", Palette.Danger);
+        }
+        else
+        {
+            FloatOver(keel.HeroId, "nothing...", Palette.TextDim);
+        }
+
+        await UpdateFigure(keel.HeroId, figure => { figure.LifeMarks = keel.LifeMarks; figure.DeathMarks = keel.DeathMarks; }, 0.3);
+    }
+
     private async Task RemoveFigure(int entityId)
     {
         _figures.Remove(entityId);
@@ -287,5 +335,11 @@ public partial class GameScreen
         public bool Stunned { get; set; }
 
         public bool Collapsed { get; set; }
+
+        public bool Keeling { get; set; }
+
+        public int LifeMarks { get; set; }
+
+        public int DeathMarks { get; set; }
     }
 }

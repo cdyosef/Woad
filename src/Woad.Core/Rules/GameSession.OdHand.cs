@@ -8,7 +8,7 @@ using Woad.Core.Model;
 namespace Woad.Core.Rules;
 
 /// <summary>
-/// Od Hand: dice for picking locks, searching rooms, disarming traps and stealing. Like Rumble and
+/// Od Hand: dice for picking locks, searching rooms, disarming traps, stealing and rousing allies Keeling Over. Like Rumble and
 /// Wend, each roll uses one or more of the turn's Od Hand dice (plus the tools' value once a turn),
 /// sixes earn Power Dice, and Luck can reroll them. None of it takes the turn's action. A check
 /// succeeds when the total reaches its difficulty; a steal must beat the target's own roll.
@@ -306,6 +306,10 @@ public sealed partial class GameSession
 
             case OdHandCheckKind.Search:
                 Reveal(hero, room, total, events);
+                break;
+
+            case OdHandCheckKind.Rouse:
+                ResolveRouse(hero, roll, check, events);
                 break;
 
             case OdHandCheckKind.Steal:

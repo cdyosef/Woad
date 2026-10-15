@@ -42,7 +42,15 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         MonsterStunned stunned => $"{nameOf(stunned.MonsterId)} is stunned.",
         MonsterTurnSkipped skipped => $"{nameOf(skipped.MonsterId)} is stunned and loses its turn.",
         HeroHealed healed => $"{nameOf(healed.HeroId)} recovers {Count(healed.Amount, "heart")}.",
-        HeroDowned downed => $"{nameOf(downed.HeroId)} is downed and drops {Count(downed.DroppedCardIds.Count, "card")}!",
+        HeroKeeledOver keeled => $"{nameOf(keeled.HeroId)} is Keeling Over! {keeled.Bane}.",
+        KeelRolled { LifeGained: > 0, DeathGained: > 0 } keel => $"{nameOf(keel.HeroId)} rolls the Keel Die: {Count(keel.LifeGained, "mark")} of life and {Count(keel.DeathGained, "mark")} of death ({Marks(keel.LifeMarks, keel.DeathMarks)}).",
+        KeelRolled { LifeGained: > 0 } keel => $"{nameOf(keel.HeroId)} rolls the Keel Die: {Count(keel.LifeGained, "mark")} of life ({Marks(keel.LifeMarks, keel.DeathMarks)}).",
+        KeelRolled { DeathGained: > 0 } keel => $"{nameOf(keel.HeroId)} rolls the Keel Die: {Count(keel.DeathGained, "mark")} of death ({Marks(keel.LifeMarks, keel.DeathMarks)}).",
+        KeelRolled keel => $"{nameOf(keel.HeroId)} rolls the Keel Die: a {keel.Keel}, nothing changes ({Marks(keel.LifeMarks, keel.DeathMarks)}).",
+        HeroRoused roused => $"{nameOf(roused.ByHeroId)} tends {nameOf(roused.HeroId)}: {Count(roused.LifeGained, "mark")} of life{(roused.DoomDiceAdded > 0 ? $", but {roused.DoomDiceAdded} Doom {(roused.DoomDiceAdded == 1 ? "Die" : "Dice")} for their next Keel roll" : "")}.",
+        KeelerStruck struck => $"{nameOf(struck.AttackerId)} strikes at {nameOf(struck.HeroId)} as they lie there: a mark of death ({struck.DeathMarks}/3).",
+        HeroStoodUp stood => $"{nameOf(stood.HeroId)} stands back up with {Count(stood.Hearts, "heart")}!",
+        HeroDied died => $"{nameOf(died.HeroId)} is dead. {died.Tombstone.Inscription}: {died.Tombstone.Epitaph}.",
         CardUsed used => $"{nameOf(used.HeroId)} uses the {cardNameOf(used.CardId)}.",
         CardEquipped equipped => $"{nameOf(equipped.HeroId)} equips the {cardNameOf(equipped.CardId)}.",
         CardBelted belted => $"{nameOf(belted.HeroId)} hangs the {cardNameOf(belted.CardId)} on their belt.",
@@ -102,6 +110,8 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         OdHandCheckKind.PickChest => "picks the chest's lock",
         OdHandCheckKind.Search => "searches the room",
         OdHandCheckKind.Disarm => "works at the trap",
+        OdHandCheckKind.PickGate => "picks the gate's lock",
+        OdHandCheckKind.Rouse => "tends a fallen ally",
         _ => "tries to steal",
     };
 
@@ -144,10 +154,13 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         CompanionOrder.Hold => "hold here",
         CompanionOrder.Fight => "fight",
         CompanionOrder.StayBack => "stay back",
+        CompanionOrder.Tend => "tend the fallen",
         _ => "follow",
     };
 
     private static string Count(int amount, string noun) => $"{amount} {noun}{(amount == 1 ? "" : "s")}";
+
+    private static string Marks(int life, int death) => $"life {life}/3, death {death}/3";
 
     private static string PowerDice(int amount) => $"{amount} Power {(amount == 1 ? "Die" : "Dice")}";
 }

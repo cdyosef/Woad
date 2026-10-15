@@ -26,9 +26,14 @@ public static class SimpleBot
         }
 
         TurnState turn = state.Turn!;
+        if (turn.KeelingOver)
+        {
+            return new RollKeel(hero.Id, hero.Power.Banked);
+        }
+
         Room room = state.RoomOf(hero);
         TileKind standingOn = room.Layout[hero.Position];
-        bool fighting = room.Monsters.Count > 0;
+        bool fighting = Fighting(session, room, hero);
 
         // Sixes: add the Power Die to an attack, bank the ones from moves.
         if (turn.UnsettledPowerDice > 0)
@@ -39,6 +44,11 @@ public static class SimpleBot
         if (turn.PendingRoll is not null)
         {
             return new ConfirmAttack(hero.Id);
+        }
+
+        if (session.GetRousableAllies().FirstOrDefault() is { } fallen)
+        {
+            return new Rouse(hero.Id, fallen.Id);
         }
 
         if (hero.Hearts <= hero.MaxHearts - 2 && UsableBeltCard(session, hero, CardEffectKind.Heal) is { } potion)
@@ -79,6 +89,25 @@ public static class SimpleBot
                           || (turn.HasActed && Beside(room, hero, TileKind.Pot) is not null)))
         {
             return new EndTurn(hero.Id);
+        }
+
+        // Nobody gets left Keeling Over once the room is clear: kneel beside them and wait to rouse them.
+        if (!fighting && BesideFallen(state, room, hero) is { } kneel)
+        {
+            if (kneel == hero.Position)
+            {
+                return new EndTurn(hero.Id);
+            }
+
+            if (turn.MovementPoints == 0 && session.MoveDiceLeft > 0)
+            {
+                return new RollMovement(hero.Id);
+            }
+
+            if (StepAlongPath(session, hero, room, kneel) is { } toFallen)
+            {
+                return new MoveHero(hero.Id, toFallen);
+            }
         }
 
         if (standingOn == TileKind.Exit && !room.Monsters.Any(monster => monster.Definition.Boss))
@@ -169,11 +198,54 @@ public static class SimpleBot
             .FirstOrDefault();
     }
 
+    /// <summary>
+    /// Whether there's a fight to be had: a monster the hero can hit now, or can walk (or open a gate)
+    /// to strike. A monster sealed off where nobody can get at it (say, a slimeling split into a walled
+    /// corner) doesn't hold the party up.
+    /// </summary>
+    internal static bool Fighting(GameSession session, Room room, Hero hero)
+    {
+        if (room.Monsters.Count == 0)
+        {
+            return false;
+        }
+
+        if (session.GetAttackableMonsters().Count > 0)
+        {
+            return true;
+        }
+
+        PathSearch search = PathSearch.Run(hero.Position, tile => Walkable(room, tile) || room.Layout[tile] == TileKind.Gate);
+        return room.Monsters.Any(monster => monster.Position.SurroundingTiles()
+            .Any(tile => tile.IsInRoom && search.CanReach(tile) && Targeting.CanHeroAttack(room.Layout, 1, tile, monster.Position)));
+    }
+
+    /// <summary>
+    /// Where to kneel to rouse an ally Keeling Over in the room: the hero's own tile if already beside
+    /// one (diagonals too), else the closest free tile beside one. Null when nobody's down or reachable.
+    /// </summary>
+    internal static GridPosition? BesideFallen(GameState state, Room room, Hero hero)
+    {
+        List<Hero> fallen = state.HeroesIn(room).Where(other => other.IsKeelingOver).ToList();
+        if (fallen.Any(other => other.Position.ChebyshevDistanceTo(hero.Position) == 1))
+        {
+            return hero.Position;
+        }
+
+        return Nearest(state, room, hero, fallen.SelectMany(other => other.Position.SurroundingTiles()).Where(tile => tile.IsInRoom));
+    }
+
     /// <summary>Walks the shortest route to the goal as far as this turn's movement allows.</summary>
     internal static GridPosition? StepAlongPath(GameSession session, Hero hero, Room room, GridPosition goal)
     {
         IReadOnlyDictionary<GridPosition, int> reachable = session.GetReachableTiles();
         PathSearch search = PathSearch.Run(hero.Position, tile => Walkable(room, tile));
+        if (!search.CanReach(goal))
+        {
+            // The only way is past a trap it knows of: step onto it and take the hit rather than wait forever.
+            search = PathSearch.Run(hero.Position, tile => room.Layout[tile].IsWalkable() && room.MonsterAt(tile) is null);
+        }
+
         if (reachable.Count == 0 || goal == hero.Position || !search.CanReach(goal))
         {
             return null;
@@ -273,7 +345,7 @@ public static class SimpleBot
         PathSearch search = PathSearch.Run(hero.Position, tile => Walkable(room, tile));
         return tiles
             .Where(tile => tile != hero.Position && search.CanReach(tile))
-            .Where(tile => !state.ActiveHeroesIn(room).Any(other => other.Position == tile))
+            .Where(tile => !state.HeroesIn(room).Any(other => other.Position == tile))
             .OrderBy(tile => search.Distances[tile])
             .ThenBy(tile => tile.Y)
             .ThenBy(tile => tile.X)

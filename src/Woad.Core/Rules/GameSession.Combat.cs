@@ -184,7 +184,7 @@ public sealed partial class GameSession
 
     /// <summary>
     /// Each target defends against the attack's total separately. With friendly fire on, targets may
-    /// be heroes; one downed this way is downed as by a monster, with no kill for the attacker.
+    /// be heroes; one brought down this way is Keeling Over as if by a monster, with no kill for the attacker.
     /// </summary>
     private void ResolveHeroAttack(PendingRoll attack, List<GameEvent> events)
     {
@@ -198,7 +198,7 @@ public sealed partial class GameSession
             }
             else if (State.ActiveHeroesIn(room).FirstOrDefault(ally => ally.Id == targetId) is { } ally)
             {
-                DamageHero(room, ally, attack.Total, events);
+                DamageHero(room, ally, attack.Total, AllyBane(hero, attack.Source), hero.Id, events);
             }
         }
     }
@@ -312,7 +312,7 @@ public sealed partial class GameSession
     /// <summary>
     /// A monster's turn of attacks on one hero: its Attack dice split into the attacks likeliest to
     /// land the most hits (see <see cref="PlanAttacks"/>), its weapon value added to the first.
-    /// It stops once the hero is downed.
+    /// It stops once the hero is Keeling Over.
     /// </summary>
     private void MonsterAttacks(Room room, Monster monster, Hero target, List<GameEvent> events)
     {
@@ -337,7 +337,7 @@ public sealed partial class GameSession
         events.Add(new AttackRolled(monster.Id, roll, bonus, total, targets.Select(hero => hero.Id).ToList(), powerDice));
         foreach (Hero hero in targets.Where(hero => hero.IsActive))
         {
-            DamageHero(room, hero, total, events);
+            DamageHero(room, hero, total, MonsterBane(monster), monster.Id, events);
         }
     }
 
@@ -387,35 +387,35 @@ public sealed partial class GameSession
         }
     }
 
-    private void DamageHero(Room room, Hero hero, int attackTotal, List<GameEvent> events)
+    /// <summary>
+    /// The hero defends against an attack. A hit costs a heart, and the last one leaves them Keeling
+    /// Over; a hit on a hero already Keeling Over is a mark of death instead.
+    /// </summary>
+    /// <param name="bane">What the attacker is, for the tombstone ("Slain by a Goblin").</param>
+    private void DamageHero(Room room, Hero hero, int attackTotal, string bane, int attackerId, List<GameEvent> events)
     {
         Stats stats = hero.EffectiveStats;
         int armor = Math.Max(0, stats.Armor);
         DiceRoll defense = RollDefense(hero.Id, hero.Power, Math.Max(0, stats.DefenseDice), armor, attackTotal, canSpend: true, events);
 
         int damage = DamageFor(attackTotal, defense.Total + armor);
+        if (hero.IsKeelingOver)
+        {
+            events.Add(new Damaged(hero.Id, damage, 0));
+            if (damage > 0)
+            {
+                MarkForDeath(room, hero, bane, attackerId, events);
+            }
+
+            return;
+        }
+
         hero.Hearts = Math.Max(0, hero.Hearts - damage);
         events.Add(new Damaged(hero.Id, damage, hero.Hearts));
 
         if (hero.Hearts == 0)
         {
-            DownHero(room, hero, events);
+            KeelOver(room, hero, bane, events);
         }
-    }
-
-    /// <summary>A downed hero is out of the run and drops everything they didn't bring in.</summary>
-    private void DownHero(Room room, Hero hero, List<GameEvent> events)
-    {
-        hero.Status = HeroStatus.Downed;
-        List<CardInstance> dropped = hero.AllCards.Where(card => card.BroughtInByHeroId != hero.Id).ToList();
-        foreach (CardInstance card in dropped)
-        {
-            hero.Remove(card);
-        }
-
-        room.AddLoot(SafeTile(room, hero.Position), dropped);
-        events.Add(new HeroDowned(hero.Id, hero.Position, dropped.Select(card => card.Id).ToList()));
-        DropHeroKeys(room, hero, events);
-        EndRunIfOver(events);
     }
 }

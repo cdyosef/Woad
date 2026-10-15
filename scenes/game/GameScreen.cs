@@ -89,6 +89,10 @@ public partial class GameScreen : Control
         {
             RunHazardTest();
         }
+        else if (args.Contains("--keeltest"))
+        {
+            RunKeelTest();
+        }
     }
 
     public override void _UnhandledInput(InputEvent @event)
@@ -480,9 +484,37 @@ public partial class GameScreen : Control
                 await RemoveFigure(defeated.MonsterId);
                 break;
 
-            case HeroDowned downed:
-                await RemoveFigure(downed.HeroId);
+            case HeroKeeledOver keeled:
+                await Walk(keeled.HeroId, [keeled.Position]);
+                FloatOver(keeled.HeroId, "keels over!", Palette.Danger);
+                await UpdateFigure(keeled.HeroId, figure => { figure.Keeling = true; figure.Hearts = 0; figure.LifeMarks = figure.DeathMarks = 0; }, 0.4);
+                break;
+
+            case KeelRolled keel:
+                await ShowKeelRoll(keel);
+                break;
+
+            case HeroRoused roused:
+                _dice.ShowOutcome(roused.LifeGained > 0);
+                FloatOver(roused.HeroId, roused.LifeGained > 0 ? $"+{roused.LifeGained} life" : "stirs...", roused.LifeGained > 0 ? Palette.Heal : Palette.TextDim);
+                await UpdateFigure(roused.HeroId, figure => figure.LifeMarks = roused.LifeMarks, 0.3);
+                break;
+
+            case KeelerStruck struck:
+                FloatOver(struck.HeroId, "mark of death", Palette.Danger);
+                await UpdateFigure(struck.HeroId, figure => figure.DeathMarks = struck.DeathMarks, 0.3);
+                break;
+
+            case HeroStoodUp stood:
+                FloatOver(stood.HeroId, "stands up!", Palette.Heal);
+                await UpdateFigure(stood.HeroId, figure => { figure.Keeling = false; figure.Hearts = stood.Hearts; }, 0.4);
+                break;
+
+            case HeroDied died:
+                FloatOver(died.HeroId, "R.I.P.", Palette.Text);
+                await RemoveFigure(died.HeroId);
                 _board.QueueRedraw();
+                await _banner.Flash($"{died.Tombstone.Inscription}", Palette.TextDim, 0.8);
                 break;
 
             case HeroEscaped escaped:
@@ -645,8 +677,20 @@ public partial class GameScreen : Control
             case HeroDescended or HeroAscended:
                 Sfx.Play("stairs");
                 break;
-            case HeroDowned:
+            case HeroKeeledOver:
                 Sfx.Play("downed");
+                break;
+            case KeelRolled:
+                Sfx.PlayVaried("dice");
+                break;
+            case HeroRoused { LifeGained: > 0 } or HeroStoodUp:
+                Sfx.Play("heal");
+                break;
+            case KeelerStruck:
+                Sfx.Play("hit");
+                break;
+            case HeroDied:
+                Sfx.Play("downed", 0.7f);
                 break;
             case HeroEscaped or RunEnded { WinnerHeroIds.Count: > 0 }:
                 Sfx.Play("victory");
@@ -686,7 +730,12 @@ public partial class GameScreen : Control
         DefenseRolled defense => FigureRoom(defense.DefenderId),
         Damaged damaged => FigureRoom(damaged.TargetId),
         HeroHealed healed => FigureRoom(healed.HeroId),
-        HeroDowned downed => FigureRoom(downed.HeroId),
+        HeroKeeledOver keeled => FigureRoom(keeled.HeroId),
+        KeelRolled keel => FigureRoom(keel.HeroId),
+        HeroRoused roused => FigureRoom(roused.HeroId),
+        KeelerStruck struck => FigureRoom(struck.HeroId),
+        HeroStoodUp stood => FigureRoom(stood.HeroId),
+        HeroDied died => FigureRoom(died.HeroId),
         MonsterDefeated defeated => FigureRoom(defeated.MonsterId),
         MonsterCollapsed collapsed => FigureRoom(collapsed.MonsterId),
         MonsterReassembled risen => FigureRoom(risen.MonsterId),
@@ -715,9 +764,10 @@ public partial class GameScreen : Control
 
     private static string OdHandCaption(OdHandCheckKind kind) => kind switch
     {
-        OdHandCheckKind.PickDoor or OdHandCheckKind.PickChest => "picks the lock",
+        OdHandCheckKind.PickDoor or OdHandCheckKind.PickChest or OdHandCheckKind.PickGate => "picks the lock",
         OdHandCheckKind.Search => "searches",
         OdHandCheckKind.Disarm => "disarms",
+        OdHandCheckKind.Rouse => "rouses an ally",
         _ => "steals",
     };
 

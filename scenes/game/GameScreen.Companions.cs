@@ -19,6 +19,7 @@ public partial class GameScreen
         (CompanionOrder.Hold, "Hold", "Stay on this tile and attack whatever comes within reach."),
         (CompanionOrder.Fight, "Fight", "Go after the monsters in the room, then follow you once it's clear."),
         (CompanionOrder.StayBack, "Back", "Keep away from monsters and stay near you; strike back only when cornered."),
+        (CompanionOrder.Tend, "Tend", "Go to allies Keeling Over in the room, even mid-fight, and rouse them; otherwise follow you."),
     ];
 
     private Button _orders = null!;
@@ -81,7 +82,7 @@ public partial class GameScreen
             for (int o = 0; o < Orders.Length; o++)
             {
                 (CompanionOrder order, string label, string help) = Orders[o];
-                Button button = UiTheme.Button(new Vector2(o * 40, 12), new Vector2(38, 15), label);
+                Button button = UiTheme.CompactButton(new Vector2(o * 32, 12), new Vector2(30, 15), label);
                 button.Name = order.ToString();
                 button.TooltipText = help;
                 button.ToggleMode = true;
@@ -99,6 +100,7 @@ public partial class GameScreen
         CompanionOrder.Hold => "holding",
         CompanionOrder.Fight => "fighting",
         CompanionOrder.StayBack => "staying back",
+        CompanionOrder.Tend => "tending the fallen",
         _ => "following",
     };
 }

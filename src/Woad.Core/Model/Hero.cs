@@ -8,8 +8,14 @@ public enum HeroStatus
 {
     Active,
 
-    /// <summary>Reduced to 0 hearts; out for the rest of the run.</summary>
-    Downed,
+    /// <summary>
+    /// Reduced to 0 hearts: lying on the floor, rolling a Keel Die each turn until three marks of
+    /// life stand them back up or three marks of death kill them.
+    /// </summary>
+    KeelingOver,
+
+    /// <summary>Died Keeling Over; out for the rest of the run, with a tombstone where they fell.</summary>
+    Dead,
 
     /// <summary>Left the dungeon through the exit.</summary>
     Escaped,
@@ -103,7 +109,25 @@ public sealed class Hero
     /// <summary>The deepest floor reached. Reaching a new one restores Luck and recharges cards.</summary>
     public int DeepestFloor { get; internal set; } = 1;
 
+    /// <summary>Marks of life earned Keeling Over (three stand the hero back up).</summary>
+    public int LifeMarks { get; internal set; }
+
+    /// <summary>Marks of death earned Keeling Over (three and the hero dies).</summary>
+    public int DeathMarks { get; internal set; }
+
+    /// <summary>Doom Dice added to the hero's next Keel roll: one for each 1 an ally rolled rousing them.</summary>
+    public int DoomDiceOwed { get; internal set; }
+
+    /// <summary>What brought the hero down, as their tombstone tells it ("Slain by a Goblin"), or null.</summary>
+    public string? Bane { get; internal set; }
+
+    /// <summary>Standing and able to act.</summary>
     public bool IsActive => Status == HeroStatus.Active;
+
+    public bool IsKeelingOver => Status == HeroStatus.KeelingOver;
+
+    /// <summary>Still in the dungeon and taking turns: standing or Keeling Over.</summary>
+    public bool IsInPlay => Status is HeroStatus.Active or HeroStatus.KeelingOver;
 
     /// <summary>Equipped cards by slot. A two-handed card appears under both hands.</summary>
     public IReadOnlyDictionary<EquipSlot, CardInstance> Equipment => _equipment;

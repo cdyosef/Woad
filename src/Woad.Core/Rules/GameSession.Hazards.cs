@@ -180,7 +180,7 @@ public sealed partial class GameSession
         GridPosition from = hero.Position;
         hero.Position = IsOccupied(room, hero.Footing) ? LandingNear(room, hero.Footing) ?? hero.Footing : hero.Footing;
         events.Add(new Drowned(hero.Id, from, hero.Position));
-        HurtHero(room, hero, GameRules.DrownDamage, events);
+        HurtHero(room, hero, GameRules.DrownDamage, "Drowned", events);
     }
 
     private string? Handle(Shove command, List<GameEvent> events)
@@ -223,7 +223,7 @@ public sealed partial class GameSession
         }
 
         events.Add(new FellIntoPit(hero.Id, room.Id, pit, Bottomless: room.BelowRoomId is null));
-        HurtHero(room, hero, GameRules.FallDamage, events);
+        HurtHero(room, hero, GameRules.FallDamage, "Fell into a pit", events);
         if (!hero.IsActive)
         {
             hero.Position = SafeTile(room, pit);

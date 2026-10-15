@@ -36,6 +36,9 @@ public enum OdHandCheckKind
 
     /// <summary>Steal from an adjacent monster or hero (a contest against their roll).</summary>
     Steal,
+
+    /// <summary>Rouse an adjacent hero Keeling Over: every 6 of the total is a mark of life for them.</summary>
+    Rouse,
 }
 
 /// <summary>
@@ -88,6 +91,9 @@ public sealed class TurnState
     internal TurnState(int heroId) => HeroId = heroId;
 
     public int HeroId { get; }
+
+    /// <summary>The hero began the turn Keeling Over: all they can do is roll the Keel Die.</summary>
+    public bool KeelingOver { get; internal init; }
 
     public int AttackDiceUsed { get; internal set; }
 
