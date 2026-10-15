@@ -17,19 +17,19 @@ internal static class TestRun
 
     /// <summary>A begun run in a single room "A".</summary>
     /// <param name="owners">Per seat: null for a player, or the seat of the player a companion belongs to.</param>
-    public static GameSession Start(string room, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, int?[]? owners = null) =>
-        Start([new RoomSetup("A", Room(room))], dice, heroes, stats, cards, loot, owners: owners);
+    public static GameSession Start(string room, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, int?[]? owners = null, bool friendlyFire = false) =>
+        Start([new RoomSetup("A", Room(room))], dice, heroes, stats, cards, loot, owners: owners, friendlyFire: friendlyFire);
 
     /// <summary>A begun run starting in the first room. Every hero gets the same stats and cards.</summary>
     /// <param name="loot">Scripts the loot stream (pots, drops, deck shuffles); seeded when omitted.</param>
-    public static GameSession Start(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, IReadOnlyList<PassageSetup>? passages = null, int?[]? owners = null)
+    public static GameSession Start(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, IReadOnlyList<PassageSetup>? passages = null, int?[]? owners = null, bool friendlyFire = false)
     {
-        GameSession session = Create(rooms, dice, heroes, stats, cards, loot, passages, owners);
+        GameSession session = Create(rooms, dice, heroes, stats, cards, loot, passages, owners, friendlyFire);
         session.Begin();
         return session;
     }
 
-    public static GameSession Create(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, IReadOnlyList<PassageSetup>? passages = null, int?[]? owners = null)
+    public static GameSession Create(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, IReadOnlyList<PassageSetup>? passages = null, int?[]? owners = null, bool friendlyFire = false)
     {
         var setup = new RunSetup
         {
@@ -41,6 +41,7 @@ internal static class TestRun
             Rooms = rooms,
             StartRoomId = rooms[0].Id,
             Passages = passages ?? [],
+            FriendlyFire = friendlyFire,
         };
 
         var random = loot is null

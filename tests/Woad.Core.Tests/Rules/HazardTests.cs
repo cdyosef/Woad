@@ -95,7 +95,7 @@ public class HazardTests
 
         IReadOnlyList<GameEvent> events = session.Do(new Shove(hero.Id, dummy.Id));
 
-        Assert.Equal(new MonsterShoved(hero.Id, dummy.Id, new GridPosition(4, 3), new GridPosition(4, 2)), events.SingleOf<MonsterShoved>());
+        Assert.Equal(new Shoved(hero.Id, dummy.Id, new GridPosition(4, 3), new GridPosition(4, 2)), events.SingleOf<Shoved>());
         Assert.Equal(new MonsterFell(dummy.Id, "A", "B", new GridPosition(4, 2)), events.SingleOf<MonsterFell>());
         Assert.Contains(new RoomCleared("A"), events);
         Assert.Same(dummy, session.OnlyMonster("B"));
@@ -150,7 +150,7 @@ public class HazardTests
         Room room = session.RoomById();
 
         Assert.Contains("nowhere to shove", session.Refuse(new Shove(hero.Id, room.Monsters.Single(monster => monster.Definition.Id == "dummy").Id)));
-        Assert.Empty(session.GetShoveableMonsters());
+        Assert.Empty(session.GetShoveTargets());
         hero.Position = new GridPosition(5, 4);
         Assert.Contains("too mighty", session.Refuse(new Shove(hero.Id, room.Monsters.Single(monster => monster.Definition.Boss).Id)));
     }

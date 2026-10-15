@@ -88,9 +88,11 @@ public sealed partial class GameSession
                     BreakWalls(room, CrackedWallsIn(room, command.Target!.Value, effect.AreaRadius), events);
                 }
 
-                if (targets.Count > 0)
+                // With friendly fire on, the blast catches heroes too, the thrower included.
+                List<int> caught = [.. targets.Select(monster => monster.Id), .. AlliesCaught(room, command.Target!.Value, effect.AreaRadius).Select(ally => ally.Id)];
+                if (caught.Count > 0)
                 {
-                    RollHeroAttack(hero, effect.Amount, 0, targets.Select(monster => monster.Id).ToList(), SourceOf(card.Definition), events);
+                    RollHeroAttack(hero, effect.Amount, 0, caught, SourceOf(card.Definition), events);
                 }
 
                 break;
@@ -634,6 +636,11 @@ public sealed partial class GameSession
                     return null;
                 }
 
+                if (targets.Count == 0 && AlliesCaught(room, attackTile, effect.AreaRadius).Count > 0)
+                {
+                    return null;
+                }
+
                 return targets.Count == 0 ? (breaksWalls ? "There are no monsters or cracked walls there." : "There are no monsters there.") : null;
 
             case CardEffectKind.Stun:
@@ -664,6 +671,11 @@ public sealed partial class GameSession
                 return "That card does nothing.";
         }
     }
+
+    /// <summary>With friendly fire on, the heroes (the user too) an attack card aimed at <paramref name="tile"/> would catch.</summary>
+    private List<Hero> AlliesCaught(Room room, GridPosition tile, int radius) => State.FriendlyFire
+        ? State.ActiveHeroesIn(room).Where(ally => ally.Position.ChebyshevDistanceTo(tile) <= radius).ToList()
+        : [];
 
     private static DamageSource SourceOf(CardDefinition card) => card.Type switch
     {

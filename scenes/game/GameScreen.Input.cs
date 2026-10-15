@@ -34,7 +34,8 @@ public partial class GameScreen
         Room room = ShownRoom;
         if (_shoving)
         {
-            if (room.MonsterAt(tile) is { } shoved)
+            int? shovedId = room.MonsterAt(tile)?.Id ?? _session.State.ActiveHeroesIn(room).FirstOrDefault(other => other.Position == tile && other != hero)?.Id;
+            if (shovedId is int targetId)
             {
                 if (_session.AttackDiceLeft > 0 && SelectedAttackDice < 1)
                 {
@@ -42,7 +43,7 @@ public partial class GameScreen
                     return;
                 }
 
-                Execute(new Shove(hero.Id, shoved.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
+                Execute(new Shove(hero.Id, targetId, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
             }
             else
             {
@@ -78,6 +79,17 @@ public partial class GameScreen
             }
 
             Execute(new AttackMonster(hero.Id, monster.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
+        }
+        else if (_session.GetAttackableAllies().FirstOrDefault(ally => ally.Position == tile) is { } ally)
+        {
+            // Friendly fire is on and an ally is in reach.
+            if (SelectedAttackDice < 1)
+            {
+                Log("Select at least one Rumble die.", Palette.TextDim);
+                return;
+            }
+
+            Execute(new AttackAlly(hero.Id, ally.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
         }
         else if (room.Layout[tile] == TileKind.Chest)
         {

@@ -21,6 +21,9 @@ public partial class Main : Control
     private const string ThemeId = "emerald_keep";
 
     private ContentCatalog _content = null!;
+
+    /// <summary>The party screen's friendly fire switch, remembered between runs this session.</summary>
+    private bool _friendlyFire;
     private ICharacterRepository _characters = null!;
     private Control? _screen;
 
@@ -134,7 +137,7 @@ public partial class Main : Control
 
     private void ShowRunSetup()
     {
-        var screen = new RunSetupScreen { Repository = _characters };
+        var screen = new RunSetupScreen { Repository = _characters, FriendlyFire = _friendlyFire };
         screen.BackRequested += ShowMainMenu;
         screen.NewCharacterRequested += () => ShowEditor(null, ShowRunSetup);
         screen.StartRequested += StartRun;
@@ -142,8 +145,11 @@ public partial class Main : Control
     }
 
     /// <summary>Generates a dungeon for the party (carrying their current gear) and starts playing it.</summary>
-    private void StartRun(IReadOnlyList<Character> party, ulong seed) =>
-        ShowGame(DungeonGenerator.CreateRun(_content, ThemeId, Party.ToHeroSetups(party), seed), party);
+    private void StartRun(IReadOnlyList<Character> party, ulong seed, bool friendlyFire)
+    {
+        _friendlyFire = friendlyFire;
+        ShowGame(DungeonGenerator.CreateRun(_content, ThemeId, Party.ToHeroSetups(party), seed) with { FriendlyFire = friendlyFire }, party);
+    }
 
     private void ShowGame(RunSetup setup, IReadOnlyList<Character> party)
     {
@@ -185,11 +191,11 @@ public partial class Main : Control
             ulong seed = (ulong)DateTime.UtcNow.Ticks;
             if (party.Count > 0)
             {
-                StartRun(party, seed);
+                StartRun(party, seed, setup.FriendlyFire);
             }
             else
             {
-                ShowGame(DungeonGenerator.CreateRun(_content, setup.ThemeId, setup.Heroes, seed), party);
+                ShowGame(DungeonGenerator.CreateRun(_content, setup.ThemeId, setup.Heroes, seed) with { FriendlyFire = setup.FriendlyFire }, party);
             }
         };
         Show(screen);

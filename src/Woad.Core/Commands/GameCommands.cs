@@ -115,11 +115,12 @@ public sealed record Escape(int HeroId) : GameCommand(HeroId);
 public sealed record OrderCompanion(int HeroId, int CompanionId, CompanionOrder Order) : GameCommand(HeroId);
 
 /// <summary>
-/// Shove an adjacent monster one tile straight away from you: roll like an attack (Rumble dice and
-/// the weapon); beating its defense pushes it, perhaps onto a trap or into a pit. Bosses can't be
-/// shoved, and the tile behind it must be open floor, a trap or a pit.
+/// Shove an adjacent monster (or, with friendly fire on, a hero or companion) one tile straight away
+/// from you: roll like an attack (Rumble dice and the weapon); beating its defense pushes it, perhaps
+/// onto a trap or into a pit. Bosses can't be shoved, and the tile behind must be open floor, a trap
+/// or a pit.
 /// </summary>
-public sealed record Shove(int HeroId, int MonsterId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0) : GameCommand(HeroId);
+public sealed record Shove(int HeroId, int TargetId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0) : GameCommand(HeroId);
 
 /// <summary>
 /// Jump a pit: <paramref name="Landing"/> is two tiles away in a straight line with a pit between.
@@ -127,3 +128,9 @@ public sealed record Shove(int HeroId, int MonsterId, int? Dice = null, bool Use
 /// drops you into the pit.
 /// </summary>
 public sealed record JumpPit(int HeroId, GridPosition Landing) : GameCommand(HeroId);
+
+/// <summary>
+/// With friendly fire on: attack another hero or companion in reach, exactly as you would a monster
+/// (Rumble dice and the weapon against their defense).
+/// </summary>
+public sealed record AttackAlly(int HeroId, int TargetId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0) : GameCommand(HeroId);

@@ -36,7 +36,7 @@ cooperate to survive the dungeon but compete for treasure: the richest player to
 
 1. **Main menu**: Play, Characters, Quit.
 2. **Characters**: create, view or delete saved characters.
-3. **Run setup**: pick 1–8 saved characters (players and their companions) and a seat order, plus an optional seed.
+3. **Run setup**: pick 1–8 saved characters (players and their companions) and a seat order, an optional seed, and whether friendly fire is on (off by default).
 4. **Dungeon**: three floors, played in rounds.
 5. **Results**: winner, treasure totals, XP gained, items kept or lost. Characters are saved.
 6. Back to the main menu.
@@ -233,6 +233,11 @@ when the total reaches its number:
   room below and loses a heart, or, bottomless, is gone for good (it counts as your kill). Bosses can't
   be shoved, and the tile behind must be free floor, a trap or a pit. Flyers don't fall. Monsters
   don't shove yet.
+- **Friendly fire** (a switch on the party screen, off by default, kept for Play again): blasts also
+  catch heroes and companions in range, the thrower included, and you can attack and shove other
+  heroes and companions in reach just like monsters (click them; Shove works on them too). Each
+  defends with their own Defense dice and armor. A hero downed this way is downed as by a monster:
+  no kill or XP for the attacker. The top bar shows **FF** while it's on.
 - **Hidden stashes** hold a key or a card, spilled onto the floor when found.
 
 ### Monsters (first theme)

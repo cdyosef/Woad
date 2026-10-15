@@ -131,7 +131,10 @@ public sealed partial class GameSession
             return;
         }
 
-        Turn.EndMove();
+        if (hero.Id == Turn.HeroId)
+        {
+            Turn.EndMove();
+        }
         hero.RoomId = target.Id;
         hero.Position = landing;
         target.Explored = true;

@@ -125,7 +125,7 @@ public partial class GameScreen
         Room room = ShownRoom;
         if (_shoving)
         {
-            _board.SetHighlights([], [], _session.GetShoveableMonsters().Select(monster => monster.Position), []);
+            _board.SetHighlights([], [], _session.GetShoveTargets(), []);
             return;
         }
 
@@ -155,7 +155,7 @@ public partial class GameScreen
         IReadOnlyCollection<GridPosition> reachable = _session.GetReachableTiles().Keys.ToList();
         _board.SetHighlights(
             reachable,
-            _session.GetAttackableMonsters().Select(monster => monster.Position),
+            _session.GetAttackableMonsters().Select(monster => monster.Position).Concat(_session.GetAttackableAllies().Select(ally => ally.Position)),
             [],
             interactive,
             hazards: reachable.Where(tile => room.Layout[tile] == TileKind.Pit || room.TrapAt(tile) is { Revealed: true }),
@@ -318,7 +318,8 @@ public partial class GameScreen
         });
 
         int floor = _shownRoomId.Length > 0 ? ShownRoom.Floor : 1;
-        return $"[color={Palette.Hex(Palette.Trim)}]ROUND {state.Round}   FLOOR {floor}[/color]   {string.Join(compact ? " " : "  ", heroes)}";
+        string friendlyFire = state.FriendlyFire ? $"  [color={Palette.Hex(Palette.Danger)}]FF[/color]" : "";
+        return $"[color={Palette.Hex(Palette.Trim)}]ROUND {state.Round}   FLOOR {floor}[/color]{friendlyFire}   {string.Join(compact ? " " : "  ", heroes)}";
     }
 
     private string NameOf(int entityId) => _names.GetValueOrDefault(entityId, "Someone");

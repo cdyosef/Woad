@@ -88,4 +88,7 @@ public sealed record RunSetup
 
     /// <summary>Doors that aren't plain open doors (each listed from one side only).</summary>
     public IReadOnlyList<PassageSetup> Passages { get; init; } = [];
+
+    /// <summary>Heroes can hurt each other: blasts catch them, and they can attack and shove one another.</summary>
+    public bool FriendlyFire { get; init; }
 }

@@ -91,6 +91,8 @@ public partial class Main
             await Click(this, setup.RosterRow(2));
             await Click(this, setup.RosterRow(0));
             Check(setup.PartySize == 3, "clicking characters seats them");
+            await Click(this, setup.FriendlyFireButton);
+            Check(setup.FriendlyFire && setup.FriendlyFireButton.Text.EndsWith("on"), "the Friendly fire button turns it on");
 
             await Click(this, setup.StartButton);
             GameScreen game = await Screen<GameScreen>();
@@ -101,6 +103,7 @@ public partial class Main
             var pip = game.Session.State.Heroes[1];
             var morgan = game.Session.State.Heroes[2];
             Check(pip.OwnerId == wren.Id, "a companion belongs to the player seated before it");
+            Check(game.Session.State.FriendlyFire, "the run has friendly fire on");
 
             Check(game.OrdersButton.Visible, "a player with a companion gets the Orders button");
             await Click(this, game.OrdersButton);
