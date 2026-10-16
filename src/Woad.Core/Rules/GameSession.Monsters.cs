@@ -105,6 +105,19 @@ public sealed partial class GameSession
         monster.TurnsTaken++;
         MonsterDefinition definition = monster.Definition;
 
+        // A thief with loot runs from everyone, and does nothing else.
+        if (definition.Thief && monster.HasLoot)
+        {
+            IReadOnlyList<GridPosition> flight = PlanFlight(room, monster, heroes);
+            if (flight.Count > 0)
+            {
+                monster.Position = flight[^1];
+                events.Add(new MonsterMoved(monster.Id, flight));
+            }
+
+            return;
+        }
+
         if (definition.Sweep is { } sweep && monster.TurnsTaken % sweep.Every == 0)
         {
             List<Hero> swept = standing.Where(hero => hero.Position.ChebyshevDistanceTo(monster.Position) <= sweep.Radius && !(Diving(room, hero) && hero.Position.ChebyshevDistanceTo(monster.Position) > 1)).ToList();
@@ -129,6 +142,12 @@ public sealed partial class GameSession
             }
         }
 
+        // Its Od Hand action: a steal from a hero beside it. A thief that got something runs next turn instead of fighting.
+        if (TrySteal(room, monster, State.HeroesIn(room).ToList(), events) && definition.Thief && monster.HasLoot)
+        {
+            return;
+        }
+
         if (ChooseTarget(room, monster, monster.Position, standing) is { } target)
         {
             MonsterAttacks(room, monster, target, events);
@@ -145,7 +164,9 @@ public sealed partial class GameSession
             .Where(hero => Targeting.CanAttack(room.Layout, monster.Definition.AttackPattern, monster.Definition.AttackRange, from, hero.Position))
             // Someone diving in deep water can only be reached up close.
             .Where(hero => !Diving(room, hero) || hero.Position.ChebyshevDistanceTo(from) <= 1)
-            .OrderBy(hero => hero.Hearts)
+            // A mugger goes for the gold.
+            .OrderByDescending(hero => monster.Definition.Mugger ? hero.Gold : 0)
+            .ThenBy(hero => hero.Hearts)
             .ThenBy(hero => hero.Seat)
             .FirstOrDefault();
 

@@ -34,6 +34,15 @@ public sealed class Monster
     /// <summary>Turns this monster will skip, frozen (the Frost Wand).</summary>
     public int FrozenTurns { get; internal set; }
 
+    /// <summary>Gold it has stolen: dropped where it falls.</summary>
+    public int StolenGold { get; internal set; }
+
+    /// <summary>Cards it has stolen: dropped where it falls.</summary>
+    public List<CardInstance> StolenCards { get; } = [];
+
+    /// <summary>Carrying anything stolen.</summary>
+    public bool HasLoot => StolenGold > 0 || StolenCards.Count > 0;
+
     /// <summary>Stun and Powerful Stun on it (see <see cref="StunState"/>).</summary>
     public StunState Stun { get; } = new();
 

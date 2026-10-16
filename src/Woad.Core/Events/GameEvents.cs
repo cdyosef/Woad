@@ -321,3 +321,12 @@ public sealed record BombDefused(string RoomId, int BombId, bool Doused) : GameE
 
 /// <summary>A bomb fell down a pit: to the room below, or out of the game.</summary>
 public sealed record BombFell(string RoomId, int BombId, string? ToRoomId) : GameEvent;
+
+/// <summary>
+/// A monster tried to steal from a hero: <paramref name="Hits"/> of its Od Hand dice beat the hero's own
+/// roll, taking <paramref name="Gold"/> gold and perhaps a card (0 hits: caught empty-handed).
+/// </summary>
+public sealed record MonsterStole(int MonsterId, int HeroId, int Hits, int Gold, int? CardId) : GameEvent;
+
+/// <summary>A mugging monster's hit took gold from a hero.</summary>
+public sealed record Mugged(int MonsterId, int HeroId, int Gold) : GameEvent;

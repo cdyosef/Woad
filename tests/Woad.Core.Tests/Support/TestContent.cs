@@ -49,7 +49,9 @@ internal static class TestContent
           { "id": "knight", "name": "Knight", "glyph": "K", "hearts": 1, "move": 0, "attackDice": 0, "defenseDice": 1, "armor": 2 },
           { "id": "duelist", "name": "Duelist", "glyph": "D", "hearts": 1, "move": 0, "attackDice": 2, "defenseDice": 0, "weapon": 2 },
           { "id": "torch", "name": "Torch", "glyph": "t", "hearts": 1, "move": 0, "attackDice": 1, "defenseDice": 0, "fireAttack": true, "fireImmune": true },
-          { "id": "sniper", "name": "Sniper", "glyph": "n", "hearts": 1, "move": 0, "attackDice": 1, "defenseDice": 0, "attackPattern": "ranged", "attackRange": 5 }
+          { "id": "sniper", "name": "Sniper", "glyph": "n", "hearts": 1, "move": 0, "attackDice": 1, "defenseDice": 0, "attackPattern": "ranged", "attackRange": 5 },
+          { "id": "pickpocket", "name": "Pickpocket", "glyph": "T", "hearts": 2, "move": 4, "attackDice": 1, "defenseDice": 0, "odHandDice": 3, "thief": true },
+          { "id": "mugger", "name": "Mugger", "glyph": "Y", "hearts": 1, "move": 0, "attackDice": 2, "defenseDice": 0, "odHandDice": 1, "mugger": true, "goldOnly": true, "separateAttacks": true }
         ]
         """;
 

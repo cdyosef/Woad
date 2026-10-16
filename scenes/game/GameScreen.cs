@@ -554,6 +554,16 @@ public partial class GameScreen : Control
                 await UpdateFigure(prone.EntityId, figure => { figure.Prone = true; figure.Diving = prone.Diving; }, 0.2);
                 break;
 
+            case MonsterStole stole:
+                FloatOver(stole.HeroId, stole.Hits > 0 ? "robbed!" : "nothing taken", stole.Hits > 0 ? Palette.Danger : Palette.TextDim);
+                await UpdateFigure(stole.MonsterId, figure => figure.CarriesLoot |= stole.Gold > 0 || stole.CardId is not null, 0.3);
+                break;
+
+            case Mugged mugged:
+                FloatOver(mugged.HeroId, $"-{mugged.Gold} gold", Palette.Loot);
+                await UpdateFigure(mugged.MonsterId, figure => figure.CarriesLoot = true, 0.15);
+                break;
+
             case BombPlaced placed when placed.RoomId == _shownRoomId:
                 _board.QueueRedraw();
                 _board.FloatText(placed.Position, placed.Lit ? "lit!" : "bomb", placed.Lit ? Palette.Fire : Palette.Text);
@@ -819,6 +829,9 @@ public partial class GameScreen : Control
             case BombExploded:
                 Sfx.Play("boom");
                 break;
+            case MonsterStole { Hits: > 0 } or Mugged:
+                Sfx.Play("coin", 0.7f);
+                break;
             case BombPlaced { Lit: true } or FuseBurned:
                 Sfx.Play("fuse");
                 break;
@@ -908,6 +921,8 @@ public partial class GameScreen : Control
         GotUp up => FigureRoom(up.EntityId),
         Stunned stunned => FigureRoom(stunned.EntityId),
         BombPlaced placed => placed.RoomId,
+        MonsterStole stole => FigureRoom(stole.MonsterId),
+        Mugged mugged => FigureRoom(mugged.MonsterId),
         FuseBurned fuse => fuse.RoomId,
         BombExploded boom => boom.RoomId,
         BlastRolled blast => blast.RoomId,

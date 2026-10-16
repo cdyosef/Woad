@@ -58,6 +58,7 @@ public partial class GameScreen
                 _figures[monster.Id].Collapsed = monster.Collapsed;
                 _figures[monster.Id].FireDice = monster.FireDice;
                 _figures[monster.Id].Prone = monster.Prone;
+                _figures[monster.Id].CarriesLoot = monster.HasLoot;
                 _figures[monster.Id].StunMarks = monster.Stun.Stacks + 3 * monster.Stun.PowerfulStacks;
             }
         }
@@ -117,6 +118,7 @@ public partial class GameScreen
         token.Keeling = figure.Keeling ? (figure.LifeMarks, figure.DeathMarks) : null;
         token.FireDice = figure.FireDice;
         token.StunMarks = figure.StunMarks;
+        token.CarriesLoot = figure.CarriesLoot;
         token.Prone = figure.Prone;
         token.Diving = figure.Diving;
         token.Active = figure.Id == ActiveHero?.Id;
@@ -390,6 +392,8 @@ public partial class GameScreen
         public int FireDice { get; set; }
 
         public int StunMarks { get; set; }
+
+        public bool CarriesLoot { get; set; }
 
         public bool Prone { get; set; }
 

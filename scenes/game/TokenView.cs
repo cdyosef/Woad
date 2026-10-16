@@ -22,6 +22,7 @@ public partial class TokenView : Node2D
     private (int Life, int Death)? _keeling;
     private int _fireDice;
     private int _stunMarks;
+    private bool _carriesLoot;
     private bool _prone;
     private bool _diving;
 
@@ -70,6 +71,12 @@ public partial class TokenView : Node2D
     public bool Collapsed
     {
         set { _collapsed = value; QueueRedraw(); }
+    }
+
+    /// <summary>A monster carrying stolen loot: a little gold sack at its side.</summary>
+    public bool CarriesLoot
+    {
+        set { _carriesLoot = value; QueueRedraw(); }
     }
 
     /// <summary>Stun on it: one star for each Stun, three for each Powerful Stun, in the top corner.</summary>
@@ -135,6 +142,14 @@ public partial class TokenView : Node2D
         if (_stunMarks > 0)
         {
             DrawStars();
+        }
+
+        if (_carriesLoot)
+        {
+            var sack = new Vector2(BoardView.TileSize - 8, 18);
+            DrawCircle(sack, 4, Palette.Loot);
+            DrawRect(new Rect2(sack + new Vector2(-1.5f, -6), new Vector2(3, 3)), Palette.Loot);
+            DrawArc(sack, 4, 0, Mathf.Tau, 12, Palette.Ink, 1);
         }
     }
 

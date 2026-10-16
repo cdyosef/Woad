@@ -521,6 +521,21 @@ public partial class GameScreen
             traits.Add("boss");
         }
 
+        if (definition.Thief)
+        {
+            traits.Add("steals, then runs");
+        }
+
+        if (definition.Mugger)
+        {
+            traits.Add("goes for your gold");
+        }
+
+        if (monster.HasLoot)
+        {
+            traits.Add($"carrying {monster.StolenGold} gold{(monster.StolenCards.Count > 0 ? $" and {UiTheme.Count(monster.StolenCards.Count, "card", "cards")}" : "")}");
+        }
+
         if (definition.FireAttack)
         {
             traits.Add("fire attacks: a 6 sets you alight");

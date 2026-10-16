@@ -81,6 +81,8 @@ public static class Palette
         "iron_warden" => new Color("a83a46"),
         "cinder_imp" => new Color("ff7a2a"),
         "fire_beetle" => new Color("b8442a"),
+        "petty_thief" => new Color("6a5a8a"),
+        "mugger_fly" => new Color("5a8a5a"),
         _ => new Color("b0b0b0"),
     };
 

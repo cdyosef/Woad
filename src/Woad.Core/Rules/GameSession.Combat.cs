@@ -248,6 +248,7 @@ public sealed partial class GameSession
         }
 
         room.RemoveMonster(monster);
+        DropStolen(room, monster, SafeTile(room, monster.Position), events);
         if (killer is not null)
         {
             killer.Kills++;
@@ -335,7 +336,9 @@ public sealed partial class GameSession
     private void MonsterAttacks(Room room, Monster monster, Hero target, List<GameEvent> events)
     {
         MonsterDefinition definition = monster.Definition;
-        IReadOnlyList<int> attacks = PlanAttacks(monster.AttackDiceThisTurn, definition.Weapon, target.EffectiveStats);
+        IReadOnlyList<int> attacks = definition.SeparateAttacks
+            ? Enumerable.Repeat(1, monster.AttackDiceThisTurn).ToList()
+            : PlanAttacks(monster.AttackDiceThisTurn, definition.Weapon, target.EffectiveStats);
         int prone = ProneBonus(target, monster.Position);
         for (int i = 0; i < attacks.Count && target.IsActive; i++)
         {
@@ -356,7 +359,11 @@ public sealed partial class GameSession
         events.Add(new AttackRolled(monster.Id, roll, bonus, total, targets.Select(hero => hero.Id).ToList(), powerDice));
         foreach (Hero hero in targets.Where(hero => hero.IsActive))
         {
-            DamageHero(room, hero, total, MonsterBane(monster), monster.Id, events, ranged: hero.Position.ChebyshevDistanceTo(monster.Position) > 1);
+            int dealt = DamageHero(room, hero, total, MonsterBane(monster), monster.Id, events, ranged: hero.Position.ChebyshevDistanceTo(monster.Position) > 1);
+            if (dealt > 0 && monster.Definition.Mugger)
+            {
+                Mug(monster, hero, events);
+            }
         }
 
         IgniteFromMonster(monster, targets, roll, events);
@@ -417,7 +424,8 @@ public sealed partial class GameSession
     /// </summary>
     /// <param name="bane">What the attacker is, for the tombstone ("Slain by a Goblin").</param>
     /// <param name="ranged">From a distance: a prone hero rolls an extra defense die.</param>
-    private void DamageHero(Room room, Hero hero, int attackTotal, string bane, int attackerId, List<GameEvent> events, bool ranged = false)
+    /// <returns>The damage it did: 1 for a hit (a heart, or a mark of death), 0 for a miss.</returns>
+    private int DamageHero(Room room, Hero hero, int attackTotal, string bane, int attackerId, List<GameEvent> events, bool ranged = false)
     {
         attackTotal += hero.Stun.AttackBonus;
         Stats stats = hero.EffectiveStats;
@@ -434,7 +442,7 @@ public sealed partial class GameSession
                 MarkForDeath(room, hero, bane, attackerId, events);
             }
 
-            return;
+            return damage;
         }
 
         hero.Hearts = Math.Max(0, hero.Hearts - damage);
@@ -444,5 +452,7 @@ public sealed partial class GameSession
         {
             KeelOver(room, hero, bane, events);
         }
+
+        return damage;
     }
 }

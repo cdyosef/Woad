@@ -328,10 +328,12 @@ when the total reaches its number:
 | Skeleton | 2 | 3 | 1d6+1 | 1d6+1 | Rises again once unless finished by a bomb or spell |
 | Cinder Imp | 1 | 4 | 1d6 | 1d6 | From floor 2. Fire attacks (a 6 sets you alight, hit or miss); can't burn |
 | Fire Beetle | 3 | 1 | 2d6 | 1d6+2 | From floor 2. Fire attacks; can't burn; slow and armored |
+| Petty Thief | 2 | 4 | 1d6 | 1d6 | Od Hand 3: steals from a hero beside it (each die over their Od Hand roll and tools takes, in turn, 2 gold, an item, 2 gold...); with loot it runs from everyone |
+| Mugger Fly | 1 | 6 | 2×1d6 | 1d6 | Flies. Goes for the hero with the most gold; every hit takes 1 gold; Od Hand 1 steals gold only |
 | **Miniboss: Key Warden** | 5 | 2 | 2d6+1 | 1d6+1 | Guards the Boss Key in the last floor's vault; can't be shoved |
 | **Boss: Iron Warden** | 8 | 3 | 2d6+1 | 1d6+1 | Every other turn, a flail sweep: one roll with all its dice against every hero within 2 |
 
-Monsters follow the same dice rules; the +1s are weapon and armor values. Each turn a monster splits its
+Monsters follow the same dice rules; the +1s are weapon and armor values. Whatever a monster stole drops where it falls. Each turn a monster splits its
 Attack dice into whichever attacks are likeliest to land the most hits on its target (its weapon goes on
 the first), so a 2-dice monster makes two quick attacks against an unarmored hero but one big one against
 a well-armored hero.
