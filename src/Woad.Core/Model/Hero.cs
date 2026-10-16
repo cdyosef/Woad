@@ -118,6 +118,12 @@ public sealed class Hero
     /// <summary>Doom Dice added to the hero's next Keel roll: one for each 1 an ally rolled rousing them.</summary>
     public int DoomDiceOwed { get; internal set; }
 
+    /// <summary>
+    /// Keel rolls made since keeling over. Every roll after the first adds that many more Doom Dice (the
+    /// creeping doom): none on the first, 1 on the second, 2 on the third...
+    /// </summary>
+    public int KeelRolls { get; internal set; }
+
     /// <summary>What brought the hero down, as their tombstone tells it ("Slain by a Goblin"), or null.</summary>
     public string? Bane { get; internal set; }
 

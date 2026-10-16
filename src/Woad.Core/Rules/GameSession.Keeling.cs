@@ -12,7 +12,8 @@ namespace Woad.Core.Rules;
 /// Keeling Over: a hero or companion at 0 hearts falls where they stand, keeping everything they
 /// carry. Each of their turns is one Keel roll: a 6 is a mark of life and rolls a Power Die (another
 /// mark on a 6); a 1 is a mark of death and rolls a Doom Die (another mark on a 1). Banked Power Dice
-/// can be added, earning marks of life on sixes only. Three marks of life stand them up with a heart;
+/// can be added, earning marks of life on sixes only. Every roll after the first adds a growing number of
+/// Doom Dice: 1 on the second, 2 on the third, and so on. Three marks of life stand them up with a heart;
 /// three marks of death kill them, leaving a tombstone that holds what they found. An adjacent ally
 /// can rouse them with Od Hand dice, and monsters with nobody standing in reach strike at them.
 /// </summary>
@@ -108,13 +109,16 @@ public sealed partial class GameSession
         }
 
         List<int> power = Enumerable.Range(0, command.PowerDice).Select(_ => RollOneDie()).ToList();
-        List<int> doom = Enumerable.Range(0, hero.DoomDiceOwed).Select(_ => RollOneDie()).ToList();
+        // The doom allies left, then the creeping doom: one more Doom Die for every roll already made.
+        int creeping = hero.KeelRolls;
+        hero.KeelRolls++;
+        List<int> doom = Enumerable.Range(0, hero.DoomDiceOwed + creeping).Select(_ => RollOneDie()).ToList();
         life += power.Count(face => face == GameRules.PowerDieFace);
         death += doom.Count(face => face == GameRules.DeathFace);
         hero.DoomDiceOwed = 0;
         hero.LifeMarks = Math.Min(GameRules.MarksToRise, hero.LifeMarks + life);
         hero.DeathMarks = Math.Min(GameRules.MarksToDie, hero.DeathMarks + death);
-        events.Add(new KeelRolled(hero.Id, keel, bonus, power, doom, life, death, hero.LifeMarks, hero.DeathMarks));
+        events.Add(new KeelRolled(hero.Id, keel, bonus, power, doom, life, death, hero.LifeMarks, hero.DeathMarks, creeping));
 
         // Reaching both at once, life wins.
         if (hero.LifeMarks >= GameRules.MarksToRise)
@@ -142,6 +146,7 @@ public sealed partial class GameSession
         hero.LifeMarks = 0;
         hero.DeathMarks = 0;
         hero.DoomDiceOwed = 0;
+        hero.KeelRolls = 0;
         hero.Bane = bane;
         if (!room.Layout[hero.Position].IsWalkable())
         {
@@ -157,6 +162,7 @@ public sealed partial class GameSession
         hero.LifeMarks = 0;
         hero.DeathMarks = 0;
         hero.DoomDiceOwed = 0;
+        hero.KeelRolls = 0;
         hero.Bane = null;
         hero.Hearts = Math.Min(hero.MaxHearts, GameRules.HeartsOnRising);
         events.Add(new HeroStoodUp(hero.Id, hero.Hearts));

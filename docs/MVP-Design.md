@@ -347,6 +347,8 @@ file under `Themes/`.
   - **1:** a mark of death, and a **Doom Die** is rolled at once: another mark of death on a 1.
   - **Banked Power Dice** can be added to the roll (select them first). Their 6s are marks of life;
     their 1s do nothing.
+  - **Creeping doom:** every Keel roll after the first adds Doom Dice (1s are marks of death): 1 on the
+    second roll, 2 on the third, and so on, so nobody lingers for long. It starts over when they stand up.
   - **Three marks of life:** they stand back up with 1 heart (and their turn ends). **Three marks of
     death:** they die. Reaching both at once, life wins. Marks start over each time someone keels over.
   - **Rousing:** a standing ally next to them (diagonals too) can click them to roll Od Hand dice for
