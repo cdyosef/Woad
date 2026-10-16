@@ -114,6 +114,7 @@ public sealed partial class GameSession
             GoProne c => Handle(c, events),
             GetUp c => Handle(c, events),
             StopDropRoll c => Handle(c, events),
+            AttackBomb c => Handle(c, events),
             _ => $"Unknown command {command.GetType().Name}.",
         };
 
@@ -200,6 +201,11 @@ public sealed partial class GameSession
         if (State.Turn is { } ended)
         {
             WearOffStun(State.GetHero(ended.HeroId), events);
+            BurnFuses(ended.HeroId, heroTurn: true, events);
+            if (State.Phase != RunPhase.InProgress)
+            {
+                return;
+            }
         }
 
         Hero? next = State.Heroes.FirstOrDefault(hero => hero.IsInPlay && hero.Seat > fromSeat);

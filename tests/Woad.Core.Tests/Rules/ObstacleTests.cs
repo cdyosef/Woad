@@ -73,39 +73,6 @@ public class ObstacleTests
     }
 
     [Fact]
-    public void ABombBreaksBothSidesOfABreachAndHeroesGoThrough()
-    {
-        string room = """
-            .........
-            .........
-            .........
-            .........
-            .......1.
-            .........
-            .........
-            .........
-            .........
-            """;
-        GameSession session = TestRun.Start(
-            [new RoomSetup("A", TestRun.Room(room)), new RoomSetup("B", TestRun.Room(room.Replace('1', '.')), MapPosition: new GridPosition(1, 0))],
-            new ScriptedDice(3), cards: ["bomb"]);
-        session.State.Rooms["A"].AddBreach(new GridPosition(8, 2), "B", new GridPosition(0, 2));
-        session.State.Rooms["B"].AddBreach(new GridPosition(0, 2), "A", new GridPosition(8, 2));
-        session.State.Rooms["A"].Layout.Set(new GridPosition(8, 2), TileKind.CrackedWall);
-        session.State.Rooms["B"].Layout.Set(new GridPosition(0, 2), TileKind.CrackedWall);
-        Hero hero = session.HeroInSeat();
-
-        IReadOnlyList<GameEvent> blast = session.Do(new UseCard(hero.Id, hero.Card("bomb").Id, new GridPosition(8, 2)));
-
-        Assert.Contains(new WallBroken("B", new GridPosition(0, 2), null), blast);
-        session.Do(new RollMovement(hero.Id));
-        session.Do(new MoveHero(hero.Id, new GridPosition(8, 2)));
-        var entered = session.Do(new GoThroughBreach(hero.Id)).SingleOf<HeroEnteredRoom>();
-        Assert.Equal(("B", new GridPosition(0, 2)), (hero.RoomId, hero.Position));
-        Assert.True(entered.FirstVisit);
-    }
-
-    [Fact]
     public void GeneratedObstaclesNeverCutOffWhatAPartyNeeds()
     {
         ContentCatalog content = ContentCatalog.LoadDefault();

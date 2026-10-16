@@ -19,7 +19,7 @@ internal static class TestContent
           { "id": "cap", "name": "Cap", "type": "armor", "slot": "head", "modifiers": { "hearts": 1 } },
           { "id": "boots", "name": "Boots", "type": "boots", "slot": "feet", "modifiers": { "moveDice": 1 } },
           { "id": "potion", "name": "Potion", "type": "potion", "usage": "singleUse", "effect": { "kind": "heal", "amount": 3 } },
-          { "id": "bomb", "name": "Bomb", "type": "bomb", "usage": "singleUse", "effect": { "kind": "attack", "amount": 2, "range": 3, "areaRadius": 1 } },
+          { "id": "bomb", "name": "Bomb", "type": "bomb", "usage": "singleUse", "effect": { "kind": "attack", "amount": 4, "range": 3, "areaRadius": 1 } },
           { "id": "scroll", "name": "Scroll", "type": "spell", "usage": "singleUse", "effect": { "kind": "attack", "amount": 3, "range": 3 } },
           { "id": "firebolt", "name": "Firebolt", "type": "spell", "usage": "singleUse", "effect": { "kind": "attack", "amount": 3, "range": 3, "fire": true } },
           { "id": "wand", "name": "Wand", "type": "spell", "slot": "offHand", "usage": "charges", "charges": 2, "effect": { "kind": "freeze", "amount": 1, "range": 3 } },

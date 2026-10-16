@@ -29,7 +29,7 @@ public class ContentCatalogTests
 
         CardDefinition bomb = content.GetCard("bomb");
         Assert.Equal(CardUsage.SingleUse, bomb.Usage);
-        Assert.Equal(new CardEffect { Kind = CardEffectKind.Attack, Amount = 2, Range = 3, AreaRadius = 1 }, bomb.Effect);
+        Assert.Equal(new CardEffect { Kind = CardEffectKind.Attack, Amount = 4, Range = 3, AreaRadius = 1 }, bomb.Effect);
 
         MonsterDefinition boss = content.GetMonster("iron_warden");
         Assert.True(boss.Boss);

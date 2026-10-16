@@ -33,6 +33,13 @@ public sealed partial class GameSession
 
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
+        if (room.FindBomb(targetId) is { } bomb)
+        {
+            return hero.Position.ChebyshevDistanceTo(bomb.Position) != 1 ? "Stand next to the bomb to shove it."
+                : PushDestination(room, hero.Position, bomb.Position, flying: false) is null ? "There's nowhere to shove it: something is in the way."
+                : null;
+        }
+
         Monster? monster = room.FindMonster(targetId);
         Hero? ally = State.FriendlyFire ? State.ActiveHeroesIn(room).FirstOrDefault(other => other.Id == targetId && other != hero) : null;
         if (monster is null && ally is null)
@@ -64,6 +71,7 @@ public sealed partial class GameSession
 
         Room room = ActiveRoom;
         return room.Monsters.Where(monster => CheckShove(monster.Id) is null).Select(monster => monster.Position)
+            .Concat(room.Bombs.Where(bomb => CheckShove(bomb.Id) is null).Select(bomb => bomb.Position))
             .Concat(State.ActiveHeroesIn(room).Where(ally => CheckShove(ally.Id) is null).Select(ally => ally.Position))
             .ToList();
     }
@@ -195,6 +203,14 @@ public sealed partial class GameSession
             return error;
         }
 
+        // A bomb just rolls a tile away, for a single Rumble die.
+        if (ActiveRoom.FindBomb(command.TargetId) is { } bomb)
+        {
+            Turn.AttackDiceUsed++;
+            ShoveBomb(ActiveHero, ActiveRoom, bomb, events);
+            return null;
+        }
+
         int left = AttackDiceLeft;
         int dice = command.Dice ?? left;
         if (dice < 1 || dice > left)
@@ -267,10 +283,14 @@ public sealed partial class GameSession
     /// hero (diagonally too). It has to be open floor (traps included) or a pit, with nobody on it.
     /// Null when there's no room.
     /// </summary>
-    private GridPosition? ShoveDestination(Room room, Hero hero, GridPosition at, bool flying)
+    private GridPosition? ShoveDestination(Room room, Hero hero, GridPosition at, bool flying) =>
+        PushDestination(room, hero.Position, at, flying);
+
+    /// <summary>Where a push away from <paramref name="away"/> takes whoever stands at <paramref name="at"/> (see <see cref="ShoveDestination"/>).</summary>
+    private GridPosition? PushDestination(Room room, GridPosition away, GridPosition at, bool flying)
     {
-        var to = new GridPosition(at.X + Math.Sign(at.X - hero.Position.X), at.Y + Math.Sign(at.Y - hero.Position.Y));
-        if (!room.Layout.Contains(to) || IsOccupied(room, to))
+        var to = new GridPosition(at.X + Math.Sign(at.X - away.X), at.Y + Math.Sign(at.Y - away.Y));
+        if (to == at || !room.Layout.Contains(to) || IsOccupied(room, to))
         {
             return null;
         }
@@ -305,9 +325,16 @@ public sealed partial class GameSession
             return;
         }
 
+        PushMonster(hero, room, monster, to, events);
+    }
+
+    /// <summary>Moves a monster a tile (a shove or a blast); then deep water, a pit or a trap there takes it.</summary>
+    private void PushMonster(Hero? pusher, Room room, Monster monster, GridPosition to, List<GameEvent> events)
+    {
+        Hero? hero = pusher;
         GridPosition from = monster.Position;
         monster.Position = to;
-        events.Add(new Shoved(hero.Id, monster.Id, from, to));
+        events.Add(new Shoved(pusher?.Id ?? 0, monster.Id, from, to));
         if (room.Layout[to] == TileKind.DeepWater && !monster.Flies)
         {
             if (monster.FireDice > 0)
@@ -328,11 +355,16 @@ public sealed partial class GameSession
         {
             MonsterFalls(hero, room, monster, from, to, events);
         }
-        else if (room.TrapAt(to) is { Kind: TrapKind.Spikes or TrapKind.TrapDoor } trap && !monster.Flies)
+        else if (room.TrapAt(to) is { Kind: TrapKind.Spikes or TrapKind.TrapDoor or TrapKind.BombTrap } trap && !monster.Flies)
         {
             trap.Revealed = true;
             events.Add(new MonsterTrapped(monster.Id, trap.Kind, to));
-            if (trap.Kind == TrapKind.TrapDoor)
+            if (trap.Kind == TrapKind.BombTrap)
+            {
+                room.SetTrap(to, null);
+                PlaceBomb(room, to, lit: true, monster.Id, events);
+            }
+            else if (trap.Kind == TrapKind.TrapDoor)
             {
                 MonsterFalls(hero, room, monster, from, to, events);
             }
@@ -359,9 +391,15 @@ public sealed partial class GameSession
             return;
         }
 
+        PushHero(hero, room, ally, to, events);
+    }
+
+    /// <summary>Moves a hero a tile (a shove or a blast); then a pit or a trap there takes them.</summary>
+    private void PushHero(Hero? pusher, Room room, Hero ally, GridPosition to, List<GameEvent> events)
+    {
         GridPosition from = ally.Position;
         ally.Position = to;
-        events.Add(new Shoved(hero.Id, ally.Id, from, to));
+        events.Add(new Shoved(pusher?.Id ?? 0, ally.Id, from, to));
         if (room.Layout[to] == TileKind.Pit)
         {
             FallIntoPit(ally, room, to, events);

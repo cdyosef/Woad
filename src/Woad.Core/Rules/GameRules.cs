@@ -77,6 +77,15 @@ public static class GameRules
 
     public const int CrawlFactor = 2;
 
+    /// <summary>Bombs: dice in a blast, the Od Hand to defuse a lit one, and the chance a Rumble die (or a point of weapon bonus) sets one off.</summary>
+    public const int BlastDice = 4;
+
+    public const int DefuseDifficulty = 10;
+
+    public const int BombChancePerDie = 12;
+
+    public const int BombChancePerBonus = 2;
+
     /// <summary>Hearts restored to each hero in a room when its last monster falls.</summary>
     public const int HeartsOnRoomClear = 1;
 

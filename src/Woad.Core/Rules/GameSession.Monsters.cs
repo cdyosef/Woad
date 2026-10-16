@@ -41,11 +41,25 @@ public sealed partial class GameSession
         (int wendLost, int rumbleLost, _) = monster.Stun.Lost(own.OdHandDice > 0, own.WendDice, own.AttackDice, own.DefenseDice);
         monster.MovesThisTurn = Math.Max(0, own.Move - 2 * wendLost);
         monster.AttackDiceThisTurn = Math.Max(0, own.AttackDice - rumbleLost);
-        ActMonsterTurn(room, monster, events);
+        _actingMonsterId = monster.Id;
+        try
+        {
+            ActMonsterTurn(room, monster, events);
+        }
+        finally
+        {
+            _actingMonsterId = null;
+        }
+
         if (monster.Stun.WearsOffThisTurn && room.FindMonster(monster.Id) is not null)
         {
             monster.Stun.Clear();
             events.Add(new StunWoreOff(monster.Id));
+        }
+
+        if (State.Phase == RunPhase.InProgress)
+        {
+            BurnFuses(monster.Id, heroTurn: false, events);
         }
     }
 

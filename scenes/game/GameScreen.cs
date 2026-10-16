@@ -101,6 +101,10 @@ public partial class GameScreen : Control
         {
             RunCameraTest();
         }
+        else if (args.Contains("--bombtest"))
+        {
+            RunBombTest();
+        }
     }
 
     public override void _UnhandledInput(InputEvent @event)
@@ -536,6 +540,47 @@ public partial class GameScreen : Control
                 await UpdateFigure(prone.EntityId, figure => { figure.Prone = true; figure.Diving = prone.Diving; }, 0.2);
                 break;
 
+            case BombPlaced placed when placed.RoomId == _shownRoomId:
+                _board.QueueRedraw();
+                _board.FloatText(placed.Position, placed.Lit ? "lit!" : "bomb", placed.Lit ? Palette.Fire : Palette.Text);
+                await Pause(0.25);
+                break;
+
+            case FuseBurned fuse when fuse.RoomId == _shownRoomId && ShownRoom.FindBomb(fuse.BombId) is { } burning:
+                _board.FloatText(burning.Position, fuse.FuseTurns == 1 ? "1 turn!" : $"{fuse.FuseTurns} turns", Palette.Fire);
+                break;
+
+            case BombExploded boom:
+                if (boom.RoomId == _shownRoomId)
+                {
+                    _board.LookAt(boom.Position);
+                    _board.Explosion(boom.Position);
+                    _board.QueueRedraw();
+                }
+
+                await Pause(0.45);
+                break;
+
+            case BlastRolled blast:
+                _trayShowsMovement = false;
+                await _dice.ShowRoll("The blast", blast.Roll, 0, newGroup: true, blast.PowerDice);
+                break;
+
+            case BombStruck { Exploded: false } struck:
+                FloatOver(struck.HeroId, $"{struck.Chance}%: nothing", Palette.TextDim);
+                await Pause(0.2);
+                break;
+
+            case BombMoved or BombDefused or BombFell:
+                _board.QueueRedraw();
+                if (gameEvent is BombDefused { Doused: var doused } defused && defused.RoomId == _shownRoomId && ShownRoom.FindBomb(defused.BombId) is { } quiet)
+                {
+                    _board.FloatText(quiet.Position, doused ? "fizzles out" : "defused", Palette.Text);
+                }
+
+                await Pause(0.2);
+                break;
+
             case Stunned stunned:
                 FloatOver(stunned.EntityId, stunned.Powerful ? "dazed!" : "stunned!", Palette.TrimBright);
                 await UpdateFigure(stunned.EntityId, figure => figure.StunMarks = stunned.Stacks + 3 * stunned.PowerfulStacks, 0.25);
@@ -757,6 +802,18 @@ public partial class GameScreen : Control
             case Stunned:
                 Sfx.Play("block", 1.5f);
                 break;
+            case BombExploded:
+                Sfx.Play("boom");
+                break;
+            case BombPlaced { Lit: true } or FuseBurned:
+                Sfx.Play("fuse");
+                break;
+            case BlastRolled:
+                Sfx.PlayVaried("dice");
+                break;
+            case BombDefused or BombMoved:
+                Sfx.Play("click");
+                break;
             case WentProne or GotUp:
                 Sfx.PlayVaried("step");
                 break;
@@ -836,6 +893,15 @@ public partial class GameScreen : Control
         WentProne prone => FigureRoom(prone.EntityId),
         GotUp up => FigureRoom(up.EntityId),
         Stunned stunned => FigureRoom(stunned.EntityId),
+        BombPlaced placed => placed.RoomId,
+        FuseBurned fuse => fuse.RoomId,
+        BombExploded boom => boom.RoomId,
+        BlastRolled blast => blast.RoomId,
+        BlastHit hit => FigureRoom(hit.EntityId),
+        BombStruck struck => FigureRoom(struck.HeroId),
+        BombMoved moved => moved.RoomId,
+        BombDefused defused => defused.RoomId,
+        BombFell fell => fell.RoomId,
         StunWoreOff wore => FigureRoom(wore.EntityId),
         KeelRolled keel => FigureRoom(keel.HeroId),
         HeroRoused roused => FigureRoom(roused.HeroId),

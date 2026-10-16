@@ -38,6 +38,7 @@ public partial class BoardView : Control
     private Vector2 _camera;
 
     private Node2D? _follow;
+    private GridPosition? _lookAt;
     private bool _panned;
     private GridPosition? _anchor;
     private bool _dragging;
@@ -63,12 +64,21 @@ public partial class BoardView : Control
     public void Follow(Node2D? target, bool snap = false)
     {
         _follow = target;
+        _lookAt = null;
         _panned = false;
         if (snap)
         {
             _camera = Desired();
             Position = -_camera;
         }
+    }
+
+    /// <summary>Turns the view to a tile (a bomb going off), ending any pan.</summary>
+    public void LookAt(GridPosition tile)
+    {
+        _follow = null;
+        _lookAt = tile;
+        _panned = false;
     }
 
     /// <summary>The tile panning must keep in view (the active hero's), or null to pan freely.</summary>
@@ -79,6 +89,12 @@ public partial class BoardView : Control
 
     public override void _Process(double delta)
     {
+        // Lit fuses spark.
+        if (_room?.Bombs.Any(bomb => bomb.Lit) == true)
+        {
+            QueueRedraw();
+        }
+
         var keys = new Vector2(
             (Input.IsKeyPressed(Key.Right) ? 1 : 0) - (Input.IsKeyPressed(Key.Left) ? 1 : 0),
             (Input.IsKeyPressed(Key.Down) ? 1 : 0) - (Input.IsKeyPressed(Key.Up) ? 1 : 0));
@@ -99,6 +115,7 @@ public partial class BoardView : Control
     {
         Vector2 center = _follow is not null && IsInstanceValid(_follow) && _follow.GetParent() == this
             ? _follow.Position + new Vector2(TileSize / 2f, TileSize / 2f)
+            : _lookAt is { } tile ? TileOrigin(tile) + new Vector2(TileSize / 2f, TileSize / 2f)
             : RoomPixels / 2;
         return Clamp(center - new Vector2(Pixels / 2f, Pixels / 2f));
     }
@@ -291,6 +308,11 @@ public partial class BoardView : Control
         foreach (Tombstone stone in _room.Tombstones)
         {
             DrawTombstone(stone.Position);
+        }
+
+        foreach (Bomb bomb in _room.Bombs)
+        {
+            DrawBomb(bomb);
         }
 
         foreach (GridPosition tile in _room.LootPositions)
@@ -592,7 +614,8 @@ public partial class BoardView : Control
     private void DrawTrap(GridPosition tile, TrapKind kind)
     {
         Rect2 rect = TileRect(tile);
-        if (GameArt.Tile(ThemeId, kind == TrapKind.TrapDoor ? "trapdoor" : "spikes") is { } art)
+        string artName = kind switch { TrapKind.TrapDoor => "trapdoor", TrapKind.BombTrap => "bomb_trap", _ => "spikes" };
+        if (GameArt.Tile(ThemeId, artName) is { } art)
         {
             DrawTextureRect(art, rect, tile: false);
             return;
@@ -600,6 +623,38 @@ public partial class BoardView : Control
 
         DrawRect(rect.Grow(-5), kind == TrapKind.TrapDoor ? Palette.Chest : Palette.TextDim, filled: kind == TrapKind.TrapDoor);
         DrawRect(rect.Grow(-5), Palette.Ink, filled: false, width: 1);
+    }
+
+    /// <summary>A bomb: unlit, or lit with its fuse sparking and the turns left on it.</summary>
+    private void DrawBomb(Bomb bomb)
+    {
+        Rect2 rect = TileRect(bomb.Position);
+        bool spark = Time.GetTicksMsec() / 140 % 2 == 0;
+        string art = !bomb.Lit ? "bomb" : spark ? "bomb_lit" : "bomb_lit2";
+        if (GameArt.Tile(ThemeId, art) is { } texture)
+        {
+            DrawTextureRect(texture, rect, tile: false);
+        }
+        else
+        {
+            DrawCircle(rect.GetCenter() + new Vector2(0, 3), 9, Palette.Ink);
+            if (bomb.Lit)
+            {
+                DrawCircle(rect.GetCenter() + new Vector2(6, -9), 2.5f, spark ? Palette.FireCore : Palette.Fire);
+            }
+        }
+
+        if (bomb.Lit)
+        {
+            DrawString(ThemeDB.FallbackFont, rect.Position + new Vector2(2, 10), bomb.FuseTurns.ToString(), fontSize: 9, modulate: Palette.FireCore);
+        }
+    }
+
+    /// <summary>A blast: a flash and a ring of fire spreading over the 3x3 around the bomb.</summary>
+    public void Explosion(GridPosition center)
+    {
+        var blast = new ExplosionView { Position = TileOrigin(center) + new Vector2(TileSize / 2f, TileSize / 2f), ZIndex = 10 };
+        AddChild(blast);
     }
 
     /// <summary>A small red "!" in a tile's corner: a trap someone found on a chest or door.</summary>

@@ -42,6 +42,9 @@ public enum OdHandCheckKind
 
     /// <summary>Rouse an adjacent hero Keeling Over: every 6 of the total is a mark of life for them.</summary>
     Rouse,
+
+    /// <summary>Put out a lit bomb next to you (or under you): 10 or more, or it goes off in your hands.</summary>
+    DefuseBomb,
 }
 
 /// <summary>

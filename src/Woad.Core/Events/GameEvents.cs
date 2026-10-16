@@ -294,3 +294,30 @@ public sealed record Stunned(int EntityId, int Stacks, int PowerfulStacks, bool 
 
 /// <summary>The end of a stunned hero's or monster's turn: the stun wore off.</summary>
 public sealed record StunWoreOff(int EntityId) : GameEvent;
+
+/// <summary>A bomb landed in a room: thrown (lit), popped out of a bomb trap (lit, or unlit when it was disarmed).</summary>
+public sealed record BombPlaced(string RoomId, int BombId, GridPosition Position, bool Lit, int? OwnerId) : GameEvent;
+
+/// <summary>A lit bomb's fuse burned down a turn: it goes off at the end of its owner's next turn (1) or this one.</summary>
+public sealed record FuseBurned(string RoomId, int BombId, int FuseTurns) : GameEvent;
+
+/// <summary>A bomb went off. Its blast (rolled next) catches everyone within a tile, and breaks cracked walls and other bombs.</summary>
+public sealed record BombExploded(string RoomId, int BombId, GridPosition Position) : GameEvent;
+
+/// <summary>A blast's dice, compared one by one with each creature's defense; <paramref name="PowerDice"/> of them came from sixes.</summary>
+public sealed record BlastRolled(string RoomId, GridPosition Position, DiceRoll Roll, int PowerDice) : GameEvent;
+
+/// <summary>How many of a blast's dice got through to a creature: 1 hurts, 2 shoves, 3 knocks prone, 4 or more Powerful Stuns.</summary>
+public sealed record BlastHit(int EntityId, int Hits) : GameEvent;
+
+/// <summary>A hero struck a bomb with their Rumble dice: <paramref name="Chance"/> percent it went off.</summary>
+public sealed record BombStruck(int HeroId, int BombId, int Chance, bool Exploded) : GameEvent;
+
+/// <summary>A bomb was shoved a tile.</summary>
+public sealed record BombMoved(string RoomId, int BombId, GridPosition From, GridPosition To) : GameEvent;
+
+/// <summary>A lit bomb went out: defused with Od Hand, or doused in water. It lies there unlit.</summary>
+public sealed record BombDefused(string RoomId, int BombId, bool Doused) : GameEvent;
+
+/// <summary>A bomb fell down a pit: to the room below, or out of the game.</summary>
+public sealed record BombFell(string RoomId, int BombId, string? ToRoomId) : GameEvent;

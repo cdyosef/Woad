@@ -86,6 +86,13 @@ public partial class GameScreen
             return;
         }
 
+        // A lit bomb next to you: try to defuse it (Od Hand 10, or it goes off).
+        if (room.BombAt(tile) is { Lit: true } && _session.CheckDisarm(tile) is null)
+        {
+            ExecuteOdHand((heroId, dice, tools, power) => new Disarm(heroId, tile, dice, tools, power));
+            return;
+        }
+
         if (_session.GetRousableAllies().FirstOrDefault(fallen => fallen.Position == tile) is { } fallen)
         {
             ExecuteOdHand((heroId, dice, tools, power) => new Rouse(heroId, fallen.Id, dice, tools, power));
@@ -356,6 +363,18 @@ public partial class GameScreen
             return $"{fallen.Name} is Keeling Over: life {fallen.LifeMarks}/3, death {fallen.DeathMarks}/3{doom}.{rouse}";
         }
 
+        if (room.BombAt(tile) is { Lit: true } lit)
+        {
+            string owner = lit.OwnerId is int ownerId ? NameOf(ownerId) : "someone";
+            return $"A lit bomb: it goes off at the end of {owner}'s {(lit.FuseTurns == 1 ? "current or next" : "next")} turn, blasting everyone within a tile. "
+                   + $"Next to it: click to defuse it (Od Hand {GameRules.DefuseDifficulty}+, or it goes off), Shove it away, or strike it ({GameRules.BombChancePerDie}% a Rumble die to set it off). Fire sets it off.";
+        }
+
+        if (room.BombAt(tile) is { Lit: false } && room.LootAt(tile).Count == 0 && room.GoldAt(tile) == 0)
+        {
+            return "An unlit bomb. Stand on it and click to pick it up as a Bomb card. Fire or a blow could still set it off.";
+        }
+
         string grave = room.TombstoneAt(tile) is { } stone ? $"{stone.Inscription}. {stone.Epitaph}. " : "";
         if (room.HasLootAt(tile))
         {
@@ -380,7 +399,9 @@ public partial class GameScreen
 
         if (room.TrapAt(tile) is { Revealed: true } trap)
         {
-            return trap.Kind == TrapKind.TrapDoor
+            return trap.Kind == TrapKind.BombTrap
+                ? $"A bomb trap: step on it and it pops out a lit bomb. Next to it: click to disarm it ({trap.Difficulty}+), and it gives up the bomb unlit."
+                : trap.Kind == TrapKind.TrapDoor
                 ? $"A trap door to the floor below. Next to it: click to jump down safely (1 step), or disarm it ({trap.Difficulty}+). Walk onto it and you fall, losing a heart."
                 : $"Spikes: whoever steps here loses a heart and stops. Next to it: click to disarm with Od Hand ({trap.Difficulty}+).";
         }

@@ -82,10 +82,17 @@ public sealed partial class GameSession
                 events.Add(new HeroHealed(hero.Id, healed, hero.Hearts));
                 break;
 
+            case CardEffectKind.Attack when IsBomb(card.Definition):
+                // A thrown bomb lands lit, and goes off at the end of the thrower's next turn.
+                PlaceBomb(room, command.Target!.Value, lit: true, hero.Id, events);
+                break;
+
             case CardEffectKind.Attack:
-                if (IsBomb(card.Definition))
+                // Fire touching a bomb sets it off at once.
+                if (effect.Fire && room.BombAt(command.Target!.Value) is { } kindling)
                 {
-                    BreakWalls(room, CrackedWallsIn(room, command.Target!.Value, effect.AreaRadius), events);
+                    Explode(room, kindling, events, setOffBy: hero);
+                    targets = [.. targets.Where(monster => room.FindMonster(monster.Id) is not null)];
                 }
 
                 // With friendly fire on, the blast catches heroes too, the thrower included.
@@ -560,6 +567,15 @@ public sealed partial class GameSession
             events.Add(new LootPickedUp(hero.Id, taken.Select(card => card.Id).ToList()));
         }
 
+        // An unlit bomb goes in the backpack as a Bomb card.
+        if (room.BombAt(hero.Position) is { Lit: false } bomb && hero.Backpack.Count < GameRules.BackpackCapacity && Content.FindCard(BombCardId) is { } bombCard)
+        {
+            room.RemoveBomb(bomb);
+            var card = new CardInstance(State.NextId(), bombCard, broughtInByHeroId: null);
+            hero.AddToBackpack(card);
+            events.Add(new LootPickedUp(hero.Id, [card.Id]));
+        }
+
         GiveGold(hero, room.TakeGold(hero.Position), events);
         GiveKeys(hero, room.TakeKeys(hero.Position), events);
         if (room.BossKeyAt == hero.Position)
@@ -641,8 +657,11 @@ public sealed partial class GameSession
 
     private static bool IsBomb(CardDefinition card) => card.Type == CardType.Bomb;
 
-    /// <param name="breaksWalls">A bomb: its blast may be aimed at cracked walls alone.</param>
-    private string? CheckEffectTarget(Hero hero, Room room, CardEffect effect, GridPosition? target, out IReadOnlyList<Monster> targets, bool breaksWalls = false)
+    /// <summary>The card an unlit bomb becomes when picked up.</summary>
+    private const string BombCardId = "bomb";
+
+    /// <param name="isBomb">A bomb: thrown onto any open tile in range, to go off later.</param>
+    private string? CheckEffectTarget(Hero hero, Room room, CardEffect effect, GridPosition? target, out IReadOnlyList<Monster> targets, bool isBomb = false)
     {
         targets = [];
         switch (effect.Kind)
@@ -667,18 +686,29 @@ public sealed partial class GameSession
                     return "That tile is out of range.";
                 }
 
-                targets = room.Monsters.Where(monster => monster.Position.ChebyshevDistanceTo(attackTile) <= effect.AreaRadius).ToList();
-                if (targets.Count == 0 && breaksWalls && CrackedWallsIn(room, attackTile, effect.AreaRadius).Count > 0)
+                // A bomb is thrown onto open ground (or water, which puts it out), anywhere in range.
+                if (isBomb)
                 {
+                    TileKind ground = room.Layout[attackTile];
+                    return !(ground.IsWalkable() || ground == TileKind.DeepWater) ? "Throw it onto open ground."
+                        : room.BombAt(attackTile) is not null ? "There's a bomb there already."
+                        : null;
+                }
+
+                // Fire may be aimed at a bomb, to set it off.
+                if (effect.Fire && room.BombAt(attackTile) is not null)
+                {
+                    targets = room.Monsters.Where(monster => monster.Position.ChebyshevDistanceTo(attackTile) <= effect.AreaRadius).ToList();
                     return null;
                 }
 
+                targets = room.Monsters.Where(monster => monster.Position.ChebyshevDistanceTo(attackTile) <= effect.AreaRadius).ToList();
                 if (targets.Count == 0 && AlliesCaught(room, attackTile, effect.AreaRadius).Count > 0)
                 {
                     return null;
                 }
 
-                return targets.Count == 0 ? (breaksWalls ? "There are no monsters or cracked walls there." : "There are no monsters there.") : null;
+                return targets.Count == 0 ? "There are no monsters there." : null;
 
             case CardEffectKind.Freeze:
                 if (target is not { } stunTile || room.MonsterAt(stunTile) is not { Collapsed: false } monster)

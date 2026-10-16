@@ -57,14 +57,20 @@ public static class SimpleBot
             return new Rouse(hero.Id, fallen.Id);
         }
 
+        if (FleeBlast(session, hero, room) is { } flee)
+        {
+            return flee;
+        }
+
         if (hero.Hearts <= hero.MaxHearts - 2 && UsableBeltCard(session, hero, CardEffectKind.Heal) is { } potion)
         {
             return new UseCard(hero.Id, potion.Id);
         }
 
-        if (fighting && UsableBeltCard(session, hero, CardEffectKind.Attack) is { } bomb && SafeAim(session, room, bomb) is { } aim)
+        // Attack cards that aren't bombs (a bot never throws a bomb: it would only blow up its own party).
+        if (fighting && UsableBeltCard(session, hero, CardEffectKind.Attack) is { Definition.Type: not CardType.Bomb } scroll && SafeAim(session, room, scroll) is { } aim)
         {
-            return new UseCard(hero.Id, bomb.Id, aim);
+            return new UseCard(hero.Id, scroll.Id, aim);
         }
 
         // One all-out attack: every Attack die left plus the weapon.
@@ -163,7 +169,8 @@ public static class SimpleBot
             return new RollMovement(hero.Id);
         }
 
-        IEnumerable<GridPosition> lootTiles = room.LootPositions.Where(_ => backpackHasRoom).Concat(room.Keys.Keys).Concat(room.Gold.Keys);
+        IEnumerable<GridPosition> lootTiles = room.LootPositions.Where(_ => backpackHasRoom).Concat(room.Keys.Keys).Concat(room.Gold.Keys)
+            .Concat(room.Bombs.Where(bomb => !bomb.Lit && backpackHasRoom).Select(bomb => bomb.Position));
         if (room.BossKeyAt is { } bossKey)
         {
             lootTiles = lootTiles.Append(bossKey);
@@ -285,7 +292,27 @@ public static class SimpleBot
 
     /// <summary>Where the bot can walk: like the rules, around monsters and the traps it knows of.</summary>
     internal static bool Walkable(Room room, GridPosition tile) =>
-        room.Layout[tile].IsWalkable() && room.MonsterAt(tile) is null && room.TrapAt(tile) is not { Revealed: true };
+        room.Layout[tile].IsWalkable() && room.MonsterAt(tile) is null && room.TrapAt(tile) is not { Revealed: true } && !InBlast(room, tile);
+
+    /// <summary>Within a tile of a lit bomb: where it would catch whoever stands there.</summary>
+    internal static bool InBlast(Room room, GridPosition tile) => room.Bombs.Any(bomb => bomb.Lit && bomb.Position.ChebyshevDistanceTo(tile) <= 1);
+
+    /// <summary>Standing where a lit bomb would catch them: roll to move if need be, and step out of the blast.</summary>
+    internal static GameCommand? FleeBlast(GameSession session, Hero hero, Room room)
+    {
+        TurnState turn = session.State.Turn!;
+        if (!InBlast(room, hero.Position) || turn.PendingRoll is not null)
+        {
+            return null;
+        }
+
+        if (turn.MovementPoints == 0)
+        {
+            return session.MoveDiceLeft > 0 ? new RollMovement(hero.Id) : null;
+        }
+
+        return StepToward(session, hero, tile => InBlast(room, tile) ? 1 : 0) is { } safe ? new MoveHero(hero.Id, safe) : null;
+    }
 
     /// <summary>
     /// When a locked gate stands between the hero and its goal: walk up to the gate, then open it with

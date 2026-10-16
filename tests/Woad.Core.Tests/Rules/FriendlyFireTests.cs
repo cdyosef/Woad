@@ -35,32 +35,6 @@ public class FriendlyFireTests
         .........
         """;
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void ABlastCatchesAlliesOnlyWithFriendlyFireOn(bool friendlyFire)
-    {
-        GameSession session = TestRun.Start(BlastRadius, new ScriptedDice(5, 5, 1), heroes: 2, cards: ["bomb"], friendlyFire: friendlyFire);
-        Hero thrower = session.HeroInSeat(0);
-        Hero ally = session.HeroInSeat(1);
-
-        IReadOnlyList<GameEvent> events = session.Do(new UseCard(thrower.Id, thrower.Card("bomb").Id, new GridPosition(4, 3)));
-
-        int[] expected = friendlyFire ? [session.OnlyMonster().Id, ally.Id] : [session.OnlyMonster().Id];
-        Assert.Equal(expected, events.SingleOf<AttackRolled>().TargetIds);
-        Assert.Equal(friendlyFire ? ally.MaxHearts - 1 : ally.MaxHearts, ally.Hearts);
-    }
-
-    [Fact]
-    public void WithFriendlyFireABlastCanBeAimedAtAlliesAlone()
-    {
-        GameSession off = TestRun.Start(AtTheEdge, heroes: 2, cards: ["bomb"]);
-        GameSession on = TestRun.Start(AtTheEdge, heroes: 2, cards: ["bomb"], friendlyFire: true);
-
-        Assert.Empty(off.GetCardTargets(off.HeroInSeat().Card("bomb").Id));
-        Assert.Contains(new GridPosition(4, 4), on.GetCardTargets(on.HeroInSeat().Card("bomb").Id));
-    }
-
     [Fact]
     public void AlliesCanBeAttackedOnlyWithFriendlyFireOnAndAFallenAllyIsNoKill()
     {

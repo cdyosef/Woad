@@ -99,7 +99,7 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 | Boots | Persistent | Dash Boots (+1 Move die) |
 | Spell | Charges or single-use | Flame Scroll (a 3-dice fire attack at range 3: any 6 sets the target alight), Frost Wand (2 charges: freeze for a round) |
 | Tool | Persistent | Grapple Hook (pull yourself up to 4 tiles in a line; not built yet) |
-| Bomb | Single-use | Bomb (range 3, a 2-dice attack on every monster in a 3×3 area) |
+| Bomb | Single-use | Bomb (thrown up to 3 tiles, lit: a 4-dice blast over a 3×3 area at the end of your next turn; see [Bombs](#bombs)) |
 | Potion | Single-use | Health Potion (restore 3 hearts) |
 | Treasure | Kept for score | Emerald (15g), Golden Idol (40g). Coins (Loose Coins 2g, Coin Pouch 5g) aren't cards: they go straight into your purse as gold |
 
@@ -115,8 +115,9 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 - **Looting** (picking up what's on your tile, or opening a chest) is free once per turn; after that it
   takes your action. Picking up fills the backpack as far as it can, and takes every key there too.
 - **Chest loot** goes to the backpack, or onto your tile if the backpack is full.
-- **Targeted cards** need line of sight and must have a target: a bomb must catch at least one monster or
-  cracked wall in its blast, and potions only heal yourself and can't be used at full hearts.
+- **Targeted cards** need line of sight and must have a target: a bomb lands on any open tile (or water,
+  which puts it out), a Flame Scroll needs a monster (or a bomb, which it sets off), and potions only heal
+  yourself and can't be used at full hearts.
 - **Lockpicks** (tool, off hand): Tools 2. In the loot deck.
 - **Freezing** (the Frost Wand): a frozen monster skips its next turn and can't be frozen again during the
   following round. Bosses can't be frozen.
@@ -180,8 +181,26 @@ facing door of the next room.
 - If the attack total is higher, the defender loses **1 heart**. Ties go to the defender. The defender's line
   in the dice tray, the log and the board say **Hit!** or **Miss!**.
 - Rolling dice together makes one attack more likely to land; splitting them gives more chances.
-- **Card attacks** (Flame Scroll, bomb) roll their own dice and don't use your Rumble dice. A bomb's
-  single roll is compared with each monster's defense in the blast.
+- **Card attacks** (the Flame Scroll) roll their own dice and don't use your Rumble dice. Bombs work
+  differently: see [Bombs](#bombs).
+
+### Bombs
+
+- **Throwing:** a bomb lands lit and goes off at the end of the thrower's **next** turn (its tile shows the
+  turns left). A **bomb trap** pops out a lit bomb under whoever springs it, burning down on their turns;
+  disarmed, it gives the bomb up unlit.
+- **The blast** rolls 4 dice (each 6 rolls another at once) against **everyone** within a tile, friend or
+  foe, whatever the friendly fire setting (except a hero diving in deep water). Each creature defends, and
+  every die over its defense total is a hit: **1** costs a heart, **2** also shove it a tile away from the
+  bomb, **3** also knock it prone, **4 or more** also Powerful Stun it (a stack for each hit past 3).
+  Whoever stands on the bomb is thrown any open way and blasted a second time. Blasts break cracked walls
+  and set off other bombs; a bomb kill goes to whoever threw it.
+- **Lit bombs on the floor:** fire sets one off at once. Strike it with Rumble dice and each die is a 12%
+  chance (each point of weapon bonus 2% more) to set it off. Shove it (1 Rumble die) and it just rolls a
+  tile away: down a pit, or into water, which puts it out. Click it from beside it to **defuse** it: Od
+  Hand 10, or it goes off in your hands.
+- **Unlit bombs** are loot: stand on one and pick it up as a Bomb card. Bots never throw bombs, and keep
+  clear of lit ones.
 - **Melee** needs an adjacent target. Heroes can strike diagonally too, unless walls close off both corners between them; monsters strike orthogonally only. **Ranged** needs line of sight; walls block it.
 - **Line of sight** runs between tile centers. Only walls (cracked ones too) block it, not pits, chests or
   other figures, and grazing a wall's corner is allowed.

@@ -162,12 +162,18 @@ public sealed partial class GameSession
         return "There's no lock there. Stand in a locked doorway, or next to a locked chest.";
     }
 
-    /// <summary>A trap the hero knows of: on their own doorway, or on an adjacent tile or chest.</summary>
+    /// <summary>A lit bomb beside them (or under them) to defuse, or a trap they know of: on their own doorway, or on an adjacent tile or chest.</summary>
     private string? FindTrapToDisarm(GridPosition target, out OdHandCheck? check)
     {
         check = null;
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
+        if (room.BombAt(target) is { Lit: true } && hero.Position.ChebyshevDistanceTo(target) <= 1)
+        {
+            check = new OdHandCheck(OdHandCheckKind.DefuseBomb, GameRules.DefuseDifficulty, target);
+            return null;
+        }
+
         Trap? trap = target == hero.Position
             ? DoorAt(room, target)?.Trap
             : hero.Position.ManhattanDistanceTo(target) == 1
@@ -287,14 +293,34 @@ public sealed partial class GameSession
                 events.Add(new GateOpened(hero.Id, room.Id, check.Target, Picked: true));
                 break;
 
+            case OdHandCheckKind.DefuseBomb when room.BombAt(check.Target) is { Lit: true } bomb:
+                if (success)
+                {
+                    Defuse(room, bomb, doused: false, events);
+                }
+                else
+                {
+                    events.Add(new CheckFailed(hero.Id, check.Kind));
+                    Explode(room, bomb, events, setOffBy: hero);
+                }
+
+                break;
+
             case OdHandCheckKind.Disarm when success:
                 if (check.Target == hero.Position && DoorAt(room, check.Target) is { } trapped)
                 {
                     trapped.Trap = null;
                 }
-                else if (room.TrapAt(check.Target) is not null)
+                else if (room.TrapAt(check.Target) is { } floorTrap)
                 {
                     room.SetTrap(check.Target, null);
+                    if (floorTrap.Kind == TrapKind.BombTrap)
+                    {
+                        // Disarmed, a bomb trap gives up its bomb unlit.
+                        events.Add(new TrapDisarmed(hero.Id, check.Target));
+                        PlaceBomb(room, check.Target, lit: false, null, events);
+                        break;
+                    }
                 }
                 else
                 {

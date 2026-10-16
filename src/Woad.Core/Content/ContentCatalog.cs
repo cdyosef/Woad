@@ -85,6 +85,8 @@ public sealed class ContentCatalog
     public CardDefinition GetCard(string id) =>
         _cards.TryGetValue(id, out CardDefinition? card) ? card : throw new KeyNotFoundException($"Unknown card '{id}'.");
 
+    public CardDefinition? FindCard(string id) => _cards.GetValueOrDefault(id);
+
     public MonsterDefinition GetMonster(string id) =>
         _monsters.TryGetValue(id, out MonsterDefinition? monster) ? monster : throw new KeyNotFoundException($"Unknown monster '{id}'.");
 

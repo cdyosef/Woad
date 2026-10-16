@@ -204,56 +204,6 @@ public class CardTests
     }
 
     [Fact]
-    public void BombsHitEveryMonsterInTheBlast()
-    {
-        GameSession session = TestRun.Start("""
-            .........
-            ...BB.B..
-            .........
-            .........
-            ....1....
-            .........
-            .........
-            .........
-            .........
-            """, new ScriptedDice(5, 5, 1, 1), cards: ["bomb"]);
-        Hero hero = session.HeroInSeat();
-
-        IReadOnlyList<GameEvent> events = session.Do(new UseCard(hero.Id, hero.Card("bomb").Id, new GridPosition(4, 1)));
-
-        // One roll (10) against each brute's own defense: a heart from each in the blast.
-        Assert.Equal(10, events.SingleOf<AttackRolled>().Total);
-        Assert.Equal([1, 1], events.OfType<Damaged>().Select(damaged => damaged.Amount));
-        Assert.Equal([1, 1, 2], session.RoomById().Monsters.Select(monster => monster.Hearts));
-        Assert.Empty(hero.Belt);
-    }
-
-    [Fact]
-    public void BombsNeedAMonsterInTheBlastAndWithinRange()
-    {
-        GameSession session = TestRun.Start("""
-            ....B....
-            .........
-            .........
-            .........
-            ....1....
-            .........
-            .........
-            .........
-            .........
-            """, cards: ["bomb"]);
-        Hero hero = session.HeroInSeat();
-        int bomb = hero.Card("bomb").Id;
-
-        Assert.Contains("out of range", session.Refuse(new UseCard(hero.Id, bomb, new GridPosition(4, 0))));
-        Assert.Contains("no monsters", session.Refuse(new UseCard(hero.Id, bomb, new GridPosition(4, 6))));
-        Assert.Contains("target tile", session.Refuse(new UseCard(hero.Id, bomb)));
-
-        // Only (4,1) is both within 3 steps of the hero and inside a blast that reaches the brute.
-        Assert.Equal([new GridPosition(4, 1)], session.GetCardTargets(bomb));
-    }
-
-    [Fact]
     public void StunnedMonstersSkipATurnAndShakeItOffBeforeTheNextStun()
     {
         GameSession session = TestRun.Start(CagedSpearman, cards: ["icicle"]);

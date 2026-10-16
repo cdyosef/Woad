@@ -13,6 +13,9 @@ public enum TrapKind
 
     /// <summary>Darts in a door frame (1 heart to the next hero through).</summary>
     Darts,
+
+    /// <summary>A floor tile that pops out a lit bomb when stepped on (no harm itself); disarmed, it pops out an unlit one.</summary>
+    BombTrap,
 }
 
 /// <summary>
