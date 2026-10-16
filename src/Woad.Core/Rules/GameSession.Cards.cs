@@ -702,7 +702,12 @@ public sealed partial class GameSession
                     return null;
                 }
 
-                targets = room.Monsters.Where(monster => monster.Position.ChebyshevDistanceTo(attackTile) <= effect.AreaRadius).ToList();
+                targets = room.Monsters.Where(monster => monster.Position.ChebyshevDistanceTo(attackTile) <= effect.AreaRadius && SpellReaches(hero, room, monster)).ToList();
+                if (targets.Count == 0 && room.Monsters.Any(monster => monster.Position.ChebyshevDistanceTo(attackTile) <= effect.AreaRadius))
+                {
+                    return "It's under the water, out of reach.";
+                }
+
                 if (targets.Count == 0 && AlliesCaught(room, attackTile, effect.AreaRadius).Count > 0)
                 {
                     return null;
@@ -719,6 +724,11 @@ public sealed partial class GameSession
                 if (!Targeting.InRangeAndSight(room.Layout, hero.Position, stunTile, effect.Range))
                 {
                     return "That monster is out of range.";
+                }
+
+                if (!SpellReaches(hero, room, monster))
+                {
+                    return "It's under the water, out of reach.";
                 }
 
                 if (monster.Definition.StunImmune)

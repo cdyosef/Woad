@@ -399,6 +399,17 @@ public partial class GameScreen : Control
                 await Walk(shoved.TargetId, [shoved.To]);
                 break;
 
+            case Flipped flipped:
+                _dice.ShowOutcome(true);
+                FloatOver(flipped.MonsterId, "flipped!", Palette.TrimBright);
+                await UpdateFigure(flipped.MonsterId, figure => figure.Prone = true, 0.25);
+                break;
+
+            case Pulled pulled:
+                FloatOver(pulled.HeroId, "pulled!", Palette.Danger);
+                await Walk(pulled.HeroId, [pulled.To]);
+                break;
+
             case ShoveResisted resisted:
                 _dice.ShowOutcome(false);
                 if (_figures.TryGetValue(resisted.TargetId, out Figure? firm) && firm.RoomId == _shownRoomId)
@@ -793,6 +804,9 @@ public partial class GameScreen : Control
             case Shoved or Leaped:
                 Sfx.Play("block", 1.3f);
                 break;
+            case Pulled:
+                Sfx.Play("block", 0.9f);
+                break;
             case ShoveResisted:
                 Sfx.Play("block", 0.8f);
                 break;
@@ -881,8 +895,11 @@ public partial class GameScreen : Control
 
         bool bossFight = state.Heroes.Any(hero => hero.Status == HeroStatus.Active
             && state.RoomOf(hero).Monsters.Any(monster => monster.Definition.Boss));
-        Music.Play(bossFight ? "boss" : "dungeon");
+        Music.Play(bossFight ? "boss" : DungeonSong);
     }
+
+    /// <summary>Each dungeon's own exploring song.</summary>
+    private string DungeonSong => _session.State.ThemeId == "sunken_temple" ? "temple" : "dungeon";
 
     /// <summary>Who an event is about, so the camera can turn to them in a room bigger than the view.</summary>
     private static int? FocusOf(GameEvent gameEvent) => gameEvent switch
@@ -894,6 +911,8 @@ public partial class GameScreen : Control
         Damaged damaged => damaged.TargetId,
         OdHandRolled rolled => rolled.HeroId,
         Shoved shoved => shoved.TargetId,
+        Pulled pulled => pulled.HeroId,
+        Flipped flipped => flipped.MonsterId,
         Leaped leap => leap.HeroId,
         HeroKeeledOver keeled => keeled.HeroId,
         KeelRolled keel => keel.HeroId,
@@ -950,6 +969,8 @@ public partial class GameScreen : Control
         FellIntoPit fell => fell.RoomId,
         ClimbedOut climbed => FigureRoom(climbed.EntityId),
         Shoved shoved => FigureRoom(shoved.TargetId),
+        Pulled pulled => FigureRoom(pulled.HeroId),
+        Flipped flipped => FigureRoom(flipped.MonsterId),
         ShoveResisted resisted => FigureRoom(resisted.TargetId),
         MonsterTrapped trapped => FigureRoom(trapped.MonsterId),
         MonsterFell fell => fell.FromRoomId,

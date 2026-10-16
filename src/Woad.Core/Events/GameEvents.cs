@@ -225,6 +225,12 @@ public sealed record ClimbedOut(int EntityId, GridPosition Position) : GameEvent
 /// <summary>A hero's shove pushed a monster (or, with friendly fire on, a hero) from one tile to the next.</summary>
 public sealed record Shoved(int HeroId, int TargetId, GridPosition From, GridPosition To) : GameEvent;
 
+/// <summary>A shove turned a shelled monster onto its back: it's prone, and its shell gives no armor until it gets up.</summary>
+public sealed record Flipped(int MonsterId) : GameEvent;
+
+/// <summary>A monster's tongue or hook dragged a hero it hit to its side.</summary>
+public sealed record Pulled(int MonsterId, int HeroId, GridPosition From, GridPosition To) : GameEvent;
+
 /// <summary>A shove didn't beat the target's defense: it stands its ground.</summary>
 public sealed record ShoveResisted(int HeroId, int TargetId) : GameEvent;
 

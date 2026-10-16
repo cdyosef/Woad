@@ -564,6 +564,136 @@ MONSTERS = {
 
 WOOD = {"o": "#2a1a10", "w": "#b07840", "d": "#8a5a2b", "g": "#e2c47a", "y": "#3a2a10", "i": "#1a0f08"}
 
+# The Sunken Temple's own monsters (its other monsters borrow the Emerald Keep's sprites).
+TEMPLE_MONSTERS = {
+    "snapper_eel": sprite([
+        "........", "........", "........",
+        "......oo",
+        ".....ogg",
+        "....oggg",
+        "....ogeg",
+        "....oggg",
+        "....oddd",
+        "....owrr",
+        "....oddd",
+        "....oggg",
+        "...ogggd",
+        "..oggddd",
+        ".bbbbbbb",
+        "..bbbbbb",
+    ], {"o": "#10202a", "g": "#3a8a6a", "d": "#24604a", "e": "#f0e040", "w": "#ffffff", "r": "#b03040", "b": "#5fb0d0"}, mirror=True),
+
+    "drowned": sprite([
+        "........",
+        "......oo",
+        ".....oww",
+        "....ovww",
+        "....owew",
+        "....owww",
+        ".....owt",
+        "......oo",
+        "...oowwo",
+        "...ovowo",
+        "...owowo",
+        "....owvo",
+        "....ow..",
+        "....ov..",
+        "...oww..",
+        "........",
+    ], {"o": "#1a2a2a", "w": "#b8d0c4", "e": "#40e0c0", "t": "#1a2a2a", "v": "#3a8a4a"}, mirror=True),
+
+    "crab_knight": sprite([
+        "........",
+        "........",
+        ".oo.....",
+        "orro....",
+        "or.ro...",
+        "orrro...",
+        ".orro.o.",
+        "..oro.oe",
+        "...ooomm",
+        "..oRRRmM",
+        ".oRRsRRR",
+        ".oRRRRRR",
+        "..oddddd",
+        "..od.od.",
+        ".od.od..",
+        "........",
+    ], {"o": "#2a0e0a", "r": "#d04a3a", "R": "#e8604a", "s": "#f8a080", "d": "#8a2a24", "e": "#101010",
+        "m": "#b8c0cc", "M": "#6a7484"}, mirror=True),
+
+    "crab_king": sprite([
+        "........",
+        "........",
+        ".oo.....",
+        "orro....",
+        "or.ro...",
+        "orrro...",
+        ".orro.o.",
+        "..oro.oe",
+        "...oog.g",
+        "..oRRggg",
+        ".oRRsRRR",
+        ".oRRRRRR",
+        "..oddddd",
+        "..od.od.",
+        ".od.od..",
+        "........",
+    ], {"o": "#200a14", "r": "#b02a4a", "R": "#c83a5a", "s": "#f090a8", "d": "#701a30", "e": "#101010",
+        "g": "#f0c94a"}, mirror=True),
+
+    "bog_frog": sprite([
+        "........", "........", "........", "........",
+        "..ooo...",
+        ".owkwo..",
+        ".ogggooo",
+        ".ogggggg",
+        "oggooooo",
+        "ogglllll",
+        "ogglllll",
+        ".oglllll",
+        "oggo.ogg",
+        "oooo.ooo",
+        "........", "........",
+    ], {"o": "#142010", "g": "#5aa040", "l": "#c8e070", "w": "#ffffff", "k": "#101010"}, mirror=True),
+
+    "jellyfish": sprite([
+        "........", "........",
+        "......oo",
+        "....oopp",
+        "...oppll",
+        "..opplll",
+        "..oppppp",
+        "..oppppp",
+        "...p.p.p",
+        "....p.p.",
+        "...p.p.p",
+        "....p...",
+        "...p....",
+        "........", "........", "........",
+    ], {"o": "#4a2a6a", "p": "#c890f0e0", "l": "#f0d8ff"}, mirror=True),
+
+    "leviathan": sprite([
+        "..o.....",
+        "..fo....",
+        "..ffo.oo",
+        "...ffogg",
+        "....oggg",
+        "...ogggg",
+        "...ogegg",
+        "...ogggg",
+        "...odggg",
+        "...owrrr",
+        "...owrrr",
+        "...odddd",
+        "..oggggd",
+        ".oggdd.o",
+        "bbbbbbbb",
+        "..bbbbbb",
+    ], {"o": "#0a1a20", "g": "#2a7a8a", "d": "#1a4a5a", "f": "#e0705a", "e": "#ffd040", "w": "#ffffff",
+        "r": "#a02a3a", "b": "#5fb0d0"}, mirror=True),
+}
+
 OBJECTS = {
     "chest": sprite([
         "................", "................", "................",
@@ -804,9 +934,30 @@ def floor_tile(seed, light, mid, dark, speck):
     return tile
 
 
-def wall_tile():
+# Each theme's colors for the tiles that differ between themes.
+KEEP_TILES = {
+    "wall": ("#7a9a8a", "#a8c4b4", "#3d5a4c", "#24382f", "#141c18"),
+    "pit": ("#2a3a33", "#1a2420", "#0e1412"),
+    "stairs": ("#141c18", "#8aa898", "#4d6158"),
+    "stairs_up": ("#2a3a33", "#c8dccf", "#6a8a7c"),
+    "deep": ("#1d3a66", "#5f8fd0"),
+    "shallow": ("#4a8ab8aa", "#c8e6f8d2"),
+    "rubble": ("#8a8f86", "#b8bcb0", "#3a4038"),
+}
+TEMPLE_TILES = {
+    "wall": ("#b8866e", "#e0b49a", "#7a4a3e", "#4a2a24", "#1e1210"),
+    "pit": ("#5a4a3a", "#3a2e24", "#1e1812"),
+    "stairs": ("#1e1812", "#d8c4a0", "#8a7458"),
+    "stairs_up": ("#5a4a3a", "#ecdcbc", "#a08a68"),
+    "deep": ("#11506a", "#3fa0b8"),
+    "shallow": ("#3aa0a8aa", "#c0f0ecd2"),
+    "rubble": ("#e07a6a", "#f8b0a0", "#8a3a34"),
+}
+
+
+def wall_tile(colors=KEEP_TILES):
     """A stone block seen from above and in front: lit top face, darker brick face below."""
-    top, top_edge, face, mortar, outline = rgba("#7a9a8a"), rgba("#a8c4b4"), rgba("#3d5a4c"), rgba("#24382f"), rgba("#141c18")
+    top, top_edge, face, mortar, outline = (rgba(color) for color in colors["wall"])
     tile = blank(color=face)
     for y in range(6):
         for x in range(16):
@@ -826,9 +977,9 @@ def wall_tile():
     return tile
 
 
-def cracked_wall_tile():
+def cracked_wall_tile(colors=KEEP_TILES):
     """A wall block split by dark cracks: a bomb's blast breaks it."""
-    tile = wall_tile()
+    tile = wall_tile(colors)
     crack = rgba("#0b100e")
     for x, y in [(4, 2), (5, 3), (5, 4), (6, 5), (6, 6), (7, 7), (7, 8), (8, 9), (8, 10), (9, 11), (9, 12), (10, 13),
                  (8, 8), (9, 8), (10, 7), (6, 10), (5, 11)]:
@@ -873,9 +1024,9 @@ def trapdoor_tile():
     return tile
 
 
-def pit_tile():
+def pit_tile(colors=KEEP_TILES):
     """A hole: a crumbling rim fading into black."""
-    rim = [rgba("#2a3a33"), rgba("#1a2420"), rgba("#0e1412")]
+    rim = [rgba(color) for color in colors["pit"]]
     tile = blank(color=rgba("#05070a"))
     for depth, color in enumerate(rim):
         for i in range(depth, 16 - depth):
@@ -885,10 +1036,10 @@ def pit_tile():
     return tile
 
 
-def stairs_tile():
+def stairs_tile(colors=KEEP_TILES):
     """Steps leading down: lit treads that shrink toward the dark bottom."""
-    tile = blank(color=rgba("#141c18"))
-    tread, riser = rgba("#8aa898"), rgba("#4d6158")
+    back, tread, riser = (rgba(color) for color in colors["stairs"])
+    tile = blank(color=back)
     for step in range(5):
         y = 1 + step * 3
         inset = 1 + step
@@ -898,10 +1049,10 @@ def stairs_tile():
     return tile
 
 
-def rubble_tile():
-    """Broken stones scattered over the floor (drawn on top of it): rough ground, 2 steps a tile."""
+def rubble_tile(colors=KEEP_TILES):
+    """Broken stones (in the Temple, coral) scattered over the floor (drawn on top of it): rough ground, 2 steps a tile."""
     tile = blank()
-    stone, light, dark = rgba("#8a8f86"), rgba("#b8bcb0"), rgba("#3a4038")
+    stone, light, dark = (rgba(color) for color in colors["rubble"])
     for left, top, width, height in [(1, 2, 4, 3), (7, 1, 3, 3), (11, 3, 4, 3), (3, 7, 3, 3),
                                      (8, 6, 4, 4), (1, 11, 3, 3), (6, 12, 4, 3), (12, 10, 3, 4)]:
         for y in range(top, top + height):
@@ -911,10 +1062,9 @@ def rubble_tile():
     return tile
 
 
-def water_tile(deep):
+def water_tile(deep, colors=KEEP_TILES):
     """Water, rippled with light crests: shallow shows a little floor through; deep is dark and opaque."""
-    base = rgba("#1d3a66" if deep else "#4a8ab8aa")
-    crest = rgba("#5f8fd0" if deep else "#c8e6f8d2")
+    base, crest = (rgba(color) for color in colors["deep" if deep else "shallow"])
     tile = blank(color=base)
     for row, offset in [(3, 1), (8, 5), (13, 2)]:
         for x in range(16):
@@ -941,10 +1091,10 @@ def gate_tile():
     return tile
 
 
-def stairs_up_tile():
+def stairs_up_tile(colors=KEEP_TILES):
     """Steps leading up: treads that widen toward a lit landing at the top."""
-    tile = blank(color=rgba("#2a3a33"))
-    tread, riser = rgba("#c8dccf"), rgba("#6a8a7c")
+    back, tread, riser = (rgba(color) for color in colors["stairs_up"])
+    tile = blank(color=back)
     for step in range(5):
         y = 1 + step * 3
         inset = 5 - step
@@ -1316,6 +1466,21 @@ def dungeon_theme():
     return song.samples
 
 
+def temple_theme():
+    """The Sunken Temple: a slow, watery D minor with rippling arpeggios."""
+    chords = ["Dm", "Dm", "A#", "C", "Dm", "Dm", "Gm", "A"] * 2
+    song = Song(bpm=92, beats=64)
+    song.voice("A4/2 D5/1 E5/1 | F5/3 E5/1 | D5/1.5 C5/0.5 A#4/2 | C5/2 E5/2 |"
+               "F5/1 E5/1 D5/1 A4/1 | D5/3 -/1 | G5/1.5 F5/0.5 E5/1 D5/1 | C#5/2 E5/2 |"
+               "A5/2 G5/1 F5/1 | E5/1 D5/1 E5/2 | F5/1.5 E5/0.5 D5/1 A#4/1 | C5/2 G5/2 |"
+               "F5/1 A5/1 G5/1 F5/1 | D5/3 -/1 | A#4/1 D5/1 G5/1 F5/1 | E5/2 C#5/1 E5/1",
+               triangle, 0.16, vibrato=True)
+    song.arpeggio(chords, [0, 1, 2, 3, 2, 1] * 2 + [0, 1, 2, 3], sine, 0.05, step=0.25)
+    song.bass(chords, [(0, 1.5), (7, 0.5), (12, 1), (7, 1)], 0.18)
+    song.drums(16, "k.......h...k..h", 0.07)
+    return song.samples
+
+
 BOSS_BEAT = [  # double kicks under a hard backbeat, a crash every four bars, fills into each new section
     "c.kks.h.k.kks.hh", "k.kks.h.k.kks.hh", "k.kks.h.k.kks.hh", "k.kks.h.k.kks.hh",
     "c.kks.h.k.kks.hh", "k.kks.h.k.kks.hh", "k.kks.h.k.kks.hh", "k.kks.h.s.sssskk",
@@ -1366,6 +1531,7 @@ def build_music(directory):
     songs = {
         "title": title_theme(),
         "dungeon": dungeon_theme(),
+        "temple": temple_theme(),
         "boss": boss_theme(),
         "victory": victory_tune(),
         "defeat": defeat_tune(),
@@ -1376,28 +1542,36 @@ def build_music(directory):
 
 # ---- Build --------------------------------------------------------------------------------
 
-def main():
-    theme = ASSETS / "themes" / "emerald_keep"
-    for name, pixels in MONSTERS.items():
-        write_png(theme / "monsters" / f"{name}.png", pixels)
-    for name, pixels in OBJECTS.items():
-        write_png(theme / "tiles" / f"{name}.png", pixels)
+def build_theme(name, monsters, colors, floors):
+    """A theme's folder: its monsters' sprites, objects and tiles in its colors."""
+    theme = ASSETS / "themes" / name
+    for monster, pixels in monsters.items():
+        write_png(theme / "monsters" / f"{monster}.png", pixels)
+    for item, pixels in OBJECTS.items():
+        write_png(theme / "tiles" / f"{item}.png", pixels)
 
-    write_png(theme / "tiles" / "floor_a.png", floor_tile(1, "#6fa48a", "#5a8f78", "#3d6555", "#4f7f6a"))
-    write_png(theme / "tiles" / "floor_b.png", floor_tile(2, "#68a084", "#548a72", "#3a6152", "#4a7863"))
-    write_png(theme / "tiles" / "wall.png", wall_tile())
-    write_png(theme / "tiles" / "cracked_wall.png", cracked_wall_tile())
+    write_png(theme / "tiles" / "floor_a.png", floor_tile(1, *floors[0]))
+    write_png(theme / "tiles" / "floor_b.png", floor_tile(2, *floors[1]))
+    write_png(theme / "tiles" / "wall.png", wall_tile(colors))
+    write_png(theme / "tiles" / "cracked_wall.png", cracked_wall_tile(colors))
     write_png(theme / "tiles" / "spikes.png", spikes_tile())
     write_png(theme / "tiles" / "trapdoor.png", trapdoor_tile())
-    write_png(theme / "tiles" / "pit.png", pit_tile())
-    write_png(theme / "tiles" / "stairs.png", stairs_tile())
-    write_png(theme / "tiles" / "stairs_up.png", stairs_up_tile())
-    write_png(theme / "tiles" / "rubble.png", rubble_tile())
+    write_png(theme / "tiles" / "pit.png", pit_tile(colors))
+    write_png(theme / "tiles" / "stairs.png", stairs_tile(colors))
+    write_png(theme / "tiles" / "stairs_up.png", stairs_up_tile(colors))
+    write_png(theme / "tiles" / "rubble.png", rubble_tile(colors))
     write_png(theme / "tiles" / "gate.png", gate_tile())
-    write_png(theme / "tiles" / "water_shallow.png", water_tile(deep=False))
-    write_png(theme / "tiles" / "water_deep.png", water_tile(deep=True))
+    write_png(theme / "tiles" / "water_shallow.png", water_tile(False, colors))
+    write_png(theme / "tiles" / "water_deep.png", water_tile(True, colors))
     write_png(theme / "tiles" / "exit_open.png", exit_tile(sealed=False))
     write_png(theme / "tiles" / "exit_sealed.png", exit_tile(sealed=True))
+
+
+def main():
+    build_theme("emerald_keep", MONSTERS, KEEP_TILES,
+                [("#6fa48a", "#5a8f78", "#3d6555", "#4f7f6a"), ("#68a084", "#548a72", "#3a6152", "#4a7863")])
+    build_theme("sunken_temple", {**MONSTERS, **TEMPLE_MONSTERS}, TEMPLE_TILES,
+                [("#c9b48e", "#b39d78", "#7d6a4e", "#9c8664"), ("#c4ae88", "#ad9772", "#78664a", "#968060")])
 
     heroes = ASSETS / "heroes"
     for look in LOOKS:

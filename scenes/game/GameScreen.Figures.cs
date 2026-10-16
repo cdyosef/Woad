@@ -103,6 +103,7 @@ public partial class GameScreen
             Body = monster is null ? null : GameArt.Monster(theme, monster.Id),
             Look = figure.Look,
             CollapsedBody = monster is { Reassembles: true } ? GameArt.Monster(theme, "bones") : null,
+            Swimmer = monster is { Swimmer: true },
             SpriteScale = monster is null ? 1f : GameArt.MonsterScale(monster),
         };
         _tokens[figure.Id] = token;

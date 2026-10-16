@@ -2,6 +2,7 @@
   // Weapons (main hand)
   { "id": "wooden_sword", "name": "Wooden Sword", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 1 }, "value": 2, "text": "Weapon 1: adds 1 to one Rumble roll a turn." },
   { "id": "knights_sword", "name": "Knight's Sword", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 2 }, "value": 10, "text": "Weapon 2: adds 2 to one Rumble roll a turn." },
+  { "id": "trident", "name": "Trident", "type": "weapon", "slot": "mainHand", "twoHanded": true, "modifiers": { "weapon": 1 }, "attackRange": 2, "swimmerBonus": 1, "value": 9, "text": "Two-handed. Weapon 1, reaching 2 tiles. +1 more against swimmers, and it spears them even submerged." },
   { "id": "short_bow", "name": "Short Bow", "type": "weapon", "slot": "mainHand", "twoHanded": true, "modifiers": { "weapon": 1 }, "attackRange": 4, "value": 8, "text": "Two-handed. Weapon 1. Attack at range 4." },
 
   // Shields (off hand)
@@ -10,6 +11,7 @@
 
   // Armor and boots
   { "id": "leather_cap", "name": "Leather Cap", "type": "armor", "slot": "head", "modifiers": { "hearts": 1 }, "value": 3, "text": "+1 Heart." },
+  { "id": "diving_helm", "name": "Diving Helm", "type": "armor", "slot": "head", "modifiers": { "armor": 1 }, "swims": true, "value": 8, "text": "Armor 1. Water costs you 1 step a tile, and you stay afloat in deep water without spending a Rumble die." },
   { "id": "chain_mail", "name": "Chain Mail", "type": "armor", "slot": "body", "modifiers": { "armor": 1 }, "value": 8, "text": "Armor 1: adds 1 to every defense." },
   { "id": "dash_boots", "name": "Dash Boots", "type": "boots", "slot": "feet", "modifiers": { "moveDice": 1 }, "value": 10, "text": "+1 Wend die." },
 
@@ -27,5 +29,6 @@
   { "id": "loose_coins", "name": "Loose Coins", "type": "treasure", "coins": true, "value": 2, "text": "2 gold, straight into your purse. Found in pots." },
   { "id": "coin_pouch", "name": "Coin Pouch", "type": "treasure", "coins": true, "value": 5, "text": "5 gold, straight into your purse." },
   { "id": "emerald", "name": "Emerald", "type": "treasure", "value": 15, "text": "Worth 15 gold." },
+  { "id": "pearl", "name": "Pearl", "type": "treasure", "value": 20, "text": "Worth 20 gold." },
   { "id": "golden_idol", "name": "Golden Idol", "type": "treasure", "value": 40, "text": "Worth 40 gold." }
 ]

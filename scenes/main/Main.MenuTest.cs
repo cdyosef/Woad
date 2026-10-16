@@ -112,6 +112,11 @@ public partial class Main
             Check(setup.PartySize == 3, "clicking characters seats them");
             await Click(this, setup.FriendlyFireButton);
             Check(setup.FriendlyFire && setup.FriendlyFireButton.Text.EndsWith("on"), "the Friendly fire button turns it on");
+            Check(setup.ThemeId == "emerald_keep" && setup.DungeonButton.Text.EndsWith("The Emerald Keep"), "the first dungeon is the Emerald Keep");
+            await Click(this, setup.DungeonButton);
+            Check(setup.ThemeId == "sunken_temple" && setup.DungeonButton.Text.EndsWith("The Sunken Temple"), "the Dungeon button picks the Sunken Temple");
+            await Click(this, setup.DungeonButton);
+            Check(setup.ThemeId == "emerald_keep", "and clicking again goes back to the Keep");
 
             await Click(this, setup.StartButton);
             GameScreen game = await Screen<GameScreen>();

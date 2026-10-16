@@ -36,7 +36,7 @@ public enum TileKind
 
     /// <summary>
     /// Deep water: heroes swim it at 2 steps a tile, and must spend a Rumble die to stay afloat if their
-    /// turn ends in it, or drown back to dry footing. Monsters can't enter it (flyers pass over).
+    /// turn ends in it, or drown back to dry footing. Only flyers (passing over) and swimmers enter it.
     /// </summary>
     DeepWater,
 

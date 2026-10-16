@@ -185,6 +185,9 @@ public sealed class Hero
     /// <summary>Reach of the Attack action: the main-hand weapon's range (melee when unarmed), or a thrown off-hand weapon's if further.</summary>
     public int AttackRange => Math.Max(MainWeapon?.Definition.AttackRange ?? 1, ThrownOffHand?.Definition.AttackRange ?? 1);
 
+    /// <summary>Wearing gear that swims (the Diving Helm): water is no harder than floor, and deep water needs no effort to stay afloat.</summary>
+    public bool Swims => _equipment.Values.Any(card => card.Definition.Swims);
+
     /// <summary>Gold value of the treasure carried; decides the winner.</summary>
     public int TreasureValue =>
         Gold + AllCards.Where(card => card.Definition.Type == CardType.Treasure).Sum(card => card.Definition.Value);

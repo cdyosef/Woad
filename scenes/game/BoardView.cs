@@ -150,6 +150,10 @@ public partial class BoardView : Control
 
     public static Vector2 TileOrigin(GridPosition tile) => new(tile.X * TileSize, tile.Y * TileSize);
 
+    /// <summary>Whether a tile of the room on show is deep water (where swimmers go under).</summary>
+    public bool IsDeepWater(GridPosition tile) =>
+        _room is not null && _room.Layout.Contains(tile) && _room.Layout[tile] == TileKind.DeepWater;
+
     public void ShowRoom(Room room)
     {
         bool newRoom = _room?.Id != room.Id;

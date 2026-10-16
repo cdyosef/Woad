@@ -12,13 +12,20 @@ namespace Woad.Scenes;
 /// <summary>
 /// The app's root: owns the content and the character store, swaps between screens, and saves
 /// each character's results when a run ends. Debug flags: <c>--uitest</c>, <c>--floortest</c>, <c>--hazardtest</c>, <c>--keeltest</c>, <c>--firetest</c>, <c>--cameratest</c>, <c>--bombtest</c>, <c>--rumbletest</c> and
-/// <c>--autoplay</c> jump straight into a run with the debug party; <c>--menutest</c> and
+/// <c>--autoplay</c> jump straight into a run with the debug party (<c>--party N</c> heroes,
+/// <c>--theme id</c> for another dungeon); <c>--menutest</c> and
 /// <c>--resultstest</c> click through the menus using a throwaway save folder.
 /// </summary>
 public partial class Main : Control
 {
-    /// <summary>The only dungeon so far. Choosing among themes comes with more dungeons.</summary>
-    private const string ThemeId = "emerald_keep";
+    /// <summary>The first dungeon, and the one debug runs use unless --theme says otherwise.</summary>
+    private const string FirstThemeId = "emerald_keep";
+
+    /// <summary>The dungeons in the order the party screen offers them: the Emerald Keep first.</summary>
+    private static readonly string[] DungeonOrder = ["emerald_keep", "sunken_temple"];
+
+    /// <summary>The party screen's dungeon, remembered between runs this session.</summary>
+    private string _themeId = FirstThemeId;
 
     private ContentCatalog _content = null!;
 
@@ -80,7 +87,9 @@ public partial class Main : Control
         {
             int partyAt = Array.IndexOf(args, "--party");
             int size = partyAt >= 0 && partyAt + 1 < args.Length && int.TryParse(args[partyAt + 1], out int n) ? Math.Clamp(n, 1, GameRules.MaxHeroes) : DemoRun.DebugHeroes.Count;
-            ShowGame(DungeonGenerator.CreateRun(_content, ThemeId, DemoRun.DebugParty(size), seed), []);
+            int themeAt = Array.IndexOf(args, "--theme");
+            string theme = themeAt >= 0 && themeAt + 1 < args.Length ? args[themeAt + 1] : FirstThemeId;
+            ShowGame(DungeonGenerator.CreateRun(_content, theme, DemoRun.DebugParty(size), seed), []);
         }
         else if (args.Contains("--resultstest"))
         {
@@ -157,7 +166,16 @@ public partial class Main : Control
 
     private void ShowRunSetup()
     {
-        var screen = new RunSetupScreen { Repository = _characters, FriendlyFire = _friendlyFire };
+        var screen = new RunSetupScreen
+        {
+            Repository = _characters,
+            FriendlyFire = _friendlyFire,
+            ThemeId = _themeId,
+            Dungeons = [.. _content.Themes.Values
+                .OrderBy(theme => Array.IndexOf(DungeonOrder, theme.Id) is var at and >= 0 ? at : int.MaxValue)
+                .ThenBy(theme => theme.Name, StringComparer.Ordinal)
+                .Select(theme => (theme.Id, theme.Name))],
+        };
         screen.BackRequested += ShowMainMenu;
         screen.NewCharacterRequested += () => ShowEditor(null, ShowRunSetup);
         screen.StartRequested += StartRun;
@@ -165,10 +183,11 @@ public partial class Main : Control
     }
 
     /// <summary>Generates a dungeon for the party (carrying their current gear) and starts playing it.</summary>
-    private void StartRun(IReadOnlyList<Character> party, ulong seed, bool friendlyFire)
+    private void StartRun(IReadOnlyList<Character> party, ulong seed, bool friendlyFire, string themeId)
     {
         _friendlyFire = friendlyFire;
-        ShowGame(DungeonGenerator.CreateRun(_content, ThemeId, Party.ToHeroSetups(party), seed) with { FriendlyFire = friendlyFire }, party);
+        _themeId = themeId;
+        ShowGame(DungeonGenerator.CreateRun(_content, themeId, Party.ToHeroSetups(party), seed) with { FriendlyFire = friendlyFire }, party);
     }
 
     private void ShowGame(RunSetup setup, IReadOnlyList<Character> party)
@@ -211,7 +230,7 @@ public partial class Main : Control
             ulong seed = (ulong)DateTime.UtcNow.Ticks;
             if (party.Count > 0)
             {
-                StartRun(party, seed, setup.FriendlyFire);
+                StartRun(party, seed, setup.FriendlyFire, setup.ThemeId);
             }
             else
             {

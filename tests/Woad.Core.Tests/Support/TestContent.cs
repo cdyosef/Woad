@@ -25,6 +25,8 @@ internal static class TestContent
           { "id": "wand", "name": "Wand", "type": "spell", "slot": "offHand", "usage": "charges", "charges": 2, "effect": { "kind": "freeze", "amount": 1, "range": 3 } },
           { "id": "icicle", "name": "Icicle", "type": "tool", "slot": "offHand", "effect": { "kind": "freeze", "amount": 1, "range": 4 } },
           { "id": "boomerang", "name": "Boomerang", "type": "weapon", "slot": "offHand", "altSlot": "mainHand", "attackRange": 4, "attackBonus": 1, "stunOnSix": true },
+          { "id": "trident", "name": "Trident", "type": "weapon", "slot": "mainHand", "twoHanded": true, "modifiers": { "weapon": 1 }, "attackRange": 2, "swimmerBonus": 1 },
+          { "id": "helm", "name": "Helm", "type": "armor", "slot": "head", "swims": true },
           { "id": "picks", "name": "Picks", "type": "tool", "slot": "offHand", "modifiers": { "tools": 2 } },
           { "id": "coin", "name": "Coin", "type": "treasure", "value": 5 },
           { "id": "purse", "name": "Purse", "type": "treasure", "coins": true, "value": 3 },
@@ -51,7 +53,12 @@ internal static class TestContent
           { "id": "torch", "name": "Torch", "glyph": "t", "hearts": 1, "move": 0, "attackDice": 1, "defenseDice": 0, "fireAttack": true, "fireImmune": true },
           { "id": "sniper", "name": "Sniper", "glyph": "n", "hearts": 1, "move": 0, "attackDice": 1, "defenseDice": 0, "attackPattern": "ranged", "attackRange": 5 },
           { "id": "pickpocket", "name": "Pickpocket", "glyph": "T", "hearts": 2, "move": 4, "attackDice": 1, "defenseDice": 0, "odHandDice": 3, "thief": true },
-          { "id": "mugger", "name": "Mugger", "glyph": "Y", "hearts": 1, "move": 0, "attackDice": 2, "defenseDice": 0, "odHandDice": 1, "mugger": true, "goldOnly": true, "separateAttacks": true }
+          { "id": "mugger", "name": "Mugger", "glyph": "Y", "hearts": 1, "move": 0, "attackDice": 2, "defenseDice": 0, "odHandDice": 1, "mugger": true, "goldOnly": true, "separateAttacks": true },
+          { "id": "eel", "name": "Eel", "glyph": "E", "hearts": 1, "move": 4, "attackDice": 1, "defenseDice": 0, "swimmer": true, "waterOnly": true },
+          { "id": "fish", "name": "Fish", "glyph": "F", "hearts": 3, "move": 0, "attackDice": 0, "defenseDice": 0, "swimmer": true },
+          { "id": "crab", "name": "Crab", "glyph": "Q", "hearts": 3, "move": 0, "attackDice": 0, "defenseDice": 0, "armor": 2, "shell": true },
+          { "id": "frog", "name": "Frog", "glyph": "R", "hearts": 1, "move": 0, "attackDice": 1, "defenseDice": 0, "attackPattern": "reach", "attackRange": 3, "pulls": true },
+          { "id": "jelly", "name": "Jelly", "glyph": "J", "hearts": 1, "move": 0, "attackDice": 1, "defenseDice": 0, "flying": true, "swimmer": true, "stunOnSix": true }
         ]
         """;
 

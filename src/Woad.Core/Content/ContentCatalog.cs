@@ -313,6 +313,11 @@ public sealed class ContentCatalog
             errors.Add($"{name} needs an attackRange of at least 1.");
         }
 
+        if (monster.WaterOnly && !monster.Swimmer)
+        {
+            errors.Add($"{name} never leaves the water, so it must be a swimmer.");
+        }
+
         if (monster.SplitsInto is { } splitId)
         {
             if (!monsterIds.Contains(splitId))
@@ -415,14 +420,16 @@ public sealed class ContentCatalog
             errors.Add($"{name}: combat and stairs rooms need at least one monster spawn point ('M').");
         }
 
+        // Everything must be reachable on foot, except spawn points in deep water: swimming will do for those.
         PathSearch reach = PathSearch.Run(template.Layout.MiddleOf(Direction.North), position => template.Layout[position].IsWalkable());
+        PathSearch swim = PathSearch.Run(template.Layout.MiddleOf(Direction.North), position => template.Layout[position].IsWalkable() || template.Layout[position] == TileKind.DeepWater);
         IEnumerable<GridPosition> mustReach = Enum.GetValues<Direction>().Select(template.Layout.MiddleOf)
             .Concat(template.HeroStarts.Values)
             .Concat(template.SpawnPoints)
             .Concat(template.TilesOf(TileKind.StairsDown))
             .Concat(template.TilesOf(TileKind.Exit))
             .Concat(template.BossSpawn is { } boss ? [boss] : []);
-        foreach (GridPosition position in mustReach.Where(position => !reach.CanReach(position)))
+        foreach (GridPosition position in mustReach.Where(position => template.Layout[position] == TileKind.DeepWater ? !swim.CanReach(position) : !reach.CanReach(position)))
         {
             errors.Add($"{name}: {position} can't be reached from the doors.");
         }

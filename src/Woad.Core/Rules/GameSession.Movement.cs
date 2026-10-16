@@ -129,7 +129,7 @@ public sealed partial class GameSession
         }
 
         hero.Position = path[^1];
-        Turn.MovementPoints -= path.Sum(tile => room.Layout[tile].MoveCost()) * Crawl;
+        Turn.MovementPoints -= path.Sum(tile => HeroStepCost(hero, room, tile)) * Crawl;
         foreach (GridPosition tile in path.Where(tile => room.Layout[tile].IsWalkable()))
         {
             hero.Footing = tile;
@@ -231,7 +231,7 @@ public sealed partial class GameSession
             position => (room.Layout[position].IsWalkable() || room.Layout[position] is TileKind.Pit or TileKind.DeepWater) && room.MonsterAt(position) is null,
             Turn.MovementPoints,
             canPass: position => room.Layout[position] != TileKind.Pit && room.TrapAt(position) is not { Revealed: true },
-            stepCost: position => room.Layout[position].MoveCost() * (hero.Prone ? GameRules.CrawlFactor : 1));
+            stepCost: position => HeroStepCost(hero, room, position) * (hero.Prone ? GameRules.CrawlFactor : 1));
 
     private bool CanHeroStop(Room room, Hero hero, GridPosition position) =>
         !State.HeroesIn(room).Any(other => other != hero && other.Position == position);

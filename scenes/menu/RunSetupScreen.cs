@@ -28,7 +28,15 @@ public partial class RunSetupScreen : MenuScreen
     public event Action? NewCharacterRequested;
 
     /// <summary>The chosen characters in seat order, the seed for the dungeon and dice, and whether friendly fire is on.</summary>
-    public event Action<IReadOnlyList<Character>, ulong, bool>? StartRequested;
+    public event Action<IReadOnlyList<Character>, ulong, bool, string>? StartRequested;
+
+    /// <summary>The dungeons to choose from (id and name), in the order the Dungeon button steps through them.</summary>
+    public IReadOnlyList<(string Id, string Name)> Dungeons { get; init; } = [];
+
+    /// <summary>The dungeon the run will be in.</summary>
+    public string ThemeId { get; set; } = "";
+
+    internal Button DungeonButton { get; private set; } = null!;
 
     /// <summary>Heroes can hurt each other this run (see <see cref="Woad.Core.Rules.RunSetup.FriendlyFire"/>).</summary>
     public bool FriendlyFire { get; set; }
@@ -94,6 +102,14 @@ public partial class RunSetupScreen : MenuScreen
         back.Pressed += () => BackRequested?.Invoke();
         Button create = Add(UiTheme.Button(new Vector2(114, 316), new Vector2(130, 26), "New character"));
         create.Pressed += () => NewCharacterRequested?.Invoke();
+        DungeonButton = Add(UiTheme.Button(new Vector2(250, 316), new Vector2(252, 26), ""));
+        DungeonButton.TooltipText = "Which dungeon to delve. Click to choose another.";
+        DungeonButton.Pressed += () =>
+        {
+            int index = Dungeons.Select(dungeon => dungeon.Id).ToList().IndexOf(ThemeId);
+            ThemeId = Dungeons[(index + 1) % Dungeons.Count].Id;
+            Refresh();
+        };
         StartButton = Add(UiTheme.Button(new Vector2(508, 316), new Vector2(110, 26), "Start run"));
         StartButton.Pressed += Start;
 
@@ -190,6 +206,13 @@ public partial class RunSetupScreen : MenuScreen
         }
 
         StartButton.Disabled = _party.Count == 0;
+        if (Dungeons.Count > 0 && !Dungeons.Any(dungeon => dungeon.Id == ThemeId))
+        {
+            ThemeId = Dungeons[0].Id;
+        }
+
+        DungeonButton.Text = "Dungeon: " + (Dungeons.FirstOrDefault(dungeon => dungeon.Id == ThemeId).Name ?? ThemeId);
+        DungeonButton.Disabled = Dungeons.Count < 2;
         FriendlyFireButton.SetPressedNoSignal(FriendlyFire);
         FriendlyFireButton.Text = FriendlyFire ? "Friendly fire: on" : "Friendly fire: off";
         int companions = _party.Count(seated => seated.IsCompanion);
@@ -210,6 +233,6 @@ public partial class RunSetupScreen : MenuScreen
             return;
         }
 
-        StartRequested?.Invoke([.. _party], seed, FriendlyFire);
+        StartRequested?.Invoke([.. _party], seed, FriendlyFire, ThemeId);
     }
 }

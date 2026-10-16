@@ -9,13 +9,13 @@ public sealed record MonsterSpawn(GridPosition Position, MonsterDefinition Monst
 /// A handcrafted 9x9 room written as text, one row per line:
 /// <c>.</c> floor, <c>#</c> wall, <c>X</c> cracked wall, <c>~</c> pit, <c>C</c> chest, <c>P</c> pot, <c>&gt;</c> stairs down,
 /// <c>*</c> exit, <c>1</c>-<c>4</c> hero start for that seat, <c>M</c> a spot the dungeon
-/// generator may put a monster, <c>&amp;</c> where the boss stands, and any monster's glyph
+/// generator may put a monster (<c>%</c>: in deep water, for swimmers), <c>&amp;</c> where the boss stands, and any monster's glyph
 /// (e.g. <c>s</c> for a slime) to place that exact monster.
 /// </summary>
 public sealed class RoomTemplate
 {
     /// <summary>Characters with a fixed meaning; monster glyphs can't use them.</summary>
-    public const string ReservedCharacters = ".#X~CP>*M&_0123456789";
+    public const string ReservedCharacters = ".#X~CP>*M%&_0123456789";
 
     private RoomTemplate(
         RoomLayout layout,
@@ -80,7 +80,7 @@ public sealed class RoomTemplate
                 '<' => TileKind.StairsUp,
                 ':' => TileKind.Rubble,
                 ',' => TileKind.ShallowWater,
-                '=' => TileKind.DeepWater,
+                '=' or '%' => TileKind.DeepWater,
                 '*' => TileKind.Exit,
                 _ => TileKind.Floor,
             };
@@ -92,7 +92,7 @@ public sealed class RoomTemplate
                 case >= '1' and <= '4':
                     heroStarts[glyph - '1'] = position;
                     break;
-                case 'M':
+                case 'M' or '%':
                     spawnPoints.Add(position);
                     break;
                 case '&':
@@ -150,6 +150,10 @@ public sealed class RoomTemplate
         TileKind[] tiles = Layout.Positions.Select(at => at == position ? tile : Layout[at]).ToArray();
         return new RoomTemplate(new RoomLayout(Layout.Width, Layout.Height, tiles), Monsters, HeroStarts, SpawnPoints, BossSpawn);
     }
+
+    /// <summary>The same room with a different set of spots the generator may put monsters.</summary>
+    public RoomTemplate WithSpawnPoints(IEnumerable<GridPosition> spawnPoints) =>
+        new(Layout, Monsters, HeroStarts, [.. spawnPoints], BossSpawn);
 
     /// <summary>The same room with a different set of monsters.</summary>
     public RoomTemplate WithMonsters(IEnumerable<MonsterSpawn> monsters) =>

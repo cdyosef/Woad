@@ -239,6 +239,10 @@ public static partial class DungeonGenerator
             }
 
             template = Roughen(template, role, doorTiles, random);
+            if (theme.Flooded)
+            {
+                template = Flood(template, role, doorTiles, random);
+            }
 
             bool isTrap = cell == trap;
             IEnumerable<MonsterSpawn> monsters = PlaceMonsters(template, role, floor, partySize, isTrap, theme, content, random);
@@ -257,7 +261,7 @@ public static partial class DungeonGenerator
                 }
                 else if (random.NextInt(0, 100) < ChannelChance)
                 {
-                    bool pits = (roomBelow || lastFloor) && random.CoinFlip();
+                    bool pits = (roomBelow || lastFloor) && random.CoinFlip() && !theme.Flooded;
                     template = Channel(template, features, doorTiles, pits, random);
                 }
             }
@@ -631,10 +635,16 @@ public static partial class DungeonGenerator
 
         foreach (GridPosition point in points)
         {
-            var fitting = roster.Where(entry => entry.Monster.Threat <= budget).ToList();
-            if (budget <= 0 || fitting.Count == 0)
+            if (budget <= 0)
             {
                 break;
+            }
+
+            // Only what can stand there: swimmers in deep water, fish only in water.
+            var fitting = roster.Where(entry => entry.Monster.Threat <= budget && CanSpawnOn(entry.Monster, template.Layout[point])).ToList();
+            if (fitting.Count == 0)
+            {
+                continue;
             }
 
             int roll = random.NextInt(0, fitting.Sum(entry => entry.Weight));
