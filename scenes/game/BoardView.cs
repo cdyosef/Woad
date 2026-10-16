@@ -7,12 +7,22 @@ namespace Woad.Scenes.Game;
 
 /// <summary>
 /// Draws one room's terrain, doors (open, locked, the Boss Door, walled up), revealed traps, loot and
-/// keys, and the move/target highlights, and reports clicks on tiles.
+/// keys, and the move/target highlights, and reports clicks on tiles. It sits in a clipping frame the
+/// size of a standard room (<see cref="Pixels"/>) and is its own camera: a bigger room scrolls to
+/// follow whoever is acting, a smaller one is centered. The player can pan (right-drag or the arrow
+/// keys), but only as far as keeps the active hero in view.
 /// </summary>
 public partial class BoardView : Control
 {
     public const int TileSize = 32;
+    /// <summary>The view onto the room: a standard room's width and height.</summary>
     public const int Pixels = RoomGrid.Size * TileSize;
+
+    /// <summary>How fast the arrow keys pan, in pixels a second.</summary>
+    private const float PanSpeed = 320;
+
+    /// <summary>A right-click that moves less than this is a click (cancel), not a drag.</summary>
+    private const float DragThreshold = 4;
 
     private Room? _room;
     private GridPosition? _hovered;
@@ -23,6 +33,16 @@ public partial class BoardView : Control
     private HashSet<GridPosition> _hazards = [];
     private HashSet<GridPosition> _jumps = [];
     private HashSet<GridPosition> _blast = [];
+
+    /// <summary>The board pixel at the top-left of the view.</summary>
+    private Vector2 _camera;
+
+    private Node2D? _follow;
+    private bool _panned;
+    private GridPosition? _anchor;
+    private bool _dragging;
+    private bool _dragged;
+    private Vector2 _dragFrom;
 
     public event Action<GridPosition>? TileClicked;
 
@@ -39,11 +59,91 @@ public partial class BoardView : Control
         MouseFilter = MouseFilterEnum.Stop;
     }
 
+    /// <summary>Keeps <paramref name="target"/> (a token on the board) in view, ending any pan. <paramref name="snap"/> jumps there at once.</summary>
+    public void Follow(Node2D? target, bool snap = false)
+    {
+        _follow = target;
+        _panned = false;
+        if (snap)
+        {
+            _camera = Desired();
+            Position = -_camera;
+        }
+    }
+
+    /// <summary>The tile panning must keep in view (the active hero's), or null to pan freely.</summary>
+    public void SetPanAnchor(GridPosition? tile) => _anchor = tile;
+
+    /// <summary>Whether a tile is inside the view right now (and so can be clicked).</summary>
+    public bool IsInView(GridPosition tile) => new Rect2(_camera, Pixels, Pixels).Encloses(TileRect(tile));
+
+    public override void _Process(double delta)
+    {
+        var keys = new Vector2(
+            (Input.IsKeyPressed(Key.Right) ? 1 : 0) - (Input.IsKeyPressed(Key.Left) ? 1 : 0),
+            (Input.IsKeyPressed(Key.Down) ? 1 : 0) - (Input.IsKeyPressed(Key.Up) ? 1 : 0));
+        if (keys != Vector2.Zero && IsVisibleInTree())
+        {
+            Pan(keys * PanSpeed * (float)delta);
+        }
+        else if (!_panned && _room is not null)
+        {
+            _camera = _camera.Lerp(Desired(), 1 - Mathf.Exp(-10 * (float)delta));
+        }
+
+        Position = -_camera;
+    }
+
+    /// <summary>Where the camera wants to be: centered on what it follows, within the room.</summary>
+    private Vector2 Desired()
+    {
+        Vector2 center = _follow is not null && IsInstanceValid(_follow) && _follow.GetParent() == this
+            ? _follow.Position + new Vector2(TileSize / 2f, TileSize / 2f)
+            : RoomPixels / 2;
+        return Clamp(center - new Vector2(Pixels / 2f, Pixels / 2f));
+    }
+
+    private Vector2 RoomPixels => _room is null ? new Vector2(Pixels, Pixels) : new Vector2(_room.Layout.Width * TileSize, _room.Layout.Height * TileSize);
+
+    /// <summary>Inside the room; a room smaller than the view is centered in it.</summary>
+    private Vector2 Clamp(Vector2 camera)
+    {
+        Vector2 room = RoomPixels;
+        float Axis(float value, float size) => size <= Pixels ? (size - Pixels) / 2 : Mathf.Clamp(value, 0, size - Pixels);
+        return new Vector2(Axis(camera.X, room.X), Axis(camera.Y, room.Y));
+    }
+
+    /// <summary>Moves the view by <paramref name="by"/> pixels, no further than keeps the anchor tile in view.</summary>
+    private void Pan(Vector2 by)
+    {
+        _panned = true;
+        Vector2 camera = Clamp(_camera + by);
+        if (_anchor is { } tile)
+        {
+            Vector2 at = TileOrigin(tile);
+            Vector2 room = RoomPixels;
+            float Keep(float value, float anchor, float size) => size <= Pixels ? value : Mathf.Clamp(value, anchor + TileSize - Pixels, anchor);
+            camera = new Vector2(Keep(camera.X, at.X, room.X), Keep(camera.Y, at.Y, room.Y));
+        }
+
+        _camera = camera;
+        Position = -_camera;
+    }
+
     public static Vector2 TileOrigin(GridPosition tile) => new(tile.X * TileSize, tile.Y * TileSize);
 
     public void ShowRoom(Room room)
     {
+        bool newRoom = _room?.Id != room.Id;
         _room = room;
+        Size = RoomPixels;
+        if (newRoom)
+        {
+            _panned = false;
+            _camera = Desired();
+            Position = -_camera;
+        }
+
         QueueRedraw();
     }
 
@@ -91,8 +191,24 @@ public partial class BoardView : Control
 
     public override void _GuiInput(InputEvent @event)
     {
+        // The board runs on beyond the view, under the panels around it: only the part in view takes the mouse.
+        if (@event is InputEventMouse mouse && !_dragging && !new Rect2(_camera, Pixels, Pixels).HasPoint(mouse.Position))
+        {
+            return;
+        }
+
         switch (@event)
         {
+            case InputEventMouseMotion motion when _dragging:
+                _dragged |= motion.Position.DistanceTo(_dragFrom) > DragThreshold;
+                if (_dragged)
+                {
+                    Pan(-motion.Relative);
+                }
+
+                AcceptEvent();
+                break;
+
             case InputEventMouseMotion motion:
                 UpdateHover(motion.Position);
                 break;
@@ -106,8 +222,21 @@ public partial class BoardView : Control
                 AcceptEvent();
                 break;
 
-            case InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Right }:
-                CancelRequested?.Invoke();
+            // Right (or middle) button: drag to pan the view; a right-click that doesn't move cancels.
+            case InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Right or MouseButton.Middle } press:
+                _dragging = true;
+                _dragged = false;
+                _dragFrom = press.Position;
+                AcceptEvent();
+                break;
+
+            case InputEventMouseButton { Pressed: false, ButtonIndex: MouseButton.Right or MouseButton.Middle } release:
+                if (_dragging && !_dragged && release.ButtonIndex == MouseButton.Right)
+                {
+                    CancelRequested?.Invoke();
+                }
+
+                _dragging = false;
                 AcceptEvent();
                 break;
         }
@@ -534,6 +663,12 @@ public partial class BoardView : Control
 
     private GridPosition? TileAt(Vector2 position)
     {
+        // Only tiles inside the view: the board runs on under the panels around it.
+        if (!new Rect2(_camera, Pixels, Pixels).HasPoint(position))
+        {
+            return null;
+        }
+
         var tile = new GridPosition(Mathf.FloorToInt(position.X / TileSize), Mathf.FloorToInt(position.Y / TileSize));
         return _room?.Layout.Contains(tile) == true ? tile : null;
     }

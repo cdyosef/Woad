@@ -458,7 +458,7 @@ them up there like any character.
 │ Active hero  │ floor / room / turn  │ Backpack (6) │
 │ portrait     ├──────────────────────┤ Belt (2)     │
 │ hearts/stats │                      │              │
-│              │    9×9 room grid     │ Dice tray    │ 360 px
+│              │  9×9 view of room    │ Dice tray    │ 360 px
 │ Equipment    │   288 × 288 px       │              │
 │ slots        │                      │ Actions      │
 │              ├──────────────────────┤              │
@@ -467,6 +467,10 @@ them up there like any character.
    176 px              288 px              176 px
 ```
 
+- **Camera:** the board is a 9×9 view onto the room. A bigger room scrolls to follow whoever is acting
+  and comes back to the active hero after each of their actions; a smaller one sits centered in solid
+  rock. Right-drag (or the arrow keys) pans to look around, but only as far as keeps the active hero in
+  view. A plain right-click still cancels.
 - **Scaling:** a 640×360 layout, integer scaled to 1280×720, 1920×1080, 2560×1440 and 4K, with
   nearest-neighbor filtering. The window stretches in `canvas_items` mode, so text renders at full
   resolution and stays sharp while the layout keeps its 640×360 coordinates.

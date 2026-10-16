@@ -97,6 +97,10 @@ public partial class GameScreen : Control
         {
             RunFireTest();
         }
+        else if (args.Contains("--cameratest"))
+        {
+            RunCameraTest();
+        }
     }
 
     public override void _UnhandledInput(InputEvent @event)
@@ -294,6 +298,11 @@ public partial class GameScreen : Control
         {
             ShowRoom(roomId);
             await Pause(0.25);
+        }
+
+        if (FocusOf(gameEvent) is int focus)
+        {
+            FocusOn(focus);
         }
 
         PlaySound(gameEvent);
@@ -778,6 +787,24 @@ public partial class GameScreen : Control
             && state.RoomOf(hero).Monsters.Any(monster => monster.Definition.Boss));
         Music.Play(bossFight ? "boss" : "dungeon");
     }
+
+    /// <summary>Who an event is about, so the camera can turn to them in a room bigger than the view.</summary>
+    private static int? FocusOf(GameEvent gameEvent) => gameEvent switch
+    {
+        TurnStarted turn => turn.HeroId,
+        HeroMoved moved => moved.HeroId,
+        MonsterMoved moved => moved.MonsterId,
+        AttackRolled attack => attack.AttackerId,
+        Damaged damaged => damaged.TargetId,
+        OdHandRolled rolled => rolled.HeroId,
+        Shoved shoved => shoved.TargetId,
+        Leaped leap => leap.HeroId,
+        HeroKeeledOver keeled => keeled.HeroId,
+        KeelRolled keel => keel.HeroId,
+        FireBurned burned => burned.EntityId,
+        MonsterSpawned spawned => spawned.MonsterId,
+        _ => null,
+    };
 
     /// <summary>The room an event happens in, so the view can cut there before playing it.</summary>
     private string? RoomOf(GameEvent gameEvent) => gameEvent switch

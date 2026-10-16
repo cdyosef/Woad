@@ -65,6 +65,7 @@ public partial class GameScreen
     /// <summary>Points the board at a room and rebuilds its tokens from the figures in it.</summary>
     private void ShowRoom(string roomId)
     {
+        bool changed = roomId != _shownRoomId;
         _shownRoomId = roomId;
         _board.ShowRoom(ShownRoom);
         foreach (TokenView token in _tokens.Values)
@@ -77,6 +78,8 @@ public partial class GameScreen
         {
             CreateToken(figure);
         }
+
+        FollowActiveHero(snap: changed);
 
         _minimap.ShowFloor(_session.State, ShownRoom.Floor, roomId);
     }
@@ -207,6 +210,27 @@ public partial class GameScreen
             token.SetHearts(healed.Hearts);
             _board.FloatText(figure.Position, $"+{healed.Amount}", Palette.Heal);
             await Pause(0.3);
+        }
+    }
+
+    /// <summary>
+    /// Points the camera at the active hero (when they're in the room on show), and lets the player pan
+    /// only as far as keeps them in view on their own turn.
+    /// </summary>
+    private void FollowActiveHero(bool snap = false)
+    {
+        Hero? hero = ActiveHero;
+        TokenView? token = hero is not null && _tokens.TryGetValue(hero.Id, out TokenView? found) ? found : null;
+        _board.Follow(token, snap);
+        _board.SetPanAnchor(token is not null && hero is { IsCompanion: false } && !_autoplay ? hero!.Position : null);
+    }
+
+    /// <summary>Points the camera at a figure, if it's on the board.</summary>
+    private void FocusOn(int entityId)
+    {
+        if (_tokens.TryGetValue(entityId, out TokenView? token))
+        {
+            _board.Follow(token);
         }
     }
 

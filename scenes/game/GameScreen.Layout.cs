@@ -441,11 +441,15 @@ public partial class GameScreen
         _hoverInfo.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
         AddChild(_hoverInfo);
 
-        _board = new BoardView { Position = BoardOrigin };
+        // The board scrolls inside a frame the size of a standard room; around a smaller room, solid rock.
+        var frame = new Control { Position = BoardOrigin, Size = new Vector2(BoardView.Pixels, BoardView.Pixels), ClipContents = true, MouseFilter = MouseFilterEnum.Pass };
+        frame.AddChild(new ColorRect { Size = frame.Size, Color = Palette.Rock, MouseFilter = MouseFilterEnum.Ignore });
+        _board = new BoardView();
         _board.TileClicked += OnTileClicked;
         _board.TileHovered += OnTileHovered;
         _board.CancelRequested += CancelSelection;
-        AddChild(_board);
+        frame.AddChild(_board);
+        AddChild(frame);
 
         AddChild(new Panel { Position = new Vector2(SideWidth, StripHeight + BoardView.Pixels), Size = new Vector2(BoardView.Pixels, StripHeight) });
         _log = RichLabel(new Vector2(SideWidth + 6, StripHeight + BoardView.Pixels + 2), new Vector2(BoardView.Pixels - 12, 33));

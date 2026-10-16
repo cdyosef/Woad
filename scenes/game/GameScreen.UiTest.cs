@@ -288,6 +288,46 @@ public partial class GameScreen
         }
     }
 
+    /// <summary>
+    /// Debug mode (<c>-- --cameratest</c>, with <see cref="DemoRun.BigHall"/>): in a hall bigger than the
+    /// view, the camera starts on Aria, a right-drag pans no further than keeps her in view, a plain
+    /// right-click still cancels, and on Bran's turn the view scrolls across the hall to him.
+    /// </summary>
+    private async void RunCameraTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            await WaitFor(this, () => _board.IsInView(aria.Position), "the view to settle on Aria");
+            Vector2 before = _board.Position;
+
+            Vector2 middle = _board.GetParent<Control>().GetGlobalRect().GetCenter();
+            await RightDrag(this, middle, middle - new Vector2(400, 400));
+            Check(_board.Position != before, "dragging with the right button pans the view");
+            Check(_board.IsInView(aria.Position), "panning stops where Aria would leave the view");
+
+            await Click(this, _search);
+            await ConfirmIfHeld();
+            Check(_board.IsInView(aria.Position), "after she acts, the view is back on Aria");
+
+            await Click(this, _endTurn);
+            await WaitUntilIdle();
+            Hero bran = ActiveHero!;
+            Check(bran.Name == "Bran", "Bran's turn comes next");
+            await WaitFor(this, () => _board.IsInView(bran.Position), "the view to scroll across the hall to Bran", maxFrames: 600);
+            Check(!_board.IsInView(aria.Position), "Aria, in the far corner, is out of view now");
+
+            GD.Print("Camera test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Camera test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
     /// <summary>Confirms a roll that Luck is holding open.</summary>
     private async Task ConfirmIfHeld()
     {
