@@ -76,6 +76,24 @@ public sealed record MonsterDefinition
     /// <summary>Can cross and stop on pits.</summary>
     public bool Flying { get; init; }
 
+    /// <summary>
+    /// Swims: shallow and deep water cost it 1 step, like floor. In deep water it's submerged: ranged
+    /// attacks, spells and blasts can't reach it, only blows from right beside it (or a trident).
+    /// </summary>
+    public bool Swimmer { get; init; }
+
+    /// <summary>A swimmer that never leaves the water (shallow or deep).</summary>
+    public bool WaterOnly { get; init; }
+
+    /// <summary>A hard shell: a shove that beats its defense flips it onto its back, and while it lies flipped (prone) its armor doesn't count.</summary>
+    public bool Shell { get; init; }
+
+    /// <summary>A hit drags the hero in a straight line to the tile beside it (a tongue or a hook).</summary>
+    public bool Pulls { get; init; }
+
+    /// <summary>Every 6 on its attack roll stuns its targets, hit or miss.</summary>
+    public bool StunOnSix { get; init; }
+
     /// <summary>Each step has an even chance of going in a random direction.</summary>
     public bool Erratic { get; init; }
 

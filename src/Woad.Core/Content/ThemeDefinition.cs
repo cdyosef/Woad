@@ -94,6 +94,9 @@ public sealed record ThemeDefinition
 
     public int Floors { get; init; } = 3;
 
+    /// <summary>A flooded dungeon: built rooms get pools, the boss arena a great pool, and streams are never chasms.</summary>
+    public bool Flooded { get; init; }
+
     public IReadOnlyList<LootDeckEntry> LootDeck { get; init; } = [];
 
     public PotDefinition? Pots { get; init; }

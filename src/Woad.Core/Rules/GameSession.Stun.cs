@@ -69,7 +69,7 @@ public sealed partial class GameSession
         bool flew = monster.Flies;
         monster.Stun.Add(powerful, stacks);
         events.Add(new Stunned(monster.Id, monster.Stun.Stacks, monster.Stun.PowerfulStacks, powerful));
-        if (!flew || monster.Flies)
+        if (!flew || monster.Flies || (monster.Definition.Swimmer && InWater(room, monster.Position)))
         {
             return;
         }

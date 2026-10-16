@@ -170,11 +170,19 @@ public sealed partial class GameSession
             .ThenBy(hero => hero.Seat)
             .FirstOrDefault();
 
-    /// <summary>Monsters can't pass through heroes, other monsters, walls or chests; only flyers cross pits.</summary>
+    /// <summary>
+    /// Monsters can't pass through heroes, other monsters, walls or chests; only flyers cross pits, and
+    /// only flyers and swimmers deep water. A water-only swimmer never leaves the water.
+    /// </summary>
     private bool CanMonsterEnter(Room room, Monster monster, GridPosition position) =>
-        room.Layout[position].IsWalkable(monster.Flies)
+        CanMonsterStand(room.Layout[position], monster)
         && (room.MonsterAt(position) is not { } other || other == monster)
         && !State.HeroesIn(room).Any(hero => hero.Position == position);
+
+    private static bool CanMonsterStand(TileKind tile, Monster monster) =>
+        monster.Definition.WaterOnly
+            ? tile is TileKind.ShallowWater or TileKind.DeepWater
+            : tile.IsWalkable(monster.Flies) || (monster.Definition.Swimmer && tile == TileKind.DeepWater);
 
     /// <summary>Steps toward the nearest tile it can attack from, stopping as soon as it can attack.</summary>
     private IReadOnlyList<GridPosition> PlanAdvance(Room room, Monster monster, IReadOnlyList<Hero> heroes)
@@ -234,7 +242,8 @@ public sealed partial class GameSession
         return goal == from ? null : search.PathTo(goal)[0];
     }
 
-    private static int StepCost(Room room, Monster monster, GridPosition tile) => room.Layout[tile].MoveCost(monster.Flies);
+    private static int StepCost(Room room, Monster monster, GridPosition tile) =>
+        monster.Definition.Swimmer && InWater(room, tile) ? 1 : room.Layout[tile].MoveCost(monster.Flies);
 
     private GridPosition? RandomStep(Room room, Monster monster, GridPosition from)
     {

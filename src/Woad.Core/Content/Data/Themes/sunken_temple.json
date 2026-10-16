@@ -1,0 +1,248 @@
+{
+  "id": "sunken_temple",
+  "name": "The Sunken Temple",
+  "floors": 3,
+  "boss": "leviathan",
+  "miniboss": "crab_king",
+
+  // Built rooms get pools, the boss arena is a great pool, and streams are never chasms.
+  "flooded": true,
+
+  "roster": [
+    { "monster": "snapper_eel", "weight": 7 },
+    { "monster": "jellyfish", "weight": 6 },
+    { "monster": "crab_knight", "weight": 6 },
+    { "monster": "bog_frog", "weight": 5 },
+    { "monster": "petty_thief", "weight": 1 },
+    { "monster": "mugger_fly", "weight": 1 },
+    { "monster": "drowned", "weight": 6, "minFloor": 2 }
+  ],
+
+  // Chests and monster drops deal from this deck; minFloor keeps the best cards for deeper floors.
+  "lootDeck": [
+    { "card": "health_potion", "copies": 4 },
+    { "card": "bomb", "copies": 2 },
+    { "card": "flame_scroll" },
+    { "card": "boomerang" },
+    { "card": "lockpicks", "copies": 2 },
+    { "card": "leather_cap" },
+    { "card": "coin_pouch", "copies": 6 },
+    { "card": "diving_helm", "copies": 2 },
+    { "card": "trident" },
+    { "card": "frost_wand", "minFloor": 2 },
+    { "card": "knights_sword", "minFloor": 2 },
+    { "card": "short_bow", "minFloor": 2 },
+    { "card": "tower_shield", "minFloor": 2 },
+    { "card": "chain_mail", "minFloor": 2 },
+    { "card": "dash_boots", "minFloor": 2 },
+    { "card": "pearl", "copies": 3, "minFloor": 2 },
+    { "card": "golden_idol", "minFloor": 3 }
+  ],
+
+  // Smashing a pot: 35% loose coins, 25% a heart, otherwise nothing.
+  "pots": { "treasure": "loose_coins", "treasureChance": 35, "heartChance": 25 },
+
+  // Legend: . floor  # wall  ~ pit  C chest  P pot  > stairs down  * exit  : rubble (2 steps)
+  //         , shallow water (2 steps)  = deep water (swim, 2 steps; only swimmers and flyers)
+  //         1-4 hero starts  M monster spawn point  % spawn point in deep water (for swimmers)
+  //         & boss (in a vault: the miniboss)
+  // Doorway tiles (middle of each edge) must stay '.'. Rooms are rotated and mirrored when used.
+  // The boss arena is built (a great pool around the Leviathan); its layout here is only a fallback.
+  "rooms": [
+    {
+      "id": "temple_steps",
+      "roles": ["arrival"],
+      "layout": [
+        "##,...,##",
+        "#P,...,P#",
+        ",,.....,,",
+        "..1...2..",
+        ".........",
+        "..3...4..",
+        ",,.....,,",
+        "#P,...,P#",
+        "##,...,##"
+      ]
+    },
+    {
+      "id": "flooded_landing",
+      "roles": ["arrival"],
+      "layout": [
+        "===...===",
+        "=,.....,=",
+        "=,.#.#.,=",
+        "..1...2..",
+        ".........",
+        "..3...4..",
+        "=,.#.#.,=",
+        "=,P...P,=",
+        "===...==="
+      ]
+    },
+    {
+      "id": "reflecting_pool",
+      "roles": ["combat"],
+      "layout": [
+        ".........",
+        ".M.....M.",
+        "..,,,,,..",
+        "..,===,..",
+        "..,=%=,..",
+        "..,===,..",
+        "..,,,,,..",
+        ".M.....M.",
+        "........."
+      ]
+    },
+    {
+      "id": "causeway",
+      "roles": ["combat"],
+      "layout": [
+        "===...===",
+        "=%=.M.=%=",
+        "===...===",
+        ",,,...,,,",
+        "...M.M...",
+        ",,,...,,,",
+        "===...===",
+        "=%=.M.=%=",
+        "===...==="
+      ]
+    },
+    {
+      "id": "pillar_baths",
+      "roles": ["combat"],
+      "layout": [
+        ".........",
+        ".#,M,M,#.",
+        ".,=====,.",
+        ".M=,%,=M.",
+        "..=,,,=..",
+        ".M=,,,=M.",
+        ".,==.==,.",
+        ".#,,.,,#.",
+        "........."
+      ]
+    },
+    {
+      "id": "sunken_hall",
+      "roles": ["combat"],
+      "layout": [
+        "#.......#",
+        ".M.#.#.M.",
+        ",,,,,,,,,",
+        ",#,=%=,#,",
+        ".,,===,,.",
+        ",#,===,#,",
+        ",,,,,,,,,",
+        ".M.#.#.M.",
+        "#.......#"
+      ]
+    },
+    {
+      "id": "coral_garden",
+      "roles": ["combat"],
+      "layout": [
+        "..:...:..",
+        ".M.....M.",
+        ":.,,,,,.:",
+        "..,=%=,..",
+        "...===...",
+        "..,===,..",
+        ":.,,,,,.:",
+        ".M..:..M.",
+        "..:...:.."
+      ]
+    },
+    {
+      "id": "pearl_vault",
+      "roles": ["treasure"],
+      "layout": [
+        "##.....##",
+        "#C.....C#",
+        ".,,===,,.",
+        ".,=,,,=,.",
+        "..=,%,=..",
+        ".,=,,,=,.",
+        ".,,=.=,,.",
+        "#P.....P#",
+        "##.....##"
+      ]
+    },
+    {
+      "id": "drowned_shrine",
+      "roles": ["treasure"],
+      "layout": [
+        ".........",
+        ".=======.",
+        ".=,,C,,=.",
+        ".=,...,=.",
+        "..,.M.,..",
+        ".=,...,=.",
+        ".=,,.,,=.",
+        ".==...==.",
+        ".P.....P."
+      ]
+    },
+    {
+      "id": "spiral_well",
+      "roles": ["stairs"],
+      "layout": [
+        ".........",
+        ".M.....M.",
+        "..=====..",
+        "..=,,,=..",
+        "...,>,...",
+        "..=,,,=..",
+        "..==,==..",
+        ".M.....M.",
+        "........."
+      ]
+    },
+    {
+      "id": "tide_stair",
+      "roles": ["stairs"],
+      "layout": [
+        "=,.....,=",
+        ",M.....M,",
+        "..,,,,,..",
+        "..,=%=,..",
+        "....>....",
+        "..,=%=,..",
+        "..,,,,,..",
+        ",M.....M,",
+        "=,.....,="
+      ]
+    },
+    {
+      "id": "crab_throne",
+      "roles": ["vault"],
+      "layout": [
+        "##.....##",
+        "#P,...,P#",
+        ",,#.C.#,,",
+        "....&....",
+        ".........",
+        "..#...#..",
+        ",,.....,,",
+        "#,.....,#",
+        "##.....##"
+      ]
+    },
+    {
+      "id": "leviathan_lair",
+      "roles": ["boss"],
+      "layout": [
+        "##.....##",
+        "#,,.*.,,#",
+        "#,.....,#",
+        "..,=,=,..",
+        "..,=&=,..",
+        "..,===,..",
+        "..,,,,,..",
+        "#.......#",
+        "##.....##"
+      ]
+    }
+  ]
+}

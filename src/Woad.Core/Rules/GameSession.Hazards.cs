@@ -183,6 +183,11 @@ public sealed partial class GameSession
             return;
         }
 
+        if (hero.Swims)
+        {
+            return;
+        }
+
         if (AttackDiceLeft > 0)
         {
             Turn.AttackDiceUsed++;
@@ -316,12 +321,25 @@ public sealed partial class GameSession
         }
 
         bool collapsed = monster.Collapsed;
-        int armor = collapsed ? 0 : monster.Definition.Armor;
+        int armor = collapsed ? 0 : ArmorOf(monster);
         int push = shove.Total + monster.Stun.AttackBonus;
         DiceRoll defense = RollDefense(monster.Id, monster.Power, collapsed ? 0 : DefenseDiceOf(monster), armor, push, canSpend: !collapsed, events);
-        if (push <= defense.Total + armor || ShoveDestination(room, hero, monster.Position, monster.Flies) is not { } to)
+        bool beaten = push > defense.Total + armor;
+
+        // A shelled monster the shove beats goes over onto its back, pushed or not.
+        if (beaten && monster.Definition.Shell && !monster.Prone && !collapsed)
         {
-            events.Add(new ShoveResisted(hero.Id, monster.Id));
+            monster.Prone = true;
+            events.Add(new Flipped(monster.Id));
+        }
+
+        if (!beaten || ShoveDestination(room, hero, monster.Position, monster.Flies) is not { } to)
+        {
+            if (!beaten || !monster.Definition.Shell)
+            {
+                events.Add(new ShoveResisted(hero.Id, monster.Id));
+            }
+
             return;
         }
 
@@ -335,7 +353,7 @@ public sealed partial class GameSession
         GridPosition from = monster.Position;
         monster.Position = to;
         events.Add(new Shoved(pusher?.Id ?? 0, monster.Id, from, to));
-        if (room.Layout[to] == TileKind.DeepWater && !monster.Flies)
+        if (room.Layout[to] == TileKind.DeepWater && !monster.Flies && !monster.Definition.Swimmer)
         {
             if (monster.FireDice > 0)
             {
@@ -349,6 +367,16 @@ public sealed partial class GameSession
             {
                 monster.Position = shore;
                 events.Add(new ClimbedOut(monster.Id, shore));
+            }
+        }
+        else if (monster.Definition.WaterOnly && !InWater(room, to))
+        {
+            // A fish out of water: a heart lost flopping back in.
+            HurtMonster(hero, room, monster, events);
+            if (room.FindMonster(monster.Id) is not null)
+            {
+                monster.Position = from;
+                events.Add(new ClimbedOut(monster.Id, from));
             }
         }
         else if (room.Layout[to] == TileKind.Pit && !monster.Flies)
@@ -394,12 +422,17 @@ public sealed partial class GameSession
         PushHero(hero, room, ally, to, events);
     }
 
-    /// <summary>Moves a hero a tile (a shove or a blast); then a pit or a trap there takes them.</summary>
-    private void PushHero(Hero? pusher, Room room, Hero ally, GridPosition to, List<GameEvent> events)
+    /// <summary>Moves a hero (a shove, a blast or a pull); then a pit or a trap there takes them.</summary>
+    /// <param name="announce">Report it as a shove (a pull reports itself).</param>
+    private void PushHero(Hero? pusher, Room room, Hero ally, GridPosition to, List<GameEvent> events, bool announce = true)
     {
         GridPosition from = ally.Position;
         ally.Position = to;
-        events.Add(new Shoved(pusher?.Id ?? 0, ally.Id, from, to));
+        if (announce)
+        {
+            events.Add(new Shoved(pusher?.Id ?? 0, ally.Id, from, to));
+        }
+
         if (room.Layout[to] == TileKind.Pit)
         {
             FallIntoPit(ally, room, to, events);

@@ -101,6 +101,12 @@ public sealed record CardDefinition
     /// <summary>Every 6 rolled attacking with it adds a stack of Stun to the target, hit or miss.</summary>
     public bool StunOnSix { get; init; }
 
+    /// <summary>Weapons: strikes submerged swimmers anywhere in its reach (others only reach them from beside them), adding this bonus against any swimmer.</summary>
+    public int SwimmerBonus { get; init; }
+
+    /// <summary>Gear: water costs the wearer 1 step a tile, and deep water needs no Rumble die to stay afloat.</summary>
+    public bool Swims { get; init; }
+
     public CardEffect? Effect { get; init; }
 
     /// <summary>Treasure only: coins go straight into the finder's purse as gold instead of taking a backpack slot.</summary>

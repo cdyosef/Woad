@@ -28,7 +28,7 @@ cooperate to survive the dungeon but compete for treasure: the richest player to
 | Death | Roguelite: keep XP, level and the gear you brought in; lose what you found this run |
 | Dungeon | Procedural, 3 floors of 6–8 rooms; a boss and the exit on floor 3 |
 | Persistence | Local JSON file per character, behind an interface that a server can replace later |
-| First theme | Inspired by *A Link to the Past*: 16-bit green-and-stone dungeon (original art; homage only) |
+| Dungeons | Chosen on the party screen. The Emerald Keep, inspired by *A Link to the Past*: 16-bit green-and-stone (original art; homage only); and the Sunken Temple: flooded sandstone and coral |
 | UI | Inspired by *Castlevania*: gothic frames, ornate gold trim, dark panels (original art) |
 | Presentation | 640×360 base resolution, 32px tiles, integer scaling, original placeholder pixel art |
 
@@ -357,6 +357,39 @@ time. Monsters stay in their own room.
 
 Monster stats and cards live in `src/Woad.Core/Content/Data/*.json`, and each dungeon theme has its own
 file under `Themes/`.
+
+### The Sunken Temple (second dungeon)
+
+Picked with the Dungeon button on the party screen. Three flooded floors of sandstone, coral and teal
+water, with its own exploring song. Hand-made rooms have pools, channels, causeways and islands; built
+rooms get pools (shallow at the rim, deep in the middle, now and then with something lurking in them),
+streams are never chasms, and the boss arena is a great pool around the Leviathan.
+
+- **Swimmers** move through shallow and deep water at 1 step a tile. One in deep water is **submerged**:
+  ranged attacks, spells and bomb blasts can't reach it, only a blow from right beside it (or a
+  Trident). It still strikes out of the water as usual.
+- **Shells:** a shove that beats a shelled monster's defense flips it onto its back (it's prone, and
+  pushed too if there's room). Until it gets up its armor doesn't count.
+- **Pulls:** a hit from a tongue or hook drags the hero in a straight line to the monster's side (a pit
+  or trap on the way takes them as a shove would).
+
+| Monster | Hearts | Move | Attack | Defense | Notes |
+| --- | --- | --- | --- | --- | --- |
+| Snapper Eel | 2 | 4 | 2d6 | 1d6 | Swimmer that never leaves the water; lurks submerged and bites anyone at the edge |
+| Jellyfish | 1 | 2 | 1d6 | none | Floats over water and pits; swimmer; every 6 on its attack stuns you |
+| Crab Knight | 3 | 2 | 1d6+1 | 1d6+2 | Shell |
+| Bog Frog | 2 | 3 | 1d6 | 1d6 | Swimmer; tongue reaches 3 in a straight line and pulls you to it |
+| Drowned | 2 | 2 | 1d6+1 | 1d6+1 | From floor 2. Swimmer; rises again once, like a Skeleton |
+| Petty Thief, Mugger Fly | | | | | Rare, as in the Keep |
+| **Miniboss: Crab King** | 6 | 2 | 2d6+1 | 1d6+2 | Shell; guards the Boss Key |
+| **Boss: Leviathan** | 10 | 4 | 2d6+1 | 1d6+1 | Never leaves the water, so it's nearly always submerged; bites at reach 2; every third turn a tail sweep hits every hero within 2 |
+
+Its loot deck adds three cards:
+
+- **Trident:** two-handed, Weapon 1, reaching 2 tiles. +1 more against swimmers, and it spears them even
+  submerged.
+- **Diving Helm:** Armor 1. Water costs 1 step a tile, and staying afloat in deep water takes no Rumble die.
+- **Pearl:** treasure worth 20 gold.
 
 ## Dungeon
 

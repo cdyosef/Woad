@@ -54,6 +54,11 @@ public sealed partial class GameSession
         }
 
         (int weaponBonus, bool stunOnSix) = WeaponFor(hero, room, monster.Position);
+        if (monster.Definition.Swimmer)
+        {
+            weaponBonus += hero.MainWeapon?.Definition.SwimmerBonus ?? 0;
+        }
+
         int bonus = command.UseWeapon && !Turn.WeaponUsed ? weaponBonus : 0;
         Turn.AttackDiceUsed += dice;
         Turn.WeaponUsed |= bonus > 0;
@@ -168,7 +173,8 @@ public sealed partial class GameSession
     }
 
     private static bool CanHeroAttack(Hero hero, Room room, Monster monster) =>
-        Targeting.CanHeroAttack(room.Layout, hero.AttackRange, hero.Position, monster.Position);
+        Targeting.CanHeroAttack(room.Layout, hero.AttackRange, hero.Position, monster.Position)
+        && (!Submerged(room, monster) || monster.Position.ChebyshevDistanceTo(hero.Position) <= 1 || (hero.MainWeapon?.Definition.SwimmerBonus ?? 0) > 0);
 
     /// <summary>
     /// Rolls a hero's attack. It waits while there's something to decide: Luck rerolls (until
@@ -221,7 +227,7 @@ public sealed partial class GameSession
         // A stunned monster is easier to hit; a collapsed heap of bones has no defense at all.
         attackTotal += monster.Stun.AttackBonus;
         bool collapsed = monster.Collapsed;
-        int armor = collapsed ? 0 : monster.Definition.Armor;
+        int armor = collapsed ? 0 : ArmorOf(monster);
         int dice = collapsed ? 0 : DefenseDiceOf(monster) + (ranged && monster.Prone ? 1 : 0);
         DiceRoll defense = RollDefense(monster.Id, monster.Power, dice, armor, attackTotal, canSpend: !collapsed, events);
 
@@ -364,9 +370,21 @@ public sealed partial class GameSession
             {
                 Mug(monster, hero, events);
             }
+
+            if (dealt > 0 && monster.Definition.Pulls && hero.IsActive)
+            {
+                Pull(room, monster, hero, events);
+            }
         }
 
         IgniteFromMonster(monster, targets, roll, events);
+        if (monster.Definition.StunOnSix && roll.Faces.Count(face => face == GameRules.PowerDieFace) is > 0 and var sixes)
+        {
+            foreach (Hero hero in targets.Where(hero => hero.IsActive))
+            {
+                Stun(hero, powerful: false, sixes, events);
+            }
+        }
     }
 
     /// <summary>

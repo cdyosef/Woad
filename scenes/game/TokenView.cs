@@ -43,6 +43,11 @@ public partial class TokenView : Node2D
     /// <summary>Shown instead of the body while collapsed (a skeleton's bone pile).</summary>
     public Texture2D? CollapsedBody { get; init; }
 
+    /// <summary>A swimming monster: in deep water it's drawn under the surface, only its top showing.</summary>
+    public bool Swimmer { get; init; }
+
+    private bool _submerged;
+
     /// <summary>Sprite size relative to a tile: smaller for slimelings, bigger for bosses.</summary>
     public float SpriteScale { get; init; } = 1;
 
@@ -107,6 +112,17 @@ public partial class TokenView : Node2D
     public (int Life, int Death)? Keeling
     {
         set { _keeling = value; QueueRedraw(); }
+    }
+
+    public override void _Process(double delta)
+    {
+        // A swimmer goes under as it moves into deep water and comes up out of it.
+        bool submerged = Swimmer && !_collapsed && GetParent() is BoardView board && board.IsDeepWater(Tile);
+        if (submerged != _submerged)
+        {
+            _submerged = submerged;
+            QueueRedraw();
+        }
     }
 
     public override void _Draw()
@@ -180,6 +196,12 @@ public partial class TokenView : Node2D
         }
 
         DrawFigure(rect, _collapsed ? new Color(0.5f, 0.5f, 0.5f) : Colors.White);
+        if (_submerged)
+        {
+            // Under the surface: the water covers all but its top, with a ripple where it breaks.
+            DrawRect(new Rect2(1, 13, BoardView.TileSize - 2, 14), Palette.DeepWater with { A = 0.8f });
+            DrawLine(new Vector2(4, 13), new Vector2(BoardView.TileSize - 4, 13), Palette.Text with { A = 0.6f }, 1);
+        }
     }
 
     private void DrawFigure(Rect2 rect, Color modulate)
