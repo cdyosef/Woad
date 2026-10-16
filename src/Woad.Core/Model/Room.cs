@@ -21,6 +21,7 @@ public sealed class Room
     private readonly Dictionary<GridPosition, int> _keys = [];
     private readonly Dictionary<GridPosition, int> _gold = [];
     private readonly List<Tombstone> _tombstones = [];
+    private readonly IReadOnlyDictionary<Direction, GridPosition> _doorTiles;
 
     internal Room(
         string id,
@@ -30,7 +31,8 @@ public sealed class Room
         GridPosition mapPosition = default,
         RoomRole role = RoomRole.Combat,
         bool trap = false,
-        IReadOnlyList<GridPosition>? arrivalTiles = null)
+        IReadOnlyList<GridPosition>? arrivalTiles = null,
+        IReadOnlyDictionary<Direction, GridPosition>? doorTiles = null)
     {
         Id = id;
         Layout = layout;
@@ -40,6 +42,7 @@ public sealed class Room
         Role = role;
         Trap = trap;
         ArrivalTiles = arrivalTiles ?? [];
+        _doorTiles = doorTiles ?? new Dictionary<Direction, GridPosition>();
     }
 
     public string Id { get; }
@@ -140,7 +143,14 @@ public sealed class Room
 
     public Tombstone? TombstoneAt(GridPosition position) => _tombstones.LastOrDefault(stone => stone.Position == position);
 
-    public IEnumerable<GridPosition> TilesOfKind(TileKind kind) => RoomGrid.AllPositions().Where(position => Layout[position] == kind);
+    public IEnumerable<GridPosition> TilesOfKind(TileKind kind) => Layout.Positions.Where(position => Layout[position] == kind);
+
+    /// <summary>Every tile in the room, row by row.</summary>
+    public IEnumerable<GridPosition> Positions => Layout.Positions;
+
+    /// <summary>The edge tile a door on <paramref name="side"/> opens onto (the middle of the edge unless the room says otherwise).</summary>
+    public GridPosition DoorTile(Direction side) => _doorTiles.TryGetValue(side, out GridPosition tile) ? tile : Layout.MiddleOf(side);
+
 
     public Monster? MonsterAt(GridPosition position) => _monsters.FirstOrDefault(monster => monster.Position == position);
 

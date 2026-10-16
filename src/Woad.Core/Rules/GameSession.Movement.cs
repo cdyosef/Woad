@@ -39,7 +39,7 @@ public sealed partial class GameSession
         }
 
         return ActiveRoom.Doors
-            .Where(door => hero.Position == door.Key.DoorTile()
+            .Where(door => hero.Position == ActiveRoom.DoorTile(door.Key)
                            && ActiveRoom.PassageOn(door.Key) is not { IsOpen: false }
                            && DoorLanding(State.Rooms[door.Value], door.Key) is not null)
             .Select(door => door.Key)
@@ -52,7 +52,7 @@ public sealed partial class GameSession
     /// </summary>
     private GridPosition? DoorLanding(Room target, Direction side)
     {
-        GridPosition doorway = side.Opposite().DoorTile();
+        GridPosition doorway = target.DoorTile(side.Opposite());
         PathSearch search = PathSearch.Run(doorway, tile => target.Layout[tile].IsWalkable());
         return search.Distances
             .OrderBy(entry => entry.Value)
@@ -172,7 +172,7 @@ public sealed partial class GameSession
                 : $"The door is locked: use a key, or pick the lock with Od Hand ({locked.Difficulty}+).";
         }
 
-        if (hero.Position != command.Door.DoorTile())
+        if (hero.Position != room.DoorTile(command.Door))
         {
             return "Stand in the doorway first.";
         }

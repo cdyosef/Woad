@@ -82,7 +82,7 @@ public static class CompanionBot
 
         Plan plan = MakePlan(session, hero, room, fighting);
         bool canStep = turn.MovementPoints > 0;
-        if (plan.Door is { } side && hero.Position == side.DoorTile() && canStep && session.GetUsableDoors().Contains(side))
+        if (plan.Door is { } side && hero.Position == room.DoorTile(side) && canStep && session.GetUsableDoors().Contains(side))
         {
             return new GoThroughDoor(hero.Id, side);
         }
@@ -163,7 +163,7 @@ public static class CompanionBot
         Room leaderRoom = state.RoomOf(leader);
         if (leaderRoom.Floor == room.Floor)
         {
-            return RouteTo(state, room, next => next.Id == leaderRoom.Id) is { } door ? new Plan { Door = door, Tile = door.DoorTile() } : Plan.Stay;
+            return RouteTo(state, room, next => next.Id == leaderRoom.Id) is { } door ? new Plan { Door = door, Tile = room.DoorTile(door) } : Plan.Stay;
         }
 
         // The leader is on another floor: head for the stairs down, or back up.
@@ -174,7 +174,7 @@ public static class CompanionBot
         }
 
         return RouteTo(state, room, next => next.TilesOfKind(way).Any()) is { } toStairs
-            ? new Plan { Door = toStairs, Tile = toStairs.DoorTile() }
+            ? new Plan { Door = toStairs, Tile = room.DoorTile(toStairs) }
             : Plan.Stay;
     }
 
@@ -183,7 +183,7 @@ public static class CompanionBot
     {
         PathSearch search = PathSearch.Run(hero.Position, tile => SimpleBot.Walkable(room, tile));
         return monster.Position.SurroundingTiles()
-            .Where(tile => tile.IsInRoom && search.CanReach(tile) && Targeting.CanHeroAttack(room.Layout, 1, tile, monster.Position))
+            .Where(tile => room.Layout.Contains(tile) && search.CanReach(tile) && Targeting.CanHeroAttack(room.Layout, 1, tile, monster.Position))
             .OrderBy(tile => search.Distances[tile])
             .Select(tile => (GridPosition?)tile)
             .FirstOrDefault();
@@ -232,13 +232,13 @@ public static class CompanionBot
     private static GameCommand? LeaveTheWay(GameSession session, Hero hero, Room room, Plan plan)
     {
         // Beside a locked gate matters even mid-fight: the monsters may be beyond it.
-        bool BesideGate(GridPosition at) => at.OrthogonalNeighbors().Any(next => next.IsInRoom && room.Layout[next] == TileKind.Gate);
+        bool BesideGate(GridPosition at) => at.OrthogonalNeighbors().Any(next => room.Layout.Contains(next) && room.Layout[next] == TileKind.Gate);
         bool InTheWay(GridPosition at) =>
             room.Layout[at] is TileKind.StairsDown or TileKind.StairsUp or TileKind.Exit
-            || room.Doors.Keys.Any(side => side.DoorTile() == at)
+            || room.Doors.Keys.Any(side => room.DoorTile(side) == at)
             || room.HasLootAt(at)
             || BesideGate(at)
-            || at.OrthogonalNeighbors().Any(next => next.IsInRoom && room.Layout[next] == TileKind.Chest && !room.IsChestOpened(next));
+            || at.OrthogonalNeighbors().Any(next => room.Layout.Contains(next) && room.Layout[next] == TileKind.Chest && !room.IsChestOpened(next));
         if (plan.Door is not null || plan.Stairs || hero.Order == CompanionOrder.Hold || !InTheWay(hero.Position)
             || (room.Monsters.Count > 0 && !BesideGate(hero.Position)))
         {

@@ -23,6 +23,7 @@ public sealed record HeroSetup(
 /// One room of the dungeon and the rooms its doors lead to. <paramref name="MapPosition"/> is
 /// its cell on the floor's map. In a <paramref name="Trap"/> room the doors stay shut while
 /// monsters remain. <paramref name="Features"/> adds traps, locked chests and hidden stashes.
+/// <paramref name="DoorTiles"/> places doors along their edges (by default, the middle of each).
 /// </summary>
 public sealed record RoomSetup(
     string Id,
@@ -32,7 +33,8 @@ public sealed record RoomSetup(
     GridPosition MapPosition = default,
     RoomRole Role = RoomRole.Combat,
     bool Trap = false,
-    RoomFeatures? Features = null);
+    RoomFeatures? Features = null,
+    IReadOnlyDictionary<Direction, GridPosition>? DoorTiles = null);
 
 public sealed record TrapSetup(TrapKind Kind, int Difficulty);
 

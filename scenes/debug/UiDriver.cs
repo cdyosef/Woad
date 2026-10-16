@@ -47,6 +47,26 @@ public static class UiDriver
         }
     }
 
+    /// <summary>Holds the right mouse button at <paramref name="from"/>, drags to <paramref name="to"/> in a few steps and lets go.</summary>
+    public static async Task RightDrag(Node context, Vector2 from, Vector2 to)
+    {
+        Viewport viewport = context.GetViewport();
+        viewport.PushInput(new InputEventMouseMotion { Position = from, GlobalPosition = from }, inLocalCoords: true);
+        viewport.PushInput(new InputEventMouseButton { ButtonIndex = MouseButton.Right, Pressed = true, Position = from, GlobalPosition = from }, inLocalCoords: true);
+        await NextFrame(context);
+        Vector2 at = from;
+        for (int step = 1; step <= 8; step++)
+        {
+            Vector2 next = from.Lerp(to, step / 8f);
+            viewport.PushInput(new InputEventMouseMotion { Position = next, GlobalPosition = next, Relative = next - at, ButtonMask = MouseButtonMask.Right }, inLocalCoords: true);
+            at = next;
+            await NextFrame(context);
+        }
+
+        viewport.PushInput(new InputEventMouseButton { ButtonIndex = MouseButton.Right, Pressed = false, Position = to, GlobalPosition = to }, inLocalCoords: true);
+        await NextFrame(context);
+    }
+
     /// <summary>Types text into whichever control has keyboard focus.</summary>
     public static async Task Type(Node context, string text)
     {

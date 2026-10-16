@@ -31,6 +31,7 @@ public static class Palette
     public static readonly Color FloorDark = new("375f4e");
     public static readonly Color Grout = new("2c4d40");
     public static readonly Color Wall = new("1f2b27");
+    public static readonly Color Rock = new("141a18");
     public static readonly Color WallTop = new("4d6158");
     public static readonly Color Pit = new("05070a");
     public static readonly Color ShallowWater = new("4a8ab8", 0.7f);

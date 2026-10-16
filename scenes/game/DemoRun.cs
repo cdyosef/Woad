@@ -139,6 +139,26 @@ public static class DemoRun
         };
     }
 
+    /// <summary>
+    /// For --cameratest: a 15x13 hall, bigger than the view, with Aria in one corner and Bran in the
+    /// opposite one, so the view has to scroll between them.
+    /// </summary>
+    public static RunSetup BigHall(ulong seed)
+    {
+        ContentCatalog content = ContentCatalog.LoadDefault();
+        string[] rows = Enumerable.Repeat(new string('.', 15), 13).ToArray();
+        rows[1] = ".1" + new string('.', 13);
+        rows[11] = new string('.', 13) + "2.";
+        return new RunSetup
+        {
+            Seed = seed,
+            ThemeId = "emerald_keep",
+            Heroes = DebugHeroes,
+            Rooms = [new RoomSetup("hall", RoomTemplate.Parse(string.Join('\n', rows), content))],
+            StartRoomId = "hall",
+        };
+    }
+
     /// <summary>The debug party in the single hand-made room, for --uitest.</summary>
     public static RunSetup SingleRoom(ulong seed) => new()
     {

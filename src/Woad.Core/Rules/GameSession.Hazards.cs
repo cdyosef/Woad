@@ -84,7 +84,7 @@ public sealed partial class GameSession
             for (int distance = 1; distance <= GameRules.MaxLeap; distance++)
             {
                 var tile = new GridPosition(hero.Position.X + dx * distance, hero.Position.Y + dy * distance);
-                if (!tile.IsInRoom || BlocksLeap(room.Layout[tile]))
+                if (!room.Layout.Contains(tile) || BlocksLeap(room.Layout[tile]))
                 {
                     break;
                 }
@@ -245,9 +245,16 @@ public sealed partial class GameSession
         events.Add(new ClimbedOut(hero.Id, hero.Position));
     }
 
+    /// <summary>The tile of the room below that lies under <paramref name="hole"/>: as far across it, since the rooms may differ in size.</summary>
+    private static GridPosition Beneath(Room from, GridPosition hole, Room below)
+    {
+        static int Scale(int at, int fromSize, int toSize) => fromSize <= 1 ? 0 : (int)Math.Round(at * (toSize - 1) / (double)(fromSize - 1));
+        return new GridPosition(Scale(hole.X, from.Layout.Width, below.Layout.Width), Scale(hole.Y, from.Layout.Height, below.Layout.Height));
+    }
+
     /// <summary>The free tile nearest <paramref name="near"/> (it first) to land or climb out on: walkable, empty and without a trap.</summary>
     private GridPosition? LandingNear(Room room, GridPosition near) =>
-        RoomGrid.AllPositions()
+        room.Positions
             .Where(tile => room.Layout[tile].IsWalkable() && !IsOccupied(room, tile) && room.TrapAt(tile) is null)
             .OrderBy(tile => tile.ManhattanDistanceTo(near))
             .ThenBy(tile => tile.Y)
@@ -263,7 +270,7 @@ public sealed partial class GameSession
     private GridPosition? ShoveDestination(Room room, Hero hero, GridPosition at, bool flying)
     {
         var to = new GridPosition(at.X + Math.Sign(at.X - hero.Position.X), at.Y + Math.Sign(at.Y - hero.Position.Y));
-        if (!to.IsInRoom || IsOccupied(room, to))
+        if (!room.Layout.Contains(to) || IsOccupied(room, to))
         {
             return null;
         }
@@ -377,7 +384,7 @@ public sealed partial class GameSession
             events.Add(new FellIntoPit(monster.Id, room.Id, hole, Bottomless: below is null));
         }
 
-        if (below is null || LandingNear(below, hole) is not { } landing)
+        if (below is null || LandingNear(below, Beneath(room, hole, below)) is not { } landing)
         {
             monster.Position = edge;
             monster.Hearts = 0;

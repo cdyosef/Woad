@@ -300,7 +300,8 @@ public sealed partial class GameSession
                 roomSetup.MapPosition,
                 roomSetup.Role,
                 roomSetup.Trap,
-                roomSetup.Template.HeroStarts.OrderBy(start => start.Key).Select(start => start.Value).ToList());
+                roomSetup.Template.HeroStarts.OrderBy(start => start.Key).Select(start => start.Value).ToList(),
+                roomSetup.DoorTiles);
             foreach (MonsterSpawn spawn in roomSetup.Template.Monsters)
             {
                 room.AddMonster(CreateMonster(state.NextId(), spawn.Monster, spawn.Position, GameRules.PartyStrength(setup.Heroes)));
@@ -382,7 +383,7 @@ public sealed partial class GameSession
         {
             foreach ((Direction side, string targetId) in room.Doors)
             {
-                if (!room.Layout[side.DoorTile()].IsWalkable())
+                if (!room.Layout[room.DoorTile(side)].IsWalkable())
                 {
                     throw new ArgumentException($"Room '{room.Id}' has a {side} door but its doorway isn't floor.");
                 }
@@ -488,8 +489,8 @@ public sealed partial class GameSession
 
     private static GridPosition FreeTileNearCenter(GameState state, Room room)
     {
-        var center = new GridPosition(RoomGrid.Center, RoomGrid.Center);
-        return RoomGrid.AllPositions()
+        GridPosition center = room.Layout.Center;
+        return room.Positions
             .Where(position => room.Layout[position].IsWalkable() && !IsOccupied(state, room, position))
             .OrderBy(position => position.ManhattanDistanceTo(center))
             .ThenBy(position => position.Y)

@@ -1,6 +1,6 @@
 namespace Woad.Core.Grid;
 
-/// <summary>The four sides of a room. Doors sit in the middle of each side.</summary>
+/// <summary>The four sides of a room. A door can sit anywhere along its side (see Room.DoorTile).</summary>
 public enum Direction
 {
     North,
@@ -20,7 +20,7 @@ public static class DirectionExtensions
         _ => throw new ArgumentOutOfRangeException(nameof(direction)),
     };
 
-    /// <summary>The edge tile a door on this side of a room opens onto.</summary>
+    /// <summary>The middle of this side in a standard 9x9 room, where its door sits by default (rooms say where theirs are).</summary>
     public static GridPosition DoorTile(this Direction direction) => direction switch
     {
         Direction.North => new GridPosition(RoomGrid.Center, 0),

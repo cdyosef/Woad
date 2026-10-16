@@ -11,9 +11,9 @@ public class GridPositionTests
     [InlineData(-1, 0, false)]
     [InlineData(0, 9, false)]
     [InlineData(9, 4, false)]
-    public void KnowsWhetherItIsInsideTheRoom(int x, int y, bool expected)
+    public void AStandardRoomKnowsWhichTilesAreInside(int x, int y, bool expected)
     {
-        Assert.Equal(expected, new GridPosition(x, y).IsInRoom);
+        Assert.Equal(expected, RoomLayout.Empty.Contains(new GridPosition(x, y)));
     }
 
     [Fact]

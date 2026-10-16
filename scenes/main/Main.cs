@@ -11,7 +11,7 @@ namespace Woad.Scenes;
 
 /// <summary>
 /// The app's root: owns the content and the character store, swaps between screens, and saves
-/// each character's results when a run ends. Debug flags: <c>--uitest</c>, <c>--floortest</c>, <c>--hazardtest</c>, <c>--keeltest</c>, <c>--firetest</c> and
+/// each character's results when a run ends. Debug flags: <c>--uitest</c>, <c>--floortest</c>, <c>--hazardtest</c>, <c>--keeltest</c>, <c>--firetest</c>, <c>--cameratest</c> and
 /// <c>--autoplay</c> jump straight into a run with the debug party; <c>--menutest</c> and
 /// <c>--resultstest</c> click through the menus using a throwaway save folder.
 /// </summary>
@@ -63,6 +63,10 @@ public partial class Main : Control
         else if (args.Contains("--firetest"))
         {
             Show(new GameScreen { Setup = DemoRun.Fire(seed), Content = _content });
+        }
+        else if (args.Contains("--cameratest"))
+        {
+            Show(new GameScreen { Setup = DemoRun.BigHall(seed), Content = _content });
         }
         else if (args.Contains("--autoplay"))
         {

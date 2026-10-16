@@ -25,17 +25,11 @@ public static partial class DungeonGenerator
     /// <summary>Percent chance a pair of neighboring rooms gets a breach in their shared edge.</summary>
     private const int BreachChance = 15;
 
-    /// <summary>Rows and columns a dividing line may run along: clear of the doorways in the middle of each edge.</summary>
-    private static readonly int[] LineIndexes = [2, 3, 5, 6];
-
-    /// <summary>The rows or columns one off each edge that a breach may open, skipping the doorway in the middle.</summary>
-    private static readonly int[] BreachOffsets = [1, 2, 3, 5, 6, 7];
-
-    /// <summary>A full row (or, if vertical, column) across the room.</summary>
-    private sealed record Line(bool Vertical, int Index)
+    /// <summary>A full row (or, if vertical, column) across the room, <paramref name="Length"/> tiles long.</summary>
+    private sealed record Line(bool Vertical, int Index, int Length)
     {
         public IEnumerable<GridPosition> Tiles =>
-            Enumerable.Range(0, RoomGrid.Size).Select(i => Vertical ? new GridPosition(Index, i) : new GridPosition(i, Index));
+            Enumerable.Range(0, Length).Select(i => Vertical ? new GridPosition(Index, i) : new GridPosition(i, Index));
 
         /// <summary>-1 or +1 for the two sides of the line, 0 on it.</summary>
         public int SideOf(GridPosition tile) => Math.Sign((Vertical ? tile.X : tile.Y) - Index);
@@ -45,9 +39,20 @@ public static partial class DungeonGenerator
             Vertical ? new GridPosition(onLine.X + side, onLine.Y) : new GridPosition(onLine.X, onLine.Y + side);
     }
 
-    private static List<Line> ShuffledLines(IRandomSource random)
+    /// <summary>
+    /// Rows and columns a dividing line may run along: two or more in from each edge, and clear of every
+    /// doorway (and the tile inside it).
+    /// </summary>
+    private static List<Line> ShuffledLines(RoomTemplate template, IReadOnlyDictionary<Direction, GridPosition> doorTiles, IRandomSource random)
     {
-        List<Line> lines = [.. LineIndexes.SelectMany(index => new[] { new Line(true, index), new Line(false, index) })];
+        RoomLayout layout = template.Layout;
+        HashSet<GridPosition> doorways = [.. DoorAreas(template, doorTiles)];
+        List<Line> lines =
+        [
+            .. Enumerable.Range(2, Math.Max(0, layout.Width - 4)).Select(x => new Line(true, x, layout.Height)),
+            .. Enumerable.Range(2, Math.Max(0, layout.Height - 4)).Select(y => new Line(false, y, layout.Width)),
+        ];
+        lines.RemoveAll(line => line.Tiles.Any(doorways.Contains));
         random.Shuffle(lines);
         return lines;
     }
@@ -72,7 +77,7 @@ public static partial class DungeonGenerator
     private static bool Connected(RoomTemplate template, RoomFeatures? features = null)
     {
         bool Passable(GridPosition tile) => template.Layout[tile].IsWalkable() && features?.Traps.ContainsKey(tile) != true;
-        List<GridPosition> open = RoomGrid.AllPositions().Where(Passable).ToList();
+        List<GridPosition> open = template.Layout.Positions.Where(Passable).ToList();
         if (open.Count == 0)
         {
             return true;
@@ -82,7 +87,7 @@ public static partial class DungeonGenerator
         // (a trap walled into a corner would hide whatever stands on it for good).
         IReadOnlyDictionary<GridPosition, int> reached = PathSearch.Run(open[0], Passable).Distances;
         return reached.Count == open.Count
-               && RoomGrid.AllPositions()
+               && template.Layout.Positions
                    .Where(tile => template.Layout[tile].IsWalkable() && !Passable(tile))
                    .All(trap => trap.OrthogonalNeighbors().Any(reached.ContainsKey));
     }
@@ -94,14 +99,14 @@ public static partial class DungeonGenerator
     /// someone could drop into from above (<paramref name="dropsIn"/>), lest they land in the closed-off part.
     /// </summary>
     private static (RoomTemplate Template, RoomFeatures Features) Divide(
-        RoomTemplate template, RoomFeatures features, IReadOnlyCollection<Direction> doors, int floor, bool dropsIn, IRandomSource random)
+        RoomTemplate template, RoomFeatures features, IReadOnlyDictionary<Direction, GridPosition> doorTiles, int floor, bool dropsIn, IRandomSource random)
     {
         HashSet<GridPosition> fixedTiles = FixedTiles(template, features);
-        IEnumerable<GridPosition> needed = doors.Select(side => side.DoorTile())
+        IEnumerable<GridPosition> needed = doorTiles.Values
             .Concat(template.TilesOf(TileKind.StairsDown)).Concat(template.TilesOf(TileKind.StairsUp)).Concat(template.TilesOf(TileKind.Exit))
             .Concat(template.Monsters.Select(spawn => spawn.Position));
 
-        foreach (Line line in ShuffledLines(random))
+        foreach (Line line in ShuffledLines(template, doorTiles, random))
         {
             if (line.Tiles.Any(fixedTiles.Contains))
             {
@@ -118,7 +123,8 @@ public static partial class DungeonGenerator
             }
 
             GridPosition gate = random.Pick(spots);
-            RoomTemplate walled = line.Tiles.Aggregate(template, (room, tile) => room.WithTile(tile, tile == gate ? TileKind.Floor : TileKind.Wall));
+            RoomTemplate walled = line.Tiles.Where(tile => template.Layout[tile] != TileKind.Rock)
+                .Aggregate(template, (room, tile) => room.WithTile(tile, tile == gate ? TileKind.Floor : TileKind.Wall));
             if (!Connected(walled, features))
             {
                 continue;
@@ -161,12 +167,12 @@ public static partial class DungeonGenerator
     /// Sometimes a chasm (pits, only where they lead somewhere or on the last floor) or a stream of deep
     /// water across the room, with one crossing: a bridge of floor, or a shallow ford.
     /// </summary>
-    private static RoomTemplate Channel(RoomTemplate template, RoomFeatures features, bool pits, IRandomSource random)
+    private static RoomTemplate Channel(RoomTemplate template, RoomFeatures features, IReadOnlyDictionary<Direction, GridPosition> doorTiles, bool pits, IRandomSource random)
     {
         HashSet<GridPosition> fixedTiles = FixedTiles(template, features);
         TileKind gap = pits ? TileKind.Pit : TileKind.DeepWater;
         TileKind crossing = pits ? TileKind.Floor : TileKind.ShallowWater;
-        foreach (Line line in ShuffledLines(random))
+        foreach (Line line in ShuffledLines(template, doorTiles, random))
         {
             if (line.Tiles.Any(fixedTiles.Contains))
             {
@@ -216,13 +222,22 @@ public static partial class DungeonGenerator
                     continue;
                 }
 
-                List<int> offsets = [.. BreachOffsets];
+                // Along the shared edge, off the corners and the doorways; the tile facing it on the other side
+                // sits as far along that room's edge (the rooms may differ in size).
+                RoomLayout mine = room.Template.Layout, theirs = neighbor.Template.Layout;
+                HashSet<GridPosition> doorways = [.. DoorAreas(room.Template, room.DoorTiles ?? new Dictionary<Direction, GridPosition>()),
+                    .. DoorAreas(neighbor.Template, neighbor.DoorTiles ?? new Dictionary<Direction, GridPosition>())];
+                List<int> offsets = [.. Enumerable.Range(1, Math.Max(0, mine.EdgeLength(side) - 2))];
                 random.Shuffle(offsets);
                 foreach (int offset in offsets)
                 {
-                    GridPosition here = side == Direction.East ? new GridPosition(RoomGrid.Size - 1, offset) : new GridPosition(offset, RoomGrid.Size - 1);
-                    GridPosition there = side == Direction.East ? new GridPosition(0, offset) : new GridPosition(offset, 0);
-                    if (FixedTiles(room.Template, room.Features ?? RoomFeatures.None).Contains(here)
+                    GridPosition here = mine.EdgeTile(side, offset);
+                    int facing = Math.Clamp((int)Math.Round(offset * (theirs.EdgeLength(side) - 1) / (double)(mine.EdgeLength(side) - 1)), 1, theirs.EdgeLength(side) - 2);
+                    GridPosition there = theirs.EdgeTile(side.Opposite(), facing);
+                    if (doorways.Contains(here) || doorways.Contains(there)
+                        || mine[here] != TileKind.Floor || theirs[there] != TileKind.Floor
+                        || !mine[here.Step(side.Opposite())].IsWalkable() || !theirs[there.Step(side)].IsWalkable()
+                        || FixedTiles(room.Template, room.Features ?? RoomFeatures.None).Contains(here)
                         || FixedTiles(neighbor.Template, neighbor.Features ?? RoomFeatures.None).Contains(there)
                         || !Connected(walled[room.Id].WithTile(here, TileKind.Wall), room.Features)
                         || !Connected(walled[neighbor.Id].WithTile(there, TileKind.Wall), neighbor.Features))

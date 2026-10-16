@@ -244,7 +244,7 @@ public partial class GameScreen
 
     /// <summary>The door whose doorway is this tile, unless it's a secret door nobody has found.</summary>
     private static Direction? DoorAt(Room room, GridPosition tile) =>
-        room.Doors.Keys.Where(side => side.DoorTile() == tile && room.PassageOn(side) is not { IsHidden: true })
+        room.Doors.Keys.Where(side => room.DoorTile(side) == tile && room.PassageOn(side) is not { IsHidden: true })
             .Select(side => (Direction?)side).FirstOrDefault();
 
     private void OnTileHovered(GridPosition? tile)
@@ -256,7 +256,7 @@ public partial class GameScreen
             && ActiveHero?.FindCard(cardId)?.Card.Definition.Effect is { AreaRadius: > 0 } effect
             && _session.GetCardTargets(cardId).Contains(target))
         {
-            _board.SetBlast(RoomGrid.AllPositions().Where(position => position.ChebyshevDistanceTo(target) <= effect.AreaRadius));
+            _board.SetBlast(ShownRoom.Positions.Where(position => position.ChebyshevDistanceTo(target) <= effect.AreaRadius));
         }
         else
         {

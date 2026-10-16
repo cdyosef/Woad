@@ -39,5 +39,5 @@ public static class Targeting
 
     /// <summary>Card targets must be within range and in sight. Range 0 means your own tile.</summary>
     public static bool InRangeAndSight(RoomLayout layout, GridPosition from, GridPosition to, int range) =>
-        to.IsInRoom && from.ManhattanDistanceTo(to) <= range && LineOfSight.IsClear(layout, from, to);
+        layout.Contains(to) && from.ManhattanDistanceTo(to) <= range && LineOfSight.IsClear(layout, from, to);
 }

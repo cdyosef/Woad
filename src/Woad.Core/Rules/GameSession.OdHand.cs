@@ -229,7 +229,7 @@ public sealed partial class GameSession
     }
 
     private static Passage? DoorAt(Room room, GridPosition tile) =>
-        room.Passages.Where(door => door.Key.DoorTile() == tile && !door.Value.IsHidden).Select(door => door.Value).FirstOrDefault();
+        room.Passages.Where(door => room.DoorTile(door.Key) == tile && !door.Value.IsHidden).Select(door => door.Value).FirstOrDefault();
 
     /// <summary>Rolls the chosen dice (plus tools and banked Power Dice); it resolves once nothing is left to decide.</summary>
     private void RollOdHand(OdHandCommand command, int dice, OdHandCheck check, List<GameEvent> events)
@@ -338,7 +338,7 @@ public sealed partial class GameSession
             if (!passage.IsHidden && passage.Trap is { Revealed: false } darts && darts.Difficulty <= total)
             {
                 darts.Revealed = true;
-                traps.Add(side.DoorTile());
+                traps.Add(room.DoorTile(side));
             }
         }
 

@@ -1,3 +1,4 @@
+using Woad.Core.Dungeon;
 using Woad.Core.Grid;
 using Woad.Core.Tests.Support;
 
@@ -44,10 +45,25 @@ public class RoomTemplateTests
     }
 
     [Fact]
-    public void RejectsTheWrongSize()
+    public void AcceptsAnyRectangleButNotRaggedOrOversizedOnes()
     {
-        Assert.Throws<FormatException>(() => TestRun.Room(string.Join('\n', Enumerable.Repeat(".........", 8))));
-        Assert.Throws<FormatException>(() => TestRun.Room(string.Join('\n', Enumerable.Repeat("........", 9))));
+        RoomTemplate wide = TestRun.Room(string.Join('\n', Enumerable.Repeat(new string('.', 13), 7)));
+        Assert.Equal((13, 7), (wide.Layout.Width, wide.Layout.Height));
+
+        Assert.Throws<FormatException>(() => TestRun.Room(".........\n........"));
+        Assert.Throws<FormatException>(() => TestRun.Room(string.Join('\n', Enumerable.Repeat(new string('.', RoomGrid.MaxSize + 1), 3))));
+    }
+
+    [Fact]
+    public void TurningANonSquareRoomSwapsItsWidthAndHeight()
+    {
+        RoomTemplate hall = TestRun.Room("#.....\n......\n......");
+
+        RoomTemplate turned = hall.Transformed(1, mirrored: false);
+
+        Assert.Equal((3, 6), (turned.Layout.Width, turned.Layout.Height));
+        Assert.Equal(TileKind.Wall, turned.Layout[new GridPosition(2, 0)]);
+        Assert.Equal(TileKind.Floor, turned.Layout[new GridPosition(0, 0)]);
     }
 
     [Fact]
