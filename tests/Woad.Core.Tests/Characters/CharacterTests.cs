@@ -80,6 +80,7 @@ public class CharacterTests
     public void CharactersBecomeHeroesWithTheirStatsAndGear()
     {
         Character character = NewCharacter(allocation: new StatAllocation { Hearts = 2, Luck = 1 });
+        character.ChangeAppearance(new Appearance("dwarf", Hair: "white"));
         var setup = new RunSetup
         {
             Seed = 1,
@@ -93,6 +94,7 @@ public class CharacterTests
 
         Assert.Equal(character.Id, hero.CharacterId);
         Assert.Equal("ember", hero.Portrait);
+        Assert.Equal(character.Appearance, hero.Appearance);
         Assert.Equal(6, hero.MaxHearts);
         Assert.Equal(1, hero.LuckRemaining);
         Assert.Equal("wooden_sword", hero.Equipment[EquipSlot.MainHand].Definition.Id);

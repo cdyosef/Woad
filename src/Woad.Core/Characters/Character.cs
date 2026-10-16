@@ -30,7 +30,8 @@ public sealed class Character
         int gold,
         int runsPlayed,
         int wins,
-        bool isCompanion = false)
+        bool isCompanion = false,
+        Appearance? appearance = null)
     {
         Id = id;
         Name = name;
@@ -46,6 +47,7 @@ public sealed class Character
         RunsPlayed = runsPlayed;
         Wins = wins;
         IsCompanion = isCompanion;
+        Appearance = appearance ?? Appearance.Default;
     }
 
     public Guid Id { get; }
@@ -57,6 +59,9 @@ public sealed class Character
 
     /// <summary>Which portrait the player picked; the game maps it to art.</summary>
     public string Portrait { get; private set; }
+
+    /// <summary>The character's look and colors; cosmetic, and can be changed any time.</summary>
+    public Appearance Appearance { get; private set; }
 
     public DateTimeOffset CreatedUtc { get; }
 
@@ -87,7 +92,8 @@ public sealed class Character
     /// <param name="isCompanion">Make a companion instead of a player's hero; it can't be changed later.</param>
     /// <exception cref="ArgumentException">The name, portrait or allocation isn't allowed.</exception>
     public static Character Create(
-        string name, string portrait, StatAllocation allocation, ContentCatalog content, DateTimeOffset createdUtc, bool isCompanion = false)
+        string name, string portrait, StatAllocation allocation, ContentCatalog content, DateTimeOffset createdUtc, bool isCompanion = false,
+        Appearance? appearance = null)
     {
         string trimmed = name.Trim();
         if (CheckName(trimmed) is { } nameError)
@@ -107,7 +113,7 @@ public sealed class Character
 
         var character = new Character(
             Guid.NewGuid(), trimmed, portrait, createdUtc, xp: 0, allocation,
-            PointBuy.CreationPoints - PointBuy.Cost(allocation), [], [], [], gold: 0, runsPlayed: 0, wins: 0, isCompanion);
+            PointBuy.CreationPoints - PointBuy.Cost(allocation), [], [], [], gold: 0, runsPlayed: 0, wins: 0, isCompanion, appearance);
 
         foreach (string cardId in GameRules.StarterKit)
         {
@@ -158,6 +164,8 @@ public sealed class Character
 
         Portrait = portrait;
     }
+
+    public void ChangeAppearance(Appearance appearance) => Appearance = appearance;
 
     /// <summary>Spends unspent points. Points already spent can't be taken back.</summary>
     public void Allocate(StatAllocation allocation)
@@ -234,7 +242,7 @@ public sealed class Character
 
     /// <summary>The hero this character plays as in a run, carrying everything they own.</summary>
     /// <param name="ownerSeat">For a companion, the seat of the player it belongs to.</param>
-    public HeroSetup ToHeroSetup(int? ownerSeat = null) => new(Name, BaseStats, [.. _equipped, .. _belt, .. _backpack], Id, Portrait, ownerSeat);
+    public HeroSetup ToHeroSetup(int? ownerSeat = null) => new(Name, BaseStats, [.. _equipped, .. _belt, .. _backpack], Id, Portrait, ownerSeat, Appearance);
 
     /// <summary>Puts a card where a new hero would: an empty matching slot, then the belt, then the backpack.</summary>
     private void Place(CardDefinition card, ContentCatalog content)

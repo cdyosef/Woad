@@ -20,6 +20,8 @@ public sealed record HeroRunResult
 
     public required string Portrait { get; init; }
 
+    public Appearance Appearance { get; init; } = Appearance.Default;
+
     public required HeroStatus Status { get; init; }
 
     public required bool Won { get; init; }
@@ -64,6 +66,7 @@ public static class RunResults
             Name = hero.Name,
             Seat = hero.Seat,
             Portrait = hero.Portrait,
+            Appearance = hero.Appearance,
             Status = hero.Status,
             Won = state.WinnerIds.Contains(hero.Id),
             Kills = hero.Kills,

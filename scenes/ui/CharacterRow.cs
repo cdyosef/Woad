@@ -31,7 +31,7 @@ public partial class CharacterRow : Button
             return;
         }
 
-        PortraitView.DrawCrest(this, new Rect2(7, 5, 24, 29), Portraits.Get(Character.Portrait));
+        Looks.Draw(this, new Rect2(4, 4, 32, 32), Looks.Resolve(Character.Appearance, Character.Portrait));
         Font font = GetThemeDefaultFont();
         DrawString(font, new Vector2(40, 17), Character.Name, fontSize: 12, modulate: ButtonPressed ? Palette.TrimBright : Palette.Text);
         if (Character.IsCompanion)

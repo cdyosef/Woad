@@ -5,8 +5,8 @@ using Woad.Scenes.Ui;
 namespace Woad.Scenes.Game;
 
 /// <summary>
-/// A hero or monster standing on the board: its sprite (a hero's tunic tinted with their seat
-/// color) on a small shadow, with heart pips underneath. Without art it falls back to a circle
+/// A hero or monster standing on the board: its sprite (a hero in their chosen look and colors,
+/// on a ring of their seat color) on a small shadow, with heart pips underneath. Without art it falls back to a circle
 /// (hero) or square (monster) with a letter.
 /// </summary>
 public partial class TokenView : Node2D
@@ -37,8 +37,8 @@ public partial class TokenView : Node2D
     /// <summary>The sprite; null falls back to a shape.</summary>
     public Texture2D? Body { get; init; }
 
-    /// <summary>Drawn over the body, tinted with <see cref="Fill"/> (heroes' tunics).</summary>
-    public Texture2D? Tint { get; init; }
+    /// <summary>A hero's look and colors, drawn instead of <see cref="Body"/>; <see cref="Fill"/> is then their seat color.</summary>
+    public LookColors? Look { get; init; }
 
     /// <summary>Shown instead of the body while collapsed (a skeleton's bone pile).</summary>
     public Texture2D? CollapsedBody { get; init; }
@@ -111,7 +111,7 @@ public partial class TokenView : Node2D
 
     public override void _Draw()
     {
-        if (Body is not null)
+        if ((Look is not null && Looks.Strip(Look.Look) is not null) || Body is not null)
         {
             DrawSprite();
         }
@@ -164,6 +164,11 @@ public partial class TokenView : Node2D
         // A shadow under the feet; the active hero's glows gold.
         DrawSetTransform(new Vector2(BoardView.TileSize / 2f, 26), 0, new Vector2(1, 0.35f));
         DrawCircle(Vector2.Zero, 11, _active ? Palette.TrimBright with { A = 0.85f } : new Color(0, 0, 0, 0.35f), antialiased: true);
+        if (Look is not null)
+        {
+            DrawArc(Vector2.Zero, 11, 0, Mathf.Tau, 24, Fill, 2.5f, antialiased: true);
+        }
+
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
 
         float size = BoardView.TileSize * SpriteScale;
@@ -174,35 +179,39 @@ public partial class TokenView : Node2D
             return;
         }
 
-        DrawTextureRect(Body!, rect, tile: false, modulate: _collapsed ? new Color(0.5f, 0.5f, 0.5f) : Colors.White);
-        if (Tint is not null)
+        DrawFigure(rect, _collapsed ? new Color(0.5f, 0.5f, 0.5f) : Colors.White);
+    }
+
+    private void DrawFigure(Rect2 rect, Color modulate)
+    {
+        if (Look is null || !Looks.Draw(this, rect, Look, modulate))
         {
-            DrawTextureRect(Tint, rect, tile: false, modulate: Fill);
+            DrawTextureRect(Body!, rect, tile: false, modulate: modulate);
         }
     }
 
     /// <summary>
     /// Lying down: the sprite tipped onto its side, head to the left. Keeling Over, with an X over each
-    /// eye (the hero sprite's eyes are at pixels (6,5) and (9,5) of 16); diving, half under the water.
+    /// eye (the look's eye pixels); diving, half under the water.
     /// </summary>
     private void DrawFallen(bool xEyes)
     {
         const float pixel = BoardView.TileSize / 16f;
         DrawSetTransform(new Vector2(BoardView.TileSize / 2f, 24), 0, new Vector2(1.2f, 0.3f));
         DrawCircle(Vector2.Zero, 12, _active ? Palette.TrimBright with { A = 0.85f } : new Color(0, 0, 0, 0.35f), antialiased: true);
+        if (Look is not null)
+        {
+            DrawArc(Vector2.Zero, 12, 0, Mathf.Tau, 24, Fill, 2.5f, antialiased: true);
+        }
 
         DrawSetTransform(new Vector2(BoardView.TileSize / 2f, 17), -Mathf.Pi / 2, Vector2.One);
         float size = BoardView.TileSize;
         var rect = new Rect2(-size / 2, -size / 2, size, size);
-        DrawTextureRect(Body!, rect, tile: false);
-        if (Tint is not null)
-        {
-            DrawTextureRect(Tint, rect, tile: false, modulate: Fill);
-        }
+        DrawFigure(rect, Colors.White);
 
-        foreach (int eye in xEyes ? [6, 9] : Array.Empty<int>())
+        foreach (Vector2I eye in xEyes ? Look?.Look.Eyes ?? [new(6, 5), new(9, 5)] : [])
         {
-            Vector2 at = rect.Position + new Vector2(eye + 0.5f, 5.5f) * pixel;
+            Vector2 at = rect.Position + new Vector2(eye.X + 0.5f, eye.Y + 0.5f) * pixel;
             DrawLine(at - new Vector2(1, 1) * pixel, at + new Vector2(1, 1) * pixel, Palette.Ink, 1.2f, antialiased: true);
             DrawLine(at + new Vector2(-1, 1) * pixel, at + new Vector2(1, -1) * pixel, Palette.Ink, 1.2f, antialiased: true);
         }

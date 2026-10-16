@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dy61g3vmc5ft6"
-path="res://.godot/imported/hero_base.png-5f44dd80fe603e9d81b5292ab1be8488.ctex"
+uid="uid://ynmw4ifao4r4"
+path="res://.godot/imported/stone_man.png-019293c6ba5b0301c5805714dc507457.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/heroes/hero_base.png"
-dest_files=["res://.godot/imported/hero_base.png-5f44dd80fe603e9d81b5292ab1be8488.ctex"]
+source_file="res://assets/heroes/looks/stone_man.png"
+dest_files=["res://.godot/imported/stone_man.png-019293c6ba5b0301c5805714dc507457.ctex"]
 
 [params]
 

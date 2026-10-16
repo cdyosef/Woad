@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://eeemsin417nd"
-path="res://.godot/imported/hero_tunic.png-9730db1c430a6d5ef703f3d3ff17daa8.ctex"
+uid="uid://shubdq157kd3"
+path="res://.godot/imported/lizard_man.png-3dd287ba1359d7b1ba35cab2c453a5c9.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/heroes/hero_tunic.png"
-dest_files=["res://.godot/imported/hero_tunic.png-9730db1c430a6d5ef703f3d3ff17daa8.ctex"]
+source_file="res://assets/heroes/looks/lizard_man.png"
+dest_files=["res://.godot/imported/lizard_man.png-3dd287ba1359d7b1ba35cab2c453a5c9.ctex"]
 
 [params]
 

@@ -23,8 +23,8 @@ public static class DemoRun
     /// <summary>Aria (with a bomb and Luck) and Bran (with a boomerang).</summary>
     public static IReadOnlyList<HeroSetup> DebugHeroes { get; } =
     [
-        new HeroSetup("Aria", GameRules.HeroBaseStats with { Luck = 1 }, [.. GameRules.StarterKit, "bomb"], Portrait: "ember"),
-        new HeroSetup("Bran", GameRules.HeroBaseStats with { Hearts = 5 }, [.. GameRules.StarterKit, "boomerang"], Portrait: "woad"),
+        new HeroSetup("Aria", GameRules.HeroBaseStats with { Luck = 1 }, [.. GameRules.StarterKit, "bomb"], Portrait: "ember", Appearance: new("princess", Hair: "ginger")),
+        new HeroSetup("Bran", GameRules.HeroBaseStats with { Hearts = 5 }, [.. GameRules.StarterKit, "boomerang"], Portrait: "woad", Appearance: new("knight", Trim: "blood")),
     ];
 
     /// <summary>The debug heroes, then plain heroes up to <paramref name="size"/> (for --autoplay --party N).</summary>
@@ -32,7 +32,8 @@ public static class DemoRun
     {
         string[] names = ["Cael", "Dara", "Edda", "Finn", "Gwen", "Hugo"];
         string[] portraits = ["moss", "gilt", "violet", "bone", "blood", "frost"];
-        return [.. DebugHeroes.Take(size), .. names.Take(size - DebugHeroes.Count).Select((name, i) => new HeroSetup(name, GameRules.HeroBaseStats, GameRules.StarterKit, Portrait: portraits[i]))];
+        string[] looks = ["druid", "dwarf", "mage", "lizard_man", "raider", "cat_lady"];
+        return [.. DebugHeroes.Take(size), .. names.Take(size - DebugHeroes.Count).Select((name, i) => new HeroSetup(name, GameRules.HeroBaseStats, GameRules.StarterKit, Portrait: portraits[i], Appearance: new(looks[i])))];
     }
 
     /// <summary>

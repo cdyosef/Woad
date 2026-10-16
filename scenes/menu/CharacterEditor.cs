@@ -1,13 +1,14 @@
 using Godot;
 using Woad.Core.Characters;
 using Woad.Core.Content;
+using Woad.Core.Model;
 using Woad.Core.Rules;
 using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Menu;
 
 /// <summary>
-/// Creates a character (name, portrait, point-buy) or edits one: rename, change portrait and
+/// Creates a character (name, look and colors, crest, point-buy) or edits one: rename, restyle and
 /// spend points earned since. Points already spent can't be taken back.
 /// </summary>
 public partial class CharacterEditor : MenuScreen
@@ -24,6 +25,7 @@ public partial class CharacterEditor : MenuScreen
 
     private readonly List<PortraitView> _portraits = [];
     private readonly Dictionary<StatKind, (Button Minus, Label Value, Button Plus)> _statControls = [];
+    private readonly List<(Label Caption, Button Previous, ColorRect Swatch, Label Value, Button Next)> _styleRows = [];
 
     private StatAllocation _allocation = StatAllocation.None;
     private StatAllocation _floor = StatAllocation.None;
@@ -32,10 +34,16 @@ public partial class CharacterEditor : MenuScreen
     private string _portrait = Portraits.All[0].Id;
     private bool _saving;
     private bool _isCompanion;
+    private string _look = "";
+    private string _main = "";
+    private string _trim = "";
+    private string _skin = "";
+    private string _hair = "";
 
     private Label _points = null!;
     private Label _error = null!;
     private PortraitView _preview = null!;
+    private FigureView _figure = null!;
     private Label _previewName = null!;
     private HeartsView _previewHearts = null!;
     private Label _previewStats = null!;
@@ -66,6 +74,13 @@ public partial class CharacterEditor : MenuScreen
 
     internal Button MinusButton(StatKind stat) => _statControls[stat].Minus;
 
+    /// <summary>The arrow buttons of the look rows: 0 look, 1 main color, 2 trim, 3 skin, 4 hair.</summary>
+    internal Button StyleButton(int row, bool next) => next ? _styleRows[row].Next : _styleRows[row].Previous;
+
+    internal Button RandomButton { get; private set; } = null!;
+
+    internal Appearance Appearance => new(_look, _main, _trim, _skin, _hair);
+
     public override void _Ready()
     {
         if (Editing is { } character)
@@ -74,12 +89,17 @@ public partial class CharacterEditor : MenuScreen
             _budget = PointBuy.Cost(character.Allocation) + character.UnspentPoints;
             _level = character.Level;
             _portrait = character.Portrait;
+            (_look, _main, _trim, _skin, _hair) = character.Appearance;
         }
         else
         {
             _budget = PointBuy.CreationPoints;
             _level = 1;
         }
+
+        _look = Looks.Get(_look).Id;
+        _main = Looks.MainId(new Appearance(Main: _main), _portrait);
+        _trim = Looks.Find(Looks.Colors, _trim)?.Id ?? Looks.DefaultTrim;
 
         BuildFrame(Editing is null ? "NEW CHARACTER" : "EDIT CHARACTER");
 
@@ -100,7 +120,7 @@ public partial class CharacterEditor : MenuScreen
         _companionType.TooltipText = "Companions join a player's party. The game plays them, following that player's orders.";
         _isCompanion = Editing?.IsCompanion ?? false;
 
-        Caption(new Vector2(24, 92), "PORTRAIT");
+        Caption(new Vector2(24, 92), "CREST");
         for (int i = 0; i < Portraits.All.Count; i++)
         {
             string id = Portraits.All[i].Id;
@@ -131,11 +151,29 @@ public partial class CharacterEditor : MenuScreen
             _statControls[stat] = (minus, value, plus);
         }
 
-        Add(new Panel { Position = new Vector2(356, 46), Size = new Vector2(262, 220), MouseFilter = MouseFilterEnum.Ignore });
-        _preview = Add(new PortraitView { Position = new Vector2(370, 58), Size = new Vector2(44, 52) });
-        _previewName = Add(UiTheme.Label(new Vector2(424, 60), new Vector2(186, 22), fontSize: 16, color: Palette.TrimBright));
-        _previewHearts = Add(new HeartsView { Position = new Vector2(424, 88), Size = new Vector2(180, 9) });
-        _previewStats = Add(UiTheme.Label(new Vector2(370, 120), new Vector2(240, 140)));
+        Add(new Panel { Position = new Vector2(356, 46), Size = new Vector2(262, 262), MouseFilter = MouseFilterEnum.Ignore });
+        _figure = Add(new FigureView { Position = new Vector2(364, 50), Size = new Vector2(48, 48) });
+        _preview = Add(new PortraitView { Position = new Vector2(418, 58), Size = new Vector2(24, 29) });
+        _previewName = Add(UiTheme.Label(new Vector2(450, 56), new Vector2(162, 22), fontSize: 16, color: Palette.TrimBright));
+        _previewHearts = Add(new HeartsView { Position = new Vector2(450, 82), Size = new Vector2(160, 9) });
+        RandomButton = Add(UiTheme.Button(new Vector2(562, 102), new Vector2(50, 19), "Random"));
+        RandomButton.TooltipText = "A random look and colors.";
+        RandomButton.Pressed += Randomize;
+        for (int row = 0; row < 5; row++)
+        {
+            float y = 102 + row * 21;
+            Label caption = Add(UiTheme.Label(new Vector2(366, y + 4), new Vector2(44, 12)));
+            int step = row;
+            Button previous = Add(UiTheme.Button(new Vector2(410, y), new Vector2(20, 19), "<"));
+            previous.Pressed += () => StepStyle(step, -1);
+            ColorRect swatch = Add(new ColorRect { Position = new Vector2(436, y + 4), Size = new Vector2(11, 11), MouseFilter = MouseFilterEnum.Ignore });
+            Label value = Add(UiTheme.Label(new Vector2(452, y + 4), new Vector2(82, 12)));
+            Button next = Add(UiTheme.Button(new Vector2(536, y), new Vector2(20, 19), ">"));
+            next.Pressed += () => StepStyle(step, +1);
+            _styleRows.Add((caption, previous, swatch, value, next));
+        }
+
+        _previewStats = Add(UiTheme.Label(new Vector2(366, 210), new Vector2(246, 96)));
 
         _error = Add(UiTheme.Label(new Vector2(24, 298), new Vector2(320, 14), color: Palette.Danger));
         SaveButton = Add(UiTheme.Button(new Vector2(420, 316), new Vector2(96, 26), Editing is null ? "Create" : "Save"));
@@ -169,8 +207,99 @@ public partial class CharacterEditor : MenuScreen
         }
     }
 
+    /// <summary>Steps a look row: the look itself, or one of its colors (wrapping around).</summary>
+    private void StepStyle(int row, int delta)
+    {
+        Look look = Looks.Get(_look);
+        switch (row)
+        {
+            case 0:
+                _look = Step(Looks.All.Select(each => each.Id).ToList(), _look, delta);
+                break;
+            case 1:
+                _main = Cycle(Looks.Colors, _main, null, delta);
+                break;
+            case 2:
+                _trim = Cycle(Looks.Colors, _trim, null, delta);
+                break;
+            case 3:
+                _skin = Cycle(Looks.SetSwatches(look.SkinSet), _skin, look.SkinDefault, delta);
+                break;
+            default:
+                _hair = Cycle(Looks.SetSwatches(look.HairSet), _hair, look.HairDefault, delta);
+                break;
+        }
+
+        Refresh();
+
+        // Steps from the swatch shown for the current choice (which may be the look's starting color).
+        static string Cycle(IReadOnlyList<Swatch> swatches, string current, string? fallback, int delta) =>
+            Looks.Shown(swatches, current, fallback) is { } shown ? Step(swatches.Select(swatch => swatch.Id).ToList(), shown.Id, delta) : current;
+
+        static string Step(IReadOnlyList<string> ids, string current, int delta)
+        {
+            int index = Math.Max(0, ids.ToList().IndexOf(current));
+            return ids[((index + delta) % ids.Count + ids.Count) % ids.Count];
+        }
+    }
+
+    private void Randomize()
+    {
+        Look look = Looks.All[Random.Shared.Next(Looks.All.Count)];
+        _look = look.Id;
+        _main = Looks.Colors[Random.Shared.Next(Looks.Colors.Count)].Id;
+        _trim = Looks.Colors.Where(swatch => swatch.Id != _main).ElementAt(Random.Shared.Next(Looks.Colors.Count - 1)).Id;
+        IReadOnlyList<Swatch> skins = Looks.SetSwatches(look.SkinSet);
+        IReadOnlyList<Swatch> hairs = Looks.SetSwatches(look.HairSet);
+        _skin = skins.Count > 0 ? skins[Random.Shared.Next(skins.Count)].Id : _skin;
+        _hair = hairs.Count > 0 ? hairs[Random.Shared.Next(hairs.Count)].Id : _hair;
+        Refresh();
+    }
+
+    private void RefreshStyle()
+    {
+        LookColors colors = Looks.Resolve(Appearance, _portrait);
+        Look look = colors.Look;
+        _figure.Colors = colors;
+        _preview.Colors = colors;
+        foreach (PortraitView portrait in _portraits)
+        {
+            portrait.Colors = colors;
+        }
+
+        ShowRow(0, "Look", null, look.Name, enabled: true);
+        ShowRow(1, "Main", colors.Main, Looks.Find(Looks.Colors, _main)!.Name, enabled: true);
+        ShowRow(2, "Trim", colors.Trim, Looks.Find(Looks.Colors, _trim)!.Name, enabled: true);
+        ShowSet(3, look.SkinSet, "Skin", _skin, look.SkinDefault, colors.Skin);
+        ShowSet(4, look.HairSet, "Hair", _hair, look.HairDefault, colors.Hair);
+
+        void ShowSet(int row, string? set, string fallbackCaption, string id, string? fallback, Color color)
+        {
+            if (Looks.Shown(Looks.SetSwatches(set), id, fallback) is not { } shown)
+            {
+                ShowRow(row, fallbackCaption, null, "-", enabled: false);
+                return;
+            }
+
+            ShowRow(row, Looks.Sets[set!].Name, color, shown.Name, enabled: true);
+        }
+
+        void ShowRow(int row, string caption, Color? color, string value, bool enabled)
+        {
+            (Label label, Button previous, ColorRect swatch, Label shown, Button next) = _styleRows[row];
+            label.Text = caption;
+            label.Modulate = enabled ? Colors.White : new Color(1, 1, 1, 0.4f);
+            previous.Disabled = next.Disabled = !enabled;
+            swatch.Visible = color is not null;
+            swatch.Color = color ?? Colors.Transparent;
+            shown.Text = value;
+            shown.Position = new Vector2(color is null ? 438 : 452, shown.Position.Y);
+        }
+    }
+
     private void Refresh()
     {
+        RefreshStyle();
         _points.Text = $"{PointsLeft} of {_budget} points left";
         foreach ((StatKind stat, (Button minus, Label value, Button plus)) in _statControls)
         {
@@ -204,11 +333,12 @@ public partial class CharacterEditor : MenuScreen
         _previewStats.Text =
             $"Wend {stats.MoveDice}d6{speed}   Luck {UiTheme.Count(stats.Luck, "reroll", "rerolls")}\n" +
             $"Rumble {UiTheme.Count(stats.AttackDice, "die", "dice")}   Defense {UiTheme.Count(stats.DefenseDice, "die", "dice")}\n" +
-            $"Od Hand {UiTheme.Count(stats.OdHandDice, "die", "dice")}\n" +
-            "(before gear bonuses)\n\n" +
+            $"Od Hand {UiTheme.Count(stats.OdHandDice, "die", "dice")}   (before gear bonuses)\n" +
             (_isCompanion ? "A companion: joins a player's party and follows their orders.\n" : "") +
-            gear + "\n\n" +
-            (_level <= 1 ? $"At level 1 you can buy at most {PointBuy.LevelOneDiceLimit} extra Rumble, Defense and Od Hand die each. Unspent points are kept." : "");
+            gear;
+        _points.TooltipText = _level <= 1
+            ? $"At level 1 you can buy at most {PointBuy.LevelOneDiceLimit} extra Rumble, Defense and Od Hand die each. Unspent points are kept."
+            : "Unspent points are kept.";
     }
 
     private async void Save()
@@ -225,13 +355,14 @@ public partial class CharacterEditor : MenuScreen
             Character character;
             if (Editing is null)
             {
-                character = Character.Create(NameEdit.Text, _portrait, _allocation, Content, DateTimeOffset.UtcNow, _isCompanion);
+                character = Character.Create(NameEdit.Text, _portrait, _allocation, Content, DateTimeOffset.UtcNow, _isCompanion, Appearance);
             }
             else
             {
                 character = Editing;
                 character.Rename(NameEdit.Text);
                 character.ChangePortrait(_portrait);
+                character.ChangeAppearance(Appearance);
                 character.Allocate(_allocation);
             }
 

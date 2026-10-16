@@ -54,7 +54,7 @@ project.godot, Woad.csproj   Godot game project (repo root): scenes, UI, input, 
 scenes/main/                 Main.tscn, the entry scene: owns content and saves, swaps screens
 scenes/menu/                 Main menu, character list, character editor, party setup
 scenes/game/                 The game screen: board, tokens, dice tray, panels, event playback
-scenes/ui/                   Shared UI pieces: palette, theme, portraits, card slots, hearts
+scenes/ui/                   Shared UI pieces: palette, theme, looks, crests, card slots, hearts
 scenes/debug/                Synthetic mouse/keyboard driver used by the debug UI tests
 src/Woad.Core/               Pure C# rules engine: no Godot references allowed
   Rules/GameSession*.cs        Executes commands (Commands/) and returns events (Events/)

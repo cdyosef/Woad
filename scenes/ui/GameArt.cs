@@ -10,11 +10,6 @@ public static class GameArt
 {
     private static readonly Dictionary<string, Resource?> Cache = [];
 
-    public static Texture2D? HeroBody => Texture("res://assets/heroes/hero_base.png");
-
-    /// <summary>White where the tunic is; drawn tinted with the player's seat color.</summary>
-    public static Texture2D? HeroTunic => Texture("res://assets/heroes/hero_tunic.png");
-
     public static Texture2D? Tile(string themeId, string name) => Texture($"res://assets/themes/{themeId}/tiles/{name}.png");
 
     /// <summary>Monsters drawn with another monster's sprite (at a different size).</summary>
