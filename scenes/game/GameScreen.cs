@@ -105,6 +105,20 @@ public partial class GameScreen : Control
         {
             RunBombTest();
         }
+        else if (args.Contains("--rumbletest"))
+        {
+            RunRumbleTest();
+        }
+    }
+
+    /// <summary>The space bar is Rumble, before any focused button can take it as a press.</summary>
+    public override void _Input(InputEvent @event)
+    {
+        if (@event is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Space } && _session.State.Turn is not null && ActiveHero is { IsCompanion: false } && !_autoplay)
+        {
+            ToggleRumble();
+            GetViewport().SetInputAsHandled();
+        }
     }
 
     public override void _UnhandledInput(InputEvent @event)

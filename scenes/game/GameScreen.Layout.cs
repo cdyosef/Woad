@@ -34,6 +34,7 @@ public partial class GameScreen
     private Button _confirm = null!;
     private Button _addPower = null!;
     private Button _bankPower = null!;
+    private Button _rumble = null!;
     private Button _prone = null!;
     private Button _dropRoll = null!;
     private Button _roll = null!;
@@ -62,6 +63,9 @@ public partial class GameScreen
 
     /// <summary>Leap was pressed: the next click on a purple tile leaps toward it.</summary>
     private bool _leaping;
+
+    /// <summary>Rumble was pressed (or the space bar): the next click on a target in reach attacks it.</summary>
+    private bool _rumbling;
 
     private void RefreshPanels()
     {
@@ -94,6 +98,9 @@ public partial class GameScreen
         _steal.Disabled = !(idle && !pending) || _session.OdHandDiceLeft < 1 || turn!.HasStolen;
         _stealing &= !_steal.Disabled;
         _steal.Text = _stealing ? "Cancel" : "Steal";
+        _rumble.Disabled = !(idle && !pending) || _session.AttackDiceLeft < 1;
+        _rumbling &= !_rumble.Disabled;
+        _rumble.Text = _rumbling ? "Cancel" : "Rumble";
         _shove.Disabled = !(idle && !pending) || _session.AttackDiceLeft < 1;
         _leap.Disabled = !(idle && !pending) || _session.MoveDiceLeft < 1;
         _leaping &= !_leap.Disabled;
@@ -113,7 +120,10 @@ public partial class GameScreen
 
         // Where Confirm and the Power Die buttons go, while there's no roll to settle: lie down or get up, and stop, drop and roll.
         bool lying = hero?.Prone == true;
-        _prone.Visible = _dropRoll.Visible = idle && !pending;
+        // The row above the dice buttons: Rumble, Shove and Prone (Drop & roll while burning), where Confirm
+        // and the Power Die buttons go while a roll waits.
+        bool waiting = turn?.PendingRoll is not null || choosingPower;
+        _rumble.Visible = _shove.Visible = _prone.Visible = _dropRoll.Visible = !waiting;
         _prone.Text = lying ? "Get up" : "Prone";
         string? proneError = hero is null || turn is null ? "" : lying ? _session.CheckGetUp() : _session.CheckGoProne();
         _prone.Disabled = proneError is not null;
@@ -121,7 +131,8 @@ public partial class GameScreen
             ? $"Get back on your feet: {GameRules.GetUpCost} steps."
             : $"Lie down: {GameRules.ProneCost} step. Every step costs double while prone; melee on you rolls an extra die, ranged attacks face an extra defense die. In deep water you dive: out of reach of ranged attacks.");
         string? dropError = hero is null || turn is null ? "" : _session.CheckStopDropRoll();
-        _dropRoll.Visible &= hero?.FireDice > 0;
+        _dropRoll.Visible &= hero?.FireDice > 0 && dropError is null;
+        _prone.Visible &= !_dropRoll.Visible;
         _dropRoll.Disabled = dropError is not null;
         _dropRoll.TooltipText = dropError ?? "Stop, drop and roll: put the fire out. It takes your whole turn and leaves you prone.";
 
@@ -136,6 +147,32 @@ public partial class GameScreen
         RefreshOrders();
         UpdateHighlights();
     }
+
+    /// <summary>Rumble (the button or the space bar): show the attack range and wait for a target, or put it away.</summary>
+    private void ToggleRumble()
+    {
+        if (_rumble.Disabled && !_rumbling)
+        {
+            return;
+        }
+
+        _rumbling = !_rumbling;
+        _stealing = _shoving = _leaping = false;
+        if (_rumbling)
+        {
+            Log("Click a target in red to attack it. Right-click to cancel.", Palette.Danger);
+        }
+
+        RefreshPanels();
+    }
+
+    /// <summary>What Rumble can strike from where the active hero stands: monsters, bombs and (with friendly fire on) allies.</summary>
+    private List<GridPosition> RumbleTargets(Room room) =>
+    [
+        .. _session.GetAttackableMonsters().Select(monster => monster.Position),
+        .. _session.GetAttackableAllies().Select(ally => ally.Position),
+        .. room.Bombs.Where(bomb => _session.CheckAttackBomb(bomb.Id) is null).Select(bomb => bomb.Position),
+    ];
 
     private void UpdateHighlights()
     {
@@ -161,6 +198,15 @@ public partial class GameScreen
         if (_leaping)
         {
             _board.SetHighlights([], [], [], [], jumps: _session.GetLeapTargets());
+            return;
+        }
+
+        if (_rumbling)
+        {
+            List<GridPosition> reach = room.Positions
+                .Where(tile => tile != hero.Position && Targeting.CanHeroAttack(room.Layout, hero.AttackRange, hero.Position, tile))
+                .ToList();
+            _board.SetHighlights([], RumbleTargets(room), [], [], range: reach);
             return;
         }
 
@@ -301,7 +347,7 @@ public partial class GameScreen
     private void ResetPool()
     {
         _attackDiceHeld = _moveDiceHeld = _odHandDiceHeld = _powerDiceSelected = 0;
-        _weaponHeld = _speedHeld = _toolsHeld = _stealing = _shoving = _leaping = false;
+        _weaponHeld = _speedHeld = _toolsHeld = _stealing = _shoving = _leaping = _rumbling = false;
     }
 
     /// <summary>The card buttons' states, with the rules engine's reason for each one that's unavailable.</summary>
@@ -485,15 +531,20 @@ public partial class GameScreen
         _bankPower.Pressed += () => ExecuteForActiveHero(heroId => new BankPowerDie(heroId));
         right.AddChild(_bankPower);
 
-        _prone = UiTheme.Button(new Vector2(8, 279), new Vector2(78, 18), "Prone");
+        _rumble = UiTheme.CompactButton(new Vector2(8, 279), new Vector2(52, 20), "Rumble");
+        _rumble.TooltipText = "Attack (Space): your attack range shows in red; click a target in it. Uses your selected Rumble dice and your weapon.";
+        _rumble.Pressed += ToggleRumble;
+        right.AddChild(_rumble);
+
+        _prone = UiTheme.CompactButton(new Vector2(116, 279), new Vector2(52, 20), "Prone");
         _prone.Pressed += () => ExecuteForActiveHero(heroId => ActiveHero?.Prone == true ? new GetUp(heroId) : new GoProne(heroId));
         right.AddChild(_prone);
-        _dropRoll = UiTheme.Button(new Vector2(90, 279), new Vector2(78, 18), "Drop & roll");
+        _dropRoll = UiTheme.CompactButton(new Vector2(116, 279), new Vector2(52, 20), "Drop&roll");
         _dropRoll.Pressed += () => ExecuteForActiveHero(heroId => new StopDropRoll(heroId));
         right.AddChild(_dropRoll);
 
         // Five buttons in a row: Wend, Leap, Search, Steal and Shove.
-        _roll = UiTheme.CompactButton(new Vector2(8, 303), new Vector2(28, 20), "Wend");
+        _roll = UiTheme.CompactButton(new Vector2(8, 303), new Vector2(38, 20), "Wend");
         _roll.TooltipText = "Roll your selected Wend dice (plus your Wend bonus) to move.";
         _roll.Pressed += () =>
         {
@@ -507,12 +558,12 @@ public partial class GameScreen
         };
         right.AddChild(_roll);
 
-        _leap = UiTheme.CompactButton(new Vector2(37, 303), new Vector2(28, 20), "Leap");
+        _leap = UiTheme.CompactButton(new Vector2(48, 303), new Vector2(38, 20), "Leap");
         _leap.TooltipText = $"Leap with one Wend die: pick a tile up to {GameRules.MaxLeap} away in a straight line, then roll; you carry half the roll.";
         _leap.Pressed += () =>
         {
             _leaping = !_leaping;
-            _stealing = _shoving = false;
+            _stealing = _shoving = _rumbling = false;
             if (_leaping)
             {
                 Log("Click a purple tile to leap toward it. Right-click to cancel.", Palette.Power);
@@ -522,16 +573,16 @@ public partial class GameScreen
         };
         right.AddChild(_leap);
 
-        _search = UiTheme.CompactButton(new Vector2(66, 303), new Vector2(36, 20), "Search");
+        _search = UiTheme.CompactButton(new Vector2(88, 303), new Vector2(40, 20), "Search");
         _search.Pressed += () => ExecuteOdHand((heroId, dice, tools, power) => new Search(heroId, dice, tools, power));
         right.AddChild(_search);
 
-        _steal = UiTheme.CompactButton(new Vector2(103, 303), new Vector2(32, 20), "Steal");
+        _steal = UiTheme.CompactButton(new Vector2(130, 303), new Vector2(38, 20), "Steal");
         _steal.TooltipText = "Steal with your selected Od Hand dice: click it, then an adjacent monster or hero. Once a turn.";
         _steal.Pressed += () =>
         {
             _stealing = !_stealing;
-            _shoving = _leaping = false;
+            _shoving = _leaping = _rumbling = false;
             if (_stealing)
             {
                 Log("Click a monster or hero next to you to steal from them. Right-click to cancel.", Palette.Target with { A = 1 });
@@ -541,12 +592,12 @@ public partial class GameScreen
         };
         right.AddChild(_steal);
 
-        _shove = UiTheme.CompactButton(new Vector2(136, 303), new Vector2(32, 20), "Shove");
+        _shove = UiTheme.CompactButton(new Vector2(62, 279), new Vector2(52, 20), "Shove");
         _shove.TooltipText = "Shove with your selected Rumble dice: click it, then a monster next to you. Beat its defense to push it a tile, onto a trap or into a pit.";
         _shove.Pressed += () =>
         {
             _shoving = !_shoving;
-            _stealing = _leaping = false;
+            _stealing = _leaping = _rumbling = false;
             if (_shoving)
             {
                 Log("Click a monster next to you to shove it. Right-click to cancel.", Palette.Target with { A = 1 });

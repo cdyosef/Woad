@@ -366,6 +366,45 @@ public partial class GameScreen
         }
     }
 
+    /// <summary>
+    /// Debug mode (<c>-- --rumbletest</c>, with <see cref="DemoRun.Duel"/>): clicking the slime beside Aria
+    /// doesn't attack it; the space bar shows her reach, a click off target puts Rumble away, and the
+    /// Rumble button then a click on the slime attacks it.
+    /// </summary>
+    private async void RunRumbleTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            Monster slime = _session.State.Rooms["yard"].Monsters.Single();
+
+            await ClickTile(slime.Position);
+            await WaitUntilIdle();
+            Check(_session.State.Turn!.AttackDiceUsed == 0, "clicking a monster no longer attacks it");
+
+            GetViewport().PushInput(new InputEventKey { Pressed = true, Keycode = Key.Space }, inLocalCoords: true);
+            await NextFrame(this);
+            Check(_rumbling && RumbleTargets(ShownRoom).Contains(slime.Position), "Space readies Rumble, with the slime in reach");
+            await ClickTile(new GridPosition(0, 0));
+            await WaitUntilIdle();
+            Check(!_rumbling, "a click off target puts Rumble away");
+
+            await Click(this, _rumble);
+            await ClickTile(slime.Position);
+            await ConfirmIfHeld();
+            Check(_session.State.Turn!.AttackDiceUsed > 0 || _session.State.Turn.HeroId != aria.Id, "Rumble, then a click on the slime, attacks it");
+
+            GD.Print("Rumble test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Rumble test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
     /// <summary>Confirms a roll that Luck is holding open.</summary>
     private async Task ConfirmIfHeld()
     {

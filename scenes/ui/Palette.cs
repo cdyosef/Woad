@@ -54,6 +54,7 @@ public static class Palette
 
     /// <summary>Where a pit jump would land.</summary>
     public static readonly Color Jump = new("b58cf0", 0.42f);
+    public static readonly Color Range = new("ff4a3d", 0.34f);
 
     /// <summary>Tints the floor seen far down a pit that leads to the room below.</summary>
     public static readonly Color FloorBelow = new(0.30f, 0.38f, 0.36f);

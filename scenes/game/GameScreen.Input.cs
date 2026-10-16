@@ -11,6 +11,36 @@ namespace Woad.Scenes.Game;
 /// <summary>Turning clicks and hovers into commands, hints and tile descriptions.</summary>
 public partial class GameScreen
 {
+    /// <summary>Rumble: attack whatever is on the tile, if it's in reach (a monster, a bomb, or with friendly fire on, an ally); else put Rumble away.</summary>
+    private void RumbleAt(Hero hero, Room room, GridPosition tile)
+    {
+        if (!RumbleTargets(room).Contains(tile))
+        {
+            _rumbling = false;
+            RefreshPanels();
+            return;
+        }
+
+        if (SelectedAttackDice < 1)
+        {
+            Log("Select at least one Rumble die.", Palette.TextDim);
+            return;
+        }
+
+        if (room.MonsterAt(tile) is { } monster)
+        {
+            Execute(new AttackMonster(hero.Id, monster.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
+        }
+        else if (_session.GetAttackableAllies().FirstOrDefault(ally => ally.Position == tile) is { } ally)
+        {
+            Execute(new AttackAlly(hero.Id, ally.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
+        }
+        else if (room.BombAt(tile) is { } bomb)
+        {
+            Execute(new AttackBomb(hero.Id, bomb.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
+        }
+    }
+
     private void OnTileClicked(GridPosition tile)
     {
         if (Locked || ActiveHero is not { } hero || _session.State.Turn is not { } turn || hero.RoomId != _shownRoomId)
@@ -99,26 +129,15 @@ public partial class GameScreen
             return;
         }
 
-        if (room.MonsterAt(tile) is { } monster)
+        if (_rumbling)
         {
-            if (_session.AttackDiceLeft > 0 && SelectedAttackDice < 1)
-            {
-                Log("Select at least one Attack die.", Palette.TextDim);
-                return;
-            }
-
-            Execute(new AttackMonster(hero.Id, monster.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
+            RumbleAt(hero, room, tile);
+            return;
         }
-        else if (_session.GetAttackableAllies().FirstOrDefault(ally => ally.Position == tile) is { } ally)
-        {
-            // Friendly fire is on and an ally is in reach.
-            if (SelectedAttackDice < 1)
-            {
-                Log("Select at least one Rumble die.", Palette.TextDim);
-                return;
-            }
 
-            Execute(new AttackAlly(hero.Id, ally.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
+        if (room.MonsterAt(tile) is not null)
+        {
+            Log("Press Rumble (or Space) to attack.", Palette.TextDim);
         }
         else if (room.Layout[tile] == TileKind.Gate)
         {
@@ -311,6 +330,11 @@ public partial class GameScreen
             return "Shove: click a monster next to you (orange) to push it a tile. Right-click to cancel.";
         }
 
+        if (_rumbling)
+        {
+            return "Rumble: click a target in red to attack it with your selected dice. Right-click (or Space) to put it away.";
+        }
+
         if (_leaping)
         {
             return $"Leap: click a purple tile up to {GameRules.MaxLeap} away. You roll a Wend die as you jump and carry half the roll. Right-click to cancel.";
@@ -324,7 +348,7 @@ public partial class GameScreen
         if (turn.MovementPoints == 0)
         {
             return _session.MoveDiceLeft > 0 || _session.AttackDiceLeft > 0
-                ? "Choose dice, then Wend to move, click a red-outlined monster to attack, or Search the room."
+                ? "Choose dice, then Wend to move, Rumble (Space) to attack, or Search the room."
                 : "Out of dice. Use your action or belt item, or end your turn.";
         }
 
@@ -578,6 +602,7 @@ public partial class GameScreen
         _stealing = false;
         _shoving = false;
         _leaping = false;
+        _rumbling = false;
         _selectedCardId = null;
         _targeting = false;
         _board.SetBlast([]);

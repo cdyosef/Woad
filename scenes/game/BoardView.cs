@@ -33,6 +33,7 @@ public partial class BoardView : Control
     private HashSet<GridPosition> _hazards = [];
     private HashSet<GridPosition> _jumps = [];
     private HashSet<GridPosition> _blast = [];
+    private HashSet<GridPosition> _range = [];
 
     /// <summary>The board pixel at the top-left of the view.</summary>
     private Vector2 _camera;
@@ -166,14 +167,17 @@ public partial class BoardView : Control
 
     /// <param name="hazards">Reachable tiles that hurt: pits and found traps (tinted red over the blue).</param>
     /// <param name="jumps">Tiles a pit jump would land on.</param>
+    /// <param name="range">Tiles within the active hero's attack reach (Rumble targeting), tinted red.</param>
     public void SetHighlights(
         IEnumerable<GridPosition> reachable,
         IEnumerable<GridPosition> attackable,
         IEnumerable<GridPosition> targets,
         IEnumerable<GridPosition> interactive,
         IEnumerable<GridPosition>? hazards = null,
-        IEnumerable<GridPosition>? jumps = null)
+        IEnumerable<GridPosition>? jumps = null,
+        IEnumerable<GridPosition>? range = null)
     {
+        _range = [.. range ?? []];
         _hazards = [.. hazards ?? []];
         _jumps = [.. jumps ?? []];
         _reachable = [.. reachable];
@@ -338,6 +342,7 @@ public partial class BoardView : Control
         DrawOverlay(_reachable, Palette.Reachable);
         DrawOverlay(_hazards, Palette.Hazard);
         DrawOverlay(_jumps, Palette.Jump);
+        DrawOverlay(_range, Palette.Range);
         DrawOverlay(_targets, Palette.Target);
         DrawOverlay(_blast, Palette.Blast);
 

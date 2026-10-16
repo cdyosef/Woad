@@ -157,7 +157,9 @@ every room that holds at least one player. Rooms with no players stay paused.
      never past your target. It sails over pits, water, traps and figures, but not walls, chests or pots.
      Coming down short over a pit drops you in; over water, you splash in; a 1 goes nowhere.
    - **Attacks (Rumble):** each attack uses one or more of your unused Rumble dice, plus your weapon's
-     value on one attack per turn (only alongside at least one die). See [Combat](#combat).
+     value on one attack per turn (only alongside at least one die). Press **Rumble** (or **Space**): your
+     attack range shows in red, and you click a target in it, a monster, a bomb, or with friendly fire on
+     an ally. Clicking a monster on its own doesn't attack. See [Combat](#combat).
    - **Od Hand checks:** each uses one or more of your unused Od Hand dice, plus your tools' value once a
      turn. See [Od Hand](#od-hand). They don't use your action.
    - **One other action:** use a card from your backpack or an equipped one, smash a pot, loot (after your
