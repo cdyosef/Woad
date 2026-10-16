@@ -98,8 +98,8 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 | Armor | Persistent | Leather Cap (+1 Heart), Chain Mail (armor 1) |
 | Boots | Persistent | Dash Boots (+1 Move die) |
 | Spell | Charges or single-use | Flame Scroll (a 3-dice fire attack at range 3: any 6 sets the target alight), Frost Wand (2 charges: freeze for a round) |
-| Tool | Persistent | Boomerang (stun a monster within 4), Grapple Hook (pull yourself up to 4 tiles in a line; not built yet) |
-| Bomb | Single-use | Bomb (range 3, a 2-dice attack on every monster in a 3×3 area) |
+| Tool | Persistent | Grapple Hook (pull yourself up to 4 tiles in a line; not built yet) |
+| Bomb | Single-use | Bomb (thrown up to 3 tiles, lit: a 4-dice blast over a 3×3 area at the end of your next turn; see [Bombs](#bombs)) |
 | Potion | Single-use | Health Potion (restore 3 hearts) |
 | Treasure | Kept for score | Emerald (15g), Golden Idol (40g). Coins (Loose Coins 2g, Coin Pouch 5g) aren't cards: they go straight into your purse as gold |
 
@@ -115,11 +115,25 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 - **Looting** (picking up what's on your tile, or opening a chest) is free once per turn; after that it
   takes your action. Picking up fills the backpack as far as it can, and takes every key there too.
 - **Chest loot** goes to the backpack, or onto your tile if the backpack is full.
-- **Targeted cards** need line of sight and must have a target: a bomb must catch at least one monster or
-  cracked wall in its blast, and potions only heal yourself and can't be used at full hearts.
+- **Targeted cards** need line of sight and must have a target: a bomb lands on any open tile (or water,
+  which puts it out), a Flame Scroll needs a monster (or a bomb, which it sets off), and potions only heal
+  yourself and can't be used at full hearts.
 - **Lockpicks** (tool, off hand): Tools 2. In the loot deck.
-- **Stuns:** a stunned monster skips its next turn and can't be stunned again during the following round.
-  Bosses can't be stunned.
+- **Freezing** (the Frost Wand): a frozen monster skips its next turn and can't be frozen again during the
+  following round. Bosses can't be frozen.
+- **Stun** (the Boomerang's sixes) and **Powerful Stun** (bomb blasts) stack, and wear off at the end of
+  the stunned creature's next turn. The first stack takes its Od Hand action and its free actions (free
+  loot, free belt item), or a Wend die if it has no Od Hand, and a flyer drops out of the air (into a pit
+  or water under it). Each further Stun takes a die: Wend first, then Rumble, then Defense. A Powerful
+  Stun takes 2 more dice to begin with (3 without Od Hand) and 3 for each further one. Attacks on a
+  stunned creature get **+1 per Stun and +3 per Powerful Stun**. Bosses can't be stunned.
+- **Boomerang:** a weapon for either hand. Thrown at a target within 4 (line of sight) with your Rumble
+  dice +1 (in place of your main weapon's bonus); every 6 rolled adds a Stun, hit or miss. In the off hand
+  it's used for targets your main weapon can't reach.
+- **Prone monsters** (knocked flat by a blast): melee on them rolls an extra die, ranged attacks face an
+  extra defense die, and getting up costs them 2 of their moves.
+- **Monster movement** is Wend dice worth a fixed 2 moves each (the last one 1, for an odd move), so a
+  stun that takes a Wend die takes 2 moves.
 
 ## Turn structure
 
@@ -143,7 +157,9 @@ every room that holds at least one player. Rooms with no players stay paused.
      never past your target. It sails over pits, water, traps and figures, but not walls, chests or pots.
      Coming down short over a pit drops you in; over water, you splash in; a 1 goes nowhere.
    - **Attacks (Rumble):** each attack uses one or more of your unused Rumble dice, plus your weapon's
-     value on one attack per turn (only alongside at least one die). See [Combat](#combat).
+     value on one attack per turn (only alongside at least one die). Press **Rumble** (or **Space**): your
+     attack range shows in red, and you click a target in it, a monster, a bomb, or with friendly fire on
+     an ally. Clicking a monster on its own doesn't attack. See [Combat](#combat).
    - **Od Hand checks:** each uses one or more of your unused Od Hand dice, plus your tools' value once a
      turn. See [Od Hand](#od-hand). They don't use your action.
    - **One other action:** use a card from your backpack or an equipped one, smash a pot, loot (after your
@@ -167,8 +183,26 @@ facing door of the next room.
 - If the attack total is higher, the defender loses **1 heart**. Ties go to the defender. The defender's line
   in the dice tray, the log and the board say **Hit!** or **Miss!**.
 - Rolling dice together makes one attack more likely to land; splitting them gives more chances.
-- **Card attacks** (Flame Scroll, bomb) roll their own dice and don't use your Rumble dice. A bomb's
-  single roll is compared with each monster's defense in the blast.
+- **Card attacks** (the Flame Scroll) roll their own dice and don't use your Rumble dice. Bombs work
+  differently: see [Bombs](#bombs).
+
+### Bombs
+
+- **Throwing:** a bomb lands lit and goes off at the end of the thrower's **next** turn (its tile shows the
+  turns left). A **bomb trap** pops out a lit bomb under whoever springs it, burning down on their turns;
+  disarmed, it gives the bomb up unlit.
+- **The blast** rolls 4 dice (each 6 rolls another at once) against **everyone** within a tile, friend or
+  foe, whatever the friendly fire setting (except a hero diving in deep water). Each creature defends, and
+  every die over its defense total is a hit: **1** costs a heart, **2** also shove it a tile away from the
+  bomb, **3** also knock it prone, **4 or more** also Powerful Stun it (a stack for each hit past 3).
+  Whoever stands on the bomb is thrown any open way and blasted a second time. Blasts break cracked walls
+  and set off other bombs; a bomb kill goes to whoever threw it.
+- **Lit bombs on the floor:** fire sets one off at once. Strike it with Rumble dice and each die is a 12%
+  chance (each point of weapon bonus 2% more) to set it off. Shove it (1 Rumble die) and it just rolls a
+  tile away: down a pit, or into water, which puts it out. Click it from beside it to **defuse** it: Od
+  Hand 10, or it goes off in your hands.
+- **Unlit bombs** are loot: stand on one and pick it up as a Bomb card. Bots never throw bombs, and keep
+  clear of lit ones.
 - **Melee** needs an adjacent target. Heroes can strike diagonally too, unless walls close off both corners between them; monsters strike orthogonally only. **Ranged** needs line of sight; walls block it.
 - **Line of sight** runs between tile centers. Only walls (cracked ones too) block it, not pits, chests or
   other figures, and grazing a wall's corner is allowed.
@@ -294,10 +328,12 @@ when the total reaches its number:
 | Skeleton | 2 | 3 | 1d6+1 | 1d6+1 | Rises again once unless finished by a bomb or spell |
 | Cinder Imp | 1 | 4 | 1d6 | 1d6 | From floor 2. Fire attacks (a 6 sets you alight, hit or miss); can't burn |
 | Fire Beetle | 3 | 1 | 2d6 | 1d6+2 | From floor 2. Fire attacks; can't burn; slow and armored |
+| Petty Thief | 2 | 4 | 1d6 | 1d6 | Od Hand 3: steals from a hero beside it (each die over their Od Hand roll and tools takes, in turn, 2 gold, an item, 2 gold...); with loot it runs from everyone |
+| Mugger Fly | 1 | 6 | 2×1d6 | 1d6 | Flies. Goes for the hero with the most gold; every hit takes 1 gold; Od Hand 1 steals gold only |
 | **Miniboss: Key Warden** | 5 | 2 | 2d6+1 | 1d6+1 | Guards the Boss Key in the last floor's vault; can't be shoved |
 | **Boss: Iron Warden** | 8 | 3 | 2d6+1 | 1d6+1 | Every other turn, a flail sweep: one roll with all its dice against every hero within 2 |
 
-Monsters follow the same dice rules; the +1s are weapon and armor values. Each turn a monster splits its
+Monsters follow the same dice rules; the +1s are weapon and armor values. Whatever a monster stole drops where it falls. Each turn a monster splits its
 Attack dice into whichever attacks are likeliest to land the most hits on its target (its weapon goes on
 the first), so a 2-dice monster makes two quick attacks against an unarmored hero but one big one against
 a well-armored hero.

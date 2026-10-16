@@ -55,6 +55,11 @@ public static class CompanionBot
             return new Rouse(hero.Id, fallen.Id);
         }
 
+        if (SimpleBot.FleeBlast(session, hero, room) is { } flee)
+        {
+            return flee;
+        }
+
         if (hero.Hearts <= hero.MaxHearts - 2 && SimpleBot.UsableBeltCard(session, hero, CardEffectKind.Heal) is { } potion)
         {
             return new UseCard(hero.Id, potion.Id);

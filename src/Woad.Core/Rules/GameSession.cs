@@ -114,6 +114,7 @@ public sealed partial class GameSession
             GoProne c => Handle(c, events),
             GetUp c => Handle(c, events),
             StopDropRoll c => Handle(c, events),
+            AttackBomb c => Handle(c, events),
             _ => $"Unknown command {command.GetType().Name}.",
         };
 
@@ -197,6 +198,16 @@ public sealed partial class GameSession
     /// <summary>Starts the next seated hero's turn, or the enemy phase and a new round after the last seat.</summary>
     private void AdvanceTurn(int fromSeat, List<GameEvent> events)
     {
+        if (State.Turn is { } ended)
+        {
+            WearOffStun(State.GetHero(ended.HeroId), events);
+            BurnFuses(ended.HeroId, heroTurn: true, events);
+            if (State.Phase != RunPhase.InProgress)
+            {
+                return;
+            }
+        }
+
         Hero? next = State.Heroes.FirstOrDefault(hero => hero.IsInPlay && hero.Seat > fromSeat);
         if (next is not null)
         {
@@ -222,6 +233,7 @@ public sealed partial class GameSession
     {
         State.Turn = new TurnState(hero.Id) { KeelingOver = hero.IsKeelingOver };
         events.Add(new TurnStarted(hero.Id));
+        ApplyStun(hero);
 
         // A burning hero burns first; if that brings them down, play moves on.
         if (!BurnAtTurnStart(hero, events) && State.Phase == RunPhase.InProgress)

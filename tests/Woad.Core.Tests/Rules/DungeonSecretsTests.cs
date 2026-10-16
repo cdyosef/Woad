@@ -147,45 +147,6 @@ public class DungeonSecretsTests
     }
 
     [Fact]
-    public void ABombBreaksTheCrackedWallInADoorway()
-    {
-        GameSession session = DoorRun(PassageKind.Cracked, cards: ["bomb"]);
-        Hero hero = session.HeroInSeat();
-        Assert.Contains("cracked wall", session.Refuse(new GoThroughDoor(hero.Id, Direction.East)));
-
-        IReadOnlyList<GameEvent> events = session.Do(new UseCard(hero.Id, hero.Card("bomb").Id, new GridPosition(7, 4)));
-
-        Assert.Equal(new WallBroken("A", new GridPosition(8, 4), Direction.East), events.SingleOf<WallBroken>());
-        Assert.DoesNotContain(events, gameEvent => gameEvent is AttackRolled);
-        Assert.True(session.RoomById("A").PassageOn(Direction.East)!.IsOpen);
-    }
-
-    [Fact]
-    public void ABombBreaksACrackedWallAndTheStashInsideSpills()
-    {
-        var features = new RoomFeatures { Caches = new Dictionary<GridPosition, CacheSetup> { [new(4, 2)] = new(0, Keys: 1, BehindWall: true) } };
-        GameSession session = TestRun.Start([new RoomSetup("A", TestRun.Room("""
-            .........
-            .........
-            ....X....
-            .........
-            ....1....
-            .........
-            .........
-            .........
-            .........
-            """), Features: features)], cards: ["bomb"]);
-        Hero hero = session.HeroInSeat();
-        Room room = session.RoomById();
-
-        IReadOnlyList<GameEvent> events = session.Do(new UseCard(hero.Id, hero.Card("bomb").Id, new GridPosition(4, 3)));
-
-        Assert.Equal(TileKind.Floor, room.Layout[new GridPosition(4, 2)]);
-        Assert.Contains(new KeysAppeared("A", new GridPosition(4, 2), 1), events);
-        Assert.Equal(1, room.KeysAt(new GridPosition(4, 2)));
-    }
-
-    [Fact]
     public void HiddenSpikesStopTheWalkAndHurt()
     {
         var features = new RoomFeatures { Traps = new Dictionary<GridPosition, TrapSetup> { [new(4, 2)] = new(TrapKind.Spikes, 4) } };

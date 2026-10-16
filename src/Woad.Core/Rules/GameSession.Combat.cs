@@ -53,11 +53,12 @@ public sealed partial class GameSession
             return powerError;
         }
 
-        int bonus = command.UseWeapon ? WeaponBonusLeft : 0;
+        (int weaponBonus, bool stunOnSix) = WeaponFor(hero, room, monster.Position);
+        int bonus = command.UseWeapon && !Turn.WeaponUsed ? weaponBonus : 0;
         Turn.AttackDiceUsed += dice;
         Turn.WeaponUsed |= bonus > 0;
         SpendBankedPowerDice(hero, command.PowerDice, events);
-        RollHeroAttack(hero, dice, bonus, [monster.Id], DamageSource.Weapon, events, command.PowerDice);
+        RollHeroAttack(hero, dice + ProneBonus(monster, hero.Position), bonus, [monster.Id], DamageSource.Weapon, events, command.PowerDice, stunOnSix: stunOnSix);
         return null;
     }
 
@@ -102,11 +103,12 @@ public sealed partial class GameSession
             return powerError;
         }
 
-        int bonus = command.UseWeapon ? WeaponBonusLeft : 0;
+        (int weaponBonus, bool stunOnSix) = WeaponFor(hero, ActiveRoom, target.Position);
+        int bonus = command.UseWeapon && !Turn.WeaponUsed ? weaponBonus : 0;
         Turn.AttackDiceUsed += dice;
         Turn.WeaponUsed |= bonus > 0;
         SpendBankedPowerDice(hero, command.PowerDice, events);
-        RollHeroAttack(hero, dice + ProneBonus(target, hero.Position), bonus, [target.Id], DamageSource.Weapon, events, command.PowerDice);
+        RollHeroAttack(hero, dice + ProneBonus(target, hero.Position), bonus, [target.Id], DamageSource.Weapon, events, command.PowerDice, stunOnSix: stunOnSix);
         return null;
     }
 
@@ -175,12 +177,13 @@ public sealed partial class GameSession
     /// <param name="bonus">The weapon's fixed value added to the roll, or 0.</param>
     /// <param name="powerDice">Banked Power Dice rolled in with the dice (already taken from the bank).</param>
     /// <param name="fire">Fire dice: any 6 sets the targets alight (see <see cref="IgniteTargets"/>).</param>
-    private void RollHeroAttack(Hero hero, int dice, int bonus, IReadOnlyList<int> targetIds, DamageSource source, List<GameEvent> events, int powerDice = 0, bool fire = false)
+    /// <param name="stunOnSix">A stunning weapon (the Boomerang): every 6 stuns the targets.</param>
+    private void RollHeroAttack(Hero hero, int dice, int bonus, IReadOnlyList<int> targetIds, DamageSource source, List<GameEvent> events, int powerDice = 0, bool fire = false, bool stunOnSix = false)
     {
         DiceRoll roll = _dice.Roll(Math.Max(0, dice) + powerDice);
         events.Add(new AttackRolled(hero.Id, roll, bonus, roll.Total + bonus, targetIds, powerDice, source == DamageSource.Shove));
 
-        Turn.PendingRoll = new PendingRoll(hero.Id, roll, bonus, targetIds, source, fire: fire);
+        Turn.PendingRoll = new PendingRoll(hero.Id, roll, bonus, targetIds, source, fire: fire, stunOnSix: stunOnSix);
         EarnPowerDice(hero, Sixes(roll.Faces), events);
     }
 
@@ -196,7 +199,7 @@ public sealed partial class GameSession
         {
             if (room.FindMonster(targetId) is { } monster)
             {
-                DamageMonster(hero, room, monster, attack.Total, attack.Source, events);
+                DamageMonster(hero, room, monster, attack.Total, attack.Source, events, ranged: monster.Position.ChebyshevDistanceTo(hero.Position) > 1);
             }
             else if (State.ActiveHeroesIn(room).FirstOrDefault(ally => ally.Id == targetId) is { } ally)
             {
@@ -205,18 +208,22 @@ public sealed partial class GameSession
         }
 
         IgniteTargets(hero, room, attack, events);
+        StunTargets(hero, room, attack, events);
     }
 
     /// <summary>An attack hits, for 1 heart, when its total beats the defense total; ties go to the defender.</summary>
     private static int DamageFor(int attackTotal, int defenseTotal) =>
         attackTotal > defenseTotal ? GameRules.DamagePerHit : 0;
 
-    private void DamageMonster(Hero? attacker, Room room, Monster monster, int attackTotal, DamageSource source, List<GameEvent> events)
+    /// <param name="ranged">From a distance: a prone monster rolls an extra defense die.</param>
+    private void DamageMonster(Hero? attacker, Room room, Monster monster, int attackTotal, DamageSource source, List<GameEvent> events, bool ranged = false)
     {
-        // A collapsed heap of bones has no defense at all.
+        // A stunned monster is easier to hit; a collapsed heap of bones has no defense at all.
+        attackTotal += monster.Stun.AttackBonus;
         bool collapsed = monster.Collapsed;
         int armor = collapsed ? 0 : monster.Definition.Armor;
-        DiceRoll defense = RollDefense(monster.Id, monster.Power, collapsed ? 0 : monster.Definition.DefenseDice, armor, attackTotal, canSpend: !collapsed, events);
+        int dice = collapsed ? 0 : DefenseDiceOf(monster) + (ranged && monster.Prone ? 1 : 0);
+        DiceRoll defense = RollDefense(monster.Id, monster.Power, dice, armor, attackTotal, canSpend: !collapsed, events);
 
         int damage = DamageFor(attackTotal, defense.Total + armor);
         monster.Hearts = Math.Max(0, monster.Hearts - damage);
@@ -235,12 +242,13 @@ public sealed partial class GameSession
         {
             monster.Collapsed = true;
             monster.HasReassembled = true;
-            monster.StunnedTurns = 0;
+            monster.FrozenTurns = 0;
             events.Add(new MonsterCollapsed(monster.Id));
             return;
         }
 
         room.RemoveMonster(monster);
+        DropStolen(room, monster, SafeTile(room, monster.Position), events);
         if (killer is not null)
         {
             killer.Kills++;
@@ -328,7 +336,9 @@ public sealed partial class GameSession
     private void MonsterAttacks(Room room, Monster monster, Hero target, List<GameEvent> events)
     {
         MonsterDefinition definition = monster.Definition;
-        IReadOnlyList<int> attacks = PlanAttacks(definition, target.EffectiveStats);
+        IReadOnlyList<int> attacks = definition.SeparateAttacks
+            ? Enumerable.Repeat(1, monster.AttackDiceThisTurn).ToList()
+            : PlanAttacks(monster.AttackDiceThisTurn, definition.Weapon, target.EffectiveStats);
         int prone = ProneBonus(target, monster.Position);
         for (int i = 0; i < attacks.Count && target.IsActive; i++)
         {
@@ -349,7 +359,11 @@ public sealed partial class GameSession
         events.Add(new AttackRolled(monster.Id, roll, bonus, total, targets.Select(hero => hero.Id).ToList(), powerDice));
         foreach (Hero hero in targets.Where(hero => hero.IsActive))
         {
-            DamageHero(room, hero, total, MonsterBane(monster), monster.Id, events, ranged: hero.Position.ChebyshevDistanceTo(monster.Position) > 1);
+            int dealt = DamageHero(room, hero, total, MonsterBane(monster), monster.Id, events, ranged: hero.Position.ChebyshevDistanceTo(monster.Position) > 1);
+            if (dealt > 0 && monster.Definition.Mugger)
+            {
+                Mug(monster, hero, events);
+            }
         }
 
         IgniteFromMonster(monster, targets, roll, events);
@@ -359,15 +373,18 @@ public sealed partial class GameSession
     /// How a monster splits its Attack dice against a hero: the split with the most expected hits,
     /// counting its weapon on the biggest attack. On a tie it keeps fewer, bigger attacks.
     /// </summary>
-    internal static IReadOnlyList<int> PlanAttacks(MonsterDefinition monster, Stats target)
+    internal static IReadOnlyList<int> PlanAttacks(MonsterDefinition monster, Stats target) => PlanAttacks(monster.AttackDice, monster.Weapon, target);
+
+    /// <summary>The same, for <paramref name="attackDice"/> dice (fewer when a stun took some).</summary>
+    internal static IReadOnlyList<int> PlanAttacks(int attackDice, int weapon, Stats target)
     {
         int defenseDice = Math.Max(0, target.DefenseDice);
         int armor = Math.Max(0, target.Armor);
         IReadOnlyList<int> best = [];
         double bestHits = -1;
-        foreach (IReadOnlyList<int> split in Splits(monster.AttackDice, monster.AttackDice))
+        foreach (IReadOnlyList<int> split in Splits(attackDice, attackDice))
         {
-            double hits = split.Select((dice, i) => DiceOdds.ChanceToBeat(dice, i == 0 ? monster.Weapon : 0, defenseDice, armor)).Sum();
+            double hits = split.Select((dice, i) => DiceOdds.ChanceToBeat(dice, i == 0 ? weapon : 0, defenseDice, armor)).Sum();
             if (hits > bestHits + 1e-9)
             {
                 best = split;
@@ -407,12 +424,14 @@ public sealed partial class GameSession
     /// </summary>
     /// <param name="bane">What the attacker is, for the tombstone ("Slain by a Goblin").</param>
     /// <param name="ranged">From a distance: a prone hero rolls an extra defense die.</param>
-    private void DamageHero(Room room, Hero hero, int attackTotal, string bane, int attackerId, List<GameEvent> events, bool ranged = false)
+    /// <returns>The damage it did: 1 for a hit (a heart, or a mark of death), 0 for a miss.</returns>
+    private int DamageHero(Room room, Hero hero, int attackTotal, string bane, int attackerId, List<GameEvent> events, bool ranged = false)
     {
+        attackTotal += hero.Stun.AttackBonus;
         Stats stats = hero.EffectiveStats;
         int armor = Math.Max(0, stats.Armor);
         int lyingLow = ranged && hero.IsProne ? 1 : 0;
-        DiceRoll defense = RollDefense(hero.Id, hero.Power, Math.Max(0, stats.DefenseDice) + lyingLow, armor, attackTotal, canSpend: true, events);
+        DiceRoll defense = RollDefense(hero.Id, hero.Power, DefenseDiceOf(hero) + lyingLow, armor, attackTotal, canSpend: true, events);
 
         int damage = DamageFor(attackTotal, defense.Total + armor);
         if (hero.IsKeelingOver)
@@ -423,7 +442,7 @@ public sealed partial class GameSession
                 MarkForDeath(room, hero, bane, attackerId, events);
             }
 
-            return;
+            return damage;
         }
 
         hero.Hearts = Math.Max(0, hero.Hearts - damage);
@@ -433,5 +452,7 @@ public sealed partial class GameSession
         {
             KeelOver(room, hero, bane, events);
         }
+
+        return damage;
     }
 }

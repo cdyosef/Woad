@@ -163,3 +163,9 @@ public sealed record GetUp(int HeroId) : GameCommand(HeroId);
 
 /// <summary>On fire, with nothing done yet this turn: put the fire out, ending the turn prone.</summary>
 public sealed record StopDropRoll(int HeroId) : GameCommand(HeroId);
+
+/// <summary>
+/// Strike a bomb in reach with <paramref name="Dice"/> Rumble dice: no roll to hit, but each die (and
+/// Power Die) is a 12% chance to set it off, and each point of weapon bonus 2% more.
+/// </summary>
+public sealed record AttackBomb(int HeroId, int BombId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0) : GameCommand(HeroId);

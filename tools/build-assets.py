@@ -221,6 +221,44 @@ MONSTERS = {
         "........",
     ], {"o": "#1a0806", "h": "#3a1a14", "s": "#8a2a1a", "f": "#ffa030"}, mirror=True)),
 
+    "petty_thief": (sprite([
+        "................",
+        "......oooo......",
+        ".....ohhhho.....",
+        "....ohhhhhho....",
+        "....ohsssshho...",
+        "....ohsesesho...",
+        "....ohhsssho....",
+        "...ooohhhhoo....",
+        "..occoccccoco...",
+        "..occocccco.oyo.",
+        "...oocccccooyyo.",
+        "....ocooccooyyo.",
+        "....oc.occo.oo..",
+        "....ok..oko.....",
+        "...ooo..ooo.....",
+        "................",
+    ], {"o": "#14100c", "h": "#4a3a5a", "s": "#d8b090", "e": "#14100c", "c": "#3a2e48", "k": "#2a2018", "y": "#c8a050"})),
+
+    "mugger_fly": (sprite([
+        "................",
+        "................",
+        "..ww........ww..",
+        ".wwww.o..o.wwww.",
+        ".wwwwwoooowwwww.",
+        "..wwwoggggowww..",
+        "....oreggeroo...",
+        "....oggggggo....",
+        "...ogkgkgkggo...",
+        "...ogkgkgkggo...",
+        "....oggggggo....",
+        ".....oo..oo.....",
+        "....o.y..o.o....",
+        ".....yyy........",
+        "......y.........",
+        "................",
+    ], {"o": "#0c100c", "w": "#cfe0e8", "g": "#3a6a3a", "k": "#1a2a1a", "r": "#d8434a", "e": "#0c100c", "y": "#f0c94a"})),
+
     "bones": (sprite([
         "........", "........", "........", "........", "........", "........",
         "........", "........", "........",
@@ -329,6 +367,59 @@ OBJECTS = {
         "................", "................",
     ], {"o": "#2a1408", "r": "#c87a4a", "c": "#a8643c", "l": "#e09a6a", "d": "#7a4528"}),
 }
+
+# Bombs: unlit, and lit with the spark at the end of its long fuse in two flickering frames.
+BOMB_ROWS = [
+    "................",
+    "..........ff....",
+    ".........f..f...",
+    "........f.......",
+    "......oof.......",
+    ".....oxxoo......",
+    "....oooooooo....",
+    "...obbbbbbbbo...",
+    "..obllbbbbbbbo..",
+    "..oblbbbbbbbbo..",
+    "..obbbbbbbbbbo..",
+    "..obbbbbbbbbbo..",
+    "...obbbbbbbbo...",
+    "....obbbbbbo....",
+    ".....oooooo.....",
+    "................",
+]
+BOMB_PALETTE = {"o": "#0e0c14", "b": "#2c2a3a", "l": "#6a6888", "x": "#8a7a5a", "f": "#c8a060"}
+
+
+def lit_bomb(sparks):
+    rows = [list(row) for row in BOMB_ROWS]
+    for x, y, c in sparks:
+        rows[y][x] = c
+    return sprite(["".join(row) for row in rows], {**BOMB_PALETTE, "s": "#ffd84a", "r": "#ff6a1f"})
+
+
+OBJECTS["bomb"] = sprite(BOMB_ROWS, BOMB_PALETTE)
+OBJECTS["bomb_lit"] = lit_bomb([(12, 2, "s"), (13, 1, "r"), (11, 1, "r"), (13, 3, "r"), (12, 1, "s")])
+OBJECTS["bomb_lit2"] = lit_bomb([(12, 2, "r"), (13, 2, "s"), (11, 3, "s"), (12, 0, "r")])
+
+# A pressure plate with a bomb mark: a found bomb trap.
+OBJECTS["bomb_trap"] = sprite([
+    "................",
+    "................",
+    "..pppppppppppp..",
+    ".pqqqqqqqqqqqqp.",
+    ".pqiqqqqqqqqiqp.",
+    ".pqqqqqoffqqqqp.",
+    ".pqqqqoooqqqqqp.",
+    ".pqqqoooooqqqqp.",
+    ".pqqqoooooqqqqp.",
+    ".pqqqoooooqqqqp.",
+    ".pqqqqoooqqqqqp.",
+    ".pqiqqqqqqqqiqp.",
+    ".pqqqqqqqqqqqqp.",
+    "..pppppppppppp..",
+    "................",
+    "................",
+], {"p": "#2a2018", "q": "#6a5a44", "i": "#a89070", "o": "#1a1820", "f": "#d0503a"})
 
 HEART_ROWS = [".oo.oo.", "orrorro", "orlrrro", "orrrrro", ".orrro.", "..oro..", "...o..."]
 
@@ -813,6 +904,8 @@ def build_sounds(directory):
         "turn": mix(tone(lambda t: 880, 0.25, sine, 0.22, release=0.22), tone(lambda t: 1320, 0.2, sine, 0.1, release=0.18)),
         "monsters": tone(lambda t: 110 + 30 * math.sin(t * 40), 0.3, volume=0.18, release=0.2),
         "downed": tone(lambda t: 330 - 500 * t, 0.45, volume=0.25, release=0.2),
+        "boom": mix(noise(0.7, 0.75, decay=5, seed=41, lowpass=0.12), tone(lambda t: 85 - 50 * t, 0.55, volume=0.3, release=0.35)),
+        "fuse": noise(0.25, 0.18, decay=8, seed=43, lowpass=0.9),
         "victory": notes([(523, 0.1), (659, 0.1), (784, 0.1), (1047, 0.12), (784, 0.08), (1047, 0.35)], volume=0.25),
     }
     for name, samples in sounds.items():

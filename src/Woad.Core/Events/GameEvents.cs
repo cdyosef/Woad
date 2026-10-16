@@ -72,7 +72,7 @@ public sealed record MonsterSpawned(int MonsterId, string MonsterDefinitionId, s
 
 public sealed record MonsterMoved(int MonsterId, IReadOnlyList<GridPosition> Path) : GameEvent;
 
-public sealed record MonsterStunned(int MonsterId, int Turns) : GameEvent;
+public sealed record MonsterFrozen(int MonsterId, int Turns) : GameEvent;
 
 public sealed record MonsterTurnSkipped(int MonsterId) : GameEvent;
 
@@ -277,14 +277,56 @@ public sealed record FireSpread(int FromId, int ToId, int FireDice) : GameEvent;
 /// <summary>A hero's or monster's fire went out.</summary>
 public sealed record FireOut(int EntityId, FireOutCause Cause) : GameEvent;
 
-/// <summary>A hero lay down: prone, or diving in deep water.</summary>
-public sealed record WentProne(int HeroId, bool Diving) : GameEvent;
+/// <summary>A hero or monster lay down (or was knocked down): prone, or diving in deep water.</summary>
+public sealed record WentProne(int EntityId, bool Diving) : GameEvent;
 
-/// <summary>A prone hero got back on their feet.</summary>
-public sealed record GotUp(int HeroId) : GameEvent;
+/// <summary>A prone hero or monster got back on its feet.</summary>
+public sealed record GotUp(int EntityId) : GameEvent;
 
 /// <summary>Coins went into a hero's purse: <paramref name="Amount"/> gold, <paramref name="Total"/> now carried.</summary>
 public sealed record GoldFound(int HeroId, int Amount, int Total) : GameEvent;
 
 /// <summary>Gold landed on the floor: coins a monster dropped or a stash held, or the purse of someone who died.</summary>
 public sealed record GoldAppeared(string RoomId, GridPosition Position, int Amount) : GameEvent;
+
+/// <summary>A hero or monster was stunned: its Stun and Powerful Stun stacks now (see <see cref="StunState"/>).</summary>
+public sealed record Stunned(int EntityId, int Stacks, int PowerfulStacks, bool Powerful) : GameEvent;
+
+/// <summary>The end of a stunned hero's or monster's turn: the stun wore off.</summary>
+public sealed record StunWoreOff(int EntityId) : GameEvent;
+
+/// <summary>A bomb landed in a room: thrown (lit), popped out of a bomb trap (lit, or unlit when it was disarmed).</summary>
+public sealed record BombPlaced(string RoomId, int BombId, GridPosition Position, bool Lit, int? OwnerId) : GameEvent;
+
+/// <summary>A lit bomb's fuse burned down a turn: it goes off at the end of its owner's next turn (1) or this one.</summary>
+public sealed record FuseBurned(string RoomId, int BombId, int FuseTurns) : GameEvent;
+
+/// <summary>A bomb went off. Its blast (rolled next) catches everyone within a tile, and breaks cracked walls and other bombs.</summary>
+public sealed record BombExploded(string RoomId, int BombId, GridPosition Position) : GameEvent;
+
+/// <summary>A blast's dice, compared one by one with each creature's defense; <paramref name="PowerDice"/> of them came from sixes.</summary>
+public sealed record BlastRolled(string RoomId, GridPosition Position, DiceRoll Roll, int PowerDice) : GameEvent;
+
+/// <summary>How many of a blast's dice got through to a creature: 1 hurts, 2 shoves, 3 knocks prone, 4 or more Powerful Stuns.</summary>
+public sealed record BlastHit(int EntityId, int Hits) : GameEvent;
+
+/// <summary>A hero struck a bomb with their Rumble dice: <paramref name="Chance"/> percent it went off.</summary>
+public sealed record BombStruck(int HeroId, int BombId, int Chance, bool Exploded) : GameEvent;
+
+/// <summary>A bomb was shoved a tile.</summary>
+public sealed record BombMoved(string RoomId, int BombId, GridPosition From, GridPosition To) : GameEvent;
+
+/// <summary>A lit bomb went out: defused with Od Hand, or doused in water. It lies there unlit.</summary>
+public sealed record BombDefused(string RoomId, int BombId, bool Doused) : GameEvent;
+
+/// <summary>A bomb fell down a pit: to the room below, or out of the game.</summary>
+public sealed record BombFell(string RoomId, int BombId, string? ToRoomId) : GameEvent;
+
+/// <summary>
+/// A monster tried to steal from a hero: <paramref name="Hits"/> of its Od Hand dice beat the hero's own
+/// roll, taking <paramref name="Gold"/> gold and perhaps a card (0 hits: caught empty-handed).
+/// </summary>
+public sealed record MonsterStole(int MonsterId, int HeroId, int Hits, int Gold, int? CardId) : GameEvent;
+
+/// <summary>A mugging monster's hit took gold from a hero.</summary>
+public sealed record Mugged(int MonsterId, int HeroId, int Gold) : GameEvent;

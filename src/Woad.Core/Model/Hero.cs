@@ -121,6 +121,9 @@ public sealed class Hero
     /// <summary>Doom Dice added to the hero's next Keel roll: one for each 1 an ally rolled rousing them.</summary>
     public int DoomDiceOwed { get; internal set; }
 
+    /// <summary>Stun and Powerful Stun on the hero (see <see cref="StunState"/>).</summary>
+    public StunState Stun { get; } = new();
+
     /// <summary>Fire dice burning on the hero (0 when not on fire): rolled against them at the start of their turn.</summary>
     public int FireDice { get; internal set; }
 
@@ -168,9 +171,15 @@ public sealed class Hero
 
     public int MaxHearts => Math.Max(1, EffectiveStats.Hearts);
 
-    /// <summary>Reach of the Attack action: the main-hand weapon's range, or melee when unarmed.</summary>
-    public int AttackRange =>
-        _equipment.TryGetValue(EquipSlot.MainHand, out CardInstance? weapon) ? weapon.Definition.AttackRange : 1;
+    /// <summary>The main-hand weapon, if any.</summary>
+    public CardInstance? MainWeapon => _equipment.GetValueOrDefault(EquipSlot.MainHand);
+
+    /// <summary>A thrown weapon (the Boomerang) in the off hand, if any: it reaches further than the main hand may.</summary>
+    public CardInstance? ThrownOffHand =>
+        _equipment.TryGetValue(EquipSlot.OffHand, out CardInstance? off) && off != MainWeapon && off.Definition.Type == CardType.Weapon ? off : null;
+
+    /// <summary>Reach of the Attack action: the main-hand weapon's range (melee when unarmed), or a thrown off-hand weapon's if further.</summary>
+    public int AttackRange => Math.Max(MainWeapon?.Definition.AttackRange ?? 1, ThrownOffHand?.Definition.AttackRange ?? 1);
 
     /// <summary>Gold value of the treasure carried; decides the winner.</summary>
     public int TreasureValue =>
@@ -202,9 +211,16 @@ public sealed class Hero
         : card.Slot is { } slot ? [slot]
         : [];
 
+    /// <summary>
+    /// The slots equipping <paramref name="card"/> would fill: its own, or its other slot (the Boomerang's
+    /// off hand) when its own is taken and the other is free.
+    /// </summary>
+    public IReadOnlyList<EquipSlot> SlotsToFill(CardDefinition card) =>
+        card.AltSlot is { } alt && card.Slot is { } own && _equipment.ContainsKey(own) && !_equipment.ContainsKey(alt) ? [alt] : SlotsFor(card);
+
     /// <summary>Cards that equipping <paramref name="card"/> would push out of their slots.</summary>
     public IReadOnlyList<CardInstance> CardsDisplacedBy(CardDefinition card) =>
-        SlotsFor(card)
+        SlotsToFill(card)
             .Select(slot => _equipment.GetValueOrDefault(slot))
             .OfType<CardInstance>()
             .Distinct()
@@ -212,7 +228,7 @@ public sealed class Hero
 
     internal void Equip(CardInstance card)
     {
-        foreach (EquipSlot slot in SlotsFor(card.Definition))
+        foreach (EquipSlot slot in SlotsToFill(card.Definition))
         {
             _equipment[slot] = card;
         }

@@ -29,7 +29,7 @@ public class ContentCatalogTests
 
         CardDefinition bomb = content.GetCard("bomb");
         Assert.Equal(CardUsage.SingleUse, bomb.Usage);
-        Assert.Equal(new CardEffect { Kind = CardEffectKind.Attack, Amount = 2, Range = 3, AreaRadius = 1 }, bomb.Effect);
+        Assert.Equal(new CardEffect { Kind = CardEffectKind.Attack, Amount = 4, Range = 3, AreaRadius = 1 }, bomb.Effect);
 
         MonsterDefinition boss = content.GetMonster("iron_warden");
         Assert.True(boss.Boss);
@@ -71,7 +71,7 @@ public class ContentCatalogTests
     [Theory]
     [InlineData("""{ "id": "x", "name": "X", "type": "weapon" }""", "no slot")]
     [InlineData("""{ "id": "x", "name": "X", "type": "potion", "usage": "singleUse" }""", "no effect")]
-    [InlineData("""{ "id": "x", "name": "X", "type": "tool", "effect": { "kind": "stun", "amount": 1, "range": 2 } }""", "needs a slot")]
+    [InlineData("""{ "id": "x", "name": "X", "type": "tool", "effect": { "kind": "freeze", "amount": 1, "range": 2 } }""", "needs a slot")]
     [InlineData("""{ "id": "x", "name": "X", "type": "weapon", "slot": "offHand", "twoHanded": true }""", "two-handed")]
     [InlineData("""{ "id": "x", "name": "X", "type": "treasure" }""", "no value")]
     public void CardRulesAreEnforced(string card, string expectedProblem)

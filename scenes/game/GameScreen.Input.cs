@@ -11,6 +11,36 @@ namespace Woad.Scenes.Game;
 /// <summary>Turning clicks and hovers into commands, hints and tile descriptions.</summary>
 public partial class GameScreen
 {
+    /// <summary>Rumble: attack whatever is on the tile, if it's in reach (a monster, a bomb, or with friendly fire on, an ally); else put Rumble away.</summary>
+    private void RumbleAt(Hero hero, Room room, GridPosition tile)
+    {
+        if (!RumbleTargets(room).Contains(tile))
+        {
+            _rumbling = false;
+            RefreshPanels();
+            return;
+        }
+
+        if (SelectedAttackDice < 1)
+        {
+            Log("Select at least one Rumble die.", Palette.TextDim);
+            return;
+        }
+
+        if (room.MonsterAt(tile) is { } monster)
+        {
+            Execute(new AttackMonster(hero.Id, monster.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
+        }
+        else if (_session.GetAttackableAllies().FirstOrDefault(ally => ally.Position == tile) is { } ally)
+        {
+            Execute(new AttackAlly(hero.Id, ally.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
+        }
+        else if (room.BombAt(tile) is { } bomb)
+        {
+            Execute(new AttackBomb(hero.Id, bomb.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
+        }
+    }
+
     private void OnTileClicked(GridPosition tile)
     {
         if (Locked || ActiveHero is not { } hero || _session.State.Turn is not { } turn || hero.RoomId != _shownRoomId)
@@ -86,32 +116,28 @@ public partial class GameScreen
             return;
         }
 
+        // A lit bomb next to you: try to defuse it (Od Hand 10, or it goes off).
+        if (room.BombAt(tile) is { Lit: true } && _session.CheckDisarm(tile) is null)
+        {
+            ExecuteOdHand((heroId, dice, tools, power) => new Disarm(heroId, tile, dice, tools, power));
+            return;
+        }
+
         if (_session.GetRousableAllies().FirstOrDefault(fallen => fallen.Position == tile) is { } fallen)
         {
             ExecuteOdHand((heroId, dice, tools, power) => new Rouse(heroId, fallen.Id, dice, tools, power));
             return;
         }
 
-        if (room.MonsterAt(tile) is { } monster)
+        if (_rumbling)
         {
-            if (_session.AttackDiceLeft > 0 && SelectedAttackDice < 1)
-            {
-                Log("Select at least one Attack die.", Palette.TextDim);
-                return;
-            }
-
-            Execute(new AttackMonster(hero.Id, monster.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
+            RumbleAt(hero, room, tile);
+            return;
         }
-        else if (_session.GetAttackableAllies().FirstOrDefault(ally => ally.Position == tile) is { } ally)
-        {
-            // Friendly fire is on and an ally is in reach.
-            if (SelectedAttackDice < 1)
-            {
-                Log("Select at least one Rumble die.", Palette.TextDim);
-                return;
-            }
 
-            Execute(new AttackAlly(hero.Id, ally.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
+        if (room.MonsterAt(tile) is not null)
+        {
+            Log("Press Rumble (or Space) to attack.", Palette.TextDim);
         }
         else if (room.Layout[tile] == TileKind.Gate)
         {
@@ -304,6 +330,11 @@ public partial class GameScreen
             return "Shove: click a monster next to you (orange) to push it a tile. Right-click to cancel.";
         }
 
+        if (_rumbling)
+        {
+            return "Rumble: click a target in red to attack it with your selected dice. Right-click (or Space) to put it away.";
+        }
+
         if (_leaping)
         {
             return $"Leap: click a purple tile up to {GameRules.MaxLeap} away. You roll a Wend die as you jump and carry half the roll. Right-click to cancel.";
@@ -317,7 +348,7 @@ public partial class GameScreen
         if (turn.MovementPoints == 0)
         {
             return _session.MoveDiceLeft > 0 || _session.AttackDiceLeft > 0
-                ? "Choose dice, then Wend to move, click a red-outlined monster to attack, or Search the room."
+                ? "Choose dice, then Wend to move, Rumble (Space) to attack, or Search the room."
                 : "Out of dice. Use your action or belt item, or end your turn.";
         }
 
@@ -341,7 +372,8 @@ public partial class GameScreen
             string power = standing.Power.Banked > 0 ? $", {PowerDiceText(standing.Power.Banked)} banked" : "";
             string companion = standing.OwnerId is int ownerId ? $" ({NameOf(ownerId)}'s companion, {Describe(standing.Order)})" : "";
             string onFire = standing.FireDice > 0 ? $", ON FIRE ({standing.FireDice} {(standing.FireDice == 1 ? "die" : "dice")})" : "";
-            string lying = _session.IsDiving(standing) ? ", diving" : standing.Prone ? ", prone" : "";
+            string lying = (_session.IsDiving(standing) ? ", diving" : standing.Prone ? ", prone" : "")
+                + (standing.Stun.IsStunned ? $", stunned (+{standing.Stun.AttackBonus} to hit)" : "");
             return $"{standing.Name}{companion}: {standing.Hearts}/{standing.MaxHearts} hearts{power}{onFire}{lying}";
         }
 
@@ -353,6 +385,18 @@ public partial class GameScreen
                 ? " Click to rouse them with Od Hand: every 6 of the total is a mark of life, but each 1 rolled adds a Doom Die."
                 : " An ally beside them can rouse them with Od Hand.";
             return $"{fallen.Name} is Keeling Over: life {fallen.LifeMarks}/3, death {fallen.DeathMarks}/3{doom}.{rouse}";
+        }
+
+        if (room.BombAt(tile) is { Lit: true } lit)
+        {
+            string owner = lit.OwnerId is int ownerId ? NameOf(ownerId) : "someone";
+            return $"A lit bomb: it goes off at the end of {owner}'s {(lit.FuseTurns == 1 ? "current or next" : "next")} turn, blasting everyone within a tile. "
+                   + $"Next to it: click to defuse it (Od Hand {GameRules.DefuseDifficulty}+, or it goes off), Shove it away, or strike it ({GameRules.BombChancePerDie}% a Rumble die to set it off). Fire sets it off.";
+        }
+
+        if (room.BombAt(tile) is { Lit: false } && room.LootAt(tile).Count == 0 && room.GoldAt(tile) == 0)
+        {
+            return "An unlit bomb. Stand on it and click to pick it up as a Bomb card. Fire or a blow could still set it off.";
         }
 
         string grave = room.TombstoneAt(tile) is { } stone ? $"{stone.Inscription}. {stone.Epitaph}. " : "";
@@ -379,7 +423,9 @@ public partial class GameScreen
 
         if (room.TrapAt(tile) is { Revealed: true } trap)
         {
-            return trap.Kind == TrapKind.TrapDoor
+            return trap.Kind == TrapKind.BombTrap
+                ? $"A bomb trap: step on it and it pops out a lit bomb. Next to it: click to disarm it ({trap.Difficulty}+), and it gives up the bomb unlit."
+                : trap.Kind == TrapKind.TrapDoor
                 ? $"A trap door to the floor below. Next to it: click to jump down safely (1 step), or disarm it ({trap.Difficulty}+). Walk onto it and you fall, losing a heart."
                 : $"Spikes: whoever steps here loses a heart and stops. Next to it: click to disarm with Od Hand ({trap.Difficulty}+).";
         }
@@ -475,6 +521,21 @@ public partial class GameScreen
             traits.Add("boss");
         }
 
+        if (definition.Thief)
+        {
+            traits.Add("steals, then runs");
+        }
+
+        if (definition.Mugger)
+        {
+            traits.Add("goes for your gold");
+        }
+
+        if (monster.HasLoot)
+        {
+            traits.Add($"carrying {monster.StolenGold} gold{(monster.StolenCards.Count > 0 ? $" and {UiTheme.Count(monster.StolenCards.Count, "card", "cards")}" : "")}");
+        }
+
         if (definition.FireAttack)
         {
             traits.Add("fire attacks: a 6 sets you alight");
@@ -520,9 +581,19 @@ public partial class GameScreen
             traits.Add("reassembles");
         }
 
-        if (monster.StunnedTurns > 0)
+        if (monster.FrozenTurns > 0)
         {
-            traits.Add("stunned");
+            traits.Add("frozen");
+        }
+
+        if (monster.Stun.IsStunned)
+        {
+            traits.Add($"stunned (+{monster.Stun.AttackBonus} to hit)");
+        }
+
+        if (monster.Prone)
+        {
+            traits.Add("prone");
         }
 
         return traits.Count == 0 ? "" : $" ({string.Join(", ", traits)})";
@@ -546,6 +617,7 @@ public partial class GameScreen
         _stealing = false;
         _shoving = false;
         _leaping = false;
+        _rumbling = false;
         _selectedCardId = null;
         _targeting = false;
         _board.SetBlast([]);

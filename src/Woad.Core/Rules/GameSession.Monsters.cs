@@ -33,7 +33,37 @@ public sealed partial class GameSession
         events.Add(new EnemyPhaseEnded(State.Round));
     }
 
+    /// <summary>A monster's turn; a stun on it wears off at the end (if it still stands).</summary>
     private void TakeMonsterTurn(Room room, Monster monster, List<GameEvent> events)
+    {
+        monster.Stun.WearsOffThisTurn = monster.Stun.IsStunned;
+        MonsterDefinition own = monster.Definition;
+        (int wendLost, int rumbleLost, _) = monster.Stun.Lost(own.OdHandDice > 0, own.WendDice, own.AttackDice, own.DefenseDice);
+        monster.MovesThisTurn = Math.Max(0, own.Move - 2 * wendLost);
+        monster.AttackDiceThisTurn = Math.Max(0, own.AttackDice - rumbleLost);
+        _actingMonsterId = monster.Id;
+        try
+        {
+            ActMonsterTurn(room, monster, events);
+        }
+        finally
+        {
+            _actingMonsterId = null;
+        }
+
+        if (monster.Stun.WearsOffThisTurn && room.FindMonster(monster.Id) is not null)
+        {
+            monster.Stun.Clear();
+            events.Add(new StunWoreOff(monster.Id));
+        }
+
+        if (State.Phase == RunPhase.InProgress)
+        {
+            BurnFuses(monster.Id, heroTurn: false, events);
+        }
+    }
+
+    private void ActMonsterTurn(Room room, Monster monster, List<GameEvent> events)
     {
         if (!BurnAtTurnStart(room, monster, events) || State.Phase != RunPhase.InProgress)
         {
@@ -48,9 +78,9 @@ public sealed partial class GameSession
             return;
         }
 
-        if (monster.StunnedTurns > 0)
+        if (monster.FrozenTurns > 0)
         {
-            monster.StunnedTurns--;
+            monster.FrozenTurns--;
             events.Add(new MonsterTurnSkipped(monster.Id));
             return;
         }
@@ -64,8 +94,29 @@ public sealed partial class GameSession
             return;
         }
 
+        // Knocked flat: getting up takes 2 of its moves.
+        if (monster.Prone)
+        {
+            monster.Prone = false;
+            monster.MovesThisTurn = Math.Max(0, monster.MovesThisTurn - GameRules.GetUpCost);
+            events.Add(new GotUp(monster.Id));
+        }
+
         monster.TurnsTaken++;
         MonsterDefinition definition = monster.Definition;
+
+        // A thief with loot runs from everyone, and does nothing else.
+        if (definition.Thief && monster.HasLoot)
+        {
+            IReadOnlyList<GridPosition> flight = PlanFlight(room, monster, heroes);
+            if (flight.Count > 0)
+            {
+                monster.Position = flight[^1];
+                events.Add(new MonsterMoved(monster.Id, flight));
+            }
+
+            return;
+        }
 
         if (definition.Sweep is { } sweep && monster.TurnsTaken % sweep.Every == 0)
         {
@@ -73,7 +124,7 @@ public sealed partial class GameSession
             if (swept.Count > 0)
             {
                 // One swing with every Attack die, which each hero in reach defends against.
-                RollMonsterAttack(room, monster, definition.AttackDice, definition.Weapon, swept, events);
+                RollMonsterAttack(room, monster, monster.AttackDiceThisTurn, definition.Weapon, swept, events);
                 return;
             }
         }
@@ -89,6 +140,12 @@ public sealed partial class GameSession
                 monster.FireDice = 0;
                 events.Add(new FireOut(monster.Id, FireOutCause.Water));
             }
+        }
+
+        // Its Od Hand action: a steal from a hero beside it. A thief that got something runs next turn instead of fighting.
+        if (TrySteal(room, monster, State.HeroesIn(room).ToList(), events) && definition.Thief && monster.HasLoot)
+        {
+            return;
         }
 
         if (ChooseTarget(room, monster, monster.Position, standing) is { } target)
@@ -107,13 +164,15 @@ public sealed partial class GameSession
             .Where(hero => Targeting.CanAttack(room.Layout, monster.Definition.AttackPattern, monster.Definition.AttackRange, from, hero.Position))
             // Someone diving in deep water can only be reached up close.
             .Where(hero => !Diving(room, hero) || hero.Position.ChebyshevDistanceTo(from) <= 1)
-            .OrderBy(hero => hero.Hearts)
+            // A mugger goes for the gold.
+            .OrderByDescending(hero => monster.Definition.Mugger ? hero.Gold : 0)
+            .ThenBy(hero => hero.Hearts)
             .ThenBy(hero => hero.Seat)
             .FirstOrDefault();
 
     /// <summary>Monsters can't pass through heroes, other monsters, walls or chests; only flyers cross pits.</summary>
     private bool CanMonsterEnter(Room room, Monster monster, GridPosition position) =>
-        room.Layout[position].IsWalkable(monster.Definition.Flying)
+        room.Layout[position].IsWalkable(monster.Flies)
         && (room.MonsterAt(position) is not { } other || other == monster)
         && !State.HeroesIn(room).Any(hero => hero.Position == position);
 
@@ -124,7 +183,7 @@ public sealed partial class GameSession
         GridPosition current = monster.Position;
 
         // Rough ground and shallow water cost 2 of its moves (flyers pay 1 everywhere).
-        for (int movesLeft = monster.Definition.Move; movesLeft > 0;)
+        for (int movesLeft = monster.MovesThisTurn; movesLeft > 0;)
         {
             if (ChooseTarget(room, monster, current, heroes) is not null)
             {
@@ -175,7 +234,7 @@ public sealed partial class GameSession
         return goal == from ? null : search.PathTo(goal)[0];
     }
 
-    private static int StepCost(Room room, Monster monster, GridPosition tile) => room.Layout[tile].MoveCost(monster.Definition.Flying);
+    private static int StepCost(Room room, Monster monster, GridPosition tile) => room.Layout[tile].MoveCost(monster.Flies);
 
     private GridPosition? RandomStep(Room room, Monster monster, GridPosition from)
     {
@@ -188,7 +247,7 @@ public sealed partial class GameSession
     /// <summary>Backs off to a tile it can still attack from, as far from the heroes as its move allows.</summary>
     private IReadOnlyList<GridPosition> PlanRetreat(Room room, Monster monster, IReadOnlyList<Hero> heroes)
     {
-        PathSearch search = PathSearch.Run(monster.Position, position => CanMonsterEnter(room, monster, position), monster.Definition.Move, stepCost: position => StepCost(room, monster, position));
+        PathSearch search = PathSearch.Run(monster.Position, position => CanMonsterEnter(room, monster, position), monster.MovesThisTurn, stepCost: position => StepCost(room, monster, position));
 
         GridPosition best = search.Distances.Keys
             .OrderBy(tile => ChooseTarget(room, monster, tile, heroes) is null ? 1 : 0)

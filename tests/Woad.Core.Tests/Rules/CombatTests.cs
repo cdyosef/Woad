@@ -280,21 +280,6 @@ public class CombatTests
     }
 
     [Fact]
-    public void BombsDestroyReassemblingMonstersOutright()
-    {
-        GameSession session = TestRun.Start(Duel('k'), new ScriptedDice(5, 5, 5), cards: ["bomb"]);
-        Hero hero = session.HeroInSeat();
-        Monster bones = session.OnlyMonster();
-        session.Do(new AttackMonster(hero.Id, bones.Id));
-
-        IReadOnlyList<GameEvent> events = session.Do(new UseCard(hero.Id, hero.Card("bomb").Id, bones.Position));
-
-        Assert.Equal(10, events.SingleOf<AttackRolled>().Total);
-        Assert.Contains(new MonsterDefeated(bones.Id, hero.Id), events);
-        Assert.DoesNotContain(events, gameEvent => gameEvent is MonsterCollapsed);
-    }
-
-    [Fact]
     public void LuckHoldsTheAttackOpenForRerolls()
     {
         GameSession session = TestRun.Start(Duel('m'), new ScriptedDice(1, 5, 1), stats: GameRules.HeroBaseStats with { Luck = 2 });

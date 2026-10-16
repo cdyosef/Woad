@@ -103,19 +103,19 @@ public class CardTests
     [Fact]
     public void TheChecksExplainWhyACardCantBeUsedOrMoved()
     {
-        GameSession session = TestRun.Start(CagedSpearman, cards: ["sword", "shield", "potion", "bomb", "boomerang", "coin", "potion"]);
+        GameSession session = TestRun.Start(CagedSpearman, cards: ["sword", "shield", "potion", "bomb", "icicle", "coin", "potion"]);
         Hero hero = session.HeroInSeat();
         int potion = hero.Belt[0].Id;
 
         Assert.Contains("carry it out", session.CheckUse(hero.Card("coin").Id));
         Assert.Contains("full hearts", session.CheckUse(potion));
-        Assert.Contains("Equip the Boomerang", session.CheckUse(hero.Card("boomerang").Id));
+        Assert.Contains("Equip the Icicle", session.CheckUse(hero.Card("icicle").Id));
         Assert.Contains("isn't worn or held", session.CheckEquip(potion));
         Assert.Contains("Only single-use", session.CheckBelt(hero.Card("sword").Id));
         Assert.Contains("belt is full", session.CheckBelt(hero.Backpack[^1].Id));
         Assert.Contains("already in your backpack", session.CheckStow(hero.Card("coin").Id));
 
-        Assert.Null(session.CheckEquip(hero.Card("boomerang").Id));
+        Assert.Null(session.CheckEquip(hero.Card("icicle").Id));
         Assert.Null(session.CheckStow(potion));
     }
 
@@ -204,71 +204,21 @@ public class CardTests
     }
 
     [Fact]
-    public void BombsHitEveryMonsterInTheBlast()
-    {
-        GameSession session = TestRun.Start("""
-            .........
-            ...BB.B..
-            .........
-            .........
-            ....1....
-            .........
-            .........
-            .........
-            .........
-            """, new ScriptedDice(5, 5, 1, 1), cards: ["bomb"]);
-        Hero hero = session.HeroInSeat();
-
-        IReadOnlyList<GameEvent> events = session.Do(new UseCard(hero.Id, hero.Card("bomb").Id, new GridPosition(4, 1)));
-
-        // One roll (10) against each brute's own defense: a heart from each in the blast.
-        Assert.Equal(10, events.SingleOf<AttackRolled>().Total);
-        Assert.Equal([1, 1], events.OfType<Damaged>().Select(damaged => damaged.Amount));
-        Assert.Equal([1, 1, 2], session.RoomById().Monsters.Select(monster => monster.Hearts));
-        Assert.Empty(hero.Belt);
-    }
-
-    [Fact]
-    public void BombsNeedAMonsterInTheBlastAndWithinRange()
-    {
-        GameSession session = TestRun.Start("""
-            ....B....
-            .........
-            .........
-            .........
-            ....1....
-            .........
-            .........
-            .........
-            .........
-            """, cards: ["bomb"]);
-        Hero hero = session.HeroInSeat();
-        int bomb = hero.Card("bomb").Id;
-
-        Assert.Contains("out of range", session.Refuse(new UseCard(hero.Id, bomb, new GridPosition(4, 0))));
-        Assert.Contains("no monsters", session.Refuse(new UseCard(hero.Id, bomb, new GridPosition(4, 6))));
-        Assert.Contains("target tile", session.Refuse(new UseCard(hero.Id, bomb)));
-
-        // Only (4,1) is both within 3 steps of the hero and inside a blast that reaches the brute.
-        Assert.Equal([new GridPosition(4, 1)], session.GetCardTargets(bomb));
-    }
-
-    [Fact]
     public void StunnedMonstersSkipATurnAndShakeItOffBeforeTheNextStun()
     {
-        GameSession session = TestRun.Start(CagedSpearman, cards: ["boomerang"]);
+        GameSession session = TestRun.Start(CagedSpearman, cards: ["icicle"]);
         Hero hero = session.HeroInSeat();
         Monster spearman = session.OnlyMonster();
-        var useBoomerang = new UseCard(hero.Id, hero.Card("boomerang").Id, spearman.Position);
+        var useIcicle = new UseCard(hero.Id, hero.Card("icicle").Id, spearman.Position);
 
-        Assert.Equal(new MonsterStunned(spearman.Id, 1), session.Do(useBoomerang).SingleOf<MonsterStunned>());
+        Assert.Equal(new MonsterFrozen(spearman.Id, 1), session.Do(useIcicle).SingleOf<MonsterFrozen>());
         Assert.True(session.State.Turn!.HasActed);
         Assert.Contains(new MonsterTurnSkipped(spearman.Id), session.EndRound());
 
-        Assert.Contains("shaking off", session.Refuse(useBoomerang));
+        Assert.Contains("shaking off", session.Refuse(useIcicle));
         Assert.DoesNotContain(session.EndRound(), gameEvent => gameEvent is MonsterTurnSkipped);
 
-        session.Do(useBoomerang);
+        session.Do(useIcicle);
     }
 
     [Fact]
@@ -284,19 +234,19 @@ public class CardTests
             .........
             .........
             .........
-            """, cards: ["boomerang"]);
+            """, cards: ["icicle"]);
         Hero hero = session.HeroInSeat();
 
-        Assert.Contains("can't be stunned", session.Refuse(new UseCard(hero.Id, hero.Card("boomerang").Id, session.OnlyMonster().Position)));
+        Assert.Contains("can't be stunned", session.Refuse(new UseCard(hero.Id, hero.Card("icicle").Id, session.OnlyMonster().Position)));
     }
 
     [Fact]
     public void ReusableCardsMustBeEquippedToUse()
     {
-        GameSession session = TestRun.Start(CagedSpearman, cards: ["shield", "boomerang"]);
+        GameSession session = TestRun.Start(CagedSpearman, cards: ["shield", "icicle"]);
         Hero hero = session.HeroInSeat();
 
-        Assert.Contains("Equip the Boomerang", session.Refuse(new UseCard(hero.Id, hero.Card("boomerang").Id, session.OnlyMonster().Position)));
+        Assert.Contains("Equip the Icicle", session.Refuse(new UseCard(hero.Id, hero.Card("icicle").Id, session.OnlyMonster().Position)));
     }
 
     [Fact]

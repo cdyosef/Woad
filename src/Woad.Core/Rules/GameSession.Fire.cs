@@ -196,6 +196,16 @@ public sealed partial class GameSession
             return true;
         }
 
+        // Burning on top of a bomb sets it off.
+        if (room.BombAt(hero.Position) is { } underHero)
+        {
+            Explode(room, underHero, events);
+            if (!hero.IsInPlay || State.Phase != RunPhase.InProgress)
+            {
+                return false;
+            }
+        }
+
         bool keeling = hero.IsKeelingOver;
         DiceRoll roll = _dice.Roll(hero.FireDice);
         hero.FireDice = FireLeft(hero.FireDice, roll);
@@ -223,6 +233,15 @@ public sealed partial class GameSession
             monster.FireDice = 0;
             events.Add(new FireOut(monster.Id, FireOutCause.Water));
             return true;
+        }
+
+        if (room.BombAt(monster.Position) is { } underMonster)
+        {
+            Explode(room, underMonster, events);
+            if (room.FindMonster(monster.Id) is null || State.Phase != RunPhase.InProgress)
+            {
+                return false;
+            }
         }
 
         DiceRoll roll = _dice.Roll(monster.FireDice);

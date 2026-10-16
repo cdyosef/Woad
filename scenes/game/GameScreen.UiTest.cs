@@ -328,6 +328,83 @@ public partial class GameScreen
         }
     }
 
+    /// <summary>
+    /// Debug mode (<c>-- --bombtest</c>, with <see cref="DemoRun.Bombs"/>): Aria throws her bomb into a
+    /// huddle of slimes. It lies there lit through her turn and the next, then goes off at the end of
+    /// her next turn: the blast rolls, the slimes take it, and the bomb is gone.
+    /// </summary>
+    private async void RunBombTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            Room armory = _session.State.Rooms["armory"];
+            CardInstance bomb = aria.AllCards.Single(card => card.Definition.Id == "bomb");
+            await Click(this, aria.Belt.Contains(bomb) ? _inventory.BeltSlot(aria.Belt.ToList().IndexOf(bomb)) : _inventory.BackpackSlot(aria.Backpack.ToList().IndexOf(bomb)));
+            await Click(this, _inventory.ActionButton(CardAction.Use));
+            Check(_targeting && _session.GetCardTargets(bomb.Id).Contains(new GridPosition(4, 3)), "the bomb can be thrown 3 tiles");
+            await ClickTile(new GridPosition(4, 3));
+            await WaitUntilIdle();
+            Check(armory.BombAt(new GridPosition(4, 3)) is { Lit: true, FuseTurns: 2 }, "the bomb lands lit, burning through this turn and the next");
+
+            await Click(this, _endTurn);
+            await WaitUntilIdle();
+            Check(armory.Bombs.Count == 1, "it hasn't gone off after one turn");
+
+            await Click(this, _endTurn);
+            await WaitUntilIdle();
+            Check(armory.Bombs.Count == 0, "it goes off at the end of her next turn");
+
+            GD.Print("Bomb test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Bomb test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
+    /// <summary>
+    /// Debug mode (<c>-- --rumbletest</c>, with <see cref="DemoRun.Duel"/>): clicking the slime beside Aria
+    /// doesn't attack it; the space bar shows her reach, a click off target puts Rumble away, and the
+    /// Rumble button then a click on the slime attacks it.
+    /// </summary>
+    private async void RunRumbleTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            Monster slime = _session.State.Rooms["yard"].Monsters.Single();
+
+            await ClickTile(slime.Position);
+            await WaitUntilIdle();
+            Check(_session.State.Turn!.AttackDiceUsed == 0, "clicking a monster no longer attacks it");
+
+            GetViewport().PushInput(new InputEventKey { Pressed = true, Keycode = Key.Space }, inLocalCoords: true);
+            await NextFrame(this);
+            Check(_rumbling && RumbleTargets(ShownRoom).Contains(slime.Position), "Space readies Rumble, with the slime in reach");
+            await ClickTile(new GridPosition(0, 0));
+            await WaitUntilIdle();
+            Check(!_rumbling, "a click off target puts Rumble away");
+
+            await Click(this, _rumble);
+            await ClickTile(slime.Position);
+            await ConfirmIfHeld();
+            Check(_session.State.Turn!.AttackDiceUsed > 0 || _session.State.Turn.HeroId != aria.Id, "Rumble, then a click on the slime, attacks it");
+
+            GD.Print("Rumble test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Rumble test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
     /// <summary>Confirms a roll that Luck is holding open.</summary>
     private async Task ConfirmIfHeld()
     {

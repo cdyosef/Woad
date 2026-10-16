@@ -54,6 +54,7 @@ public static class Palette
 
     /// <summary>Where a pit jump would land.</summary>
     public static readonly Color Jump = new("b58cf0", 0.42f);
+    public static readonly Color Range = new("ff4a3d", 0.34f);
 
     /// <summary>Tints the floor seen far down a pit that leads to the room below.</summary>
     public static readonly Color FloorBelow = new(0.30f, 0.38f, 0.36f);
@@ -80,6 +81,8 @@ public static class Palette
         "iron_warden" => new Color("a83a46"),
         "cinder_imp" => new Color("ff7a2a"),
         "fire_beetle" => new Color("b8442a"),
+        "petty_thief" => new Color("6a5a8a"),
+        "mugger_fly" => new Color("5a8a5a"),
         _ => new Color("b0b0b0"),
     };
 

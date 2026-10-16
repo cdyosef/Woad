@@ -43,8 +43,8 @@ public enum CardEffectKind
     /// <summary>Roll <see cref="CardEffect.Amount"/> attack dice against every monster in the area.</summary>
     Attack,
 
-    /// <summary>The target monster skips its next <see cref="CardEffect.Amount"/> turns.</summary>
-    Stun,
+    /// <summary>Freeze: the target monster skips its next <see cref="CardEffect.Amount"/> turns.</summary>
+    Freeze,
 }
 
 /// <summary>What happens when a card is used.</summary>
@@ -75,6 +75,9 @@ public sealed record CardDefinition
     /// <summary>The slot this card is equipped into, or null if it can't be equipped.</summary>
     public EquipSlot? Slot { get; init; }
 
+    /// <summary>Another slot it can go in instead (the Boomerang, main hand or off hand): used when <see cref="Slot"/> is taken and this one isn't.</summary>
+    public EquipSlot? AltSlot { get; init; }
+
     /// <summary>Two-handed cards fill both the main hand and the off hand.</summary>
     public bool TwoHanded { get; init; }
 
@@ -86,8 +89,17 @@ public sealed record CardDefinition
     /// <summary>Bonuses granted while equipped.</summary>
     public Stats Modifiers { get; init; } = Stats.None;
 
-    /// <summary>Main-hand weapons: reach of the Attack action. 1 is melee; more is ranged and needs line of sight.</summary>
+    /// <summary>
+    /// Weapons: reach of an attack with it. 1 is melee; more is ranged and needs line of sight. A thrown
+    /// weapon (one with an <see cref="AttackBonus"/>) reaches this far from the off hand too.
+    /// </summary>
     public int AttackRange { get; init; } = 1;
+
+    /// <summary>A thrown weapon's own bonus, added to attacks made with it (in place of the main-hand weapon's).</summary>
+    public int AttackBonus { get; init; }
+
+    /// <summary>Every 6 rolled attacking with it adds a stack of Stun to the target, hit or miss.</summary>
+    public bool StunOnSix { get; init; }
 
     public CardEffect? Effect { get; init; }
 

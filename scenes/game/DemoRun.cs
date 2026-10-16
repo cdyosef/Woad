@@ -159,6 +159,33 @@ public static class DemoRun
         };
     }
 
+    /// <summary>
+    /// For --bombtest: a tough Aria with a bomb, three slimes in a huddle a few tiles away, and an
+    /// unlit bomb lying beside her.
+    /// </summary>
+    public static RunSetup Bombs(ulong seed)
+    {
+        ContentCatalog content = ContentCatalog.LoadDefault();
+        return new RunSetup
+        {
+            Seed = seed,
+            ThemeId = "emerald_keep",
+            Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 30 }, CardIds = ["bomb"] }],
+            Rooms = [new RoomSetup("armory", RoomTemplate.Parse("....s....\n...s.s...\n.........\n.........\n.........\n.........\n....1....\n.........\n.........", content))],
+            StartRoomId = "armory",
+        };
+    }
+
+    /// <summary>For --rumbletest: a tough Aria with a slime right beside her.</summary>
+    public static RunSetup Duel(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20 } }],
+        Rooms = [new RoomSetup("yard", RoomTemplate.Parse(".........\n.........\n.........\n.........\n....1s...\n.........\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
+        StartRoomId = "yard",
+    };
+
     /// <summary>The debug party in the single hand-made room, for --uitest.</summary>
     public static RunSetup SingleRoom(ulong seed) => new()
     {

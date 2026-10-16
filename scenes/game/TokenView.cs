@@ -17,10 +17,12 @@ public partial class TokenView : Node2D
     private int _hearts;
     private int _maxHearts;
     private bool _active;
-    private bool _stunned;
+    private bool _frozen;
     private bool _collapsed;
     private (int Life, int Death)? _keeling;
     private int _fireDice;
+    private int _stunMarks;
+    private bool _carriesLoot;
     private bool _prone;
     private bool _diving;
 
@@ -61,14 +63,26 @@ public partial class TokenView : Node2D
         set { _active = value; QueueRedraw(); }
     }
 
-    public bool Stunned
+    public bool Frozen
     {
-        set { _stunned = value; QueueRedraw(); }
+        set { _frozen = value; QueueRedraw(); }
     }
 
     public bool Collapsed
     {
         set { _collapsed = value; QueueRedraw(); }
+    }
+
+    /// <summary>A monster carrying stolen loot: a little gold sack at its side.</summary>
+    public bool CarriesLoot
+    {
+        set { _carriesLoot = value; QueueRedraw(); }
+    }
+
+    /// <summary>Stun on it: one star for each Stun, three for each Powerful Stun, in the top corner.</summary>
+    public int StunMarks
+    {
+        set { _stunMarks = value; QueueRedraw(); }
     }
 
     /// <summary>Fire dice burning on it: a flame and the count in the corner.</summary>
@@ -115,7 +129,7 @@ public partial class TokenView : Node2D
             DrawHeartPips();
         }
 
-        if (_stunned)
+        if (_frozen)
         {
             DrawString(ThemeDB.FallbackFont, new Vector2(Center.X + 7, 6), "z", fontSize: 9, modulate: Palette.TrimBright);
         }
@@ -123,6 +137,19 @@ public partial class TokenView : Node2D
         if (_fireDice > 0)
         {
             DrawFlame();
+        }
+
+        if (_stunMarks > 0)
+        {
+            DrawStars();
+        }
+
+        if (_carriesLoot)
+        {
+            var sack = new Vector2(BoardView.TileSize - 8, 18);
+            DrawCircle(sack, 4, Palette.Loot);
+            DrawRect(new Rect2(sack + new Vector2(-1.5f, -6), new Vector2(3, 3)), Palette.Loot);
+            DrawArc(sack, 4, 0, Mathf.Tau, 12, Palette.Ink, 1);
         }
     }
 
@@ -185,6 +212,22 @@ public partial class TokenView : Node2D
         {
             DrawRect(new Rect2(2, 16, BoardView.TileSize - 4, 10), Palette.DeepWater with { A = 0.75f });
             DrawLine(new Vector2(5, 16), new Vector2(BoardView.TileSize - 5, 16), Palette.Text with { A = 0.5f }, 1);
+        }
+    }
+
+    /// <summary>Little stars circling over its head, with the count past three.</summary>
+    private void DrawStars()
+    {
+        int shown = Math.Min(_stunMarks, 3);
+        for (int i = 0; i < shown; i++)
+        {
+            Vector2 at = new(BoardView.TileSize / 2f - (shown - 1) * 4 + i * 8, 2);
+            DrawColoredPolygon([at + new Vector2(0, -3), at + new Vector2(1, -1), at + new Vector2(3, 0), at + new Vector2(1, 1), at + new Vector2(0, 3), at + new Vector2(-1, 1), at + new Vector2(-3, 0), at + new Vector2(-1, -1)], Palette.TrimBright);
+        }
+
+        if (_stunMarks > 3)
+        {
+            DrawString(ThemeDB.FallbackFont, new Vector2(BoardView.TileSize / 2f + 12, 6), _stunMarks.ToString(), fontSize: 8, modulate: Palette.TrimBright);
         }
     }
 

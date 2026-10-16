@@ -454,8 +454,9 @@ public static partial class DungeonGenerator
         {
             if (TakeOpenTile() is { } tile && StaysConnected(template, [.. traps.Keys, tile]))
             {
-                bool trapDoor = roomBelow && random.NextInt(0, 100) < 30;
-                traps[tile] = new TrapSetup(trapDoor ? TrapKind.TrapDoor : TrapKind.Spikes, GameRules.TrapDifficulty(floor));
+                int kind = random.NextInt(0, 100);
+                TrapKind trap = roomBelow && kind < 30 ? TrapKind.TrapDoor : floor >= 2 && kind >= 75 ? TrapKind.BombTrap : TrapKind.Spikes;
+                traps[tile] = new TrapSetup(trap, GameRules.TrapDifficulty(floor));
             }
         }
 

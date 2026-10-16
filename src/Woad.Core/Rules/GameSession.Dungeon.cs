@@ -147,6 +147,14 @@ public sealed partial class GameSession
     {
         trap.Revealed = true;
         events.Add(new TrapSprung(hero.Id, trap.Kind, position));
+        if (trap.Kind == TrapKind.BombTrap)
+        {
+            // No harm itself: it pops out a lit bomb, whose fuse burns on the hero's turns.
+            room.SetTrap(position, null);
+            PlaceBomb(room, position, lit: true, hero.Id, events);
+            return;
+        }
+
         HurtHero(room, hero, 1, TrapBane(trap.Kind), events);
         if (trap.Kind == TrapKind.TrapDoor && hero.IsActive)
         {

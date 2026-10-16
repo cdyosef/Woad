@@ -101,6 +101,24 @@ public partial class GameScreen : Control
         {
             RunCameraTest();
         }
+        else if (args.Contains("--bombtest"))
+        {
+            RunBombTest();
+        }
+        else if (args.Contains("--rumbletest"))
+        {
+            RunRumbleTest();
+        }
+    }
+
+    /// <summary>The space bar is Rumble, before any focused button can take it as a press.</summary>
+    public override void _Input(InputEvent @event)
+    {
+        if (@event is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Space } && _session.State.Turn is not null && ActiveHero is { IsCompanion: false } && !_autoplay)
+        {
+            ToggleRumble();
+            GetViewport().SetInputAsHandled();
+        }
     }
 
     public override void _UnhandledInput(InputEvent @event)
@@ -532,12 +550,72 @@ public partial class GameScreen : Control
                 break;
 
             case WentProne prone:
-                FloatOver(prone.HeroId, prone.Diving ? "dives" : "drops prone", Palette.Text);
-                await UpdateFigure(prone.HeroId, figure => { figure.Prone = true; figure.Diving = prone.Diving; }, 0.2);
+                FloatOver(prone.EntityId, prone.Diving ? "dives" : "drops prone", Palette.Text);
+                await UpdateFigure(prone.EntityId, figure => { figure.Prone = true; figure.Diving = prone.Diving; }, 0.2);
+                break;
+
+            case MonsterStole stole:
+                FloatOver(stole.HeroId, stole.Hits > 0 ? "robbed!" : "nothing taken", stole.Hits > 0 ? Palette.Danger : Palette.TextDim);
+                await UpdateFigure(stole.MonsterId, figure => figure.CarriesLoot |= stole.Gold > 0 || stole.CardId is not null, 0.3);
+                break;
+
+            case Mugged mugged:
+                FloatOver(mugged.HeroId, $"-{mugged.Gold} gold", Palette.Loot);
+                await UpdateFigure(mugged.MonsterId, figure => figure.CarriesLoot = true, 0.15);
+                break;
+
+            case BombPlaced placed when placed.RoomId == _shownRoomId:
+                _board.QueueRedraw();
+                _board.FloatText(placed.Position, placed.Lit ? "lit!" : "bomb", placed.Lit ? Palette.Fire : Palette.Text);
+                await Pause(0.25);
+                break;
+
+            case FuseBurned fuse when fuse.RoomId == _shownRoomId && ShownRoom.FindBomb(fuse.BombId) is { } burning:
+                _board.FloatText(burning.Position, fuse.FuseTurns == 1 ? "1 turn!" : $"{fuse.FuseTurns} turns", Palette.Fire);
+                break;
+
+            case BombExploded boom:
+                if (boom.RoomId == _shownRoomId)
+                {
+                    _board.LookAt(boom.Position);
+                    _board.Explosion(boom.Position);
+                    _board.QueueRedraw();
+                }
+
+                await Pause(0.45);
+                break;
+
+            case BlastRolled blast:
+                _trayShowsMovement = false;
+                await _dice.ShowRoll("The blast", blast.Roll, 0, newGroup: true, blast.PowerDice);
+                break;
+
+            case BombStruck { Exploded: false } struck:
+                FloatOver(struck.HeroId, $"{struck.Chance}%: nothing", Palette.TextDim);
+                await Pause(0.2);
+                break;
+
+            case BombMoved or BombDefused or BombFell:
+                _board.QueueRedraw();
+                if (gameEvent is BombDefused { Doused: var doused } defused && defused.RoomId == _shownRoomId && ShownRoom.FindBomb(defused.BombId) is { } quiet)
+                {
+                    _board.FloatText(quiet.Position, doused ? "fizzles out" : "defused", Palette.Text);
+                }
+
+                await Pause(0.2);
+                break;
+
+            case Stunned stunned:
+                FloatOver(stunned.EntityId, stunned.Powerful ? "dazed!" : "stunned!", Palette.TrimBright);
+                await UpdateFigure(stunned.EntityId, figure => figure.StunMarks = stunned.Stacks + 3 * stunned.PowerfulStacks, 0.25);
+                break;
+
+            case StunWoreOff wore:
+                await UpdateFigure(wore.EntityId, figure => figure.StunMarks = 0, 0.1);
                 break;
 
             case GotUp up:
-                await UpdateFigure(up.HeroId, figure => { figure.Prone = false; figure.Diving = false; }, 0.2);
+                await UpdateFigure(up.EntityId, figure => { figure.Prone = false; figure.Diving = false; }, 0.2);
                 break;
 
             case HeroKeeledOver keeled:
@@ -590,12 +668,12 @@ public partial class GameScreen : Control
                 await SpawnFigure((MonsterSpawned)gameEvent);
                 break;
 
-            case MonsterStunned stunned:
-                await UpdateFigure(stunned.MonsterId, figure => figure.Stunned = true, 0.2);
+            case MonsterFrozen stunned:
+                await UpdateFigure(stunned.MonsterId, figure => figure.Frozen = true, 0.2);
                 break;
 
             case MonsterTurnSkipped skipped:
-                await UpdateFigure(skipped.MonsterId, figure => figure.Stunned = false, 0.3);
+                await UpdateFigure(skipped.MonsterId, figure => figure.Frozen = false, 0.3);
                 break;
 
             case RoomCleared:
@@ -669,7 +747,7 @@ public partial class GameScreen : Control
             case Damaged:
                 Sfx.Play("block");
                 break;
-            case MonsterStunned:
+            case MonsterFrozen:
                 Sfx.Play("block", 0.6f);
                 break;
             case MonsterDefeated:
@@ -744,6 +822,24 @@ public partial class GameScreen : Control
                 break;
             case FireOut:
                 Sfx.Play("block", 0.7f);
+                break;
+            case Stunned:
+                Sfx.Play("block", 1.5f);
+                break;
+            case BombExploded:
+                Sfx.Play("boom");
+                break;
+            case MonsterStole { Hits: > 0 } or Mugged:
+                Sfx.Play("coin", 0.7f);
+                break;
+            case BombPlaced { Lit: true } or FuseBurned:
+                Sfx.Play("fuse");
+                break;
+            case BlastRolled:
+                Sfx.PlayVaried("dice");
+                break;
+            case BombDefused or BombMoved:
+                Sfx.Play("click");
                 break;
             case WentProne or GotUp:
                 Sfx.PlayVaried("step");
@@ -821,8 +917,21 @@ public partial class GameScreen : Control
         FireSpread spread => FigureRoom(spread.ToId),
         FireBurned burned => FigureRoom(burned.EntityId),
         FireOut fireOut => FigureRoom(fireOut.EntityId),
-        WentProne prone => FigureRoom(prone.HeroId),
-        GotUp up => FigureRoom(up.HeroId),
+        WentProne prone => FigureRoom(prone.EntityId),
+        GotUp up => FigureRoom(up.EntityId),
+        Stunned stunned => FigureRoom(stunned.EntityId),
+        BombPlaced placed => placed.RoomId,
+        MonsterStole stole => FigureRoom(stole.MonsterId),
+        Mugged mugged => FigureRoom(mugged.MonsterId),
+        FuseBurned fuse => fuse.RoomId,
+        BombExploded boom => boom.RoomId,
+        BlastRolled blast => blast.RoomId,
+        BlastHit hit => FigureRoom(hit.EntityId),
+        BombStruck struck => FigureRoom(struck.HeroId),
+        BombMoved moved => moved.RoomId,
+        BombDefused defused => defused.RoomId,
+        BombFell fell => fell.RoomId,
+        StunWoreOff wore => FigureRoom(wore.EntityId),
         KeelRolled keel => FigureRoom(keel.HeroId),
         HeroRoused roused => FigureRoom(roused.HeroId),
         KeelerStruck struck => FigureRoom(struck.HeroId),
@@ -831,7 +940,7 @@ public partial class GameScreen : Control
         MonsterDefeated defeated => FigureRoom(defeated.MonsterId),
         MonsterCollapsed collapsed => FigureRoom(collapsed.MonsterId),
         MonsterReassembled risen => FigureRoom(risen.MonsterId),
-        MonsterStunned stunned => FigureRoom(stunned.MonsterId),
+        MonsterFrozen stunned => FigureRoom(stunned.MonsterId),
         MonsterTurnSkipped skipped => FigureRoom(skipped.MonsterId),
         MonsterSpawned spawned => spawned.RoomId,
         RoomCleared cleared => cleared.RoomId,

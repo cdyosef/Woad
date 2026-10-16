@@ -15,12 +15,12 @@
 
   // Spells and tools
   { "id": "flame_scroll", "name": "Flame Scroll", "type": "spell", "usage": "singleUse", "effect": { "kind": "attack", "amount": 3, "range": 3, "fire": true }, "value": 4, "text": "Single use. A 3-dice fire attack on a monster within 3 (not your Rumble dice). Any 6 sets it alight." },
-  { "id": "frost_wand", "name": "Frost Wand", "type": "spell", "slot": "offHand", "usage": "charges", "charges": 2, "effect": { "kind": "stun", "amount": 1, "range": 3 }, "value": 8, "text": "2 charges per floor. Freeze a monster within 3: it skips its next turn." },
-  { "id": "boomerang", "name": "Boomerang", "type": "tool", "slot": "offHand", "effect": { "kind": "stun", "amount": 1, "range": 4 }, "value": 6, "text": "Stun a monster within 4: it skips its next turn." },
+  { "id": "frost_wand", "name": "Frost Wand", "type": "spell", "slot": "offHand", "usage": "charges", "charges": 2, "effect": { "kind": "freeze", "amount": 1, "range": 3 }, "value": 8, "text": "2 charges per floor. Freeze a monster within 3: it skips its next turn." },
+  { "id": "boomerang", "name": "Boomerang", "type": "weapon", "slot": "offHand", "altSlot": "mainHand", "attackRange": 4, "attackBonus": 1, "stunOnSix": true, "value": 6, "text": "Off hand or main hand. Throw it with your Rumble dice +1 at a target within 4; every 6 stuns it (hit or miss)." },
   { "id": "lockpicks", "name": "Lockpicks", "type": "tool", "slot": "offHand", "modifiers": { "tools": 2 }, "value": 6, "text": "Tools 2: adds 2 to one Od Hand roll a turn (picking locks, searching, disarming, stealing)." },
 
   // Consumables
-  { "id": "bomb", "name": "Bomb", "type": "bomb", "usage": "singleUse", "effect": { "kind": "attack", "amount": 2, "range": 3, "areaRadius": 1 }, "value": 1, "text": "Single use. Throw up to 3 tiles: a 2-dice attack on every monster in a 3x3 blast. Breaks cracked walls." },
+  { "id": "bomb", "name": "Bomb", "type": "bomb", "usage": "singleUse", "effect": { "kind": "attack", "amount": 4, "range": 3, "areaRadius": 1 }, "value": 1, "text": "Single use. Throw it up to 3 tiles, lit: at the end of your next turn it blasts everyone within a tile (yourself too) with 4 dice. More dice through means a shove, knocked flat, stunned. Breaks cracked walls." },
   { "id": "health_potion", "name": "Health Potion", "type": "potion", "usage": "singleUse", "effect": { "kind": "heal", "amount": 3 }, "value": 2, "text": "Single use. Restore 3 hearts." },
 
   // Treasure

@@ -2,6 +2,7 @@ using Woad.Core.Commands;
 using Woad.Core.Content;
 using Woad.Core.Dungeon;
 using Woad.Core.Events;
+using Woad.Core.Grid;
 using Woad.Core.Model;
 using Woad.Core.Randomness;
 using Woad.Core.Rules;
@@ -92,6 +93,14 @@ internal static class SessionTestExtensions
         }
 
         return events;
+    }
+
+    /// <summary>Drops a bomb in a room (lit, owned by <paramref name="ownerId"/>: it goes off at the end of their current turn by default).</summary>
+    public static Bomb DropBomb(this GameSession session, GridPosition tile, bool lit = true, int? ownerId = null, int fuseTurns = 1, string roomId = "A")
+    {
+        var bomb = new Bomb(session.State.NextId(), tile, lit, lit ? ownerId ?? session.State.ActiveHero!.Id : null, lit ? fuseTurns : 0);
+        session.State.Rooms[roomId].AddBomb(bomb);
+        return bomb;
     }
 
     public static T SingleOf<T>(this IEnumerable<GameEvent> events) where T : GameEvent =>

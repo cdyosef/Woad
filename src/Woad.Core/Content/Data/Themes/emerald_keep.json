@@ -6,13 +6,15 @@
   "miniboss": "key_warden",
 
   "roster": [
-    { "monster": "slime", "weight": 3 },
-    { "monster": "bat", "weight": 2 },
-    { "monster": "spear_guard", "weight": 2 },
-    { "monster": "archer_guard", "weight": 2, "minFloor": 2 },
-    { "monster": "skeleton", "weight": 2, "minFloor": 2 },
-    { "monster": "cinder_imp", "weight": 2, "minFloor": 2 },
-    { "monster": "fire_beetle", "weight": 1, "minFloor": 2 }
+    { "monster": "slime", "weight": 9 },
+    { "monster": "bat", "weight": 6 },
+    { "monster": "petty_thief", "weight": 1 },
+    { "monster": "mugger_fly", "weight": 1 },
+    { "monster": "spear_guard", "weight": 6 },
+    { "monster": "archer_guard", "weight": 6, "minFloor": 2 },
+    { "monster": "skeleton", "weight": 6, "minFloor": 2 },
+    { "monster": "cinder_imp", "weight": 6, "minFloor": 2 },
+    { "monster": "fire_beetle", "weight": 3, "minFloor": 2 }
   ],
 
   // Chests and monster drops deal from this deck; minFloor keeps the best cards for deeper floors.

@@ -85,6 +85,8 @@ public sealed class ContentCatalog
     public CardDefinition GetCard(string id) =>
         _cards.TryGetValue(id, out CardDefinition? card) ? card : throw new KeyNotFoundException($"Unknown card '{id}'.");
 
+    public CardDefinition? FindCard(string id) => _cards.GetValueOrDefault(id);
+
     public MonsterDefinition GetMonster(string id) =>
         _monsters.TryGetValue(id, out MonsterDefinition? monster) ? monster : throw new KeyNotFoundException($"Unknown monster '{id}'.");
 
@@ -280,7 +282,7 @@ public sealed class ContentCatalog
                 errors.Add($"{name} effect range and areaRadius can't be negative.");
             }
 
-            if (effect.Kind is CardEffectKind.Stun && effect.Range < 1)
+            if (effect.Kind is CardEffectKind.Freeze && effect.Range < 1)
             {
                 errors.Add($"{name} stun effect needs a range of at least 1.");
             }

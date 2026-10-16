@@ -21,6 +21,7 @@ public sealed class Room
     private readonly Dictionary<GridPosition, int> _keys = [];
     private readonly Dictionary<GridPosition, int> _gold = [];
     private readonly List<Tombstone> _tombstones = [];
+    private readonly List<Bomb> _bombs = [];
     private readonly IReadOnlyDictionary<Direction, GridPosition> _doorTiles;
 
     internal Room(
@@ -135,8 +136,16 @@ public sealed class Room
     /// <summary>Where the Boss Key lies on the floor, if it does.</summary>
     public GridPosition? BossKeyAt { get; internal set; }
 
-    /// <summary>Anything on the tile to pick up: cards, gold, keys or the Boss Key.</summary>
-    public bool HasLootAt(GridPosition position) => LootAt(position).Count > 0 || GoldAt(position) > 0 || KeysAt(position) > 0 || BossKeyAt == position;
+    /// <summary>Anything on the tile to pick up: cards, gold, keys, the Boss Key or an unlit bomb.</summary>
+    public bool HasLootAt(GridPosition position) =>
+        LootAt(position).Count > 0 || GoldAt(position) > 0 || KeysAt(position) > 0 || BossKeyAt == position || BombAt(position) is { Lit: false };
+
+    /// <summary>Bombs lying here, lit or not.</summary>
+    public IReadOnlyList<Bomb> Bombs => _bombs;
+
+    public Bomb? BombAt(GridPosition position) => _bombs.FirstOrDefault(bomb => bomb.Position == position);
+
+    public Bomb? FindBomb(int bombId) => _bombs.FirstOrDefault(bomb => bomb.Id == bombId);
 
     /// <summary>Where heroes died, in the order they fell.</summary>
     public IReadOnlyList<Tombstone> Tombstones => _tombstones;
@@ -264,6 +273,10 @@ public sealed class Room
     }
 
     internal void AddTombstone(Tombstone tombstone) => _tombstones.Add(tombstone);
+
+    internal void AddBomb(Bomb bomb) => _bombs.Add(bomb);
+
+    internal void RemoveBomb(Bomb bomb) => _bombs.Remove(bomb);
 
     internal void AddLoot(GridPosition position, IEnumerable<CardInstance> cards)
     {
