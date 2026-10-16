@@ -94,6 +94,23 @@ public class KeelingOverTests
     }
 
     [Fact]
+    public void EveryKeelRollAfterTheFirstAddsOneMoreDoomDie()
+    {
+        // Rolls: 3 (no doom); 3 + doom 4; 3 + doom 1, 5.
+        (GameSession session, Hero standing, Hero fallen) = FallenTurn(new ScriptedDice(3, 3, 4, 3, 1, 5));
+
+        Assert.Empty(session.Do(new RollKeel(fallen.Id)).SingleOf<KeelRolled>().DoomFaces);
+        session.Do(new EndTurn(standing.Id));
+        var second = session.Do(new RollKeel(fallen.Id)).SingleOf<KeelRolled>();
+        session.Do(new EndTurn(standing.Id));
+        var third = session.Do(new RollKeel(fallen.Id)).SingleOf<KeelRolled>();
+
+        Assert.Equal((1, 1), (second.CreepingDoom, second.DoomFaces.Count));
+        Assert.Equal((2, 2), (third.CreepingDoom, third.DoomFaces.Count));
+        Assert.Equal((0, 1, 3), (fallen.LifeMarks, fallen.DeathMarks, fallen.KeelRolls));
+    }
+
+    [Fact]
     public void ThreeMarksOfLifeStandTheHeroUpWithAHeart()
     {
         (GameSession session, Hero standing, Hero fallen) = FallenTurn(new ScriptedDice(6, 3));

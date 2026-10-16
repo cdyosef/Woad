@@ -274,7 +274,9 @@ public partial class GameScreen
 
         if (turn.KeelingOver)
         {
-            return $"{hero.Name} is Keeling Over (life {hero.LifeMarks}/3, death {hero.DeathMarks}/3). Roll the Keel Die: 6 is a mark of life, 1 a mark of death. Select Power Dice to add their 6s.";
+            int doom = hero.DoomDiceOwed + hero.KeelRolls;
+            string dooms = doom > 0 ? $" {doom} Doom {(doom == 1 ? "Die rolls" : "Dice roll")} with it (1s are death)." : "";
+            return $"{hero.Name} is Keeling Over (life {hero.LifeMarks}/3, death {hero.DeathMarks}/3). Roll the Keel Die: 6 is a mark of life, 1 a mark of death.{dooms} Select Power Dice to add their 6s.";
         }
 
         if (turn.UnsettledPowerDice > 0)
@@ -337,7 +339,8 @@ public partial class GameScreen
 
         if (_session.State.HeroesIn(room).FirstOrDefault(hero => hero.Position == tile && hero.IsKeelingOver) is { } fallen)
         {
-            string doom = fallen.DoomDiceOwed > 0 ? $", {fallen.DoomDiceOwed} Doom {(fallen.DoomDiceOwed == 1 ? "Die" : "Dice")} waiting" : "";
+            int waiting = fallen.DoomDiceOwed + fallen.KeelRolls;
+            string doom = waiting > 0 ? $", {waiting} Doom {(waiting == 1 ? "Die" : "Dice")} on their next roll" : "";
             string rouse = _session.GetRousableAllies().Contains(fallen)
                 ? " Click to rouse them with Od Hand: every 6 of the total is a mark of life, but each 1 rolled adds a Doom Die."
                 : " An ally beside them can rouse them with Od Hand.";

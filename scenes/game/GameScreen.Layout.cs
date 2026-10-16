@@ -101,7 +101,7 @@ public partial class GameScreen
         _endTurn.Disabled = !((idle && !pending) || keeling);
         _endTurn.Text = turn is { KeelingOver: true } ? "Roll Keel Die" : "End turn";
         _endTurn.TooltipText = turn is { KeelingOver: true }
-            ? "Keeling Over: roll the Keel Die. A 6 is a mark of life and rolls a Power Die (another on a 6); a 1 is a mark of death and rolls a Doom Die (another on a 1). Select banked Power Dice to add them: their 6s are marks of life."
+            ? "Keeling Over: roll the Keel Die. A 6 is a mark of life and rolls a Power Die (another on a 6); a 1 is a mark of death and rolls a Doom Die (another on a 1). Every roll after the first adds Doom Dice: 1 on the second, 2 on the third... Select banked Power Dice to add them: their 6s are marks of life."
             : "";
         _confirm.Visible = turn?.PendingRoll is not null && !choosingPower;
         _confirm.Disabled = Locked;

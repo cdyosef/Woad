@@ -84,7 +84,8 @@ public sealed record HeroKeeledOver(int HeroId, GridPosition Position, string Ba
 /// <summary>
 /// A hero Keeling Over rolled for their life: the Keel Die; the Power Die its 6 rolls or the Doom Die
 /// its 1 rolls (<paramref name="BonusDie"/>); the banked Power Dice spent; and the Doom Dice allies
-/// left them. Then the marks gained and the totals.
+/// left them plus the creeping doom (<paramref name="CreepingDoom"/> of them, one more each roll after
+/// the first). Then the marks gained and the totals.
 /// </summary>
 public sealed record KeelRolled(
     int HeroId,
@@ -95,7 +96,8 @@ public sealed record KeelRolled(
     int LifeGained,
     int DeathGained,
     int LifeMarks,
-    int DeathMarks) : GameEvent;
+    int DeathMarks,
+    int CreepingDoom = 0) : GameEvent;
 
 /// <summary>An ally's Od Hand roll roused a hero Keeling Over: marks of life earned, and Doom Dice added to their next Keel roll.</summary>
 public sealed record HeroRoused(int HeroId, int ByHeroId, int LifeGained, int DoomDiceAdded, int LifeMarks, int DoomDiceOwed) : GameEvent;
