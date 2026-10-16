@@ -220,26 +220,7 @@ public static partial class DungeonGenerator
         {
             RoomRole role = roles[cell];
             bool roomBelow = below.Contains(cell);
-            RoomRole layoutRole = role == RoomRole.Secret ? RoomRole.Treasure : role;
-            List<ThemeRoom> candidates = layouts.Where(layout => layout.Roles.Contains(layoutRole)).ToList();
-            List<ThemeRoom> pitless = candidates.Where(layout => !layout.Template.TilesOf(TileKind.Pit).Any()).ToList();
-            if (!lastFloor && !roomBelow && pitless.Count > 0)
-            {
-                candidates = pitless;
-            }
-
-            RoomTemplate template = random.Pick(candidates).Template.Transformed(random.NextInt(0, 4), random.CoinFlip());
-            if (role == RoomRole.Arrival && floor > 1)
-            {
-                template = template.WithTile(StairsUpSpot(template), TileKind.StairsUp);
-            }
-
-            template = Roughen(template, role, random);
-
-            bool isTrap = cell == trap;
-            IEnumerable<MonsterSpawn> monsters = PlaceMonsters(template, role, floor, partySize, isTrap, theme, content, random);
-            template = template.WithMonsters(template.Monsters.Concat(monsters));
-            (template, RoomFeatures features) = PlaceSecrets(template, role, floor, lastFloor, roomBelow, random);
+            RoomTemplate template = ChooseTemplate(role, lastFloor || roomBelow, layouts, random);
 
             var doors = new Dictionary<Direction, string>();
             foreach (Direction side in Enum.GetValues<Direction>())
@@ -251,6 +232,19 @@ public static partial class DungeonGenerator
                 }
             }
 
+            (template, Dictionary<Direction, GridPosition> doorTiles) = PlaceDoors(template, doors.Keys, random);
+            if (role == RoomRole.Arrival && floor > 1)
+            {
+                template = template.WithTile(StairsUpSpot(template, doorTiles), TileKind.StairsUp);
+            }
+
+            template = Roughen(template, role, doorTiles, random);
+
+            bool isTrap = cell == trap;
+            IEnumerable<MonsterSpawn> monsters = PlaceMonsters(template, role, floor, partySize, isTrap, theme, content, random);
+            template = template.WithMonsters(template.Monsters.Concat(monsters));
+            (template, RoomFeatures features) = PlaceSecrets(template, role, floor, lastFloor, roomBelow, doorTiles, random);
+
             // Sometimes a wall dividing the room, or a chasm or stream across it (never in a sealed room).
             if (!isTrap && role is RoomRole.Combat or RoomRole.Treasure or RoomRole.Stairs)
             {
@@ -259,18 +253,107 @@ public static partial class DungeonGenerator
                     // Pits and trap doors in the room above drop people in here.
                     bool dropsIn = rooms.Any(above => above.Floor == floor - 1 && above.MapPosition == cell
                         && (above.Template.TilesOf(TileKind.Pit).Any() || above.Features?.Traps.Values.Any(trap => trap.Kind == TrapKind.TrapDoor) == true));
-                    (template, features) = Divide(template, features, doors.Keys, floor, dropsIn, random);
+                    (template, features) = Divide(template, features, doorTiles, floor, dropsIn, random);
                 }
                 else if (random.NextInt(0, 100) < ChannelChance)
                 {
                     bool pits = (roomBelow || lastFloor) && random.CoinFlip();
-                    template = Channel(template, features, pits, random);
+                    template = Channel(template, features, doorTiles, pits, random);
                 }
             }
 
-            rooms.Add(new RoomSetup(RoomId(floor, cell), template, doors, floor, cell, role, isTrap, features));
+            rooms.Add(new RoomSetup(RoomId(floor, cell), template, doors, floor, cell, role, isTrap, features, doorTiles));
         }
     }
+
+    /// <summary>
+    /// A room's layout. Most are the theme's hand-made 9x9 layouts, randomly turned (arrival rooms and
+    /// vaults always are); the rest are built: small ones (often for treasure), long halls and galleries,
+    /// and big chambers that may be round, cross-shaped or L-shaped. The boss arena is always built, and
+    /// the biggest room of all. Where pits would lead nowhere, hand-made layouts with pits are skipped.
+    /// </summary>
+    private static RoomTemplate ChooseTemplate(RoomRole role, bool pitsLeadSomewhere, IReadOnlyList<ThemeRoom> layouts, IRandomSource random)
+    {
+        if (role == RoomRole.Boss)
+        {
+            RoomShape arena = random.CoinFlip() ? RoomShape.Round : RoomShape.Plain;
+            return RoomBuilder.Build(BossSize, BossSize, arena, role, random);
+        }
+
+        int roll = random.NextInt(0, 100);
+        bool small = role is RoomRole.Treasure or RoomRole.Secret;
+        if (role is not (RoomRole.Arrival or RoomRole.Vault) && roll < (small ? 55 : 45))
+        {
+            (int width, int height, RoomShape shape) = small
+                ? random.Pick(SmallRooms)
+                : random.NextInt(0, 100) switch
+                {
+                    < 25 => random.Pick(SmallRooms),
+                    < 65 => random.Pick(LongRooms),
+                    _ => random.Pick(BigRooms),
+                };
+            return RoomBuilder.Build(width, height, shape, role, random).Transformed(random.NextInt(0, 4), random.CoinFlip());
+        }
+
+        RoomRole layoutRole = role == RoomRole.Secret ? RoomRole.Treasure : role;
+        List<ThemeRoom> candidates = layouts.Where(layout => layout.Roles.Contains(layoutRole)).ToList();
+        List<ThemeRoom> pitless = candidates.Where(layout => !layout.Template.TilesOf(TileKind.Pit).Any()).ToList();
+        if (!pitsLeadSomewhere && pitless.Count > 0)
+        {
+            candidates = pitless;
+        }
+
+        return random.Pick(candidates).Template.Transformed(random.NextInt(0, 4), random.CoinFlip());
+    }
+
+    /// <summary>The boss arena's width and height: bigger than any other room.</summary>
+    public const int BossSize = 15;
+
+    private static readonly (int Width, int Height, RoomShape Shape)[] SmallRooms =
+        [(5, 5, RoomShape.Plain), (7, 7, RoomShape.Plain), (7, 5, RoomShape.Plain), (7, 7, RoomShape.Round)];
+
+    private static readonly (int Width, int Height, RoomShape Shape)[] LongRooms =
+        [(13, 7, RoomShape.Plain), (11, 7, RoomShape.Plain), (13, 5, RoomShape.Gallery), (13, 7, RoomShape.Gallery), (11, 5, RoomShape.Plain)];
+
+    private static readonly (int Width, int Height, RoomShape Shape)[] BigRooms =
+        [(11, 11, RoomShape.Round), (13, 13, RoomShape.Round), (11, 11, RoomShape.Cross), (13, 13, RoomShape.Cross),
+         (11, 11, RoomShape.Ell), (13, 11, RoomShape.Ell), (11, 11, RoomShape.Plain)];
+
+    /// <summary>
+    /// Where each door sits on its edge: any edge tile (not a corner) of plain floor with open floor
+    /// inside it. The middle of the edge is the most likely, as in the hand-made layouts. A side with no
+    /// such tile gets its middle carved open (with the tile inside it).
+    /// </summary>
+    private static (RoomTemplate Template, Dictionary<Direction, GridPosition> Tiles) PlaceDoors(RoomTemplate template, IEnumerable<Direction> sides, IRandomSource random)
+    {
+        var tiles = new Dictionary<Direction, GridPosition>();
+        foreach (Direction side in sides)
+        {
+            RoomLayout layout = template.Layout;
+            Direction inward = side.Opposite();
+            List<GridPosition> candidates = Enumerable.Range(1, layout.EdgeLength(side) - 2)
+                .Select(offset => layout.EdgeTile(side, offset))
+                .Where(tile => layout[tile] == TileKind.Floor && layout[tile.Step(inward)].IsWalkable()
+                               && !template.HeroStarts.Values.Contains(tile) && !template.SpawnPoints.Contains(tile))
+                .ToList();
+            GridPosition middle = layout.MiddleOf(side);
+            if (candidates.Count == 0)
+            {
+                template = template.WithTile(middle, TileKind.Floor).WithTile(middle.Step(inward), TileKind.Floor);
+            }
+
+            tiles[side] = candidates.Count == 0 || (candidates.Contains(middle) && random.NextInt(0, 100) < 40)
+                ? middle
+                : random.Pick(candidates);
+        }
+
+        return (template, tiles);
+    }
+
+    /// <summary>The doorways and the tile just inside each: kept clear of traps, rubble and obstacles.</summary>
+    private static IEnumerable<GridPosition> DoorAreas(RoomTemplate template, IReadOnlyDictionary<Direction, GridPosition> doorTiles) =>
+        doorTiles.SelectMany(door => new[] { door.Value, door.Value.Step(door.Key.Opposite()) })
+            .Concat(Enum.GetValues<Direction>().Where(side => !doorTiles.ContainsKey(side)).Select(template.Layout.MiddleOf));
 
     /// <summary>
     /// How a door between cells starts: the Boss Door into the boss room; a loop may be secret or a
@@ -309,7 +392,7 @@ public static partial class DungeonGenerator
     /// last floor's treasure room holds the Boss Key, in a chest if it has one.
     /// </summary>
     private static (RoomTemplate Template, RoomFeatures Features) PlaceSecrets(
-        RoomTemplate template, RoomRole role, int floor, bool lastFloor, bool roomBelow, IRandomSource random)
+        RoomTemplate template, RoomRole role, int floor, bool lastFloor, bool roomBelow, IReadOnlyDictionary<Direction, GridPosition> doorTiles, IRandomSource random)
     {
         var traps = new Dictionary<GridPosition, TrapSetup>();
         var lockedChests = new Dictionary<GridPosition, int>();
@@ -319,7 +402,7 @@ public static partial class DungeonGenerator
         GridPosition? bossKeyOnFloor = null;
 
         // Nothing goes beside a chest or pot either: found traps there could wall it off.
-        HashSet<GridPosition> reserved = [.. Enum.GetValues<Direction>().Select(template.Layout.MiddleOf), .. template.HeroStarts.Values,
+        HashSet<GridPosition> reserved = [.. DoorAreas(template, doorTiles), .. template.HeroStarts.Values,
             .. template.SpawnPoints, .. template.Monsters.Select(spawn => spawn.Position),
             .. template.TilesOf(TileKind.Chest).Concat(template.TilesOf(TileKind.Pot)).SelectMany(tile => tile.OrthogonalNeighbors())];
         List<GridPosition> open = template.TilesOf(TileKind.Floor).Where(tile => !reserved.Contains(tile)).ToList();
@@ -459,14 +542,14 @@ public static partial class DungeonGenerator
     /// Sometimes a patch of rubble (rough ground, 2 steps a tile) on a room's open floor, away from
     /// doorways, starts and spawn points. It's walkable, so it never cuts anything off.
     /// </summary>
-    private static RoomTemplate Roughen(RoomTemplate template, RoomRole role, IRandomSource random)
+    private static RoomTemplate Roughen(RoomTemplate template, RoomRole role, IReadOnlyDictionary<Direction, GridPosition> doorTiles, IRandomSource random)
     {
         if (role is RoomRole.Arrival or RoomRole.Boss or RoomRole.Vault || random.NextInt(0, 100) >= RubbleChance)
         {
             return template;
         }
 
-        HashSet<GridPosition> reserved = [.. Enum.GetValues<Direction>().Select(template.Layout.MiddleOf), .. template.HeroStarts.Values, .. template.SpawnPoints];
+        HashSet<GridPosition> reserved = [.. DoorAreas(template, doorTiles), .. template.HeroStarts.Values, .. template.SpawnPoints];
         List<GridPosition> open = template.TilesOf(TileKind.Floor).Where(tile => !reserved.Contains(tile)).ToList();
         if (open.Count == 0)
         {
@@ -489,9 +572,9 @@ public static partial class DungeonGenerator
     }
 
     /// <summary>Where a lower floor's arrival room gets its stairs up: the open floor tile nearest the middle.</summary>
-    private static GridPosition StairsUpSpot(RoomTemplate template)
+    private static GridPosition StairsUpSpot(RoomTemplate template, IReadOnlyDictionary<Direction, GridPosition> doorTiles)
     {
-        HashSet<GridPosition> reserved = [.. Enum.GetValues<Direction>().Select(template.Layout.MiddleOf), .. template.HeroStarts.Values, .. template.SpawnPoints];
+        HashSet<GridPosition> reserved = [.. DoorAreas(template, doorTiles), .. template.HeroStarts.Values, .. template.SpawnPoints];
         GridPosition center = template.Layout.Center;
         return template.TilesOf(TileKind.Floor)
             .Where(tile => !reserved.Contains(tile))
@@ -530,6 +613,13 @@ public static partial class DungeonGenerator
             RoomRole.Boss => partySize,
             _ => floor + partySize - 1 + (trap ? 1 : 0),
         };
+
+        // Bigger rooms hold more, smaller ones fewer (by open floor, against a standard 9x9 room's).
+        if (role is RoomRole.Combat or RoomRole.Stairs)
+        {
+            int open = template.Layout.Positions.Count(tile => template.Layout[tile].IsWalkable());
+            budget = Math.Max(1, (int)Math.Round(budget * open / 70.0));
+        }
 
         var roster = theme.Roster
             .Where(entry => entry.MinFloor <= floor)

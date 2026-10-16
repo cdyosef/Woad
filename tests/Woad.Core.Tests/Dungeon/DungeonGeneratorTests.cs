@@ -99,9 +99,36 @@ public class DungeonGeneratorTests
             {
                 Assert.Equal(room.Id, byId[target].Doors![side.Opposite()]);
                 Assert.Equal(room.Floor, byId[target].Floor);
-                Assert.Equal(TileKind.Floor, room.Template.Layout[side.DoorTile()]);
+                Assert.Equal(TileKind.Floor, room.Template.Layout[room.DoorTiles![side]]);
             }
         }
+    }
+
+    [Fact]
+    public void RoomsComeInManySizesMostlyStandardWithTheBossArenaTheBiggest()
+    {
+        List<RoomSetup> all = SeedValues.SelectMany(seed => Generate(seed).Rooms).ToList();
+        int Area(RoomSetup room) => room.Template.Layout.Width * room.Template.Layout.Height;
+
+        Assert.All(all.Where(room => room.Role == RoomRole.Boss), boss => Assert.Equal((DungeonGenerator.BossSize, DungeonGenerator.BossSize), (boss.Template.Layout.Width, boss.Template.Layout.Height)));
+        Assert.All(all.Where(room => room.Role != RoomRole.Boss), room => Assert.True(Area(room) < DungeonGenerator.BossSize * DungeonGenerator.BossSize));
+        Assert.All(all.Where(room => room.Role is RoomRole.Arrival or RoomRole.Vault), room => Assert.Equal(81, Area(room)));
+
+        int standard = all.Count(room => Area(room) == 81);
+        Assert.True(standard > all.Count / 2, $"{standard} of {all.Count} rooms are 9x9");
+        Assert.Contains(all, room => Area(room) < 81);
+        Assert.Contains(all, room => Area(room) > 81 && room.Role != RoomRole.Boss);
+        Assert.Contains(all, room => room.Template.Layout.Positions.Any(tile => room.Template.Layout[tile] == TileKind.Rock));
+    }
+
+    [Fact]
+    public void DoorsSitAlongTheirEdgesNotAlwaysInTheMiddle()
+    {
+        List<RoomSetup> all = SeedValues.SelectMany(seed => Generate(seed).Rooms).ToList();
+
+        Assert.All(all.SelectMany(room => room.DoorTiles!.Select(door => (room, door))), pair =>
+            Assert.Equal(pair.door.Value, pair.room.Template.Layout.EdgeTile(pair.door.Key, pair.door.Key is Direction.North or Direction.South ? pair.door.Value.X : pair.door.Value.Y)));
+        Assert.Contains(all, room => room.DoorTiles!.Any(door => door.Value != room.Template.Layout.MiddleOf(door.Key)));
     }
 
     [Fact]

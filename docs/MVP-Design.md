@@ -313,7 +313,8 @@ file under `Themes/`.
 ## Dungeon
 
 - **3 floors**, each 6–8 rooms, laid out by a random walk on a 5×5 room map that all floors share,
-  so a pit or trap door drops into the room underneath (never into the boss room). A floor's Arrival
+  so a pit or trap door drops into the room underneath (never into the boss room), landing as far across
+  it as the hole was across its own room. A floor's Arrival
   room is under the stairs that lead to it. Above the last floor, rooms with nothing underneath get
   layouts without pits. A few extra doors between neighboring rooms add loops.
 - **Room roles:** the walk's first room is the Arrival room, which has no monsters. The room farthest
@@ -324,15 +325,21 @@ file under `Themes/`.
   pits lead somewhere, or on the last floor) or a deep stream across them with one crossing (a bridge or
   a shallow ford); some neighbors get a breach in their shared edge. Every one is checked so that
   doorways, stairs, the exit and monsters all stay reachable, on foot or through a locked gate.
-- **Room layouts** are handcrafted 9×9 text templates in the theme file (walls, pits, chests, stairs,
-  exit, hero starts, monster spawn points, the boss). Each use is randomly rotated and mirrored. When
-  content loads, every layout is checked: doorways are plain floor, and everything can be reached
-  from every door.
+- **Room sizes and shapes:** most rooms are the theme's handcrafted 9×9 text templates (walls, pits,
+  chests, stairs, exit, hero starts, monster spawn points, the boss), randomly rotated and mirrored;
+  arrival rooms and vaults always are. The rest are built to order: small rooms (5×5 to 7×7, often for
+  treasure), long halls and pillared galleries (up to 13×7), and big chambers (11×11 to 13×13) that may
+  be round, cross-shaped or L-shaped, with solid rock outside the shape. The **boss arena** is always the
+  biggest room, 15×15. Every room keeps its edges clear for doors and all its floor in one piece. When
+  content loads, every handcrafted layout is checked: doorways are plain floor, and everything can be
+  reached from every door.
 - **Monsters** are bought for a room's spawn points from the theme's roster (weighted, some only from
   floor 2) until its threat budget runs out. Slimes and bats cost 1; guards and skeletons cost 2.
-  Budgets *(tunable)*: combat and stairs rooms get floor + party size − 1, plus 1 in a trap room;
+  Budgets *(tunable)*: combat and stairs rooms get floor + party size − 1, plus 1 in a trap room; scaled
+  by the room's open floor against a standard room's (about 70 tiles), so big rooms hold more;
   treasure rooms 1; arrival rooms 0; the boss room the boss plus party-size worth of guards.
-- **Doors** are gold bars on the board's edges. Stand in the doorway and click it again to go through
+- **Doors** are gold bars on the room's edges, anywhere along them (the middle is most likely), on floor
+  with open floor inside. Stand in the doorway and click it again to go through
   (1 step). If someone is standing in the far doorway, you land on the nearest free tile. Locked doors are
   dark with a key mark, the Boss Door red, and walled-up doorways grey. See
   [Keys, locks and secrets](#keys-locks-and-secrets).

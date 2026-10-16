@@ -189,7 +189,7 @@ public sealed partial class GameSession
             target = _random.Behavior.Pick(candidates);
         }
 
-        if (LandingNear(target, hole) is not { } landing)
+        if (LandingNear(target, Beneath(from, hole, target)) is not { } landing)
         {
             return;
         }

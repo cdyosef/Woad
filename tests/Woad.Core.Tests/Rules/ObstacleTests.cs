@@ -124,7 +124,7 @@ public class ObstacleTests
                 // the exit and every monster can be reached from every other.
                 bool Passable(GridPosition tile) =>
                     (room.Layout[tile].IsWalkable() || room.Layout[tile] == TileKind.Gate) && room.TrapAt(tile) is null;
-                List<GridPosition> needed = [.. room.Doors.Keys.Select(side => side.DoorTile()), .. room.TilesOfKind(TileKind.StairsDown),
+                List<GridPosition> needed = [.. room.Doors.Keys.Select(room.DoorTile), .. room.TilesOfKind(TileKind.StairsDown),
                     .. room.TilesOfKind(TileKind.StairsUp), .. room.TilesOfKind(TileKind.Exit)];
                 if (needed.Count == 0)
                 {

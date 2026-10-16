@@ -15,7 +15,7 @@ public sealed record MonsterSpawn(GridPosition Position, MonsterDefinition Monst
 public sealed class RoomTemplate
 {
     /// <summary>Characters with a fixed meaning; monster glyphs can't use them.</summary>
-    public const string ReservedCharacters = ".#X~CP>*M&0123456789";
+    public const string ReservedCharacters = ".#X~CP>*M&_0123456789";
 
     private RoomTemplate(
         RoomLayout layout,
@@ -71,6 +71,7 @@ public sealed class RoomTemplate
             tiles[position.Y * width + position.X] = glyph switch
             {
                 '#' => TileKind.Wall,
+                '_' => TileKind.Rock,
                 'X' => TileKind.CrackedWall,
                 '~' => TileKind.Pit,
                 'C' => TileKind.Chest,
@@ -86,7 +87,7 @@ public sealed class RoomTemplate
 
             switch (glyph)
             {
-                case '.' or '#' or 'X' or '~' or 'C' or 'P' or '>' or '<' or '*' or ':' or ',' or '=':
+                case '_' or '.' or '#' or 'X' or '~' or 'C' or 'P' or '>' or '<' or '*' or ':' or ',' or '=':
                     break;
                 case >= '1' and <= '4':
                     heroStarts[glyph - '1'] = position;

@@ -245,6 +245,13 @@ public sealed partial class GameSession
         events.Add(new ClimbedOut(hero.Id, hero.Position));
     }
 
+    /// <summary>The tile of the room below that lies under <paramref name="hole"/>: as far across it, since the rooms may differ in size.</summary>
+    private static GridPosition Beneath(Room from, GridPosition hole, Room below)
+    {
+        static int Scale(int at, int fromSize, int toSize) => fromSize <= 1 ? 0 : (int)Math.Round(at * (toSize - 1) / (double)(fromSize - 1));
+        return new GridPosition(Scale(hole.X, from.Layout.Width, below.Layout.Width), Scale(hole.Y, from.Layout.Height, below.Layout.Height));
+    }
+
     /// <summary>The free tile nearest <paramref name="near"/> (it first) to land or climb out on: walkable, empty and without a trap.</summary>
     private GridPosition? LandingNear(Room room, GridPosition near) =>
         room.Positions
@@ -377,7 +384,7 @@ public sealed partial class GameSession
             events.Add(new FellIntoPit(monster.Id, room.Id, hole, Bottomless: below is null));
         }
 
-        if (below is null || LandingNear(below, hole) is not { } landing)
+        if (below is null || LandingNear(below, Beneath(room, hole, below)) is not { } landing)
         {
             monster.Position = edge;
             monster.Hearts = 0;

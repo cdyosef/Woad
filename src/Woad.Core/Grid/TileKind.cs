@@ -45,6 +45,12 @@ public enum TileKind
     /// with a key or a picked lock.
     /// </summary>
     Gate,
+
+    /// <summary>
+    /// Solid rock outside a room's shape (round chambers, crosses, L-shaped rooms): like a wall, but
+    /// not part of the room. Blocks movement and line of sight.
+    /// </summary>
+    Rock,
 }
 
 public static class TileKindExtensions
@@ -58,5 +64,5 @@ public static class TileKindExtensions
     public static int MoveCost(this TileKind tile, bool flying = false) =>
         !flying && tile is TileKind.Rubble or TileKind.ShallowWater or TileKind.DeepWater ? 2 : 1;
 
-    public static bool BlocksSight(this TileKind tile) => tile is TileKind.Wall or TileKind.CrackedWall;
+    public static bool BlocksSight(this TileKind tile) => tile is TileKind.Wall or TileKind.CrackedWall or TileKind.Rock;
 }

@@ -417,8 +417,38 @@ public partial class BoardView : Control
         }
     }
 
+    /// <summary>Solid rock outside the room's shape, with a wall face along the edges where it meets the room.</summary>
+    private void DrawRock(GridPosition tile)
+    {
+        Rect2 rect = TileRect(tile);
+        DrawRect(rect, Palette.Rock);
+        foreach (Direction side in Enum.GetValues<Direction>())
+        {
+            GridPosition next = tile.Step(side);
+            if (!_room!.Layout.Contains(next) || _room.Layout[next] == TileKind.Rock)
+            {
+                continue;
+            }
+
+            Rect2 face = side switch
+            {
+                Direction.North => new Rect2(rect.Position, new Vector2(TileSize, 3)),
+                Direction.South => new Rect2(rect.Position + new Vector2(0, TileSize - 6), new Vector2(TileSize, 6)),
+                Direction.West => new Rect2(rect.Position, new Vector2(3, TileSize)),
+                _ => new Rect2(rect.Position + new Vector2(TileSize - 3, 0), new Vector2(3, TileSize)),
+            };
+            DrawRect(face, side == Direction.South ? Palette.WallTop : Palette.Wall);
+        }
+    }
+
     private void DrawTile(GridPosition tile, TileKind kind)
     {
+        if (kind == TileKind.Rock)
+        {
+            DrawRock(tile);
+            return;
+        }
+
         if (DrawTexturedTile(tile, kind))
         {
             return;
