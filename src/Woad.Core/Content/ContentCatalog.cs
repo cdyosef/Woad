@@ -280,7 +280,7 @@ public sealed class ContentCatalog
                 errors.Add($"{name} effect range and areaRadius can't be negative.");
             }
 
-            if (effect.Kind is CardEffectKind.Stun && effect.Range < 1)
+            if (effect.Kind is CardEffectKind.Freeze && effect.Range < 1)
             {
                 errors.Add($"{name} stun effect needs a range of at least 1.");
             }

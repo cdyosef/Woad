@@ -97,11 +97,11 @@ public sealed partial class GameSession
 
                 break;
 
-            case CardEffectKind.Stun:
+            case CardEffectKind.Freeze:
                 Monster stunned = targets[0];
-                stunned.StunnedTurns = Math.Max(stunned.StunnedTurns, effect.Amount);
-                stunned.StunImmuneThroughRound = State.Round + 1;
-                events.Add(new MonsterStunned(stunned.Id, stunned.StunnedTurns));
+                stunned.FrozenTurns = Math.Max(stunned.FrozenTurns, effect.Amount);
+                stunned.FreezeImmuneThroughRound = State.Round + 1;
+                events.Add(new MonsterFrozen(stunned.Id, stunned.FrozenTurns));
                 break;
         }
 
@@ -680,7 +680,7 @@ public sealed partial class GameSession
 
                 return targets.Count == 0 ? (breaksWalls ? "There are no monsters or cracked walls there." : "There are no monsters there.") : null;
 
-            case CardEffectKind.Stun:
+            case CardEffectKind.Freeze:
                 if (target is not { } stunTile || room.MonsterAt(stunTile) is not { Collapsed: false } monster)
                 {
                     return "Choose a monster.";
@@ -696,7 +696,7 @@ public sealed partial class GameSession
                     return $"The {monster.Definition.Name} can't be stunned.";
                 }
 
-                if (monster.StunImmuneThroughRound >= State.Round)
+                if (monster.FreezeImmuneThroughRound >= State.Round)
                 {
                     return $"The {monster.Definition.Name} is still shaking off the last stun.";
                 }

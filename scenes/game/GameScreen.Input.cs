@@ -341,7 +341,8 @@ public partial class GameScreen
             string power = standing.Power.Banked > 0 ? $", {PowerDiceText(standing.Power.Banked)} banked" : "";
             string companion = standing.OwnerId is int ownerId ? $" ({NameOf(ownerId)}'s companion, {Describe(standing.Order)})" : "";
             string onFire = standing.FireDice > 0 ? $", ON FIRE ({standing.FireDice} {(standing.FireDice == 1 ? "die" : "dice")})" : "";
-            string lying = _session.IsDiving(standing) ? ", diving" : standing.Prone ? ", prone" : "";
+            string lying = (_session.IsDiving(standing) ? ", diving" : standing.Prone ? ", prone" : "")
+                + (standing.Stun.IsStunned ? $", stunned (+{standing.Stun.AttackBonus} to hit)" : "");
             return $"{standing.Name}{companion}: {standing.Hearts}/{standing.MaxHearts} hearts{power}{onFire}{lying}";
         }
 
@@ -520,9 +521,19 @@ public partial class GameScreen
             traits.Add("reassembles");
         }
 
-        if (monster.StunnedTurns > 0)
+        if (monster.FrozenTurns > 0)
         {
-            traits.Add("stunned");
+            traits.Add("frozen");
+        }
+
+        if (monster.Stun.IsStunned)
+        {
+            traits.Add($"stunned (+{monster.Stun.AttackBonus} to hit)");
+        }
+
+        if (monster.Prone)
+        {
+            traits.Add("prone");
         }
 
         return traits.Count == 0 ? "" : $" ({string.Join(", ", traits)})";

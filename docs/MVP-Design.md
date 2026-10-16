@@ -98,7 +98,7 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 | Armor | Persistent | Leather Cap (+1 Heart), Chain Mail (armor 1) |
 | Boots | Persistent | Dash Boots (+1 Move die) |
 | Spell | Charges or single-use | Flame Scroll (a 3-dice fire attack at range 3: any 6 sets the target alight), Frost Wand (2 charges: freeze for a round) |
-| Tool | Persistent | Boomerang (stun a monster within 4), Grapple Hook (pull yourself up to 4 tiles in a line; not built yet) |
+| Tool | Persistent | Grapple Hook (pull yourself up to 4 tiles in a line; not built yet) |
 | Bomb | Single-use | Bomb (range 3, a 2-dice attack on every monster in a 3×3 area) |
 | Potion | Single-use | Health Potion (restore 3 hearts) |
 | Treasure | Kept for score | Emerald (15g), Golden Idol (40g). Coins (Loose Coins 2g, Coin Pouch 5g) aren't cards: they go straight into your purse as gold |
@@ -118,8 +118,21 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 - **Targeted cards** need line of sight and must have a target: a bomb must catch at least one monster or
   cracked wall in its blast, and potions only heal yourself and can't be used at full hearts.
 - **Lockpicks** (tool, off hand): Tools 2. In the loot deck.
-- **Stuns:** a stunned monster skips its next turn and can't be stunned again during the following round.
-  Bosses can't be stunned.
+- **Freezing** (the Frost Wand): a frozen monster skips its next turn and can't be frozen again during the
+  following round. Bosses can't be frozen.
+- **Stun** (the Boomerang's sixes) and **Powerful Stun** (bomb blasts) stack, and wear off at the end of
+  the stunned creature's next turn. The first stack takes its Od Hand action and its free actions (free
+  loot, free belt item), or a Wend die if it has no Od Hand, and a flyer drops out of the air (into a pit
+  or water under it). Each further Stun takes a die: Wend first, then Rumble, then Defense. A Powerful
+  Stun takes 2 more dice to begin with (3 without Od Hand) and 3 for each further one. Attacks on a
+  stunned creature get **+1 per Stun and +3 per Powerful Stun**. Bosses can't be stunned.
+- **Boomerang:** a weapon for either hand. Thrown at a target within 4 (line of sight) with your Rumble
+  dice +1 (in place of your main weapon's bonus); every 6 rolled adds a Stun, hit or miss. In the off hand
+  it's used for targets your main weapon can't reach.
+- **Prone monsters** (knocked flat by a blast): melee on them rolls an extra die, ranged attacks face an
+  extra defense die, and getting up costs them 2 of their moves.
+- **Monster movement** is Wend dice worth a fixed 2 moves each (the last one 1, for an odd move), so a
+  stun that takes a Wend die takes 2 moves.
 
 ## Turn structure
 

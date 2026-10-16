@@ -71,7 +71,7 @@ public class ContentCatalogTests
     [Theory]
     [InlineData("""{ "id": "x", "name": "X", "type": "weapon" }""", "no slot")]
     [InlineData("""{ "id": "x", "name": "X", "type": "potion", "usage": "singleUse" }""", "no effect")]
-    [InlineData("""{ "id": "x", "name": "X", "type": "tool", "effect": { "kind": "stun", "amount": 1, "range": 2 } }""", "needs a slot")]
+    [InlineData("""{ "id": "x", "name": "X", "type": "tool", "effect": { "kind": "freeze", "amount": 1, "range": 2 } }""", "needs a slot")]
     [InlineData("""{ "id": "x", "name": "X", "type": "weapon", "slot": "offHand", "twoHanded": true }""", "two-handed")]
     [InlineData("""{ "id": "x", "name": "X", "type": "treasure" }""", "no value")]
     public void CardRulesAreEnforced(string card, string expectedProblem)

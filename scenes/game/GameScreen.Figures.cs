@@ -42,6 +42,7 @@ public partial class GameScreen
                 LifeMarks = hero.LifeMarks,
                 DeathMarks = hero.DeathMarks,
                 FireDice = hero.FireDice,
+                StunMarks = hero.Stun.Stacks + 3 * hero.Stun.PowerfulStacks,
                 Prone = hero.Prone,
                 Diving = _session.IsDiving(hero),
             };
@@ -53,9 +54,11 @@ public partial class GameScreen
             {
                 _names[monster.Id] = monster.Definition.Name;
                 _figures[monster.Id] = MonsterFigure(monster.Id, monster.Definition, room.Id, monster.Position, monster.Hearts, monster.MaxHearts);
-                _figures[monster.Id].Stunned = monster.StunnedTurns > 0;
+                _figures[monster.Id].Frozen = monster.FrozenTurns > 0;
                 _figures[monster.Id].Collapsed = monster.Collapsed;
                 _figures[monster.Id].FireDice = monster.FireDice;
+                _figures[monster.Id].Prone = monster.Prone;
+                _figures[monster.Id].StunMarks = monster.Stun.Stacks + 3 * monster.Stun.PowerfulStacks;
             }
         }
 
@@ -109,10 +112,11 @@ public partial class GameScreen
     private void ApplyFigure(Figure figure, TokenView token)
     {
         token.SetHearts(figure.Hearts, figure.MaxHearts);
-        token.Stunned = figure.Stunned;
+        token.Frozen = figure.Frozen;
         token.Collapsed = figure.Collapsed;
         token.Keeling = figure.Keeling ? (figure.LifeMarks, figure.DeathMarks) : null;
         token.FireDice = figure.FireDice;
+        token.StunMarks = figure.StunMarks;
         token.Prone = figure.Prone;
         token.Diving = figure.Diving;
         token.Active = figure.Id == ActiveHero?.Id;
@@ -373,7 +377,7 @@ public partial class GameScreen
 
         public Color Fill { get; init; }
 
-        public bool Stunned { get; set; }
+        public bool Frozen { get; set; }
 
         public bool Collapsed { get; set; }
 
@@ -384,6 +388,8 @@ public partial class GameScreen
         public int DeathMarks { get; set; }
 
         public int FireDice { get; set; }
+
+        public int StunMarks { get; set; }
 
         public bool Prone { get; set; }
 

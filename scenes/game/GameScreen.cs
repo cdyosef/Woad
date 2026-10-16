@@ -532,12 +532,21 @@ public partial class GameScreen : Control
                 break;
 
             case WentProne prone:
-                FloatOver(prone.HeroId, prone.Diving ? "dives" : "drops prone", Palette.Text);
-                await UpdateFigure(prone.HeroId, figure => { figure.Prone = true; figure.Diving = prone.Diving; }, 0.2);
+                FloatOver(prone.EntityId, prone.Diving ? "dives" : "drops prone", Palette.Text);
+                await UpdateFigure(prone.EntityId, figure => { figure.Prone = true; figure.Diving = prone.Diving; }, 0.2);
+                break;
+
+            case Stunned stunned:
+                FloatOver(stunned.EntityId, stunned.Powerful ? "dazed!" : "stunned!", Palette.TrimBright);
+                await UpdateFigure(stunned.EntityId, figure => figure.StunMarks = stunned.Stacks + 3 * stunned.PowerfulStacks, 0.25);
+                break;
+
+            case StunWoreOff wore:
+                await UpdateFigure(wore.EntityId, figure => figure.StunMarks = 0, 0.1);
                 break;
 
             case GotUp up:
-                await UpdateFigure(up.HeroId, figure => { figure.Prone = false; figure.Diving = false; }, 0.2);
+                await UpdateFigure(up.EntityId, figure => { figure.Prone = false; figure.Diving = false; }, 0.2);
                 break;
 
             case HeroKeeledOver keeled:
@@ -590,12 +599,12 @@ public partial class GameScreen : Control
                 await SpawnFigure((MonsterSpawned)gameEvent);
                 break;
 
-            case MonsterStunned stunned:
-                await UpdateFigure(stunned.MonsterId, figure => figure.Stunned = true, 0.2);
+            case MonsterFrozen stunned:
+                await UpdateFigure(stunned.MonsterId, figure => figure.Frozen = true, 0.2);
                 break;
 
             case MonsterTurnSkipped skipped:
-                await UpdateFigure(skipped.MonsterId, figure => figure.Stunned = false, 0.3);
+                await UpdateFigure(skipped.MonsterId, figure => figure.Frozen = false, 0.3);
                 break;
 
             case RoomCleared:
@@ -669,7 +678,7 @@ public partial class GameScreen : Control
             case Damaged:
                 Sfx.Play("block");
                 break;
-            case MonsterStunned:
+            case MonsterFrozen:
                 Sfx.Play("block", 0.6f);
                 break;
             case MonsterDefeated:
@@ -744,6 +753,9 @@ public partial class GameScreen : Control
                 break;
             case FireOut:
                 Sfx.Play("block", 0.7f);
+                break;
+            case Stunned:
+                Sfx.Play("block", 1.5f);
                 break;
             case WentProne or GotUp:
                 Sfx.PlayVaried("step");
@@ -821,8 +833,10 @@ public partial class GameScreen : Control
         FireSpread spread => FigureRoom(spread.ToId),
         FireBurned burned => FigureRoom(burned.EntityId),
         FireOut fireOut => FigureRoom(fireOut.EntityId),
-        WentProne prone => FigureRoom(prone.HeroId),
-        GotUp up => FigureRoom(up.HeroId),
+        WentProne prone => FigureRoom(prone.EntityId),
+        GotUp up => FigureRoom(up.EntityId),
+        Stunned stunned => FigureRoom(stunned.EntityId),
+        StunWoreOff wore => FigureRoom(wore.EntityId),
         KeelRolled keel => FigureRoom(keel.HeroId),
         HeroRoused roused => FigureRoom(roused.HeroId),
         KeelerStruck struck => FigureRoom(struck.HeroId),
@@ -831,7 +845,7 @@ public partial class GameScreen : Control
         MonsterDefeated defeated => FigureRoom(defeated.MonsterId),
         MonsterCollapsed collapsed => FigureRoom(collapsed.MonsterId),
         MonsterReassembled risen => FigureRoom(risen.MonsterId),
-        MonsterStunned stunned => FigureRoom(stunned.MonsterId),
+        MonsterFrozen stunned => FigureRoom(stunned.MonsterId),
         MonsterTurnSkipped skipped => FigureRoom(skipped.MonsterId),
         MonsterSpawned spawned => spawned.RoomId,
         RoomCleared cleared => cleared.RoomId,

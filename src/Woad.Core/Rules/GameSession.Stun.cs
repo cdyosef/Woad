@@ -1,0 +1,154 @@
+using Woad.Core.Content;
+using Woad.Core.Events;
+using Woad.Core.Grid;
+using Woad.Core.Model;
+
+namespace Woad.Core.Rules;
+
+/// <summary>
+/// Stuns (see <see cref="StunState"/>): the Boomerang's sixes add Stun, bomb blasts Powerful Stun.
+/// A hero's stun takes its dice when their next turn starts; a monster's when its next turn does. Either
+/// way it wears off at the end of that turn. Stunned flyers drop out of the air, into whatever is under
+/// them. Bosses can't be stunned. Also here: which weapon an attack is made with, a thrown weapon from
+/// the off hand reaching where the main hand can't.
+/// </summary>
+public sealed partial class GameSession
+{
+    /// <summary>
+    /// The bonus an attack on <paramref name="target"/> gets from the weapon that reaches it: the main
+    /// hand if it can (and there is one), else a thrown weapon in the off hand (whose own bonus replaces the main hand's),
+    /// and whether that weapon stuns on sixes.
+    /// </summary>
+    private static (int Bonus, bool StunOnSix) WeaponFor(Hero hero, Room room, GridPosition target)
+    {
+        int weapon = Math.Max(0, hero.EffectiveStats.Weapon);
+        CardDefinition? main = hero.MainWeapon?.Definition;
+        if (hero.ThrownOffHand is not { } thrown || (main is not null && Targeting.CanHeroAttack(room.Layout, main.AttackRange, hero.Position, target)))
+        {
+            return (weapon + (main?.AttackBonus ?? 0), main?.StunOnSix ?? false);
+        }
+
+        CardDefinition off = thrown.Definition;
+        return (Math.Max(0, weapon - (main?.Modifiers.Weapon ?? 0) + off.Modifiers.Weapon + off.AttackBonus), off.StunOnSix);
+    }
+
+    /// <summary>A melee attack (from right beside it) on a prone monster rolls an extra die.</summary>
+    private static int ProneBonus(Monster target, GridPosition from) =>
+        target.Prone && target.Position.ChebyshevDistanceTo(from) <= 1 ? 1 : 0;
+
+    /// <summary>A stunning weapon's attack: each 6 among its dice stuns every target still standing, hit or miss.</summary>
+    private void StunTargets(Hero attacker, Room room, PendingRoll attack, List<GameEvent> events)
+    {
+        int sixes = attack.StunOnSix ? attack.Roll.Faces.Count(face => face == GameRules.PowerDieFace) : 0;
+        if (sixes == 0)
+        {
+            return;
+        }
+
+        foreach (int targetId in attack.TargetIds)
+        {
+            if (room.FindMonster(targetId) is { } monster)
+            {
+                Stun(room, monster, powerful: false, sixes, attacker, events);
+            }
+            else if (State.HeroesIn(room).FirstOrDefault(ally => ally.Id == targetId) is { } ally)
+            {
+                Stun(ally, powerful: false, sixes, events);
+            }
+        }
+    }
+
+    /// <summary>Stuns a monster (not a boss). A flyer stunned over a pit falls; over deep water, it flounders out.</summary>
+    private void Stun(Room room, Monster monster, bool powerful, int stacks, Hero? by, List<GameEvent> events)
+    {
+        if (monster.Definition.StunImmune || stacks < 1 || room.FindMonster(monster.Id) is null)
+        {
+            return;
+        }
+
+        bool flew = monster.Flies;
+        monster.Stun.Add(powerful, stacks);
+        events.Add(new Stunned(monster.Id, monster.Stun.Stacks, monster.Stun.PowerfulStacks, powerful));
+        if (!flew || monster.Flies)
+        {
+            return;
+        }
+
+        TileKind under = room.Layout[monster.Position];
+        if (under == TileKind.Pit)
+        {
+            MonsterFalls(by, room, monster, monster.Position, monster.Position, events);
+        }
+        else if (under == TileKind.DeepWater)
+        {
+            HurtMonster(by, room, monster, events);
+            if (room.FindMonster(monster.Id) is not null && LandingNear(room, monster.Position) is { } shore)
+            {
+                monster.Position = shore;
+                events.Add(new ClimbedOut(monster.Id, shore));
+            }
+        }
+    }
+
+    private static void Stun(Hero hero, bool powerful, int stacks, List<GameEvent> events)
+    {
+        if (!hero.IsInPlay || stacks < 1)
+        {
+            return;
+        }
+
+        hero.Stun.Add(powerful, stacks);
+        events.Add(new Stunned(hero.Id, hero.Stun.Stacks, hero.Stun.PowerfulStacks, powerful));
+    }
+
+    /// <summary>
+    /// A stunned hero's turn starts short: no Od Hand action and no free loot or belt item (or a Wend die
+    /// if they have no Od Hand), and the dice the stun takes, Wend first, then Rumble.
+    /// </summary>
+    private void ApplyStun(Hero hero)
+    {
+        if (!hero.Stun.IsStunned)
+        {
+            return;
+        }
+
+        hero.Stun.WearsOffThisTurn = true;
+        Stats stats = hero.EffectiveStats;
+        bool odHand = stats.OdHandDice > 0;
+        (int wend, int rumble, _) = hero.Stun.Lost(odHand, stats.MoveDice, stats.AttackDice, stats.DefenseDice);
+        if (odHand)
+        {
+            Turn.OdHandDiceUsed = stats.OdHandDice;
+        }
+
+        Turn.MoveDiceUsed += wend;
+        Turn.AttackDiceUsed += rumble;
+        Turn.UsedFreeLoot = true;
+        Turn.UsedBeltItem = true;
+    }
+
+    /// <summary>The end of a hero's turn: a stun that was on them all turn wears off.</summary>
+    private static void WearOffStun(Hero hero, List<GameEvent> events)
+    {
+        if (hero.Stun.WearsOffThisTurn)
+        {
+            hero.Stun.Clear();
+            events.Add(new StunWoreOff(hero.Id));
+        }
+    }
+
+    /// <summary>Defense dice a hero rolls now: theirs, less what a stun took.</summary>
+    private static int DefenseDiceOf(Hero hero)
+    {
+        Stats stats = hero.EffectiveStats;
+        int dice = Math.Max(0, stats.DefenseDice);
+        return dice - hero.Stun.Lost(stats.OdHandDice > 0, stats.MoveDice, stats.AttackDice, dice).Defense;
+    }
+
+    /// <summary>Defense dice a monster rolls now: its own, less what a stun took.</summary>
+    private static int DefenseDiceOf(Monster monster)
+    {
+        MonsterDefinition definition = monster.Definition;
+        return definition.DefenseDice - monster.Stun.Lost(definition.OdHandDice > 0, definition.WendDice, definition.AttackDice, definition.DefenseDice).Defense;
+    }
+}

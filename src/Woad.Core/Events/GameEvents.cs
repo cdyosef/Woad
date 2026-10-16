@@ -72,7 +72,7 @@ public sealed record MonsterSpawned(int MonsterId, string MonsterDefinitionId, s
 
 public sealed record MonsterMoved(int MonsterId, IReadOnlyList<GridPosition> Path) : GameEvent;
 
-public sealed record MonsterStunned(int MonsterId, int Turns) : GameEvent;
+public sealed record MonsterFrozen(int MonsterId, int Turns) : GameEvent;
 
 public sealed record MonsterTurnSkipped(int MonsterId) : GameEvent;
 
@@ -277,14 +277,20 @@ public sealed record FireSpread(int FromId, int ToId, int FireDice) : GameEvent;
 /// <summary>A hero's or monster's fire went out.</summary>
 public sealed record FireOut(int EntityId, FireOutCause Cause) : GameEvent;
 
-/// <summary>A hero lay down: prone, or diving in deep water.</summary>
-public sealed record WentProne(int HeroId, bool Diving) : GameEvent;
+/// <summary>A hero or monster lay down (or was knocked down): prone, or diving in deep water.</summary>
+public sealed record WentProne(int EntityId, bool Diving) : GameEvent;
 
-/// <summary>A prone hero got back on their feet.</summary>
-public sealed record GotUp(int HeroId) : GameEvent;
+/// <summary>A prone hero or monster got back on its feet.</summary>
+public sealed record GotUp(int EntityId) : GameEvent;
 
 /// <summary>Coins went into a hero's purse: <paramref name="Amount"/> gold, <paramref name="Total"/> now carried.</summary>
 public sealed record GoldFound(int HeroId, int Amount, int Total) : GameEvent;
 
 /// <summary>Gold landed on the floor: coins a monster dropped or a stash held, or the purse of someone who died.</summary>
 public sealed record GoldAppeared(string RoomId, GridPosition Position, int Amount) : GameEvent;
+
+/// <summary>A hero or monster was stunned: its Stun and Powerful Stun stacks now (see <see cref="StunState"/>).</summary>
+public sealed record Stunned(int EntityId, int Stacks, int PowerfulStacks, bool Powerful) : GameEvent;
+
+/// <summary>The end of a stunned hero's or monster's turn: the stun wore off.</summary>
+public sealed record StunWoreOff(int EntityId) : GameEvent;

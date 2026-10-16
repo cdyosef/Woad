@@ -15,8 +15,8 @@
 
   // Spells and tools
   { "id": "flame_scroll", "name": "Flame Scroll", "type": "spell", "usage": "singleUse", "effect": { "kind": "attack", "amount": 3, "range": 3, "fire": true }, "value": 4, "text": "Single use. A 3-dice fire attack on a monster within 3 (not your Rumble dice). Any 6 sets it alight." },
-  { "id": "frost_wand", "name": "Frost Wand", "type": "spell", "slot": "offHand", "usage": "charges", "charges": 2, "effect": { "kind": "stun", "amount": 1, "range": 3 }, "value": 8, "text": "2 charges per floor. Freeze a monster within 3: it skips its next turn." },
-  { "id": "boomerang", "name": "Boomerang", "type": "tool", "slot": "offHand", "effect": { "kind": "stun", "amount": 1, "range": 4 }, "value": 6, "text": "Stun a monster within 4: it skips its next turn." },
+  { "id": "frost_wand", "name": "Frost Wand", "type": "spell", "slot": "offHand", "usage": "charges", "charges": 2, "effect": { "kind": "freeze", "amount": 1, "range": 3 }, "value": 8, "text": "2 charges per floor. Freeze a monster within 3: it skips its next turn." },
+  { "id": "boomerang", "name": "Boomerang", "type": "weapon", "slot": "offHand", "altSlot": "mainHand", "attackRange": 4, "attackBonus": 1, "stunOnSix": true, "value": 6, "text": "Off hand or main hand. Throw it with your Rumble dice +1 at a target within 4; every 6 stuns it (hit or miss)." },
   { "id": "lockpicks", "name": "Lockpicks", "type": "tool", "slot": "offHand", "modifiers": { "tools": 2 }, "value": 6, "text": "Tools 2: adds 2 to one Od Hand roll a turn (picking locks, searching, disarming, stealing)." },
 
   // Consumables

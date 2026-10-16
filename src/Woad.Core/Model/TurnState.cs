@@ -56,7 +56,7 @@ public sealed record OdHandCheck(OdHandCheckKind Kind, int Difficulty, GridPosit
 /// </summary>
 public sealed class PendingRoll
 {
-    internal PendingRoll(int heroId, DiceRoll roll, int bonus, IReadOnlyList<int> targetIds, DamageSource source, OdHandCheck? check = null, bool fire = false)
+    internal PendingRoll(int heroId, DiceRoll roll, int bonus, IReadOnlyList<int> targetIds, DamageSource source, OdHandCheck? check = null, bool fire = false, bool stunOnSix = false)
     {
         HeroId = heroId;
         Roll = roll;
@@ -65,6 +65,7 @@ public sealed class PendingRoll
         Source = source;
         Check = check;
         Fire = fire;
+        StunOnSix = stunOnSix;
     }
 
     public int HeroId { get; }
@@ -86,6 +87,9 @@ public sealed class PendingRoll
 
     /// <summary>The dice are fire (the Flame Scroll): any 6 among them sets the targets alight, hit or miss.</summary>
     public bool Fire { get; }
+
+    /// <summary>A stunning weapon (the Boomerang): every 6 among the dice stuns the targets, hit or miss.</summary>
+    public bool StunOnSix { get; }
 }
 
 /// <summary>

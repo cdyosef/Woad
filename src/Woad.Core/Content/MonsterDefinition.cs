@@ -42,6 +42,15 @@ public sealed record MonsterDefinition
     /// <summary>d6 rolled, all of them, whenever attacked.</summary>
     public required int DefenseDice { get; init; }
 
+    /// <summary>d6 for Od Hand: stealing. Most monsters have none.</summary>
+    public int OdHandDice { get; init; }
+
+    /// <summary>
+    /// Its <see cref="Move"/> in Wend dice, each worth a fixed 2 moves (the last 1 when the move is odd).
+    /// A stun that takes a Wend die takes 2 moves.
+    /// </summary>
+    public int WendDice => (Move + 1) / 2;
+
     /// <summary>Fixed value added to one attack per turn, like a hero's weapon.</summary>
     public int Weapon { get; init; }
 

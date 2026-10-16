@@ -51,7 +51,7 @@ public sealed partial class GameSession
             return $"The {monster.Definition.Name} is too mighty to shove.";
         }
 
-        return ShoveDestination(room, hero, at, monster?.Definition.Flying ?? false) is null ? "There's nowhere to shove them: something is in the way." : null;
+        return ShoveDestination(room, hero, at, monster?.Flies ?? false) is null ? "There's nowhere to shove them: something is in the way." : null;
     }
 
     /// <summary>Where the monsters (and, with friendly fire on, heroes) the active hero could shove right now stand.</summary>
@@ -297,8 +297,9 @@ public sealed partial class GameSession
 
         bool collapsed = monster.Collapsed;
         int armor = collapsed ? 0 : monster.Definition.Armor;
-        DiceRoll defense = RollDefense(monster.Id, monster.Power, collapsed ? 0 : monster.Definition.DefenseDice, armor, shove.Total, canSpend: !collapsed, events);
-        if (shove.Total <= defense.Total + armor || ShoveDestination(room, hero, monster.Position, monster.Definition.Flying) is not { } to)
+        int push = shove.Total + monster.Stun.AttackBonus;
+        DiceRoll defense = RollDefense(monster.Id, monster.Power, collapsed ? 0 : DefenseDiceOf(monster), armor, push, canSpend: !collapsed, events);
+        if (push <= defense.Total + armor || ShoveDestination(room, hero, monster.Position, monster.Flies) is not { } to)
         {
             events.Add(new ShoveResisted(hero.Id, monster.Id));
             return;
@@ -307,7 +308,7 @@ public sealed partial class GameSession
         GridPosition from = monster.Position;
         monster.Position = to;
         events.Add(new Shoved(hero.Id, monster.Id, from, to));
-        if (room.Layout[to] == TileKind.DeepWater && !monster.Definition.Flying)
+        if (room.Layout[to] == TileKind.DeepWater && !monster.Flies)
         {
             if (monster.FireDice > 0)
             {
@@ -323,11 +324,11 @@ public sealed partial class GameSession
                 events.Add(new ClimbedOut(monster.Id, shore));
             }
         }
-        else if (room.Layout[to] == TileKind.Pit && !monster.Definition.Flying)
+        else if (room.Layout[to] == TileKind.Pit && !monster.Flies)
         {
             MonsterFalls(hero, room, monster, from, to, events);
         }
-        else if (room.TrapAt(to) is { Kind: TrapKind.Spikes or TrapKind.TrapDoor } trap && !monster.Definition.Flying)
+        else if (room.TrapAt(to) is { Kind: TrapKind.Spikes or TrapKind.TrapDoor } trap && !monster.Flies)
         {
             trap.Revealed = true;
             events.Add(new MonsterTrapped(monster.Id, trap.Kind, to));
@@ -350,7 +351,8 @@ public sealed partial class GameSession
     {
         Stats stats = ally.EffectiveStats;
         int armor = Math.Max(0, stats.Armor);
-        DiceRoll defense = RollDefense(ally.Id, ally.Power, Math.Max(0, stats.DefenseDice), armor, total, canSpend: true, events);
+        total += ally.Stun.AttackBonus;
+        DiceRoll defense = RollDefense(ally.Id, ally.Power, DefenseDiceOf(ally), armor, total, canSpend: true, events);
         if (total <= defense.Total + armor || ShoveDestination(room, hero, ally.Position, flying: false) is not { } to)
         {
             events.Add(new ShoveResisted(hero.Id, ally.Id));
@@ -375,7 +377,7 @@ public sealed partial class GameSession
     /// heart, or to its doom when nothing is below. What it leaves behind lands where it stood before
     /// the shove (<paramref name="edge"/>).
     /// </summary>
-    private void MonsterFalls(Hero pusher, Room room, Monster monster, GridPosition edge, GridPosition hole, List<GameEvent> events)
+    private void MonsterFalls(Hero? pusher, Room room, Monster monster, GridPosition edge, GridPosition hole, List<GameEvent> events)
     {
         Room? below = room.BelowRoomId is { } belowId ? State.Rooms[belowId] : null;
         bool trapDoor = room.Layout[hole] != TileKind.Pit;
@@ -401,7 +403,7 @@ public sealed partial class GameSession
     }
 
     /// <summary>A fall or a trap costs a monster a heart; bones broken this way stay down.</summary>
-    private void HurtMonster(Hero pusher, Room room, Monster monster, List<GameEvent> events)
+    private void HurtMonster(Hero? pusher, Room room, Monster monster, List<GameEvent> events)
     {
         monster.Hearts = Math.Max(0, monster.Hearts - GameRules.FallDamage);
         events.Add(new Damaged(monster.Id, GameRules.FallDamage, monster.Hearts));

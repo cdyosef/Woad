@@ -31,8 +31,23 @@ public sealed class Monster
     /// <summary>Someone has already stolen from it; it guards what's left.</summary>
     public bool Robbed { get; internal set; }
 
-    /// <summary>Turns this monster will skip.</summary>
-    public int StunnedTurns { get; internal set; }
+    /// <summary>Turns this monster will skip, frozen (the Frost Wand).</summary>
+    public int FrozenTurns { get; internal set; }
+
+    /// <summary>Stun and Powerful Stun on it (see <see cref="StunState"/>).</summary>
+    public StunState Stun { get; } = new();
+
+    /// <summary>Knocked flat (by a blast): melee on it rolls an extra die, ranged attacks face an extra defense die; getting up costs 2 of its moves.</summary>
+    public bool Prone { get; internal set; }
+
+    /// <summary>Moves it has this turn: its own, less what a stun or getting up took.</summary>
+    internal int MovesThisTurn { get; set; }
+
+    /// <summary>Attack dice it has this turn: its own, less what a stun took.</summary>
+    internal int AttackDiceThisTurn { get; set; }
+
+    /// <summary>Flies over pits and water, unless stunned.</summary>
+    public bool Flies => Definition.Flying && !Stun.IsStunned;
 
     /// <summary>Fire dice burning on it (0 when not on fire): rolled against it at the start of its turn.</summary>
     public int FireDice { get; internal set; }
@@ -48,8 +63,8 @@ public sealed class Monster
     /// <summary>Turns acted (not counting skipped or rising turns); paces sweep attacks.</summary>
     public int TurnsTaken { get; internal set; }
 
-    /// <summary>A stunned monster can't be stunned again until this round has passed.</summary>
-    internal int StunImmuneThroughRound { get; set; }
+    /// <summary>A frozen monster can't be frozen again until this round has passed.</summary>
+    internal int FreezeImmuneThroughRound { get; set; }
 
     public override string ToString() => $"{Definition.Name} #{Id} at {Position}";
 }
