@@ -97,11 +97,11 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 | Shield | Persistent | Buckler (armor 2), Tower Shield (armor 3, −1 Wend) |
 | Armor | Persistent | Leather Cap (+1 Heart), Chain Mail (armor 1) |
 | Boots | Persistent | Dash Boots (+1 Move die) |
-| Spell | Charges or single-use | Flame Scroll (a 3-dice attack at range 3), Frost Wand (2 charges: freeze for a round) |
+| Spell | Charges or single-use | Flame Scroll (a 3-dice fire attack at range 3: any 6 sets the target alight), Frost Wand (2 charges: freeze for a round) |
 | Tool | Persistent | Boomerang (stun a monster within 4), Grapple Hook (pull yourself up to 4 tiles in a line; not built yet) |
 | Bomb | Single-use | Bomb (range 3, a 2-dice attack on every monster in a 3×3 area) |
 | Potion | Single-use | Health Potion (restore 3 hearts) |
-| Treasure | Kept for score | Coin Pouch (5g), Emerald (15g), Golden Idol (40g) |
+| Treasure | Kept for score | Emerald (15g), Golden Idol (40g). Coins (Loose Coins 2g, Coin Pouch 5g) aren't cards: they go straight into your purse as gold |
 
 - **Starter kit** (new characters): Wooden Sword, Buckler, Health Potion.
 - **Equipping, belting or stowing gear** is free while no monsters are in your room, as often as you like.
@@ -175,6 +175,29 @@ facing door of the next room.
 - **Luck** rerolls one of your own Wend, Rumble or Od Hand dice. A Wend die can be rerolled any time before
   your first step. With Luck left, an attack or Od Hand roll waits for you to reroll or confirm; spending
   your last Luck resolves it. Luck doesn't apply to defense rolls.
+
+### Fire
+
+- **Catching fire:** fire dice (the Flame Scroll's, and the attacks of Cinder Imps and Fire Beetles) set
+  their target alight on **any 6**, hit or miss: 1 fire die, or one more on a creature already burning.
+- **Burning:** at the start of a burning hero's or monster's turn its fire dice are rolled as an attack on
+  it, defended as usual (1 heart on a hit; a mark of death for someone Keeling Over). Then each **6** adds
+  a fire die and sets a random neighbor alight (diagonals too, anyone: hero, companion or monster), and
+  each **1** snuffs a die out. With none left, the fire is out.
+- **Putting it out:** stepping or being shoved into shallow or deep water douses it. **Stop, drop and
+  roll** (the **Drop & roll** button, only while on fire, before doing anything else that turn) puts it
+  out at the cost of the whole turn, and leaves the hero prone.
+- **Credit:** a monster that burns to death is a kill (and XP) for whoever set the fire. Skeletons burned
+  to death stay down.
+
+### Prone and diving
+
+- **Lying down** (the **Prone** button) costs 1 step of movement; **getting up** costs 2. While prone every
+  step costs double, on top of rough ground and water (rubble crawled over costs 4). No leaping while prone.
+- **Melee** attacks on a prone hero roll **1 extra die**; **ranged** attacks face **1 extra defense die**.
+  Heroes Keeling Over count as prone.
+- **Diving:** prone in deep water, a hero is under the surface: no ranged attack, blast or sweep can reach
+  them from more than a tile away. Melee still can, and staying afloat still takes a Rumble die.
 
 ### Power Dice
 
@@ -269,6 +292,8 @@ when the total reaches its number:
 | Spear Guard | 2 | 3 | 1d6+1 | 1d6+1 | Reach 2 in a straight line |
 | Archer Guard | 2 | 2 | 1d6+1 | 1d6+1 | Ranged 5; keeps its distance |
 | Skeleton | 2 | 3 | 1d6+1 | 1d6+1 | Rises again once unless finished by a bomb or spell |
+| Cinder Imp | 1 | 4 | 1d6 | 1d6 | From floor 2. Fire attacks (a 6 sets you alight, hit or miss); can't burn |
+| Fire Beetle | 3 | 1 | 2d6 | 1d6+2 | From floor 2. Fire attacks; can't burn; slow and armored |
 | **Miniboss: Key Warden** | 5 | 2 | 2d6+1 | 1d6+1 | Guards the Boss Key in the last floor's vault; can't be shoved |
 | **Boss: Iron Warden** | 8 | 3 | 2d6+1 | 1d6+1 | Every other turn, a flail sweep: one roll with all its dice against every hero within 2 |
 
@@ -338,6 +363,11 @@ file under `Themes/`.
 - **Pots** block movement until a hero beside them smashes one (uses the action). In the Emerald Keep:
   35% Loose Coins (2 gold), 25% a heart, otherwise nothing *(tunable)*.
 - **Found items:** cards found during a run are tagged as found.
+- **Gold:** coins (Loose Coins, Coin Pouches) never take a backpack slot: whoever finds them, in a
+  chest, a pot or a steal, pockets the gold at once (shown beside Kills on the hero panel). Coins a
+  monster drops or a stash holds lie on the floor as gold, picked up like any loot. Gold counts as
+  treasure for the winner and becomes the character's gold on escape; someone who dies drops theirs
+  on their tombstone, and companions left behind lose it.
 - **XP** *(tunable)*: each monster's XP goes to whoever defeats it (slime 2, guards 4, skeleton 5, Iron
   Warden 25). Reaching a floor for the first time gives 5, and escaping gives 10.
 - **Keeling Over:** a hero or companion reduced to 0 hearts falls where they stand (X's for eyes) and

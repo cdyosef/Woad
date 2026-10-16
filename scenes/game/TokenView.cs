@@ -20,6 +20,9 @@ public partial class TokenView : Node2D
     private bool _stunned;
     private bool _collapsed;
     private (int Life, int Death)? _keeling;
+    private int _fireDice;
+    private bool _prone;
+    private bool _diving;
 
     public int EntityId { get; init; }
 
@@ -68,6 +71,24 @@ public partial class TokenView : Node2D
         set { _collapsed = value; QueueRedraw(); }
     }
 
+    /// <summary>Fire dice burning on it: a flame and the count in the corner.</summary>
+    public int FireDice
+    {
+        set { _fireDice = value; QueueRedraw(); }
+    }
+
+    /// <summary>Lying down (prone): drawn on its side.</summary>
+    public bool Prone
+    {
+        set { _prone = value; QueueRedraw(); }
+    }
+
+    /// <summary>Prone in deep water: drawn half under the surface.</summary>
+    public bool Diving
+    {
+        set { _diving = value; QueueRedraw(); }
+    }
+
     /// <summary>Keeling Over: lying on their side with X eyes, marks of life and death shown instead of hearts. Null when standing.</summary>
     public (int Life, int Death)? Keeling
     {
@@ -98,13 +119,18 @@ public partial class TokenView : Node2D
         {
             DrawString(ThemeDB.FallbackFont, new Vector2(Center.X + 7, 6), "z", fontSize: 9, modulate: Palette.TrimBright);
         }
+
+        if (_fireDice > 0)
+        {
+            DrawFlame();
+        }
     }
 
     private void DrawSprite()
     {
-        if (_keeling is not null)
+        if (_keeling is not null || _prone)
         {
-            DrawFallen();
+            DrawFallen(xEyes: _keeling is not null);
             return;
         }
 
@@ -129,10 +155,10 @@ public partial class TokenView : Node2D
     }
 
     /// <summary>
-    /// Keeling Over: the sprite tipped onto its side, head to the left, with an X over each eye
-    /// (the hero sprite's eyes are at pixels (6,5) and (9,5) of 16).
+    /// Lying down: the sprite tipped onto its side, head to the left. Keeling Over, with an X over each
+    /// eye (the hero sprite's eyes are at pixels (6,5) and (9,5) of 16); diving, half under the water.
     /// </summary>
-    private void DrawFallen()
+    private void DrawFallen(bool xEyes)
     {
         const float pixel = BoardView.TileSize / 16f;
         DrawSetTransform(new Vector2(BoardView.TileSize / 2f, 24), 0, new Vector2(1.2f, 0.3f));
@@ -147,7 +173,7 @@ public partial class TokenView : Node2D
             DrawTextureRect(Tint, rect, tile: false, modulate: Fill);
         }
 
-        foreach (int eye in new[] { 6, 9 })
+        foreach (int eye in xEyes ? [6, 9] : Array.Empty<int>())
         {
             Vector2 at = rect.Position + new Vector2(eye + 0.5f, 5.5f) * pixel;
             DrawLine(at - new Vector2(1, 1) * pixel, at + new Vector2(1, 1) * pixel, Palette.Ink, 1.2f, antialiased: true);
@@ -155,6 +181,23 @@ public partial class TokenView : Node2D
         }
 
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        if (_diving)
+        {
+            DrawRect(new Rect2(2, 16, BoardView.TileSize - 4, 10), Palette.DeepWater with { A = 0.75f });
+            DrawLine(new Vector2(5, 16), new Vector2(BoardView.TileSize - 5, 16), Palette.Text with { A = 0.5f }, 1);
+        }
+    }
+
+    /// <summary>A small flame in the top corner, with how many fire dice burn.</summary>
+    private void DrawFlame()
+    {
+        var at = new Vector2(3, 3);
+        DrawColoredPolygon([at + new Vector2(4, 0), at + new Vector2(8, 6), at + new Vector2(6, 10), at + new Vector2(2, 10), at + new Vector2(0, 6)], Palette.Fire);
+        DrawColoredPolygon([at + new Vector2(4, 4), at + new Vector2(6, 7), at + new Vector2(5, 10), at + new Vector2(3, 10), at + new Vector2(2, 7)], Palette.FireCore);
+        if (_fireDice > 1)
+        {
+            DrawString(ThemeDB.FallbackFont, at + new Vector2(9, 10), _fireDice.ToString(), fontSize: 8, modulate: Palette.FireCore);
+        }
     }
 
     /// <summary>Instead of hearts: three pips for marks of life (green) and three for marks of death (bone white on black).</summary>

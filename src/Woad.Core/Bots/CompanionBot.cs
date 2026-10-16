@@ -34,6 +34,12 @@ public static class CompanionBot
             return new RollKeel(hero.Id, hero.Power.Banked);
         }
 
+        // Badly on fire with the turn still fresh: stop, drop and roll.
+        if ((hero.FireDice >= 2 || hero.Hearts <= 1) && session.CheckStopDropRoll() is null)
+        {
+            return new StopDropRoll(hero.Id);
+        }
+
         if (turn.UnsettledPowerDice > 0)
         {
             return turn.PendingRoll is not null ? new AddPowerDie(hero.Id) : new BankPowerDie(hero.Id);
@@ -59,6 +65,19 @@ public static class CompanionBot
             is { } target)
         {
             return new AttackMonster(hero.Id, target.Id);
+        }
+
+        if (hero.Prone)
+        {
+            if (session.CheckGetUp() is null)
+            {
+                return new GetUp(hero.Id);
+            }
+
+            if (turn.MovementRoll is null && session.MoveDiceLeft > 0)
+            {
+                return new RollMovement(hero.Id);
+            }
         }
 
         Plan plan = MakePlan(session, hero, room, fighting);

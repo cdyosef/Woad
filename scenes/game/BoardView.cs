@@ -169,6 +169,11 @@ public partial class BoardView : Control
             DrawLoot(tile, _room.LootAt(tile).Count);
         }
 
+        foreach ((GridPosition tile, int amount) in _room.Gold)
+        {
+            DrawGold(tile, amount);
+        }
+
         foreach ((GridPosition tile, int count) in _room.Keys)
         {
             DrawKey(tile, "icon_key", count);
@@ -482,6 +487,20 @@ public partial class BoardView : Control
         DrawLine(body.Position + new Vector2(0, body.Size.Y), body.End, Palette.Ink, 1);
         DrawRect(new Rect2(origin + new Vector2(18, 6), new Vector2(3, 18)), Palette.StoneShade);
         DrawString(ThemeDB.FallbackFont, origin + new Vector2(9, 19), "RIP", HorizontalAlignment.Center, 14, 6, Palette.Ink);
+    }
+
+    /// <summary>A little stack of coins in the bottom-left corner, with the amount.</summary>
+    private void DrawGold(GridPosition tile, int amount)
+    {
+        Vector2 origin = TileOrigin(tile) + new Vector2(3, 20);
+        for (int i = 0; i < 3; i++)
+        {
+            var coin = new Rect2(origin + new Vector2(0, 6 - i * 3), new Vector2(9, 3));
+            DrawRect(coin, Palette.Loot);
+            DrawRect(coin, Palette.PotRim, filled: false, width: 1);
+        }
+
+        DrawString(ThemeDB.FallbackFont, origin + new Vector2(11, 9), amount.ToString(), fontSize: 8, modulate: Palette.Loot);
     }
 
     private void DrawLoot(GridPosition tile, int count)

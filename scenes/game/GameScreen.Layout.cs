@@ -34,6 +34,8 @@ public partial class GameScreen
     private Button _confirm = null!;
     private Button _addPower = null!;
     private Button _bankPower = null!;
+    private Button _prone = null!;
+    private Button _dropRoll = null!;
     private Button _roll = null!;
     private Button _search = null!;
     private Button _steal = null!;
@@ -108,6 +110,20 @@ public partial class GameScreen
         _addPower.Visible = _bankPower.Visible = choosingPower;
         _addPower.Disabled = _bankPower.Disabled = Locked;
         _bankPower.Text = hero is null ? "Bank it" : $"Bank it ({hero.Power.Banked}/{GameRules.MaxBankedPowerDice})";
+
+        // Where Confirm and the Power Die buttons go, while there's no roll to settle: lie down or get up, and stop, drop and roll.
+        bool lying = hero?.Prone == true;
+        _prone.Visible = _dropRoll.Visible = idle && !pending;
+        _prone.Text = lying ? "Get up" : "Prone";
+        string? proneError = hero is null || turn is null ? "" : lying ? _session.CheckGetUp() : _session.CheckGoProne();
+        _prone.Disabled = proneError is not null;
+        _prone.TooltipText = proneError ?? (lying
+            ? $"Get back on your feet: {GameRules.GetUpCost} steps."
+            : $"Lie down: {GameRules.ProneCost} step. Every step costs double while prone; melee on you rolls an extra die, ranged attacks face an extra defense die. In deep water you dive: out of reach of ranged attacks.");
+        string? dropError = hero is null || turn is null ? "" : _session.CheckStopDropRoll();
+        _dropRoll.Visible &= hero?.FireDice > 0;
+        _dropRoll.Disabled = dropError is not null;
+        _dropRoll.TooltipText = dropError ?? "Stop, drop and roll: put the fire out. It takes your whole turn and leaves you prone.";
 
         bool canReroll = idle && hero!.LuckRemaining > 0
             && (pending || (_trayShowsMovement && turn!.MovementRoll is not null && !turn.HasMoved));
@@ -464,6 +480,13 @@ public partial class GameScreen
         _bankPower = UiTheme.Button(new Vector2(90, 279), new Vector2(78, 18), "Bank it");
         _bankPower.Pressed += () => ExecuteForActiveHero(heroId => new BankPowerDie(heroId));
         right.AddChild(_bankPower);
+
+        _prone = UiTheme.Button(new Vector2(8, 279), new Vector2(78, 18), "Prone");
+        _prone.Pressed += () => ExecuteForActiveHero(heroId => ActiveHero?.Prone == true ? new GetUp(heroId) : new GoProne(heroId));
+        right.AddChild(_prone);
+        _dropRoll = UiTheme.Button(new Vector2(90, 279), new Vector2(78, 18), "Drop & roll");
+        _dropRoll.Pressed += () => ExecuteForActiveHero(heroId => new StopDropRoll(heroId));
+        right.AddChild(_dropRoll);
 
         // Five buttons in a row: Wend, Leap, Search, Steal and Shove.
         _roll = UiTheme.CompactButton(new Vector2(8, 303), new Vector2(28, 20), "Wend");

@@ -393,7 +393,7 @@ public sealed partial class GameSession
             }
 
             var card = new CardInstance(State.NextId(), State.LootDeck.Draw(room.Floor), broughtInByHeroId: null);
-            GiveCards(thief, room, [card]);
+            GiveCards(thief, room, [card], events);
             events.Add(new Stole(thief.Id, monster.Id, card.Id, Key: false));
             return;
         }
@@ -421,7 +421,7 @@ public sealed partial class GameSession
 
         CardInstance taken = victim.Backpack[pick - victim.Keys];
         victim.Remove(taken);
-        GiveCards(thief, room, [taken]);
+        GiveCards(thief, room, [taken], events);
         events.Add(new Stole(thief.Id, victim.Id, taken.Id, Key: false));
     }
 }

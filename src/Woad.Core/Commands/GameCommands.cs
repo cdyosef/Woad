@@ -154,3 +154,12 @@ public sealed record OpenGate(int HeroId, GridPosition Gate) : GameCommand(HeroI
 
 /// <summary>Go through the broken-open breach you're standing on into the neighboring room (costs 1 movement).</summary>
 public sealed record GoThroughBreach(int HeroId) : GameCommand(HeroId);
+
+/// <summary>Lie down: costs 1 step. Prone, every step costs double (in deep water it's diving).</summary>
+public sealed record GoProne(int HeroId) : GameCommand(HeroId);
+
+/// <summary>Get back on your feet: costs 2 steps.</summary>
+public sealed record GetUp(int HeroId) : GameCommand(HeroId);
+
+/// <summary>On fire, with nothing done yet this turn: put the fire out, ending the turn prone.</summary>
+public sealed record StopDropRoll(int HeroId) : GameCommand(HeroId);

@@ -73,6 +73,7 @@ public sealed partial class GameSession
         Room room = ActiveRoom;
         return State.ActiveHeroesIn(room)
             .Where(ally => ally != hero && Targeting.CanHeroAttack(room.Layout, hero.AttackRange, hero.Position, ally.Position))
+            .Where(ally => !Diving(room, ally) || ally.Position.ChebyshevDistanceTo(hero.Position) <= 1)
             .ToList();
     }
 
@@ -105,7 +106,7 @@ public sealed partial class GameSession
         Turn.AttackDiceUsed += dice;
         Turn.WeaponUsed |= bonus > 0;
         SpendBankedPowerDice(hero, command.PowerDice, events);
-        RollHeroAttack(hero, dice, bonus, [target.Id], DamageSource.Weapon, events, command.PowerDice);
+        RollHeroAttack(hero, dice + ProneBonus(target, hero.Position), bonus, [target.Id], DamageSource.Weapon, events, command.PowerDice);
         return null;
     }
 
@@ -173,12 +174,13 @@ public sealed partial class GameSession
     /// </summary>
     /// <param name="bonus">The weapon's fixed value added to the roll, or 0.</param>
     /// <param name="powerDice">Banked Power Dice rolled in with the dice (already taken from the bank).</param>
-    private void RollHeroAttack(Hero hero, int dice, int bonus, IReadOnlyList<int> targetIds, DamageSource source, List<GameEvent> events, int powerDice = 0)
+    /// <param name="fire">Fire dice: any 6 sets the targets alight (see <see cref="IgniteTargets"/>).</param>
+    private void RollHeroAttack(Hero hero, int dice, int bonus, IReadOnlyList<int> targetIds, DamageSource source, List<GameEvent> events, int powerDice = 0, bool fire = false)
     {
         DiceRoll roll = _dice.Roll(Math.Max(0, dice) + powerDice);
         events.Add(new AttackRolled(hero.Id, roll, bonus, roll.Total + bonus, targetIds, powerDice, source == DamageSource.Shove));
 
-        Turn.PendingRoll = new PendingRoll(hero.Id, roll, bonus, targetIds, source);
+        Turn.PendingRoll = new PendingRoll(hero.Id, roll, bonus, targetIds, source, fire: fire);
         EarnPowerDice(hero, Sixes(roll.Faces), events);
     }
 
@@ -198,16 +200,18 @@ public sealed partial class GameSession
             }
             else if (State.ActiveHeroesIn(room).FirstOrDefault(ally => ally.Id == targetId) is { } ally)
             {
-                DamageHero(room, ally, attack.Total, AllyBane(hero, attack.Source), hero.Id, events);
+                DamageHero(room, ally, attack.Total, AllyBane(hero, attack.Source), hero.Id, events, ranged: ally.Position.ChebyshevDistanceTo(hero.Position) > 1);
             }
         }
+
+        IgniteTargets(hero, room, attack, events);
     }
 
     /// <summary>An attack hits, for 1 heart, when its total beats the defense total; ties go to the defender.</summary>
     private static int DamageFor(int attackTotal, int defenseTotal) =>
         attackTotal > defenseTotal ? GameRules.DamagePerHit : 0;
 
-    private void DamageMonster(Hero attacker, Room room, Monster monster, int attackTotal, DamageSource source, List<GameEvent> events)
+    private void DamageMonster(Hero? attacker, Room room, Monster monster, int attackTotal, DamageSource source, List<GameEvent> events)
     {
         // A collapsed heap of bones has no defense at all.
         bool collapsed = monster.Collapsed;
@@ -224,7 +228,7 @@ public sealed partial class GameSession
         }
     }
 
-    private void DefeatMonster(Hero killer, Room room, Monster monster, DamageSource source, List<GameEvent> events)
+    private void DefeatMonster(Hero? killer, Room room, Monster monster, DamageSource source, List<GameEvent> events)
     {
         MonsterDefinition definition = monster.Definition;
         if (definition.Reassembles && !monster.HasReassembled && source == DamageSource.Weapon)
@@ -237,9 +241,16 @@ public sealed partial class GameSession
         }
 
         room.RemoveMonster(monster);
-        killer.Kills++;
-        events.Add(new MonsterDefeated(monster.Id, killer.Id));
-        GrantXp(killer, definition.Xp, events);
+        if (killer is not null)
+        {
+            killer.Kills++;
+        }
+
+        events.Add(new MonsterDefeated(monster.Id, killer?.Id ?? 0));
+        if (killer is not null)
+        {
+            GrantXp(killer, definition.Xp, events);
+        }
 
         if (definition.SplitsInto is { } splitId)
         {
@@ -251,9 +262,7 @@ public sealed partial class GameSession
             for (int i = 0; i < definition.Drops; i++)
             {
                 var card = new CardInstance(State.NextId(), State.LootDeck.Draw(room.Floor), broughtInByHeroId: null);
-                GridPosition spot = SafeTile(room, monster.Position);
-                room.AddLoot(spot, [card]);
-                events.Add(new LootDropped(room.Id, spot, card.Id));
+                DropLoot(room, SafeTile(room, monster.Position), card, events);
             }
         }
 
@@ -294,9 +303,11 @@ public sealed partial class GameSession
     /// <summary>Spawns the pieces of a split monster on its tile and the free tiles around it.</summary>
     private void Split(Room room, GridPosition origin, MonsterDefinition piece, int count, List<GameEvent> events)
     {
+        // Only tiles it could crawl to: a diagonal neighbor can be cut off behind walls.
+        PathSearch reach = PathSearch.Run(origin, tile => room.Layout[tile].IsWalkable(piece.Flying));
         List<GridPosition> tiles = new[] { origin }
             .Concat(origin.SurroundingTiles())
-            .Where(position => room.Layout[position].IsWalkable(piece.Flying) && !IsOccupied(room, position))
+            .Where(position => room.Layout[position].IsWalkable(piece.Flying) && !IsOccupied(room, position) && reach.CanReach(position))
             .Take(count)
             .ToList();
 
@@ -318,9 +329,10 @@ public sealed partial class GameSession
     {
         MonsterDefinition definition = monster.Definition;
         IReadOnlyList<int> attacks = PlanAttacks(definition, target.EffectiveStats);
+        int prone = ProneBonus(target, monster.Position);
         for (int i = 0; i < attacks.Count && target.IsActive; i++)
         {
-            RollMonsterAttack(room, monster, attacks[i], i == 0 ? definition.Weapon : 0, [target], events);
+            RollMonsterAttack(room, monster, attacks[i] + (i == 0 ? prone : 0), i == 0 ? definition.Weapon : 0, [target], events);
         }
     }
 
@@ -337,8 +349,10 @@ public sealed partial class GameSession
         events.Add(new AttackRolled(monster.Id, roll, bonus, total, targets.Select(hero => hero.Id).ToList(), powerDice));
         foreach (Hero hero in targets.Where(hero => hero.IsActive))
         {
-            DamageHero(room, hero, total, MonsterBane(monster), monster.Id, events);
+            DamageHero(room, hero, total, MonsterBane(monster), monster.Id, events, ranged: hero.Position.ChebyshevDistanceTo(monster.Position) > 1);
         }
+
+        IgniteFromMonster(monster, targets, roll, events);
     }
 
     /// <summary>
@@ -392,11 +406,13 @@ public sealed partial class GameSession
     /// Over; a hit on a hero already Keeling Over is a mark of death instead.
     /// </summary>
     /// <param name="bane">What the attacker is, for the tombstone ("Slain by a Goblin").</param>
-    private void DamageHero(Room room, Hero hero, int attackTotal, string bane, int attackerId, List<GameEvent> events)
+    /// <param name="ranged">From a distance: a prone hero rolls an extra defense die.</param>
+    private void DamageHero(Room room, Hero hero, int attackTotal, string bane, int attackerId, List<GameEvent> events, bool ranged = false)
     {
         Stats stats = hero.EffectiveStats;
         int armor = Math.Max(0, stats.Armor);
-        DiceRoll defense = RollDefense(hero.Id, hero.Power, Math.Max(0, stats.DefenseDice), armor, attackTotal, canSpend: true, events);
+        int lyingLow = ranged && hero.IsProne ? 1 : 0;
+        DiceRoll defense = RollDefense(hero.Id, hero.Power, Math.Max(0, stats.DefenseDice) + lyingLow, armor, attackTotal, canSpend: true, events);
 
         int damage = DamageFor(attackTotal, defense.Total + armor);
         if (hero.IsKeelingOver)

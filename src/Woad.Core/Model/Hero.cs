@@ -89,6 +89,9 @@ public sealed class Hero
 
     public PowerBank Power { get; } = new();
 
+    /// <summary>Gold in the purse, from coins found this run. It doesn't take backpack space and counts as treasure.</summary>
+    public int Gold { get; internal set; }
+
     /// <summary>Small keys carried: each opens one locked door or chest. They don't take backpack space.</summary>
     public int Keys { get; internal set; }
 
@@ -118,6 +121,16 @@ public sealed class Hero
     /// <summary>Doom Dice added to the hero's next Keel roll: one for each 1 an ally rolled rousing them.</summary>
     public int DoomDiceOwed { get; internal set; }
 
+    /// <summary>Fire dice burning on the hero (0 when not on fire): rolled against them at the start of their turn.</summary>
+    public int FireDice { get; internal set; }
+
+    /// <summary>
+    /// Lying down on purpose (or after stopping, dropping and rolling): every step costs double, melee
+    /// attacks on them roll an extra die and ranged attacks face an extra defense die. In deep water it
+    /// is diving: out of reach of ranged attacks. See <see cref="IsProne"/>.
+    /// </summary>
+    public bool Prone { get; internal set; }
+
     /// <summary>
     /// Keel rolls made since keeling over. Every roll after the first adds that many more Doom Dice (the
     /// creeping doom): none on the first, 1 on the second, 2 on the third...
@@ -131,6 +144,9 @@ public sealed class Hero
     public bool IsActive => Status == HeroStatus.Active;
 
     public bool IsKeelingOver => Status == HeroStatus.KeelingOver;
+
+    /// <summary>Lying down: prone on purpose, or Keeling Over.</summary>
+    public bool IsProne => Prone || IsKeelingOver;
 
     /// <summary>Still in the dungeon and taking turns: standing or Keeling Over.</summary>
     public bool IsInPlay => Status is HeroStatus.Active or HeroStatus.KeelingOver;
@@ -158,7 +174,7 @@ public sealed class Hero
 
     /// <summary>Gold value of the treasure carried; decides the winner.</summary>
     public int TreasureValue =>
-        AllCards.Where(card => card.Definition.Type == CardType.Treasure).Sum(card => card.Definition.Value);
+        Gold + AllCards.Where(card => card.Definition.Type == CardType.Treasure).Sum(card => card.Definition.Value);
 
     public (CardInstance Card, CardLocation Location)? FindCard(int cardId)
     {

@@ -59,6 +59,9 @@ public sealed record CardEffect
 
     /// <summary>Attack only: monsters within this many tiles (diagonals count as 1) of the target are hit.</summary>
     public int AreaRadius { get; init; }
+
+    /// <summary>Attack only: the dice are fire. Any 6 among them sets the target alight, hit or miss.</summary>
+    public bool Fire { get; init; }
 }
 
 public sealed record CardDefinition
@@ -87,6 +90,9 @@ public sealed record CardDefinition
     public int AttackRange { get; init; } = 1;
 
     public CardEffect? Effect { get; init; }
+
+    /// <summary>Treasure only: coins go straight into the finder's purse as gold instead of taking a backpack slot.</summary>
+    public bool Coins { get; init; }
 
     /// <summary>Gold value. Treasure cards count toward the run's score.</summary>
     public int Value { get; init; }

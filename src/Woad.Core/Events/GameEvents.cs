@@ -249,3 +249,42 @@ public sealed record Drowned(int HeroId, GridPosition From, GridPosition To) : G
 
 /// <summary>A hero opened a locked gate inside a room: with a key, or <paramref name="Picked"/> with Od Hand.</summary>
 public sealed record GateOpened(int HeroId, string RoomId, GridPosition Gate, bool Picked) : GameEvent;
+
+public enum FireOutCause
+{
+    /// <summary>Its last fire die came up 1.</summary>
+    Snuffed,
+
+    /// <summary>It went into water.</summary>
+    Water,
+
+    /// <summary>A hero stopped, dropped and rolled.</summary>
+    Rolled,
+}
+
+/// <summary>A hero or monster caught fire, or its fire grew: <paramref name="FireDice"/> now burn on it. <paramref name="ById"/> set it (0 if nobody).</summary>
+public sealed record Ignited(int EntityId, int FireDice, int ById) : GameEvent;
+
+/// <summary>
+/// The start of a burning hero's or monster's turn: its fire dice rolled as an attack on it (the
+/// defense and damage follow), then each 6 added a die and each 1 took one away.
+/// </summary>
+public sealed record FireBurned(int EntityId, DiceRoll Roll, int FireDiceLeft) : GameEvent;
+
+/// <summary>A 6 on a burn roll spread the fire to a neighbor.</summary>
+public sealed record FireSpread(int FromId, int ToId, int FireDice) : GameEvent;
+
+/// <summary>A hero's or monster's fire went out.</summary>
+public sealed record FireOut(int EntityId, FireOutCause Cause) : GameEvent;
+
+/// <summary>A hero lay down: prone, or diving in deep water.</summary>
+public sealed record WentProne(int HeroId, bool Diving) : GameEvent;
+
+/// <summary>A prone hero got back on their feet.</summary>
+public sealed record GotUp(int HeroId) : GameEvent;
+
+/// <summary>Coins went into a hero's purse: <paramref name="Amount"/> gold, <paramref name="Total"/> now carried.</summary>
+public sealed record GoldFound(int HeroId, int Amount, int Total) : GameEvent;
+
+/// <summary>Gold landed on the floor: coins a monster dropped or a stash held, or the purse of someone who died.</summary>
+public sealed record GoldAppeared(string RoomId, GridPosition Position, int Amount) : GameEvent;

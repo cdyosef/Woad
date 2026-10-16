@@ -35,6 +35,11 @@ public sealed partial class GameSession
 
     private void TakeMonsterTurn(Room room, Monster monster, List<GameEvent> events)
     {
+        if (!BurnAtTurnStart(room, monster, events) || State.Phase != RunPhase.InProgress)
+        {
+            return;
+        }
+
         if (monster.Collapsed)
         {
             monster.Collapsed = false;
@@ -64,7 +69,7 @@ public sealed partial class GameSession
 
         if (definition.Sweep is { } sweep && monster.TurnsTaken % sweep.Every == 0)
         {
-            List<Hero> swept = standing.Where(hero => hero.Position.ChebyshevDistanceTo(monster.Position) <= sweep.Radius).ToList();
+            List<Hero> swept = standing.Where(hero => hero.Position.ChebyshevDistanceTo(monster.Position) <= sweep.Radius && !(Diving(room, hero) && hero.Position.ChebyshevDistanceTo(monster.Position) > 1)).ToList();
             if (swept.Count > 0)
             {
                 // One swing with every Attack die, which each hero in reach defends against.
@@ -79,6 +84,11 @@ public sealed partial class GameSession
         {
             monster.Position = path[^1];
             events.Add(new MonsterMoved(monster.Id, path));
+            if (monster.FireDice > 0 && path.Any(tile => InWater(room, tile)))
+            {
+                monster.FireDice = 0;
+                events.Add(new FireOut(monster.Id, FireOutCause.Water));
+            }
         }
 
         if (ChooseTarget(room, monster, monster.Position, standing) is { } target)
@@ -95,6 +105,8 @@ public sealed partial class GameSession
     private static Hero? ChooseTarget(Room room, Monster monster, GridPosition from, IEnumerable<Hero> heroes) =>
         heroes
             .Where(hero => Targeting.CanAttack(room.Layout, monster.Definition.AttackPattern, monster.Definition.AttackRange, from, hero.Position))
+            // Someone diving in deep water can only be reached up close.
+            .Where(hero => !Diving(room, hero) || hero.Position.ChebyshevDistanceTo(from) <= 1)
             .OrderBy(hero => hero.Hearts)
             .ThenBy(hero => hero.Seat)
             .FirstOrDefault();

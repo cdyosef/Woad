@@ -17,7 +17,7 @@ public sealed partial class GameSession
             return "Stand on the stairs first.";
         }
 
-        if (CheckCanMove(1) is { } error)
+        if (CheckCanMove(Crawl) is { } error)
         {
             return error;
         }
@@ -40,7 +40,7 @@ public sealed partial class GameSession
 
         hero.RoomId = arrival.Id;
         hero.Position = landing;
-        Turn.MovementPoints -= 1;
+        Turn.MovementPoints -= Crawl;
         Turn.HasMoved = true;
         arrival.Explored = true;
 
@@ -68,7 +68,7 @@ public sealed partial class GameSession
 
         hero.RoomId = above.Id;
         hero.Position = landing;
-        Turn.MovementPoints -= 1;
+        Turn.MovementPoints -= Crawl;
         Turn.HasMoved = true;
         events.Add(new HeroAscended(hero.Id, room.Id, above.Id, above.Floor, landing));
         return null;

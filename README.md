@@ -97,6 +97,7 @@ on the Godot command line:
 | `--floortest` | Clicks through a door and down the stairs in a tiny three-room setup, checking that the view follows the hero. |
 | `--hazardtest` | Shoves a slimeling into a pit that leads to the room below, then leaps over the pit, checking where the hero comes down. |
 | `--keeltest` | Walks a one-heart hero onto hidden spikes so they keel over, rouses them from beside, then rolls their Keel Die until they stand back up or die and leave a tombstone. |
+| `--firetest` | Puts a tough hero among Cinder Imps until one sets them alight, then clicks Drop & roll (fire out, prone, turn over) and, next turn, Get up. |
 | `--resultstest` | Two saved characters click their way out of the exit; checks that their results are saved and shown. Uses a throwaway save folder. |
 | `--autoplay` | The debug party plays a generated dungeon with the rules-engine bot until the run ends, narrating to the console. Add `--fast` for 8× speed, and `--party N` for a party of N (up to 8). |
 

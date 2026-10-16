@@ -71,7 +71,7 @@ public sealed partial class GameSession
     /// <summary>Tiles the active hero could aim a leap at right now (see <see cref="Leap"/>).</summary>
     public IReadOnlyList<GridPosition> GetLeapTargets()
     {
-        if (State.Turn is not { PendingRoll: null } || MoveDiceLeft < 1)
+        if (State.Turn is not { PendingRoll: null } || MoveDiceLeft < 1 || ActiveHero.Prone)
         {
             return [];
         }
@@ -113,6 +113,11 @@ public sealed partial class GameSession
         if (MoveDiceLeft < 1)
         {
             return "Leaping takes a Wend die, and you have none left this turn.";
+        }
+
+        if (ActiveHero.Prone)
+        {
+            return "You can't leap lying down: get up first.";
         }
 
         if (!GetLeapTargets().Contains(command.Target))
@@ -297,6 +302,12 @@ public sealed partial class GameSession
         events.Add(new Shoved(hero.Id, monster.Id, from, to));
         if (room.Layout[to] == TileKind.DeepWater && !monster.Definition.Flying)
         {
+            if (monster.FireDice > 0)
+            {
+                monster.FireDice = 0;
+                events.Add(new FireOut(monster.Id, FireOutCause.Water));
+            }
+
             // Monsters don't swim: it loses a heart and scrambles out onto the nearest footing.
             HurtMonster(hero, room, monster, events);
             if (room.FindMonster(monster.Id) is not null && LandingNear(room, to) is { } shore)

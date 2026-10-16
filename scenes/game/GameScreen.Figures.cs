@@ -41,6 +41,9 @@ public partial class GameScreen
                 Keeling = hero.IsKeelingOver,
                 LifeMarks = hero.LifeMarks,
                 DeathMarks = hero.DeathMarks,
+                FireDice = hero.FireDice,
+                Prone = hero.Prone,
+                Diving = _session.IsDiving(hero),
             };
         }
 
@@ -52,6 +55,7 @@ public partial class GameScreen
                 _figures[monster.Id] = MonsterFigure(monster.Id, monster.Definition, room.Id, monster.Position, monster.Hearts, monster.MaxHearts);
                 _figures[monster.Id].Stunned = monster.StunnedTurns > 0;
                 _figures[monster.Id].Collapsed = monster.Collapsed;
+                _figures[monster.Id].FireDice = monster.FireDice;
             }
         }
 
@@ -105,6 +109,9 @@ public partial class GameScreen
         token.Stunned = figure.Stunned;
         token.Collapsed = figure.Collapsed;
         token.Keeling = figure.Keeling ? (figure.LifeMarks, figure.DeathMarks) : null;
+        token.FireDice = figure.FireDice;
+        token.Prone = figure.Prone;
+        token.Diving = figure.Diving;
         token.Active = figure.Id == ActiveHero?.Id;
     }
 
@@ -200,6 +207,16 @@ public partial class GameScreen
             token.SetHearts(healed.Hearts);
             _board.FloatText(figure.Position, $"+{healed.Amount}", Palette.Heal);
             await Pause(0.3);
+        }
+    }
+
+    /// <summary>A prone hero who crawled into or out of deep water starts or stops diving.</summary>
+    private void SyncDiving(int heroId)
+    {
+        if (_figures.TryGetValue(heroId, out Figure? figure) && figure.Prone && _tokens.TryGetValue(heroId, out TokenView? token))
+        {
+            figure.Diving = _session.IsDiving(_session.State.GetHero(heroId));
+            ApplyFigure(figure, token);
         }
     }
 
@@ -341,5 +358,11 @@ public partial class GameScreen
         public int LifeMarks { get; set; }
 
         public int DeathMarks { get; set; }
+
+        public int FireDice { get; set; }
+
+        public bool Prone { get; set; }
+
+        public bool Diving { get; set; }
     }
 }

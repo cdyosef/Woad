@@ -92,7 +92,7 @@ public sealed partial class GameSession
                 List<int> caught = [.. targets.Select(monster => monster.Id), .. AlliesCaught(room, command.Target!.Value, effect.AreaRadius).Select(ally => ally.Id)];
                 if (caught.Count > 0)
                 {
-                    RollHeroAttack(hero, effect.Amount, 0, caught, SourceOf(card.Definition), events);
+                    RollHeroAttack(hero, effect.Amount, 0, caught, SourceOf(card.Definition), events, fire: effect.Fire);
                 }
 
                 break;
@@ -376,7 +376,7 @@ public sealed partial class GameSession
             return "There's nothing here to pick up.";
         }
 
-        bool onlyCards = room.KeysAt(hero.Position) == 0 && room.BossKeyAt != hero.Position;
+        bool onlyCards = room.KeysAt(hero.Position) == 0 && room.GoldAt(hero.Position) == 0 && room.BossKeyAt != hero.Position;
         if (onlyCards && hero.Backpack.Count >= GameRules.BackpackCapacity)
         {
             return "Your backpack is full.";
@@ -436,7 +436,7 @@ public sealed partial class GameSession
         List<CardInstance> cards = Enumerable.Range(0, superior ? 2 : 1)
             .Select(_ => new CardInstance(State.NextId(), State.LootDeck.Draw(superior ? room.Floor + 1 : room.Floor), broughtInByHeroId: null))
             .ToList();
-        bool allFit = GiveCards(hero, room, cards);
+        bool allFit = GiveCards(hero, room, cards, events);
         events.Add(new ChestOpened(hero.Id, command.Chest, cards.Select(card => card.Id).ToList(), allFit));
         if (bossKey)
         {
@@ -447,13 +447,20 @@ public sealed partial class GameSession
         return null;
     }
 
-    /// <summary>Puts cards in the backpack while there's room; the rest go on the hero's tile. True if all fit.</summary>
-    private static bool GiveCards(Hero hero, Room room, IReadOnlyList<CardInstance> cards)
+    /// <summary>
+    /// Puts cards in the backpack while there's room; the rest go on the hero's tile. Coins go straight
+    /// into the purse. True if all fit.
+    /// </summary>
+    private static bool GiveCards(Hero hero, Room room, IReadOnlyList<CardInstance> cards, List<GameEvent> events)
     {
         bool allFit = true;
         foreach (CardInstance card in cards)
         {
-            if (hero.Backpack.Count < GameRules.BackpackCapacity)
+            if (card.Definition.Coins)
+            {
+                GiveGold(hero, card.Definition.Value, events);
+            }
+            else if (hero.Backpack.Count < GameRules.BackpackCapacity)
             {
                 hero.AddToBackpack(card);
             }
@@ -502,12 +509,17 @@ public sealed partial class GameSession
         int? cardId = null;
         bool addedToBackpack = false;
         int hearts = 0;
+        int coins = 0;
         if (pots is not null && roll < pots.TreasureChance)
         {
             var card = new CardInstance(State.NextId(), Content.GetCard(pots.Treasure), broughtInByHeroId: null);
             cardId = card.Id;
-            addedToBackpack = hero.Backpack.Count < GameRules.BackpackCapacity;
-            if (addedToBackpack)
+            addedToBackpack = card.Definition.Coins || hero.Backpack.Count < GameRules.BackpackCapacity;
+            if (card.Definition.Coins)
+            {
+                coins = card.Definition.Value;
+            }
+            else if (addedToBackpack)
             {
                 hero.AddToBackpack(card);
             }
@@ -523,6 +535,7 @@ public sealed partial class GameSession
         }
 
         events.Add(new PotSmashed(hero.Id, command.Pot, cardId, addedToBackpack, hearts));
+        GiveGold(hero, coins, events);
         return null;
     }
 
@@ -547,6 +560,7 @@ public sealed partial class GameSession
             events.Add(new LootPickedUp(hero.Id, taken.Select(card => card.Id).ToList()));
         }
 
+        GiveGold(hero, room.TakeGold(hero.Position), events);
         GiveKeys(hero, room.TakeKeys(hero.Position), events);
         if (room.BossKeyAt == hero.Position)
         {
@@ -556,6 +570,29 @@ public sealed partial class GameSession
         }
 
         return null;
+    }
+
+    private static void GiveGold(Hero hero, int amount, List<GameEvent> events)
+    {
+        if (amount > 0)
+        {
+            hero.Gold += amount;
+            events.Add(new GoldFound(hero.Id, amount, hero.Gold));
+        }
+    }
+
+    /// <summary>A card turning up on the floor (a monster's drop, a stash): coins lie there as gold.</summary>
+    private static void DropLoot(Room room, GridPosition tile, CardInstance card, List<GameEvent> events)
+    {
+        if (card.Definition.Coins)
+        {
+            room.AddGold(tile, card.Definition.Value);
+            events.Add(new GoldAppeared(room.Id, tile, card.Definition.Value));
+            return;
+        }
+
+        room.AddLoot(tile, [card]);
+        events.Add(new LootDropped(room.Id, tile, card.Id));
     }
 
     private static void GiveKeys(Hero hero, int count, List<GameEvent> events)
@@ -674,7 +711,7 @@ public sealed partial class GameSession
 
     /// <summary>With friendly fire on, the heroes (the user too) an attack card aimed at <paramref name="tile"/> would catch.</summary>
     private List<Hero> AlliesCaught(Room room, GridPosition tile, int radius) => State.FriendlyFire
-        ? State.ActiveHeroesIn(room).Where(ally => ally.Position.ChebyshevDistanceTo(tile) <= radius).ToList()
+        ? State.ActiveHeroesIn(room).Where(ally => ally.Position.ChebyshevDistanceTo(tile) <= radius && !Diving(room, ally)).ToList()
         : [];
 
     private static DamageSource SourceOf(CardDefinition card) => card.Type switch

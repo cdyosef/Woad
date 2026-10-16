@@ -97,7 +97,7 @@ public sealed partial class GameSession
             return "The way out is sealed until every monster here is defeated.";
         }
 
-        if (CheckCanMove(1) is { } error)
+        if (CheckCanMove(Crawl) is { } error)
         {
             return error;
         }
@@ -111,7 +111,7 @@ public sealed partial class GameSession
 
         hero.RoomId = target.Id;
         hero.Position = landing;
-        Turn.MovementPoints -= 1;
+        Turn.MovementPoints -= Crawl;
         Turn.HasMoved = true;
         bool firstVisit = !target.Explored;
         target.Explored = true;
@@ -133,7 +133,7 @@ public sealed partial class GameSession
             return "Stand next to the trap door to jump down it.";
         }
 
-        if (CheckCanMove(1) is { } error)
+        if (CheckCanMove(Crawl) is { } error)
         {
             return error;
         }
@@ -274,8 +274,7 @@ public sealed partial class GameSession
         for (int i = 0; i < cache.Cards; i++)
         {
             var card = new CardInstance(State.NextId(), State.LootDeck.Draw(room.Floor), broughtInByHeroId: null);
-            room.AddLoot(tile, [card]);
-            events.Add(new LootDropped(room.Id, tile, card.Id));
+            DropLoot(room, tile, card, events);
         }
     }
 

@@ -73,6 +73,12 @@ public sealed record MonsterDefinition
 
     public bool StunImmune { get; init; }
 
+    /// <summary>Its attacks are fire: any 6 on its attack roll sets the target alight, hit or miss.</summary>
+    public bool FireAttack { get; init; }
+
+    /// <summary>Never catches fire.</summary>
+    public bool FireImmune { get; init; }
+
     public bool Boss { get; init; }
 
     /// <summary>A vault guardian: tougher than most, can't be shoved, but doesn't seal the exit.</summary>

@@ -5,6 +5,8 @@
   { "id": "spear_guard", "name": "Spear Guard", "glyph": "g", "hearts": 2, "move": 3, "attackDice": 1, "weapon": 1, "defenseDice": 1, "armor": 1, "attackPattern": "reach", "attackRange": 2, "xp": 4, "threat": 2, "dropChance": 25 },
   { "id": "archer_guard", "name": "Archer Guard", "glyph": "a", "hearts": 2, "move": 2, "attackDice": 1, "weapon": 1, "defenseDice": 1, "armor": 1, "attackPattern": "ranged", "attackRange": 5, "keepsDistance": true, "xp": 4, "threat": 2, "dropChance": 25 },
   { "id": "skeleton", "name": "Skeleton", "glyph": "k", "hearts": 2, "move": 3, "attackDice": 1, "weapon": 1, "defenseDice": 1, "armor": 1, "reassembles": true, "xp": 5, "threat": 2, "dropChance": 30 },
+  { "id": "cinder_imp", "name": "Cinder Imp", "glyph": "i", "hearts": 1, "move": 4, "attackDice": 1, "defenseDice": 1, "fireAttack": true, "fireImmune": true, "xp": 3, "threat": 1, "dropChance": 15 },
+  { "id": "fire_beetle", "name": "Fire Beetle", "glyph": "f", "hearts": 3, "move": 1, "attackDice": 2, "defenseDice": 1, "armor": 2, "fireAttack": true, "fireImmune": true, "xp": 5, "threat": 2, "dropChance": 20 },
   { "id": "iron_warden", "name": "Iron Warden", "glyph": "W", "hearts": 8, "move": 3, "attackDice": 2, "weapon": 1, "defenseDice": 1, "armor": 1, "sweep": { "radius": 2, "every": 2 }, "stunImmune": true, "boss": true, "xp": 25, "dropChance": 100, "drops": 3 },
   { "id": "key_warden", "name": "Key Warden", "glyph": "K", "hearts": 5, "move": 2, "attackDice": 2, "weapon": 1, "defenseDice": 1, "armor": 1, "miniboss": true, "xp": 12, "dropChance": 100, "drops": 1 }
 ]

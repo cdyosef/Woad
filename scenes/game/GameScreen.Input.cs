@@ -284,6 +284,11 @@ public partial class GameScreen
             return "You rolled a 6! Add a Power Die to this roll, or bank it for later.";
         }
 
+        if (hero.FireDice > 0 && _session.CheckStopDropRoll() is null)
+        {
+            return $"You're on fire ({hero.FireDice} {(hero.FireDice == 1 ? "die" : "dice")})! Stop, drop and roll to put it out (your whole turn), or get into water.";
+        }
+
         if (turn.PendingRoll is not null)
         {
             return "Click a die to reroll it with Luck, or Confirm the roll.";
@@ -326,15 +331,18 @@ public partial class GameScreen
         {
             MonsterDefinition definition = monster.Definition;
             string power = monster.Power.Banked > 0 ? $", {PowerDiceText(monster.Power.Banked)} banked" : "";
+            string burning = monster.FireDice > 0 ? $" ON FIRE ({monster.FireDice} {(monster.FireDice == 1 ? "die" : "dice")})." : "";
             return $"{definition.Name}: {monster.Hearts}/{monster.MaxHearts} hearts{power}, move {definition.Move}, " +
-                   $"attack {UiTheme.Dice(definition.AttackDice, definition.Weapon)}, defense {UiTheme.Dice(definition.DefenseDice, definition.Armor)}{Traits(monster)}";
+                   $"attack {UiTheme.Dice(definition.AttackDice, definition.Weapon)}, defense {UiTheme.Dice(definition.DefenseDice, definition.Armor)}{Traits(monster)}{burning}";
         }
 
         if (_session.State.ActiveHeroesIn(room).FirstOrDefault(hero => hero.Position == tile) is { } standing)
         {
             string power = standing.Power.Banked > 0 ? $", {PowerDiceText(standing.Power.Banked)} banked" : "";
             string companion = standing.OwnerId is int ownerId ? $" ({NameOf(ownerId)}'s companion, {Describe(standing.Order)})" : "";
-            return $"{standing.Name}{companion}: {standing.Hearts}/{standing.MaxHearts} hearts{power}";
+            string onFire = standing.FireDice > 0 ? $", ON FIRE ({standing.FireDice} {(standing.FireDice == 1 ? "die" : "dice")})" : "";
+            string lying = _session.IsDiving(standing) ? ", diving" : standing.Prone ? ", prone" : "";
+            return $"{standing.Name}{companion}: {standing.Hearts}/{standing.MaxHearts} hearts{power}{onFire}{lying}";
         }
 
         if (_session.State.HeroesIn(room).FirstOrDefault(hero => hero.Position == tile && hero.IsKeelingOver) is { } fallen)
@@ -351,6 +359,11 @@ public partial class GameScreen
         if (room.HasLootAt(tile))
         {
             IEnumerable<string> things = room.LootAt(tile).Select(card => card.Definition.Name);
+            if (room.GoldAt(tile) > 0)
+            {
+                things = things.Prepend($"{room.GoldAt(tile)} gold");
+            }
+
             if (room.KeysAt(tile) > 0)
             {
                 things = things.Append(UiTheme.Count(room.KeysAt(tile), "key", "keys"));
@@ -460,6 +473,16 @@ public partial class GameScreen
         if (definition.Boss)
         {
             traits.Add("boss");
+        }
+
+        if (definition.FireAttack)
+        {
+            traits.Add("fire attacks: a 6 sets you alight");
+        }
+
+        if (definition.FireImmune)
+        {
+            traits.Add("can't burn");
         }
 
         if (definition.AttackPattern == AttackPattern.Reach)
