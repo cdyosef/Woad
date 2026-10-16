@@ -122,6 +122,23 @@ public static class DemoRun
         };
     }
 
+    /// <summary>
+    /// For --firetest: a tough Aria hemmed in by three Cinder Imps, whose fire attacks set her alight
+    /// sooner or later, with shallow water a few steps away.
+    /// </summary>
+    public static RunSetup Fire(ulong seed)
+    {
+        ContentCatalog content = ContentCatalog.LoadDefault();
+        return new RunSetup
+        {
+            Seed = seed,
+            ThemeId = "emerald_keep",
+            Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 40, DefenseDice = 3 } }],
+            Rooms = [new RoomSetup("forge", RoomTemplate.Parse(".........\n.........\n.........\n...i.i...\n....1....\n....i....\n.........\n.........\n,,,,,,,,,", content))],
+            StartRoomId = "forge",
+        };
+    }
+
     /// <summary>The debug party in the single hand-made room, for --uitest.</summary>
     public static RunSetup SingleRoom(ulong seed) => new()
     {

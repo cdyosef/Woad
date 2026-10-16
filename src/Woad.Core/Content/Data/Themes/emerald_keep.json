@@ -10,7 +10,9 @@
     { "monster": "bat", "weight": 2 },
     { "monster": "spear_guard", "weight": 2 },
     { "monster": "archer_guard", "weight": 2, "minFloor": 2 },
-    { "monster": "skeleton", "weight": 2, "minFloor": 2 }
+    { "monster": "skeleton", "weight": 2, "minFloor": 2 },
+    { "monster": "cinder_imp", "weight": 2, "minFloor": 2 },
+    { "monster": "fire_beetle", "weight": 1, "minFloor": 2 }
   ],
 
   // Chests and monster drops deal from this deck; minFloor keeps the best cards for deeper floors.

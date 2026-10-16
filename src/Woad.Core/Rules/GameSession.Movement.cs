@@ -12,7 +12,7 @@ public sealed partial class GameSession
     /// <summary>Tiles the active hero can walk to right now, with the steps each costs.</summary>
     public IReadOnlyDictionary<GridPosition, int> GetReachableTiles()
     {
-        if (State.Turn is not { PendingRoll: null } || CheckCanMove(1) is not null)
+        if (State.Turn is not { PendingRoll: null } || CheckCanMove(Crawl) is not null)
         {
             return new Dictionary<GridPosition, int>();
         }
@@ -27,7 +27,7 @@ public sealed partial class GameSession
     /// <summary>Doors the active hero is standing in and could step through right now.</summary>
     public IReadOnlyList<Direction> GetUsableDoors()
     {
-        if (State.Turn is not { PendingRoll: null } || CheckCanMove(1) is not null)
+        if (State.Turn is not { PendingRoll: null } || CheckCanMove(Crawl) is not null)
         {
             return [];
         }
@@ -104,7 +104,7 @@ public sealed partial class GameSession
 
     private string? Handle(MoveHero command, List<GameEvent> events)
     {
-        if (CheckCanMove(1) is { } error)
+        if (CheckCanMove(Crawl) is { } error)
         {
             return error;
         }
@@ -129,7 +129,7 @@ public sealed partial class GameSession
         }
 
         hero.Position = path[^1];
-        Turn.MovementPoints -= path.Sum(tile => room.Layout[tile].MoveCost());
+        Turn.MovementPoints -= path.Sum(tile => room.Layout[tile].MoveCost()) * Crawl;
         foreach (GridPosition tile in path.Where(tile => room.Layout[tile].IsWalkable()))
         {
             hero.Footing = tile;
@@ -137,6 +137,7 @@ public sealed partial class GameSession
 
         Turn.HasMoved = true;
         events.Add(new HeroMoved(hero.Id, path, Turn.MovementPoints));
+        DouseOnPath(room, hero, path, events);
         if (sprung >= 0)
         {
             Turn.EndMove();
@@ -181,7 +182,7 @@ public sealed partial class GameSession
             return "The doors are sealed until every monster here is defeated.";
         }
 
-        if (CheckCanMove(1) is { } error)
+        if (CheckCanMove(Crawl) is { } error)
         {
             return error;
         }
@@ -194,7 +195,7 @@ public sealed partial class GameSession
 
         hero.RoomId = target.Id;
         hero.Position = arrival;
-        Turn.MovementPoints -= 1;
+        Turn.MovementPoints -= Crawl;
         Turn.HasMoved = true;
         bool firstVisit = !target.Explored;
         target.Explored = true;
@@ -230,7 +231,7 @@ public sealed partial class GameSession
             position => (room.Layout[position].IsWalkable() || room.Layout[position] is TileKind.Pit or TileKind.DeepWater) && room.MonsterAt(position) is null,
             Turn.MovementPoints,
             canPass: position => room.Layout[position] != TileKind.Pit && room.TrapAt(position) is not { Revealed: true },
-            stepCost: position => room.Layout[position].MoveCost());
+            stepCost: position => room.Layout[position].MoveCost() * (hero.Prone ? GameRules.CrawlFactor : 1));
 
     private bool CanHeroStop(Room room, Hero hero, GridPosition position) =>
         !State.HeroesIn(room).Any(other => other != hero && other.Position == position);

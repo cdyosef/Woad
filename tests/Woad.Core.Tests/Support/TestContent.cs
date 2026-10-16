@@ -21,10 +21,12 @@ internal static class TestContent
           { "id": "potion", "name": "Potion", "type": "potion", "usage": "singleUse", "effect": { "kind": "heal", "amount": 3 } },
           { "id": "bomb", "name": "Bomb", "type": "bomb", "usage": "singleUse", "effect": { "kind": "attack", "amount": 2, "range": 3, "areaRadius": 1 } },
           { "id": "scroll", "name": "Scroll", "type": "spell", "usage": "singleUse", "effect": { "kind": "attack", "amount": 3, "range": 3 } },
+          { "id": "firebolt", "name": "Firebolt", "type": "spell", "usage": "singleUse", "effect": { "kind": "attack", "amount": 3, "range": 3, "fire": true } },
           { "id": "wand", "name": "Wand", "type": "spell", "slot": "offHand", "usage": "charges", "charges": 2, "effect": { "kind": "stun", "amount": 1, "range": 3 } },
           { "id": "boomerang", "name": "Boomerang", "type": "tool", "slot": "offHand", "effect": { "kind": "stun", "amount": 1, "range": 4 } },
           { "id": "picks", "name": "Picks", "type": "tool", "slot": "offHand", "modifiers": { "tools": 2 } },
           { "id": "coin", "name": "Coin", "type": "treasure", "value": 5 },
+          { "id": "purse", "name": "Purse", "type": "treasure", "coins": true, "value": 3 },
           { "id": "gem", "name": "Gem", "type": "treasure", "value": 15 }
         ]
         """;
@@ -44,7 +46,9 @@ internal static class TestContent
           { "id": "boss", "name": "Boss", "glyph": "W", "hearts": 10, "move": 0, "attackDice": 1, "defenseDice": 0, "sweep": { "radius": 2, "every": 2 }, "stunImmune": true, "boss": true, "xp": 25 },
           { "id": "hoarder", "name": "Hoarder", "glyph": "h", "hearts": 1, "move": 0, "attackDice": 0, "defenseDice": 0, "dropChance": 100, "drops": 2, "xp": 7 },
           { "id": "knight", "name": "Knight", "glyph": "K", "hearts": 1, "move": 0, "attackDice": 0, "defenseDice": 1, "armor": 2 },
-          { "id": "duelist", "name": "Duelist", "glyph": "D", "hearts": 1, "move": 0, "attackDice": 2, "defenseDice": 0, "weapon": 2 }
+          { "id": "duelist", "name": "Duelist", "glyph": "D", "hearts": 1, "move": 0, "attackDice": 2, "defenseDice": 0, "weapon": 2 },
+          { "id": "torch", "name": "Torch", "glyph": "t", "hearts": 1, "move": 0, "attackDice": 1, "defenseDice": 0, "fireAttack": true, "fireImmune": true },
+          { "id": "sniper", "name": "Sniper", "glyph": "n", "hearts": 1, "move": 0, "attackDice": 1, "defenseDice": 0, "attackPattern": "ranged", "attackRange": 5 }
         ]
         """;
 

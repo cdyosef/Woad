@@ -39,6 +39,8 @@ public static class Palette
     public static readonly Color ChestOpen = new("4a3018");
     public static readonly Color Loot = new("f0c94a");
     public static readonly Color Pot = new("a8643c");
+    public static readonly Color Fire = new("ff6a1f");
+    public static readonly Color FireCore = new("ffd84a");
     public static readonly Color Stone = new("9aa0a6");
     public static readonly Color StoneShade = new("6e747c", 0.6f);
     public static readonly Color Grave = new("3b2c22", 0.85f);
@@ -75,6 +77,8 @@ public static class Palette
         "archer_guard" => new Color("c8a46a"),
         "skeleton" => new Color("e8e2d0"),
         "iron_warden" => new Color("a83a46"),
+        "cinder_imp" => new Color("ff7a2a"),
+        "fire_beetle" => new Color("b8442a"),
         _ => new Color("b0b0b0"),
     };
 

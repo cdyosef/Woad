@@ -73,7 +73,18 @@ public static partial class DungeonGenerator
     {
         bool Passable(GridPosition tile) => template.Layout[tile].IsWalkable() && features?.Traps.ContainsKey(tile) != true;
         List<GridPosition> open = RoomGrid.AllPositions().Where(Passable).ToList();
-        return open.Count == 0 || PathSearch.Run(open[0], Passable).Distances.Count == open.Count;
+        if (open.Count == 0)
+        {
+            return true;
+        }
+
+        // Every open tile reachable without crossing a trap, and every trap tile beside one of them
+        // (a trap walled into a corner would hide whatever stands on it for good).
+        IReadOnlyDictionary<GridPosition, int> reached = PathSearch.Run(open[0], Passable).Distances;
+        return reached.Count == open.Count
+               && RoomGrid.AllPositions()
+                   .Where(tile => template.Layout[tile].IsWalkable() && !Passable(tile))
+                   .All(trap => trap.OrthogonalNeighbors().Any(reached.ContainsKey));
     }
 
     /// <summary>
@@ -191,6 +202,10 @@ public static partial class DungeonGenerator
     private static List<BreachSetup> PlanBreaches(List<RoomSetup> rooms, IRandomSource random)
     {
         var breaches = new List<BreachSetup>();
+
+        // Each room as its breaches so far will leave it: walls where they stand, so two breaches can't
+        // seal off a corner between them.
+        var walled = rooms.ToDictionary(room => room.Id, room => room.Template);
         foreach (RoomSetup room in rooms.Where(room => room.Role != RoomRole.Boss))
         {
             foreach (Direction side in new[] { Direction.East, Direction.South })
@@ -209,12 +224,14 @@ public static partial class DungeonGenerator
                     GridPosition there = side == Direction.East ? new GridPosition(0, offset) : new GridPosition(offset, 0);
                     if (FixedTiles(room.Template, room.Features ?? RoomFeatures.None).Contains(here)
                         || FixedTiles(neighbor.Template, neighbor.Features ?? RoomFeatures.None).Contains(there)
-                        || !Connected(room.Template.WithTile(here, TileKind.Wall), room.Features)
-                        || !Connected(neighbor.Template.WithTile(there, TileKind.Wall), neighbor.Features))
+                        || !Connected(walled[room.Id].WithTile(here, TileKind.Wall), room.Features)
+                        || !Connected(walled[neighbor.Id].WithTile(there, TileKind.Wall), neighbor.Features))
                     {
                         continue;
                     }
 
+                    walled[room.Id] = walled[room.Id].WithTile(here, TileKind.Wall);
+                    walled[neighbor.Id] = walled[neighbor.Id].WithTile(there, TileKind.Wall);
                     breaches.Add(new BreachSetup(room.Id, here, neighbor.Id, there));
                     break;
                 }

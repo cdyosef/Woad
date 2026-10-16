@@ -70,6 +70,13 @@ public static class GameRules
     /// <summary>Every this much of an ally's Od Hand total rousing a hero Keeling Over earns them a mark of life.</summary>
     public const int RousePerMark = 6;
 
+    /// <summary>Prone: steps to lie down, steps to get up, and how much each step costs while down.</summary>
+    public const int ProneCost = 1;
+
+    public const int GetUpCost = 2;
+
+    public const int CrawlFactor = 2;
+
     /// <summary>Hearts restored to each hero in a room when its last monster falls.</summary>
     public const int HeartsOnRoomClear = 1;
 

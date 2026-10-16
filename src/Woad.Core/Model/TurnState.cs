@@ -15,6 +15,9 @@ public enum DamageSource
 
     /// <summary>A fall or a trap a monster was shoved into. Bones broken this way stay down.</summary>
     Fall,
+
+    /// <summary>Burning, at the start of a turn. Bones burned this way stay down.</summary>
+    Fire,
 }
 
 public enum OdHandCheckKind
@@ -53,7 +56,7 @@ public sealed record OdHandCheck(OdHandCheckKind Kind, int Difficulty, GridPosit
 /// </summary>
 public sealed class PendingRoll
 {
-    internal PendingRoll(int heroId, DiceRoll roll, int bonus, IReadOnlyList<int> targetIds, DamageSource source, OdHandCheck? check = null)
+    internal PendingRoll(int heroId, DiceRoll roll, int bonus, IReadOnlyList<int> targetIds, DamageSource source, OdHandCheck? check = null, bool fire = false)
     {
         HeroId = heroId;
         Roll = roll;
@@ -61,6 +64,7 @@ public sealed class PendingRoll
         TargetIds = targetIds;
         Source = source;
         Check = check;
+        Fire = fire;
     }
 
     public int HeroId { get; }
@@ -79,6 +83,9 @@ public sealed class PendingRoll
 
     /// <summary>The Od Hand check this roll is for, or null for an attack.</summary>
     public OdHandCheck? Check { get; }
+
+    /// <summary>The dice are fire (the Flame Scroll): any 6 among them sets the targets alight, hit or miss.</summary>
+    public bool Fire { get; }
 }
 
 /// <summary>

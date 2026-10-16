@@ -31,6 +31,12 @@ public static class SimpleBot
             return new RollKeel(hero.Id, hero.Power.Banked);
         }
 
+        // Badly on fire with the turn still fresh: stop, drop and roll.
+        if ((hero.FireDice >= 2 || hero.Hearts <= 1) && session.CheckStopDropRoll() is null)
+        {
+            return new StopDropRoll(hero.Id);
+        }
+
         Room room = state.RoomOf(hero);
         TileKind standingOn = room.Layout[hero.Position];
         bool fighting = Fighting(session, room, hero);
@@ -65,6 +71,20 @@ public static class SimpleBot
         if (session.GetAttackableMonsters().FirstOrDefault() is { } target)
         {
             return new AttackMonster(hero.Id, target.Id);
+        }
+
+        // Prone (after stopping, dropping and rolling): roll to move and get up.
+        if (hero.Prone)
+        {
+            if (session.CheckGetUp() is null)
+            {
+                return new GetUp(hero.Id);
+            }
+
+            if (turn.MovementRoll is null && session.MoveDiceLeft > 0)
+            {
+                return new RollMovement(hero.Id);
+            }
         }
 
         if (ClosedChestBeside(room, hero) is { } chest && session.CheckOpenChest(chest) is null)
@@ -143,7 +163,7 @@ public static class SimpleBot
             return new RollMovement(hero.Id);
         }
 
-        IEnumerable<GridPosition> lootTiles = room.LootPositions.Where(_ => backpackHasRoom).Concat(room.Keys.Keys);
+        IEnumerable<GridPosition> lootTiles = room.LootPositions.Where(_ => backpackHasRoom).Concat(room.Keys.Keys).Concat(room.Gold.Keys);
         if (room.BossKeyAt is { } bossKey)
         {
             lootTiles = lootTiles.Append(bossKey);
@@ -327,7 +347,7 @@ public static class SimpleBot
             .ToList();
 
     private static bool WorthPickingUp(Room room, Hero hero) =>
-        room.KeysAt(hero.Position) > 0 || room.BossKeyAt == hero.Position
+        room.KeysAt(hero.Position) > 0 || room.GoldAt(hero.Position) > 0 || room.BossKeyAt == hero.Position
         || (room.LootAt(hero.Position).Count > 0 && hero.Backpack.Count < GameRules.BackpackCapacity);
 
     private static GridPosition? Beside(Room room, Hero hero, TileKind kind) =>

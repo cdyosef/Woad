@@ -159,6 +159,7 @@ public sealed partial class GameSession
     private static void StandUp(Hero hero, List<GameEvent> events)
     {
         hero.Status = HeroStatus.Active;
+        hero.Prone = false;
         hero.LifeMarks = 0;
         hero.DeathMarks = 0;
         hero.DoomDiceOwed = 0;
@@ -175,10 +176,11 @@ public sealed partial class GameSession
     private void StrikeKeeler(Room room, Monster monster, Hero keeler, List<GameEvent> events)
     {
         MonsterDefinition definition = monster.Definition;
-        (DiceRoll roll, int powerDice) = RollMonsterDice(definition.AttackDice);
+        (DiceRoll roll, int powerDice) = RollMonsterDice(definition.AttackDice + ProneBonus(keeler, monster.Position));
         int total = roll.Total + definition.Weapon;
         events.Add(new AttackRolled(monster.Id, roll, definition.Weapon, total, [keeler.Id], powerDice));
-        DamageHero(room, keeler, total, MonsterBane(monster), monster.Id, events);
+        DamageHero(room, keeler, total, MonsterBane(monster), monster.Id, events, ranged: keeler.Position.ChebyshevDistanceTo(monster.Position) > 1);
+        IgniteFromMonster(monster, [keeler], roll, events);
     }
 
     private void MarkForDeath(Room room, Hero keeler, string bane, int attackerId, List<GameEvent> events)
@@ -199,6 +201,8 @@ public sealed partial class GameSession
     private void Die(Room room, Hero hero, List<GameEvent> events)
     {
         hero.Status = HeroStatus.Dead;
+        hero.FireDice = 0;
+        hero.Prone = false;
         List<CardInstance> dropped = hero.AllCards.Where(card => card.BroughtInByHeroId != hero.Id).ToList();
         foreach (CardInstance card in dropped)
         {
@@ -207,6 +211,13 @@ public sealed partial class GameSession
 
         GridPosition spot = SafeTile(room, hero.Position);
         room.AddLoot(spot, dropped);
+        if (hero.Gold > 0)
+        {
+            room.AddGold(spot, hero.Gold);
+            events.Add(new GoldAppeared(room.Id, spot, hero.Gold));
+            hero.Gold = 0;
+        }
+
         var tombstone = new Tombstone(spot, hero.Id, hero.Name, hero.Bane ?? "Lost in the dungeon", HereLies: _random.Behavior.CoinFlip());
         room.AddTombstone(tombstone);
         events.Add(new HeroDied(hero.Id, tombstone, dropped.Select(card => card.Id).ToList()));

@@ -111,6 +111,9 @@ public sealed partial class GameSession
             Leap c => Handle(c, events),
             Rouse c => Handle(c, events),
             RollKeel c => Handle(c, events),
+            GoProne c => Handle(c, events),
+            GetUp c => Handle(c, events),
+            StopDropRoll c => Handle(c, events),
             _ => $"Unknown command {command.GetType().Name}.",
         };
 
@@ -127,6 +130,11 @@ public sealed partial class GameSession
             State.Turn.UnsettledPowerDice = 0;
             events.Add(new TurnEnded(turn.HeroId));
             AdvanceTurn(State.GetHero(turn.HeroId).Seat, events);
+        }
+
+        if (State.Phase == RunPhase.InProgress)
+        {
+            DouseEveryoneInWater(events);
         }
 
         foreach (Hero hero in State.Heroes.Where(hero => hero.IsActive && State.RoomOf(hero).Layout[hero.Position].IsWalkable()))
@@ -214,6 +222,14 @@ public sealed partial class GameSession
     {
         State.Turn = new TurnState(hero.Id) { KeelingOver = hero.IsKeelingOver };
         events.Add(new TurnStarted(hero.Id));
+
+        // A burning hero burns first; if that brings them down, play moves on.
+        if (!BurnAtTurnStart(hero, events) && State.Phase == RunPhase.InProgress)
+        {
+            State.Turn.PendingRoll = null;
+            events.Add(new TurnEnded(hero.Id));
+            AdvanceTurn(hero.Seat, events);
+        }
     }
 
     /// <summary>
@@ -234,6 +250,8 @@ public sealed partial class GameSession
             {
                 companion.Remove(found);
             }
+
+            companion.Gold = 0;
         }
 
         List<Hero> escaped = State.Heroes.Where(hero => hero.Status == HeroStatus.Escaped && !hero.IsCompanion).ToList();

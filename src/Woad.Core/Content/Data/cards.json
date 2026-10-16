@@ -14,7 +14,7 @@
   { "id": "dash_boots", "name": "Dash Boots", "type": "boots", "slot": "feet", "modifiers": { "moveDice": 1 }, "value": 10, "text": "+1 Wend die." },
 
   // Spells and tools
-  { "id": "flame_scroll", "name": "Flame Scroll", "type": "spell", "usage": "singleUse", "effect": { "kind": "attack", "amount": 3, "range": 3 }, "value": 4, "text": "Single use. A 3-dice attack of fire on a monster within 3 (not your Rumble dice)." },
+  { "id": "flame_scroll", "name": "Flame Scroll", "type": "spell", "usage": "singleUse", "effect": { "kind": "attack", "amount": 3, "range": 3, "fire": true }, "value": 4, "text": "Single use. A 3-dice fire attack on a monster within 3 (not your Rumble dice). Any 6 sets it alight." },
   { "id": "frost_wand", "name": "Frost Wand", "type": "spell", "slot": "offHand", "usage": "charges", "charges": 2, "effect": { "kind": "stun", "amount": 1, "range": 3 }, "value": 8, "text": "2 charges per floor. Freeze a monster within 3: it skips its next turn." },
   { "id": "boomerang", "name": "Boomerang", "type": "tool", "slot": "offHand", "effect": { "kind": "stun", "amount": 1, "range": 4 }, "value": 6, "text": "Stun a monster within 4: it skips its next turn." },
   { "id": "lockpicks", "name": "Lockpicks", "type": "tool", "slot": "offHand", "modifiers": { "tools": 2 }, "value": 6, "text": "Tools 2: adds 2 to one Od Hand roll a turn (picking locks, searching, disarming, stealing)." },
@@ -24,8 +24,8 @@
   { "id": "health_potion", "name": "Health Potion", "type": "potion", "usage": "singleUse", "effect": { "kind": "heal", "amount": 3 }, "value": 2, "text": "Single use. Restore 3 hearts." },
 
   // Treasure
-  { "id": "loose_coins", "name": "Loose Coins", "type": "treasure", "value": 2, "text": "Worth 2 gold. Found in pots." },
-  { "id": "coin_pouch", "name": "Coin Pouch", "type": "treasure", "value": 5, "text": "Worth 5 gold." },
+  { "id": "loose_coins", "name": "Loose Coins", "type": "treasure", "coins": true, "value": 2, "text": "2 gold, straight into your purse. Found in pots." },
+  { "id": "coin_pouch", "name": "Coin Pouch", "type": "treasure", "coins": true, "value": 5, "text": "5 gold, straight into your purse." },
   { "id": "emerald", "name": "Emerald", "type": "treasure", "value": 15, "text": "Worth 15 gold." },
   { "id": "golden_idol", "name": "Golden Idol", "type": "treasure", "value": 40, "text": "Worth 40 gold." }
 ]

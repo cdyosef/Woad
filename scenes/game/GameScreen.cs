@@ -93,6 +93,10 @@ public partial class GameScreen : Control
         {
             RunKeelTest();
         }
+        else if (args.Contains("--firetest"))
+        {
+            RunFireTest();
+        }
     }
 
     public override void _UnhandledInput(InputEvent @event)
@@ -322,6 +326,7 @@ public partial class GameScreen : Control
 
             case HeroMoved moved:
                 await Walk(moved.HeroId, moved.Path);
+                SyncDiving(moved.HeroId);
                 break;
 
             case MonsterMoved moved:
@@ -444,6 +449,18 @@ public partial class GameScreen : Control
                 await Pause(0.3);
                 break;
 
+            case GoldFound found:
+                FloatOver(found.HeroId, $"+{found.Amount} gold", Palette.Loot);
+                _board.QueueRedraw();
+                await Pause(0.2);
+                break;
+
+            case GoldAppeared appeared when appeared.RoomId == _shownRoomId:
+                _board.QueueRedraw();
+                _board.FloatText(appeared.Position, $"{appeared.Amount} gold", Palette.Loot);
+                await Pause(0.15);
+                break;
+
             case WallBroken or KeysAppeared or BossKeyDropped:
                 _board.QueueRedraw();
                 await Pause(0.15);
@@ -482,6 +499,36 @@ public partial class GameScreen : Control
 
             case MonsterDefeated defeated:
                 await RemoveFigure(defeated.MonsterId);
+                break;
+
+            case Ignited ignited:
+                FloatOver(ignited.EntityId, ignited.FireDice == 1 ? "on fire!" : $"fire {ignited.FireDice}!", Palette.Fire);
+                await UpdateFigure(ignited.EntityId, figure => figure.FireDice = ignited.FireDice, 0.3);
+                break;
+
+            case FireSpread spread:
+                FloatOver(spread.ToId, "catches fire!", Palette.Fire);
+                await UpdateFigure(spread.ToId, figure => figure.FireDice = spread.FireDice, 0.3);
+                break;
+
+            case FireBurned burned:
+                _trayShowsMovement = false;
+                await _dice.ShowRoll($"{NameOf(burned.EntityId)} burns", burned.Roll, 0, newGroup: true);
+                await UpdateFigure(burned.EntityId, figure => figure.FireDice = burned.FireDiceLeft, 0.1);
+                break;
+
+            case FireOut { Cause: var cause } fireOut:
+                FloatOver(fireOut.EntityId, cause switch { FireOutCause.Water => "doused", FireOutCause.Rolled => "rolls it out", _ => "fire out" }, Palette.Text);
+                await UpdateFigure(fireOut.EntityId, figure => figure.FireDice = 0, 0.3);
+                break;
+
+            case WentProne prone:
+                FloatOver(prone.HeroId, prone.Diving ? "dives" : "drops prone", Palette.Text);
+                await UpdateFigure(prone.HeroId, figure => { figure.Prone = true; figure.Diving = prone.Diving; }, 0.2);
+                break;
+
+            case GotUp up:
+                await UpdateFigure(up.HeroId, figure => { figure.Prone = false; figure.Diving = false; }, 0.2);
                 break;
 
             case HeroKeeledOver keeled:
@@ -668,7 +715,7 @@ public partial class GameScreen : Control
             case WallBroken:
                 Sfx.Play("pot", 0.6f);
                 break;
-            case KeysFound or Stole:
+            case KeysFound or Stole or GoldFound or GoldAppeared:
                 Sfx.Play("coin");
                 break;
             case BossKeyFound:
@@ -679,6 +726,18 @@ public partial class GameScreen : Control
                 break;
             case HeroKeeledOver:
                 Sfx.Play("downed");
+                break;
+            case Ignited or FireSpread:
+                Sfx.Play("hit", 1.4f);
+                break;
+            case FireBurned:
+                Sfx.PlayVaried("dice");
+                break;
+            case FireOut:
+                Sfx.Play("block", 0.7f);
+                break;
+            case WentProne or GotUp:
+                Sfx.PlayVaried("step");
                 break;
             case KeelRolled:
                 Sfx.PlayVaried("dice");
@@ -731,6 +790,12 @@ public partial class GameScreen : Control
         Damaged damaged => FigureRoom(damaged.TargetId),
         HeroHealed healed => FigureRoom(healed.HeroId),
         HeroKeeledOver keeled => FigureRoom(keeled.HeroId),
+        Ignited ignited => FigureRoom(ignited.EntityId),
+        FireSpread spread => FigureRoom(spread.ToId),
+        FireBurned burned => FigureRoom(burned.EntityId),
+        FireOut fireOut => FigureRoom(fireOut.EntityId),
+        WentProne prone => FigureRoom(prone.HeroId),
+        GotUp up => FigureRoom(up.HeroId),
         KeelRolled keel => FigureRoom(keel.HeroId),
         HeroRoused roused => FigureRoom(roused.HeroId),
         KeelerStruck struck => FigureRoom(struck.HeroId),
@@ -759,6 +824,8 @@ public partial class GameScreen : Control
         WallBroken broken => broken.RoomId,
         KeysAppeared keys => keys.RoomId,
         LootDropped dropped => dropped.RoomId,
+        GoldFound found => FigureRoom(found.HeroId),
+        GoldAppeared appeared => appeared.RoomId,
         _ => null,
     };
 

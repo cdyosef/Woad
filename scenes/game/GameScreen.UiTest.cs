@@ -244,6 +244,50 @@ public partial class GameScreen
         }
     }
 
+    /// <summary>
+    /// Debug mode (<c>-- --firetest</c>, with <see cref="DemoRun.Fire"/>): Aria waits among Cinder Imps
+    /// until one sets her alight, puts it out with Drop &amp; roll (her whole turn, leaving her prone),
+    /// then rolls to move and gets back up with the Get up button.
+    /// </summary>
+    private async void RunFireTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            Check(!_dropRoll.Visible, "Drop & roll only shows while you're on fire");
+            for (int rounds = 0; aria.FireDice == 0 && rounds < 60; rounds++)
+            {
+                await Click(this, _endTurn);
+                await WaitUntilIdle();
+            }
+
+            Check(aria.FireDice > 0 && _figures[aria.Id].FireDice == aria.FireDice, "an imp's fire attack sets Aria alight, and her figure shows it");
+            Check(_dropRoll.Visible && !_dropRoll.Disabled, "on fire, Drop & roll is offered");
+            await Click(this, _dropRoll);
+            await WaitUntilIdle();
+            // (The imps may set her alight again in their phase, so the log tells whether it went out.)
+            Check(aria.Prone, "Drop & roll leaves Aria prone");
+            Check(_figures[aria.Id].Prone, "her figure lies down");
+            Check(ActiveHero == aria && _session.State.Round > 1, "it takes her whole turn");
+
+            await Click(this, _roll);
+            await WaitUntilIdle();
+            Check(_prone.Text == "Get up" && !_prone.Disabled, "prone, the button offers to get up");
+            await Click(this, _prone);
+            await WaitUntilIdle();
+            Check(!aria.Prone && !_figures[aria.Id].Prone, "Get up stands Aria back up");
+
+            GD.Print("Fire test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Fire test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
     /// <summary>Confirms a roll that Luck is holding open.</summary>
     private async Task ConfirmIfHeld()
     {

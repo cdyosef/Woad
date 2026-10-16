@@ -34,6 +34,12 @@ public sealed class Monster
     /// <summary>Turns this monster will skip.</summary>
     public int StunnedTurns { get; internal set; }
 
+    /// <summary>Fire dice burning on it (0 when not on fire): rolled against it at the start of its turn.</summary>
+    public int FireDice { get; internal set; }
+
+    /// <summary>The hero whose fire this is, who gets the kill if it burns to death; null if nobody's.</summary>
+    public int? IgnitedBy { get; internal set; }
+
     /// <summary>A reassembling monster knocked down by a weapon; it rises next enemy phase.</summary>
     public bool Collapsed { get; internal set; }
 
