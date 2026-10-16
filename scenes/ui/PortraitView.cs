@@ -7,6 +7,7 @@ public partial class PortraitView : Control
 {
     private string _portraitId = "";
     private bool _selected;
+    private LookColors? _colors;
 
     public event Action? Clicked;
 
@@ -16,6 +17,13 @@ public partial class PortraitView : Control
     {
         get => _portraitId;
         set { _portraitId = value; QueueRedraw(); }
+    }
+
+    /// <summary>The character's colors, for the shield and its rim; null draws the portrait's own color.</summary>
+    public LookColors? Colors
+    {
+        get => _colors;
+        set { _colors = value; QueueRedraw(); }
     }
 
     public bool Selected
@@ -45,26 +53,27 @@ public partial class PortraitView : Control
 
     public override void _Draw()
     {
-        DrawCrest(this, new Rect2(Vector2.Zero, Size), Portraits.Get(PortraitId));
+        DrawCrest(this, new Rect2(Vector2.Zero, Size), Portraits.Get(PortraitId), _colors);
         if (_selected)
         {
             DrawRect(new Rect2(-3, -3, Size.X + 6, Size.Y + 6), Palette.TrimBright, filled: false, width: 1.5f);
         }
     }
 
-    /// <summary>Draws a shield in the portrait's color with its sigil.</summary>
-    public static void DrawCrest(CanvasItem canvas, Rect2 rect, Portrait portrait)
+    /// <summary>Draws a shield with the portrait's sigil, in the character's main and trim colors (or the portrait's color).</summary>
+    public static void DrawCrest(CanvasItem canvas, Rect2 rect, Portrait portrait, LookColors? colors = null)
     {
+        Color color = colors?.Main ?? portrait.Color;
         Vector2 o = rect.Position;
         float w = rect.Size.X;
         float h = rect.Size.Y;
         Vector2[] shield = [o, o + new Vector2(w, 0), o + new Vector2(w, h * 0.55f), o + new Vector2(w / 2, h), o + new Vector2(0, h * 0.55f)];
-        canvas.DrawColoredPolygon(shield, portrait.Color.Darkened(0.4f));
-        canvas.DrawPolyline([.. shield, shield[0]], Palette.Trim, 1.5f, antialiased: true);
+        canvas.DrawColoredPolygon(shield, color.Darkened(0.4f));
+        canvas.DrawPolyline([.. shield, shield[0]], colors?.Trim ?? Palette.Trim, 1.5f, antialiased: true);
 
         Vector2 c = o + new Vector2(w / 2, h * 0.42f);
         float s = w * 0.2f;
-        Color ink = portrait.Color.Lightened(0.3f);
+        Color ink = color.Lightened(0.3f);
         switch (portrait.Sigil)
         {
             case 0:

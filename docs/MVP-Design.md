@@ -24,7 +24,7 @@ cooperate to survive the dungeon but compete for treasure: the richest player to
 | Turn | Spend your Rumble, Wend and Od Hand dice on attacks, moves and Od Hand checks, plus 1 other action, 1 free loot and 1 free belt item, in any order |
 | Secrets | Keys and locked doors and chests, a Boss Key to the Boss Door, secret doors, cracked walls broken by bombs, traps and trap doors |
 | Combat | On the room grid; an enemy phase follows each round of player turns |
-| Characters | Created before play: name, portrait, classless point-buy of dice stats |
+| Characters | Created before play: name, look and colors, crest, classless point-buy of dice stats |
 | Death | Roguelite: keep XP, level and the gear you brought in; lose what you found this run |
 | Dungeon | Procedural, 3 floors of 6–8 rooms; a boss and the exit on floor 3 |
 | Persistence | Local JSON file per character, behind an interface that a server can replace later |
@@ -60,15 +60,27 @@ Stats are expressed directly as dice and points. Gear cards add to them.
 | Armor | Fixed value added to every defense | 0 | Gear only (shields, armor) |
 | Luck | Rerolls of a single die, per floor | 0 | 2 per reroll |
 
-- **Creation:** name (1–16 letters, numbers, spaces, apostrophes or hyphens), portrait, and 6 points to
+- **Creation:** name (1–16 letters, numbers, spaces, apostrophes or hyphens), look, crest, and 6 points to
   spend. Unspent points are kept for later. While at level 1, a character can buy at most +1 Attack and
   +1 Defense die *(tunable)*. Points already spent can't be refunded.
 - **Progression:** XP from monster kills and floors reached. Level 2 takes 10 XP, level 3 takes 30, then
   60, 100 and so on (10 × 1, 3, 6, 10…). Each level grants 1 point.
-- **Portraits:** for now, eight placeholder heraldic crests (a color and a sigil). The art pass replaces
-  them with real portraits under the same ids.
-- **Characters screen:** lists saved characters with their stats, gear and record. You can create,
-  edit (rename, change portrait, spend points) or delete them; delete asks for a second click.
+- **Looks:** purely cosmetic; stats come only from point-buy. A character picks one of 44 figures
+  (Wanderer, Knight, Ranger, Rogue, Mage, Wizard, Brute, Barbarian, Wild Woman, Shaka, Druid,
+  Princess, Noble, Enchantress, Dancer, Sorceress, Street Rat, Sultan, Bard, Bunny Lady, Cat Lady,
+  Monk, Priestess, Elf, She-Elf, Dark Elf, Spider Lover, Brave, Wolf Man, Birdman, Dwarf, Halfling,
+  Lizard Man, Stone Man, Log Man, Devilman, Helling, Raider, Swashbuckler, Pirate, Tempest, Riverman,
+  Alchemist, Artificer) and its colors:
+  - **Main and trim:** two of 12 colors (clothes, then belts, sashes, plumes and the like).
+  - **Skin and hair:** from the figure's own sets: skin tones, dark elf or demon skin, scales, stone
+    or wood; hair, fur, plumage or leaves. Some looks start on a fitting color (dark elves white-haired). Figures that don't show one (a Knight's helmet, a Monk's bald head) skip it.
+  - **Random** rolls a look and colors. Any two players may share colors: on the board each hero
+    stands on a ring of their seat color.
+  - Characters saved before looks existed are Wanderers in their crest's color.
+- **Crests:** eight heraldic sigils, drawn in the character's main and trim colors. They head the
+  hero panel in a run.
+- **Characters screen:** lists saved characters (with their figures) and their stats, gear and record.
+  You can create, edit (rename, restyle, spend points) or delete them; delete asks for a second click.
 - **Party setup:** click characters to seat them; the order you pick them is the turn order. An
   optional seed replays a specific run.
 
@@ -481,7 +493,7 @@ them up there like any character.
 
 - **Location:** one JSON file per character at `user://characters/{id}.json`. On Windows that is
   `%APPDATA%\Godot\app_userdata\Woad\characters\`.
-- **Contents:** schema version, id, name, portrait, creation time, XP (level is derived from it), stat
+- **Contents:** schema version, id, name, portrait (crest), appearance (look and colors), creation time, XP (level is derived from it), stat
   points spent and unspent, equipped cards, belt, backpack, gold, runs played and wins.
 - **Writes:** each save goes to a temporary file first and then replaces the old one, so a crash can't
   leave a half-written character.
@@ -521,7 +533,8 @@ them up there like any character.
   that nods to *A Link to the Past*:
   - **Tiles:** green flagstones, stone blocks, chasms that join up with their neighbors, stairs, a
     barred or lit exit, chests and clay pots.
-  - **Heroes:** one adventurer sprite whose tunic is tinted with the player's seat color.
+  - **Heroes:** a sprite per look. The art keeps the main, trim, skin and hair pixels as white masks
+    (with a grey for shading), which the game tints with the character's colors.
   - **Monsters:** a sprite each. Slimelings are small slimes, the Iron Warden looms larger, and a
     collapsed skeleton becomes a bone pile.
 - **UI art:** dark panels in riveted, gold-trimmed frames, and an original serif capitals pixel font

@@ -17,7 +17,8 @@ public sealed record HeroSetup(
     IReadOnlyList<string> CardIds,
     Guid? CharacterId = null,
     string Portrait = "",
-    int? OwnerSeat = null);
+    int? OwnerSeat = null,
+    Appearance? Appearance = null);
 
 /// <summary>
 /// One room of the dungeon and the rooms its doors lead to. <paramref name="MapPosition"/> is

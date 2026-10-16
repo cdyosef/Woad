@@ -365,7 +365,7 @@ public sealed partial class GameSession
                 ownerId = state.Heroes[ownerSeat].Id;
             }
 
-            var hero = new Hero(state.NextId(), seat, heroSetup.Name, heroSetup.BaseStats, startRoom.Id, start, heroSetup.CharacterId, heroSetup.Portrait)
+            var hero = new Hero(state.NextId(), seat, heroSetup.Name, heroSetup.BaseStats, startRoom.Id, start, heroSetup.CharacterId, heroSetup.Portrait, heroSetup.Appearance)
             {
                 OwnerId = ownerId,
                 PlayerNumber = ownerId is null ? state.Heroes.Count(other => !other.IsCompanion) + 1 : 0,

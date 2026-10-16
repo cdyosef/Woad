@@ -1,5 +1,6 @@
 using Woad.Core.Characters;
 using Woad.Core.Content;
+using Woad.Core.Model;
 
 namespace Woad.Core.Tests.Characters;
 
@@ -33,6 +34,22 @@ public sealed class JsonCharacterRepositoryTests : IDisposable
         string path = Directory.GetFiles(_folder, "*.json").Single();
         File.WriteAllText(path, File.ReadAllText(path).Replace("\"isCompanion\": true", "\"unused\": 0"));
         Assert.False(Assert.Single((await Repository().LoadAllAsync()).Characters).IsCompanion);
+    }
+
+    [Fact]
+    public async Task LooksAreSavedAndOlderFilesGetTheDefaultLook()
+    {
+        var look = new Appearance("wolf_man", "teal", "bone", "", "russet");
+        Character character = Character.Create("Fenn", "moss", StatAllocation.None, Content, DateTimeOffset.UnixEpoch, appearance: look);
+        await Repository().SaveAsync(character);
+        Assert.Equal(look, Assert.Single((await Repository().LoadAllAsync()).Characters).Appearance);
+
+        // Files from before looks have no appearance at all.
+        string path = Directory.GetFiles(_folder, "*.json").Single();
+        string json = File.ReadAllText(path);
+        int start = json.IndexOf("\"appearance\"", StringComparison.Ordinal);
+        File.WriteAllText(path, json[..start].TrimEnd().TrimEnd(',') + "\n}");
+        Assert.Equal(Appearance.Default, Assert.Single((await Repository().LoadAllAsync()).Characters).Appearance);
     }
 
     [Fact]

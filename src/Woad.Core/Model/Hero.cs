@@ -35,7 +35,7 @@ public sealed class Hero
     private readonly List<CardInstance> _belt = [];
     private readonly List<CardInstance> _backpack = [];
 
-    internal Hero(int id, int seat, string name, Stats baseStats, string roomId, GridPosition position, Guid? characterId = null, string portrait = "")
+    internal Hero(int id, int seat, string name, Stats baseStats, string roomId, GridPosition position, Guid? characterId = null, string portrait = "", Appearance? appearance = null)
     {
         Id = id;
         Seat = seat;
@@ -46,6 +46,7 @@ public sealed class Hero
         Footing = position;
         CharacterId = characterId;
         Portrait = portrait;
+        Appearance = appearance ?? Appearance.Default;
     }
 
     public int Id { get; }
@@ -54,6 +55,9 @@ public sealed class Hero
     public Guid? CharacterId { get; }
 
     public string Portrait { get; }
+
+    /// <summary>The character's look and colors (cosmetic).</summary>
+    public Appearance Appearance { get; }
 
     /// <summary>Turn order, starting at 0.</summary>
     public int Seat { get; }

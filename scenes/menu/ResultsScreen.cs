@@ -67,7 +67,7 @@ public partial class ResultsScreen : MenuScreen
     {
         HeroRunResult result = row.Result;
         Put(new Panel { Position = new Vector2(0, top), Size = new Vector2(600, RowHeight - 6), MouseFilter = MouseFilterEnum.Ignore });
-        Put(new PortraitView { Position = new Vector2(10, top + 9), Size = new Vector2(30, 36) }).PortraitId = result.Portrait;
+        Put(new FigureView { Position = new Vector2(8, top + 9), Size = new Vector2(32, 32) }).Colors = Looks.Resolve(result.Appearance, result.Portrait);
 
         Put(UiTheme.Label(new Vector2(50, top + 5), new Vector2(200, 18), result.Name, 14, Palette.Seat(result.Seat)));
         string outcome = result.Status switch

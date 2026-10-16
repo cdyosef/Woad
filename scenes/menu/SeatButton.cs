@@ -48,7 +48,7 @@ public partial class SeatButton : Button
             return;
         }
 
-        PortraitView.DrawCrest(this, new Rect2(Size.X - 30, 5, 24, 29), Portraits.Get(_character.Portrait));
+        Looks.Draw(this, new Rect2(Size.X - 36, Size.Y / 2 - 16, 32, 32), Looks.Resolve(_character.Appearance, _character.Portrait));
         DrawString(font, new Vector2(12, 31), _character.Name, HorizontalAlignment.Left, Size.X - 46, 10, Palette.Text, TextServer.JustificationFlag.None, TextServer.Direction.Auto, TextServer.Orientation.Horizontal);
     }
 }

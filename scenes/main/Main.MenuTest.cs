@@ -34,6 +34,12 @@ public partial class Main
             Check(editor.NameEdit.Text == "Morgan", "typing fills in the name");
             Check(!editor.SaveButton.Disabled, "a valid name enables Create");
             await Click(this, editor.PortraitButton(2));
+            await Click(this, editor.StyleButton(0, next: true));
+            Check(editor.Appearance.Look == "knight" && editor.StyleButton(3, next: true).Disabled, "the next look is the Knight, whose face is hidden (no skin color)");
+            await Click(this, editor.StyleButton(0, next: true));
+            await Click(this, editor.StyleButton(1, next: true));
+            await Click(this, editor.StyleButton(3, next: false));
+            Check(editor.Appearance is { Look: "ranger", Main: "ember", Skin: "deep" }, "the arrows pick the look, main color and skin");
             await Click(this, editor.PlusButton(StatKind.Hearts));
             await Click(this, editor.PlusButton(StatKind.Hearts));
             await Click(this, editor.PlusButton(StatKind.AttackDice));
@@ -45,6 +51,19 @@ public partial class Main
             list = await LoadedList();
             Check(list.CharacterCount == 1, "the new character is listed");
             Check(Directory.GetFiles(saveFolder, "*.json").Length == 1, "the character is saved to disk");
+
+            await Click(this, list.Row(0));
+            await Click(this, list.EditButton);
+            editor = await Screen<CharacterEditor>();
+            Check(editor.Appearance is { Look: "ranger", Main: "ember", Skin: "deep" }, "editing opens with the character's look");
+            await Click(this, editor.StyleButton(0, next: true));
+            await Click(this, editor.StyleButton(0, next: true));
+            await Click(this, editor.StyleButton(4, next: true));
+            Check(editor.Appearance is { Look: "mage", Hair: "black" }, "an existing character can change look and hair");
+            await Click(this, editor.SaveButton);
+            list = await LoadedList();
+            string saved = File.ReadAllText(Directory.GetFiles(saveFolder, "*.json").Single());
+            Check(saved.Contains("\"look\": \"mage\"") && saved.Contains("\"hair\": \"black\"") && saved.Contains("\"main\": \"ember\""), "saving the edit writes the new look to disk");
 
             await Click(this, list.NewButton);
             editor = await Screen<CharacterEditor>();
@@ -117,6 +136,7 @@ public partial class Main
             Check(!game.OrdersButton.Visible, "a player without companions has no Orders button");
             Check(morgan.MaxHearts == 6 && morgan.EffectiveStats.AttackDice == 2 && morgan.EffectiveStats.Weapon == 1, "the hero has the character's stats plus gear");
             Check(morgan.Portrait == "moss", "the hero has the chosen portrait");
+            Check(morgan.Appearance is { Look: "mage", Main: "ember", Hair: "black" }, "the hero has the chosen look");
             Check(Music.Current == "dungeon", "a run plays the dungeon music");
 
             await Click(this, game.MenuButton);

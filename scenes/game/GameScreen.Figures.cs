@@ -38,6 +38,7 @@ public partial class GameScreen
                 MaxHearts = hero.MaxHearts,
                 Glyph = hero.Name[..1].ToUpperInvariant(),
                 Fill = Palette.Seat(hero.Seat),
+                Look = Looks.Resolve(hero.Appearance, hero.Portrait),
                 Keeling = hero.IsKeelingOver,
                 LifeMarks = hero.LifeMarks,
                 DeathMarks = hero.DeathMarks,
@@ -99,8 +100,8 @@ public partial class GameScreen
             Glyph = figure.Glyph,
             Fill = figure.Fill,
             Position = BoardView.TileOrigin(figure.Position),
-            Body = monster is null ? GameArt.HeroBody : GameArt.Monster(theme, monster.Id),
-            Tint = monster is null ? GameArt.HeroTunic : null,
+            Body = monster is null ? null : GameArt.Monster(theme, monster.Id),
+            Look = figure.Look,
             CollapsedBody = monster is { Reassembles: true } ? GameArt.Monster(theme, "bones") : null,
             SpriteScale = monster is null ? 1f : GameArt.MonsterScale(monster),
         };
@@ -378,6 +379,8 @@ public partial class GameScreen
         public string Glyph { get; init; } = "";
 
         public Color Fill { get; init; }
+
+        public LookColors? Look { get; init; }
 
         public bool Frozen { get; set; }
 
