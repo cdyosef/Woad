@@ -72,7 +72,7 @@ public static partial class DungeonGenerator
     private static bool Connected(RoomTemplate template, RoomFeatures? features = null)
     {
         bool Passable(GridPosition tile) => template.Layout[tile].IsWalkable() && features?.Traps.ContainsKey(tile) != true;
-        List<GridPosition> open = RoomGrid.AllPositions().Where(Passable).ToList();
+        List<GridPosition> open = template.Layout.Positions.Where(Passable).ToList();
         if (open.Count == 0)
         {
             return true;
@@ -82,7 +82,7 @@ public static partial class DungeonGenerator
         // (a trap walled into a corner would hide whatever stands on it for good).
         IReadOnlyDictionary<GridPosition, int> reached = PathSearch.Run(open[0], Passable).Distances;
         return reached.Count == open.Count
-               && RoomGrid.AllPositions()
+               && template.Layout.Positions
                    .Where(tile => template.Layout[tile].IsWalkable() && !Passable(tile))
                    .All(trap => trap.OrthogonalNeighbors().Any(reached.ContainsKey));
     }
@@ -97,7 +97,7 @@ public static partial class DungeonGenerator
         RoomTemplate template, RoomFeatures features, IReadOnlyCollection<Direction> doors, int floor, bool dropsIn, IRandomSource random)
     {
         HashSet<GridPosition> fixedTiles = FixedTiles(template, features);
-        IEnumerable<GridPosition> needed = doors.Select(side => side.DoorTile())
+        IEnumerable<GridPosition> needed = doors.Select(template.Layout.MiddleOf)
             .Concat(template.TilesOf(TileKind.StairsDown)).Concat(template.TilesOf(TileKind.StairsUp)).Concat(template.TilesOf(TileKind.Exit))
             .Concat(template.Monsters.Select(spawn => spawn.Position));
 

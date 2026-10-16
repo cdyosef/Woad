@@ -180,7 +180,7 @@ public sealed partial class GameSession
     private GridPosition? RandomStep(Room room, Monster monster, GridPosition from)
     {
         List<GridPosition> options = from.OrthogonalNeighbors()
-            .Where(position => position.IsInRoom && CanMonsterEnter(room, monster, position))
+            .Where(position => room.Layout.Contains(position) && CanMonsterEnter(room, monster, position))
             .ToList();
         return options.Count == 0 ? null : _random.Behavior.Pick(options);
     }

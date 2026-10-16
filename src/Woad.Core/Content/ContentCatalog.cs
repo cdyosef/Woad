@@ -371,8 +371,8 @@ public sealed class ContentCatalog
 
         foreach (Direction side in Enum.GetValues<Direction>())
         {
-            GridPosition door = side.DoorTile();
-            if (room.Layout.Count == RoomGrid.Size && room.Layout[door.Y].Trim()[door.X] != '.')
+            GridPosition door = template.Layout.MiddleOf(side);
+            if (room.Layout.Where(row => row.Trim().Length > 0).ElementAtOrDefault(door.Y)?.Trim().ElementAtOrDefault(door.X) != '.')
             {
                 errors.Add($"{name}: the {side} doorway {door} must be plain floor ('.').");
             }
@@ -413,8 +413,8 @@ public sealed class ContentCatalog
             errors.Add($"{name}: combat and stairs rooms need at least one monster spawn point ('M').");
         }
 
-        PathSearch reach = PathSearch.Run(Direction.North.DoorTile(), position => template.Layout[position].IsWalkable());
-        IEnumerable<GridPosition> mustReach = Enum.GetValues<Direction>().Select(side => side.DoorTile())
+        PathSearch reach = PathSearch.Run(template.Layout.MiddleOf(Direction.North), position => template.Layout[position].IsWalkable());
+        IEnumerable<GridPosition> mustReach = Enum.GetValues<Direction>().Select(template.Layout.MiddleOf)
             .Concat(template.HeroStarts.Values)
             .Concat(template.SpawnPoints)
             .Concat(template.TilesOf(TileKind.StairsDown))

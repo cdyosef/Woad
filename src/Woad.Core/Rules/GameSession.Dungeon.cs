@@ -22,7 +22,7 @@ public sealed partial class GameSession
             return "There's no door on that side.";
         }
 
-        if (hero.Position != command.Door.DoorTile())
+        if (hero.Position != room.DoorTile(command.Door))
         {
             return "Stand in the doorway first.";
         }
@@ -224,12 +224,12 @@ public sealed partial class GameSession
 
     /// <summary>A bomb's blast breaks the cracked walls in it, and cracked walls standing in doorways.</summary>
     private static List<(GridPosition Tile, Direction? Door)> CrackedWallsIn(Room room, GridPosition center, int radius) =>
-        RoomGrid.AllPositions()
+        room.Positions
             .Where(tile => tile.ChebyshevDistanceTo(center) <= radius && room.Layout[tile] == TileKind.CrackedWall)
             .Select(tile => (tile, (Direction?)null))
             .Concat(room.Passages
-                .Where(door => door.Value is { IsBlocked: true, IsHidden: false } && door.Key.DoorTile().ChebyshevDistanceTo(center) <= radius)
-                .Select(door => (door.Key.DoorTile(), (Direction?)door.Key)))
+                .Where(door => door.Value is { IsBlocked: true, IsHidden: false } && room.DoorTile(door.Key).ChebyshevDistanceTo(center) <= radius)
+                .Select(door => (room.DoorTile(door.Key), (Direction?)door.Key)))
             .ToList();
 
     private void BreakWalls(Room room, IEnumerable<(GridPosition Tile, Direction? Door)> walls, List<GameEvent> events)
@@ -294,7 +294,7 @@ public sealed partial class GameSession
     {
         if (Chance(Content.GetTheme(State.ThemeId).Keys.RoomCleared))
         {
-            List<GridPosition> free = RoomGrid.AllPositions()
+            List<GridPosition> free = room.Positions
                 .Where(tile => room.Layout[tile] == TileKind.Floor && !IsOccupied(room, tile) && room.TrapAt(tile) is null && !room.HasLootAt(tile))
                 .ToList();
             if (free.Count > 0)

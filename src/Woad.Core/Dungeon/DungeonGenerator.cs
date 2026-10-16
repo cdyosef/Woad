@@ -319,7 +319,7 @@ public static partial class DungeonGenerator
         GridPosition? bossKeyOnFloor = null;
 
         // Nothing goes beside a chest or pot either: found traps there could wall it off.
-        HashSet<GridPosition> reserved = [.. Enum.GetValues<Direction>().Select(side => side.DoorTile()), .. template.HeroStarts.Values,
+        HashSet<GridPosition> reserved = [.. Enum.GetValues<Direction>().Select(template.Layout.MiddleOf), .. template.HeroStarts.Values,
             .. template.SpawnPoints, .. template.Monsters.Select(spawn => spawn.Position),
             .. template.TilesOf(TileKind.Chest).Concat(template.TilesOf(TileKind.Pot)).SelectMany(tile => tile.OrthogonalNeighbors())];
         List<GridPosition> open = template.TilesOf(TileKind.Floor).Where(tile => !reserved.Contains(tile)).ToList();
@@ -406,7 +406,7 @@ public static partial class DungeonGenerator
     private static bool StaysConnected(RoomTemplate template, IReadOnlyCollection<GridPosition> blocked)
     {
         bool Open(GridPosition tile) => template.Layout[tile].IsWalkable() && !blocked.Contains(tile);
-        List<GridPosition> walkable = RoomGrid.AllPositions().Where(Open).ToList();
+        List<GridPosition> walkable = template.Layout.Positions.Where(Open).ToList();
         return walkable.Count == 0 || PathSearch.Run(walkable[0], Open).Distances.Count == walkable.Count;
     }
 
@@ -466,7 +466,7 @@ public static partial class DungeonGenerator
             return template;
         }
 
-        HashSet<GridPosition> reserved = [.. Enum.GetValues<Direction>().Select(side => side.DoorTile()), .. template.HeroStarts.Values, .. template.SpawnPoints];
+        HashSet<GridPosition> reserved = [.. Enum.GetValues<Direction>().Select(template.Layout.MiddleOf), .. template.HeroStarts.Values, .. template.SpawnPoints];
         List<GridPosition> open = template.TilesOf(TileKind.Floor).Where(tile => !reserved.Contains(tile)).ToList();
         if (open.Count == 0)
         {
@@ -491,8 +491,8 @@ public static partial class DungeonGenerator
     /// <summary>Where a lower floor's arrival room gets its stairs up: the open floor tile nearest the middle.</summary>
     private static GridPosition StairsUpSpot(RoomTemplate template)
     {
-        HashSet<GridPosition> reserved = [.. Enum.GetValues<Direction>().Select(side => side.DoorTile()), .. template.HeroStarts.Values, .. template.SpawnPoints];
-        var center = new GridPosition(RoomGrid.Center, RoomGrid.Center);
+        HashSet<GridPosition> reserved = [.. Enum.GetValues<Direction>().Select(template.Layout.MiddleOf), .. template.HeroStarts.Values, .. template.SpawnPoints];
+        GridPosition center = template.Layout.Center;
         return template.TilesOf(TileKind.Floor)
             .Where(tile => !reserved.Contains(tile))
             .OrderBy(tile => tile.ManhattanDistanceTo(center))

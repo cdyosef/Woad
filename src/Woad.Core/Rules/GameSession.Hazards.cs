@@ -84,7 +84,7 @@ public sealed partial class GameSession
             for (int distance = 1; distance <= GameRules.MaxLeap; distance++)
             {
                 var tile = new GridPosition(hero.Position.X + dx * distance, hero.Position.Y + dy * distance);
-                if (!tile.IsInRoom || BlocksLeap(room.Layout[tile]))
+                if (!room.Layout.Contains(tile) || BlocksLeap(room.Layout[tile]))
                 {
                     break;
                 }
@@ -247,7 +247,7 @@ public sealed partial class GameSession
 
     /// <summary>The free tile nearest <paramref name="near"/> (it first) to land or climb out on: walkable, empty and without a trap.</summary>
     private GridPosition? LandingNear(Room room, GridPosition near) =>
-        RoomGrid.AllPositions()
+        room.Positions
             .Where(tile => room.Layout[tile].IsWalkable() && !IsOccupied(room, tile) && room.TrapAt(tile) is null)
             .OrderBy(tile => tile.ManhattanDistanceTo(near))
             .ThenBy(tile => tile.Y)
@@ -263,7 +263,7 @@ public sealed partial class GameSession
     private GridPosition? ShoveDestination(Room room, Hero hero, GridPosition at, bool flying)
     {
         var to = new GridPosition(at.X + Math.Sign(at.X - hero.Position.X), at.Y + Math.Sign(at.Y - hero.Position.Y));
-        if (!to.IsInRoom || IsOccupied(room, to))
+        if (!room.Layout.Contains(to) || IsOccupied(room, to))
         {
             return null;
         }

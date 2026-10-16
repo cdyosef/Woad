@@ -29,7 +29,7 @@ public sealed partial class GameSession
             return CheckEffectTarget(hero, room, effect, null, out _) is null ? [hero.Position] : [];
         }
 
-        return RoomGrid.AllPositions()
+        return room.Positions
             .Where(position => CheckEffectTarget(hero, room, effect, position, out _, IsBomb(held.Card.Definition)) is null)
             .ToList();
     }

@@ -441,7 +441,7 @@ public partial class GameScreen : Control
 
             case SecretsFound found:
                 _board.QueueRedraw();
-                foreach (GridPosition spot in found.Traps.Concat(found.Stashes).Concat(found.Gates ?? []).Concat(found.Doors.Select(side => side.DoorTile())))
+                foreach (GridPosition spot in found.Traps.Concat(found.Stashes).Concat(found.Gates ?? []).Concat(found.Doors.Select(ShownRoom.DoorTile)))
                 {
                     _board.FloatText(spot, "found!", Palette.TrimBright);
                 }

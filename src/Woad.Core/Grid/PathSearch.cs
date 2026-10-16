@@ -51,7 +51,7 @@ public sealed class PathSearch
 
             foreach (GridPosition next in current.OrthogonalNeighbors())
             {
-                if (!next.IsInRoom || !canEnter(next))
+                if (next.X is < 0 or >= RoomGrid.MaxSize || next.Y is < 0 or >= RoomGrid.MaxSize || !canEnter(next))
                 {
                     continue;
                 }

@@ -130,7 +130,7 @@ public partial class BoardView : Control
             return;
         }
 
-        foreach (GridPosition tile in RoomGrid.AllPositions())
+        foreach (GridPosition tile in _room.Positions)
         {
             DrawTile(tile, _room.Layout[tile]);
         }
@@ -401,13 +401,13 @@ public partial class BoardView : Control
     /// </summary>
     private void DrawDoor(Direction side, Passage? passage, bool sealedShut)
     {
-        Rect2 tile = TileRect(side.DoorTile());
+        Rect2 tile = TileRect(_room!.DoorTile(side));
         Rect2 bar = side switch
         {
-            Direction.North => new Rect2(tile.Position.X + 4, 0, TileSize - 8, 4),
-            Direction.South => new Rect2(tile.Position.X + 4, Pixels - 4, TileSize - 8, 4),
-            Direction.West => new Rect2(0, tile.Position.Y + 4, 4, TileSize - 8),
-            _ => new Rect2(Pixels - 4, tile.Position.Y + 4, 4, TileSize - 8),
+            Direction.North => new Rect2(tile.Position.X + 4, tile.Position.Y, TileSize - 8, 4),
+            Direction.South => new Rect2(tile.Position.X + 4, tile.End.Y - 4, TileSize - 8, 4),
+            Direction.West => new Rect2(tile.Position.X, tile.Position.Y + 4, 4, TileSize - 8),
+            _ => new Rect2(tile.End.X - 4, tile.Position.Y + 4, 4, TileSize - 8),
         };
         Color color = passage switch
         {
@@ -425,7 +425,7 @@ public partial class BoardView : Control
 
         if (passage?.Trap is { Revealed: true })
         {
-            DrawWarning(side.DoorTile());
+            DrawWarning(_room.DoorTile(side));
         }
     }
 
@@ -532,10 +532,10 @@ public partial class BoardView : Control
         }
     }
 
-    private static GridPosition? TileAt(Vector2 position)
+    private GridPosition? TileAt(Vector2 position)
     {
         var tile = new GridPosition(Mathf.FloorToInt(position.X / TileSize), Mathf.FloorToInt(position.Y / TileSize));
-        return tile.IsInRoom ? tile : null;
+        return _room?.Layout.Contains(tile) == true ? tile : null;
     }
 
     private static Rect2 TileRect(GridPosition tile) => new(TileOrigin(tile), new Vector2(TileSize, TileSize));

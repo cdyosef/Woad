@@ -5,8 +5,6 @@ public readonly record struct GridPosition(int X, int Y)
 {
     private static readonly Direction[] Directions = [Direction.North, Direction.East, Direction.South, Direction.West];
 
-    public bool IsInRoom => X is >= 0 and < RoomGrid.Size && Y is >= 0 and < RoomGrid.Size;
-
     public int ManhattanDistanceTo(GridPosition other) => Math.Abs(X - other.X) + Math.Abs(Y - other.Y);
 
     /// <summary>Distance counting diagonal steps as 1; used for area effects such as bomb blasts.</summary>

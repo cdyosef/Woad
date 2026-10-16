@@ -533,7 +533,7 @@ public class DungeonSecretsTests
                 foreach (Room room in floor)
                 {
                     IEnumerable<GridPosition> besideLoot = room.TilesOfKind(TileKind.Chest).Concat(room.TilesOfKind(TileKind.Pot))
-                        .SelectMany(tile => tile.OrthogonalNeighbors()).Where(tile => tile.IsInRoom);
+                        .SelectMany(tile => tile.OrthogonalNeighbors()).Where(room.Layout.Contains);
                     Assert.DoesNotContain(besideLoot, tile => room.TrapAt(tile) is not null);
                 }
             }

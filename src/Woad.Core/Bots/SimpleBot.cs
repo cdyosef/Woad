@@ -137,7 +137,7 @@ public static class SimpleBot
 
         bool canStep = turn.MovementPoints > 0;
         Direction? door = fighting ? null : NextDoor(state, room, hero);
-        if (door is { } lockedSide && hero.Position == lockedSide.DoorTile() && room.PassageOn(lockedSide) is { IsLocked: true } locked)
+        if (door is { } lockedSide && hero.Position == room.DoorTile(lockedSide) && room.PassageOn(lockedSide) is { IsLocked: true } locked)
         {
             if (locked.NeedsBossKey || hero.Keys > 0)
             {
@@ -147,7 +147,7 @@ public static class SimpleBot
             return session.CheckPickLock(hero.Position) is null ? new PickLock(hero.Id, hero.Position) : new EndTurn(hero.Id);
         }
 
-        if (door is { } side && hero.Position == side.DoorTile() && canStep && session.GetUsableDoors().Contains(side))
+        if (door is { } side && hero.Position == room.DoorTile(side) && canStep && session.GetUsableDoors().Contains(side))
         {
             return new GoThroughDoor(hero.Id, side);
         }
@@ -173,7 +173,7 @@ public static class SimpleBot
             : Nearest(state, room, hero, lootTiles)
               ?? Nearest(state, room, hero, OpenableChests(room, hero).SelectMany(tile => tile.OrthogonalNeighbors()))
               ?? Nearest(state, room, hero, room.TilesOfKind(TileKind.Pot).SelectMany(tile => tile.OrthogonalNeighbors()))
-              ?? (door is { } exitSide ? exitSide.DoorTile() : WayOut(room));
+              ?? (door is { } exitSide ? room.DoorTile(exitSide) : WayOut(room));
 
         if (goal is { } tile && StepAlongPath(session, hero, room, tile) is { } destination)
         {
@@ -188,8 +188,8 @@ public static class SimpleBot
         }
 
         // Not using this doorway (say, a teammate holds the Boss Key): at least keep out of it.
-        bool InDoorway(GridPosition at) => room.Doors.Keys.Any(side => side.DoorTile() == at);
-        if (!fighting && door?.DoorTile() != hero.Position && InDoorway(hero.Position)
+        bool InDoorway(GridPosition at) => room.Doors.Keys.Any(side => room.DoorTile(side) == at);
+        if (!fighting && (door is not { } heading || room.DoorTile(heading) != hero.Position) && InDoorway(hero.Position)
             && StepToward(session, hero, at => InDoorway(at) ? 1 : 0) is { } aside)
         {
             return new MoveHero(hero.Id, aside);
@@ -209,7 +209,7 @@ public static class SimpleBot
         PathSearch search = PathSearch.Run(hero.Position, tile => Walkable(room, tile));
         return room.Monsters
             .SelectMany(monster => monster.Position.SurroundingTiles()
-                .Where(tile => tile.IsInRoom && Targeting.CanHeroAttack(room.Layout, 1, tile, monster.Position)))
+                .Where(tile => room.Layout.Contains(tile) && Targeting.CanHeroAttack(room.Layout, 1, tile, monster.Position)))
             .Where(search.CanReach)
             .OrderBy(tile => search.Distances[tile])
             .ThenBy(tile => tile.Y)
@@ -237,7 +237,7 @@ public static class SimpleBot
 
         PathSearch search = PathSearch.Run(hero.Position, tile => Walkable(room, tile) || room.Layout[tile] == TileKind.Gate);
         return room.Monsters.Any(monster => monster.Position.SurroundingTiles()
-            .Any(tile => tile.IsInRoom && search.CanReach(tile) && Targeting.CanHeroAttack(room.Layout, 1, tile, monster.Position)));
+            .Any(tile => room.Layout.Contains(tile) && search.CanReach(tile) && Targeting.CanHeroAttack(room.Layout, 1, tile, monster.Position)));
     }
 
     /// <summary>
@@ -252,7 +252,7 @@ public static class SimpleBot
             return hero.Position;
         }
 
-        return Nearest(state, room, hero, fallen.SelectMany(other => other.Position.SurroundingTiles()).Where(tile => tile.IsInRoom));
+        return Nearest(state, room, hero, fallen.SelectMany(other => other.Position.SurroundingTiles()).Where(tile => room.Layout.Contains(tile)));
     }
 
     /// <summary>Walks the shortest route to the goal as far as this turn's movement allows.</summary>

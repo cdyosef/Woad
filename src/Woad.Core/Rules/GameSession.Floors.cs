@@ -108,9 +108,9 @@ public sealed partial class GameSession
     /// <summary>Where a hero coming down the stairs lands: the first free arrival tile, else near the center.</summary>
     private GridPosition? Landing(Room room)
     {
-        var center = new GridPosition(RoomGrid.Center, RoomGrid.Center);
+        GridPosition center = room.Layout.Center;
         return room.ArrivalTiles
-            .Concat(RoomGrid.AllPositions().OrderBy(tile => tile.ManhattanDistanceTo(center)))
+            .Concat(room.Positions.OrderBy(tile => tile.ManhattanDistanceTo(center)))
             .Where(tile => room.Layout[tile] == TileKind.Floor && !IsOccupied(room, tile))
             .Select(tile => (GridPosition?)tile)
             .FirstOrDefault();
