@@ -474,7 +474,7 @@ public partial class GameScreen
         _heroPanel.CardSelected += SelectCard;
         _heroPanel.Pool.TokenClicked += OnPoolTokenClicked;
         AddChild(_heroPanel);
-        _minimap = new MinimapView { Position = new Vector2(8, 252), Size = new Vector2(160, 100) };
+        _minimap = new MinimapView { Position = new Vector2(8, 264), Size = new Vector2(160, 90) };
         AddChild(_minimap);
 
         AddChild(new Panel { Position = new Vector2(SideWidth, 0), Size = new Vector2(BoardView.Pixels, StripHeight) });

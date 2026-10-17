@@ -552,8 +552,8 @@ them up there like any character.
 ┌──────────────┬──────────────────────┬──────────────┐
 │ Active hero  │ floor / room / turn  │ Belt (2)     │
 │ portrait     ├──────────────────────┤ Backpack (6) │
-│ hearts/stats │                      │ Card text    │
-│              │  9×9 view of room    │ Message log  │ 360 px
+│ hearts/stats,│                      │ Card text    │
+│ gold, keys   │  9×9 view of room    │ Message log  │ 360 px
 │ Equipment    │   288 × 288 px       │              │
 │ slots,       │                      │ Actions      │
 │ minimap      ├──────────────────────┤              │
