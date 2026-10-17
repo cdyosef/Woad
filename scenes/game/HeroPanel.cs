@@ -23,13 +23,16 @@ public partial class HeroPanel : Panel
     private Label _seat = null!;
     private HeartsView _hearts = null!;
     private RichTextLabel _stats = null!;
+    private RichTextLabel _gold = null!;
     private RichTextLabel _record = null!;
+    private int? _goldHeroId;
+    private int _goldShown;
     private Label _turn = null!;
 
     public event Action<int>? CardSelected;
 
     /// <summary>The dice left this turn, kept up to date by the game screen.</summary>
-    public DicePoolView Pool { get; } = new() { Position = new(8, 188), Size = new(160, 60) };
+    public DicePoolView Pool { get; } = new() { Position = new(8, 200), Size = new(160, 60) };
 
     public override void _Ready()
     {
@@ -41,13 +44,15 @@ public partial class HeroPanel : Panel
         _seat.HorizontalAlignment = HorizontalAlignment.Right;
         _hearts = Add(new HeartsView { Position = new(8, 24), Size = new(160, 9) });
         _stats = Add(UiTheme.RichLabel(new(8, 35), new(160, 28)));
-        _record = Add(UiTheme.RichLabel(new(8, 63), new(160, 14)));
+        _gold = Add(UiTheme.RichLabel(new(8, 63), new(160, 14)));
+        _gold.PivotOffset = new Vector2(10, 7);
+        _record = Add(UiTheme.RichLabel(new(8, 76), new(160, 14)));
 
-        Add(UiTheme.Heading(UiTheme.Label(new(8, 78), new(160, 12), "EQUIPMENT", color: Palette.Trim), 1));
+        Add(UiTheme.Heading(UiTheme.Label(new(8, 90), new(160, 12), "EQUIPMENT", color: Palette.Trim), 1));
         for (int i = 0; i < Slots.Length; i++)
         {
             (EquipSlot slot, string caption) = Slots[i];
-            float y = 91 + i * 16;
+            float y = 103 + i * 16;
             Add(UiTheme.Label(new(8, y + 2), new(32, 12), caption, color: Palette.TextDim));
             CardSlot cardSlot = Add(new CardSlot { Position = new(40, y), Size = new(128, 15) });
             cardSlot.Pressed += () =>
@@ -60,9 +65,9 @@ public partial class HeroPanel : Panel
             _slots[slot] = cardSlot;
         }
 
-        Add(UiTheme.Heading(UiTheme.Label(new(8, 173), new(160, 12), "THIS TURN", color: Palette.Trim), 1));
+        Add(UiTheme.Heading(UiTheme.Label(new(8, 185), new(160, 12), "THIS TURN", color: Palette.Trim), 1));
         Add(Pool);
-        _turn = Add(UiTheme.Label(new(72, 174), new(96, 12), color: Palette.TextDim));
+        _turn = Add(UiTheme.Label(new(72, 186), new(96, 12), color: Palette.TextDim));
         _turn.HorizontalAlignment = HorizontalAlignment.Right;
     }
 
@@ -73,7 +78,8 @@ public partial class HeroPanel : Panel
             _crest.Visible = false;
             Pool.Visible = false;
             _name.Text = "Run over";
-            _seat.Text = _stats.Text = _record.Text = _turn.Text = "";
+            _seat.Text = _stats.Text = _gold.Text = _record.Text = _turn.Text = "";
+            _goldHeroId = null;
             _hearts.ShowHearts(0, 0);
             foreach (CardSlot slot in _slots.Values)
             {
@@ -96,11 +102,22 @@ public partial class HeroPanel : Panel
                       $"{UiTheme.Icon("icon_wend", "Wend")} {UiTheme.Dice(stats.MoveDice, stats.Speed)}  " +
                       $"{UiTheme.Icon("icon_odhand", "Od Hand")} {UiTheme.Dice(stats.OdHandDice, stats.Tools)}\n" +
                       $"Defense {UiTheme.Dice(stats.DefenseDice, stats.Armor)}   Luck {hero.LuckRemaining}/{stats.Luck}";
+        // Gold, the treasure carried (what escaping now is worth on top), and keys, together on one line.
         string dim = Palette.Hex(Palette.TextDim);
+        int treasure = hero.TreasureValue - hero.Gold;
         string keys = hero.Keys > 0 || hero.HasBossKey
-            ? $"  {UiTheme.Icon("icon_key", "Keys")} {hero.Keys}{(hero.HasBossKey ? " " + UiTheme.Icon("icon_boss_key", "Boss Key") : "")}"
+            ? $"   {UiTheme.Icon("icon_key", "Keys")} {hero.Keys}{(hero.HasBossKey ? " " + UiTheme.Icon("icon_boss_key", "Boss Key") : "")}"
             : "";
-        _record.Text = $"[color={dim}]Kills {hero.Kills}  {hero.TreasureValue}g  XP {hero.Xp}[/color]{keys}";
+        _gold.Text = $"{UiTheme.Icon("icon_gold", "Gold")} [color={Palette.Hex(Palette.Loot)}]{hero.Gold}[/color]" +
+                     (treasure > 0 ? $"  [color={dim}]+{treasure} in treasure[/color]" : "") + keys;
+        _record.Text = $"[color={dim}]Kills {hero.Kills}   XP {hero.Xp}[/color]";
+        if (_goldHeroId == hero.Id && hero.Gold != _goldShown)
+        {
+            PopGold(hero.Gold > _goldShown ? Palette.Heal : Palette.Danger);
+        }
+
+        _goldHeroId = hero.Id;
+        _goldShown = hero.Gold;
 
         foreach ((EquipSlot slot, CardSlot view) in _slots)
         {
@@ -120,6 +137,16 @@ public partial class HeroPanel : Panel
             };
     }
 
+
+    /// <summary>The gold line swells and flashes: green when gold comes in, red when it's lost.</summary>
+    private void PopGold(Color flash)
+    {
+        Tween tween = _gold.CreateTween().SetParallel();
+        _gold.Scale = new Vector2(1.3f, 1.3f);
+        _gold.Modulate = flash.Lightened(0.3f);
+        tween.TweenProperty(_gold, "scale", Vector2.One, 0.3).SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
+        tween.TweenProperty(_gold, "modulate", Colors.White, 0.5);
+    }
 
     private T Add<T>(T node) where T : Node
     {

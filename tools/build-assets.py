@@ -910,6 +910,20 @@ KEY_ROWS = [
     "............",
 ]
 ICONS["icon_key"] = sprite(KEY_ROWS, {"o": "#5a4424", "y": "#f0c94a"})
+ICONS["icon_gold"] = sprite([
+    "............",
+    "....oooo....",
+    "...oyyyyo...",
+    "..oyywyyyo..",
+    "..oywyyyyo..",
+    "..oyyyyyyo..",
+    "..oyyyyydo..",
+    "..oyyyyddo..",
+    "...oyyddo...",
+    "....oooo....",
+    "............",
+    "............",
+], {"o": "#5a4424", "y": "#f0c94a", "w": "#fff4c0", "d": "#c8962a"})
 ICONS["icon_boss_key"] = sprite(KEY_ROWS, {"o": "#e2c47a", "y": "#d8434a"})
 
 
