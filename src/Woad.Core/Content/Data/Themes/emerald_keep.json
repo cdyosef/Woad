@@ -28,6 +28,7 @@
     { "card": "coin_pouch", "copies": 6 },
     { "card": "frost_wand", "minFloor": 2 },
     { "card": "knights_sword", "minFloor": 2 },
+    { "card": "longsword", "minFloor": 2 },
     { "card": "short_bow", "minFloor": 2 },
     { "card": "tower_shield", "minFloor": 2 },
     { "card": "chain_mail", "minFloor": 2 },

@@ -203,11 +203,7 @@ public sealed partial class GameSession
         hero.Status = HeroStatus.Dead;
         hero.FireDice = 0;
         hero.Prone = false;
-        List<CardInstance> dropped = hero.AllCards.Where(card => card.BroughtInByHeroId != hero.Id).ToList();
-        foreach (CardInstance card in dropped)
-        {
-            hero.Remove(card);
-        }
+        List<CardInstance> dropped = TakeFound(hero);
 
         GridPosition spot = SafeTile(room, hero.Position);
         room.AddLoot(spot, dropped);

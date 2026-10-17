@@ -98,14 +98,15 @@ public class DungeonSecretsTests
     }
 
     [Fact]
-    public void LockpicksAddTheirValueOnceATurn()
+    public void LockpicksAddOneAndADieOnceATurn()
     {
-        GameSession session = DoorRun(PassageKind.Locked, difficulty: 5, dice: new ScriptedDice(3), cards: ["picks"]);
+        // The Od Hand die's 3, the pick's die's 2 and its +1: 6.
+        GameSession session = DoorRun(PassageKind.Locked, difficulty: 5, dice: new ScriptedDice(3, 2), cards: ["picks"]);
         Hero hero = session.HeroInSeat();
 
         var rolled = session.Do(new PickLock(hero.Id, hero.Position)).SingleOf<OdHandRolled>();
 
-        Assert.Equal((2, 5), (rolled.Bonus, rolled.Total));
+        Assert.Equal((1, 6, 1), (rolled.Bonus, rolled.Total, rolled.ToolDice));
         Assert.Equal(0, session.ToolsBonusLeft);
     }
 
@@ -284,7 +285,7 @@ public class DungeonSecretsTests
 
         Assert.Equal(new KeyUsed(hero.Id, 0), events[0]);
         Assert.Equal(2, events.SingleOf<ChestOpened>().CardIds.Count);
-        Assert.Equal(2, hero.Backpack.Count);
+        Assert.Equal(2, session.RoomById().LootAt(new GridPosition(4, 3)).Sum(card => card.Count));
     }
 
     [Fact]

@@ -50,7 +50,17 @@ public sealed record HeroEnteredRoom(int HeroId, string FromRoomId, string RoomI
 /// <paramref name="PowerDice"/> faces of the roll are Power Dice (banked ones spent, or a monster's sixes).
 /// A <paramref name="Shove"/> pushes its target instead of hurting it.
 /// </summary>
-public sealed record AttackRolled(int AttackerId, DiceRoll Roll, int Bonus, int Total, IReadOnlyList<int> TargetIds, int PowerDice = 0, bool Shove = false) : GameEvent;
+public sealed record AttackRolled(int AttackerId, DiceRoll Roll, int Bonus, int Total, IReadOnlyList<int> TargetIds, int PowerDice = 0, bool Shove = false) : GameEvent
+{
+    /// <summary>Of the faces, after the Rumble dice: the weapon's own dice (the Longsword's d6). Power Dice come last.</summary>
+    public int WeaponDice { get; init; }
+}
+
+/// <summary>A tool's or weapon's die came up 6: that many more dice rolled straight into the roll (as Power Dice).</summary>
+public sealed record CritRolled(int HeroId, int Dice) : GameEvent;
+
+/// <summary>A lock-picking roll failed with a 1 showing: one of the hero's lockpicks snapped (<paramref name="Left"/> remain).</summary>
+public sealed record LockpickSnapped(int HeroId, int CardId, int Left) : GameEvent;
 
 /// <summary>
 /// A target answered an attack: its defense dice plus its armor make <paramref name="Total"/>. The
@@ -116,8 +126,8 @@ public sealed record HeroDied(int HeroId, Tombstone Tombstone, IReadOnlyList<int
 
 public sealed record CardUsed(int HeroId, int CardId, GridPosition? Target) : GameEvent;
 
-/// <summary>A single-use card was used up and removed.</summary>
-public sealed record CardConsumed(int HeroId, int CardId) : GameEvent;
+/// <summary>A single-use card was used up: removed, or one taken off its stack (<paramref name="Left"/> remain).</summary>
+public sealed record CardConsumed(int HeroId, int CardId, int Left = 0) : GameEvent;
 
 public sealed record CardEquipped(int HeroId, int CardId) : GameEvent;
 
@@ -125,7 +135,11 @@ public sealed record CardBelted(int HeroId, int CardId) : GameEvent;
 
 public sealed record CardStowed(int HeroId, int CardId) : GameEvent;
 
-public sealed record CardDropped(int HeroId, int CardId, GridPosition Position) : GameEvent;
+public sealed record CardDropped(int HeroId, int CardId, GridPosition Position) : GameEvent
+{
+    /// <summary>How many were put down (part of a stack, or all of it).</summary>
+    public int Count { get; init; } = 1;
+}
 
 /// <summary>
 /// A chest gave cards (two from a chest that was locked); those that didn't fit in the backpack went
@@ -134,7 +148,11 @@ public sealed record CardDropped(int HeroId, int CardId, GridPosition Position) 
 public sealed record ChestOpened(int HeroId, GridPosition Chest, IReadOnlyList<int> CardIds, bool AddedToBackpack) : GameEvent;
 
 /// <summary>An Od Hand roll for a check, against <paramref name="Difficulty"/> (0 for a steal, a contest).</summary>
-public sealed record OdHandRolled(int HeroId, OdHandCheckKind Kind, DiceRoll Roll, int Bonus, int Total, int Difficulty, int PowerDice = 0) : GameEvent;
+public sealed record OdHandRolled(int HeroId, OdHandCheckKind Kind, DiceRoll Roll, int Bonus, int Total, int Difficulty, int PowerDice = 0) : GameEvent
+{
+    /// <summary>Of the faces, after the Od Hand dice: the tools' own dice (a lockpick's d6). Power Dice come last.</summary>
+    public int ToolDice { get; init; }
+}
 
 /// <summary>An Od Hand check fell short (or a steal was out-rolled); nothing happens.</summary>
 public sealed record CheckFailed(int HeroId, OdHandCheckKind Kind) : GameEvent;
@@ -185,7 +203,11 @@ public sealed record WallBroken(string RoomId, GridPosition Position, Direction?
 /// <summary>A steal worked: a card (<paramref name="CardId"/>) or a key changed hands.</summary>
 public sealed record Stole(int ThiefId, int VictimId, int? CardId, bool Key) : GameEvent;
 
-public sealed record LootPickedUp(int HeroId, IReadOnlyList<int> CardIds) : GameEvent;
+public sealed record LootPickedUp(int HeroId, IReadOnlyList<int> CardIds) : GameEvent
+{
+    /// <summary>For a single card that joined a stack the hero already held: that stack's card.</summary>
+    public int? HolderId { get; init; }
+}
 
 public sealed record EnemyPhaseStarted(int Round) : GameEvent;
 
@@ -227,6 +249,17 @@ public sealed record Shoved(int HeroId, int TargetId, GridPosition From, GridPos
 
 /// <summary>A shove turned a shelled monster onto its back: it's prone, and its shell gives no armor until it gets up.</summary>
 public sealed record Flipped(int MonsterId) : GameEvent;
+
+/// <summary>A card (or <paramref name="Count"/> of a stack) passed from one ally to another.</summary>
+public sealed record CardTraded(int FromHeroId, int ToHeroId, int CardId, int Count) : GameEvent;
+
+public sealed record GoldTraded(int FromHeroId, int ToHeroId, int Amount) : GameEvent;
+
+/// <summary>A key (or the Boss Key) passed from one ally to another.</summary>
+public sealed record KeyTraded(int FromHeroId, int ToHeroId, bool BossKey) : GameEvent;
+
+/// <summary>A companion's owner equipped, belted or stowed one of its cards.</summary>
+public sealed record CompanionOutfitted(int OwnerId, int CompanionId, int CardId, Commands.OutfitAction Action) : GameEvent;
 
 /// <summary>A monster's tongue or hook dragged a hero it hit to its side.</summary>
 public sealed record Pulled(int MonsterId, int HeroId, GridPosition From, GridPosition To) : GameEvent;

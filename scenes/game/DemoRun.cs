@@ -187,6 +187,30 @@ public static class DemoRun
         StartRoomId = "yard",
     };
 
+    /// <summary>For --loottest: Aria with a stack of lockpicks, an emerald and a bomb, beside a chest.</summary>
+    public static RunSetup Treasury(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = [DebugHeroes[0] with { CardIds = ["lockpicks", "lockpicks", "lockpicks", "emerald", "bomb"] }],
+        Rooms = [new RoomSetup("vault", RoomTemplate.Parse(".........\n.........\n.........\n....C....\n....1....\n.........\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
+        StartRoomId = "vault",
+    };
+
+    /// <summary>For --tradetest: Aria with two potions and her companion Pip beside her, a Knight's Sword in its pack.</summary>
+    public static RunSetup Camp(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes =
+        [
+            DebugHeroes[0] with { CardIds = ["health_potion", "health_potion", "wooden_sword"] },
+            new HeroSetup("Pip", GameRules.HeroBaseStats, ["wooden_sword", "knights_sword"], OwnerSeat: 0),
+        ],
+        Rooms = [new RoomSetup("camp", RoomTemplate.Parse(".........\n.........\n.........\n.........\n....1....\n.....2...\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
+        StartRoomId = "camp",
+    };
+
     /// <summary>For --clicktest: a quick Aria (3 Wend dice) across the yard from a slime.</summary>
     public static RunSetup Stalk(ulong seed) => new()
     {

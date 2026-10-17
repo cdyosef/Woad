@@ -61,10 +61,14 @@ public partial class BoardView : Control
     /// <summary>Which theme's tile art to draw; without art the board falls back to flat shapes.</summary>
     public string ThemeId { get; set; } = "";
 
+    private LootLayer _loot = null!;
+
     public override void _Ready()
     {
         Size = new Vector2(Pixels, Pixels);
         MouseFilter = MouseFilterEnum.Stop;
+        _loot = new LootLayer { Board = this };
+        AddChild(_loot);
     }
 
     /// <summary>Keeps <paramref name="target"/> (a token on the board) in view, ending any pan. <paramref name="snap"/> jumps there at once.</summary>
@@ -358,10 +362,7 @@ public partial class BoardView : Control
             DrawBomb(bomb);
         }
 
-        foreach (GridPosition tile in _room.LootPositions)
-        {
-            DrawLoot(tile, _room.LootAt(tile).Count);
-        }
+        _loot.QueueRedraw();
 
         foreach ((GridPosition tile, int amount) in _room.Gold)
         {
@@ -727,14 +728,59 @@ public partial class BoardView : Control
         DrawString(ThemeDB.FallbackFont, origin + new Vector2(11, 9), amount.ToString(), fontSize: 8, modulate: Palette.Loot);
     }
 
-    private void DrawLoot(GridPosition tile, int count)
+    /// <summary>
+    /// Loot on the floor, drawn above the figures so loot under someone still shows: one thing is a gold
+    /// gem; two or more lie in a bulging sack with the count. An opened chest with things left in it
+    /// shows a little gem and the count at its corner.
+    /// </summary>
+    private static void DrawLoot(CanvasItem canvas, GridPosition tile, int count, bool inChest)
     {
-        Vector2 origin = TileOrigin(tile) + new Vector2(21, 19);
-        DrawColoredPolygon([origin + new Vector2(4, 0), origin + new Vector2(8, 5), origin + new Vector2(4, 10), origin + new Vector2(0, 5)], Palette.Loot);
-        if (count > 1)
+        if (inChest || count < 2)
         {
-            DrawString(ThemeDB.FallbackFont, origin + new Vector2(-6, 9), count.ToString(), fontSize: 8, modulate: Palette.Loot);
+            Vector2 origin = TileOrigin(tile) + (inChest ? new Vector2(22, 2) : new Vector2(22, 20));
+            canvas.DrawColoredPolygon([origin + new Vector2(4, 0), origin + new Vector2(8, 5), origin + new Vector2(4, 10), origin + new Vector2(0, 5)], Palette.Loot);
+            canvas.DrawPolyline([origin + new Vector2(4, 0), origin + new Vector2(8, 5), origin + new Vector2(4, 10), origin + new Vector2(0, 5), origin + new Vector2(4, 0)], Palette.Ink, 1);
+            if (count > 1)
+            {
+                canvas.DrawString(ThemeDB.FallbackFont, origin + new Vector2(-6, 9), count.ToString(), fontSize: 8, modulate: Palette.Loot);
+            }
+
+            return;
         }
+
+        // A loot bag: a round brown sack tied at the neck, gold peeking out.
+        Vector2 bag = TileOrigin(tile) + new Vector2(25, 24);
+        Color sack = new("9a6a3a"), dark = new("3a2410");
+        canvas.DrawCircle(bag, 6, dark);
+        canvas.DrawCircle(bag, 5, sack);
+        canvas.DrawColoredPolygon([bag + new Vector2(-3, -5), bag + new Vector2(3, -5), bag + new Vector2(2, -8), bag + new Vector2(-2, -8)], sack);
+        canvas.DrawLine(bag + new Vector2(-3, -5), bag + new Vector2(3, -5), dark, 1.5f);
+        canvas.DrawCircle(bag + new Vector2(0, -8.5f), 1.6f, Palette.Loot);
+        canvas.DrawString(ThemeDB.FallbackFont, bag + new Vector2(-2.5f, 3), count.ToString(), fontSize: 7, modulate: Palette.Ink);
+    }
+
+    /// <summary>Draws every loot mark onto the layer above the figures.</summary>
+    private void DrawLootMarks(CanvasItem canvas)
+    {
+        if (_room is null)
+        {
+            return;
+        }
+
+        foreach (GridPosition tile in _room.LootPositions)
+        {
+            DrawLoot(canvas, tile, _room.LootAt(tile).Sum(card => card.Count), inChest: _room.Layout[tile] == TileKind.Chest);
+        }
+    }
+
+    /// <summary>The layer above the figures that loot marks are drawn on.</summary>
+    private sealed partial class LootLayer : Node2D
+    {
+        public BoardView Board { get; init; } = null!;
+
+        public override void _Ready() => ZIndex = 4;
+
+        public override void _Draw() => Board.DrawLootMarks(this);
     }
 
     private void DrawOverlay(HashSet<GridPosition> tiles, Color color)

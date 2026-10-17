@@ -286,11 +286,40 @@ public sealed class Room
             _loot[position] = pile;
         }
 
-        pile.AddRange(cards);
+        // Copies of a stackable card gather into one stack in the pile.
+        foreach (CardInstance card in cards)
+        {
+            if (card.Definition.IsStackable && pile.FirstOrDefault(other => other.Definition == card.Definition && other != card) is { } stack)
+            {
+                stack.Absorb(card);
+            }
+            else
+            {
+                pile.Add(card);
+            }
+        }
+
         if (pile.Count == 0)
         {
             _loot.Remove(position);
         }
+    }
+
+    /// <summary>Takes one card out of the pile on a tile, or null if it isn't there.</summary>
+    internal CardInstance? TakeCard(GridPosition position, int cardId)
+    {
+        if (!_loot.TryGetValue(position, out List<CardInstance>? pile) || pile.FirstOrDefault(card => card.Id == cardId) is not { } card)
+        {
+            return null;
+        }
+
+        pile.Remove(card);
+        if (pile.Count == 0)
+        {
+            _loot.Remove(position);
+        }
+
+        return card;
     }
 
     /// <summary>Takes up to <paramref name="count"/> cards from the top of the pile on a tile.</summary>

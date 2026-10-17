@@ -29,7 +29,7 @@ public partial class DicePoolView : Control
     [
         new("icon_rumble", "Rumble: your attack dice this turn, plus your weapon's value on one attack. Click dice to hold some back."),
         new("icon_wend", "Wend: your move dice this turn, plus your flat Wend bonus on one move. Click dice to hold some back."),
-        new("icon_odhand", "Od Hand: dice for picking locks, searching, disarming traps and stealing, plus your tools' value once a turn."),
+        new("icon_odhand", "Od Hand: dice for picking locks, searching, disarming traps and stealing. Your tools (lockpicks) add their value and dice to one lock-picking roll a turn."),
         new("icon_power", "Power Dice, earned by rolling a 6. Click to add banked ones to your next roll.") { IsPower = true },
     ];
 
@@ -40,10 +40,12 @@ public partial class DicePoolView : Control
 
     /// <param name="bonus">The weapon, Speed or tools still available this turn (0 when used or none).</param>
     /// <param name="note">Text drawn after the tokens, such as the steps left in a move.</param>
-    public void ShowPool(DicePool pool, int dice, int selected, int bonus, bool bonusSelected, string note = "")
+    /// <param name="bonusDice">Dice the weapon or tools add along with their value (the Longsword's or a lockpick's d6).</param>
+    public void ShowPool(DicePool pool, int dice, int selected, int bonus, bool bonusSelected, string note = "", int bonusDice = 0)
     {
         Row row = _rows[(int)pool];
         row.Dice = dice;
+        row.BonusDice = bonus != 0 ? bonusDice : 0;
         row.Selected = selected;
         row.Bonus = bonus;
         row.BonusSelected = bonusSelected;
@@ -92,7 +94,7 @@ public partial class DicePoolView : Control
                 bool on = _enabled && row.BonusSelected;
                 DrawRect(rect, on ? Palette.PanelPressed : Palette.PanelDark);
                 DrawRect(rect, on ? Palette.TrimBright : Palette.TrimDim, filled: false, width: 1);
-                string text = row.Bonus > 0 ? $"+{row.Bonus}" : row.Bonus.ToString();
+                string text = (row.Bonus > 0 ? $"+{row.Bonus}" : row.Bonus.ToString()) + (row.BonusDice > 0 ? $"+{row.BonusDice}d6" : "");
                 DrawString(font, rect.Position + new Vector2(3, 9), text, fontSize: UiTheme.FontSize, modulate: on ? Palette.TrimBright : Palette.TextDim);
                 x = rect.End.X + Gap;
             }
@@ -160,7 +162,7 @@ public partial class DicePoolView : Control
         new(new Vector2(LabelWidth + index * (Token + Gap), row * RowHeight), new Vector2(Token, Token));
 
     private static Rect2 BonusRect(int row, Row data) =>
-        new(new Vector2(LabelWidth + data.Dice * (Token + Gap), row * RowHeight), new Vector2(18, Token));
+        new(new Vector2(LabelWidth + data.Dice * (Token + Gap), row * RowHeight), new Vector2(data.BonusDice > 0 ? 34 : 18, Token));
 
     private sealed class Row(string icon, string help)
     {
@@ -175,6 +177,8 @@ public partial class DicePoolView : Control
         public int Selected { get; set; }
 
         public int Bonus { get; set; }
+
+        public int BonusDice { get; set; }
 
         public bool BonusSelected { get; set; }
 

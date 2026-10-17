@@ -53,17 +53,18 @@ public sealed partial class GameSession
             return powerError;
         }
 
-        (int weaponBonus, bool stunOnSix) = WeaponFor(hero, room, monster.Position);
+        (int weaponBonus, bool stunOnSix, int weaponDice) = WeaponFor(hero, room, monster.Position);
         if (monster.Definition.Swimmer)
         {
             weaponBonus += hero.MainWeapon?.Definition.SwimmerBonus ?? 0;
         }
 
-        int bonus = command.UseWeapon && !Turn.WeaponUsed ? weaponBonus : 0;
+        bool armed = command.UseWeapon && !Turn.WeaponUsed && (weaponBonus > 0 || weaponDice > 0);
+        int bonus = armed ? weaponBonus : 0;
         Turn.AttackDiceUsed += dice;
-        Turn.WeaponUsed |= bonus > 0;
+        Turn.WeaponUsed |= armed;
         SpendBankedPowerDice(hero, command.PowerDice, events);
-        RollHeroAttack(hero, dice + ProneBonus(monster, hero.Position), bonus, [monster.Id], DamageSource.Weapon, events, command.PowerDice, stunOnSix: stunOnSix);
+        RollHeroAttack(hero, dice + ProneBonus(monster, hero.Position), bonus, [monster.Id], DamageSource.Weapon, events, command.PowerDice, stunOnSix: stunOnSix, weaponDice: armed ? weaponDice : 0);
         return null;
     }
 
@@ -108,12 +109,13 @@ public sealed partial class GameSession
             return powerError;
         }
 
-        (int weaponBonus, bool stunOnSix) = WeaponFor(hero, ActiveRoom, target.Position);
-        int bonus = command.UseWeapon && !Turn.WeaponUsed ? weaponBonus : 0;
+        (int weaponBonus, bool stunOnSix, int weaponDice) = WeaponFor(hero, ActiveRoom, target.Position);
+        bool armed = command.UseWeapon && !Turn.WeaponUsed && (weaponBonus > 0 || weaponDice > 0);
+        int bonus = armed ? weaponBonus : 0;
         Turn.AttackDiceUsed += dice;
-        Turn.WeaponUsed |= bonus > 0;
+        Turn.WeaponUsed |= armed;
         SpendBankedPowerDice(hero, command.PowerDice, events);
-        RollHeroAttack(hero, dice + ProneBonus(target, hero.Position), bonus, [target.Id], DamageSource.Weapon, events, command.PowerDice, stunOnSix: stunOnSix);
+        RollHeroAttack(hero, dice + ProneBonus(target, hero.Position), bonus, [target.Id], DamageSource.Weapon, events, command.PowerDice, stunOnSix: stunOnSix, weaponDice: armed ? weaponDice : 0);
         return null;
     }
 
@@ -184,13 +186,21 @@ public sealed partial class GameSession
     /// <param name="powerDice">Banked Power Dice rolled in with the dice (already taken from the bank).</param>
     /// <param name="fire">Fire dice: any 6 sets the targets alight (see <see cref="IgniteTargets"/>).</param>
     /// <param name="stunOnSix">A stunning weapon (the Boomerang): every 6 stuns the targets.</param>
-    private void RollHeroAttack(Hero hero, int dice, int bonus, IReadOnlyList<int> targetIds, DamageSource source, List<GameEvent> events, int powerDice = 0, bool fire = false, bool stunOnSix = false)
+    /// <param name="weaponDice">The weapon's own dice (the Longsword's d6), whose sixes roll straight in.</param>
+    private void RollHeroAttack(Hero hero, int dice, int bonus, IReadOnlyList<int> targetIds, DamageSource source, List<GameEvent> events, int powerDice = 0, bool fire = false, bool stunOnSix = false, int weaponDice = 0)
     {
-        DiceRoll roll = _dice.Roll(Math.Max(0, dice) + powerDice);
-        events.Add(new AttackRolled(hero.Id, roll, bonus, roll.Total + bonus, targetIds, powerDice, source == DamageSource.Shove));
+        dice = Math.Max(0, dice);
+        DiceRoll rolled = _dice.Roll(dice + powerDice);
+        (int[] weapon, int crits) = RollBonusDice(weaponDice);
+        var roll = new DiceRoll([.. rolled.Faces.Take(dice), .. weapon[..weaponDice], .. rolled.Faces.Skip(dice), .. weapon[weaponDice..]]);
+        events.Add(new AttackRolled(hero.Id, roll, bonus, roll.Total + bonus, targetIds, powerDice + crits, source == DamageSource.Shove) { WeaponDice = weaponDice });
+        if (crits > 0)
+        {
+            events.Add(new CritRolled(hero.Id, crits));
+        }
 
-        Turn.PendingRoll = new PendingRoll(hero.Id, roll, bonus, targetIds, source, fire: fire, stunOnSix: stunOnSix);
-        EarnPowerDice(hero, Sixes(roll.Faces), events);
+        Turn.PendingRoll = new PendingRoll(hero.Id, roll, bonus, targetIds, source, fire: fire, stunOnSix: stunOnSix) { NonPowerDice = dice + weaponDice };
+        EarnPowerDice(hero, Sixes(rolled.Faces), events);
     }
 
     /// <summary>

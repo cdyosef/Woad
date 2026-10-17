@@ -93,7 +93,7 @@ public class SetupAndTurnFlowTests
         Assert.Throws<ArgumentException>(() => TestRun.Create([room], heroes: 0));
         Assert.Throws<ArgumentException>(() => TestRun.Create([room], heroes: GameRules.MaxHeroes + 1));
         Assert.Throws<ArgumentException>(() => TestRun.Create([oneWay, noReturn]));
-        Assert.Throws<ArgumentException>(() => TestRun.Create([room], cards: Enumerable.Repeat("coin", 7).ToArray()));
+        Assert.Throws<ArgumentException>(() => TestRun.Create([room], cards: Enumerable.Repeat("potion", 9).ToArray()));
     }
 
     [Fact]

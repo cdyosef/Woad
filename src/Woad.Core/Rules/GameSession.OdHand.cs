@@ -18,7 +18,7 @@ public sealed partial class GameSession
     /// <summary>Od Hand dice the active hero hasn't used this turn.</summary>
     public int OdHandDiceLeft => State.Turn is { } turn ? Math.Max(0, ActiveHero.EffectiveStats.OdHandDice - turn.OdHandDiceUsed) : 0;
 
-    /// <summary>The tools' value the active hero can still add to an Od Hand roll this turn (0 once used).</summary>
+    /// <summary>The tools' value the active hero can still add to a lock-picking roll this turn (0 once used).</summary>
     public int ToolsBonusLeft => State.Turn is { ToolsUsed: false } ? Math.Max(0, ActiveHero.EffectiveStats.Tools) : 0;
 
     /// <summary>Why the active hero can't pick a lock on the tile (their own doorway, or an adjacent chest), or null.</summary>
@@ -52,6 +52,7 @@ public sealed partial class GameSession
             return error;
         }
 
+        ActiveHero.SearchedRoomIds.Add(ActiveRoom.Id);
         RollOdHand(command, dice, new OdHandCheck(OdHandCheckKind.Search, 0, ActiveHero.Position), events);
         return null;
     }
@@ -237,19 +238,74 @@ public sealed partial class GameSession
     private static Passage? DoorAt(Room room, GridPosition tile) =>
         room.Passages.Where(door => room.DoorTile(door.Key) == tile && !door.Value.IsHidden).Select(door => door.Value).FirstOrDefault();
 
-    /// <summary>Rolls the chosen dice (plus tools and banked Power Dice); it resolves once nothing is left to decide.</summary>
+    /// <summary>Locks: doors, chests and gates. Only these take tools.</summary>
+    private static bool IsLock(OdHandCheckKind kind) => kind is OdHandCheckKind.PickDoor or OdHandCheckKind.PickChest or OdHandCheckKind.PickGate;
+
+    /// <summary>
+    /// Rolls the chosen dice, plus on a lock the tools (their value and their dice, whose sixes roll
+    /// straight in), plus banked Power Dice; it resolves once nothing is left to decide.
+    /// </summary>
     private void RollOdHand(OdHandCommand command, int dice, OdHandCheck check, List<GameEvent> events)
     {
         Hero hero = ActiveHero;
-        int bonus = command.UseTools ? ToolsBonusLeft : 0;
+        int bonus = command.UseTools && IsLock(check.Kind) ? ToolsBonusLeft : 0;
+        int toolDice = bonus > 0 ? Math.Max(0, hero.EffectiveStats.ToolDice) : 0;
         Turn.OdHandDiceUsed += dice;
         Turn.ToolsUsed |= bonus > 0;
         SpendBankedPowerDice(hero, command.PowerDice, events);
 
-        DiceRoll roll = _dice.Roll(dice + command.PowerDice);
-        events.Add(new OdHandRolled(hero.Id, check.Kind, roll, bonus, roll.Total + bonus, check.Difficulty, command.PowerDice));
-        Turn.PendingRoll = new PendingRoll(hero.Id, roll, bonus, [], DamageSource.Weapon, check);
-        EarnPowerDice(hero, Sixes(roll.Faces), events);
+        DiceRoll rolled = _dice.Roll(dice + command.PowerDice);
+        (int[] tool, int crits) = RollBonusDice(toolDice);
+        var roll = new DiceRoll([.. rolled.Faces.Take(dice), .. tool[..toolDice], .. rolled.Faces.Skip(dice), .. tool[toolDice..]]);
+        events.Add(new OdHandRolled(hero.Id, check.Kind, roll, bonus, roll.Total + bonus, check.Difficulty, command.PowerDice + crits) { ToolDice = toolDice });
+        if (crits > 0)
+        {
+            events.Add(new CritRolled(hero.Id, crits));
+        }
+
+        Turn.PendingRoll = new PendingRoll(hero.Id, roll, bonus, [], DamageSource.Weapon, check) { NonPowerDice = dice + toolDice, UsedTools = bonus > 0 };
+        EarnPowerDice(hero, Sixes(rolled.Faces), events);
+    }
+
+    /// <summary>A tool's or weapon's own dice: every 6 rolls one more die straight in (which can come up 6 again).</summary>
+    private (int[] Faces, int Crits) RollBonusDice(int dice)
+    {
+        var faces = new List<int>(_dice.Roll(dice).Faces);
+        int crits = 0;
+        for (int pending = faces.Count(face => face == GameRules.PowerDieFace); pending > 0; pending--)
+        {
+            int face = RollOneDie();
+            faces.Add(face);
+            crits++;
+            if (face == GameRules.PowerDieFace)
+            {
+                pending++;
+            }
+        }
+
+        return ([.. faces], crits);
+    }
+
+    /// <summary>A failed lock-picking roll with a 1 among its non-Power dice snaps one of the lockpicks used.</summary>
+    private void SnapPick(Hero hero, PendingRoll roll, bool success, List<GameEvent> events)
+    {
+        if (success || !roll.UsedTools || !roll.Roll.Faces.Take(roll.NonPowerDice).Contains(1)
+            || hero.EquippedCards.FirstOrDefault(card => card.Definition.Modifiers.Tools > 0) is not { } picks)
+        {
+            return;
+        }
+
+        if (picks.Count > 1)
+        {
+            picks.Count--;
+            picks.BroughtInCount = Math.Min(picks.BroughtInCount, picks.Count);
+        }
+        else
+        {
+            hero.Remove(picks);
+        }
+
+        events.Add(new LockpickSnapped(hero.Id, picks.Id, hero.FindCard(picks.Id) is null ? 0 : picks.Count));
     }
 
     /// <summary>An attack or an Od Hand check, once its dice are final.</summary>
@@ -275,6 +331,7 @@ public sealed partial class GameSession
         Room room = State.RoomOf(hero);
         int total = roll.Total;
         bool success = total >= check.Difficulty;
+        SnapPick(hero, roll, success, events);
         switch (check.Kind)
         {
             case OdHandCheckKind.PickDoor when success && DoorAt(room, check.Target) is { } passage:
@@ -427,9 +484,8 @@ public sealed partial class GameSession
         Hero victim = State.GetHero(targetId);
         Stats stats = victim.EffectiveStats;
         DiceRoll hold = _dice.Roll(Math.Max(0, stats.OdHandDice));
-        int tools = Math.Max(0, stats.Tools);
-        events.Add(new DefenseRolled(victim.Id, hold, tools, hold.Total + tools));
-        if (total <= hold.Total + tools || (victim.Keys == 0 && victim.Backpack.Count == 0))
+        events.Add(new DefenseRolled(victim.Id, hold, 0, hold.Total));
+        if (total <= hold.Total || (victim.Keys == 0 && victim.Backpack.Count == 0))
         {
             events.Add(new CheckFailed(thief.Id, OdHandCheckKind.Steal));
             return;
@@ -445,8 +501,7 @@ public sealed partial class GameSession
             return;
         }
 
-        CardInstance taken = victim.Backpack[pick - victim.Keys];
-        victim.Remove(taken);
+        CardInstance taken = TakeFromHero(victim, victim.Backpack[pick - victim.Keys], 1);
         GiveCards(thief, room, [taken], events);
         events.Add(new Stole(thief.Id, victim.Id, taken.Id, Key: false));
     }

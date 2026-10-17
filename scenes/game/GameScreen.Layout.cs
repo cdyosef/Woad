@@ -146,6 +146,8 @@ public partial class GameScreen
 
         RefreshOrders();
         UpdateHighlights();
+        RefreshRummage();
+        RefreshTrade();
     }
 
     /// <summary>Rumble (the button or the space bar): show the attack range and wait for a target, or put it away.</summary>
@@ -303,9 +305,9 @@ public partial class GameScreen
             return;
         }
 
-        pool.ShowPool(DicePool.Rumble, _session.AttackDiceLeft, SelectedAttackDice, weapon, weapon > 0 && !_weaponHeld);
+        pool.ShowPool(DicePool.Rumble, _session.AttackDiceLeft, SelectedAttackDice, weapon, weapon > 0 && !_weaponHeld, bonusDice: _session.WeaponDiceLeft);
         pool.ShowPool(DicePool.Wend, _session.MoveDiceLeft, SelectedMoveDice, speed, speed < 0 || (speed > 0 && !_speedHeld), steps);
-        pool.ShowPool(DicePool.OdHand, _session.OdHandDiceLeft, SelectedOdHandDice, tools, tools > 0 && !_toolsHeld);
+        pool.ShowPool(DicePool.OdHand, _session.OdHandDiceLeft, SelectedOdHandDice, tools, tools > 0 && !_toolsHeld, bonusDice: _session.ToolDiceLeft);
         pool.ShowPool(DicePool.Power, ActiveHero?.Power.Banked ?? 0, SelectedPowerDice, 0, false);
     }
 
@@ -620,6 +622,8 @@ public partial class GameScreen
         right.AddChild(_endTurn);
         BuildOrders(right);
 
+        BuildLootWindows();
+        BuildTradeWindow();
         _banner = new TurnBanner { Position = BoardOrigin, Size = new Vector2(BoardView.Pixels, BoardView.Pixels) };
         AddChild(_banner);
     }

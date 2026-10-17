@@ -32,8 +32,17 @@ public sealed record Stats
     /// <summary>Od Hand: d6 each turn for picking locks, searching, disarming traps and stealing.</summary>
     public int OdHandDice { get; init; }
 
-    /// <summary>A tool's fixed value (lockpicks), added to one Od Hand roll per turn, like a weapon.</summary>
+    /// <summary>
+    /// A tool's fixed value (lockpicks), added to one lock-picking roll per turn, like a weapon. Only
+    /// locks (doors, chests, gates) take tools; searching, disarming and stealing don't.
+    /// </summary>
     public int Tools { get; init; }
+
+    /// <summary>Dice a tool adds to the roll it's used on (lockpicks: 1d6). A 6 on one rolls another die straight in.</summary>
+    public int ToolDice { get; init; }
+
+    /// <summary>Dice a weapon adds to the attack it's used on (the Longsword: 1d6). A 6 on one rolls another die straight in.</summary>
+    public int WeaponDice { get; init; }
 
     /// <summary>Rerolls of a single die, per floor.</summary>
     public int Luck { get; init; }
@@ -49,6 +58,8 @@ public sealed record Stats
         Armor = left.Armor + right.Armor,
         OdHandDice = left.OdHandDice + right.OdHandDice,
         Tools = left.Tools + right.Tools,
+        ToolDice = left.ToolDice + right.ToolDice,
+        WeaponDice = left.WeaponDice + right.WeaponDice,
         Luck = left.Luck + right.Luck,
     };
 }

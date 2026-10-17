@@ -54,7 +54,7 @@ Stats are expressed directly as dice and points. Gear cards add to them.
 | Wend bonus | Tiles added to one move per turn (shown as the "+2" in "Wend 1d6+2"; the editor calls it Wend) | 2 | 2 per point |
 | Rumble (fist) | d6 for attacking each turn; each attack uses one or more | 1 | 3 per die |
 | Od Hand (hamsa) | d6 each turn for picking locks, searching, disarming traps, stealing and rousing allies Keeling Over | 1 | 3 per die |
-| Tools | Fixed value added to one Od Hand roll per turn | 0 | Gear only (Lockpicks) |
+| Tools | Fixed value and dice added to one lock-picking roll per turn | 0 | Gear only (Lockpicks: +1 and 1d6) |
 | Defense | d6 rolled, all of them, whenever you're attacked | 1 | 3 per die |
 | Weapon | Fixed value added to one attack per turn | 0 | Gear only (weapons) |
 | Armor | Fixed value added to every defense | 0 | Gear only (shields, armor) |
@@ -105,7 +105,7 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 
 | Type | Usage | Examples (placeholder names) |
 | --- | --- | --- |
-| Weapon | Persistent | Wooden Sword (weapon 1), Knight's Sword (weapon 2), Short Bow (weapon 1, ranged 4) |
+| Weapon | Persistent | Wooden Sword (weapon 1), Knight's Sword (weapon 2), Longsword (weapon 1 + 1d6, versatile +1), Short Bow (weapon 1, ranged 4) |
 | Shield | Persistent | Buckler (armor 2), Tower Shield (armor 3, −1 Wend) |
 | Armor | Persistent | Leather Cap (+1 Heart), Chain Mail (armor 1) |
 | Boots | Persistent | Dash Boots (+1 Move die) |
@@ -123,14 +123,32 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 - **Using a belt item** doesn't take your action (once per turn). Using an item from the backpack takes your action.
 - **Only single-use cards** (potions, bombs, scrolls) go on the belt. Reusable cards with an effect (boomerang,
   wand) must be equipped to use.
-- **Dropping a card** onto your tile is free.
-- **Looting** (picking up what's on your tile, or opening a chest) is free once per turn; after that it
-  takes your action. Picking up fills the backpack as far as it can, and takes every key there too.
-- **Chest loot** goes to the backpack, or onto your tile if the backpack is full.
+- **Stacks:** Lockpicks, Bombs, Health Potions, Flame Scrolls and treasure (but not coins) stack: copies
+  gather into one card with a count ("Lockpicks x3"), filling one slot, in the belt, the backpack or (for
+  lockpicks) the off hand. Picking up more joins the stack, even with the backpack full; using one takes
+  one off; equipping or moving a stack moves all of it. A treasure stack is worth every copy in it.
+- **Dropping a card** onto your tile is free; dropping part of a stack asks how many.
+- **Loot piles and bags:** loot lies on a tile; two or more things make a loot bag. A pile (or an opened
+  chest) can be reached from its tile or any tile touching it, diagonals too, so an ally standing on it
+  doesn't block you. Clicking a single thing takes it; clicking a bag or a chest opens it to **rummage**:
+  take one card, one off a stack, the gold and keys, or everything (**Take all**), and **Put in** a card
+  of your own (part of a stack asks how many). Loot shows above whoever stands on it.
+- **Looting** (the first take from a pile, or opening a chest) is free once per turn; after that it takes
+  your action. More from the same pile (or the chest just opened) that turn costs nothing. Putting cards
+  in is free.
+- **Chests** keep what's inside: opening one shows its contents to take or leave (coins go straight to
+  your purse), and what you leave stays in the open chest for anyone to rummage through later.
 - **Targeted cards** need line of sight and must have a target: a bomb lands on any open tile (or water,
   which puts it out), a Flame Scroll needs a monster (or a bomb, which it sets off), and potions only heal
   yourself and can't be used at full hearts.
-- **Lockpicks** (tool, off hand): Tools 2. In the loot deck.
+- **Lockpicks** (tool, off hand, stack): +1 and 1d6 on one lock-picking roll a turn (doors, chests,
+  gates, and any locks added later; not searching, disarming or stealing). A 6 on the pick's die rolls
+  another die straight in. A failed lock-picking roll with a 1 showing (not on a Power Die) snaps one
+  pick off the stack.
+- **Longsword** (main hand, from floor 2): Weapon 1 and 1d6 on one attack a turn; a 6 on its die rolls
+  another straight in. Versatile: +1 more with nothing in your off hand (held two-handed).
+- **Tool and weapon dice:** a 6 on one doesn't wait to be banked: a Power Die rolls straight into that
+  roll, with a "6!" callout.
 - **Freezing** (the Frost Wand): a frozen monster skips its next turn and can't be frozen again during the
   following round. Bosses can't be frozen.
 - **Stun** (the Boomerang's sixes) and **Powerful Stun** (bomb blasts) stack, and wear off at the end of
@@ -517,11 +535,23 @@ them up there like any character.
   - **Fight:** goes after the monsters in the room; follows you once it's clear.
   - **Stay back:** keeps away from monsters near you, striking only when one is right next to it.
   - **Tend:** goes to allies Keeling Over in the room, even mid-fight, and rouses them; otherwise follows.
-  - Under any order, a companion rouses an ally Keeling Over right beside it, and (except when holding)
-    goes to one once the room is clear. Keeling Over itself, it rolls its own Keel Die.
-- **What companions don't do:** loot, open chests, smash pots, unlock, search or steal. They keep
-  out of doorways, the stairs, the exit, loot and the spots beside unopened chests when they have
-  nowhere to be. If their owner is dead or gone, they follow the first player still in.
+  - **Find me:** follows you wherever you are, through locked doors too (a key, or picking the lock;
+    never the Boss Door) and, when there's no way by the stairs, down a pit to the floor below.
+  - **Burgle:** picks the room's locks (doors, chests, gates; keys first) and opens its chests, leaving
+    what's inside for you to rummage through; then follows.
+  - **Loot:** gathers the room's loot (bags, chests, gold, keys, pots), then follows. Trade with it to share.
+  - **Explore:** searches each room once for secret doors, traps and stashes, then follows.
+  - Under any order but Hold, Fight and Stay back, a companion guards you: it goes after monsters
+    closing in on you. Under any order, it rouses an ally Keeling Over right beside it, and (except
+    when holding) goes to one once the room is clear. Keeling Over itself, it rolls its own Keel Die.
+    A companion that comes by the Boss Key hands it to you as soon as it's beside you.
+- **What companions don't do unless told:** loot, open chests, smash pots, unlock or search; they never
+  steal. They keep out of doorways, the stairs, the exit, loot and the spots beside unopened chests when
+  they have nowhere to be. If their owner is dead or gone, they follow the first player still in.
+- **Trading:** click an ally beside you (diagonals too), a fellow player or a companion, to trade:
+  give and take cards (part of a stack asks how many), gold, keys and the Boss Key. Your own
+  companion's cards also have **Equip**, **Belt** and **Stow**, so you can dress it. Trading is free;
+  if they're standing on loot, it can be opened from there.
 - **Monster scaling:** a companion counts as half a hero (rounded up) when sizing rooms and the boss.
 - **End of the run:** the run ends once every player has died or escaped. When a player escapes, their
   companions standing in the same room escape with them. Companions still inside (Keeling Over
@@ -588,6 +618,8 @@ them up there like any character.
   for headings, titles, banners and callouts, in the spirit of *Castlevania*. Body text is Pixelify
   Sans at its bold weight (SIL Open Font License; `assets/fonts/PixelifySans-OFL.txt`), lightly
   smoothed so it stays readable at every window size.
+- **Dice colors:** Rumble dice are red, Wend green, Od Hand yellow, Defense blue, tools' dice bronze,
+  Power Dice purple; weapon dice look like Rumble dice. Other rolls (the Keel Die, blasts, fire) are white.
 - **Dice bar:** under the board, fighting-game style. Whoever rolls is on the left with their dice,
   bonus and total; whoever answers is on the right of a slanted VS (several defenders, as in a blast,
   each get a smaller column). The winning side glows gold, and each defender is tagged HIT, MISS or

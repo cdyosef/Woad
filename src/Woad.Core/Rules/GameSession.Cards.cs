@@ -64,7 +64,14 @@ public sealed partial class GameSession
         }
 
         events.Add(new CardUsed(hero.Id, card.Id, command.Target));
-        if (card.Definition.Usage == CardUsage.SingleUse)
+        if (card.Definition.Usage == CardUsage.SingleUse && card.Count > 1)
+        {
+            // One off the stack (a found copy first).
+            card.Count--;
+            card.BroughtInCount = Math.Min(card.BroughtInCount, card.Count);
+            events.Add(new CardConsumed(hero.Id, card.Id, card.Count));
+        }
+        else if (card.Definition.Usage == CardUsage.SingleUse)
         {
             hero.Remove(card);
             events.Add(new CardConsumed(hero.Id, card.Id));
@@ -327,11 +334,16 @@ public sealed partial class GameSession
             return "You don't have that card.";
         }
 
-        hero.Remove(card);
-        hero.ClampHearts();
+        int count = command.Count ?? card.Count;
+        if (count < 1 || count > card.Count)
+        {
+            return $"Drop 1 to {card.Count}.";
+        }
+
+        CardInstance dropped = TakeFromHero(hero, card, count);
         GridPosition spot = SafeTile(ActiveRoom, hero.Position);
-        ActiveRoom.AddLoot(spot, [card]);
-        events.Add(new CardDropped(hero.Id, card.Id, spot));
+        ActiveRoom.AddLoot(spot, [dropped]);
+        events.Add(new CardDropped(hero.Id, dropped.Id, spot) { Count = dropped.Count });
         return null;
     }
 
@@ -368,28 +380,29 @@ public sealed partial class GameSession
         return CheckLoot();
     }
 
-    /// <summary>Why the active hero can't pick up what's on their tile, or null if they can.</summary>
-    public string? CheckPickUp()
+    /// <summary>Why the active hero can't take everything from a pile (their own tile by default), or null if they can.</summary>
+    public string? CheckPickUp(GridPosition? tile = null)
     {
-        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
+        GridPosition at = tile ?? ActiveHero.Position;
+        if (CheckRummage(at) is { } error)
         {
-            return "Finish the roll first.";
+            return error;
         }
 
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
-        if (!room.HasLootAt(hero.Position))
+        if (!room.HasLootAt(at))
         {
             return "There's nothing here to pick up.";
         }
 
-        bool onlyCards = room.KeysAt(hero.Position) == 0 && room.GoldAt(hero.Position) == 0 && room.BossKeyAt != hero.Position;
-        if (onlyCards && hero.Backpack.Count >= GameRules.BackpackCapacity)
+        bool onlyCards = room.KeysAt(at) == 0 && room.GoldAt(at) == 0 && room.BossKeyAt != at && room.BombAt(at) is null;
+        if (onlyCards && !room.LootAt(at).Any(card => hero.CanCarry(card.Definition)))
         {
             return "Your backpack is full.";
         }
 
-        return CheckLoot();
+        return LootingAgain(at) ? null : CheckLoot();
     }
 
     /// <summary>The first loot each turn is free; after that, looting takes the action.</summary>
@@ -443,8 +456,15 @@ public sealed partial class GameSession
         List<CardInstance> cards = Enumerable.Range(0, superior ? 2 : 1)
             .Select(_ => new CardInstance(State.NextId(), State.LootDeck.Draw(superior ? room.Floor + 1 : room.Floor), broughtInByHeroId: null))
             .ToList();
-        bool allFit = GiveCards(hero, room, cards, events);
-        events.Add(new ChestOpened(hero.Id, command.Chest, cards.Select(card => card.Id).ToList(), allFit));
+        // Coins go straight into the purse; the rest stay in the chest to take or leave.
+        foreach (CardInstance coins in cards.Where(card => card.Definition.Coins))
+        {
+            GiveGold(hero, coins.Definition.Value, events);
+        }
+
+        room.AddLoot(command.Chest, cards.Where(card => !card.Definition.Coins));
+        Turn.LootedTile = command.Chest;
+        events.Add(new ChestOpened(hero.Id, command.Chest, cards.Select(card => card.Id).ToList(), AddedToBackpack: false));
         if (bossKey)
         {
             hero.HasBossKey = true;
@@ -467,7 +487,7 @@ public sealed partial class GameSession
             {
                 GiveGold(hero, card.Definition.Value, events);
             }
-            else if (hero.Backpack.Count < GameRules.BackpackCapacity)
+            else if (hero.CanCarry(card.Definition))
             {
                 hero.AddToBackpack(card);
             }
@@ -521,7 +541,7 @@ public sealed partial class GameSession
         {
             var card = new CardInstance(State.NextId(), Content.GetCard(pots.Treasure), broughtInByHeroId: null);
             cardId = card.Id;
-            addedToBackpack = card.Definition.Coins || hero.Backpack.Count < GameRules.BackpackCapacity;
+            addedToBackpack = card.Definition.Coins || hero.CanCarry(card.Definition);
             if (card.Definition.Coins)
             {
                 coins = card.Definition.Value;
@@ -548,27 +568,34 @@ public sealed partial class GameSession
 
     private string? Handle(PickUpLoot command, List<GameEvent> events)
     {
-        if (CheckPickUp() is { } error)
+        if (CheckPickUp(command.Tile) is { } error)
         {
             return error;
         }
 
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
-        SpendLoot();
-        IReadOnlyList<CardInstance> taken = room.TakeLoot(hero.Position, GameRules.BackpackCapacity - hero.Backpack.Count);
-        foreach (CardInstance card in taken)
+        GridPosition at = command.Tile ?? hero.Position;
+        SpendLootOn(at);
+
+        // Everything that fits: stacks join what the hero holds, the rest while the backpack has room.
+        var taken = new List<int>();
+        foreach (CardInstance card in room.LootAt(at).ToList())
         {
-            hero.AddToBackpack(card);
+            if (hero.CanCarry(card.Definition))
+            {
+                hero.AddToBackpack(room.TakeCard(at, card.Id)!);
+                taken.Add(card.Id);
+            }
         }
 
         if (taken.Count > 0)
         {
-            events.Add(new LootPickedUp(hero.Id, taken.Select(card => card.Id).ToList()));
+            events.Add(new LootPickedUp(hero.Id, taken));
         }
 
         // An unlit bomb goes in the backpack as a Bomb card.
-        if (room.BombAt(hero.Position) is { Lit: false } bomb && hero.Backpack.Count < GameRules.BackpackCapacity && Content.FindCard(BombCardId) is { } bombCard)
+        if (room.BombAt(at) is { Lit: false } bomb && Content.FindCard(BombCardId) is { } bombCard && hero.CanCarry(bombCard))
         {
             room.RemoveBomb(bomb);
             var card = new CardInstance(State.NextId(), bombCard, broughtInByHeroId: null);
@@ -576,15 +603,7 @@ public sealed partial class GameSession
             events.Add(new LootPickedUp(hero.Id, [card.Id]));
         }
 
-        GiveGold(hero, room.TakeGold(hero.Position), events);
-        GiveKeys(hero, room.TakeKeys(hero.Position), events);
-        if (room.BossKeyAt == hero.Position)
-        {
-            room.BossKeyAt = null;
-            hero.HasBossKey = true;
-            events.Add(new BossKeyFound(hero.Id));
-        }
-
+        TakeValuables(hero, room, at, events);
         return null;
     }
 

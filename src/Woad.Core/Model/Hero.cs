@@ -51,6 +51,9 @@ public sealed class Hero
 
     public int Id { get; }
 
+    /// <summary>Rooms this hero has searched (a companion exploring searches each once).</summary>
+    public HashSet<string> SearchedRoomIds { get; } = [];
+
     /// <summary>The saved character playing this hero, if any.</summary>
     public Guid? CharacterId { get; }
 
@@ -190,7 +193,15 @@ public sealed class Hero
 
     /// <summary>Gold value of the treasure carried; decides the winner.</summary>
     public int TreasureValue =>
-        Gold + AllCards.Where(card => card.Definition.Type == CardType.Treasure).Sum(card => card.Definition.Value);
+        Gold + AllCards.Where(card => card.Definition.Type == CardType.Treasure).Sum(card => card.Definition.Value * card.Count);
+
+    /// <summary>The stack this hero already holds of a stackable card (anywhere), which more copies join.</summary>
+    public CardInstance? StackOf(CardDefinition definition) =>
+        definition.IsStackable ? AllCards.FirstOrDefault(card => card.Definition == definition) : null;
+
+    /// <summary>Whether the hero can take this card: it joins a stack they hold, or there's room in the backpack.</summary>
+    public bool CanCarry(CardDefinition definition) =>
+        StackOf(definition) is not null || _backpack.Count < GameRules.BackpackCapacity;
 
     public (CardInstance Card, CardLocation Location)? FindCard(int cardId)
     {
@@ -241,9 +252,28 @@ public sealed class Hero
         }
     }
 
-    internal void AddToBelt(CardInstance card) => _belt.Add(card);
+    /// <summary>Puts a card on the belt, or into the stack of it the hero already holds. Returns the card that holds it.</summary>
+    internal CardInstance AddToBelt(CardInstance card) => JoinStack(card) ?? Add(_belt, card);
 
-    internal void AddToBackpack(CardInstance card) => _backpack.Add(card);
+    /// <summary>Puts a card in the backpack, or into the stack of it the hero already holds. Returns the card that holds it.</summary>
+    internal CardInstance AddToBackpack(CardInstance card) => JoinStack(card) ?? Add(_backpack, card);
+
+    private static CardInstance Add(List<CardInstance> place, CardInstance card)
+    {
+        place.Add(card);
+        return card;
+    }
+
+    private CardInstance? JoinStack(CardInstance card)
+    {
+        if (StackOf(card.Definition) is not { } stack || stack == card)
+        {
+            return null;
+        }
+
+        stack.Absorb(card);
+        return stack;
+    }
 
     /// <summary>Removes the card from wherever it is held.</summary>
     internal void Remove(CardInstance card)
@@ -264,6 +294,11 @@ public sealed class Hero
     internal bool TryPlaceStartingCard(CardInstance card)
     {
         CardDefinition definition = card.Definition;
+        if (JoinStack(card) is not null)
+        {
+            return true;
+        }
+
         if (definition.Slot is not null && CardsDisplacedBy(definition).Count == 0)
         {
             Equip(card);

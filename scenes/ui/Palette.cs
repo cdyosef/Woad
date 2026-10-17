@@ -27,6 +27,13 @@ public static class Palette
     /// <summary>Power Dice, earned by rolling a 6.</summary>
     public static readonly Color Power = new("b58cf0");
 
+    /// <summary>Dice by kind: Rumble red, Wend green, Od Hand yellow, Defense blue, tools bronze.</summary>
+    public static readonly Color DieRumble = new("f08a80");
+    public static readonly Color DieWend = new("8fdc8f");
+    public static readonly Color DieOdHand = new("f0d060");
+    public static readonly Color DieDefense = new("88b4f4");
+    public static readonly Color DieTool = new("d0904a");
+
     /// <summary>A shield block: the BLOCKED callout and its sparks.</summary>
     public static readonly Color Block = new("6fb4ff");
 

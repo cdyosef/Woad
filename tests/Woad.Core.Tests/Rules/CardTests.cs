@@ -138,7 +138,7 @@ public class CardTests
     [Fact]
     public void SwappingNeedsRoomInTheBackpack()
     {
-        GameSession session = TestRun.Start(Open, cards: ["sword", "shield", "bow", "coin", "coin", "coin", "coin", "coin"]);
+        GameSession session = TestRun.Start(Open, cards: ["sword", "shield", "bow", "big_sword", "wand", "icicle", "boomerang", "picks"]);
         Hero hero = session.HeroInSeat();
 
         Assert.Contains("no room", session.Refuse(new EquipCard(hero.Id, hero.Card("bow").Id)));
@@ -305,19 +305,23 @@ public class CardTests
 
         var opened = session.Do(new OpenChest(hero.Id, new GridPosition(4, 3))).SingleOf<ChestOpened>();
 
-        CardInstance loot = Assert.Single(hero.Backpack);
+        // What's inside stays in the chest until it's taken.
+        CardInstance loot = Assert.Single(session.RoomById().LootAt(new GridPosition(4, 3)));
         Assert.Equal([loot.Id], opened.CardIds);
-        Assert.True(opened.AddedToBackpack);
+        Assert.Empty(hero.Backpack);
         Assert.Contains(loot.Definition.Id, new[] { "coin", "gem" });
         Assert.Null(loot.BroughtInByHeroId);
+        session.Do(new TakeLoot(hero.Id, new GridPosition(4, 3), loot.Id));
+        Assert.Equal([loot], hero.Backpack);
 
         session.EndRound();
         Assert.Contains("already open", session.Refuse(new OpenChest(hero.Id, new GridPosition(4, 3))));
     }
 
     [Fact]
-    public void LootThatDoesntFitIsLeftOnTheFloor()
+    public void AFullBackpackCantTakeWhatDoesntStack()
     {
+        // A full backpack still takes another coin (onto the stack of them), but nothing else.
         GameSession session = TestRun.Start("""
             .........
             .........
@@ -328,11 +332,20 @@ public class CardTests
             .........
             .........
             .........
-            """, cards: ["coin", "coin", "coin", "coin", "coin", "coin"]);
+            """, cards: ["big_sword", "wand", "icicle", "boomerang", "picks", "coin"]);
         Hero hero = session.HeroInSeat();
+        session.Do(new OpenChest(hero.Id, new GridPosition(4, 3)));
+        CardInstance loot = Assert.Single(session.RoomById().LootAt(new GridPosition(4, 3)));
 
-        Assert.False(session.Do(new OpenChest(hero.Id, new GridPosition(4, 3))).SingleOf<ChestOpened>().AddedToBackpack);
-        Assert.Single(session.RoomById().LootAt(hero.Position));
+        if (loot.Definition.Id == "coin")
+        {
+            session.Do(new TakeLoot(hero.Id, new GridPosition(4, 3), loot.Id));
+            Assert.Equal(2, hero.Card("coin").Count);
+        }
+        else
+        {
+            Assert.Contains("full", session.Refuse(new TakeLoot(hero.Id, new GridPosition(4, 3), loot.Id)));
+        }
     }
 
     [Fact]
