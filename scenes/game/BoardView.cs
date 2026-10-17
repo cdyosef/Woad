@@ -51,6 +51,9 @@ public partial class BoardView : Control
 
     public event Action<GridPosition>? TileClicked;
 
+    /// <summary>The second press of a double-click (the first came through <see cref="TileClicked"/>).</summary>
+    public event Action<GridPosition>? TileDoubleClicked;
+
     public event Action<GridPosition?>? TileHovered;
 
     public event Action? CancelRequested;
@@ -265,7 +268,14 @@ public partial class BoardView : Control
             case InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left } click:
                 if (TileAt(click.Position) is { } tile)
                 {
-                    TileClicked?.Invoke(tile);
+                    if (click.DoubleClick)
+                    {
+                        TileDoubleClicked?.Invoke(tile);
+                    }
+                    else
+                    {
+                        TileClicked?.Invoke(tile);
+                    }
                 }
 
                 AcceptEvent();

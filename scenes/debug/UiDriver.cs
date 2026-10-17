@@ -47,6 +47,25 @@ public static class UiDriver
         }
     }
 
+    /// <summary>A double-click: a click, then a second press marked as a double-click.</summary>
+    public static async Task DoubleClickAt(Node context, Vector2 position)
+    {
+        await ClickAt(context, position);
+        Viewport viewport = context.GetViewport();
+        foreach (bool pressed in new[] { true, false })
+        {
+            viewport.PushInput(new InputEventMouseButton
+            {
+                ButtonIndex = MouseButton.Left,
+                Pressed = pressed,
+                DoubleClick = pressed,
+                Position = position,
+                GlobalPosition = position,
+            }, inLocalCoords: true);
+            await NextFrame(context);
+        }
+    }
+
     /// <summary>Holds the right mouse button at <paramref name="from"/>, drags to <paramref name="to"/> in a few steps and lets go.</summary>
     public static async Task RightDrag(Node context, Vector2 from, Vector2 to)
     {

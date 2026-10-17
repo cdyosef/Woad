@@ -109,16 +109,33 @@ public partial class GameScreen : Control
         {
             RunRumbleTest();
         }
+        else if (args.Contains("--clicktest"))
+        {
+            RunClickTest();
+        }
     }
 
-    /// <summary>The space bar is Rumble, before any focused button can take it as a press.</summary>
+    /// <summary>Hotkeys, before any focused button can take them as a press: R or Space is Rumble, W rolls Wend.</summary>
     public override void _Input(InputEvent @event)
     {
-        if (@event is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Space } && _session.State.Turn is not null && ActiveHero is { IsCompanion: false } && !_autoplay)
+        if (@event is not InputEventKey { Pressed: true, Echo: false } key || _session.State.Turn is null || ActiveHero is not { IsCompanion: false } || _autoplay)
         {
-            ToggleRumble();
-            GetViewport().SetInputAsHandled();
+            return;
         }
+
+        switch (key.Keycode)
+        {
+            case Key.Space or Key.R:
+                ToggleRumble();
+                break;
+            case Key.W when !_roll.Disabled && _roll.Visible:
+                RollWend();
+                break;
+            default:
+                return;
+        }
+
+        GetViewport().SetInputAsHandled();
     }
 
     public override void _UnhandledInput(InputEvent @event)
@@ -332,6 +349,7 @@ public partial class GameScreen : Control
                 _targeting = false;
                 _trayShowsMovement = false;
                 _dice.Clear();
+                _goal = null;
                 ResetCombo();
                 ResetPool();
                 RefreshPanels();
