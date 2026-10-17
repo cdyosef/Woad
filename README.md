@@ -100,7 +100,8 @@ on the Godot command line:
 | `--firetest` | Puts a tough hero among Cinder Imps until one sets them alight, then clicks Drop & roll (fire out, prone, turn over) and, next turn, Get up. |
 | `--cameratest` | In a 15x13 hall bigger than the view, checks the view starts on the first hero, that a right-drag pans no further than keeps them in view, and that it scrolls across to the second hero on their turn. |
 | `--bombtest` | Throws a bomb into a huddle of slimes and checks it lies lit through two turns and goes off at the end of the thrower's next turn. |
-| `--rumbletest` | Checks clicking a monster no longer attacks, that Space readies Rumble with the monster in reach, that a click off target puts it away, and that the Rumble button then a click attacks. |
+| `--rumbletest` | Checks W rolls the Wend dice, clicking a monster no longer attacks, that Space readies Rumble with the monster in reach, that a click off target puts it away, that double-clicking the monster aims Rumble without attacking, and that the Rumble button then a click attacks. |
+| `--clicktest` | Checks that double-clicking a far-off monster rolls the Wend dice, clicking it again walks up to it with Rumble aimed, R puts Rumble away and back, and one more click attacks. |
 | `--resultstest` | Two saved characters click their way out of the exit; checks that their results are saved and shown. Uses a throwaway save folder. |
 | `--autoplay` | The debug party plays a generated dungeon with the rules-engine bot until the run ends, narrating to the console. Add `--fast` for 8× speed, `--party N` for a party of N (up to 8), and `--theme sunken_temple` for the second dungeon. |
 

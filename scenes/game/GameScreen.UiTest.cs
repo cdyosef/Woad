@@ -379,6 +379,11 @@ public partial class GameScreen
             Hero aria = ActiveHero!;
             Monster slime = _session.State.Rooms["yard"].Monsters.Single();
 
+            await PressKey(Key.W);
+            await WaitUntilIdle();
+            await ConfirmIfHeld();
+            Check(_session.State.Turn!.MovementPoints > 0, "W rolls the Wend dice");
+
             await ClickTile(slime.Position);
             await WaitUntilIdle();
             Check(_session.State.Turn!.AttackDiceUsed == 0, "clicking a monster no longer attacks it");
@@ -389,6 +394,12 @@ public partial class GameScreen
             await ClickTile(new GridPosition(0, 0));
             await WaitUntilIdle();
             Check(!_rumbling, "a click off target puts Rumble away");
+
+            await DoubleClickAt(this, _board.GetGlobalRect().Position + BoardView.TileOrigin(slime.Position) + new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f));
+            await WaitUntilIdle();
+            Check(_rumbling && _session.State.Turn!.AttackDiceUsed == 0, "double-clicking a monster in reach aims Rumble at it, without attacking yet");
+            await ClickTile(new GridPosition(0, 0));
+            await WaitUntilIdle();
 
             await Click(this, _rumble);
             await ClickTile(slime.Position);
@@ -403,6 +414,56 @@ public partial class GameScreen
             GD.PushError($"Rumble test failed: {exception.Message}");
             Sfx.QuitGame(this, 1);
         }
+    }
+
+    /// <summary>
+    /// Debug mode (<c>-- --clicktest</c>, with <see cref="DemoRun.Stalk"/>): double-clicking the slime
+    /// across the yard rolls Aria's Wend dice; clicking it again walks her up to it with Rumble aimed,
+    /// and one more click attacks.
+    /// </summary>
+    private async void RunClickTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            Monster slime = _session.State.Rooms["yard"].Monsters.Single();
+            Vector2 at = _board.GetGlobalRect().Position + BoardView.TileOrigin(slime.Position) + new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f);
+
+            await DoubleClickAt(this, at);
+            await WaitUntilIdle();
+            await ConfirmIfHeld();
+            Check(_session.State.Turn!.MovementPoints > 0, "double-clicking a far-off monster rolls the Wend dice");
+            Check(aria.Position == new GridPosition(1, 4), "the roll alone doesn't move her");
+
+            await ClickTile(slime.Position);
+            await WaitUntilIdle();
+            Check(Woad.Core.Rules.Targeting.CanHeroAttack(ShownRoom.Layout, aria.AttackRange, aria.Position, slime.Position), "clicking it again walks her up to it");
+            Check(_rumbling, "and Rumble is aimed at it");
+            await PressKey(Key.R);
+            Check(!_rumbling, "R puts Rumble away");
+            await PressKey(Key.R);
+            Check(_rumbling, "and R aims it again");
+
+            await ClickTile(slime.Position);
+            await ConfirmIfHeld();
+            Check(_session.State.Turn!.AttackDiceUsed > 0 || _session.State.Turn.HeroId != aria.Id, "one more click attacks");
+
+
+            GD.Print("Click test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Click test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
+    private async Task PressKey(Key key)
+    {
+        GetViewport().PushInput(new InputEventKey { Pressed = true, Keycode = key }, inLocalCoords: true);
+        await NextFrame(this);
     }
 
     /// <summary>Confirms a roll that Luck is holding open.</summary>

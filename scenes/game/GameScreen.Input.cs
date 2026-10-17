@@ -41,6 +41,118 @@ public partial class GameScreen
         }
     }
 
+    /// <summary>The enemy a double-click rolled Wend toward: clicking it again walks up to it.</summary>
+    private GridPosition? _goal;
+
+    /// <summary>
+    /// Double-clicks, for quick play. On an enemy you can hit from where you stand: Rumble aims at it, and
+    /// one more click attacks. On a space, or an enemy you can't hit yet: if you haven't rolled Wend this
+    /// turn, your selected Wend dice roll, and clicking it again goes there (beside the enemy, after which
+    /// Rumble aims at it). Already rolled, it goes there straight away.
+    /// </summary>
+    private async void OnTileDoubleClicked(GridPosition tile)
+    {
+        if (Locked || ActiveHero is not { } hero || _session.State.Turn is not { } turn || hero.RoomId != _shownRoomId
+            || tile == hero.Position || _targeting || _leaping || _shoving || _stealing)
+        {
+            return;
+        }
+
+        Room room = ShownRoom;
+        if (room.MonsterAt(tile) is { } monster && RumbleTargets(room).Contains(tile))
+        {
+            AimAt(monster);
+            return;
+        }
+
+        bool enemy = room.MonsterAt(tile) is not null;
+        if (!enemy && !(room.Layout[tile].IsWalkable() || room.Layout[tile] == TileKind.DeepWater))
+        {
+            return;
+        }
+
+        if (turn.MovementPoints > 0)
+        {
+            await GoToward(hero, room, tile);
+            return;
+        }
+
+        if (_session.MoveDiceLeft < 1 || turn.PendingRoll is not null)
+        {
+            return;
+        }
+
+        if (SelectedMoveDice < 1)
+        {
+            Log("Select at least one Wend die.", Palette.TextDim);
+            return;
+        }
+
+        if (!await ExecuteAsync(new RollMovement(hero.Id, SelectedMoveDice, !_speedHeld, SelectedPowerDice)))
+        {
+            return;
+        }
+
+        _goal = enemy ? tile : null;
+        bool reachable = enemy ? SpotBeside(room, tile) is not null : _session.GetReachableTiles().ContainsKey(tile);
+        Log(reachable
+            ? (enemy ? "Click it again to go up to it." : "Click it again to go there.")
+            : "Out of reach this turn: click somewhere closer.", reachable ? Palette.Heal : Palette.TextDim);
+    }
+
+    /// <summary>Rumble aims at a monster: one more click on it attacks.</summary>
+    private void AimAt(Monster monster)
+    {
+        _rumbling = true;
+        _stealing = _shoving = _leaping = false;
+        _goal = null;
+        Log($"Click the {monster.Definition.Name} again to attack it. Right-click to cancel.", Palette.Danger);
+        RefreshPanels();
+    }
+
+    /// <summary>
+    /// Goes to a space you can reach, or up to an enemy: the reachable tile it can be hit from with the
+    /// shortest walk. Arriving where you can hit it, Rumble aims at it.
+    /// </summary>
+    private async Task GoToward(Hero hero, Room room, GridPosition tile)
+    {
+        _goal = null;
+        if (room.MonsterAt(tile) is not { } monster)
+        {
+            Execute(new MoveHero(hero.Id, tile));
+            return;
+        }
+
+        if (SpotBeside(room, tile) is not { } spot)
+        {
+            Log($"You can't get to the {monster.Definition.Name} this turn.", Palette.TextDim);
+            return;
+        }
+
+        if (spot != hero.Position && !await ExecuteAsync(new MoveHero(hero.Id, spot)))
+        {
+            return;
+        }
+
+        if (ActiveHero == hero && room.FindMonster(monster.Id) is not null && RumbleTargets(room).Contains(monster.Position))
+        {
+            AimAt(monster);
+        }
+    }
+
+    /// <summary>The tile to walk to for a swing at whatever stands on <paramref name="target"/>: reachable, closest first.</summary>
+    private GridPosition? SpotBeside(Room room, GridPosition target)
+    {
+        Hero hero = ActiveHero!;
+        IReadOnlyDictionary<GridPosition, int> reachable = _session.GetReachableTiles();
+        return reachable.Keys.Append(hero.Position)
+            .Where(tile => Targeting.CanHeroAttack(room.Layout, hero.AttackRange, tile, target))
+            .OrderBy(tile => tile == hero.Position ? 0 : reachable[tile])
+            .ThenBy(tile => tile.ManhattanDistanceTo(target))
+            .Select(tile => (GridPosition?)tile)
+            .FirstOrDefault();
+    }
+
     private void OnTileClicked(GridPosition tile)
     {
         if (Locked || ActiveHero is not { } hero || _session.State.Turn is not { } turn || hero.RoomId != _shownRoomId)
@@ -135,9 +247,13 @@ public partial class GameScreen
             return;
         }
 
-        if (room.MonsterAt(tile) is not null)
+        if (room.MonsterAt(tile) is not null && _goal == tile && turn.MovementPoints > 0)
         {
-            Log("Press Rumble (or Space) to attack.", Palette.TextDim);
+            _ = GoToward(hero, room, tile);
+        }
+        else if (room.MonsterAt(tile) is not null)
+        {
+            Log("Press Rumble (or Space), or double-click it, to attack.", Palette.TextDim);
         }
         else if (room.Layout[tile] == TileKind.Gate)
         {
@@ -182,7 +298,7 @@ public partial class GameScreen
         }
         else if (turn.MovementPoints == 0)
         {
-            Log(_session.MoveDiceLeft > 0 ? "Roll to move first." : "No Move dice left this turn.", Palette.TextDim);
+            Log(_session.MoveDiceLeft > 0 ? "Roll to move first (or double-click where you want to go)." : "No Move dice left this turn.", Palette.TextDim);
         }
         else
         {

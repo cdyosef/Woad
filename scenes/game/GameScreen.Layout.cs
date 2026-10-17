@@ -149,6 +149,17 @@ public partial class GameScreen
     }
 
     /// <summary>Rumble (the button or the space bar): show the attack range and wait for a target, or put it away.</summary>
+    private void RollWend()
+    {
+        if (SelectedMoveDice < 1)
+        {
+            Log("Select at least one Move die.", Palette.TextDim);
+            return;
+        }
+
+        ExecuteForActiveHero(heroId => new RollMovement(heroId, SelectedMoveDice, !_speedHeld, SelectedPowerDice));
+    }
+
     private void ToggleRumble()
     {
         if (_rumble.Disabled && !_rumbling)
@@ -492,6 +503,7 @@ public partial class GameScreen
         frame.AddChild(new ColorRect { Size = frame.Size, Color = Palette.Rock, MouseFilter = MouseFilterEnum.Ignore });
         _board = new BoardView();
         _board.TileClicked += OnTileClicked;
+        _board.TileDoubleClicked += OnTileDoubleClicked;
         _board.TileHovered += OnTileHovered;
         _board.CancelRequested += CancelSelection;
         frame.AddChild(_board);
@@ -533,7 +545,7 @@ public partial class GameScreen
         right.AddChild(_bankPower);
 
         _rumble = UiTheme.CompactButton(new Vector2(8, 279), new Vector2(52, 20), "Rumble");
-        _rumble.TooltipText = "Attack (Space): your attack range shows in red; click a target in it. Uses your selected Rumble dice and your weapon.";
+        _rumble.TooltipText = "Attack (R or Space): your attack range shows in red; click a target in it. Uses your selected Rumble dice and your weapon.";
         _rumble.Pressed += ToggleRumble;
         right.AddChild(_rumble);
 
@@ -546,17 +558,8 @@ public partial class GameScreen
 
         // Five buttons in a row: Wend, Leap, Search, Steal and Shove.
         _roll = UiTheme.CompactButton(new Vector2(8, 303), new Vector2(38, 20), "Wend");
-        _roll.TooltipText = "Roll your selected Wend dice (plus your Wend bonus) to move.";
-        _roll.Pressed += () =>
-        {
-            if (SelectedMoveDice < 1)
-            {
-                Log("Select at least one Move die.", Palette.TextDim);
-                return;
-            }
-
-            ExecuteForActiveHero(heroId => new RollMovement(heroId, SelectedMoveDice, !_speedHeld, SelectedPowerDice));
-        };
+        _roll.TooltipText = "Roll your selected Wend dice (plus your Wend bonus) to move. (W)";
+        _roll.Pressed += RollWend;
         right.AddChild(_roll);
 
         _leap = UiTheme.CompactButton(new Vector2(48, 303), new Vector2(38, 20), "Leap");

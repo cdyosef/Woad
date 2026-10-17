@@ -187,6 +187,16 @@ public static class DemoRun
         StartRoomId = "yard",
     };
 
+    /// <summary>For --clicktest: a quick Aria (3 Wend dice) across the yard from a slime.</summary>
+    public static RunSetup Stalk(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20, MoveDice = 3 } }],
+        Rooms = [new RoomSetup("yard", RoomTemplate.Parse(".........\n.........\n.........\n.........\n.1....s..\n.........\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
+        StartRoomId = "yard",
+    };
+
     /// <summary>The debug party in the single hand-made room, for --uitest.</summary>
     public static RunSetup SingleRoom(ulong seed) => new()
     {
