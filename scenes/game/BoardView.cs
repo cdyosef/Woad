@@ -46,6 +46,9 @@ public partial class BoardView : Control
     private bool _dragged;
     private Vector2 _dragFrom;
 
+    /// <summary>How hard the view is shaking (pixels), dying away.</summary>
+    private float _shake;
+
     public event Action<GridPosition>? TileClicked;
 
     public event Action<GridPosition?>? TileHovered;
@@ -108,8 +111,29 @@ public partial class BoardView : Control
             _camera = _camera.Lerp(Desired(), 1 - Mathf.Exp(-10 * (float)delta));
         }
 
-        Position = -_camera;
+        _shake = Mathf.MoveToward(_shake, 0, 30 * (float)delta);
+        Vector2 jolt = _shake > 0.05f ? new Vector2((float)(Random.Shared.NextDouble() * 2 - 1), (float)(Random.Shared.NextDouble() * 2 - 1)) * _shake : Vector2.Zero;
+        Position = -_camera + jolt.Round();
     }
+
+    /// <summary>Shakes the view, harder for bigger blows.</summary>
+    public void Shake(float strength) => _shake = Math.Max(_shake, strength);
+
+    /// <summary>A fighting-game callout (HIT!, K.O.!...) over a tile, kept inside the view.</summary>
+    /// <param name="size">Multiples of the heading font: 2 for most, 3 for the big ones.</param>
+    /// <param name="below">Shifts it down a line (for a second callout, like a combo count).</param>
+    public void Callout(GridPosition tile, string text, Color color, int size = 2, bool below = false)
+    {
+        Vector2 at = TileOrigin(tile) + new Vector2(TileSize / 2f, below ? 30 : 0);
+        float half = text.Length * UiTheme.HeadingPixelSize * size * 0.45f;
+        at.X = Mathf.Clamp(at.X, _camera.X + half + 4, _camera.X + Pixels - half - 4);
+        at.Y = Mathf.Clamp(at.Y, _camera.Y + 14 * size / 2f, _camera.Y + Pixels - 8);
+        AddChild(new ActionCallout { Position = at, Text = text, Color = color, Size = size });
+    }
+
+    /// <summary>A strike's slash and sparks on a tile; sparks only for a block.</summary>
+    public void Spark(GridPosition tile, Color color, bool slash = true) =>
+        AddChild(new HitSpark { Position = TileOrigin(tile) + new Vector2(TileSize / 2f, TileSize / 2f - 2), Color = color, Slash = slash, Backhand = Random.Shared.Next(2) == 0 });
 
     /// <summary>Where the camera wants to be: centered on what it follows, within the room.</summary>
     private Vector2 Desired()

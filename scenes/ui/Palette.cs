@@ -27,6 +27,9 @@ public static class Palette
     /// <summary>Power Dice, earned by rolling a 6.</summary>
     public static readonly Color Power = new("b58cf0");
 
+    /// <summary>A shield block: the BLOCKED callout and its sparks.</summary>
+    public static readonly Color Block = new("6fb4ff");
+
     public static readonly Color FloorLight = new("3f6b58");
     public static readonly Color FloorDark = new("375f4e");
     public static readonly Color Grout = new("2c4d40");

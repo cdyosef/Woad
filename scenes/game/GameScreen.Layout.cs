@@ -13,7 +13,7 @@ public partial class GameScreen
 {
     private const float SideWidth = 176;
     private const float StripHeight = 36;
-    private const int LogLines = 3;
+    private const int LogLines = 7;
 
     private static readonly Vector2 BoardOrigin = new(SideWidth, StripHeight);
 
@@ -25,7 +25,7 @@ public partial class GameScreen
     private HeroPanel _heroPanel = null!;
     private MinimapView _minimap = null!;
     private InventoryPanel _inventory = null!;
-    private DiceTray _dice = null!;
+    private DiceBar _dice = null!;
     private TurnBanner _banner = null!;
     private RichTextLabel _header = null!;
     private Label _hoverInfo = null!;
@@ -497,9 +497,11 @@ public partial class GameScreen
         frame.AddChild(_board);
         AddChild(frame);
 
+        // Under the board, the dice bar: who rolls on the left, VS, who answers on the right.
         AddChild(new Panel { Position = new Vector2(SideWidth, StripHeight + BoardView.Pixels), Size = new Vector2(BoardView.Pixels, StripHeight) });
-        _log = RichLabel(new Vector2(SideWidth + 6, StripHeight + BoardView.Pixels + 2), new Vector2(BoardView.Pixels - 12, 33));
-        _log.AddThemeConstantOverride("line_separation", -2);
+        _dice = new DiceBar { Position = new Vector2(SideWidth + 6, StripHeight + BoardView.Pixels + 2), Size = new Vector2(BoardView.Pixels - 12, 32) };
+        _dice.DieClicked += index => ExecuteForActiveHero(heroId => new RerollDie(heroId, index));
+        AddChild(_dice);
 
         var right = new Panel { Position = new Vector2(SideWidth + BoardView.Pixels, 0), Size = new Vector2(SideWidth, 360) };
         AddChild(right);
@@ -511,10 +513,9 @@ public partial class GameScreen
             Log($"{action}: {AvailableCardActions(ActiveHero, _session.State.Turn).Explain(action)}", Palette.TextDim);
         right.AddChild(_inventory);
 
-        right.AddChild(UiTheme.Heading(UiTheme.Label(new Vector2(8, 169), new Vector2(160, 12), "DICE", color: Palette.Trim), 1));
-        _dice = new DiceTray { Position = new Vector2(8, 182), Size = new Vector2(160, 80) };
-        _dice.DieClicked += index => ExecuteForActiveHero(heroId => new RerollDie(heroId, index));
-        right.AddChild(_dice);
+        // The message log, under the cards: the newest line bright, older ones dimmed.
+        _log = RichLabel(new Vector2(SideWidth + BoardView.Pixels + 8, 189), new Vector2(160, 74));
+        _log.AddThemeConstantOverride("line_separation", -2);
 
         _luckHint = UiTheme.Label(new Vector2(8, 263), new Vector2(160, 14), "Luck: click a die to reroll it.", color: Palette.Heal);
         right.AddChild(_luckHint);

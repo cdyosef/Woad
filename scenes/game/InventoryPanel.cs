@@ -51,7 +51,7 @@ public partial class InventoryPanel : Control
 
     public override void _Ready()
     {
-        Size = new Vector2(176, 168);
+        Size = new Vector2(176, 188);
         MouseFilter = MouseFilterEnum.Ignore;
 
         AddChild(UiTheme.Heading(UiTheme.Label(new(8, 4), new(160, 12), "BELT", color: Palette.Trim), 1));
@@ -66,14 +66,14 @@ public partial class InventoryPanel : Control
             _backpack[i] = AddSlot(new Vector2(8 + i % 2 * 82, 49 + i / 2 * 18));
         }
 
-        _details = UiTheme.Label(new(8, 105), new(160, 40), color: Palette.Text);
+        _details = UiTheme.Label(new(8, 105), new(160, 62), color: Palette.Text);
         AddChild(_details);
 
         CardAction[] actions = Enum.GetValues<CardAction>();
         for (int i = 0; i < actions.Length; i++)
         {
             CardAction action = actions[i];
-            Button button = UiTheme.Button(new(8 + i * 32, 147), new(30, 16), action.ToString());
+            Button button = UiTheme.Button(new(8 + i * 32, 169), new(30, 16), action.ToString());
             button.Pressed += () => ActionRequested?.Invoke(action);
             button.GuiInput += input =>
             {

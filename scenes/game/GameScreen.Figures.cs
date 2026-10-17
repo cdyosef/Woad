@@ -179,32 +179,6 @@ public partial class GameScreen
         await ToSignal(tween, Tween.SignalName.Finished);
     }
 
-    private async Task ShowDamage(Damaged damaged)
-    {
-        if (!_figures.TryGetValue(damaged.TargetId, out Figure? figure))
-        {
-            return;
-        }
-
-        figure.Hearts = damaged.HeartsLeft;
-        if (!_tokens.TryGetValue(damaged.TargetId, out TokenView? token))
-        {
-            return;
-        }
-
-        token.SetHearts(damaged.HeartsLeft);
-        if (damaged.Amount > 0)
-        {
-            _board.FloatText(figure.Position, $"Hit! -{damaged.Amount}", Palette.Danger);
-            await Tint(token, new Color(1, 0.3f, 0.3f));
-        }
-        else
-        {
-            _board.FloatText(figure.Position, "Miss!", Palette.Text);
-            await Pause(0.25);
-        }
-    }
-
     private async Task ShowHealing(HeroHealed healed)
     {
         if (!_figures.TryGetValue(healed.HeroId, out Figure? figure))

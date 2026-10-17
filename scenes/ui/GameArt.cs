@@ -24,6 +24,36 @@ public static class GameArt
 
     public static Texture2D? Ui(string name) => Texture($"res://assets/ui/{name}.png");
 
+    /// <summary>
+    /// The body text font: Pixelify Sans (SIL Open Font License, see assets/fonts/PixelifySans-OFL.txt)
+    /// at its bold weight, drawn crisp with no smoothing to match the pixel art. Null if it's missing.
+    /// </summary>
+    public static Font? BodyFont
+    {
+        get
+        {
+            if (Cache.TryGetValue(BodyFontKey, out Resource? cached))
+            {
+                return cached as Font;
+            }
+
+            Font? body = null;
+            if (Load("res://assets/fonts/PixelifySans.ttf") is FontFile file)
+            {
+                file.Antialiasing = TextServer.FontAntialiasing.Gray;
+                file.Hinting = TextServer.Hinting.None;
+                file.SubpixelPositioning = TextServer.SubpixelPositioning.Disabled;
+                long weight = TextServerManager.GetPrimaryInterface().NameToTag("wght");
+                body = new FontVariation { BaseFont = file, VariationOpentype = new Godot.Collections.Dictionary { [weight] = 700 } };
+            }
+
+            Cache[BodyFontKey] = body;
+            return body;
+        }
+    }
+
+    private const string BodyFontKey = "body-font";
+
     /// <summary>The serif capitals pixel font for headings (uppercase, digits and a little punctuation).</summary>
     public static FontFile? HeadingFont
     {
