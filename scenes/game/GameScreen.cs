@@ -117,6 +117,10 @@ public partial class GameScreen : Control
         {
             RunLootTest();
         }
+        else if (args.Contains("--tradetest"))
+        {
+            RunTradeTest();
+        }
     }
 
     /// <summary>Hotkeys, before any focused button can take them as a press: R or Space is Rumble, W rolls Wend.</summary>
@@ -355,6 +359,7 @@ public partial class GameScreen : Control
                 _dice.Clear();
                 _goal = null;
                 CloseRummage();
+                CloseTrade();
                 ResetCombo();
                 ResetPool();
                 RefreshPanels();

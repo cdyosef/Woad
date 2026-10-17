@@ -16,6 +16,7 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
             $"{nameOf(rerolled.HeroId)} turns a {rerolled.OldFace} into a {rerolled.NewFace}: {Count(points, "step")}.",
         DieRerolled rerolled => $"{nameOf(rerolled.HeroId)} turns a {rerolled.OldFace} into a {rerolled.NewFace}.",
         HeroEnteredRoom entered => $"{nameOf(entered.HeroId)} enters a new room.",
+        CompanionOrdered { Order: CompanionOrder.FindMe } ordered => $"{nameOf(ordered.OwnerId)} tells {nameOf(ordered.CompanionId)} to come and find {nameOf(ordered.OwnerId)}.",
         CompanionOrdered ordered => $"{nameOf(ordered.OwnerId)} tells {nameOf(ordered.CompanionId)} to {Command(ordered.Order)}.",
         FellIntoPit { Bottomless: true } fell => $"{nameOf(fell.EntityId)} falls into the pit!",
         FellIntoPit fell => $"{nameOf(fell.EntityId)} falls through the pit to the room below!",
@@ -125,6 +126,12 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         CritRolled crit => $"A 6! {nameOf(crit.HeroId)} rolls {crit.Dice} more {(crit.Dice == 1 ? "die" : "dice")} straight in.",
         LockpickSnapped { Left: 0 } snapped => $"{nameOf(snapped.HeroId)}'s last lockpick snaps!",
         LockpickSnapped snapped => $"A lockpick snaps! {nameOf(snapped.HeroId)} has {snapped.Left} left.",
+        CardTraded { Count: > 1 } traded => $"{nameOf(traded.FromHeroId)} hands {nameOf(traded.ToHeroId)} {traded.Count} {cardNameOf(traded.CardId)}.",
+        CardTraded traded => $"{nameOf(traded.FromHeroId)} hands {nameOf(traded.ToHeroId)} the {cardNameOf(traded.CardId)}.",
+        GoldTraded gold => $"{nameOf(gold.FromHeroId)} hands {nameOf(gold.ToHeroId)} {gold.Amount} gold.",
+        KeyTraded { BossKey: true } key => $"{nameOf(key.FromHeroId)} hands {nameOf(key.ToHeroId)} the Boss Key.",
+        KeyTraded key => $"{nameOf(key.FromHeroId)} hands {nameOf(key.ToHeroId)} a key.",
+        CompanionOutfitted outfit => $"{nameOf(outfit.OwnerId)} has {nameOf(outfit.CompanionId)} {outfit.Action switch { Woad.Core.Commands.OutfitAction.Equip => "equip", Woad.Core.Commands.OutfitAction.Belt => "belt", _ => "stow" }} the {cardNameOf(outfit.CardId)}.",
         LootPickedUp loot => $"{nameOf(loot.HeroId)} picks up {string.Join(", ", loot.CardIds.Select(cardNameOf))}.",
         HeroDescended { FirstTimeOnFloor: true } descended =>
             $"{nameOf(descended.HeroId)} descends to floor {descended.Floor}. Luck and charges are restored.",
@@ -196,6 +203,9 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         CompanionOrder.Fight => "fight",
         CompanionOrder.StayBack => "stay back",
         CompanionOrder.Tend => "tend the fallen",
+        CompanionOrder.Burgle => "burgle the room",
+        CompanionOrder.Loot => "loot the room",
+        CompanionOrder.Explore => "explore",
         _ => "follow",
     };
 

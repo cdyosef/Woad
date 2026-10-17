@@ -535,11 +535,23 @@ them up there like any character.
   - **Fight:** goes after the monsters in the room; follows you once it's clear.
   - **Stay back:** keeps away from monsters near you, striking only when one is right next to it.
   - **Tend:** goes to allies Keeling Over in the room, even mid-fight, and rouses them; otherwise follows.
-  - Under any order, a companion rouses an ally Keeling Over right beside it, and (except when holding)
-    goes to one once the room is clear. Keeling Over itself, it rolls its own Keel Die.
-- **What companions don't do:** loot, open chests, smash pots, unlock, search or steal. They keep
-  out of doorways, the stairs, the exit, loot and the spots beside unopened chests when they have
-  nowhere to be. If their owner is dead or gone, they follow the first player still in.
+  - **Find me:** follows you wherever you are, through locked doors too (a key, or picking the lock;
+    never the Boss Door) and, when there's no way by the stairs, down a pit to the floor below.
+  - **Burgle:** picks the room's locks (doors, chests, gates; keys first) and opens its chests, leaving
+    what's inside for you to rummage through; then follows.
+  - **Loot:** gathers the room's loot (bags, chests, gold, keys, pots), then follows. Trade with it to share.
+  - **Explore:** searches each room once for secret doors, traps and stashes, then follows.
+  - Under any order but Hold, Fight and Stay back, a companion guards you: it goes after monsters
+    closing in on you. Under any order, it rouses an ally Keeling Over right beside it, and (except
+    when holding) goes to one once the room is clear. Keeling Over itself, it rolls its own Keel Die.
+    A companion that comes by the Boss Key hands it to you as soon as it's beside you.
+- **What companions don't do unless told:** loot, open chests, smash pots, unlock or search; they never
+  steal. They keep out of doorways, the stairs, the exit, loot and the spots beside unopened chests when
+  they have nowhere to be. If their owner is dead or gone, they follow the first player still in.
+- **Trading:** click an ally beside you (diagonals too), a fellow player or a companion, to trade:
+  give and take cards (part of a stack asks how many), gold, keys and the Boss Key. Your own
+  companion's cards also have **Equip**, **Belt** and **Stow**, so you can dress it. Trading is free;
+  if they're standing on loot, it can be opened from there.
 - **Monster scaling:** a companion counts as half a hero (rounded up) when sizing rooms and the boss.
 - **End of the run:** the run ends once every player has died or escaped. When a player escapes, their
   companions standing in the same room escape with them. Companions still inside (Keeling Over

@@ -247,7 +247,14 @@ public partial class GameScreen
             return;
         }
 
-        // Loot beside you (an ally may be standing on it): take it, or open the bag.
+        // An ally beside you: trade with them.
+        if (tile != hero.Position && _session.GetTradePartners().FirstOrDefault(ally => ally.Position == tile && !ally.IsKeelingOver) is { } partner)
+        {
+            OpenTrade(hero, partner);
+            return;
+        }
+
+        // Loot beside you: take it, or open the bag.
         if (tile != hero.Position && room.MonsterAt(tile) is null && room.Layout[tile] != TileKind.Chest
             && room.HasLootAt(tile) && hero.Position.ChebyshevDistanceTo(tile) == 1)
         {
@@ -748,6 +755,7 @@ public partial class GameScreen
     private void CancelSelection()
     {
         CloseRummage();
+        CloseTrade();
         _stealing = false;
         _shoving = false;
         _leaping = false;

@@ -51,6 +51,9 @@ public sealed class Hero
 
     public int Id { get; }
 
+    /// <summary>Rooms this hero has searched (a companion exploring searches each once).</summary>
+    public HashSet<string> SearchedRoomIds { get; } = [];
+
     /// <summary>The saved character playing this hero, if any.</summary>
     public Guid? CharacterId { get; }
 

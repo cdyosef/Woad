@@ -522,6 +522,52 @@ public partial class GameScreen
         }
     }
 
+    /// <summary>
+    /// Debug mode (<c>-- --tradetest</c>, with <see cref="DemoRun.Camp"/>): Aria clicks Pip beside her to
+    /// trade, gives it one of her two potions (asked how many) and has it equip its Knight's Sword; then
+    /// orders it to Find me from the Orders panel.
+    /// </summary>
+    private async void RunTradeTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            Hero pip = _session.State.Heroes.Single(hero => hero.Name == "Pip");
+
+            await ClickTile(pip.Position);
+            Check(_trade.Visible && _trade.PartnerId == pip.Id, "clicking an ally beside you opens trading");
+
+            CardInstance potions = aria.AllCards.Single(card => card.Definition.Id == "health_potion");
+            await Click(this, _trade.Button($"Give{potions.Id}")!);
+            Check(_countPrompt.Visible, "giving part of a stack asks how many");
+            await Click(this, _countPrompt.OkButton);
+            await WaitUntilIdle();
+            Check(potions.Count == 1 && pip.AllCards.Any(card => card.Definition.Id == "health_potion"), "one potion goes to Pip");
+
+            CardInstance sword = pip.AllCards.Single(card => card.Definition.Id == "knights_sword");
+            await Click(this, _trade.Button($"Equip{sword.Id}")!);
+            await WaitUntilIdle();
+            Check(pip.MainWeapon == sword, "Aria has her companion equip its Knight's Sword");
+
+            await Click(this, _trade.Button("Close") ?? _trade.GetChildren().OfType<Button>().First(button => button.Text == "Close"));
+            Check(!_trade.Visible, "Close puts trading away");
+
+            await Click(this, _orders);
+            await Click(this, OrderButton(0, CompanionOrder.FindMe));
+            await WaitUntilIdle();
+            Check(pip.Order == CompanionOrder.FindMe, "the Find me order button gives the order");
+
+            GD.Print("Trade test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Trade test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
     private async Task PressKey(Key key)
     {
         GetViewport().PushInput(new InputEventKey { Pressed = true, Keycode = key }, inLocalCoords: true);

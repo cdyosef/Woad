@@ -389,7 +389,7 @@ public static class SimpleBot
     /// The closest of the given tiles the hero could walk to (ignoring this turn's movement), if any.
     /// Tiles a teammate stands on are skipped: the hero couldn't stop there.
     /// </summary>
-    private static GridPosition? Nearest(GameState state, Room room, Hero hero, IEnumerable<GridPosition> tiles)
+    internal static GridPosition? Nearest(GameState state, Room room, Hero hero, IEnumerable<GridPosition> tiles)
     {
         PathSearch search = PathSearch.Run(hero.Position, tile => Walkable(room, tile));
         return tiles

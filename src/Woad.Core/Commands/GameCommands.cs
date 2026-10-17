@@ -140,6 +140,34 @@ public sealed record Escape(int HeroId) : GameCommand(HeroId);
 /// </summary>
 public sealed record OrderCompanion(int HeroId, int CompanionId, CompanionOrder Order) : GameCommand(HeroId);
 
+/// <summary>Give one of your cards (or <paramref name="Count"/> of a stack) to an ally beside you. Free.</summary>
+public sealed record GiveCard(int HeroId, int ToHeroId, int CardId, int? Count = null) : GameCommand(HeroId);
+
+/// <summary>Take a card (or <paramref name="Count"/> of a stack) from an ally beside you. Free.</summary>
+public sealed record TakeCard(int HeroId, int FromHeroId, int CardId, int? Count = null) : GameCommand(HeroId);
+
+/// <summary>Give gold to an ally beside you. Free.</summary>
+public sealed record GiveGold(int HeroId, int ToHeroId, int Amount) : GameCommand(HeroId);
+
+/// <summary>Take gold from an ally beside you. Free.</summary>
+public sealed record TakeGold(int HeroId, int FromHeroId, int Amount) : GameCommand(HeroId);
+
+/// <summary>Give a key (or the Boss Key) to an ally beside you. Free.</summary>
+public sealed record GiveKey(int HeroId, int ToHeroId, bool BossKey = false) : GameCommand(HeroId);
+
+/// <summary>Take a key (or the Boss Key) from an ally beside you. Free.</summary>
+public sealed record TakeKey(int HeroId, int FromHeroId, bool BossKey = false) : GameCommand(HeroId);
+
+public enum OutfitAction
+{
+    Equip,
+    Belt,
+    Stow,
+}
+
+/// <summary>Equip, belt or stow one of your companion's cards, standing beside it. Free.</summary>
+public sealed record OutfitCompanion(int HeroId, int CompanionId, int CardId, OutfitAction Action) : GameCommand(HeroId);
+
 /// <summary>
 /// Shove an adjacent monster (or, with friendly fire on, a hero or companion) one tile straight away
 /// from you: roll like an attack (Rumble dice and the weapon); beating its defense pushes it, perhaps

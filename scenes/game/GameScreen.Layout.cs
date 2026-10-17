@@ -147,6 +147,7 @@ public partial class GameScreen
         RefreshOrders();
         UpdateHighlights();
         RefreshRummage();
+        RefreshTrade();
     }
 
     /// <summary>Rumble (the button or the space bar): show the attack range and wait for a target, or put it away.</summary>
@@ -622,6 +623,7 @@ public partial class GameScreen
         BuildOrders(right);
 
         BuildLootWindows();
+        BuildTradeWindow();
         _banner = new TurnBanner { Position = BoardOrigin, Size = new Vector2(BoardView.Pixels, BoardView.Pixels) };
         AddChild(_banner);
     }

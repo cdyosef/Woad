@@ -22,4 +22,19 @@ public enum CompanionOrder
     /// Go to allies Keeling Over in the room, even mid-fight, and rouse them; otherwise follow the owner.
     /// </summary>
     Tend,
+
+    /// <summary>
+    /// Find a way to the owner, wherever they are: like following, but through locked doors too (with a
+    /// key, or by picking the lock) and down pits to a floor below. In the owner's room, follow.
+    /// </summary>
+    FindMe,
+
+    /// <summary>Pick the locks in the room (doors, chests, gates; keys first) and open its chests; then follow.</summary>
+    Burgle,
+
+    /// <summary>Gather the room's loot: piles, opened and unlocked chests, pots; then follow.</summary>
+    Loot,
+
+    /// <summary>Search each room once for secrets (doors, traps, stashes); then follow.</summary>
+    Explore,
 }

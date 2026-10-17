@@ -11,7 +11,7 @@ namespace Woad.Scenes.Game;
 /// </summary>
 public partial class GameScreen
 {
-    private const float OrderRowHeight = 30;
+    private const float OrderRowHeight = 46;
 
     private static readonly (CompanionOrder Order, string Label, string Help)[] Orders =
     [
@@ -20,6 +20,10 @@ public partial class GameScreen
         (CompanionOrder.Fight, "Fight", "Go after the monsters in the room, then follow you once it's clear."),
         (CompanionOrder.StayBack, "Back", "Keep away from monsters and stay near you; strike back only when cornered."),
         (CompanionOrder.Tend, "Tend", "Go to allies Keeling Over in the room, even mid-fight, and rouse them; otherwise follow you."),
+        (CompanionOrder.FindMe, "Find me", "Find a way to you wherever you are: through locked doors (a key, or picking the lock) and down pits to the floor below."),
+        (CompanionOrder.Burgle, "Burgle", "Pick the room's locks (doors, chests, gates; keys first) and open its chests, then follow you."),
+        (CompanionOrder.Loot, "Loot", "Gather the room's loot: bags, chests, gold, keys, pots. Then follow you. Trade with it to share."),
+        (CompanionOrder.Explore, "Explore", "Search each room once for secret doors, traps and stashes, then follow you."),
     ];
 
     private Button _orders = null!;
@@ -81,8 +85,11 @@ public partial class GameScreen
             row.AddChild(UiTheme.Label(Vector2.Zero, new Vector2(158, 12), $"{companion.Name}: {Describe(companion.Order)}", color: Palette.Seat(companion.Seat)));
             for (int o = 0; o < Orders.Length; o++)
             {
+                // Five on the first row, the newer four (wider) on the second.
                 (CompanionOrder order, string label, string help) = Orders[o];
-                Button button = UiTheme.CompactButton(new Vector2(o * 32, 12), new Vector2(30, 15), label);
+                Button button = o < 5
+                    ? UiTheme.CompactButton(new Vector2(o * 32, 12), new Vector2(30, 15), label)
+                    : UiTheme.CompactButton(new Vector2((o - 5) * 40, 29), new Vector2(38, 15), label);
                 button.Name = order.ToString();
                 button.TooltipText = help;
                 button.ToggleMode = true;
@@ -101,6 +108,10 @@ public partial class GameScreen
         CompanionOrder.Fight => "fighting",
         CompanionOrder.StayBack => "staying back",
         CompanionOrder.Tend => "tending the fallen",
+        CompanionOrder.FindMe => "finding you",
+        CompanionOrder.Burgle => "burgling",
+        CompanionOrder.Loot => "looting",
+        CompanionOrder.Explore => "exploring",
         _ => "following",
     };
 }

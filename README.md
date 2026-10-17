@@ -102,6 +102,7 @@ on the Godot command line:
 | `--bombtest` | Throws a bomb into a huddle of slimes and checks it lies lit through two turns and goes off at the end of the thrower's next turn. |
 | `--rumbletest` | Checks W rolls the Wend dice, clicking a monster no longer attacks, that Space readies Rumble with the monster in reach, that a click off target puts it away, that double-clicking the monster aims Rumble without attacking, and that the Rumble button then a click attacks. |
 | `--loottest` | Checks a stack of lockpicks fills one slot, dropping part of a stack asks how many, a bag of loot opens to Take one thing or Take all (the picks rejoin their stack), and an opened chest shows what's inside. |
+| `--tradetest` | Checks clicking a companion beside you opens trading, giving part of a stack asks how many, its owner can have it equip a sword, and the Orders panel's Find me button gives the order. |
 | `--clicktest` | Checks that double-clicking a far-off monster rolls the Wend dice, clicking it again walks up to it with Rumble aimed, R puts Rumble away and back, and one more click attacks. |
 | `--resultstest` | Two saved characters click their way out of the exit; checks that their results are saved and shown. Uses a throwaway save folder. |
 | `--autoplay` | The debug party plays a generated dungeon with the rules-engine bot until the run ends, narrating to the console. Add `--fast` for 8× speed, `--party N` for a party of N (up to 8), and `--theme sunken_temple` for the second dungeon. |

@@ -52,6 +52,7 @@ public sealed partial class GameSession
             return error;
         }
 
+        ActiveHero.SearchedRoomIds.Add(ActiveRoom.Id);
         RollOdHand(command, dice, new OdHandCheck(OdHandCheckKind.Search, 0, ActiveHero.Position), events);
         return null;
     }

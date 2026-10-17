@@ -250,6 +250,17 @@ public sealed record Shoved(int HeroId, int TargetId, GridPosition From, GridPos
 /// <summary>A shove turned a shelled monster onto its back: it's prone, and its shell gives no armor until it gets up.</summary>
 public sealed record Flipped(int MonsterId) : GameEvent;
 
+/// <summary>A card (or <paramref name="Count"/> of a stack) passed from one ally to another.</summary>
+public sealed record CardTraded(int FromHeroId, int ToHeroId, int CardId, int Count) : GameEvent;
+
+public sealed record GoldTraded(int FromHeroId, int ToHeroId, int Amount) : GameEvent;
+
+/// <summary>A key (or the Boss Key) passed from one ally to another.</summary>
+public sealed record KeyTraded(int FromHeroId, int ToHeroId, bool BossKey) : GameEvent;
+
+/// <summary>A companion's owner equipped, belted or stowed one of its cards.</summary>
+public sealed record CompanionOutfitted(int OwnerId, int CompanionId, int CardId, Commands.OutfitAction Action) : GameEvent;
+
 /// <summary>A monster's tongue or hook dragged a hero it hit to its side.</summary>
 public sealed record Pulled(int MonsterId, int HeroId, GridPosition From, GridPosition To) : GameEvent;
 

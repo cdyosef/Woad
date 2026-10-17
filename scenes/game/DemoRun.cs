@@ -197,6 +197,20 @@ public static class DemoRun
         StartRoomId = "vault",
     };
 
+    /// <summary>For --tradetest: Aria with two potions and her companion Pip beside her, a Knight's Sword in its pack.</summary>
+    public static RunSetup Camp(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes =
+        [
+            DebugHeroes[0] with { CardIds = ["health_potion", "health_potion", "wooden_sword"] },
+            new HeroSetup("Pip", GameRules.HeroBaseStats, ["wooden_sword", "knights_sword"], OwnerSeat: 0),
+        ],
+        Rooms = [new RoomSetup("camp", RoomTemplate.Parse(".........\n.........\n.........\n.........\n....1....\n.....2...\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
+        StartRoomId = "camp",
+    };
+
     /// <summary>For --clicktest: a quick Aria (3 Wend dice) across the yard from a slime.</summary>
     public static RunSetup Stalk(ulong seed) => new()
     {
