@@ -150,3 +150,23 @@ Each character is saved as one JSON file under Godot's user data folder. On Wind
 `%APPDATA%\Godot\app_userdata\Woad\characters\`. Files that can't be read are skipped and listed on
 the Characters screen. Cards that no longer exist in the game are dropped, with a warning.
 The music and sound-effect volumes from **Settings** are saved next to that folder, in `settings.cfg`.
+
+## Sharing a build on itch.io
+
+The game is published at [cdyosef.itch.io/woad](https://cdyosef.itch.io/woad) (a restricted page:
+share it with a password or download keys from its **Distribute** tab). One-time setup:
+
+- Godot's .NET export templates for this Godot version, in `%APPDATA%\Godot\export_templates\`
+  (Editor → Manage Export Templates, or unpack the `.tpz` from Godot's GitHub releases there).
+- [butler](https://itch.io/docs/butler/), itch.io's upload tool, on the PATH or in `%LOCALAPPDATA%\butler`,
+  signed in once with `butler login` (it opens your browser).
+
+Then build and upload in one go (the build lands in `export/windows`, which git ignores):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/publish-itch.ps1 -Target cdyosef/woad
+```
+
+`-SkipUpload` only builds. Each upload goes to the page's `windows` channel, labeled with the git
+commit; the itch app updates players automatically. The build isn't code-signed, so Windows shows
+"Windows protected your PC" the first time: **More info → Run anyway**.
