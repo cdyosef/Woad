@@ -113,7 +113,7 @@ public class LootAndXpTests
 
         Assert.Equal(new XpGained(hero.Id, 7, 7), events.SingleOf<XpGained>());
         Assert.Equal(2, events.OfType<LootDropped>().Count());
-        Assert.Equal(2, session.RoomById().LootAt(new GridPosition(4, 3)).Count);
+        Assert.Equal(2, session.RoomById().LootAt(new GridPosition(4, 3)).Sum(card => card.Count));
         Assert.Equal(7, hero.Xp);
     }
 

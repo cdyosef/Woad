@@ -41,7 +41,17 @@ public sealed partial class GameSession
     public int MoveDiceLeft => State.Turn is { } turn ? Math.Max(0, ActiveHero.EffectiveStats.MoveDice - turn.MoveDiceUsed) : 0;
 
     /// <summary>The weapon value the active hero can still add to an attack this turn (0 once used).</summary>
-    public int WeaponBonusLeft => State.Turn is { WeaponUsed: false } ? Math.Max(0, ActiveHero.EffectiveStats.Weapon) : 0;
+    public int WeaponBonusLeft => State.Turn is { WeaponUsed: false } ? Math.Max(0, ActiveHero.EffectiveStats.Weapon) + Versatile(ActiveHero) : 0;
+
+    /// <summary>The weapon's own dice the active hero can still add to an attack this turn (the Longsword's d6).</summary>
+    public int WeaponDiceLeft => State.Turn is { WeaponUsed: false } ? Math.Max(0, ActiveHero.MainWeapon?.Definition.Modifiers.WeaponDice ?? 0) : 0;
+
+    /// <summary>The tools' own dice the active hero can still add to a lock-picking roll this turn (a lockpick's d6).</summary>
+    public int ToolDiceLeft => State.Turn is { ToolsUsed: false } ? Math.Max(0, ActiveHero.EffectiveStats.ToolDice) : 0;
+
+    /// <summary>A versatile main-hand weapon's extra, held in both hands (nothing in the off hand).</summary>
+    private static int Versatile(Hero hero) =>
+        hero.MainWeapon?.Definition is { Versatile: > 0 } main && !hero.Equipment.ContainsKey(EquipSlot.OffHand) ? main.Versatile : 0;
 
     /// <summary>The Speed the active hero can still add to a move this turn (0 once used; may be negative).</summary>
     public int SpeedBonusLeft => State.Turn is { SpeedUsed: false } ? ActiveHero.EffectiveStats.Speed : 0;
@@ -101,6 +111,8 @@ public sealed partial class GameSession
             DropCard c => Handle(c, events),
             OpenChest c => Handle(c, events),
             PickUpLoot c => Handle(c, events),
+            TakeLoot c => Handle(c, events),
+            PutLoot c => Handle(c, events),
             EndTurn c => Handle(c, events),
             TakeStairs c => Handle(c, events),
             SmashPot c => Handle(c, events),
@@ -258,10 +270,7 @@ public sealed partial class GameSession
 
         foreach (Hero companion in State.Heroes.Where(hero => hero.IsInPlay))
         {
-            foreach (CardInstance found in companion.AllCards.Where(card => card.BroughtInByHeroId != companion.Id).ToList())
-            {
-                companion.Remove(found);
-            }
+            TakeFound(companion);
 
             companion.Gold = 0;
         }

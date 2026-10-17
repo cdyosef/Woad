@@ -187,6 +187,16 @@ public static class DemoRun
         StartRoomId = "yard",
     };
 
+    /// <summary>For --loottest: Aria with a stack of lockpicks, an emerald and a bomb, beside a chest.</summary>
+    public static RunSetup Treasury(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = [DebugHeroes[0] with { CardIds = ["lockpicks", "lockpicks", "lockpicks", "emerald", "bomb"] }],
+        Rooms = [new RoomSetup("vault", RoomTemplate.Parse(".........\n.........\n.........\n....C....\n....1....\n.........\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
+        StartRoomId = "vault",
+    };
+
     /// <summary>For --clicktest: a quick Aria (3 Wend dice) across the yard from a slime.</summary>
     public static RunSetup Stalk(ulong seed) => new()
     {

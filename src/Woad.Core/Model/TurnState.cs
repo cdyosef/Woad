@@ -93,6 +93,12 @@ public sealed class PendingRoll
 
     /// <summary>A stunning weapon (the Boomerang): every 6 among the dice stuns the targets, hit or miss.</summary>
     public bool StunOnSix { get; }
+
+    /// <summary>How many of the dice, from the first, aren't Power Dice (the rest are, and those added later).</summary>
+    public int NonPowerDice { get; internal init; } = int.MaxValue;
+
+    /// <summary>The tools (lockpicks) went into this roll: if it fails with a 1 among its non-Power dice, a pick snaps.</summary>
+    public bool UsedTools { get; internal init; }
 }
 
 /// <summary>
@@ -126,6 +132,9 @@ public sealed class TurnState
 
     /// <summary>The once-per-turn free loot (picking up or opening a chest) has been used.</summary>
     public bool UsedFreeLoot { get; internal set; }
+
+    /// <summary>The pile (or chest) looted this turn: taking more from it costs nothing more.</summary>
+    public GridPosition? LootedTile { get; internal set; }
 
     /// <summary>The hero has tried to steal this turn (once per turn).</summary>
     public bool HasStolen { get; internal set; }

@@ -31,6 +31,8 @@ public partial class HeroPanel : Panel
 
     public event Action<int>? CardSelected;
 
+    internal CardSlot EquipmentSlot(EquipSlot slot) => _slots[slot];
+
     /// <summary>The dice left this turn, kept up to date by the game screen.</summary>
     public DicePoolView Pool { get; } = new() { Position = new(8, 200), Size = new(160, 60) };
 
@@ -98,9 +100,12 @@ public partial class HeroPanel : Panel
         _hearts.ShowHearts(hero.Hearts, hero.MaxHearts);
 
         Stats stats = hero.EffectiveStats;
-        _stats.Text = $"{UiTheme.Icon("icon_rumble", "Rumble")} {UiTheme.Dice(stats.AttackDice, stats.Weapon)}  " +
+        // Weapon and tool dice show after the bonus (the Longsword: 1d6+1+1d6); tools only help with locks.
+        string weaponDice = stats.WeaponDice > 0 ? $"+{stats.WeaponDice}d6" : "";
+        string toolDice = stats.Tools > 0 ? $" ({UiTheme.Dice(stats.ToolDice, stats.Tools).Replace("0d6", "")} locks)" : "";
+        _stats.Text = $"{UiTheme.Icon("icon_rumble", "Rumble")} {UiTheme.Dice(stats.AttackDice, stats.Weapon)}{weaponDice}  " +
                       $"{UiTheme.Icon("icon_wend", "Wend")} {UiTheme.Dice(stats.MoveDice, stats.Speed)}  " +
-                      $"{UiTheme.Icon("icon_odhand", "Od Hand")} {UiTheme.Dice(stats.OdHandDice, stats.Tools)}\n" +
+                      $"{UiTheme.Icon("icon_odhand", "Od Hand")} {UiTheme.Dice(stats.OdHandDice, 0)}{toolDice}\n" +
                       $"Defense {UiTheme.Dice(stats.DefenseDice, stats.Armor)}   Luck {hero.LuckRemaining}/{stats.Luck}";
         // Gold, the treasure carried (what escaping now is worth on top), and keys, together on one line.
         string dim = Palette.Hex(Palette.TextDim);

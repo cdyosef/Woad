@@ -113,6 +113,10 @@ public partial class GameScreen : Control
         {
             RunClickTest();
         }
+        else if (args.Contains("--loottest"))
+        {
+            RunLootTest();
+        }
     }
 
     /// <summary>Hotkeys, before any focused button can take them as a press: R or Space is Rumble, W rolls Wend.</summary>
@@ -350,6 +354,7 @@ public partial class GameScreen : Control
                 _trayShowsMovement = false;
                 _dice.Clear();
                 _goal = null;
+                CloseRummage();
                 ResetCombo();
                 ResetPool();
                 RefreshPanels();
@@ -363,7 +368,7 @@ public partial class GameScreen : Control
 
             case MovementRolled rolled:
                 _trayShowsMovement = true;
-                await _dice.ShowRoll($"{NameOf(rolled.HeroId)} rolls to move", rolled.Roll, rolled.Bonus, newGroup: true, rolled.PowerDice);
+                await _dice.ShowRoll($"{NameOf(rolled.HeroId)} rolls to move", rolled.Roll, rolled.Bonus, newGroup: true, rolled.PowerDice, DiceKind.Wend);
                 break;
 
             case DieRerolled rerolled:
@@ -478,7 +483,7 @@ public partial class GameScreen : Control
             case OdHandRolled rolled:
                 _trayShowsMovement = false;
                 string goal = rolled.Difficulty > 0 ? $" ({rolled.Difficulty}+)" : "";
-                await _dice.ShowRoll($"{NameOf(rolled.HeroId)} {OdHandCaption(rolled.Kind)}{goal}", rolled.Roll, rolled.Bonus, newGroup: true, rolled.PowerDice);
+                await _dice.ShowRoll($"{NameOf(rolled.HeroId)} {OdHandCaption(rolled.Kind)}{goal}", rolled.Roll, rolled.Bonus, newGroup: true, rolled.PowerDice, DiceKind.OdHand, rolled.ToolDice);
                 break;
 
             case DoorUnlocked or ChestUnlocked or TrapDisarmed or Stole or GateOpened:
@@ -531,16 +536,27 @@ public partial class GameScreen : Control
                 _trayShowsMovement = false;
                 BeginStrike(attack.AttackerId, attack.Total, attack.Roll.Faces.TakeLast(attack.PowerDice).Sum());
                 await Lunge(attack.AttackerId, attack.TargetIds.FirstOrDefault());
-                await _dice.ShowRoll($"{NameOf(attack.AttackerId)} {(attack.Shove ? "shoves" : "attacks")}", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice);
+                await _dice.ShowRoll($"{NameOf(attack.AttackerId)} {(attack.Shove ? "shoves" : "attacks")}", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice, DiceKind.Rumble);
                 break;
 
             case DefenseRolled defense:
                 _defense = defense;
-                await _dice.ShowRoll($"{NameOf(defense.DefenderId)} defends", defense.Roll, defense.Armor, newGroup: false, defense.PowerDice);
+                await _dice.ShowRoll($"{NameOf(defense.DefenderId)} defends", defense.Roll, defense.Armor, newGroup: false, defense.PowerDice, DiceKind.Defense);
                 break;
 
             case PowerDiceEarned earned when _figures.TryGetValue(earned.HeroId, out Figure? lucky) && lucky.RoomId == _shownRoomId:
                 _board.FloatText(lucky.Position, "6! Power Die", Palette.Power);
+                break;
+
+            case CritRolled crit:
+                CalloutOver(crit.HeroId, "6!", Palette.Power);
+                await Pause(0.2);
+                break;
+
+            case LockpickSnapped snapped:
+                CalloutOver(snapped.HeroId, "PICK SNAPS!", Palette.DieTool);
+                RefreshPanels();
+                await Pause(0.3);
                 break;
 
             case PowerDieAdded added:

@@ -4,12 +4,23 @@ using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Game;
 
+/// <summary>What a roll is, for its dice's color: Rumble red, Wend green, Od Hand yellow, Defense blue; others plain.</summary>
+public enum DiceKind
+{
+    Plain,
+    Rumble,
+    Wend,
+    OdHand,
+    Defense,
+}
+
 /// <summary>
 /// The dice of the latest roll, fighting-game style under the board: the roller and their dice on the
 /// left, and when someone answers it, a VS and every defender's dice on the right (smaller when there
 /// are several, as in a blast). Each side shows its fixed bonus (weapon, armor or Speed) and total;
-/// dice tumble before they land with a small pop, and the side that wins glows gold. Power Dice are
-/// purple. When Luck allows, the roller's dice can be clicked to reroll them.
+/// dice tumble before they land with a small pop, and the side that wins glows gold. Dice are colored
+/// by what they are (see <see cref="DiceKind"/>); tools' dice are bronze and Power Dice purple. When
+/// Luck allows, the roller's dice can be clicked to reroll them.
 /// </summary>
 public partial class DiceBar : Control
 {
@@ -50,9 +61,10 @@ public partial class DiceBar : Control
     /// <summary>Tumbles and then shows a roll: a new roll on the left (clearing the bar), or a defender answering it on the right.</summary>
     /// <param name="bonus">The fixed value added to the dice (weapon, armor or Speed).</param>
     /// <param name="powerDice">How many of the last faces are Power Dice.</param>
-    public async Task ShowRoll(string caption, DiceRoll roll, int bonus, bool newGroup, int powerDice = 0)
+    /// <param name="toolDice">How many faces, just before the Power Dice, are the tools' own dice (bronze).</param>
+    public async Task ShowRoll(string caption, DiceRoll roll, int bonus, bool newGroup, int powerDice = 0, DiceKind kind = DiceKind.Plain, int toolDice = 0)
     {
-        var row = new Row(caption, [.. roll.Faces], bonus, roll.Faces.Count - powerDice);
+        var row = new Row(caption, [.. roll.Faces], bonus, roll.Faces.Count - powerDice) { Kind = kind, ToolFrom = roll.Faces.Count - powerDice - toolDice };
         if (newGroup || _roller is null)
         {
             _roller = row;
@@ -79,7 +91,7 @@ public partial class DiceBar : Control
             return;
         }
 
-        _roller = new Row(old.Caption, [.. old.Faces, face], old.Bonus, old.PowerFrom) { Won = old.Won };
+        _roller = new Row(old.Caption, [.. old.Faces, face], old.Bonus, old.PowerFrom) { Won = old.Won, Kind = old.Kind, ToolFrom = old.ToolFrom };
         await Tumble(_roller, [_roller.Faces.Length - 1]);
     }
 
@@ -186,7 +198,8 @@ public partial class DiceBar : Control
             row.Rects[i] = rect;
             float scale = 1 + 0.35f * row.Pop[i];
             DrawSetTransform(rect.GetCenter() + row.Offset[i], row.Angle[i], new Vector2(scale, scale));
-            DrawDie(row.Shown[i], die, row.Won, clickable, power: i >= row.PowerFrom);
+            Color fill = i >= row.PowerFrom ? Palette.Power : i >= row.ToolFrom ? Palette.DieTool : DieColor(row.Kind);
+            DrawDie(row.Shown[i], die, row.Won, clickable, fill);
             DrawSetTransform(Vector2.Zero, 0, Vector2.One);
         }
 
@@ -286,18 +299,27 @@ public partial class DiceBar : Control
         await ToSignal(pop, Tween.SignalName.Finished);
     }
 
-    /// <summary>Draws a die of <paramref name="size"/> centered on the current transform's origin.</summary>
-    private void DrawDie(int face, float size, bool success, bool clickable, bool power)
+    private static Color DieColor(DiceKind kind) => kind switch
+    {
+        DiceKind.Rumble => Palette.DieRumble,
+        DiceKind.Wend => Palette.DieWend,
+        DiceKind.OdHand => Palette.DieOdHand,
+        DiceKind.Defense => Palette.DieDefense,
+        _ => Palette.Text,
+    };
+
+    /// <summary>Draws a die of <paramref name="size"/> centered on the current transform's origin; a winning one glows gold.</summary>
+    private void DrawDie(int face, float size, bool success, bool clickable, Color fill)
     {
         var rect = new Rect2(-size / 2, -size / 2, size, size);
         if (success)
         {
-            DrawRect(rect.Grow(2), Palette.TrimBright with { A = 0.35f });
+            DrawRect(rect.Grow(2.5f), Palette.TrimBright with { A = 0.55f });
         }
 
-        DrawRect(rect, power ? Palette.Power : success ? Palette.TrimBright : Palette.Text);
-        DrawRect(new Rect2(rect.Position.X, rect.End.Y - 2, rect.Size.X, 2), success ? Palette.Trim : Palette.TextDim);
-        DrawRect(rect, clickable ? Palette.Heal : Palette.Ink, filled: false, width: clickable ? 1.5f : 1);
+        DrawRect(rect, fill);
+        DrawRect(new Rect2(rect.Position.X, rect.End.Y - 2, rect.Size.X, 2), fill.Darkened(0.35f));
+        DrawRect(rect, clickable ? Palette.Heal : success ? Palette.TrimBright : Palette.Ink, filled: false, width: clickable || success ? 1.5f : 1);
         float pip = Math.Max(0.8f, size / 10);
         foreach (Vector2 spot in Pips[Math.Clamp(face, 0, 6)])
         {
@@ -317,6 +339,11 @@ public partial class DiceBar : Control
         public int[] Shown { get; } = [.. faces];
 
         public int Bonus { get; } = bonus;
+
+        public DiceKind Kind { get; init; }
+
+        /// <summary>Faces from this index (up to <see cref="PowerFrom"/>) are the tools' own dice.</summary>
+        public int ToolFrom { get; init; } = int.MaxValue;
 
         /// <summary>This side won; its dice glow.</summary>
         public bool Won { get; set; }

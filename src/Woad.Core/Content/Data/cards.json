@@ -1,6 +1,7 @@
 [
   // Weapons (main hand)
   { "id": "wooden_sword", "name": "Wooden Sword", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 1 }, "value": 2, "text": "Weapon 1: adds 1 to one Rumble roll a turn." },
+  { "id": "longsword", "name": "Longsword", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 1, "weaponDice": 1 }, "versatile": 1, "value": 14, "text": "Weapon 1 + 1d6 on one Rumble roll a turn (a 6 on its die rolls another straight in). Versatile: +1 more with nothing in your off hand." },
   { "id": "knights_sword", "name": "Knight's Sword", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 2 }, "value": 10, "text": "Weapon 2: adds 2 to one Rumble roll a turn." },
   { "id": "trident", "name": "Trident", "type": "weapon", "slot": "mainHand", "twoHanded": true, "modifiers": { "weapon": 1 }, "attackRange": 2, "swimmerBonus": 1, "value": 9, "text": "Two-handed. Weapon 1, reaching 2 tiles. +1 more against swimmers, and it spears them even submerged." },
   { "id": "short_bow", "name": "Short Bow", "type": "weapon", "slot": "mainHand", "twoHanded": true, "modifiers": { "weapon": 1 }, "attackRange": 4, "value": 8, "text": "Two-handed. Weapon 1. Attack at range 4." },
@@ -16,14 +17,14 @@
   { "id": "dash_boots", "name": "Dash Boots", "type": "boots", "slot": "feet", "modifiers": { "moveDice": 1 }, "value": 10, "text": "+1 Wend die." },
 
   // Spells and tools
-  { "id": "flame_scroll", "name": "Flame Scroll", "type": "spell", "usage": "singleUse", "effect": { "kind": "attack", "amount": 3, "range": 3, "fire": true }, "value": 4, "text": "Single use. A 3-dice fire attack on a monster within 3 (not your Rumble dice). Any 6 sets it alight." },
+  { "id": "flame_scroll", "name": "Flame Scroll", "type": "spell", "usage": "singleUse", "stacks": true, "effect": { "kind": "attack", "amount": 3, "range": 3, "fire": true }, "value": 4, "text": "Single use. A 3-dice fire attack on a monster within 3 (not your Rumble dice). Any 6 sets it alight." },
   { "id": "frost_wand", "name": "Frost Wand", "type": "spell", "slot": "offHand", "usage": "charges", "charges": 2, "effect": { "kind": "freeze", "amount": 1, "range": 3 }, "value": 8, "text": "2 charges per floor. Freeze a monster within 3: it skips its next turn." },
   { "id": "boomerang", "name": "Boomerang", "type": "weapon", "slot": "offHand", "altSlot": "mainHand", "attackRange": 4, "attackBonus": 1, "stunOnSix": true, "value": 6, "text": "Off hand or main hand. Throw it with your Rumble dice +1 at a target within 4; every 6 stuns it (hit or miss)." },
-  { "id": "lockpicks", "name": "Lockpicks", "type": "tool", "slot": "offHand", "modifiers": { "tools": 2 }, "value": 6, "text": "Tools 2: adds 2 to one Od Hand roll a turn (picking locks, searching, disarming, stealing)." },
+  { "id": "lockpicks", "name": "Lockpicks", "type": "tool", "slot": "offHand", "stacks": true, "modifiers": { "tools": 1, "toolDice": 1 }, "value": 6, "text": "Stacks. +1 and 1d6 on one lock-picking roll a turn (doors, chests, gates; a 6 on its die rolls another straight in). A failed pick with a 1 showing snaps one." },
 
   // Consumables
-  { "id": "bomb", "name": "Bomb", "type": "bomb", "usage": "singleUse", "effect": { "kind": "attack", "amount": 4, "range": 3, "areaRadius": 1 }, "value": 1, "text": "Single use. Throw it up to 3 tiles, lit: at the end of your next turn it blasts everyone within a tile (yourself too) with 4 dice. More dice through means a shove, knocked flat, stunned. Breaks cracked walls." },
-  { "id": "health_potion", "name": "Health Potion", "type": "potion", "usage": "singleUse", "effect": { "kind": "heal", "amount": 3 }, "value": 2, "text": "Single use. Restore 3 hearts." },
+  { "id": "bomb", "name": "Bomb", "type": "bomb", "usage": "singleUse", "stacks": true, "effect": { "kind": "attack", "amount": 4, "range": 3, "areaRadius": 1 }, "value": 1, "text": "Single use. Throw it up to 3 tiles, lit: at the end of your next turn it blasts everyone within a tile (yourself too) with 4 dice. More dice through means a shove, knocked flat, stunned. Breaks cracked walls." },
+  { "id": "health_potion", "name": "Health Potion", "type": "potion", "usage": "singleUse", "stacks": true, "effect": { "kind": "heal", "amount": 3 }, "value": 2, "text": "Single use. Restore 3 hearts." },
 
   // Treasure
   { "id": "loose_coins", "name": "Loose Coins", "type": "treasure", "coins": true, "value": 2, "text": "2 gold, straight into your purse. Found in pots." },

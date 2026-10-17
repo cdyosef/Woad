@@ -247,6 +247,14 @@ public partial class GameScreen
             return;
         }
 
+        // Loot beside you (an ally may be standing on it): take it, or open the bag.
+        if (tile != hero.Position && room.MonsterAt(tile) is null && room.Layout[tile] != TileKind.Chest
+            && room.HasLootAt(tile) && hero.Position.ChebyshevDistanceTo(tile) == 1)
+        {
+            Rummage(hero, room, tile);
+            return;
+        }
+
         if (room.MonsterAt(tile) is not null && _goal == tile && turn.MovementPoints > 0)
         {
             _ = GoToward(hero, room, tile);
@@ -306,9 +314,18 @@ public partial class GameScreen
         }
     }
 
-    /// <summary>A chest: disarm a trap you found, pick the lock if you've no key, otherwise open it (using a key if locked).</summary>
-    private void ClickChest(Hero hero, Room room, GridPosition chest)
+    /// <summary>
+    /// A chest: an opened one is rummaged through; otherwise disarm a trap you found, pick the lock if
+    /// you've no key, or open it (using a key if locked) and rummage through what's inside.
+    /// </summary>
+    private async void ClickChest(Hero hero, Room room, GridPosition chest)
     {
+        if (room.IsChestOpened(chest))
+        {
+            Rummage(hero, room, chest);
+            return;
+        }
+
         if (room.ChestTrapAt(chest) is { Revealed: true })
         {
             ExecuteOdHand((heroId, dice, tools, power) => new Disarm(heroId, chest, dice, tools, power));
@@ -317,9 +334,9 @@ public partial class GameScreen
         {
             ExecuteOdHand((heroId, dice, tools, power) => new PickLock(heroId, chest, dice, tools, power));
         }
-        else
+        else if (await ExecuteAsync(new OpenChest(hero.Id, chest)) && ActiveHero == hero && room.IsChestOpened(chest) && room.LootAt(chest).Count > 0)
         {
-            Execute(new OpenChest(hero.Id, chest));
+            Rummage(hero, room, chest);
         }
     }
 
@@ -348,7 +365,7 @@ public partial class GameScreen
     {
         if (room.HasLootAt(hero.Position))
         {
-            Execute(new PickUpLoot(hero.Id));
+            Rummage(hero, room, hero.Position);
         }
         else if (room.Breaches.ContainsKey(hero.Position) && room.Layout[hero.Position] != TileKind.CrackedWall)
         {
@@ -730,6 +747,7 @@ public partial class GameScreen
 
     private void CancelSelection()
     {
+        CloseRummage();
         _stealing = false;
         _shoving = false;
         _leaping = false;
@@ -767,7 +785,7 @@ public partial class GameScreen
                 Execute(new StowCard(hero.Id, cardId));
                 break;
             case CardAction.Drop:
-                Execute(new DropCard(hero.Id, cardId));
+                Drop(card);
                 break;
         }
     }

@@ -460,6 +460,68 @@ public partial class GameScreen
         }
     }
 
+    /// <summary>
+    /// Debug mode (<c>-- --loottest</c>, with <see cref="DemoRun.Treasury"/>): Aria drops two of her three
+    /// lockpicks (asked how many) and her emerald, which lie in a bag; she rummages through it, takes the
+    /// emerald back and then the rest; then she opens the chest beside her and takes what's inside.
+    /// </summary>
+    private async void RunLootTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            CardInstance picks = aria.AllCards.Single(card => card.Definition.Id == "lockpicks");
+            Check(picks.Count == 3 && aria.Equipment[EquipSlot.OffHand] == picks, "three lockpicks make one stack, in the off hand");
+
+            await Click(this, _heroPanel.EquipmentSlot(EquipSlot.OffHand));
+            await Click(this, _inventory.ActionButton(CardAction.Drop));
+            Check(_countPrompt.Visible, "dropping a stack asks how many");
+            await Click(this, _countPrompt.PlusButton);
+            await Click(this, _countPrompt.OkButton);
+            await WaitUntilIdle();
+            Check(picks.Count == 1 && ShownRoom.LootAt(aria.Position).Sum(card => card.Count) == 2, "two of the three are dropped");
+
+            CardInstance emerald = aria.AllCards.Single(card => card.Definition.Id == "emerald");
+            await Click(this, _inventory.BackpackSlot(aria.Backpack.ToList().IndexOf(emerald)));
+            await Click(this, _inventory.ActionButton(CardAction.Drop));
+            await WaitUntilIdle();
+
+            await ClickTile(aria.Position);
+            Check(_rummage.Visible && _rummage.Tile == aria.Position, "clicking a bag of loot opens it");
+            await Click(this, _rummage.TakeButton(emerald.Id)!);
+            await WaitUntilIdle();
+            Check(aria.AllCards.Contains(emerald) && _rummage.Visible, "Take takes just that card, and the bag stays open");
+            await Click(this, _rummage.TakeAllButton);
+            await WaitUntilIdle();
+            Check(picks.Count == 3 && !_rummage.Visible, "Take all empties the bag (the picks rejoin the stack) and closes it");
+
+            var chest = new GridPosition(4, 3);
+            await ClickTile(chest);
+            await WaitUntilIdle();
+            Check(ShownRoom.IsChestOpened(chest), "clicking the chest opens it");
+            if (ShownRoom.LootAt(chest).Count == 0)
+            {
+                Check(!_rummage.Visible, "coins go straight to the purse, leaving nothing to rummage through");
+            }
+            else
+            {
+                Check(_rummage.Visible && _rummage.Tile == chest, "and shows what's inside");
+                await Click(this, _rummage.TakeAllButton);
+                await WaitUntilIdle();
+                Check(ShownRoom.LootAt(chest).Count == 0 || aria.Backpack.Count == 6, "Take all empties the chest (or fills the backpack)");
+            }
+
+            GD.Print("Loot test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Loot test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
     private async Task PressKey(Key key)
     {
         GetViewport().PushInput(new InputEventKey { Pressed = true, Keycode = key }, inLocalCoords: true);

@@ -31,5 +31,5 @@ public partial class CardSlot : Button
     public static string Title(CardInstance card) =>
         card.Definition.Usage == CardUsage.Charges
             ? $"{card.Definition.Name} ({card.ChargesRemaining}/{card.Definition.Charges})"
-            : card.Definition.Name;
+            : card.Count > 1 ? $"{card.Definition.Name} x{card.Count}" : card.Definition.Name;
 }

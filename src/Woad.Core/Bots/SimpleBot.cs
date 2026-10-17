@@ -99,9 +99,11 @@ public static class SimpleBot
         }
 
         bool backpackHasRoom = hero.Backpack.Count < GameRules.BackpackCapacity;
-        if (session.CheckPickUp() is null)
+        // Loot on its tile or in reach (a chest it just opened, a pile beside it).
+        if (new[] { hero.Position }.Concat(hero.Position.SurroundingTiles()).FirstOrDefault(tile => room.Layout.Contains(tile) && room.HasLootAt(tile) && session.CheckPickUp(tile) is null) is var reach
+            && room.Layout.Contains(reach) && room.HasLootAt(reach) && session.CheckPickUp(reach) is null)
         {
-            return new PickUpLoot(hero.Id);
+            return new PickUpLoot(hero.Id, reach);
         }
 
         if (!turn.HasActed && !fighting && Beside(room, hero, TileKind.Pot) is { } pot)
@@ -169,7 +171,7 @@ public static class SimpleBot
             return new RollMovement(hero.Id);
         }
 
-        IEnumerable<GridPosition> lootTiles = room.LootPositions.Where(_ => backpackHasRoom).Concat(room.Keys.Keys).Concat(room.Gold.Keys)
+        IEnumerable<GridPosition> lootTiles = room.LootPositions.Where(tile => backpackHasRoom && room.Layout[tile].IsWalkable()).Concat(room.Keys.Keys).Concat(room.Gold.Keys)
             .Concat(room.Bombs.Where(bomb => !bomb.Lit && backpackHasRoom).Select(bomb => bomb.Position));
         if (room.BossKeyAt is { } bossKey)
         {

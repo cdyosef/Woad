@@ -27,7 +27,9 @@ internal static class TestContent
           { "id": "boomerang", "name": "Boomerang", "type": "weapon", "slot": "offHand", "altSlot": "mainHand", "attackRange": 4, "attackBonus": 1, "stunOnSix": true },
           { "id": "trident", "name": "Trident", "type": "weapon", "slot": "mainHand", "twoHanded": true, "modifiers": { "weapon": 1 }, "attackRange": 2, "swimmerBonus": 1 },
           { "id": "helm", "name": "Helm", "type": "armor", "slot": "head", "swims": true },
-          { "id": "picks", "name": "Picks", "type": "tool", "slot": "offHand", "modifiers": { "tools": 2 } },
+          { "id": "picks", "name": "Picks", "type": "tool", "slot": "offHand", "stacks": true, "modifiers": { "tools": 1, "toolDice": 1 } },
+          { "id": "longsword", "name": "Longsword", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 1, "weaponDice": 1 }, "versatile": 1 },
+          { "id": "tonic", "name": "Tonic", "type": "potion", "usage": "singleUse", "stacks": true, "effect": { "kind": "heal", "amount": 1 } },
           { "id": "coin", "name": "Coin", "type": "treasure", "value": 5 },
           { "id": "purse", "name": "Purse", "type": "treasure", "coins": true, "value": 3 },
           { "id": "gem", "name": "Gem", "type": "treasure", "value": 15 }

@@ -107,6 +107,15 @@ public sealed record CardDefinition
     /// <summary>Gear: water costs the wearer 1 step a tile, and deep water needs no Rumble die to stay afloat.</summary>
     public bool Swims { get; init; }
 
+    /// <summary>Weapons: this much more on attacks while nothing is in the off hand (wielded two-handed).</summary>
+    public int Versatile { get; init; }
+
+    /// <summary>Copies gather into one card with a count, filling one slot (lockpicks, bombs, potions, scrolls).</summary>
+    public bool Stacks { get; init; }
+
+    /// <summary>Whether copies stack: those marked so, and every treasure but coins.</summary>
+    public bool IsStackable => Stacks || (Type == CardType.Treasure && !Coins);
+
     public CardEffect? Effect { get; init; }
 
     /// <summary>Treasure only: coins go straight into the finder's purse as gold instead of taking a backpack slot.</summary>

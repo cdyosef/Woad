@@ -57,8 +57,8 @@ public sealed record BeltCard(int HeroId, int CardId) : GameCommand(HeroId);
 /// <summary>Move an equipped or belted card into the backpack. Uses the action.</summary>
 public sealed record StowCard(int HeroId, int CardId) : GameCommand(HeroId);
 
-/// <summary>Drop a card onto your tile as loot. Free.</summary>
-public sealed record DropCard(int HeroId, int CardId) : GameCommand(HeroId);
+/// <summary>Drop a card onto your tile as loot (of a stack, <paramref name="Count"/> of it; all by default). Free.</summary>
+public sealed record DropCard(int HeroId, int CardId, int? Count = null) : GameCommand(HeroId);
 
 /// <summary>
 /// Open an adjacent chest and draw from the loot deck. A locked chest takes a key (or pick it first).
@@ -66,8 +66,21 @@ public sealed record DropCard(int HeroId, int CardId) : GameCommand(HeroId);
 /// </summary>
 public sealed record OpenChest(int HeroId, GridPosition Chest) : GameCommand(HeroId);
 
-/// <summary>Take cards (as many as fit), keys and the Boss Key from your tile. Looting, like opening a chest.</summary>
-public sealed record PickUpLoot(int HeroId) : GameCommand(HeroId);
+/// <summary>
+/// Take everything (cards as fit, gold, keys, the Boss Key, an unlit bomb) from a pile on or next to
+/// you (your own tile by default), or an opened chest. Looting, like opening a chest.
+/// </summary>
+public sealed record PickUpLoot(int HeroId, GridPosition? Tile = null) : GameCommand(HeroId);
+
+/// <summary>
+/// Take one card (or <paramref name="Count"/> off its stack) from a pile on or next to you, or an opened
+/// chest; with no card, the gold and keys there. Looting: the first take each turn is the free loot,
+/// and more from the same pile that turn are free.
+/// </summary>
+public sealed record TakeLoot(int HeroId, GridPosition Tile, int? CardId, int? Count = null) : GameCommand(HeroId);
+
+/// <summary>Put one of your cards (or <paramref name="Count"/> of a stack) into a pile on or next to you, or an opened chest. Free.</summary>
+public sealed record PutLoot(int HeroId, GridPosition Tile, int CardId, int? Count = null) : GameCommand(HeroId);
 
 /// <summary>Open the locked door you stand in with a key, or the Boss Door with the Boss Key. Free.</summary>
 public sealed record UnlockDoor(int HeroId, Direction Door) : GameCommand(HeroId);

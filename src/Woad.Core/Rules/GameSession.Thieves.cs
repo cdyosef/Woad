@@ -9,8 +9,8 @@ namespace Woad.Core.Rules;
 
 /// <summary>
 /// Monsters that steal (the Petty Thief, the Mugger Fly). A monster with Od Hand dice may steal from a
-/// hero beside it once a turn (a stun takes that away): its dice against the hero's own Od Hand dice
-/// and tools, every die over their total a hit. Hits take, in turn, gold, an item from the backpack,
+/// hero beside it once a turn (a stun takes that away): its dice against the hero's own Od Hand dice,
+/// every die over their total a hit. Hits take, in turn, gold, an item from the backpack,
 /// then gold again (<see cref="GoldPerTheft"/> a hit), never more than one item, and only gold for a
 /// gold-only thief. A thief with loot runs from everyone; a mugger goes after the richest hero, and
 /// each of its hits takes a gold piece too. Whatever a monster stole drops where it falls.
@@ -49,18 +49,16 @@ public sealed partial class GameSession
         events.Add(new AttackRolled(monster.Id, roll, 0, roll.Total, [mark.Id], powerDice));
         Stats stats = mark.EffectiveStats;
         DiceRoll hold = _dice.Roll(Math.Max(0, stats.OdHandDice));
-        int tools = Math.Max(0, stats.Tools);
-        events.Add(new DefenseRolled(mark.Id, hold, tools, hold.Total + tools));
+        events.Add(new DefenseRolled(mark.Id, hold, 0, hold.Total));
 
-        int hits = roll.Faces.Count(face => face > hold.Total + tools);
+        int hits = roll.Faces.Count(face => face > hold.Total);
         int gold = 0;
         CardInstance? taken = null;
         for (int hit = 1; hit <= hits; hit++)
         {
             if (hit == 2 && !monster.Definition.GoldOnly && mark.Backpack.Count > 0)
             {
-                taken = mark.Backpack[_random.Loot.NextInt(0, mark.Backpack.Count)];
-                mark.Remove(taken);
+                taken = TakeFromHero(mark, mark.Backpack[_random.Loot.NextInt(0, mark.Backpack.Count)], 1);
                 monster.StolenCards.Add(taken);
                 continue;
             }
