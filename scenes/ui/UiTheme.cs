@@ -16,6 +16,12 @@ public static class UiTheme
     public static Theme Create()
     {
         var theme = new Theme { DefaultFontSize = FontSize };
+        if (GameArt.BodyFont is { } body)
+        {
+            // Text drawn by hand (on the board, in the dice bar) uses the fallback font: the same one.
+            theme.DefaultFont = body;
+            ThemeDB.FallbackFont = body;
+        }
 
         theme.SetColor("font_color", "Label", Palette.Text);
         theme.SetFontSize("normal_font_size", "RichTextLabel", FontSize);

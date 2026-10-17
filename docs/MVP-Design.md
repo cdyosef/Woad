@@ -192,8 +192,8 @@ facing door of the next room.
 - The attacker rolls the Rumble dice they chose and adds them up, plus their weapon's value if they
   used it.
 - The defender rolls all their Defense dice and adds their armor.
-- If the attack total is higher, the defender loses **1 heart**. Ties go to the defender. The defender's line
-  in the dice tray, the log and the board say **Hit!** or **Miss!**.
+- If the attack total is higher, the defender loses **1 heart**. Ties go to the defender. The dice bar
+  tags the defender's dice HIT, MISS or BLOCKED, and the board calls it out (see Presentation).
 - Rolling dice together makes one attack more likely to land; splitting them gives more chances.
 - **Card attacks** (the Flame Scroll) roll their own dice and don't use your Rumble dice. Bombs work
   differently: see [Bombs](#bombs).
@@ -543,14 +543,14 @@ them up there like any character.
 ```
 640 px
 ┌──────────────┬──────────────────────┬──────────────┐
-│ Active hero  │ floor / room / turn  │ Backpack (6) │
-│ portrait     ├──────────────────────┤ Belt (2)     │
-│ hearts/stats │                      │              │
-│              │  9×9 view of room    │ Dice tray    │ 360 px
+│ Active hero  │ floor / room / turn  │ Belt (2)     │
+│ portrait     ├──────────────────────┤ Backpack (6) │
+│ hearts/stats │                      │ Card text    │
+│              │  9×9 view of room    │ Message log  │ 360 px
 │ Equipment    │   288 × 288 px       │              │
-│ slots        │                      │ Actions      │
-│              ├──────────────────────┤              │
-│              │ message log/minimap  │              │
+│ slots,       │                      │ Actions      │
+│ minimap      ├──────────────────────┤              │
+│              │ dice bar: A  VS  B   │              │
 └──────────────┴──────────────────────┴──────────────┘
    176 px              288 px              176 px
 ```
@@ -571,9 +571,22 @@ them up there like any character.
   - **Monsters:** a sprite each. Slimelings are small slimes, the Iron Warden looms larger, and a
     collapsed skeleton becomes a bone pile.
 - **UI art:** dark panels in riveted, gold-trimmed frames, and an original serif capitals pixel font
-  for headings, titles and banners, in the spirit of *Castlevania*. Body text stays in the default
-  font for readability.
-- **Dice:** dice jitter and spin as they tumble, then land with a small pop. Successful faces glow gold.
+  for headings, titles, banners and callouts, in the spirit of *Castlevania*. Body text is Pixelify
+  Sans at its bold weight (SIL Open Font License; `assets/fonts/PixelifySans-OFL.txt`), lightly
+  smoothed so it stays readable at every window size.
+- **Dice bar:** under the board, fighting-game style. Whoever rolls is on the left with their dice,
+  bonus and total; whoever answers is on the right of a slanted VS (several defenders, as in a blast,
+  each get a smaller column). The winning side glows gold, and each defender is tagged HIT, MISS or
+  BLOCKED. Dice jitter and spin as they tumble, then land with a small pop. With Luck, the roller's
+  dice can be clicked to reroll them. Rolls with no opponent (moving, the Keel Die) show one side.
+- **Hits, fighting-game style:** a hit freezes the action for a beat (hit-stop), flashes the target
+  white, slashes across it in a spray of the attacker's sparks, shakes the view and makes the target
+  reel, under a big slanted callout that slams in and slides away:
+  - **HIT!**; **CRITICAL!** when Power Dice made the difference; **K.O.!** when it defeats a monster;
+    **2 HITS!**, **3 HITS!**... when one attacker (or one blast) lands several in a row.
+  - **MISS** for a plain miss; **BLOCKED!**, with blue sparks and a clang, when a shield (or a
+    monster's armor) made the difference.
+  - **DOWN!** when a hero keels over, and **STUN!**, **BURN!**, **TOPPLED!** and **PULLED!**.
 - **Sound:** synthesized 8-bit effects for buttons, dice, footsteps, hits, blocks, defeats, healing,
   coins, chests, pots, doors, stairs, turns, the monsters' phase, keeling over, dying and victory.
 - **Music:** synthesized chiptune songs that crossfade with the action: a title theme for the menus,

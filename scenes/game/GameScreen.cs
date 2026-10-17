@@ -332,6 +332,7 @@ public partial class GameScreen : Control
                 _targeting = false;
                 _trayShowsMovement = false;
                 _dice.Clear();
+                ResetCombo();
                 ResetPool();
                 RefreshPanels();
                 Hero hero = _session.State.GetHero(turn.HeroId);
@@ -401,12 +402,12 @@ public partial class GameScreen : Control
 
             case Flipped flipped:
                 _dice.ShowOutcome(true);
-                FloatOver(flipped.MonsterId, "flipped!", Palette.TrimBright);
+                CalloutOver(flipped.MonsterId, "TOPPLED!", Palette.TrimBright);
                 await UpdateFigure(flipped.MonsterId, figure => figure.Prone = true, 0.25);
                 break;
 
             case Pulled pulled:
-                FloatOver(pulled.HeroId, "pulled!", Palette.Danger);
+                CalloutOver(pulled.HeroId, "PULLED!", Palette.Danger);
                 await Walk(pulled.HeroId, [pulled.To]);
                 break;
 
@@ -510,11 +511,13 @@ public partial class GameScreen : Control
 
             case AttackRolled attack:
                 _trayShowsMovement = false;
+                BeginStrike(attack.AttackerId, attack.Total, attack.Roll.Faces.TakeLast(attack.PowerDice).Sum());
                 await Lunge(attack.AttackerId, attack.TargetIds.FirstOrDefault());
                 await _dice.ShowRoll($"{NameOf(attack.AttackerId)} {(attack.Shove ? "shoves" : "attacks")}", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice);
                 break;
 
             case DefenseRolled defense:
+                _defense = defense;
                 await _dice.ShowRoll($"{NameOf(defense.DefenderId)} defends", defense.Roll, defense.Armor, newGroup: false, defense.PowerDice);
                 break;
 
@@ -523,11 +526,12 @@ public partial class GameScreen : Control
                 break;
 
             case PowerDieAdded added:
+                _attackTotal += added.Face;
+                _attackPower += added.Face;
                 await _dice.AddPowerDie(added.Face);
                 break;
 
             case Damaged damaged:
-                _dice.ShowOutcome(damaged.Amount > 0);
                 await ShowDamage(damaged);
                 break;
 
@@ -540,7 +544,7 @@ public partial class GameScreen : Control
                 break;
 
             case Ignited ignited:
-                FloatOver(ignited.EntityId, ignited.FireDice == 1 ? "on fire!" : $"fire {ignited.FireDice}!", Palette.Fire);
+                CalloutOver(ignited.EntityId, ignited.FireDice == 1 ? "BURN!" : $"BURN {ignited.FireDice}!", Palette.Fire);
                 await UpdateFigure(ignited.EntityId, figure => figure.FireDice = ignited.FireDice, 0.3);
                 break;
 
@@ -551,6 +555,7 @@ public partial class GameScreen : Control
 
             case FireBurned burned:
                 _trayShowsMovement = false;
+                BeginStrike(0, burned.Roll.Total, 0);
                 await _dice.ShowRoll($"{NameOf(burned.EntityId)} burns", burned.Roll, 0, newGroup: true);
                 await UpdateFigure(burned.EntityId, figure => figure.FireDice = burned.FireDiceLeft, 0.1);
                 break;
@@ -598,6 +603,7 @@ public partial class GameScreen : Control
 
             case BlastRolled blast:
                 _trayShowsMovement = false;
+                BeginStrike(0, blast.Roll.Total, 0);
                 await _dice.ShowRoll("The blast", blast.Roll, 0, newGroup: true, blast.PowerDice);
                 break;
 
@@ -617,7 +623,7 @@ public partial class GameScreen : Control
                 break;
 
             case Stunned stunned:
-                FloatOver(stunned.EntityId, stunned.Powerful ? "dazed!" : "stunned!", Palette.TrimBright);
+                CalloutOver(stunned.EntityId, "STUN!", Palette.TrimBright);
                 await UpdateFigure(stunned.EntityId, figure => figure.StunMarks = stunned.Stacks + 3 * stunned.PowerfulStacks, 0.25);
                 break;
 
@@ -631,7 +637,8 @@ public partial class GameScreen : Control
 
             case HeroKeeledOver keeled:
                 await Walk(keeled.HeroId, [keeled.Position]);
-                FloatOver(keeled.HeroId, "keels over!", Palette.Danger);
+                CalloutOver(keeled.HeroId, "DOWN!", Palette.Danger, size: 3);
+                _board.Shake(4);
                 await UpdateFigure(keeled.HeroId, figure => { figure.Keeling = true; figure.Hearts = 0; figure.LifeMarks = figure.DeathMarks = 0; }, 0.4);
                 break;
 
@@ -754,9 +761,6 @@ public partial class GameScreen : Control
                 break;
             case Damaged { Amount: > 0 }:
                 Sfx.Play("hit");
-                break;
-            case Damaged:
-                Sfx.Play("block");
                 break;
             case MonsterFrozen:
                 Sfx.Play("block", 0.6f);
