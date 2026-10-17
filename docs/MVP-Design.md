@@ -572,7 +572,14 @@ them up there like any character.
 - **Dungeon art:** original 16×16 placeholder sprites, drawn at 2× (32px tiles), in a 16-bit palette
   that nods to *A Link to the Past*:
   - **Tiles:** green flagstones, stone blocks, chasms that join up with their neighbors, stairs, a
-    barred or lit exit, chests and clay pots.
+    barred or lit exit, chests (a locked one shows a gold lock plate with a keyhole; the Boss Key's
+    chest is crimson with gold horns) and clay pots.
+  - **Walls and doors:** a thin rim of the dungeon's stone runs round every room's outline (along the
+    rock of round, cross and L-shaped rooms too), broken only by doorways and blown-open breaches.
+    Each door sits in a round-topped stone archway: open (a dark way through, its leaf swung back),
+    locked (iron-bound wood with a keyhole), the Boss Door (crimson, with gold horns round the frame
+    and the keyhole), a found secret door (a stone panel standing ajar), walled up (cracked stone), or
+    a sealed trap room's red portcullis. A secret door no one has found is just more rim.
   - **Heroes:** a sprite per look. The art keeps the main, trim, skin and hair pixels as white masks
     (with a grey for shading), which the game tints with the character's colors.
   - **Monsters:** a sprite each. Slimelings are small slimes, the Iron Warden looms larger, and a
