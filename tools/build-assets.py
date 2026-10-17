@@ -801,38 +801,40 @@ OBJECTS["bomb_trap"] = sprite([
 HEART_ROWS = [".oo.oo.", "orrorro", "orlrrro", "orrrrro", ".orrro.", "..oro..", "...o..."]
 
 # A chest bound in iron with a gold lock plate: it holds better loot, and takes a key or a picked lock.
-OBJECTS["chest_locked"] = sprite([
+OBJECTS["chest_locked"] = sprite([  # iron bands and a gold lock plate with a keyhole
     "................", "................", "................",
     "..oooooooooooo..",
     ".owwwwwwwwwwwwo.",
     ".owddddddddddwo.",
-    ".owddddddddddwo.",
-    ".oggggggggggggo.",
-    ".oggggoyyoggggo.",
-    ".owdddoyyodddwo.",
-    ".owddddddddddwo.",
-    ".owddddddddddwo.",
+    ".owddYYYYYYddwo.",
+    ".ogggYyyyyYgggo.",
+    ".owddYykkyYddwo.",
+    ".owddYykkyYddwo.",
+    ".owddYyykyYddwo.",
+    ".owddYYYYYYddwo.",
     ".oggggggggggggo.",
     ".oooooooooooooo.",
     "................", "................",
-], {**WOOD, "g": "#9aa4ad", "y": "#f0c94a"})
+], {**WOOD, "g": "#9aa4ad", "y": "#f0c94a", "Y": "#b08020", "k": "#1a1410"})
 
-# The Boss Key's chest in the vault: crimson bands and a gold lock.
+# The Boss Key's chest in the vault: crimson bands, gold horns, and a horned gold lock.
 OBJECTS["chest_boss"] = sprite([
-    "................", "................", "................",
+    "y..............y",
+    "yY............Yy",
+    ".yY..........Yy.",
     "..oooooooooooo..",
     ".owwwwwwwwwwwwo.",
-    ".owddddddddddwo.",
-    ".owddddddddddwo.",
-    ".oggggggggggggo.",
-    ".oggggoyyoggggo.",
-    ".owdddoyyodddwo.",
-    ".owddddddddddwo.",
-    ".owddddddddddwo.",
+    ".owdyddddddydwo.",
+    ".owdyYYYYYYydwo.",
+    ".ogggYyyyyYgggo.",
+    ".owddYykkyYddwo.",
+    ".owddYykkyYddwo.",
+    ".owddYyykyYddwo.",
+    ".owddYYYYYYddwo.",
     ".oggggggggggggo.",
     ".oooooooooooooo.",
     "................", "................",
-], {**WOOD, "g": "#c8343e", "y": "#f0c94a", "w": "#c89040"})
+], {**WOOD, "g": "#c8343e", "y": "#f0c94a", "Y": "#b08020", "w": "#c89040", "k": "#1a1410"})
 
 # ---- Stat and key icons (12x12) -------------------------------------------------------------
 

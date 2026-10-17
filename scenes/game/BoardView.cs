@@ -6,7 +6,7 @@ using Woad.Scenes.Ui;
 namespace Woad.Scenes.Game;
 
 /// <summary>
-/// Draws one room's terrain, doors (open, locked, the Boss Door, walled up), revealed traps, loot and
+/// Draws one room's terrain, its stone rim and doors (see BoardView.Walls.cs), revealed traps, loot and
 /// keys, and the move/target highlights, and reports clicks on tiles. It sits in a clipping frame the
 /// size of a standard room (<see cref="Pixels"/>) and is its own camera: a bigger room scrolls to
 /// follow whoever is acting, a smaller one is centered. The player can pan (right-drag or the arrow
@@ -331,6 +331,7 @@ public partial class BoardView : Control
             }
         }
 
+        DrawRim();
         foreach ((Direction side, string _) in _room.Doors)
         {
             if (_room.PassageOn(side) is not { IsHidden: true })
@@ -616,40 +617,6 @@ public partial class BoardView : Control
                 DrawRect(new Rect2(body.Position + new Vector2(0, 5), new Vector2(20, 2)), open ? Palette.TrimDim : _room.ChestLockAt(tile) is not null ? Palette.TextDim : Palette.TrimBright);
                 DrawRect(body, Palette.Ink, filled: false, width: 1);
                 break;
-        }
-    }
-
-    /// <summary>
-    /// A bar on the board's edge marking a door: gold when open, red while a trap room is sealed,
-    /// grey and cracked when walled up, with a lock (or the Boss Key's mark) when locked.
-    /// </summary>
-    private void DrawDoor(Direction side, Passage? passage, bool sealedShut)
-    {
-        Rect2 tile = TileRect(_room!.DoorTile(side));
-        Rect2 bar = side switch
-        {
-            Direction.North => new Rect2(tile.Position.X + 4, tile.Position.Y, TileSize - 8, 4),
-            Direction.South => new Rect2(tile.Position.X + 4, tile.End.Y - 4, TileSize - 8, 4),
-            Direction.West => new Rect2(tile.Position.X, tile.Position.Y + 4, 4, TileSize - 8),
-            _ => new Rect2(tile.End.X - 4, tile.Position.Y + 4, 4, TileSize - 8),
-        };
-        Color color = passage switch
-        {
-            { IsBlocked: true } => Palette.WallTop,
-            { IsLocked: true, NeedsBossKey: true } => Palette.Heart,
-            { IsLocked: true } => Palette.TrimDim,
-            _ when sealedShut => Palette.Danger,
-            _ => Palette.TrimBright,
-        };
-        DrawRect(bar, color);
-        if (passage is { IsLocked: true } && GameArt.Ui(passage.NeedsBossKey ? "icon_boss_key" : "icon_key") is { } lockIcon)
-        {
-            DrawTextureRect(lockIcon, new Rect2(tile.GetCenter() - new Vector2(8, 8), new Vector2(16, 16)), tile: false);
-        }
-
-        if (passage?.Trap is { Revealed: true })
-        {
-            DrawWarning(_room.DoorTile(side));
         }
     }
 

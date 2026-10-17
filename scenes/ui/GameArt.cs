@@ -43,8 +43,15 @@ public static class GameArt
                 file.Antialiasing = TextServer.FontAntialiasing.Gray;
                 file.Hinting = TextServer.Hinting.None;
                 file.SubpixelPositioning = TextServer.SubpixelPositioning.Disabled;
-                long weight = TextServerManager.GetPrimaryInterface().NameToTag("wght");
-                body = new FontVariation { BaseFont = file, VariationOpentype = new Godot.Collections.Dictionary { [weight] = 700 } };
+                TextServer text = TextServerManager.GetPrimaryInterface();
+                body = new FontVariation
+                {
+                    BaseFont = file,
+                    VariationOpentype = new Godot.Collections.Dictionary { [text.NameToTag("wght")] = 700 },
+
+                    // Its "fi" and "fl" ligatures look like an "A" ("JellyAsh"): letters stay separate.
+                    OpentypeFeatures = new Godot.Collections.Dictionary { [text.NameToTag("liga")] = 0, [text.NameToTag("clig")] = 0 },
+                };
             }
 
             Cache[BodyFontKey] = body;
