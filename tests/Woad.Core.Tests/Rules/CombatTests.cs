@@ -319,7 +319,7 @@ public class CombatTests
     public void MonstersSplitTheirDiceWhenSmallAttacksWouldLandMore()
     {
         // Against no defense at all, two 1-die attacks are two sure hits.
-        GameSession session = TestRun.Start(Duel('B'), new ScriptedDice(1, 1), stats: GameRules.HeroBaseStats with { DefenseDice = 0 });
+        GameSession session = TestRun.Start(Duel('B'), new ScriptedDice(1, 1), stats: TestRun.HeroStats with { DefenseDice = 0 });
         Hero hero = session.HeroInSeat();
 
         IReadOnlyList<GameEvent> events = session.EndRound();

@@ -539,14 +539,14 @@ public partial class GameScreen
         right.AddChild(_confirm);
 
         // After a 6: roll the Power Die into this roll, or keep it for later.
-        _addPower = UiTheme.Button(new Vector2(8, 279), new Vector2(78, 18), "Add Power Die");
+        _addPower = UiTheme.Accent(UiTheme.Button(new Vector2(8, 279), new Vector2(78, 18), "Add Power Die"), Palette.Power);
         _addPower.Pressed += () => ExecuteForActiveHero(heroId => new AddPowerDie(heroId));
         right.AddChild(_addPower);
-        _bankPower = UiTheme.Button(new Vector2(90, 279), new Vector2(78, 18), "Bank it");
+        _bankPower = UiTheme.Accent(UiTheme.Button(new Vector2(90, 279), new Vector2(78, 18), "Bank it"), Palette.Power);
         _bankPower.Pressed += () => ExecuteForActiveHero(heroId => new BankPowerDie(heroId));
         right.AddChild(_bankPower);
 
-        _rumble = UiTheme.CompactButton(new Vector2(8, 279), new Vector2(52, 20), "Rumble");
+        _rumble = UiTheme.Accent(UiTheme.CompactButton(new Vector2(8, 279), new Vector2(52, 20), "Rumble"), Palette.DieRumble);
         _rumble.TooltipText = "Attack (R or Space): your attack range shows in red; click a target in it. Uses your selected Rumble dice and your weapon.";
         _rumble.Pressed += ToggleRumble;
         right.AddChild(_rumble);
@@ -559,12 +559,12 @@ public partial class GameScreen
         right.AddChild(_dropRoll);
 
         // Five buttons in a row: Wend, Leap, Search, Steal and Shove.
-        _roll = UiTheme.CompactButton(new Vector2(8, 303), new Vector2(38, 20), "Wend");
+        _roll = UiTheme.Accent(UiTheme.CompactButton(new Vector2(8, 303), new Vector2(38, 20), "Wend"), Palette.DieWend);
         _roll.TooltipText = "Roll your selected Wend dice (plus your Wend bonus) to move. (W)";
         _roll.Pressed += RollWend;
         right.AddChild(_roll);
 
-        _leap = UiTheme.CompactButton(new Vector2(48, 303), new Vector2(38, 20), "Leap");
+        _leap = UiTheme.Accent(UiTheme.CompactButton(new Vector2(48, 303), new Vector2(38, 20), "Leap"), Palette.DieWend);
         _leap.TooltipText = $"Leap with one Wend die: pick a tile up to {GameRules.MaxLeap} away in a straight line, then roll; you carry half the roll.";
         _leap.Pressed += () =>
         {
@@ -579,11 +579,11 @@ public partial class GameScreen
         };
         right.AddChild(_leap);
 
-        _search = UiTheme.CompactButton(new Vector2(88, 303), new Vector2(40, 20), "Search");
+        _search = UiTheme.Accent(UiTheme.CompactButton(new Vector2(88, 303), new Vector2(40, 20), "Search"), Palette.DieOdHand);
         _search.Pressed += () => ExecuteOdHand((heroId, dice, tools, power) => new Search(heroId, dice, tools, power));
         right.AddChild(_search);
 
-        _steal = UiTheme.CompactButton(new Vector2(130, 303), new Vector2(38, 20), "Steal");
+        _steal = UiTheme.Accent(UiTheme.CompactButton(new Vector2(130, 303), new Vector2(38, 20), "Steal"), Palette.DieOdHand);
         _steal.TooltipText = "Steal with your selected Od Hand dice: click it, then an adjacent monster or hero. Once a turn.";
         _steal.Pressed += () =>
         {
@@ -598,7 +598,7 @@ public partial class GameScreen
         };
         right.AddChild(_steal);
 
-        _shove = UiTheme.CompactButton(new Vector2(62, 279), new Vector2(52, 20), "Shove");
+        _shove = UiTheme.Accent(UiTheme.CompactButton(new Vector2(62, 279), new Vector2(52, 20), "Shove"), Palette.DieRumble);
         _shove.TooltipText = "Shove with your selected Rumble dice: click it, then a monster next to you. Beat its defense to push it a tile, onto a trap or into a pit.";
         _shove.Pressed += () =>
         {

@@ -16,6 +16,12 @@ internal static class TestRun
 
     public static RoomTemplate Room(string text) => RoomTemplate.Parse(text, TestContent.Catalog);
 
+    /// <summary>
+    /// The heroes' stats unless a test says otherwise: the game's starting stats, but with 4 hearts, so
+    /// rules tests don't shift when the starting hearts are retuned.
+    /// </summary>
+    public static Stats HeroStats { get; } = GameRules.HeroBaseStats with { Hearts = 4 };
+
     /// <summary>A begun run in a single room "A".</summary>
     /// <param name="owners">Per seat: null for a player, or the seat of the player a companion belongs to.</param>
     public static GameSession Start(string room, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, int?[]? owners = null, bool friendlyFire = false) =>
@@ -37,7 +43,7 @@ internal static class TestRun
             Seed = Seed,
             ThemeId = TestContent.ThemeId,
             Heroes = Enumerable.Range(1, heroes)
-                .Select(number => new HeroSetup($"Hero {number}", stats ?? GameRules.HeroBaseStats, cards ?? [], OwnerSeat: owners?[number - 1]))
+                .Select(number => new HeroSetup($"Hero {number}", stats ?? HeroStats, cards ?? [], OwnerSeat: owners?[number - 1]))
                 .ToList(),
             Rooms = rooms,
             StartRoomId = rooms[0].Id,

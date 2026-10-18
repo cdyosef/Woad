@@ -927,6 +927,34 @@ ICONS["icon_gold"] = sprite([
     "............",
 ], {"o": "#5a4424", "y": "#f0c94a", "w": "#fff4c0", "d": "#c8962a"})
 ICONS["icon_boss_key"] = sprite(KEY_ROWS, {"o": "#e2c47a", "y": "#d8434a"})
+ICONS["icon_defense"] = sprite([  # a kite shield, blue like the Defense dice
+    "............",
+    ".oooooooooo.",
+    ".oggggggggo.",
+    ".oglbbbbbgo.",
+    ".oglbbbbbgo.",
+    ".ogbbbbbbgo.",
+    ".ogbbbbbbgo.",
+    "..ogbbbbgo..",
+    "..ogbbbbgo..",
+    "...ogbbgo...",
+    "....oggo....",
+    ".....oo.....",
+], {"o": OUTLINE, "g": "#e2c47a", "b": "#5d8de0", "l": "#a8c8f8"})
+ICONS["icon_luck"] = sprite([  # a four-leaf clover
+    ".ooo.ooo....",
+    "olggolggo...",
+    "ogggogggo...",
+    "oggdoggdo...",
+    ".ooooooo....",
+    "olggolggo...",
+    "ogggogggo...",
+    "oggdoggdo...",
+    ".ooo.oooso..",
+    ".......oso..",
+    "........oso.",
+    ".........o..",
+], {"o": OUTLINE, "g": "#5cc86a", "l": "#a8eca0", "d": "#2e8a3e", "s": "#3a7a3a"})
 
 
 # ---- Procedural tiles (16x16) ---------------------------------------------------------------

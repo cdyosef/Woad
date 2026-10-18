@@ -8,9 +8,9 @@
     with the git commit it was built from, and itch's app updates players to it automatically.
 
     Needs, once: Godot's .NET export templates for this Godot version (Editor > Manage Export
-    Templates, or unpacked into %APPDATA%\Godot\export_templates), and butler (on the PATH, or in
-    %LOCALAPPDATA%\butler), logged in to your itch.io account (run "butler login" yourself; it opens
-    your browser).
+    Templates, or unpacked into %APPDATA%\Godot\export_templates), and butler (unzipped into
+    tools\butler, which git ignores, or on the PATH), logged in to your itch.io account (run
+    "& .\tools\butler\butler.exe login" yourself; it opens your browser).
 
 .PARAMETER Target
     The itch.io page to upload to, as "user/game" (e.g. "chris/woad").
@@ -54,7 +54,9 @@ if ($SkipUpload) {
 }
 
 $version = (git -C $root rev-parse --short HEAD).Trim()
-$butler = if (Get-Command butler -ErrorAction SilentlyContinue) { 'butler' } else { Join-Path $env:LOCALAPPDATA 'butler\butler.exe' }
+$butler = if (Test-Path (Join-Path $PSScriptRoot 'butler\butler.exe')) { Join-Path $PSScriptRoot 'butler\butler.exe' }
+          elseif (Get-Command butler -ErrorAction SilentlyContinue) { 'butler' }
+          else { Join-Path $env:LOCALAPPDATA 'butler\butler.exe' }
 Write-Host "Uploading to $Target (version $version)..."
 & $butler push $output "${Target}:windows" --userversion $version
 if ($LASTEXITCODE -ne 0) { throw 'The upload failed.' }

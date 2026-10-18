@@ -10,7 +10,7 @@ public class PointBuyAndProgressionTests
     {
         var allocation = new StatAllocation { Hearts = 2, Speed = 1, AttackDice = 1, DefenseDice = 1, Luck = 1 };
 
-        Assert.Equal(2 * 1 + 1 * 2 + 1 * 3 + 1 * 3 + 1 * 2, PointBuy.Cost(allocation));
+        Assert.Equal(2 * 1 + 1 * 2 + 1 * 3 + 1 * 3 + 1 * 1, PointBuy.Cost(allocation));
     }
 
     [Fact]

@@ -182,7 +182,7 @@ public class DungeonSecretsTests
         IReadOnlyList<GameEvent> events = session.Do(new MoveHero(hero.Id, new GridPosition(4, 3)));
         Assert.Equal(new TrapSprung(hero.Id, TrapKind.Spikes, new GridPosition(4, 3)), events.SingleOf<TrapSprung>());
         Assert.Equal(new GridPosition(4, 3), hero.Position);
-        Assert.Equal(GameRules.HeroBaseStats.Hearts - 1, hero.Hearts);
+        Assert.Equal(TestRun.HeroStats.Hearts - 1, hero.Hearts);
         Assert.Equal(0, session.State.Turn!.MovementPoints);
     }
 

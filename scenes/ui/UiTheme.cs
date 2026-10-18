@@ -179,6 +179,21 @@ public static class UiTheme
     }
 
     /// <summary>A button with almost no side padding, for short labels in a tight row.</summary>
+    /// <summary>
+    /// Marks a button with the color of the dice it uses: a stripe down its left edge and tinted text
+    /// (Rumble red, Wend green, Od Hand yellow, Power purple), keeping the gold-trimmed frame.
+    /// </summary>
+    public static T Accent<T>(T button, Color color) where T : Button
+    {
+        float height = button.Size.Y;
+        button.AddChild(new ColorRect { Position = new Vector2(3, 3), Size = new Vector2(2, Math.Max(2, height - 6)), Color = color, MouseFilter = Control.MouseFilterEnum.Ignore });
+        button.AddThemeColorOverride("font_color", color.Lerp(Palette.Text, 0.35f));
+        button.AddThemeColorOverride("font_hover_color", color.Lightened(0.35f));
+        button.AddThemeColorOverride("font_pressed_color", color.Lightened(0.35f));
+        button.AddThemeColorOverride("font_hover_pressed_color", color.Lightened(0.35f));
+        return button;
+    }
+
     public static Button CompactButton(Vector2 position, Vector2 size, string text)
     {
         Button button = Button(position, size, text);

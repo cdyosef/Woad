@@ -21,7 +21,7 @@ public static class PointBuy
         StatKind.AttackDice => 3,
         StatKind.DefenseDice => 3,
         StatKind.OdHandDice => 3,
-        StatKind.Luck => 2,
+        StatKind.Luck => 1,
         _ => throw new ArgumentOutOfRangeException(nameof(stat)),
     };
 

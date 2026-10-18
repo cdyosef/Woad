@@ -13,14 +13,14 @@ namespace Woad.Scenes.Menu;
 /// </summary>
 public partial class CharacterEditor : MenuScreen
 {
-    private static readonly (StatKind Stat, string Name)[] StatRows =
+    private static readonly (StatKind Stat, string Name, string Icon)[] StatRows =
     [
-        (StatKind.Hearts, "Hearts"),
-        (StatKind.Speed, "Wend"),
-        (StatKind.AttackDice, "Rumble"),
-        (StatKind.DefenseDice, "Defense"),
-        (StatKind.OdHandDice, "Od Hand"),
-        (StatKind.Luck, "Luck"),
+        (StatKind.Hearts, "Hearts", "heart_full"),
+        (StatKind.Speed, "Wend", "icon_wend"),
+        (StatKind.AttackDice, "Rumble", "icon_rumble"),
+        (StatKind.DefenseDice, "Defense", "icon_defense"),
+        (StatKind.OdHandDice, "Od Hand", "icon_odhand"),
+        (StatKind.Luck, "Luck", "icon_luck"),
     ];
 
     private readonly List<PortraitView> _portraits = [];
@@ -29,6 +29,20 @@ public partial class CharacterEditor : MenuScreen
 
     private StatAllocation _allocation = StatAllocation.None;
     private StatAllocation _floor = StatAllocation.None;
+
+    /// <summary>The stat whose row the mouse is over: its explanation shows in the preview panel.</summary>
+    private StatKind? _explaining;
+
+    /// <summary>What each stat does, for the hover help.</summary>
+    private static readonly Dictionary<StatKind, string> StatHelp = new()
+    {
+        [StatKind.Hearts] = "HEARTS\nHow much punishment you can take: each hit that gets through costs one. With none left you Keel Over and roll the Keel Die each turn until you stand back up, or die. Each point buys another heart.",
+        [StatKind.Speed] = "WEND\nHow far you move. Each move rolls one or more Wend dice for that many steps, plus your Wend bonus once a turn. Each point adds +1 to your Wend bonus.",
+        [StatKind.AttackDice] = "RUMBLE\nYour attack dice. Each attack or shove uses one or more, and your weapon adds to one attack a turn. Beat the defender's roll to hit. Each point buys another die.",
+        [StatKind.DefenseDice] = "DEFENSE\nThe dice you roll, all of them, whenever you're attacked; your armor adds to each roll. Tie or beat the attack to block it. Each point buys another die.",
+        [StatKind.OdHandDice] = "OD HAND\nYour dice for picking locks, searching, disarming traps, stealing and rousing allies who've Keeled Over. Lockpicks help with locks. Each point buys another die.",
+        [StatKind.Luck] = "LUCK\nRerolls of a single die, refilled on each new floor: after any roll, click a die to roll it again. Each point buys another reroll.",
+    };
     private int _budget;
     private int _level;
     private string _portrait = Portraits.All[0].Id;
@@ -67,6 +81,9 @@ public partial class CharacterEditor : MenuScreen
     internal Button CompanionButton => _companionType;
 
     internal int PointsLeft => _budget - PointBuy.Cost(_allocation);
+
+    /// <summary>The preview panel's text: the character's summary, or the help for the stat under the mouse.</summary>
+    internal string PreviewText => _previewStats.Text;
 
     internal PortraitView PortraitButton(int index) => _portraits[index];
 
@@ -138,9 +155,24 @@ public partial class CharacterEditor : MenuScreen
         _points = Add(UiTheme.Label(new Vector2(120, 152), new Vector2(200, 12), color: Palette.TrimBright));
         for (int i = 0; i < StatRows.Length; i++)
         {
-            (StatKind stat, string name) = StatRows[i];
+            (StatKind stat, string name, string icon) = StatRows[i];
             float y = 164 + i * 21;
-            Add(UiTheme.Label(new Vector2(24, y + 4), new Vector2(60, 12), name));
+            // The stat's symbol and name; hovering them explains the stat in the preview panel.
+            Control hover = Add(new Control { Position = new Vector2(22, y + 2), Size = new Vector2(60, 16), MouseFilter = MouseFilterEnum.Stop, MouseDefaultCursorShape = CursorShape.Help });
+            hover.AddChild(new TextureRect
+            {
+                Texture = GameArt.Ui(icon),
+                Position = new Vector2(2, 2),
+                Size = new Vector2(12, 12),
+                StretchMode = TextureRect.StretchModeEnum.KeepCentered,
+                TextureFilter = TextureFilterEnum.Nearest,
+                MouseFilter = MouseFilterEnum.Ignore,
+            });
+            Label label = UiTheme.Label(new Vector2(17, 2), new Vector2(43, 12), name);
+            label.MouseFilter = MouseFilterEnum.Ignore;
+            hover.AddChild(label);
+            hover.MouseEntered += () => Explain(stat);
+            hover.MouseExited += () => Explain(null);
             Add(UiTheme.Label(new Vector2(84, y + 4), new Vector2(60, 12), $"{PointBuy.CostPerStep(stat)} pt each", color: Palette.TextDim));
             Button minus = Add(UiTheme.Button(new Vector2(150, y), new Vector2(20, 19), "-"));
             Label value = Add(UiTheme.Label(new Vector2(172, y + 4), new Vector2(28, 12)));
@@ -195,6 +227,12 @@ public partial class CharacterEditor : MenuScreen
             Refresh();
         };
         return button;
+    }
+
+    private void Explain(StatKind? stat)
+    {
+        _explaining = stat;
+        Refresh();
     }
 
     private void Step(StatKind stat, int delta)
@@ -339,6 +377,10 @@ public partial class CharacterEditor : MenuScreen
         _points.TooltipText = _level <= 1
             ? $"At level 1 you can buy at most {PointBuy.LevelOneDiceLimit} extra Rumble, Defense and Od Hand die each. Unspent points are kept."
             : "Unspent points are kept.";
+        if (_explaining is { } explained)
+        {
+            _previewStats.Text = StatHelp[explained];
+        }
     }
 
     private async void Save()

@@ -24,7 +24,7 @@ public class CharacterTests
         Assert.Equal(["wooden_sword", "buckler"], character.Equipped);
         Assert.Equal(["health_potion"], character.Belt);
         Assert.Empty(character.Backpack);
-        Assert.Equal(5, character.BaseStats.Hearts);
+        Assert.Equal(GameRules.HeroBaseStats.Hearts + 1, character.BaseStats.Hearts);
         Assert.Equal(2, character.BaseStats.AttackDice);
     }
 
@@ -57,11 +57,11 @@ public class CharacterTests
     {
         Character character = NewCharacter(allocation: new StatAllocation { Hearts = 2 });
 
-        character.Allocate(new StatAllocation { Hearts = 2, Luck = 2 });
+        character.Allocate(new StatAllocation { Hearts = 2, Luck = 4 });
 
         Assert.Equal(0, character.UnspentPoints);
-        Assert.Throws<ArgumentException>(() => character.Allocate(new StatAllocation { Hearts = 1, Luck = 2 }));
-        Assert.Throws<ArgumentException>(() => character.Allocate(new StatAllocation { Hearts = 3, Luck = 2 }));
+        Assert.Throws<ArgumentException>(() => character.Allocate(new StatAllocation { Hearts = 1, Luck = 4 }));
+        Assert.Throws<ArgumentException>(() => character.Allocate(new StatAllocation { Hearts = 3, Luck = 4 }));
     }
 
     [Fact]
@@ -95,7 +95,7 @@ public class CharacterTests
         Assert.Equal(character.Id, hero.CharacterId);
         Assert.Equal("ember", hero.Portrait);
         Assert.Equal(character.Appearance, hero.Appearance);
-        Assert.Equal(6, hero.MaxHearts);
+        Assert.Equal(GameRules.HeroBaseStats.Hearts + 2, hero.MaxHearts);
         Assert.Equal(1, hero.LuckRemaining);
         Assert.Equal("wooden_sword", hero.Equipment[EquipSlot.MainHand].Definition.Id);
         Assert.Equal(["health_potion"], hero.Belt.Select(card => card.Definition.Id));
