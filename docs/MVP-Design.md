@@ -49,7 +49,7 @@ Stats are expressed directly as dice and points. Gear cards add to them.
 
 | Stat | Meaning | Base *(tunable)* | Point cost *(tunable)* |
 | --- | --- | --- | --- |
-| Hearts | Maximum HP | 4 | 1 per heart |
+| Hearts | Maximum HP | 3 | 1 per heart |
 | Wend (boot) | d6 for moving each turn; each move uses one or more | 1 | Gear only (e.g. boots) |
 | Wend bonus | Tiles added to one move per turn (shown as the "+2" in "Wend 1d6+2"; the editor calls it Wend) | 2 | 2 per point |
 | Rumble (fist) | d6 for attacking each turn; each attack uses one or more | 1 | 3 per die |
@@ -58,10 +58,11 @@ Stats are expressed directly as dice and points. Gear cards add to them.
 | Defense | d6 rolled, all of them, whenever you're attacked | 1 | 3 per die |
 | Weapon | Fixed value added to one attack per turn | 0 | Gear only (weapons) |
 | Armor | Fixed value added to every defense | 0 | Gear only (shields, armor) |
-| Luck | Rerolls of a single die, per floor | 0 | 2 per reroll |
+| Luck | Rerolls of a single die, per floor | 0 | 1 per reroll |
 
 - **Creation:** name (1–16 letters, numbers, spaces, apostrophes or hyphens), look, crest, and 6 points to
-  spend. Unspent points are kept for later. While at level 1, a character can buy at most +1 Attack and
+  spend. Unspent points are kept for later. Each stat is shown with its symbol (a heart, boot, fist, shield, hamsa or clover);
+  hovering one explains what it does in the preview panel. While at level 1, a character can buy at most +1 Attack and
   +1 Defense die *(tunable)*. Points already spent can't be refunded.
 - **Progression:** XP from monster kills and floors reached. Level 2 takes 10 XP, level 3 takes 30, then
   60, 100 and so on (10 × 1, 3, 6, 10…). Each level grants 1 point.
@@ -620,6 +621,8 @@ them up there like any character.
   smoothed so it stays readable at every window size.
 - **Dice colors:** Rumble dice are red, Wend green, Od Hand yellow, Defense blue, tools' dice bronze,
   Power Dice purple; weapon dice look like Rumble dice. Other rolls (the Keel Die, blasts, fire) are white.
+  The **This turn** dice tokens and the buttons that spend them share those colors, as a stripe and tinted
+  text: Rumble and Shove red, Wend and Leap green, Search and Steal yellow, Add Power Die and Bank it purple.
 - **Dice bar:** under the board, fighting-game style. Whoever rolls is on the left with their dice,
   bonus and total; whoever answers is on the right of a slanted VS (several defenders, as in a blast,
   each get a smaller column). The winning side glows gold, and each defender is tagged HIT, MISS or

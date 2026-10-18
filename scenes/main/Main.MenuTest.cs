@@ -40,6 +40,23 @@ public partial class Main
             await Click(this, editor.StyleButton(1, next: true));
             await Click(this, editor.StyleButton(3, next: false));
             Check(editor.Appearance is { Look: "ranger", Main: "ember", Skin: "deep" }, "the arrows pick the look, main color and skin");
+            string[] headings = ["HEARTS", "WEND", "RUMBLE", "DEFENSE", "OD HAND", "LUCK"];
+            bool explained = true;
+            for (int row = 0; row < headings.Length; row++)
+            {
+                Vector2 statName = editor.GetGlobalRect().Position + new Vector2(30, 164 + row * 21 + 8);
+                GetViewport().PushInput(new InputEventMouseMotion { Position = statName, GlobalPosition = statName }, inLocalCoords: true);
+                await NextFrame(this);
+                explained &= editor.PreviewText.StartsWith(headings[row]);
+                await NextFrame(this);
+                await NextFrame(this);
+            }
+
+            Check(explained, "hovering each stat's symbol or name explains it");
+
+            GetViewport().PushInput(new InputEventMouseMotion { Position = new Vector2(600, 20), GlobalPosition = new Vector2(600, 20) }, inLocalCoords: true);
+            await NextFrame(this);
+            Check(!editor.PreviewText.StartsWith("LUCK"),"and moving away brings back the summary");
             await Click(this, editor.PlusButton(StatKind.Hearts));
             await Click(this, editor.PlusButton(StatKind.Hearts));
             await Click(this, editor.PlusButton(StatKind.AttackDice));
@@ -139,7 +156,7 @@ public partial class Main
             await WaitFor(this, () => game.Session.State.ActiveHero == morgan && !game.IsBusy, "the companion's turn to play out");
             Check(pip.Position == post, "a holding companion stays put on its own turn");
             Check(!game.OrdersButton.Visible, "a player without companions has no Orders button");
-            Check(morgan.MaxHearts == 6 && morgan.EffectiveStats.AttackDice == 2 && morgan.EffectiveStats.Weapon == 1, "the hero has the character's stats plus gear");
+            Check(morgan.MaxHearts == Woad.Core.Rules.GameRules.HeroBaseStats.Hearts + 2 && morgan.EffectiveStats.AttackDice == 2 && morgan.EffectiveStats.Weapon == 1, "the hero has the character's stats plus gear");
             Check(morgan.Portrait == "moss", "the hero has the chosen portrait");
             Check(morgan.Appearance is { Look: "mage", Main: "ember", Hair: "black" }, "the hero has the chosen look");
             Check(Music.Current == "dungeon", "a run plays the dungeon music");

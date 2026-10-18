@@ -122,7 +122,7 @@ body text font, Pixelify Sans (`assets/fonts/PixelifySans.ttf`, SIL Open Font Li
   16×16 text grids.
 - **Procedural art:** floor, wall, cracked wall, stairs down and up, exit, spike and trap door, rubble, shallow
   and deep water and gate tiles, and the gold-trimmed UI frames.
-- **Icons:** the stat symbols (a fist for Rumble, a boot for Wend, a hamsa for Od Hand), the Power Dice star and the keys.
+- **Icons:** the stat symbols (a fist for Rumble, a boot for Wend, a hamsa for Od Hand, a shield for Defense, a clover for Luck), the Power Dice star and the keys.
 - **Heading font:** a serif capitals pixel font, written as a BMFont.
 - **Sound effects:** 8-bit style, synthesized from waveforms.
 - **Music:** chiptune songs written as short note scores (`assets/audio/music/`): `title` for the
@@ -158,8 +158,9 @@ share it with a password or download keys from its **Distribute** tab). One-time
 
 - Godot's .NET export templates for this Godot version, in `%APPDATA%\Godot\export_templates\`
   (Editor → Manage Export Templates, or unpack the `.tpz` from Godot's GitHub releases there).
-- [butler](https://itch.io/docs/butler/), itch.io's upload tool, on the PATH or in `%LOCALAPPDATA%\butler`,
-  signed in once with `butler login` (it opens your browser).
+- [butler](https://itch.io/docs/butler/), itch.io's upload tool, unzipped into `tools\butler` (git
+  ignores it) or on the PATH, signed in once with `& .\tools\butler\butler.exe login` (it opens your
+  browser).
 
 Then build and upload in one go (the build lands in `export/windows`, which git ignores):
 

@@ -27,10 +27,10 @@ public partial class DicePoolView : Control
 
     private readonly Row[] _rows =
     [
-        new("icon_rumble", "Rumble: your attack dice this turn, plus your weapon's value on one attack. Click dice to hold some back."),
-        new("icon_wend", "Wend: your move dice this turn, plus your flat Wend bonus on one move. Click dice to hold some back."),
-        new("icon_odhand", "Od Hand: dice for picking locks, searching, disarming traps and stealing. Your tools (lockpicks) add their value and dice to one lock-picking roll a turn."),
-        new("icon_power", "Power Dice, earned by rolling a 6. Click to add banked ones to your next roll.") { IsPower = true },
+        new("icon_rumble", "Rumble: your attack dice this turn, plus your weapon's value on one attack. Click dice to hold some back.") { Color = Palette.DieRumble },
+        new("icon_wend", "Wend: your move dice this turn, plus your flat Wend bonus on one move. Click dice to hold some back.") { Color = Palette.DieWend },
+        new("icon_odhand", "Od Hand: dice for picking locks, searching, disarming traps and stealing. Your tools (lockpicks) add their value and dice to one lock-picking roll a turn.") { Color = Palette.DieOdHand },
+        new("icon_power", "Power Dice, earned by rolling a 6. Click to add banked ones to your next roll.") { IsPower = true, Color = Palette.Power },
     ];
 
     private bool _enabled;
@@ -84,7 +84,7 @@ public partial class DicePoolView : Control
 
             for (int i = 0; i < row.Dice; i++)
             {
-                DrawDieToken(TokenRect(r, i), _enabled && i < row.Selected, row.IsPower);
+                DrawDieToken(TokenRect(r, i), _enabled && i < row.Selected, row.Color);
             }
 
             float x = LabelWidth + row.Dice * (Token + Gap);
@@ -146,11 +146,11 @@ public partial class DicePoolView : Control
         AcceptEvent();
     }
 
-    /// <summary>An unrolled die: a blank face with three pips, bright when selected (purple for Power Dice).</summary>
-    private void DrawDieToken(Rect2 rect, bool selected, bool power)
+    /// <summary>A die token in its pool's color (Rumble red, Wend green, Od Hand yellow, Power purple); held-back ones are dark with a colored rim.</summary>
+    private void DrawDieToken(Rect2 rect, bool selected, Color color)
     {
-        DrawRect(rect, selected ? (power ? Palette.Power : Palette.Text) : Palette.PanelHover);
-        DrawRect(rect, selected ? Palette.TrimBright : Palette.TrimDim, filled: false, width: 1);
+        DrawRect(rect, selected ? color : Palette.PanelHover);
+        DrawRect(rect, selected ? Palette.TrimBright : color.Darkened(0.35f), filled: false, width: 1);
         Color pip = selected ? Palette.Ink : Palette.TextDim;
         foreach (float t in new[] { 0.27f, 0.5f, 0.73f })
         {
@@ -171,6 +171,9 @@ public partial class DicePoolView : Control
         public string Help { get; } = help;
 
         public bool IsPower { get; init; }
+
+        /// <summary>The pool's dice color, matching its dice in the dice bar and its buttons.</summary>
+        public Color Color { get; init; } = Palette.Text;
 
         public int Dice { get; set; }
 

@@ -107,7 +107,7 @@ public static class GameRules
     /// <summary>Stats every new character starts with, before spending creation points.</summary>
     public static Stats HeroBaseStats { get; } = new()
     {
-        Hearts = 4,
+        Hearts = 3,
         MoveDice = 1,
         Speed = 2,
         AttackDice = 1,

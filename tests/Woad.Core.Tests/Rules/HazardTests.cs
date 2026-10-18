@@ -65,7 +65,7 @@ public class HazardTests
 
         Assert.Equal(new FellIntoPit(hero.Id, "A", new GridPosition(4, 3), Bottomless: false), events.SingleOf<FellIntoPit>());
         Assert.Equal(("B", new GridPosition(4, 3)), (hero.RoomId, hero.Position));
-        Assert.Equal(GameRules.HeroBaseStats.Hearts - GameRules.FallDamage, hero.Hearts);
+        Assert.Equal(TestRun.HeroStats.Hearts - GameRules.FallDamage, hero.Hearts);
         Assert.Equal(0, session.State.Turn!.MovementPoints);
         Assert.Equal("B", session.RoomById().BelowRoomId);
     }
@@ -83,7 +83,7 @@ public class HazardTests
         var climbed = events.SingleOf<ClimbedOut>();
         Assert.Equal(1, climbed.Position.ManhattanDistanceTo(new GridPosition(4, 3)));
         Assert.Equal(("A", climbed.Position), (hero.RoomId, hero.Position));
-        Assert.Equal(GameRules.HeroBaseStats.Hearts - GameRules.FallDamage, hero.Hearts);
+        Assert.Equal(TestRun.HeroStats.Hearts - GameRules.FallDamage, hero.Hearts);
     }
 
     [Fact]
@@ -201,7 +201,7 @@ public class HazardTests
         if (landing == new GridPosition(4, 3))
         {
             Assert.True(events.SingleOf<FellIntoPit>().Bottomless);
-            Assert.Equal(GameRules.HeroBaseStats.Hearts - GameRules.FallDamage, hero.Hearts);
+            Assert.Equal(TestRun.HeroStats.Hearts - GameRules.FallDamage, hero.Hearts);
         }
         else
         {
@@ -294,13 +294,13 @@ public class HazardTests
         {
             Assert.Equal(new StayedAfloat(hero.Id), events.SingleOf<StayedAfloat>());
             Assert.Equal(new GridPosition(4, 3), hero.Position);
-            Assert.Equal(GameRules.HeroBaseStats.Hearts, hero.Hearts);
+            Assert.Equal(TestRun.HeroStats.Hearts, hero.Hearts);
         }
         else
         {
             Assert.Equal(new Drowned(hero.Id, new GridPosition(4, 3), new GridPosition(4, 4)), events.SingleOf<Drowned>());
             Assert.Equal(new GridPosition(4, 4), hero.Position);
-            Assert.Equal(GameRules.HeroBaseStats.Hearts - GameRules.DrownDamage, hero.Hearts);
+            Assert.Equal(TestRun.HeroStats.Hearts - GameRules.DrownDamage, hero.Hearts);
         }
 
         Assert.Equal(new TurnStarted(session.HeroInSeat(1).Id), events[^1]);

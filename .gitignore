@@ -17,6 +17,9 @@ TestResults/
 # Export output
 /export/
 
+# itch.io upload tool (see README: Sharing a build on itch.io)
+/tools/butler/
+
 # Claude Code (local only)
 .claude/worktrees/
 .claude/settings.local.json
