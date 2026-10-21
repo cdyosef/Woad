@@ -33,7 +33,7 @@ public partial class WoarldMapScreen : Control
     private readonly Queue<Direction> _path = new();
     private readonly IRandomSource _random = new Pcg32((ulong)DateTime.UtcNow.Ticks, sequence: 7);
     private WoarldMapView _view = null!;
-    private Label _status = null!;
+    private RichTextLabel _status = null!;
     private Label _message = null!;
     private double _stepCooldown;
 
@@ -58,8 +58,8 @@ public partial class WoarldMapScreen : Control
     /// <summary>What the Back button says it does.</summary>
     public string BackTooltip { get; init; } = "Back to the Dungeon Run list. Your travels are saved.";
 
-    /// <summary>A hero's hearts, for the status bar ("3/5"); null when hearts don't carry over (a Dungeon Run).</summary>
-    public Func<Character, string>? HeartsText { get; init; }
+    /// <summary>A hero's hearts now and at full, for the status bar; null when hearts don't carry over (a Dungeon Run).</summary>
+    public Func<Character, (int Now, int Max)>? Hearts { get; init; }
 
     public event Action? BackRequested;
 
@@ -105,9 +105,7 @@ public partial class WoarldMapScreen : Control
         AddChild(_view);
 
         AddChild(new Panel { Size = new Vector2(Size.X, BarHeight), MouseFilter = MouseFilterEnum.Ignore });
-        _status = UiTheme.Label(new Vector2(8, 2), new Vector2(Size.X - 16, 14), color: Palette.TrimBright);
-        _status.AutowrapMode = TextServer.AutowrapMode.Off;
-        _status.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        _status = UiTheme.RichLabel(new Vector2(8, 2), new Vector2(Size.X - 16, 15));
         AddChild(_status);
         _message = UiTheme.Label(new Vector2(8, 16), new Vector2(Size.X - 16, 14), Greeting, color: Palette.Text);
         _message.AutowrapMode = TextServer.AutowrapMode.Off;
@@ -320,8 +318,8 @@ public partial class WoarldMapScreen : Control
     {
         Character leader = Party[Leader];
         string time = Journey.IsDay ? $"Daylight, {Journey.StepsUntilChange} steps to nightfall" : $"Night, {Journey.StepsUntilChange} steps to dawn";
-        _status.Text = $"{Journey.Map.Name.ToUpperInvariant()}   Day {Journey.Day}   {time}   {UiTheme.Count(Journey.TotalSteps, "step", "steps")} walked" +
-                       (HeartsText is null ? "" : "   " + string.Join("  ", WalkingOrder.Select(hero => $"{hero.Name} {HeartsText(hero)}")));
+        _status.Text = $"[color={Palette.Hex(Palette.TrimBright)}]{Journey.Map.Name.ToUpperInvariant()}[/color]  Day {Journey.Day}  {time}  {UiTheme.Count(Journey.TotalSteps, "step", "steps")} walked" +
+                       (Hearts is null ? "" : "   " + string.Join("   ", WalkingOrder.Select(hero => $"{hero.Name} {UiTheme.Hearts(Hearts(hero).Now, Hearts(hero).Max)}")));
         LeaderButton.Text = $"Leader: {leader.Name}";
         LeaderButton.Disabled = Party.Count(hero => !hero.IsCompanion) < 2;
 

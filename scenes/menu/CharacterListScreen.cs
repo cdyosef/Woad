@@ -62,7 +62,7 @@ public partial class CharacterListScreen : MenuScreen
 
         _figure = Add(new FigureView { Position = new Vector2(338, 46), Size = new Vector2(48, 48) });
         _portrait = Add(new PortraitView { Position = new Vector2(392, 50), Size = new Vector2(30, 36) });
-        _name = Add(UiTheme.Label(new Vector2(430, 50), new Vector2(186, 22), fontSize: 18, color: Palette.TrimBright));
+        _name = Add(UiTheme.Label(new Vector2(430, 50), new Vector2(186, 22), fontSize: 20, color: Palette.TrimBright));
         _details = Add(UiTheme.Label(new Vector2(342, 104), new Vector2(276, 160)));
         _problems = Add(UiTheme.Label(new Vector2(342, 266), new Vector2(276, 44), color: Palette.Danger));
 

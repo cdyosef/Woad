@@ -629,9 +629,9 @@ them up there like any character.
   - **Monsters:** a sprite each. Slimelings are small slimes, the Iron Warden looms larger, and a
     collapsed skeleton becomes a bone pile.
 - **UI art:** dark panels in riveted, gold-trimmed frames, and an original serif capitals pixel font
-  for headings, titles, banners and callouts, in the spirit of *Castlevania*. Body text is Pixelify
-  Sans at its bold weight (SIL Open Font License; `assets/fonts/PixelifySans-OFL.txt`), lightly
-  smoothed so it stays readable at every window size.
+  for headings, titles, banners and callouts, in the spirit of *Castlevania*. Body text is Jersey 10
+  (SIL Open Font License; `assets/fonts/Jersey10-OFL.txt`), drawn on its 10-pixel grid so every
+  letter stays crisp and clear.
 - **Dice colors:** Rumble dice are red, Wend green, Od Hand yellow, Defense blue, tools' dice bronze,
   Power Dice purple; weapon dice look like Rumble dice. Other rolls (the Keel Die, blasts, fire) are white.
   The **This turn** dice tokens and the buttons that spend them share those colors, as a stripe and tinted

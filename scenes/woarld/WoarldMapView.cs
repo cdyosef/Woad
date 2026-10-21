@@ -187,10 +187,10 @@ public partial class WoarldMapView : Control
         foreach (WoarldLabel label in map.Labels)
         {
             Vector2 at = new Vector2(label.X + 0.5f, label.Y + 0.75f) * TileSize - camera;
-            Vector2 size = font.GetStringSize(label.Text, HorizontalAlignment.Left, -1, 8);
+            Vector2 size = font.GetStringSize(label.Text, HorizontalAlignment.Left, -1, UiTheme.FontSize);
             Vector2 origin = new(Math.Clamp(at.X - size.X / 2, 2, Size.X - size.X - 2), at.Y);
-            DrawStringOutline(font, origin, label.Text, HorizontalAlignment.Left, -1, 8, 3, Palette.Ink);
-            DrawString(font, origin, label.Text, HorizontalAlignment.Left, -1, 8, Palette.Trim);
+            DrawStringOutline(font, origin, label.Text, HorizontalAlignment.Left, -1, UiTheme.FontSize, 3, Palette.Ink);
+            DrawString(font, origin, label.Text, HorizontalAlignment.Left, -1, UiTheme.FontSize, Palette.Trim);
         }
     }
 

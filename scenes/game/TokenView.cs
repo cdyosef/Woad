@@ -147,7 +147,7 @@ public partial class TokenView : Node2D
 
         if (_frozen)
         {
-            DrawString(ThemeDB.FallbackFont, new Vector2(Center.X + 7, 6), "z", fontSize: 9, modulate: Palette.TrimBright);
+            DrawString(ThemeDB.FallbackFont, new Vector2(Center.X + 7, 6), "z", fontSize: UiTheme.FontSize, modulate: Palette.TrimBright);
         }
 
         if (_fireDice > 0)
@@ -258,7 +258,7 @@ public partial class TokenView : Node2D
 
         if (_stunMarks > 3)
         {
-            DrawString(ThemeDB.FallbackFont, new Vector2(BoardView.TileSize / 2f + 12, 6), _stunMarks.ToString(), fontSize: 8, modulate: Palette.TrimBright);
+            DrawString(ThemeDB.FallbackFont, new Vector2(BoardView.TileSize / 2f + 12, 6), _stunMarks.ToString(), fontSize: UiTheme.FontSize, modulate: Palette.TrimBright);
         }
     }
 
@@ -270,7 +270,7 @@ public partial class TokenView : Node2D
         DrawColoredPolygon([at + new Vector2(4, 4), at + new Vector2(6, 7), at + new Vector2(5, 10), at + new Vector2(3, 10), at + new Vector2(2, 7)], Palette.FireCore);
         if (_fireDice > 1)
         {
-            DrawString(ThemeDB.FallbackFont, at + new Vector2(9, 10), _fireDice.ToString(), fontSize: 8, modulate: Palette.FireCore);
+            DrawString(ThemeDB.FallbackFont, at + new Vector2(9, 10), _fireDice.ToString(), fontSize: UiTheme.FontSize, modulate: Palette.FireCore);
         }
     }
 

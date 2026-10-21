@@ -376,8 +376,8 @@ public partial class Main : Control
         }
     }
 
-    /// <summary>A hero's hearts in the raid, out of their full health.</summary>
-    private string RaidHearts(Character hero) => $"{_raid!.HeartsOf(hero.Id, hero.MaxHearts(_content))}/{hero.MaxHearts(_content)}";
+    /// <summary>A hero's hearts in the raid, and their full health.</summary>
+    private (int Now, int Max) RaidHearts(Character hero) => (_raid!.HeartsOf(hero.Id, hero.MaxHearts(_content)), hero.MaxHearts(_content));
 
     private void ShowDungeonSelect() => ShowDungeonSelect(null);
 
@@ -601,7 +601,7 @@ public partial class Main : Control
             ReplacesSavedRun = world is null && _runFile.Exists,
             BackTooltip = world is null ? "Back to the Dungeon Run list. Your travels are saved." : "Back to your raids. This raid and the Woarld are saved.",
             RestBoosts = world is null ? null : walkers => world.TakeRestBoosts([.. walkers.Select(hero => hero.Id)], TavernDefinition.LoadDefault()),
-            HeartsText = _raid is null || world is null ? null : RaidHearts,
+            Hearts = _raid is null || world is null ? null : RaidHearts,
         };
         _woarldNews = "";
         SaveRaid(RaidLocation.Map);

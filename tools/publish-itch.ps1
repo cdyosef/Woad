@@ -46,7 +46,7 @@ if ($LASTEXITCODE -ne 0) { throw 'The build failed.' }
 Write-Host 'Exporting the Windows build...'
 & $godot --headless --path $root --export-release 'Windows Desktop' (Join-Path $output 'Woad.exe') | Out-Host
 if (-not (Test-Path (Join-Path $output 'Woad.exe'))) { throw 'The export failed: no Woad.exe was made.' }
-Copy-Item (Join-Path $root 'assets\fonts\PixelifySans-OFL.txt') $output
+Copy-Item (Join-Path $root 'assets\fonts\Jersey10-OFL.txt') $output
 
 if ($SkipUpload) {
     Write-Host "Built: $output"

@@ -33,10 +33,10 @@ public partial class CharacterRow : Button
 
         Looks.Draw(this, new Rect2(4, 4, 32, 32), Looks.Resolve(Character.Appearance, Character.Portrait));
         Font font = GetThemeDefaultFont();
-        DrawString(font, new Vector2(40, 17), Character.Name, fontSize: 12, modulate: ButtonPressed ? Palette.TrimBright : Palette.Text);
+        DrawString(font, new Vector2(40, 17), Character.Name, fontSize: UiTheme.HeadingSize, modulate: ButtonPressed ? Palette.TrimBright : Palette.Text);
         if (Character.IsCompanion)
         {
-            float nameWidth = font.GetStringSize(Character.Name, fontSize: 12).X;
+            float nameWidth = font.GetStringSize(Character.Name, fontSize: UiTheme.HeadingSize).X;
             DrawString(font, new Vector2(46 + nameWidth, 17), "companion", fontSize: UiTheme.FontSize, modulate: Palette.Power);
         }
 

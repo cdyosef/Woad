@@ -34,7 +34,7 @@ public partial class TavernScreen : Control
     private readonly IRandomSource _random = new Pcg32((ulong)DateTime.UtcNow.Ticks, sequence: 13);
     private TavernVisit _visit = null!;
     private TavernView _view = null!;
-    private Label _status = null!;
+    private RichTextLabel _status = null!;
     private Label _message = null!;
     private double _stepCooldown;
 
@@ -139,9 +139,7 @@ public partial class TavernScreen : Control
         AddChild(_view);
 
         AddChild(new Panel { Size = new Vector2(Size.X, BarHeight), MouseFilter = MouseFilterEnum.Ignore });
-        _status = UiTheme.Label(new Vector2(8, 2), new Vector2(Size.X - 16, 14), color: Palette.TrimBright);
-        _status.AutowrapMode = TextServer.AutowrapMode.Off;
-        _status.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        _status = UiTheme.RichLabel(new Vector2(8, 2), new Vector2(Size.X - 16, 15));
         AddChild(_status);
         _message = UiTheme.Label(new Vector2(8, 16), new Vector2(Size.X - 16, 14), Greeting.Length > 0 ? Greeting : $"Welcome to {Tavern.Name}. Walk up to anyone to talk, or click them.");
         _message.AutowrapMode = TextServer.AutowrapMode.Off;
@@ -316,8 +314,8 @@ public partial class TavernScreen : Control
         }
 
         _visit.SetPartySize(Party.Count);
-        _status.Text = $"{Tavern.Name.ToUpperInvariant()}   Day {World.Journey.Day}   Reputation {World.Reputation(Tavern.Id)}   " +
-                       string.Join("   ", Party.Select(member => $"{member.Name} {HeartsOf(member)}/{member.MaxHearts(Content)} hearts {member.Gold} gold"));
+        _status.Text = $"[color={Palette.Hex(Palette.TrimBright)}]{Tavern.Name.ToUpperInvariant()}[/color]  Day {World.Journey.Day}  Reputation {World.Reputation(Tavern.Id)}   " +
+                       string.Join("    ", Party.Select(member => $"{member.Name} {UiTheme.Hearts(HeartsOf(member), member.MaxHearts(Content))} {UiTheme.Gold(member.Gold)}"));
         LeaderButton.Text = $"Leader: {_leader.Name}";
         LeaderButton.Disabled = Party.Count(member => !member.IsCompanion) < 2;
         TavernNpc? near = _visit.NpcInReach;
@@ -343,7 +341,8 @@ public partial class TavernScreen : Control
     private void BuildDialog()
     {
         _dialog = new Control { Size = Size, Visible = false };
-        _dialog.AddChild(new ColorRect { Color = new Color(Palette.Background, 0.6f), Size = Size });
+        // Dims the room but not the bar above it, so everyone's gold and hearts stay in view while talking.
+        _dialog.AddChild(new ColorRect { Color = new Color(Palette.Background, 0.6f), Position = new Vector2(0, BarHeight), Size = Size - new Vector2(0, BarHeight) });
         var panel = new Panel { Position = new Vector2(32, 36), Size = new Vector2(576, 288), MouseFilter = MouseFilterEnum.Ignore };
         _dialog.AddChild(panel);
 
@@ -682,12 +681,9 @@ public partial class TavernScreen : Control
     {
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 4);
+        // Long lines (a card's whole text) wrap onto more lines rather than being cut short.
         Label label = UiTheme.Label(Vector2.Zero, new Vector2(width, RowHeight), text);
         label.CustomMinimumSize = new Vector2(width, RowHeight);
-        label.AutowrapMode = TextServer.AutowrapMode.Off;
-        label.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-        label.TooltipText = text;
-        label.MouseFilter = MouseFilterEnum.Pass;
         label.VerticalAlignment = VerticalAlignment.Center;
         row.AddChild(label);
         _list.AddChild(row);
@@ -698,6 +694,7 @@ public partial class TavernScreen : Control
     {
         Button button = UiTheme.Button(Vector2.Zero, new Vector2(width, RowHeight), text);
         button.CustomMinimumSize = new Vector2(width, RowHeight);
+        button.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         button.Pressed += action;
         row.AddChild(button);
         return button;
