@@ -370,6 +370,11 @@ public partial class Main
         await Click(this, inn.ByeButton);
 
         await TalkTo(Npc(NpcRole.Gambler));
+        Check(inn.ListRows.First().StartsWith("Bones: two dice each") && !inn.ListButton("20 gold")!.Disabled, "the Bones rules get a line of their own, and Wren can bet 20");
+        await Click(this, inn.PayerButton);
+        Check(inn.Payer.Name == "Pip" && inn.ListButton("1 gold")!.Disabled && inn.ListButton("1 gold")!.TooltipText == "Pip has 0 gold.", "Pip has no gold, so the bets are greyed out, saying why");
+        await Click(this, inn.PayerButton);
+        await Click(this, inn.PayerButton);
         await Click(this, inn.ListButton("1 gold")!);
         Check(wren.Gold is 43 or 44 or 45 && (inn.DialogText.Contains("rolls") || inn.DialogText.Contains("tie")), "a game of Bones for 1 gold");
         int gold = wren.Gold;

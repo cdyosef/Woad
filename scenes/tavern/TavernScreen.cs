@@ -607,15 +607,18 @@ public partial class TavernScreen : Control
 
     private void ShowBones()
     {
-        HBoxContainer row = Row($"Bones: two dice each, high total takes the pot; a tie hands the wagers back. {_payer.Name} bets:", 300);
+        Row("Bones: two dice each, high total takes the pot; a tie hands the wagers back.", 536);
+        HBoxContainer row = Row($"{_payer.Name} bets:", 300);
         foreach (int wager in new[] { 1, 5, 10, TavernServices.MaxWager })
         {
-            RowButton(row, $"{wager} gold", 54, () =>
+            Button bet = RowButton(row, $"{wager} gold", 54, () =>
             {
                 BonesResult game = TavernServices.Bones(_random, _payer, wager);
                 Sfx.Play("dice");
                 Done(new ServiceResult(game.Yours.Count > 0, game.Message), _payer);
             });
+            bet.Disabled = _payer.Gold < wager;
+            bet.TooltipText = bet.Disabled ? $"{_payer.Name} has {_payer.Gold} gold." : $"Bet {wager} gold on a game of Bones.";
         }
     }
 
