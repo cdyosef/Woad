@@ -1,10 +1,13 @@
 using Godot;
 using Woad.Core.Characters;
+using Woad.Core.Grid;
+using Woad.Core.Woarld;
 using Woad.Core.Content;
 using Woad.Core.Model;
 using Woad.Scenes.Game;
 using Woad.Scenes.Menu;
 using Woad.Scenes.Ui;
+using Woad.Scenes.Woarld;
 using static Woad.Scenes.Debug.UiDriver;
 
 namespace Woad.Scenes;
@@ -129,7 +132,7 @@ public partial class Main
             modes = await Screen<ModeSelectScreen>();
             await Click(this, modes.DungeonRunButton);
             DungeonSelectScreen dungeons = await Screen<DungeonSelectScreen>();
-            Check(dungeons.ContinueButton.Disabled && dungeons.WoarldMapButton.Disabled, "with no saved run, Continue and the Woarld Map are greyed out");
+            Check(dungeons.ContinueButton.Disabled && !dungeons.WoarldMapButton.Disabled, "with no saved run, Continue is greyed out; the Woarld Map is open");
             Check(dungeons.DungeonButton(0).Text == "The Emerald Keep" && dungeons.DungeonButton(1).Text == "The Sunken Temple", "the Dungeon Run list starts with the Emerald Keep, then the Sunken Temple");
             await Click(this, dungeons.DungeonButton(1));
             RunSetupScreen setup = await Screen<RunSetupScreen>();
@@ -211,6 +214,9 @@ public partial class Main
             await Click(this, setup.BeginRaid.ChillButton);
             await Click(this, setup.BackButton);
             dungeons = await Screen<DungeonSelectScreen>();
+
+            await RunWoarldMapTest(dungeons);
+            dungeons = await Screen<DungeonSelectScreen>();
             await Click(this, dungeons.BackButton);
             modes = await Screen<ModeSelectScreen>();
             await Click(this, modes.BackButton);
@@ -239,6 +245,65 @@ public partial class Main
                 Directory.Delete(saveFolder, recursive: true);
             }
         }
+    }
+
+    /// <summary>
+    /// Sets out on the Woarld Map with Wren, Pip and Morgan: walks by click, changes leader, rests,
+    /// follows the road to the Emerald Keep, raids it, leaves the run and comes back to the map.
+    /// </summary>
+    private async Task RunWoarldMapTest(DungeonSelectScreen dungeons)
+    {
+        await Click(this, dungeons.WoarldMapButton);
+        RunSetupScreen setup = await Screen<RunSetupScreen>();
+        await WaitFor(this, () => setup.IsLoaded, "the roster to load");
+        await NextFrame(this);
+        Check(setup.DungeonLabel.Text == "Off to: The Woarld Map", "the party screen says the party sets out on the Woarld Map");
+        await Click(this, setup.RosterRow(1));
+        await Click(this, setup.RosterRow(2));
+        await Click(this, setup.RosterRow(0));
+        await Click(this, setup.StartButton);
+        Check(!setup.BeginRaid.DetailText.Contains("replaces"), "setting out on the map doesn't replace the saved run");
+        await Click(this, setup.BeginRaid.RaidButton);
+
+        WoarldMapScreen map = await Screen<WoarldMapScreen>();
+        WoarldJourney journey = map.Journey;
+        GridPosition inn = journey.Map.Start;
+        Check(journey.Leader == inn && journey.PlaceHere?.Id == "waylay_inn", "the party sets out from The Waylay Inn");
+        Check(map.LeaderButton.Text == "Leader: Wren" && journey.Trail.Count == 2, "Wren leads, with two following");
+        Check(map.EnterButton.Visible && map.EnterButton.Text == "Enter The Waylay Inn", "at the inn, the Enter button offers it");
+        await Click(this, map.EnterButton);
+        Check(map.Message.Contains("Coming soon"), "the inn opens with Raiding Party");
+
+        // A click two tiles east walks there; the others fall in behind.
+        await ClickAt(this, map.View.TileCenter(inn with { X = inn.X + 2 }));
+        await WaitFor(this, () => !map.IsWalking, "the party to walk");
+        Check(journey.Leader == inn with { X = inn.X + 2 } && journey.Trail[0] == inn with { X = inn.X + 1 } && journey.Trail[1] == inn, "clicking walks the party there in a line");
+        Check(journey.TotalSteps == 2 && !map.EnterButton.Visible, "two steps walked, and nothing to enter here");
+
+        await Click(this, map.LeaderButton);
+        Check(map.LeaderButton.Text == "Leader: Morgan", "the Leader button passes the lead to the next player, skipping the companion");
+        await Click(this, map.RestButton);
+        Check(journey.TotalSteps == 2 + WoarldJourney.RestSteps && map.Message.StartsWith("Rested"), "resting rolls for everyone and takes 50 steps");
+
+        // Back along the road east, over the bridge and north to the Keep.
+        Direction[] road = [.. Enumerable.Repeat(Direction.East, 14), .. Enumerable.Repeat(Direction.North, 5), .. Enumerable.Repeat(Direction.East, 6), Direction.North];
+        map.Walk(road);
+        await WaitFor(this, () => !map.IsWalking, "the walk to the Keep");
+        Check(journey.PlaceHere?.Id == "emerald_keep" && map.EnterButton.Text == "Raid The Emerald Keep", "the road leads to the Emerald Keep");
+        await Click(this, map.EnterButton);
+        Check(map.BeginRaid.Visible && map.BeginRaid.DetailText.Contains("replaces your saved run"), "raiding asks Begin Raid?, warning of the saved run");
+        await Click(this, map.BeginRaid.RaidButton);
+
+        GameScreen game = await Screen<GameScreen>();
+        await game.WaitUntilIdle();
+        Check(game.Session.State.ThemeId == "emerald_keep" && game.Session.State.Heroes.Count == 3, "the party raids the Keep");
+        Check(journey.Day == 2, "a raid takes the rest of the day");
+        await Click(this, game.MenuButton);
+        await Click(this, game.MenuButton);
+        map = await Screen<WoarldMapScreen>();
+        Check(map.Journey.PlaceHere?.Id == "emerald_keep" && map.LeaderButton.Text == "Leader: Morgan", "leaving the raid goes back to the map, at the Keep, Morgan still leading");
+        await Click(this, map.BackButton);
+        Check(File.Exists(_journeyPath) && File.ReadAllText(_journeyPath).Contains("\"day\":2"), "the journey is saved");
     }
 
     private async Task<T> Screen<T>() where T : Control

@@ -24,6 +24,8 @@ public partial class DungeonSelectScreen : MenuScreen
 
     public event Action? ContinueRequested;
 
+    public event Action? WoarldMapRequested;
+
     /// <summary>A dungeon was picked: its theme id.</summary>
     public event Action<string>? DungeonChosen;
 
@@ -59,9 +61,9 @@ public partial class DungeonSelectScreen : MenuScreen
         }
 
         WoarldMapButton = Add(UiTheme.Button(new Vector2(40, 270), new Vector2(200, 26), "Open Woarld Map"));
-        WoarldMapButton.Disabled = true;
-        WoarldMapButton.TooltipText = "The Woarld Map: coming soon.";
-        Add(UiTheme.Label(new Vector2(254, 270), new Vector2(350, 26), "Raid any dungeon you've unlocked on the Woarld Map. Coming soon.", color: Palette.TextDim)).VerticalAlignment = VerticalAlignment.Center;
+        WoarldMapButton.Pressed += () => WoarldMapRequested?.Invoke();
+        WoarldMapButton.TooltipText = "Walk the Woarld with your party and raid the dungeons you've opened.";
+        Add(UiTheme.Label(new Vector2(254, 270), new Vector2(350, 26), "Walk the Woarld with your party and raid any dungeon you've opened.")).VerticalAlignment = VerticalAlignment.Center;
 
         BackButton = Add(UiTheme.Button(new Vector2(20, 316), new Vector2(88, 26), "Back"));
         BackButton.Pressed += () => BackRequested?.Invoke();

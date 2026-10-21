@@ -1307,6 +1307,242 @@ def exit_tile(sealed):
     return tile
 
 
+# ---- Woarld Map tiles and places (16x16) ----------------------------------------------------
+
+GRASS = ("#5f9a4c", "#78b45c", "#467a3a")
+
+
+def speckled(seed, base, specks, count=10):
+    """A flat tile with a scatter of 1-2 pixel specks in the given colors."""
+    tile = blank(color=rgba(base))
+    generator = random.Random(seed)
+    for _ in range(count):
+        x, y = generator.randrange(0, 16), generator.randrange(0, 16)
+        color = rgba(generator.choice(specks))
+        tile[y][x] = color
+        if generator.random() < 0.5 and x < 15:
+            tile[y][x + 1] = color
+    return tile
+
+
+def grass_tile(seed):
+    """Grass with tufts: a light blade over a dark root."""
+    tile = speckled(seed, GRASS[0], [GRASS[2]], count=4)
+    generator = random.Random(seed + 100)
+    for _ in range(5):
+        x, y = generator.randrange(1, 15), generator.randrange(1, 15)
+        tile[y][x] = rgba(GRASS[1])
+        tile[y + 1][x] = rgba(GRASS[2])
+    return tile
+
+
+def paint(tile, art, palette, dx=0, dy=0):
+    """Draws sprite rows over a tile, '.' leaving it be."""
+    for y, row in enumerate(art):
+        for x, char in enumerate(row):
+            if char != "." and 0 <= y + dy < 16 and 0 <= x + dx < 16:
+                tile[y + dy][x + dx] = rgba(palette[char])
+    return tile
+
+
+TREE = ["..oooo..", ".oLLLGo.", "oLLGGGGo", "oLGGGGDo", "oGGGGDDo", ".oGDDDo.", "..ootoo.", "....t..."]
+TREE_COLORS = {"o": "#1e3a1e", "L": "#6aa84e", "G": "#3f7a36", "D": "#2c5a2a", "t": "#5a3a20"}
+
+
+def forest_tile():
+    """Three trees crowded together on dark grass."""
+    tile = speckled(7, "#3f6e34", ["#355e2c"], count=6)
+    paint(tile, TREE, TREE_COLORS, 0, 0)
+    paint(tile, TREE, TREE_COLORS, 8, 2)
+    paint(tile, TREE, TREE_COLORS, 3, 8)
+    return tile
+
+
+def hills_tile():
+    """Two grassy mounds, lit on the left."""
+    tile = grass_tile(11)
+    mound = ["...oooo...", "..oLLGGo..", ".oLLGGGDo.", "oLLGGGGDDo"]
+    colors = {"o": "#34582a", "L": "#9ac470", "G": "#78a456", "D": "#5a8642"}
+    paint(tile, mound, colors, 0, 4)
+    paint(tile, mound, colors, 6, 10)
+    return tile
+
+
+def mountain_tile():
+    """A grey peak with a snow cap, lit on the left."""
+    tile = speckled(13, "#6f7f5c", ["#5f6e4e"], count=5)
+    peak = [
+        ".......o........",
+        "......oWo.......",
+        ".....oWWWo......",
+        "....oWWLDDo.....",
+        "....oLLLGDo.....",
+        "...oLLLGGDDo....",
+        "...oLLGGGDDo....",
+        "..oLLLGGGDDDo...",
+        "..oLLGGGGDDDo.o.",
+        ".oLLLGGGGDDDDoWo",
+        ".oLLGGGGGDDDDoDo",
+        "oLLLGGGGGDDDDDDo",
+        "oLLGGGGGGDDDDDDo",
+        "oooooooooooooooo",
+    ]
+    return paint(tile, peak, {"o": "#2a2a34", "W": "#f0f2f8", "L": "#b8b8c4", "G": "#8a8a98", "D": "#5c5c6c"}, 0, 2)
+
+
+def woarld_water_tile():
+    """Open water, rippled with light crests."""
+    tile = blank(color=rgba("#2c5c9c"))
+    for row, offset in [(2, 1), (7, 5), (12, 2)]:
+        for x in range(16):
+            if (x + offset) % 8 in (0, 1, 2):
+                tile[row][x] = rgba("#6a9ad8")
+    return tile
+
+
+def road_tile():
+    """Packed dirt with pebbles."""
+    return speckled(17, "#b8945e", ["#9a7a48", "#d0b07a"], count=12)
+
+
+def sand_tile():
+    return speckled(19, "#dcc88e", ["#c4ae74", "#f0e0ae"], count=10)
+
+
+def bridge_tile():
+    """Plank boards across the water, a rail along each side."""
+    tile = woarld_water_tile()
+    for y in range(2, 14):
+        for x in range(16):
+            tile[y][x] = rgba("#b07840" if x % 4 else "#6a4224")
+    for x in range(16):
+        tile[2][x] = tile[13][x] = rgba("#5a3a20")
+        tile[3][x] = rgba("#8a5a2b")
+    return tile
+
+
+def cloud_tile(size=48):
+    """Cloud cover over unexplored land: a haze of soft puffs, 3x3 tiles big so it tiles unseen.
+    Each puff wraps round the edges, so the texture joins up with itself on every side."""
+    tile = blank(size, size, rgba("#6e7890"))
+    generator = random.Random(23)
+    puffs = [(generator.randrange(size), generator.randrange(size), generator.randrange(5, 10)) for _ in range(16)]
+    for layer, color in [(0, "#8a94aa"), (2, "#a2abbe")]:
+        for cx, cy, radius in puffs:
+            r = radius - layer
+            for y in range(size):
+                for x in range(size):
+                    dx = min(abs(x - cx), size - abs(x - cx))
+                    dy = min(abs(y - cy), size - abs(y - cy))
+                    # Lit toward the top-left: the inner layer sits up and left of the puff's middle.
+                    if (dx + layer / 2) ** 2 + (dy + layer / 2) ** 2 <= r * r if layer else dx * dx + dy * dy <= r * r:
+                        tile[y][x] = rgba(color)
+    return tile
+
+
+def unknown_tile():
+    """Parts Unknown: old dark parchment, cross-hatched."""
+    tile = blank(color=rgba("#3a3226"))
+    for y in range(16):
+        for x in range(16):
+            if (x + y) % 6 == 0 or (x - y) % 6 == 0:
+                tile[y][x] = rgba("#4c4232")
+    return tile
+
+
+# Places, drawn over the tile they stand on. Halves mirrored.
+PLACES = {
+    "place_keep": sprite([
+        "........",
+        ".o.o.o..",
+        ".ooooo..",
+        ".oLLMo..",
+        ".oLLMoo.",
+        ".oLLMooo",
+        ".oLLMLLM",
+        ".oLLMLLM",
+        ".oLLMLoo",
+        ".oLLMLog",
+        ".oLLMLog",
+        ".oLLMLog",
+        ".oooooog",
+        "........",
+        "........",
+        "........",
+    ], {"o": "#181420", "L": "#a8c4b4", "M": "#5f8a74", "g": "#2a1a10"}, mirror=True),
+    "place_temple": sprite([
+        "........",
+        ".......o",
+        ".....ooR",
+        "...ooRRR",
+        ".ooRRRRR",
+        "oooooooo",
+        ".oPo.oPo",
+        ".oPo.oPo",
+        ".oPo.oPo",
+        ".oPo.oPo",
+        ".oPo.oPo",
+        "oooooooo",
+        "~~~~~~~~",
+        "w~~w~~~w",
+        "........",
+        "........",
+    ], {"o": "#3a2418", "R": "#e0b49a", "P": "#ecdcbc", "~": "#3fa0b8", "w": "#c0f0ec"}, mirror=True),
+    "place_inn": sprite([
+        "........",
+        "......oo",
+        "....ooRR",
+        "..ooRRRR",
+        "ooRRRRRR",
+        "oooooooo",
+        ".oWWWWWW",
+        ".oWyyoWW",
+        ".oWyyoWW",
+        ".oWWWWWo",
+        ".oWWWWod",
+        ".oWWWWod",
+        ".ooooooo",
+        "........",
+        "........",
+        "........",
+    ], {"o": "#2a1a10", "R": "#a0423a", "W": "#c89a5e", "y": "#f0d060", "d": "#6a4224"}, mirror=True),
+    "place_lock": sprite([
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "...........ooo..",
+        "..........o...o.",
+        "..........o...o.",
+        ".........ooooooo",
+        ".........oyyyyyo",
+        ".........oyyoyyo",
+        ".........oyyyyyo",
+        ".........ooooooo",
+    ], {"o": "#181420", "y": "#e2c47a"}),
+}
+
+
+def build_woarld(directory):
+    write_png(directory / "grass_a.png", grass_tile(1))
+    write_png(directory / "grass_b.png", grass_tile(2))
+    write_png(directory / "forest.png", forest_tile())
+    write_png(directory / "hills.png", hills_tile())
+    write_png(directory / "mountain.png", mountain_tile())
+    write_png(directory / "water.png", woarld_water_tile())
+    write_png(directory / "road.png", road_tile())
+    write_png(directory / "bridge.png", bridge_tile())
+    write_png(directory / "sand.png", sand_tile())
+    write_png(directory / "cloud.png", cloud_tile())
+    write_png(directory / "unknown.png", unknown_tile())
+    for name, pixels in PLACES.items():
+        write_png(directory / f"{name}.png", pixels)
+
+
 # ---- UI frame (12x12, drawn as a nine-patch with 4px margins) --------------------------------
 
 def frame(edge, inner_edge, fill):
@@ -1809,6 +2045,7 @@ def main():
     for name, pixels in ICONS.items():
         write_png(ui / f"{name}.png", pixels)
 
+    build_woarld(ASSETS / "woarld")
     build_font(ASSETS / "fonts", "woad_gothic")
     build_sounds(ASSETS / "audio")
     build_music(ASSETS / "audio" / "music")

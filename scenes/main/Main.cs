@@ -4,9 +4,11 @@ using Woad.Core.Content;
 using Woad.Core.Dungeon;
 using Woad.Core.Rules;
 using Woad.Core.Saves;
+using Woad.Core.Woarld;
 using Woad.Scenes.Game;
 using Woad.Scenes.Menu;
 using Woad.Scenes.Ui;
+using Woad.Scenes.Woarld;
 
 namespace Woad.Scenes;
 
@@ -36,6 +38,22 @@ public partial class Main : Control
 
     /// <summary>The Dungeon Run in progress, saved after every move.</summary>
     private SavedRunFile _runFile = null!;
+
+    /// <summary>Where the Dungeon Run's Woarld Map journey is saved.</summary>
+    private string _journeyPath = "";
+
+    /// <summary>The Dungeon Run's Woarld Map journey, loaded when first needed.</summary>
+    private WoarldJourney? _journey;
+
+    /// <summary>The party walking the Woarld Map this session, and who leads it.</summary>
+    private List<Character> _woarldParty = [];
+    private int _woarldLeader;
+
+    /// <summary>News for the Woarld Map to show when it next opens.</summary>
+    private string _woarldNews = "";
+
+    /// <summary>The run was raided from the Woarld Map, so it goes back there afterwards.</summary>
+    private bool _runFromMap;
     private Control? _screen;
 
     public override void _Ready()
@@ -52,6 +70,9 @@ public partial class Main : Control
         _runFile = new SavedRunFile(throwawaySaves
             ? Path.Combine(saveFolder, "runs", "current-run.json")
             : ProjectSettings.GlobalizePath("user://runs/current-run.json"));
+        _journeyPath = throwawaySaves
+            ? Path.Combine(saveFolder, "woarld", "dungeon-run.json")
+            : ProjectSettings.GlobalizePath("user://woarld/dungeon-run.json");
 
         AudioSettings.Load(throwawaySaves ? Path.Combine(saveFolder, "settings.cfg") : "user://settings.cfg");
         AddChild(new Sfx());
@@ -229,6 +250,11 @@ public partial class Main : Control
         };
         screen.BackRequested += ShowModeSelect;
         screen.ContinueRequested += ContinueRun;
+        screen.WoarldMapRequested += () =>
+        {
+            _themeId = "";
+            ShowRunSetup();
+        };
         screen.DungeonChosen += themeId =>
         {
             _themeId = themeId;
@@ -244,12 +270,25 @@ public partial class Main : Control
             Repository = _characters,
             FriendlyFire = _friendlyFire,
             ThemeId = _themeId,
-            DungeonName = _content.Themes.TryGetValue(_themeId, out ThemeDefinition? theme) ? theme.Name : _themeId,
-            ReplacesSavedRun = _runFile.Exists,
+            DungeonName = _themeId.Length == 0 ? "The Woarld Map" : _content.Themes.TryGetValue(_themeId, out ThemeDefinition? theme) ? theme.Name : _themeId,
+            ReplacesSavedRun = _themeId.Length > 0 && _runFile.Exists,
         };
         screen.BackRequested += ShowDungeonSelect;
         screen.NewCharacterRequested += () => ShowEditor(null, ShowRunSetup);
-        screen.StartRequested += StartRun;
+        screen.StartRequested += (party, seed, friendlyFire, themeId) =>
+        {
+            _runFromMap = false;
+            if (themeId.Length > 0)
+            {
+                StartRun(party, seed, friendlyFire, themeId);
+                return;
+            }
+
+            _friendlyFire = friendlyFire;
+            _woarldParty = [.. party];
+            _woarldLeader = Math.Max(0, _woarldParty.FindIndex(hero => !hero.IsCompanion));
+            ShowWoarldMap();
+        };
         ShowMenu(screen);
     }
 
@@ -286,6 +325,7 @@ public partial class Main : Control
             .OfType<Character>()];
         _themeId = run.ThemeId;
         _friendlyFire = run.FriendlyFire;
+        _runFromMap = false;
         ShowGame(run.CreateSetup(_content), party, run, session);
     }
 
@@ -301,7 +341,17 @@ public partial class Main : Control
                 save.Record(command, state);
                 WriteSave(save);
             };
-            game.ExitRequested += ShowDungeonSelect;
+            game.ExitRequested += () =>
+            {
+                if (_runFromMap)
+                {
+                    ShowWoarldMap();
+                }
+                else
+                {
+                    ShowDungeonSelect();
+                }
+            };
         }
         else
         {
@@ -318,6 +368,76 @@ public partial class Main : Control
             FinishRun(results, setup, party);
         };
         Show(game);
+    }
+
+    /// <summary>Walks the Woarld Map with the party picked for it.</summary>
+    private void ShowWoarldMap()
+    {
+        WoarldJourney journey = LoadJourney();
+        journey.SetPartySize(_woarldParty.Count);
+        var screen = new WoarldMapScreen { Journey = journey, Party = _woarldParty, Leader = _woarldLeader, Greeting = _woarldNews, ReplacesSavedRun = _runFile.Exists };
+        _woarldNews = "";
+        screen.BackRequested += () =>
+        {
+            SaveJourney();
+            ShowDungeonSelect();
+        };
+        screen.JourneyChanged += () =>
+        {
+            _woarldLeader = screen.Leader;
+            SaveJourney();
+        };
+        screen.RaidRequested += place =>
+        {
+            journey.PassDay();
+            SaveJourney();
+            _runFromMap = true;
+            StartRun(_woarldParty, (ulong)DateTime.UtcNow.Ticks, _friendlyFire, place.ThemeId!);
+        };
+        ShowMenu(screen);
+    }
+
+    /// <summary>The Dungeon Run's journey: as saved, or a new one if there's none (or it can't be read).</summary>
+    private WoarldJourney LoadJourney()
+    {
+        if (_journey is not null)
+        {
+            return _journey;
+        }
+
+        WoarldMap map = WoarldMap.LoadDefault();
+        try
+        {
+            if (File.Exists(_journeyPath))
+            {
+                return _journey = WoarldJourney.FromJson(File.ReadAllText(_journeyPath), map);
+            }
+        }
+        catch (Exception exception) when (exception is InvalidDataException or IOException)
+        {
+            GD.PushWarning($"The Woarld Map journey couldn't be loaded, so it starts afresh: {exception.Message}");
+        }
+
+        return _journey = WoarldJourney.Begin(map, 1);
+    }
+
+    private void SaveJourney()
+    {
+        if (_journey is null)
+        {
+            return;
+        }
+
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(_journeyPath)!);
+            File.WriteAllText(_journeyPath + ".tmp", _journey.ToJson());
+            File.Move(_journeyPath + ".tmp", _journeyPath, overwrite: true);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            GD.PushWarning($"The Woarld Map journey couldn't be saved: {exception.Message}");
+        }
     }
 
     private void WriteSave(SavedRun save)
@@ -356,9 +476,29 @@ public partial class Main : Control
             rows.Add(new ResultRow(result, character, reward));
         }
 
+        if (results.Any(result => result.Won))
+        {
+            IReadOnlyList<WoarldPlace> opened = LoadJourney().MarkBeaten(setup.ThemeId);
+            SaveJourney();
+            if (opened.Count > 0)
+            {
+                _woarldNews = $"{string.Join(" and ", opened.Select(place => place.Name))} has opened! Find it on the Woarld Map.";
+            }
+        }
+
         Music.Play(results.Any(result => result.Won) ? "victory" : "defeat", loop: false);
         var screen = new ResultsScreen { Rows = rows, Content = _content, SaveProblem = saveProblem };
-        screen.DoneRequested += ShowRunSetup;
+        screen.DoneRequested += () =>
+        {
+            if (_runFromMap)
+            {
+                ShowWoarldMap();
+            }
+            else
+            {
+                ShowRunSetup();
+            }
+        };
         screen.PlayAgainRequested += () =>
         {
             ulong seed = (ulong)DateTime.UtcNow.Ticks;

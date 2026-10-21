@@ -33,10 +33,10 @@ public partial class RunSetupScreen : MenuScreen
     /// <summary>The chosen characters in seat order, the seed for the dungeon and dice, and whether friendly fire is on.</summary>
     public event Action<IReadOnlyList<Character>, ulong, bool, string>? StartRequested;
 
-    /// <summary>The dungeon the run will be in, picked on the Dungeon Run list.</summary>
+    /// <summary>The dungeon the run will be in, picked on the Dungeon Run list; empty to set out on the Woarld Map.</summary>
     public string ThemeId { get; init; } = "";
 
-    /// <summary>The dungeon's name, shown at the bottom.</summary>
+    /// <summary>The dungeon's name (or the Woarld Map's), shown at the bottom.</summary>
     public string DungeonName { get; init; } = "";
 
     internal Label DungeonLabel { get; private set; } = null!;
@@ -112,7 +112,7 @@ public partial class RunSetupScreen : MenuScreen
         BackButton.Pressed += () => BackRequested?.Invoke();
         Button create = Add(UiTheme.Button(new Vector2(114, 316), new Vector2(130, 26), "New character"));
         create.Pressed += () => NewCharacterRequested?.Invoke();
-        DungeonLabel = Add(UiTheme.Label(new Vector2(256, 316), new Vector2(246, 26), "Dungeon: " + DungeonName, color: Palette.Trim));
+        DungeonLabel = Add(UiTheme.Label(new Vector2(256, 316), new Vector2(246, 26), (ThemeId.Length > 0 ? "Dungeon: " : "Off to: ") + DungeonName, color: Palette.Trim));
         DungeonLabel.VerticalAlignment = VerticalAlignment.Center;
         StartButton = Add(UiTheme.Button(new Vector2(508, 316), new Vector2(110, 26), "Start run"));
         StartButton.Pressed += Start;
