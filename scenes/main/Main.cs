@@ -21,10 +21,10 @@ public partial class Main : Control
     /// <summary>The first dungeon, and the one debug runs use unless --theme says otherwise.</summary>
     private const string FirstThemeId = "emerald_keep";
 
-    /// <summary>The dungeons in the order the party screen offers them: the Emerald Keep first.</summary>
+    /// <summary>The dungeons in the order the Dungeon Run list offers them: the Emerald Keep first.</summary>
     private static readonly string[] DungeonOrder = ["emerald_keep", "sunken_temple"];
 
-    /// <summary>The party screen's dungeon, remembered between runs this session.</summary>
+    /// <summary>The dungeon picked on the Dungeon Run list, for the party screen and the run.</summary>
     private string _themeId = FirstThemeId;
 
     private ContentCatalog _content = null!;
@@ -148,7 +148,7 @@ public partial class Main : Control
     private void ShowMainMenu()
     {
         var menu = new MainMenu();
-        menu.PlayRequested += ShowRunSetup;
+        menu.PlayRequested += ShowModeSelect;
         menu.CharactersRequested += ShowCharacters;
         menu.SettingsRequested += ShowSettings;
         ShowMenu(menu);
@@ -184,6 +184,32 @@ public partial class Main : Control
         ShowMenu(editor);
     }
 
+    private void ShowModeSelect()
+    {
+        var screen = new ModeSelectScreen();
+        screen.BackRequested += ShowMainMenu;
+        screen.DungeonRunRequested += ShowDungeonSelect;
+        ShowMenu(screen);
+    }
+
+    private void ShowDungeonSelect()
+    {
+        var screen = new DungeonSelectScreen
+        {
+            Dungeons = [.. _content.Themes.Values
+                .OrderBy(theme => Array.IndexOf(DungeonOrder, theme.Id) is var at and >= 0 ? at : int.MaxValue)
+                .ThenBy(theme => theme.Name, StringComparer.Ordinal)
+                .Select(theme => (theme.Id, theme.Name, theme.Description))],
+        };
+        screen.BackRequested += ShowModeSelect;
+        screen.DungeonChosen += themeId =>
+        {
+            _themeId = themeId;
+            ShowRunSetup();
+        };
+        ShowMenu(screen);
+    }
+
     private void ShowRunSetup()
     {
         var screen = new RunSetupScreen
@@ -191,12 +217,9 @@ public partial class Main : Control
             Repository = _characters,
             FriendlyFire = _friendlyFire,
             ThemeId = _themeId,
-            Dungeons = [.. _content.Themes.Values
-                .OrderBy(theme => Array.IndexOf(DungeonOrder, theme.Id) is var at and >= 0 ? at : int.MaxValue)
-                .ThenBy(theme => theme.Name, StringComparer.Ordinal)
-                .Select(theme => (theme.Id, theme.Name))],
+            DungeonName = _content.Themes.TryGetValue(_themeId, out ThemeDefinition? theme) ? theme.Name : _themeId,
         };
-        screen.BackRequested += ShowMainMenu;
+        screen.BackRequested += ShowDungeonSelect;
         screen.NewCharacterRequested += () => ShowEditor(null, ShowRunSetup);
         screen.StartRequested += StartRun;
         ShowMenu(screen);

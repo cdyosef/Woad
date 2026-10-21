@@ -10,9 +10,10 @@ using static Woad.Scenes.Debug.UiDriver;
 namespace Woad.Scenes;
 
 /// <summary>
-/// Debug mode (<c>-- --menutest</c>): creates two characters and a companion, seats them, starts a
-/// run, orders the companion, leaves the run and deletes a character, all with synthetic clicks and
-/// typing against a throwaway save folder.
+/// Debug mode (<c>-- --menutest</c>): creates two characters and a companion, goes through Select
+/// Mode and the Dungeon Run list, seats them, answers Begin Raid?, starts a run, orders the
+/// companion, leaves the run and deletes a character, all with synthetic clicks and typing against
+/// a throwaway save folder.
 /// </summary>
 public partial class Main
 {
@@ -118,7 +119,26 @@ public partial class Main
             Check(AudioSettings.MusicVolume == savedMusic && AudioSettings.SfxVolume == 0, "leaving Settings saves the volumes, and they load again");
 
             await Click(this, menu.PlayButton);
+            ModeSelectScreen modes = await Screen<ModeSelectScreen>();
+            Check(!modes.DungeonRunButton.Disabled, "Play opens Select Mode, with Dungeon Run ready");
+            Check(new[] { modes.RaidingPartyButton, modes.FrontierRaidButton, modes.BalladButton, modes.MapEditorButton, modes.WoarldTreeButton }.All(button => button.Disabled),
+                "the modes still to come are greyed out");
+            await Click(this, modes.BackButton);
+            menu = await Screen<MainMenu>();
+            await Click(this, menu.PlayButton);
+            modes = await Screen<ModeSelectScreen>();
+            await Click(this, modes.DungeonRunButton);
+            DungeonSelectScreen dungeons = await Screen<DungeonSelectScreen>();
+            Check(dungeons.ContinueButton.Disabled && dungeons.WoarldMapButton.Disabled, "with no saved run, Continue and the Woarld Map are greyed out");
+            Check(dungeons.DungeonButton(0).Text == "The Emerald Keep" && dungeons.DungeonButton(1).Text == "The Sunken Temple", "the Dungeon Run list starts with the Emerald Keep, then the Sunken Temple");
+            await Click(this, dungeons.DungeonButton(1));
             RunSetupScreen setup = await Screen<RunSetupScreen>();
+            Check(setup.ThemeId == "sunken_temple" && setup.DungeonLabel.Text.EndsWith("The Sunken Temple"), "picking the Sunken Temple takes the party there");
+            await WaitFor(this, () => setup.IsLoaded, "the roster to load");
+            await Click(this, setup.BackButton);
+            dungeons = await Screen<DungeonSelectScreen>();
+            await Click(this, dungeons.DungeonButton(0));
+            setup = await Screen<RunSetupScreen>();
             await WaitFor(this, () => setup.IsLoaded, "the roster to load");
             Check(setup.StartButton.Disabled, "Start needs at least one player");
             await Click(this, setup.RosterRow(2));
@@ -129,13 +149,14 @@ public partial class Main
             Check(setup.PartySize == 3, "clicking characters seats them");
             await Click(this, setup.FriendlyFireButton);
             Check(setup.FriendlyFire && setup.FriendlyFireButton.Text.EndsWith("on"), "the Friendly fire button turns it on");
-            Check(setup.ThemeId == "emerald_keep" && setup.DungeonButton.Text.EndsWith("The Emerald Keep"), "the first dungeon is the Emerald Keep");
-            await Click(this, setup.DungeonButton);
-            Check(setup.ThemeId == "sunken_temple" && setup.DungeonButton.Text.EndsWith("The Sunken Temple"), "the Dungeon button picks the Sunken Temple");
-            await Click(this, setup.DungeonButton);
-            Check(setup.ThemeId == "emerald_keep", "and clicking again goes back to the Keep");
+            Check(setup.ThemeId == "emerald_keep" && setup.DungeonLabel.Text.EndsWith("The Emerald Keep"), "and back to the list for the Emerald Keep");
 
             await Click(this, setup.StartButton);
+            Check(setup.BeginRaid.Visible, "Start asks Begin Raid?");
+            await Click(this, setup.BeginRaid.ChillButton);
+            Check(!setup.BeginRaid.Visible && _screen == setup && setup.PartySize == 3, "Chill closes the question and keeps the party");
+            await Click(this, setup.StartButton);
+            await Click(this, setup.BeginRaid.RaidButton);
             GameScreen game = await Screen<GameScreen>();
             await game.WaitUntilIdle();
             string[] names = [.. game.Session.State.Heroes.Select(hero => hero.Name)];
@@ -168,8 +189,11 @@ public partial class Main
             Check(Music.Current == "title", "leaving the run brings back the title music");
 
             await WaitFor(this, () => setup.IsLoaded, "the roster to load");
-            Button back = setup.GetChildren().OfType<Button>().First(button => button.Text == "Back");
-            await Click(this, back);
+            await Click(this, setup.BackButton);
+            dungeons = await Screen<DungeonSelectScreen>();
+            await Click(this, dungeons.BackButton);
+            modes = await Screen<ModeSelectScreen>();
+            await Click(this, modes.BackButton);
             menu = await Screen<MainMenu>();
             await Click(this, menu.CharactersButton);
             list = await LoadedList();

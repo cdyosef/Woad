@@ -23,7 +23,7 @@ public partial class MainMenu : MenuScreen
 
         Label title = Add(UiTheme.Heading(UiTheme.Label(new Vector2(0, 48), new Vector2(Width, 64), "WOAD", 52, Palette.TrimBright), 6));
         title.HorizontalAlignment = HorizontalAlignment.Center;
-        Label subtitle = Add(UiTheme.Label(new Vector2(0, 118), new Vector2(Width, 16), "A dungeon crawl for one to four heroes", 10, Palette.TextDim));
+        Label subtitle = Add(UiTheme.Label(new Vector2(0, 118), new Vector2(Width, 16), "A dungeon crawl for one to eight heroes", 10, Palette.TextDim));
         subtitle.HorizontalAlignment = HorizontalAlignment.Center;
 
         PlayButton = Add(UiTheme.Button(new Vector2(240, 164), new Vector2(160, 26), "Play"));
@@ -35,7 +35,7 @@ public partial class MainMenu : MenuScreen
         Button quit = Add(UiTheme.Button(new Vector2(240, 266), new Vector2(160, 26), "Quit"));
         quit.Pressed += () => Sfx.QuitGame(this);
 
-        Label footer = Add(UiTheme.Label(new Vector2(0, 326), new Vector2(Width, 12), "Early build: The Emerald Keep, local hot-seat for 1-8 players", color: Palette.TextDim));
+        Label footer = Add(UiTheme.Label(new Vector2(0, 326), new Vector2(Width, 12), "Early build: two dungeons, local hot-seat for 1-8 players", color: Palette.TextDim));
         footer.HorizontalAlignment = HorizontalAlignment.Center;
     }
 }
