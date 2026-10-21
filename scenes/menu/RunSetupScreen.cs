@@ -41,6 +41,9 @@ public partial class RunSetupScreen : MenuScreen
 
     internal Label DungeonLabel { get; private set; } = null!;
 
+    /// <summary>Starting a run replaces the saved one, so Begin Raid? says so.</summary>
+    public bool ReplacesSavedRun { get; init; }
+
     internal BeginRaidDialog BeginRaid { get; private set; } = null!;
 
     /// <summary>Heroes can hurt each other this run (see <see cref="Woad.Core.Rules.RunSetup.FriendlyFire"/>).</summary>
@@ -231,6 +234,6 @@ public partial class RunSetupScreen : MenuScreen
 
         List<Character> party = [.. _party];
         _raid = () => StartRequested?.Invoke(party, seed, FriendlyFire, ThemeId);
-        BeginRaid.Ask($"{DungeonName}, with {UiTheme.Count(party.Count, "hero", "heroes")}.");
+        BeginRaid.Ask($"{DungeonName}, with {UiTheme.Count(party.Count, "hero", "heroes")}." + (ReplacesSavedRun ? " This replaces your saved run." : ""));
     }
 }

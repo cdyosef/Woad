@@ -14,7 +14,15 @@ public partial class DungeonSelectScreen : MenuScreen
     /// <summary>The dungeons to offer (id, name and a line about each), in order.</summary>
     public IReadOnlyList<(string Id, string Name, string Description)> Dungeons { get; init; } = [];
 
+    /// <summary>A line about the saved run (dungeon, party, how far), or null if there's none to continue.</summary>
+    public string? SavedRun { get; init; }
+
+    /// <summary>Why there's no run to continue, when a save couldn't be read.</summary>
+    public string? SaveProblem { get; init; }
+
     public event Action? BackRequested;
+
+    public event Action? ContinueRequested;
 
     /// <summary>A dungeon was picked: its theme id.</summary>
     public event Action<string>? DungeonChosen;
@@ -32,9 +40,12 @@ public partial class DungeonSelectScreen : MenuScreen
         BuildFrame("DUNGEON RUN");
 
         ContinueButton = Add(UiTheme.Button(new Vector2(40, 46), new Vector2(200, 26), "Continue current run"));
-        ContinueButton.Disabled = true;
-        ContinueButton.TooltipText = "No run saved yet.";
-        Add(UiTheme.Label(new Vector2(254, 46), new Vector2(350, 26), "No run saved yet.", color: Palette.TextDim)).VerticalAlignment = VerticalAlignment.Center;
+        ContinueButton.Disabled = SavedRun is null;
+        ContinueButton.Pressed += () => ContinueRequested?.Invoke();
+        string line = SavedRun ?? SaveProblem ?? "No run saved. A run saves as you play, until it ends.";
+        ContinueButton.TooltipText = line;
+        Color color = SavedRun is not null ? Palette.Text : SaveProblem is not null ? Palette.Danger : Palette.TextDim;
+        Add(UiTheme.Label(new Vector2(254, 42), new Vector2(350, 34), line, color: color)).VerticalAlignment = VerticalAlignment.Center;
 
         Caption(new Vector2(40, 86), "DUNGEONS");
         for (int i = 0; i < Dungeons.Count; i++)

@@ -182,13 +182,33 @@ public partial class Main
             Check(morgan.Appearance is { Look: "mage", Main: "ember", Hair: "black" }, "the hero has the chosen look");
             Check(Music.Current == "dungeon", "a run plays the dungeon music");
 
+            string where = string.Join(" ", game.Session.State.Heroes.Select(hero => $"{hero.Name}@{hero.Position}:{hero.Hearts}"));
+            (int round, int active) = (game.Session.State.Round, game.Session.State.ActiveHero!.Id);
             await Click(this, game.MenuButton);
             await Click(this, game.MenuButton);
-            setup = await Screen<RunSetupScreen>();
+            dungeons = await Screen<DungeonSelectScreen>();
             Check(true, "the Menu button leaves the run after confirming");
             Check(Music.Current == "title", "leaving the run brings back the title music");
+            Check(!dungeons.ContinueButton.Disabled && dungeons.ContinueButton.TooltipText.StartsWith("The Emerald Keep: Wren, Pip, Morgan"), "the run was saved, and Continue offers it");
 
+            await Click(this, dungeons.ContinueButton);
+            game = await Screen<GameScreen>();
+            await game.WaitUntilIdle();
+            Check(string.Join(" ", game.Session.State.Heroes.Select(hero => $"{hero.Name}@{hero.Position}:{hero.Hearts}")) == where
+                && game.Session.State.Round == round && game.Session.State.ActiveHero!.Id == active, "Continue picks the run up exactly where it was left");
+            Check(game.Session.State.Heroes[1].Order == CompanionOrder.Hold && game.Session.State.FriendlyFire, "orders and friendly fire carry over");
+            await Click(this, game.MenuButton);
+            await Click(this, game.MenuButton);
+            dungeons = await Screen<DungeonSelectScreen>();
+
+            await Click(this, dungeons.DungeonButton(0));
+            setup = await Screen<RunSetupScreen>();
             await WaitFor(this, () => setup.IsLoaded, "the roster to load");
+            await NextFrame(this);
+            await Click(this, setup.RosterRow(0));
+            await Click(this, setup.StartButton);
+            Check(setup.BeginRaid.DetailText.Contains("replaces your saved run"), "starting another run warns that it replaces the saved one");
+            await Click(this, setup.BeginRaid.ChillButton);
             await Click(this, setup.BackButton);
             dungeons = await Screen<DungeonSelectScreen>();
             await Click(this, dungeons.BackButton);

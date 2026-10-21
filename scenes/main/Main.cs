@@ -3,6 +3,7 @@ using Woad.Core.Characters;
 using Woad.Core.Content;
 using Woad.Core.Dungeon;
 using Woad.Core.Rules;
+using Woad.Core.Saves;
 using Woad.Scenes.Game;
 using Woad.Scenes.Menu;
 using Woad.Scenes.Ui;
@@ -32,6 +33,9 @@ public partial class Main : Control
     /// <summary>The party screen's friendly fire switch, remembered between runs this session.</summary>
     private bool _friendlyFire;
     private ICharacterRepository _characters = null!;
+
+    /// <summary>The Dungeon Run in progress, saved after every move.</summary>
+    private SavedRunFile _runFile = null!;
     private Control? _screen;
 
     public override void _Ready()
@@ -45,6 +49,9 @@ public partial class Main : Control
             ? Path.Combine(Path.GetTempPath(), "woad-uitest", Guid.NewGuid().ToString("N"))
             : ProjectSettings.GlobalizePath("user://characters");
         _characters = new JsonCharacterRepository(saveFolder, _content);
+        _runFile = new SavedRunFile(throwawaySaves
+            ? Path.Combine(saveFolder, "runs", "current-run.json")
+            : ProjectSettings.GlobalizePath("user://runs/current-run.json"));
 
         AudioSettings.Load(throwawaySaves ? Path.Combine(saveFolder, "settings.cfg") : "user://settings.cfg");
         AddChild(new Sfx());
@@ -192,16 +199,36 @@ public partial class Main : Control
         ShowMenu(screen);
     }
 
-    private void ShowDungeonSelect()
+    private void ShowDungeonSelect() => ShowDungeonSelect(null);
+
+    /// <param name="saveProblem">Why the saved run just failed to continue, if it did.</param>
+    private void ShowDungeonSelect(string? saveProblem)
     {
+        string? savedRun = null;
+        try
+        {
+            if (saveProblem is null && _runFile.Load() is { } run)
+            {
+                string dungeon = _content.Themes.TryGetValue(run.ThemeId, out ThemeDefinition? theme) ? theme.Name : run.ThemeId;
+                savedRun = $"{dungeon}: {string.Join(", ", run.Heroes.Select(hero => hero.Name))}. Floor {run.Floor}, round {run.Round}.";
+            }
+        }
+        catch (Exception exception) when (exception is InvalidDataException or IOException)
+        {
+            saveProblem = exception.Message;
+        }
+
         var screen = new DungeonSelectScreen
         {
+            SavedRun = savedRun,
+            SaveProblem = saveProblem is null ? null : "Your saved run can't be continued. " + saveProblem,
             Dungeons = [.. _content.Themes.Values
                 .OrderBy(theme => Array.IndexOf(DungeonOrder, theme.Id) is var at and >= 0 ? at : int.MaxValue)
                 .ThenBy(theme => theme.Name, StringComparer.Ordinal)
                 .Select(theme => (theme.Id, theme.Name, theme.Description))],
         };
         screen.BackRequested += ShowModeSelect;
+        screen.ContinueRequested += ContinueRun;
         screen.DungeonChosen += themeId =>
         {
             _themeId = themeId;
@@ -218,6 +245,7 @@ public partial class Main : Control
             FriendlyFire = _friendlyFire,
             ThemeId = _themeId,
             DungeonName = _content.Themes.TryGetValue(_themeId, out ThemeDefinition? theme) ? theme.Name : _themeId,
+            ReplacesSavedRun = _runFile.Exists,
         };
         screen.BackRequested += ShowDungeonSelect;
         screen.NewCharacterRequested += () => ShowEditor(null, ShowRunSetup);
@@ -230,15 +258,78 @@ public partial class Main : Control
     {
         _friendlyFire = friendlyFire;
         _themeId = themeId;
-        ShowGame(DungeonGenerator.CreateRun(_content, themeId, Party.ToHeroSetups(party), seed) with { FriendlyFire = friendlyFire }, party);
+        var save = new SavedRun { ThemeId = themeId, Seed = seed, FriendlyFire = friendlyFire, Heroes = Party.ToHeroSetups(party) };
+        WriteSave(save);
+        ShowGame(save.CreateSetup(_content), party, save);
     }
 
-    private void ShowGame(RunSetup setup, IReadOnlyList<Character> party)
+    /// <summary>Picks the saved run up where it was left, with its characters as they are now.</summary>
+    private async void ContinueRun()
     {
-        var game = new GameScreen { Setup = setup, Content = _content };
-        game.ExitRequested += ShowRunSetup;
-        game.RunFinished += results => FinishRun(results, setup, party);
+        SavedRun run;
+        GameSession session;
+        try
+        {
+            run = _runFile.Load() ?? throw new InvalidDataException("It's gone.");
+            session = run.Restore(_content);
+        }
+        catch (Exception exception) when (exception is InvalidDataException or IOException)
+        {
+            GD.PushWarning($"The saved run can't be continued: {exception.Message}");
+            ShowDungeonSelect(exception.Message);
+            return;
+        }
+
+        CharacterLoadResult saved = await _characters.LoadAllAsync();
+        List<Character> party = [.. run.Heroes
+            .Select(hero => saved.Characters.FirstOrDefault(character => character.Id == hero.CharacterId))
+            .OfType<Character>()];
+        _themeId = run.ThemeId;
+        _friendlyFire = run.FriendlyFire;
+        ShowGame(run.CreateSetup(_content), party, run, session);
+    }
+
+    /// <param name="save">Where the run is saved as it's played, or null for a run that isn't (debug runs).</param>
+    /// <param name="restored">The saved run, already replayed, to play on from.</param>
+    private void ShowGame(RunSetup setup, IReadOnlyList<Character> party, SavedRun? save = null, GameSession? restored = null)
+    {
+        var game = new GameScreen { Setup = setup, Content = _content, Restored = restored, SavesRun = save is not null };
+        if (save is not null)
+        {
+            game.CommandPlayed += (command, state) =>
+            {
+                save.Record(command, state);
+                WriteSave(save);
+            };
+            game.ExitRequested += ShowDungeonSelect;
+        }
+        else
+        {
+            game.ExitRequested += ShowRunSetup;
+        }
+
+        game.RunFinished += results =>
+        {
+            if (save is not null)
+            {
+                _runFile.Delete();
+            }
+
+            FinishRun(results, setup, party);
+        };
         Show(game);
+    }
+
+    private void WriteSave(SavedRun save)
+    {
+        try
+        {
+            _runFile.Save(save);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            GD.PushWarning($"The run couldn't be saved: {exception.Message}");
+        }
     }
 
     /// <summary>Saves what each character earned, then shows the results.</summary>

@@ -17,6 +17,8 @@ public partial class BeginRaidDialog : Control
 
     internal Button RaidButton { get; private set; } = null!;
 
+    internal string DetailText => _detail.Text;
+
     public override void _Ready()
     {
         Size = new Vector2(MenuScreen.Width, MenuScreen.Height);

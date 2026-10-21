@@ -492,7 +492,7 @@ public partial class GameScreen
             }
 
             _confirmingLeave = true;
-            Log("Click Leave? again to abandon this run. Nothing will be saved.", Palette.TrimBright);
+            Log(SavesRun ? "Click Leave? again to leave. The run is saved: continue it from Dungeon Run." : "Click Leave? again to abandon this run. Nothing will be saved.", Palette.TrimBright);
             RefreshPanels();
         };
         AddChild(_menu);
