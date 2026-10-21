@@ -20,7 +20,7 @@ public static class GameArt
 
     /// <summary>Bosses loom larger; monsters borrowing a relative's sprite are its smaller form.</summary>
     public static float MonsterScale(Woad.Core.Content.MonsterDefinition monster) =>
-        monster.Boss ? 1.25f : SpriteStandIns.ContainsKey(monster.Id) ? 0.75f : 1f;
+        monster.Big ? 1.5f : monster.Boss ? 1.25f : SpriteStandIns.ContainsKey(monster.Id) ? 0.75f : 1f;
 
     public static Texture2D? Ui(string name) => Texture($"res://assets/ui/{name}.png");
 

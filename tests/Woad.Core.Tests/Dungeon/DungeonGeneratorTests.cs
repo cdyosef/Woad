@@ -27,8 +27,9 @@ public class DungeonGeneratorTests
 
         foreach (IGrouping<int, RoomSetup> floor in run.Rooms.GroupBy(room => room.Floor))
         {
-            Assert.InRange(floor.Count(room => room.Role != RoomRole.Secret), DungeonGenerator.MinRooms, DungeonGenerator.MaxRooms);
+            Assert.InRange(floor.Count(room => room.Role is not (RoomRole.Secret or RoomRole.Den)), DungeonGenerator.MinRooms, DungeonGenerator.MaxRooms);
             Assert.InRange(floor.Count(room => room.Role == RoomRole.Secret), 0, 1);
+            Assert.Equal(floor.Key == 1 ? 1 : 0, floor.Count(room => room.Role == RoomRole.Den));
 
             var reached = new HashSet<string> { floor.First().Id };
             var frontier = new Queue<RoomSetup>([floor.First()]);
@@ -41,6 +42,34 @@ public class DungeonGeneratorTests
             }
 
             Assert.Equal(floor.Count(), reached.Count);
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(Seeds))]
+    public void TheFirstFloorAlwaysHasTheOgreChampsDenOverARoomBelow(ulong seed)
+    {
+        foreach (int partySize in new[] { 1, 4, 8 })
+        {
+            RunSetup run = Generate(seed, partySize);
+
+            RoomSetup den = Assert.Single(run.Rooms, room => room.Role == RoomRole.Den);
+            Assert.Equal(1, den.Floor);
+            MonsterSpawn keeper = Assert.Single(den.Template.Monsters);
+            Assert.Equal("ogre_champ", keeper.Monster.Id);
+            Assert.Single(den.Doors!);
+            Assert.Contains(run.Rooms, room => room.Floor == 2 && room.MapPosition == den.MapPosition && room.Role is not (RoomRole.Boss or RoomRole.Secret));
+
+            // Pits all round; the bridges lead from the door to the Ogre Champ and on to the grand chest under its lock.
+            RoomLayout layout = den.Template.Layout;
+            Assert.All(layout.Positions.Where(tile => tile.X == 0 || tile.Y == 0 || tile.X == layout.Width - 1 || tile.Y == layout.Height - 1)
+                .Where(tile => tile != den.DoorTiles!.Single().Value), tile => Assert.Equal(TileKind.Pit, layout[tile]));
+            GridPosition chest = layout.Positions.Single(tile => layout[tile] == TileKind.Chest);
+            Assert.Contains(chest, den.Features!.GrandChests);
+            Assert.True(den.Features.LockedChests.ContainsKey(chest));
+            PathSearch walk = PathSearch.Run(den.DoorTiles!.Single().Value, tile => layout[tile].IsWalkable());
+            Assert.True(walk.CanReach(keeper.Position));
+            Assert.Contains(chest.OrthogonalNeighbors(), walk.CanReach);
         }
     }
 
@@ -169,7 +198,7 @@ public class DungeonGeneratorTests
     {
         IReadOnlyList<ThemeRoom> rooms = Content.RoomsFor("emerald_keep");
 
-        // Secret rooms use treasure layouts.
-        Assert.All(Enum.GetValues<RoomRole>().Where(role => role != RoomRole.Secret), role => Assert.Contains(rooms, room => room.Roles.Contains(role)));
+        // Secret rooms use treasure layouts, and the den has its own.
+        Assert.All(Enum.GetValues<RoomRole>().Where(role => role is not (RoomRole.Secret or RoomRole.Den)), role => Assert.Contains(rooms, room => room.Roles.Contains(role)));
     }
 }

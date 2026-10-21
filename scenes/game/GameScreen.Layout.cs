@@ -92,7 +92,8 @@ public partial class GameScreen
         bool choosingPower = turn?.UnsettledPowerDice > 0;
         bool pending = turn?.PendingRoll is not null || choosingPower;
         UpdatePool((idle && !pending) || keeling);
-        _roll.Disabled = !(idle && !pending && _session.MoveDiceLeft > 0);
+        bool held = hero is not null && _session.HeldBy(hero) is not null;
+        _roll.Disabled = !(idle && !pending && _session.MoveDiceLeft > 0) || held;
         _search.Disabled = !(idle && !pending) || _session.CheckSearch() is not null;
         _search.TooltipText = _session.State.Turn is null ? "" : _session.CheckSearch() ?? "Search the room with your selected Od Hand dice: finds secret doors, traps and stashes your total reaches.";
         _steal.Disabled = !(idle && !pending) || _session.OdHandDiceLeft < 1 || turn!.HasStolen;
@@ -102,7 +103,7 @@ public partial class GameScreen
         _rumbling &= !_rumble.Disabled;
         _rumble.Text = _rumbling ? "Cancel" : "Rumble";
         _shove.Disabled = !(idle && !pending) || _session.AttackDiceLeft < 1;
-        _leap.Disabled = !(idle && !pending) || _session.MoveDiceLeft < 1;
+        _leap.Disabled = !(idle && !pending) || _session.MoveDiceLeft < 1 || held;
         _leaping &= !_leap.Disabled;
         _leap.Text = _leaping ? "Cancel" : "Leap";
         _shoving &= !_shove.Disabled;

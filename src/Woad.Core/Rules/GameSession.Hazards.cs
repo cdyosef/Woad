@@ -79,7 +79,7 @@ public sealed partial class GameSession
     /// <summary>Tiles the active hero could aim a leap at right now (see <see cref="Leap"/>).</summary>
     public IReadOnlyList<GridPosition> GetLeapTargets()
     {
-        if (State.Turn is not { PendingRoll: null } || MoveDiceLeft < 1 || ActiveHero.Prone)
+        if (State.Turn is not { PendingRoll: null } || MoveDiceLeft < 1 || ActiveHero.Prone || HeldBy(ActiveHero) is not null)
         {
             return [];
         }
@@ -126,6 +126,11 @@ public sealed partial class GameSession
         if (ActiveHero.Prone)
         {
             return "You can't leap lying down: get up first.";
+        }
+
+        if (CheckHeld(ActiveHero) is { } held)
+        {
+            return held;
         }
 
         if (!GetLeapTargets().Contains(command.Target))

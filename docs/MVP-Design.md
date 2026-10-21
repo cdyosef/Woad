@@ -341,6 +341,12 @@ when the total reaches its number:
 - **Secret rooms:** some floors have a room off one ordinary room, reached only through a secret door or
   a cracked wall, with no other way in. It holds only extras (treasure, stashes), never anything a run
   needs, and nothing drops into it from above.
+- **The Ogre Champ's den (floor 1, always):** an optional room off one ordinary room, through a plain door
+  that is its only way in, and over a room on floor 2 when the map allows. Pits ring the walls; a one-tile
+  bridge leads from the door to a platform where the Ogre Champ waits, and a second bridge on the far side
+  leads to a little platform with a **grand chest** (gilded and jeweled, its lock 2 harder than the floor's
+  other locks): three cards dealt as if from two floors deeper, and 10 gold. The Champ roars with laughter
+  ("HAR HAR HAR!") when heroes first walk in, and its own pounding song plays while anyone is in there.
 - **Shove:** roll Rumble dice (and the weapon) at an adjacent monster as for an attack; beat its
   defense and it's pushed one tile straight away from you (diagonally too) instead of hurt. Onto a
   trap, the trap goes off on it (spikes: 1 heart; trap door: it falls). Into a pit, it drops to the
@@ -368,6 +374,12 @@ when the total reaches its number:
 | Fire Beetle | 3 | 1 | 2d6 | 1d6+2 | From floor 2. Fire attacks; can't burn; slow and armored |
 | Petty Thief | 2 | 4 | 1d6 | 1d6 | Od Hand 3: steals from a hero beside it (each die over their Od Hand roll and tools takes, in turn, 2 gold, an item, 2 gold...); with loot it runs from everyone |
 | Mugger Fly | 1 | 6 | 2×1d6 | 1d6 | Flies. Goes for the hero with the most gold; every hit takes 1 gold; Od Hand 1 steals gold only |
+| Mimic | 4 | 2 | 2d6+1 | 1d6+1 | Not spawned: about one ordinary chest in ten is a Mimic (never the Boss Key's, nor in an arrival room). Opening it or trying its lock wakes it with a free bite; a Search reaching 5 + floor finds it out first. A hit grabs: the hero can't move or leap until it's hurt, shoved, stunned, frozen or knocked flat. Always drops 2 cards |
+| Ogre | 5 | 2 | 2d6+2 | 1d6+1 | Rare, from floor 2. Each hit knocks the hero a tile straight back, into a pit or onto a trap if one's there |
+| Ogre Champ | 6 | 1 | 3d6 | 1d6+1 | Only in its den. Reach 2. Drawn bigger: fat, shirtless and horned, with a great club. Each hit knocks the hero a tile back, and every 6 on its roll a tile more, hit or miss |
+| Necromancer | 3 | 2 | 1d6+1 | 1d6 | Rare, from floor 2. Ranged 4; keeps its distance. Every other turn raises a Skeleton beside it (from a grave nearby if there is one): 2 at a time, 4 in all. They crumble when it falls and are worth no XP, loot or kill |
+| Hexer | 2 | 3 | 1d6+1 | 1d6 | Rare, from floor 2. Ranged 4; keeps its distance. Each hit drains a Luck reroll; with none left, it stuns |
+| Gelatinous Cube | 4 | 1 | 2d6 | 0d6+1 | Rare, from floor 2. Swallows the cards and gold on every tile it crawls over, dropping them where it falls; splits into two Slimes |
 | **Miniboss: Key Warden** | 5 | 2 | 2d6+1 | 1d6+1 | Guards the Boss Key in the last floor's vault; can't be shoved |
 | **Boss: Iron Warden** | 8 | 3 | 2d6+1 | 1d6+1 | Every other turn, a flail sweep: one roll with all its dice against every hero within 2 |
 
@@ -427,7 +439,8 @@ Its loot deck adds three cards:
 - **Room roles:** the walk's first room is the Arrival room, which has no monsters. The room farthest
   from it holds the Stairs down (floors 1–2) or the Boss and Exit (floor 3), behind the Boss Door. A dead
   end becomes the Treasure room (chests, one guard), on floor 3 another becomes the Vault (the Boss Key's
-  chest and the Key Warden), half the floors get a Secret room, and the rest are Combat rooms.
+  chest and the Key Warden), half the floors get a Secret room, floor 1 gets the Ogre Champ's den, and the
+  rest are Combat rooms.
 - **Terrain:** some rooms get a patch of rubble; some have a wall dividing them, or a chasm (only where
   pits lead somewhere, or on the last floor) or a deep stream across them with one crossing (a bridge or
   a shallow ford); some neighbors get a breach in their shared edge. Every one is checked so that

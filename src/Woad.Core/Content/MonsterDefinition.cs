@@ -91,6 +91,39 @@ public sealed record MonsterDefinition
     /// <summary>A hit drags the hero in a straight line to the tile beside it (a tongue or a hook).</summary>
     public bool Pulls { get; init; }
 
+    /// <summary>A hit grabs the hero: they can't move while it holds them, until it's hurt, shoved, stunned or frozen.</summary>
+    public bool Grabs { get; init; }
+
+    /// <summary>A hit knocks the hero a tile straight back, into a pit or onto a trap if one's there.</summary>
+    public bool KnocksBack { get; init; }
+
+    /// <summary>Every 6 on its attack roll knocks its targets a tile further back, hit or miss.</summary>
+    public bool KnockbackOnSix { get; init; }
+
+    /// <summary>What it bellows when heroes first come into its room (shown and heard, no effect).</summary>
+    public string? Taunt { get; init; }
+
+    /// <summary>Its own song, played while a hero shares its room.</summary>
+    public string? Music { get; init; }
+
+    /// <summary>Drawn bigger than a tile (it still fills only one).</summary>
+    public bool Big { get; init; }
+
+    /// <summary>A hit also drains one of the hero's Luck rerolls; with none left, the hex stuns them instead.</summary>
+    public bool Hexes { get; init; }
+
+    /// <summary>Swallows the loot (cards and gold) on every tile it crawls over, and drops it where it falls.</summary>
+    public bool Engulfs { get; init; }
+
+    /// <summary>Raises this monster beside itself every other turn; they crumble when it falls, and are worth nothing.</summary>
+    public string? Raises { get; init; }
+
+    /// <summary>How many it keeps raised at once.</summary>
+    public int RaiseMax { get; init; } = 2;
+
+    /// <summary>How many it can raise in all before its power runs dry.</summary>
+    public int RaiseTotal { get; init; } = 4;
+
     /// <summary>Every 6 on its attack roll stuns its targets, hit or miss.</summary>
     public bool StunOnSix { get; init; }
 

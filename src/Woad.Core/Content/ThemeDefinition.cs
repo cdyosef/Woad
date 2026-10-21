@@ -22,6 +22,18 @@ public sealed record PotDefinition
     public int HeartChance { get; init; }
 }
 
+/// <summary>Chests that are really monsters lying in wait.</summary>
+public sealed record MimicDefinition
+{
+    /// <summary>The monster a mimic chest turns into.</summary>
+    public required string Monster { get; init; }
+
+    /// <summary>Percent chance an ordinary chest (not the Boss Key's) is a mimic.</summary>
+    public int Chance { get; init; }
+
+    public int MinFloor { get; init; } = 1;
+}
+
 /// <summary>Percent chances of finding a small key.</summary>
 public sealed record KeyChances
 {
@@ -60,6 +72,20 @@ public enum RoomRole
 
     /// <summary>A hidden room behind a secret door or cracked wall, with extra treasure and no other way in.</summary>
     Secret,
+
+    /// <summary>
+    /// A monster's lair off one ordinary room, its only way in: a platform ringed by pits, its keeper in
+    /// the middle, and a grand chest beyond (see <see cref="ThemeDefinition.Den"/>).
+    /// </summary>
+    Den,
+}
+
+/// <summary>One floor always has a den: a big monster on a platform ringed by pits, guarding a grand chest.</summary>
+public sealed record DenDefinition
+{
+    public required string Monster { get; init; }
+
+    public int Floor { get; init; } = 1;
 }
 
 /// <summary>A monster the generator may place on this theme's floors.</summary>
@@ -104,6 +130,12 @@ public sealed record ThemeDefinition
     public KeyChances Keys { get; init; } = new();
 
     public IReadOnlyList<RosterEntry> Roster { get; init; } = [];
+
+    /// <summary>The floor's den and its keeper; null for none.</summary>
+    public DenDefinition? Den { get; init; }
+
+    /// <summary>Chests that may be mimics; null for none.</summary>
+    public MimicDefinition? Mimics { get; init; }
 
     public string? Boss { get; init; }
 

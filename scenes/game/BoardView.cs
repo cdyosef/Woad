@@ -424,6 +424,7 @@ public partial class BoardView : Control
             TileKind.DeepWater => "water_deep",
             TileKind.Chest => _room!.IsChestOpened(tile) ? "chest_open"
                 : _room.HoldsBossKey(tile) ? "chest_boss"
+                : _room.IsGrandChest(tile) ? "chest_grand"
                 : _room.ChestLockAt(tile) is not null ? "chest_locked" : "chest",
             TileKind.Pot => "pot",
             TileKind.Exit => _room!.Monsters.Any(monster => monster.Definition.Boss) ? "exit_sealed" : "exit_open",

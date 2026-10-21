@@ -212,11 +212,12 @@ public static partial class DungeonGenerator
         // Each room as its breaches so far will leave it: walls where they stand, so two breaches can't
         // seal off a corner between them.
         var walled = rooms.ToDictionary(room => room.Id, room => room.Template);
-        foreach (RoomSetup room in rooms.Where(room => room.Role != RoomRole.Boss))
+        // The boss room and a den keep their one way in.
+        foreach (RoomSetup room in rooms.Where(room => room.Role is not (RoomRole.Boss or RoomRole.Den)))
         {
             foreach (Direction side in new[] { Direction.East, Direction.South })
             {
-                RoomSetup? neighbor = rooms.FirstOrDefault(other => other.Floor == room.Floor && other.MapPosition == room.MapPosition.Step(side) && other.Role != RoomRole.Boss);
+                RoomSetup? neighbor = rooms.FirstOrDefault(other => other.Floor == room.Floor && other.MapPosition == room.MapPosition.Step(side) && other.Role is not (RoomRole.Boss or RoomRole.Den));
                 if (neighbor is null || random.NextInt(0, 100) >= BreachChance)
                 {
                     continue;

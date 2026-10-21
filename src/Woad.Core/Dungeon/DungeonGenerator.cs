@@ -42,7 +42,7 @@ public static partial class DungeonGenerator
             bool needed = role switch
             {
                 RoomRole.Stairs => theme.Floors > 1,
-                RoomRole.Secret => false,
+                RoomRole.Secret or RoomRole.Den => false,
                 _ => true,
             };
             if (needed && !layouts.Any(layout => layout.Roles.Contains(role)))
@@ -65,6 +65,11 @@ public static partial class DungeonGenerator
         for (int floor = 1; floor <= theme.Floors; floor++)
         {
             plans.Add(PlanFloor(floor, floor == theme.Floors, plans.Count > 0 ? plans[^1].Farthest : null, random, passages));
+        }
+
+        if (theme.Den is { } den)
+        {
+            PlanDen(plans, den.Floor, random);
         }
 
         foreach (FloorPlan plan in plans)
@@ -219,6 +224,12 @@ public static partial class DungeonGenerator
         foreach (GridPosition cell in cells)
         {
             RoomRole role = roles[cell];
+            if (role == RoomRole.Den)
+            {
+                rooms.Add(BuildDen(floor, cell, links, theme, content, random));
+                continue;
+            }
+
             bool roomBelow = below.Contains(cell);
             RoomTemplate template = ChooseTemplate(role, lastFloor || roomBelow, layouts, random);
 
@@ -247,7 +258,7 @@ public static partial class DungeonGenerator
             bool isTrap = cell == trap;
             IEnumerable<MonsterSpawn> monsters = PlaceMonsters(template, role, floor, partySize, isTrap, theme, content, random);
             template = template.WithMonsters(template.Monsters.Concat(monsters));
-            (template, RoomFeatures features) = PlaceSecrets(template, role, floor, lastFloor, roomBelow, doorTiles, random);
+            (template, RoomFeatures features) = PlaceSecrets(template, role, floor, lastFloor, roomBelow, doorTiles, theme.Mimics, random);
 
             // Sometimes a wall dividing the room, or a chasm or stream across it (never in a sealed room).
             if (!isTrap && role is RoomRole.Combat or RoomRole.Treasure or RoomRole.Stairs)
@@ -396,8 +407,9 @@ public static partial class DungeonGenerator
     /// last floor's treasure room holds the Boss Key, in a chest if it has one.
     /// </summary>
     private static (RoomTemplate Template, RoomFeatures Features) PlaceSecrets(
-        RoomTemplate template, RoomRole role, int floor, bool lastFloor, bool roomBelow, IReadOnlyDictionary<Direction, GridPosition> doorTiles, IRandomSource random)
+        RoomTemplate template, RoomRole role, int floor, bool lastFloor, bool roomBelow, IReadOnlyDictionary<Direction, GridPosition> doorTiles, MimicDefinition? mimicSetup, IRandomSource random)
     {
+        var mimics = new Dictionary<GridPosition, int>();
         var traps = new Dictionary<GridPosition, TrapSetup>();
         var lockedChests = new Dictionary<GridPosition, int>();
         var chestTraps = new Dictionary<GridPosition, TrapSetup>();
@@ -442,7 +454,12 @@ public static partial class DungeonGenerator
                 lockedChests[chest] = GameRules.ChestLockDifficulty(floor);
             }
 
-            if (random.NextInt(0, 100) < 20)
+            // A mimic is never trapped: it is the trap.
+            if (role is not (RoomRole.Vault or RoomRole.Arrival) && mimicSetup is { } mimic && floor >= mimic.MinFloor && random.NextInt(0, 100) < mimic.Chance)
+            {
+                mimics[chest] = GameRules.StashDifficulty(floor);
+            }
+            else if (random.NextInt(0, 100) < 20)
             {
                 chestTraps[chest] = new TrapSetup(TrapKind.Needle, GameRules.TrapDifficulty(floor));
             }
@@ -450,7 +467,7 @@ public static partial class DungeonGenerator
 
         if (role is RoomRole.Arrival or RoomRole.Boss or RoomRole.Vault)
         {
-            return (template, new RoomFeatures { LockedChests = lockedChests, ChestTraps = chestTraps, BossKeyChest = bossKeyChest, BossKeyOnFloor = bossKeyOnFloor });
+            return (template, new RoomFeatures { LockedChests = lockedChests, ChestTraps = chestTraps, Mimics = mimics, BossKeyChest = bossKeyChest, BossKeyOnFloor = bossKeyOnFloor });
         }
 
         // Revealed traps are walked around, so a trap never goes where it would cut the room in two.
@@ -484,6 +501,7 @@ public static partial class DungeonGenerator
             Traps = traps,
             LockedChests = lockedChests,
             ChestTraps = chestTraps,
+            Mimics = mimics,
             BossKeyChest = bossKeyChest,
             BossKeyOnFloor = bossKeyOnFloor,
             Caches = caches,

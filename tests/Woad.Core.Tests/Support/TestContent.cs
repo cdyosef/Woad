@@ -60,7 +60,13 @@ internal static class TestContent
           { "id": "fish", "name": "Fish", "glyph": "F", "hearts": 3, "move": 0, "attackDice": 0, "defenseDice": 0, "swimmer": true },
           { "id": "crab", "name": "Crab", "glyph": "Q", "hearts": 3, "move": 0, "attackDice": 0, "defenseDice": 0, "armor": 2, "shell": true },
           { "id": "frog", "name": "Frog", "glyph": "R", "hearts": 1, "move": 0, "attackDice": 1, "defenseDice": 0, "attackPattern": "reach", "attackRange": 3, "pulls": true },
-          { "id": "jelly", "name": "Jelly", "glyph": "J", "hearts": 1, "move": 0, "attackDice": 1, "defenseDice": 0, "flying": true, "swimmer": true, "stunOnSix": true }
+          { "id": "jelly", "name": "Jelly", "glyph": "J", "hearts": 1, "move": 0, "attackDice": 1, "defenseDice": 0, "flying": true, "swimmer": true, "stunOnSix": true },
+          { "id": "lurker", "name": "Lurker", "glyph": "x", "hearts": 3, "move": 0, "attackDice": 1, "defenseDice": 0, "grabs": true, "xp": 4 },
+          { "id": "champ", "name": "Champ", "glyph": "Z", "hearts": 3, "move": 0, "attackDice": 2, "defenseDice": 0, "knocksBack": true, "knockbackOnSix": true },
+          { "id": "basher", "name": "Basher", "glyph": "o", "hearts": 3, "move": 0, "attackDice": 1, "defenseDice": 0, "knocksBack": true },
+          { "id": "hexer", "name": "Hexer", "glyph": "H", "hearts": 1, "move": 0, "attackDice": 1, "defenseDice": 0, "attackPattern": "ranged", "attackRange": 4, "hexes": true },
+          { "id": "raiser", "name": "Raiser", "glyph": "N", "hearts": 1, "move": 0, "attackDice": 0, "defenseDice": 0, "raises": "bones", "raiseMax": 2, "xp": 5 },
+          { "id": "blob", "name": "Blob", "glyph": "u", "hearts": 1, "move": 2, "attackDice": 1, "defenseDice": 0, "engulfs": true }
         ]
         """;
 
@@ -74,7 +80,8 @@ internal static class TestContent
           "name": "Test Theme",
           "lootDeck": [ { "card": "coin", "copies": 2 }, { "card": "gem", "minFloor": 2 } ],
           "pots": { "treasure": "coin", "treasureChance": 50, "heartChance": 30 },
-          "keys": { "monster": 0, "pot": 0, "roomCleared": 0, "steal": 50 }
+          "keys": { "monster": 0, "pot": 0, "roomCleared": 0, "steal": 50 },
+          "mimics": { "monster": "lurker", "chance": 0 }
         }
         """;
 

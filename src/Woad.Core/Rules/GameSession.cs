@@ -443,6 +443,16 @@ public sealed partial class GameSession
             room.SetChestTrap(chest, new Trap(trap.Kind, trap.Difficulty));
         }
 
+        foreach (GridPosition chest in features.GrandChests)
+        {
+            room.MakeGrandChest(chest);
+        }
+
+        foreach ((GridPosition chest, int difficulty) in features.Mimics)
+        {
+            room.HideMimic(chest, difficulty);
+        }
+
         if (features.BossKeyChest is { } bossKeyChest)
         {
             room.PutBossKeyInChest(bossKeyChest);

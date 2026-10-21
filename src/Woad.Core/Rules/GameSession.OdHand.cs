@@ -41,6 +41,13 @@ public sealed partial class GameSession
             return error;
         }
 
+        // Fiddling with a mimic's "lock" wakes it.
+        if (check!.Kind == OdHandCheckKind.PickChest && ActiveRoom.MimicAt(check.Target) is not null)
+        {
+            WakeMimic(ActiveRoom, check.Target, ActiveHero, events);
+            return null;
+        }
+
         RollOdHand(command, dice, check!, events);
         return null;
     }
@@ -447,6 +454,12 @@ public sealed partial class GameSession
         foreach ((GridPosition tile, Cache cache) in stashes)
         {
             RevealCache(room, tile, cache, events);
+        }
+
+        // A sharp eye sees the teeth: the mimic gives up its disguise without getting a bite in.
+        foreach (GridPosition mimic in room.Mimics.Where(mimic => mimic.Value <= total).Select(mimic => mimic.Key).ToList())
+        {
+            WakeMimic(room, mimic, null, events);
         }
     }
 
