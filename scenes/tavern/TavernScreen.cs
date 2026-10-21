@@ -1,10 +1,12 @@
 using Godot;
 using Woad.Core.Characters;
 using Woad.Core.Content;
+using Woad.Core.Dice;
 using Woad.Core.Grid;
 using Woad.Core.Randomness;
 using Woad.Core.Saves;
 using Woad.Core.Tavern;
+using Woad.Scenes.Game;
 using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Tavern;
@@ -46,6 +48,12 @@ public partial class TavernScreen : Control
     private Label _dialogText = null!;
     private VBoxContainer _list = null!;
     private TavernNpc? _talkingTo;
+
+    /// <summary>A game of Bones's dice, shown as in a fight: yours, VS, the gambler's.</summary>
+    private DiceBar _bones = null!;
+
+    /// <summary>The dice of a game of Bones are still tumbling.</summary>
+    private bool _rolling;
     private Character _leader = null!;
     private Character _payer = null!;
 
@@ -112,6 +120,11 @@ public partial class TavernScreen : Control
 
     /// <summary>The party is on its way: steps still to take, or the last one still being walked.</summary>
     internal bool IsWalking => _path.Count > 0 || _view.Motion.IsMoving;
+
+    /// <summary>A game of Bones's dice are still tumbling: its outcome isn't in yet.</summary>
+    internal bool IsRolling => _rolling;
+
+    internal DiceBar BonesDice => _bones;
 
     internal Character Payer => _payer;
 
@@ -365,6 +378,9 @@ public partial class TavernScreen : Control
         scroll.AddChild(_list);
         panel.AddChild(scroll);
 
+        _bones = new DiceBar { Position = new Vector2(46, 150), Size = new Vector2(484, 32), Visible = false };
+        panel.AddChild(_bones);
+
         RumorButton = UiTheme.Button(new Vector2(14, 256), new Vector2(160, 22), "Any rumors?");
         RumorButton.Pressed += () =>
         {
@@ -385,6 +401,7 @@ public partial class TavernScreen : Control
         _path.Clear();
         _talkingTo = npc;
         _dialogText.Text = npc.Greeting;
+        _bones.Clear();
         _dialog.Visible = true;
         ShowTalk();
     }
@@ -424,6 +441,7 @@ public partial class TavernScreen : Control
 
         _dialogTitle.Text = $"{npc.Name.ToUpperInvariant()}";
         PayerButton.Text = $"Paying: {_payer.Name} ({_payer.Gold} gold)";
+        _bones.Visible = npc.Role == NpcRole.Gambler;
         RumorButton.Visible = npc.Rumors.Count > 0;
         foreach (Node child in _list.GetChildren())
         {
@@ -613,14 +631,54 @@ public partial class TavernScreen : Control
         HBoxContainer row = Row($"{_payer.Name} bets:", 300);
         foreach (int wager in new[] { 1, 5, 10, TavernServices.MaxWager })
         {
-            Button bet = RowButton(row, $"{wager} gold", 54, () =>
-            {
-                BonesResult game = TavernServices.Bones(_random, _payer, wager);
-                Sfx.Play("dice");
-                Done(new ServiceResult(game.Yours.Count > 0, game.Message), _payer);
-            });
-            bet.Disabled = _payer.Gold < wager;
+            Button bet = RowButton(row, $"{wager} gold", 54, () => PlayBones(wager));
+            bet.Disabled = _payer.Gold < wager || _rolling;
             bet.TooltipText = bet.Disabled ? $"{_payer.Name} has {_payer.Gold} gold." : $"Bet {wager} gold on a game of Bones.";
+        }
+    }
+
+    /// <summary>
+    /// Plays a game of Bones: the dice tumble and land as in a fight (the payer's, VS, the gambler's),
+    /// the winner glows, and only then does the gold change hands on screen.
+    /// </summary>
+    private async void PlayBones(int wager)
+    {
+        if (_rolling || _talkingTo is not { Role: NpcRole.Gambler } gambler)
+        {
+            return;
+        }
+
+        Character player = _payer;
+        BonesResult game = TavernServices.Bones(_random, player, wager);
+        if (game.Yours.Count == 0)
+        {
+            Done(new ServiceResult(false, game.Message), null);
+            return;
+        }
+
+        _rolling = true;
+        foreach (Button bet in _list.GetChildren().OfType<HBoxContainer>().SelectMany(row => row.GetChildren().OfType<Button>()))
+        {
+            bet.Disabled = true;
+        }
+
+        _dialogText.Text = $"{player.Name} bets {wager} gold. The dice fly...";
+        Sfx.Play("dice");
+        await _bones.ShowRoll($"{player.Name} rolls", new DiceRoll(game.Yours), 0, newGroup: true);
+        await _bones.ShowRoll($"{gambler.Name} rolls", new DiceRoll(game.Theirs), 0, newGroup: false);
+        if (game.Winnings != 0)
+        {
+            _bones.ShowOutcome(game.Winnings > 0, game.Winnings > 0 ? "YOU WIN" : "YOU LOSE");
+        }
+        else
+        {
+            _bones.ShowTie();
+        }
+
+        _rolling = false;
+        if (IsInsideTree())
+        {
+            Done(new ServiceResult(true, game.Message), player);
         }
     }
 

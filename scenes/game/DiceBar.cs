@@ -120,6 +120,16 @@ public partial class DiceBar : Control
         QueueRedraw();
     }
 
+    /// <summary>A draw (as in a game of Bones): neither side glows, and the latest answer is tagged TIE.</summary>
+    public void ShowTie()
+    {
+        if (_defenders.Count > 0)
+        {
+            _defenders[^1].Verdict = "TIE";
+            QueueRedraw();
+        }
+    }
+
     public async Task Reroll(int dieIndex, int newFace)
     {
         if (_roller is null || dieIndex >= _roller.Faces.Length)
@@ -187,7 +197,7 @@ public partial class DiceBar : Control
         if (row.Verdict is { } verdict)
         {
             float tagX = alignRight ? box.Position.X : Math.Min(box.Position.X + font.GetStringSize(row.Caption, fontSize: UiTheme.FontSize).X + 3, box.End.X - verdictWidth);
-            Color color = verdict switch { "HIT" => Palette.Danger, "BLOCKED" => Palette.Block, _ => Palette.TextDim };
+            Color color = verdict switch { "HIT" or "YOU LOSE" => Palette.Danger, "BLOCKED" => Palette.Block, "YOU WIN" => Palette.Heal, _ => Palette.TextDim };
             DrawString(font, new Vector2(tagX, 8), verdict, fontSize: UiTheme.FontSize, modulate: color);
         }
 

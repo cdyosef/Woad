@@ -376,6 +376,8 @@ public partial class Main
         await Click(this, inn.PayerButton);
         await Click(this, inn.PayerButton);
         await Click(this, inn.ListButton("1 gold")!);
+        Check(inn.IsRolling && inn.BonesDice.Visible && inn.ListButton("20 gold")!.Disabled, "the Bones dice tumble as in a fight, bets held back meanwhile");
+        await WaitFor(this, () => !inn.IsRolling, "the Bones dice to land");
         Check(wren.Gold is 43 or 44 or 45 && (inn.DialogText.Contains("rolls") || inn.DialogText.Contains("tie")), "a game of Bones for 1 gold");
         int gold = wren.Gold;
         await Click(this, inn.ByeButton);
