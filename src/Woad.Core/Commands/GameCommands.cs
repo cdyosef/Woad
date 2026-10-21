@@ -1,3 +1,4 @@
+using Woad.Core.Content;
 using Woad.Core.Grid;
 using Woad.Core.Model;
 
@@ -48,8 +49,12 @@ public sealed record ConfirmAttack(int HeroId) : GameCommand(HeroId);
 /// </summary>
 public sealed record UseCard(int HeroId, int CardId, GridPosition? Target = null) : GameCommand(HeroId);
 
-/// <summary>Equip a card from the backpack; anything in its slot(s) goes to the backpack. Uses the action.</summary>
-public sealed record EquipCard(int HeroId, int CardId) : GameCommand(HeroId);
+/// <summary>
+/// Equip a card from the backpack; anything in its slot(s) goes to the backpack. Uses the action.
+/// <paramref name="Hand"/> picks the hand for a card that goes in either (the Boomerang); such a card
+/// already equipped moves to the other hand (or the one chosen).
+/// </summary>
+public sealed record EquipCard(int HeroId, int CardId, EquipSlot? Hand = null) : GameCommand(HeroId);
 
 /// <summary>Move a single-use card from the backpack to the belt. Uses the action.</summary>
 public sealed record BeltCard(int HeroId, int CardId) : GameCommand(HeroId);

@@ -70,10 +70,13 @@ public partial class GameScreen
             Hero bran = ActiveHero!;
             Check(bran.Seat == 1, "End turn passes to the next player");
 
-            // Equip the boomerang from the backpack; the buckler swaps out.
+            // Equip the boomerang from the backpack, choosing a hand: the off hand, so the buckler swaps out.
             CardInstance boomerang = bran.Backpack.Single(card => card.Definition.Id == "boomerang");
             await Click(this, _inventory.BackpackSlot(bran.Backpack.ToList().IndexOf(boomerang)));
             await Click(this, _inventory.ActionButton(CardAction.Equip));
+            Check(_inventory.IsChoosingHand && _inventory.HandButton(0).Text == "Main hand (stows Wooden Sword)" && _inventory.HandButton(1).Text == "Off hand (stows Buckler)",
+                "Equip on the boomerang asks which hand, saying what each would stow");
+            await Click(this, _inventory.HandButton(1));
             await WaitUntilIdle();
             Check(bran.Equipment.GetValueOrDefault(EquipSlot.OffHand) == boomerang, "Equip puts the card in its slot");
             Check(bran.Backpack.Any(card => card.Definition.Id == "buckler"), "the old card goes to the backpack");
