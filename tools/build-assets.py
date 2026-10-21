@@ -1543,6 +1543,116 @@ def build_woarld(directory):
         write_png(directory / f"{name}.png", pixels)
 
 
+# ---- Tavern tiles (16x16) -----------------------------------------------------------------
+
+PLANK = ("#9a6a3c", "#b47e4a", "#6a4424", "#5a3a20")
+
+
+def planks_tile(seed):
+    """Wooden floor boards running across, with seams, staggered joints and a knot or two."""
+    light, mid, seam, knot = (rgba(color) for color in (PLANK[1], PLANK[0], PLANK[2], PLANK[3]))
+    tile = blank(color=mid)
+    generator = random.Random(seed)
+    for board in range(4):
+        top = board * 4
+        for x in range(16):
+            tile[top][x] = light
+            tile[top + 3][x] = seam
+        joint = (board * 5 + seed * 3) % 16
+        for y in range(top, top + 4):
+            tile[y][joint] = seam
+        x, y = generator.randrange(1, 15), top + generator.randrange(1, 3)
+        tile[y][x] = knot
+    return tile
+
+
+def on_planks(art, palette, seed=1):
+    return paint(planks_tile(seed), art, palette)
+
+
+def tavern_wall_tile():
+    """Timber-framed plaster: a dark beam along the bottom, uprights at the sides."""
+    tile = blank(color=rgba("#d8c8a0"))
+    for y in range(16):
+        for x in range(16):
+            if x in (0, 15) or y >= 12:
+                tile[y][x] = rgba("#5a3a20")
+            elif (x * 3 + y * 5) % 11 == 0:
+                tile[y][x] = rgba("#c4b48c")
+    for x in range(16):
+        tile[12][x] = rgba("#3a2414")
+    return tile
+
+
+TAVERN_COLORS = {"o": "#2a1a10", "w": "#b07840", "d": "#8a5a2b", "l": "#d09a5a", "i": "#5a3a20",
+                 "g": "#e2c47a", "r": "#a0423a", "R": "#c8604a", "f": "#f0a030", "F": "#f8e070", "s": "#5a5a68",
+                 "S": "#8a8a98", "G": "#3a7a4a", "H": "#5a9a64", "p": "#d8d0bc", "b": "#3a2a50"}
+
+TAVERN_TILES = {
+    "bar": ["oooooooooooooooo", "llllllllllllllll", "wwwwwwwwwwwwwwww", "oooooooooooooooo",
+            "dddddddddddddddd", "dwwddwwddwwddwwd", "dwwddwwddwwddwwd", "dwwddwwddwwddwwd",
+            "dwwddwwddwwddwwd", "dwwddwwddwwddwwd", "dwwddwwddwwddwwd", "dddddddddddddddd",
+            "dddddddddddddddd", "iiiiiiiiiiiiiiii", "oooooooooooooooo", "................"],
+    "barrel": [
+            "................", "....oooooooo....", "...oddddddddo...", "..odwwwwwwwwdo..",
+            "..odwwwwwwwwdo..", "..oiiiiiiiiiio..", "..odwwwwwwwwdo..", "..odwwwwwwwwdo..",
+            "..odwwwwwwwwdo..", "..odwwwwwwwwdo..", "..oiiiiiiiiiio..", "..odwwwwwwwwdo..",
+            "...oddddddddo...", "....oooooooo....", "................", "................"],
+    "hearth": ["ssssssssssssssss", "sSSSsSSSSsSSSSss", "ssssssssssssssss", "sSsoooooooooosSs",
+               "sSo..........oSs", "sso..........oss", "sSo....f.....oSs", "sso...fFf..f.oss",
+               "sSo..fFFfffFfoSs", "sso.fFFFFFFFfoss", "sSo.fFfFFfFFfoSs", "sso.iiiiiiiiioss",
+               "sSooooooooooooSs", "ssssssssssssssss", "sSSSsSSSSsSSSSss", "ssssssssssssssss"],
+    "stairs": ["oooooooooooooooo", "illllllllllllllo", "iddddddddddddddo", "oooooooooooooooo",
+               "illllllllllllllo", "iwwwwwwwwwwwwwwo", "oooooooooooooooo", "illllllllllllllo",
+               "iwwwwwwwwwwwwwwo", "oooooooooooooooo", "illllllllllllllo", "iwwwwwwwwwwwwwwo",
+               "oooooooooooooooo", "illllllllllllllo", "iwwwwwwwwwwwwwwo", "oooooooooooooooo"],
+    "door": ["oooooooooooooooo", "oddddddddddddddo", "odwwwwwwwwwwwwdo", "odwddddwwddddwdo",
+             "odwdwwdwwdwwdwdo", "odwdwwdwwdwwdwdo", "odwddddwwddddwdo", "odwwwwwwwwwwwgdo",
+             "odwwwwwwwwwwwgdo", "odwddddwwddddwdo", "odwdwwdwwdwwdwdo", "odwdwwdwwdwwdwdo",
+             "odwddddwwddddwdo", "odwwwwwwwwwwwwdo", "oddddddddddddddo", "oooooooooooooooo"],
+}
+
+# Furniture stands on the planks.
+TAVERN_FURNITURE = {
+    "stool": ["................", "................", "................", "................",
+              ".....oooooo.....", "....odwwwwdo....", "....oddddddo....", ".....oooooo.....",
+              ".....o....o.....", ".....o....o.....", ".....o....o.....", "....oo....oo....",
+              "................", "................", "................", "................"],
+    "table": ["................", "...oooooooooo...", "..owwlllllwwwo..", ".owwllwwwwwwwwo.",
+              ".owlwwwwwwwwwwo.", ".owwwwwwwwwwwwo.", ".owwwwwwwwwwwwo.", ".owwwwwwwwwwwdo.",
+              ".odwwwwwwwwwwdo.", "..odwwwwwwwwdo..", "...oddddddddo...", "....oooooooo....",
+              ".....oi..io.....", ".....oi..io.....", "....ooo..ooo....", "................"],
+    "dice_table": ["................", "...oooooooooo...", "..odGGGGGGGGdo..", ".odGHGGGGGGGGdo.",
+                   ".odGGGppGGGGGdo.", ".odGGGpbGGpGGdo.", ".odGGGGGGGbpGdo.", ".odGGGGGGGGGGdo.",
+                   ".odGGGGGGGGGGdo.", "..odGGGGGGGGdo..", "...oddddddddo...", "....oooooooo....",
+                   ".....oi..io.....", ".....oi..io.....", "....ooo..ooo....", "................"],
+    "desk": [
+            "oooooooooooooooo", "ollllllllllllllo", "owwwwwwwwwwppwwo", "owwwwwwwwwpbpwwo",
+            "oooooooooooooooo", "oddddddddddddddo", "odwwwwddwwwwwddo", "odwwwwddwwwwwddo",
+            "odwwwwddwwwwwddo", "odwwwwddwwwwwddo", "oddddddddddddddo", "odwwwwddwwwwwddo",
+            "odwwwwddwwwwwddo", "oddddddddddddddo", "oooooooooooooooo", "................"],
+    "stall": [
+            "rRrRrRrRrRrRrRrR", "RrRrRrRrRrRrRrRr", "oooooooooooooooo", "..o..........o..",
+            "..o..........o..", "oooooooooooooooo", "owSwgwrwSwgwSwwo", "oooooooooooooooo",
+            "oddddddddddddddo", "odwwwwwwwwwwwwdo", "odwwwwwwwwwwwwdo", "odwwwwwwwwwwwwdo",
+            "odwwwwwwwwwwwwdo", "oddddddddddddddo", "oooooooooooooooo", "................"],
+    "rug": ["rrrrrrrrrrrrrrrr", "rggggggggggggggr", "rgRRRRRRRRRRRRgr", "rgRrrrrrrrrrrRgr",
+            "rgRrRRRRRRRRrRgr", "rgRrRggggggRrRgr", "rgRrRgrrrrgRrRgr", "rgRrRgrRRrgRrRgr",
+            "rgRrRgrRRrgRrRgr", "rgRrRgrrrrgRrRgr", "rgRrRggggggRrRgr", "rgRrRRRRRRRRrRgr",
+            "rgRrrrrrrrrrrRgr", "rgRRRRRRRRRRRRgr", "rggggggggggggggr", "rrrrrrrrrrrrrrrr"],
+}
+
+
+def build_tavern(directory):
+    write_png(directory / "planks_a.png", planks_tile(1))
+    write_png(directory / "planks_b.png", planks_tile(2))
+    write_png(directory / "wall.png", tavern_wall_tile())
+    for name, rows in TAVERN_TILES.items():
+        write_png(directory / f"{name}.png", on_planks(rows, TAVERN_COLORS))
+    for name, rows in TAVERN_FURNITURE.items():
+        write_png(directory / f"{name}.png", on_planks(rows, TAVERN_COLORS))
+
+
 # ---- UI frame (12x12, drawn as a nine-patch with 4px margins) --------------------------------
 
 def frame(edge, inner_edge, fill):
@@ -2046,6 +2156,7 @@ def main():
         write_png(ui / f"{name}.png", pixels)
 
     build_woarld(ASSETS / "woarld")
+    build_tavern(ASSETS / "tavern")
     build_font(ASSETS / "fonts", "woad_gothic")
     build_sounds(ASSETS / "audio")
     build_music(ASSETS / "audio" / "music")

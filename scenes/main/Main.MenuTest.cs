@@ -4,9 +4,11 @@ using Woad.Core.Grid;
 using Woad.Core.Woarld;
 using Woad.Core.Content;
 using Woad.Core.Model;
+using Woad.Core.Tavern;
 using Woad.Scenes.Game;
 using Woad.Scenes.Menu;
 using Woad.Scenes.Ui;
+using Woad.Scenes.Tavern;
 using Woad.Scenes.Woarld;
 using static Woad.Scenes.Debug.UiDriver;
 
@@ -124,8 +126,8 @@ public partial class Main
             await Click(this, menu.PlayButton);
             ModeSelectScreen modes = await Screen<ModeSelectScreen>();
             Check(!modes.DungeonRunButton.Disabled, "Play opens Select Mode, with Dungeon Run ready");
-            Check(new[] { modes.RaidingPartyButton, modes.FrontierRaidButton, modes.BalladButton, modes.MapEditorButton, modes.WoarldTreeButton }.All(button => button.Disabled),
-                "the modes still to come are greyed out");
+            Check(!modes.RaidingPartyButton.Disabled && new[] { modes.FrontierRaidButton, modes.BalladButton, modes.MapEditorButton, modes.WoarldTreeButton }.All(button => button.Disabled),
+                "Raiding Party is ready too; the modes still to come are greyed out");
             await Click(this, modes.BackButton);
             menu = await Screen<MainMenu>();
             await Click(this, menu.PlayButton);
@@ -219,16 +221,19 @@ public partial class Main
             dungeons = await Screen<DungeonSelectScreen>();
             await Click(this, dungeons.BackButton);
             modes = await Screen<ModeSelectScreen>();
+            await RunTavernTest(modes);
+            modes = await Screen<ModeSelectScreen>();
             await Click(this, modes.BackButton);
             menu = await Screen<MainMenu>();
             await Click(this, menu.CharactersButton);
             list = await LoadedList();
+            Check(list.CharacterCount == 4, "the hired recruit is in the roster");
             await Click(this, list.Row(1));
             await Click(this, list.DeleteButton);
-            Check(list.CharacterCount == 3, "the first Delete click only asks for confirmation");
+            Check(list.CharacterCount == 4, "the first Delete click only asks for confirmation");
             await Click(this, list.DeleteButton);
-            await WaitFor(this, () => list.IsLoaded && list.CharacterCount == 2, "the list to reload after deleting");
-            Check(Directory.GetFiles(saveFolder, "*.json").Length == 2, "deleting removes the save file");
+            await WaitFor(this, () => list.IsLoaded && list.CharacterCount == 3, "the list to reload after deleting");
+            Check(Directory.GetFiles(saveFolder, "*.json").Length == 3, "deleting removes the save file");
 
             GD.Print("Menu test passed.");
             Sfx.QuitGame(this);
@@ -272,7 +277,7 @@ public partial class Main
         Check(map.LeaderButton.Text == "Leader: Wren" && journey.Trail.Count == 2, "Wren leads, with two following");
         Check(map.EnterButton.Visible && map.EnterButton.Text == "Enter The Waylay Inn", "at the inn, the Enter button offers it");
         await Click(this, map.EnterButton);
-        Check(map.Message.Contains("Coming soon"), "the inn opens with Raiding Party");
+        Check(map.Message.Contains("Raiding Party"), "in a Dungeon Run, the inn says it opens in Raiding Party");
 
         // A click two tiles east walks there; the others fall in behind.
         await ClickAt(this, map.View.TileCenter(inn with { X = inn.X + 2 }));
@@ -304,6 +309,91 @@ public partial class Main
         Check(map.Journey.PlaceHere?.Id == "emerald_keep" && map.LeaderButton.Text == "Leader: Morgan", "leaving the raid goes back to the map, at the Keep, Morgan still leading");
         await Click(this, map.BackButton);
         Check(File.Exists(_journeyPath) && File.ReadAllText(_journeyPath).Contains("\"day\":2"), "the journey is saved");
+    }
+
+    /// <summary>
+    /// A Raiding Party of Wren, Pip and Morgan in The Waylay Inn: talks to everyone there (drinks,
+    /// a meal To-Go, a round for the bar, a rumor, a purchase, a game of Bones, a hire, a swap),
+    /// then goes out to the Woarld Map, rests on what they ate, and comes back in.
+    /// </summary>
+    private async Task RunTavernTest(ModeSelectScreen modes)
+    {
+        await Click(this, modes.RaidingPartyButton);
+        RunSetupScreen setup = await Screen<RunSetupScreen>();
+        await WaitFor(this, () => setup.IsLoaded, "the roster to load");
+        await NextFrame(this);
+        Check(setup.DungeonLabel.Text == "Off to: The Waylay Inn", "a Raiding Party sets out for The Waylay Inn");
+        await Click(this, setup.RosterRow(1));
+        await Click(this, setup.RosterRow(2));
+        await Click(this, setup.RosterRow(0));
+        await Click(this, setup.StartButton);
+        await Click(this, setup.BeginRaid.RaidButton);
+
+        TavernScreen inn = await Screen<TavernScreen>();
+        Character wren = inn.Party[0];
+        Check(wren.Name == "Wren" && inn.LeaderButton.Text == "Leader: Wren" && inn.Visit.Leader == inn.Tavern.Start, "the party comes in at the inn's door, Wren leading");
+        wren.EarnGold(60);
+
+        TavernNpc Npc(NpcRole role) => inn.Tavern.Npcs.First(npc => npc.Role == role);
+        async Task TalkTo(TavernNpc npc)
+        {
+            inn.Clicked(npc.Position);
+            await WaitFor(this, () => inn.TalkingTo == npc, $"the walk to {npc.Name}");
+        }
+
+        await ClickAt(this, inn.View.TileCenter(new GridPosition(5, 5)));
+        await WaitFor(this, () => !inn.IsWalking, "the walk into the room");
+        TavernNpc bartender = Npc(NpcRole.Bartender);
+        await ClickAt(this, inn.View.TileCenter(bartender.Position));
+        await WaitFor(this, () => inn.TalkingTo == bartender, "the walk to the bar");
+        Check(inn.Visit.NpcInReach == bartender, "clicking the bartender walks the party up to the bar to talk");
+        await Click(this, inn.ListButton("Drink", 0)!);
+        Check(wren.Gold == 59 && inn.World.Fed(wren.Id).Bonus == 2, "a Woad Ale costs 1 gold and boosts Wren's next Rest");
+        await Click(this, inn.ListButton("To-Go", 2)!);
+        Check(inn.World.Provisions(wren.Id).SequenceEqual(["hearth_stew"]), "a Hearth Stew is packed To-Go");
+        await Click(this, inn.ListButton("Buy", 6)!);
+        Check(inn.World.Reputation(inn.Tavern.Id) == 1 && wren.Gold == 46, "a round for the whole bar raises the inn's reputation");
+        await Click(this, inn.RumorButton);
+        Check(inn.World.Journey.IsRevealed(new GridPosition(33, 26)), "the bartender's rumor marks the Sunken Temple on the map");
+        await Click(this, inn.ByeButton);
+
+        await TalkTo(Npc(NpcRole.Merchant));
+        await Click(this, inn.ListButton("Buy")!);
+        Check(wren.Gold == 44 && wren.Belt.Contains("bomb"), "the merchant sells Wren a bomb, his cheapest ware");
+        await Click(this, inn.ByeButton);
+
+        await TalkTo(Npc(NpcRole.Gambler));
+        await Click(this, inn.ListButton("1 gold")!);
+        Check(wren.Gold is 43 or 44 or 45 && (inn.DialogText.Contains("rolls") || inn.DialogText.Contains("tie")), "a game of Bones for 1 gold");
+        int gold = wren.Gold;
+        await Click(this, inn.ByeButton);
+
+        await TalkTo(Npc(NpcRole.Recruiter));
+        await Click(this, inn.ListButton("Hire")!);
+        Check(inn.Party.Count == 4 && inn.Party[2].IsCompanion && inn.Party[3].Name == "Morgan" && wren.Gold == gold - 10,
+            "hiring a recruit for 10 gold seats them as Wren's companion, after Pip");
+        await Click(this, inn.ByeButton);
+
+        await TalkTo(Npc(NpcRole.Innkeeper));
+        await Click(this, inn.ListButton("Go upstairs", 5)!);
+        Check(inn.Party.Count == 3 && inn.Party.All(member => member.Name != "Morgan"), "the innkeeper lets Morgan wait upstairs");
+        await Click(this, inn.ListButton("Join", 6)!);
+        Check(inn.Party.Count == 4 && inn.Party[3].Name == "Morgan", "and Morgan comes back down to join");
+        await Click(this, inn.ByeButton);
+
+        await Click(this, inn.DoorButton);
+        WoarldMapScreen map = await Screen<WoarldMapScreen>();
+        Check(map.Journey.PlaceHere?.Id == "waylay_inn" && map.Party.Count == 4, "the door leads out onto the Woarld Map, at the inn");
+        await Click(this, map.RestButton);
+        Check(map.Message.StartsWith("Rested: Wren") && map.Message.Contains("+2") && _raidWorld!.Provisions(wren.Id).Count == 0 && _raidWorld.Fed(wren.Id).IsNone,
+            "resting eats Wren's stew and drinks the ale's +2");
+        await Click(this, map.EnterButton);
+        inn = await Screen<TavernScreen>();
+        Check(inn.Party.Count == 4, "the inn on the map leads back inside");
+        await Click(this, inn.DoorButton);
+        map = await Screen<WoarldMapScreen>();
+        await Click(this, map.BackButton);
+        Check(File.ReadAllText(_raidWorldPath).Contains("\"waylay_inn\":1"), "the shared Woarld is saved, with the inn's reputation");
     }
 
     private async Task<T> Screen<T>() where T : Control

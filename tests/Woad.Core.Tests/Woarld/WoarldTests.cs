@@ -141,6 +141,8 @@ public class WoarldTests
         // Food's extra die: 5 + 5 makes ten.
         Assert.Equal(1, RestRoll.Roll(new ScriptedDice(5, 5), extraDice: 1).Hearts);
         Assert.Equal(RestRoll.MaxDice, RestRoll.Roll(new ScriptedDice([.. Enumerable.Repeat(6, RestRoll.MaxDice)])).Dice.Count);
+        // A drink's +4 makes 3 + 4 + 3 = 10.
+        Assert.Equal(1, RestRoll.Roll(new ScriptedDice(3, 3), extraDice: 1, bonus: 4).Hearts);
     }
 
     [Fact]
@@ -170,6 +172,20 @@ public class WoarldTests
         Assert.Equal((2, 0, 2), (loaded.Day, loaded.StepsToday, loaded.TotalSteps));
         Assert.Equal(["emerald_keep"], loaded.Beaten);
         Assert.Equal(journey.ToJson(), loaded.ToJson());
+    }
+
+    [Fact]
+    public void ANewRaidGathersThePartyAtTheInn()
+    {
+        WoarldJourney journey = WoarldJourney.Begin(Map, 3);
+        journey.Step(Direction.East);
+        journey.Step(Direction.East);
+
+        journey.ReturnTo(Map.Start);
+
+        Assert.Equal(Map.Start, journey.Leader);
+        Assert.Equal([Map.Start, Map.Start], journey.Trail);
+        Assert.Throws<ArgumentException>(() => journey.ReturnTo(new GridPosition(0, 0)));
     }
 
     [Fact]

@@ -4,10 +4,12 @@ using Woad.Core.Content;
 using Woad.Core.Dungeon;
 using Woad.Core.Rules;
 using Woad.Core.Saves;
+using Woad.Core.Tavern;
 using Woad.Core.Woarld;
 using Woad.Scenes.Game;
 using Woad.Scenes.Menu;
 using Woad.Scenes.Ui;
+using Woad.Scenes.Tavern;
 using Woad.Scenes.Woarld;
 
 namespace Woad.Scenes;
@@ -54,6 +56,15 @@ public partial class Main : Control
 
     /// <summary>The run was raided from the Woarld Map, so it goes back there afterwards.</summary>
     private bool _runFromMap;
+
+    /// <summary>Playing Raiding Party: the map and taverns are the shared Woarld's, not the Dungeon Run's.</summary>
+    private bool _raiding;
+
+    /// <summary>Where the Raiding Party's shared Woarld is saved.</summary>
+    private string _raidWorldPath = "";
+
+    /// <summary>The Raiding Party's shared Woarld, loaded when first needed.</summary>
+    private RaidWorld? _raidWorld;
     private Control? _screen;
 
     public override void _Ready()
@@ -73,6 +84,9 @@ public partial class Main : Control
         _journeyPath = throwawaySaves
             ? Path.Combine(saveFolder, "woarld", "dungeon-run.json")
             : ProjectSettings.GlobalizePath("user://woarld/dungeon-run.json");
+        _raidWorldPath = throwawaySaves
+            ? Path.Combine(saveFolder, "woarld", "raiding-party.json")
+            : ProjectSettings.GlobalizePath("user://woarld/raiding-party.json");
 
         AudioSettings.Load(throwawaySaves ? Path.Combine(saveFolder, "settings.cfg") : "user://settings.cfg");
         AddChild(new Sfx());
@@ -216,7 +230,17 @@ public partial class Main : Control
     {
         var screen = new ModeSelectScreen();
         screen.BackRequested += ShowMainMenu;
-        screen.DungeonRunRequested += ShowDungeonSelect;
+        screen.DungeonRunRequested += () =>
+        {
+            _raiding = false;
+            ShowDungeonSelect();
+        };
+        screen.RaidingPartyRequested += () =>
+        {
+            _raiding = true;
+            _themeId = "";
+            ShowRunSetup();
+        };
         ShowMenu(screen);
     }
 
@@ -270,10 +294,20 @@ public partial class Main : Control
             Repository = _characters,
             FriendlyFire = _friendlyFire,
             ThemeId = _themeId,
-            DungeonName = _themeId.Length == 0 ? "The Woarld Map" : _content.Themes.TryGetValue(_themeId, out ThemeDefinition? theme) ? theme.Name : _themeId,
+            DungeonName = _raiding ? TavernDefinition.LoadDefault().Name : _themeId.Length == 0 ? "The Woarld Map" : _content.Themes.TryGetValue(_themeId, out ThemeDefinition? theme) ? theme.Name : _themeId,
             ReplacesSavedRun = _themeId.Length > 0 && _runFile.Exists,
         };
-        screen.BackRequested += ShowDungeonSelect;
+        screen.BackRequested += () =>
+        {
+            if (_raiding)
+            {
+                ShowModeSelect();
+            }
+            else
+            {
+                ShowDungeonSelect();
+            }
+        };
         screen.NewCharacterRequested += () => ShowEditor(null, ShowRunSetup);
         screen.StartRequested += (party, seed, friendlyFire, themeId) =>
         {
@@ -287,7 +321,19 @@ public partial class Main : Control
             _friendlyFire = friendlyFire;
             _woarldParty = [.. party];
             _woarldLeader = Math.Max(0, _woarldParty.FindIndex(hero => !hero.IsCompanion));
-            ShowWoarldMap();
+            if (_raiding)
+            {
+                // Every Raiding Party sets out from the inn.
+                RaidWorld world = LoadRaidWorld();
+                world.Journey.SetPartySize(_woarldParty.Count);
+                world.Journey.ReturnTo(world.Journey.Map.Places.Single(place => place.Id == TavernDefinition.LoadDefault().PlaceId).Position);
+                SaveRaidWorld();
+                ShowTavern();
+            }
+            else
+            {
+                ShowWoarldMap();
+            }
         };
         ShowMenu(screen);
     }
@@ -370,31 +416,148 @@ public partial class Main : Control
         Show(game);
     }
 
-    /// <summary>Walks the Woarld Map with the party picked for it.</summary>
+    /// <summary>Walks the Woarld Map with the party picked for it: the Raiding Party's shared Woarld, or the Dungeon Run's.</summary>
     private void ShowWoarldMap()
     {
-        WoarldJourney journey = LoadJourney();
+        RaidWorld? world = _raiding ? LoadRaidWorld() : null;
+        WoarldJourney journey = world?.Journey ?? LoadJourney();
         journey.SetPartySize(_woarldParty.Count);
-        var screen = new WoarldMapScreen { Journey = journey, Party = _woarldParty, Leader = _woarldLeader, Greeting = _woarldNews, ReplacesSavedRun = _runFile.Exists };
+        var screen = new WoarldMapScreen
+        {
+            Journey = journey,
+            Party = _woarldParty,
+            Leader = _woarldLeader,
+            Greeting = _woarldNews,
+            ReplacesSavedRun = _runFile.Exists,
+            BackTooltip = world is null ? "Back to the Dungeon Run list. Your travels are saved." : "Back to Select Mode. The Woarld is saved.",
+            RestBoosts = world is null ? null : walkers => world.TakeRestBoosts([.. walkers.Select(hero => hero.Id)], TavernDefinition.LoadDefault()),
+        };
         _woarldNews = "";
         screen.BackRequested += () =>
         {
-            SaveJourney();
-            ShowDungeonSelect();
+            SaveMapProgress();
+            if (world is null)
+            {
+                ShowDungeonSelect();
+            }
+            else
+            {
+                ShowModeSelect();
+            }
         };
         screen.JourneyChanged += () =>
         {
             _woarldLeader = screen.Leader;
-            SaveJourney();
+            SaveMapProgress();
         };
+        if (world is not null)
+        {
+            screen.PlaceEntered += place =>
+            {
+                if (place.Id == TavernDefinition.LoadDefault().PlaceId)
+                {
+                    SaveMapProgress();
+                    ShowTavern();
+                }
+            };
+        }
+
         screen.RaidRequested += place =>
         {
             journey.PassDay();
-            SaveJourney();
+            SaveMapProgress();
             _runFromMap = true;
             StartRun(_woarldParty, (ulong)DateTime.UtcNow.Ticks, _friendlyFire, place.ThemeId!);
         };
         ShowMenu(screen);
+    }
+
+    /// <summary>Inside The Waylay Inn with the Raiding Party; the door leads out to the Woarld Map.</summary>
+    private async void ShowTavern()
+    {
+        TavernDefinition tavern = TavernDefinition.LoadDefault();
+        RaidWorld world = LoadRaidWorld();
+        // The roster, with the party's own copies of its members, so changes show everywhere.
+        List<Character> roster = [.. (await _characters.LoadAllAsync()).Characters
+            .Select(saved => _woarldParty.FirstOrDefault(member => member.Id == saved.Id) ?? saved)];
+        var screen = new TavernScreen
+        {
+            Tavern = tavern,
+            World = world,
+            Content = _content,
+            Party = _woarldParty,
+            Roster = roster,
+            Leader = _woarldLeader,
+            Greeting = _woarldNews,
+        };
+        _woarldNews = "";
+        screen.LeaveRequested += () =>
+        {
+            _woarldLeader = screen.Leader;
+            ShowWoarldMap();
+        };
+        screen.PartyChanged += () => _woarldLeader = screen.Leader;
+        screen.WorldChanged += SaveRaidWorld;
+        screen.CharacterChanged += SaveCharacter;
+        screen.RecruitHired += SaveCharacter;
+        ShowMenu(screen);
+    }
+
+    private async void SaveCharacter(Character character)
+    {
+        try
+        {
+            await _characters.SaveAsync(character);
+        }
+        catch (IOException exception)
+        {
+            GD.PushWarning($"{character.Name} couldn't be saved: {exception.Message}");
+        }
+    }
+
+    /// <summary>The Raiding Party's shared Woarld: as saved, or a new one if there's none (or it can't be read).</summary>
+    private RaidWorld LoadRaidWorld()
+    {
+        if (_raidWorld is not null)
+        {
+            return _raidWorld;
+        }
+
+        WoarldMap map = WoarldMap.LoadDefault();
+        try
+        {
+            if (File.Exists(_raidWorldPath))
+            {
+                return _raidWorld = RaidWorld.FromJson(File.ReadAllText(_raidWorldPath), map);
+            }
+        }
+        catch (Exception exception) when (exception is InvalidDataException or IOException)
+        {
+            GD.PushWarning($"The Raiding Party's Woarld couldn't be loaded, so it starts afresh: {exception.Message}");
+        }
+
+        return _raidWorld = RaidWorld.Begin(map);
+    }
+
+    private void SaveRaidWorld()
+    {
+        if (_raidWorld is not null)
+        {
+            WriteFile(_raidWorldPath, _raidWorld.ToJson(), "The Raiding Party's Woarld");
+        }
+    }
+
+    /// <summary>Saves the map the party is walking: the Raiding Party's Woarld, or the Dungeon Run's journey.</summary>
+    private void SaveMapProgress()
+    {
+        if (_raiding)
+        {
+            SaveRaidWorld();
+        }
+        else
+        {
+            SaveJourney();
+        }
     }
 
     /// <summary>The Dungeon Run's journey: as saved, or a new one if there's none (or it can't be read).</summary>
@@ -428,15 +591,21 @@ public partial class Main : Control
             return;
         }
 
+        WriteFile(_journeyPath, _journey.ToJson(), "The Woarld Map journey");
+    }
+
+    /// <summary>Writes a save beside the old one, then swaps it in, so a crash mid-write never loses both.</summary>
+    private static void WriteFile(string path, string contents, string what)
+    {
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(_journeyPath)!);
-            File.WriteAllText(_journeyPath + ".tmp", _journey.ToJson());
-            File.Move(_journeyPath + ".tmp", _journeyPath, overwrite: true);
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path + ".tmp", contents);
+            File.Move(path + ".tmp", path, overwrite: true);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            GD.PushWarning($"The Woarld Map journey couldn't be saved: {exception.Message}");
+            GD.PushWarning($"{what} couldn't be saved: {exception.Message}");
         }
     }
 
@@ -478,8 +647,8 @@ public partial class Main : Control
 
         if (results.Any(result => result.Won))
         {
-            IReadOnlyList<WoarldPlace> opened = LoadJourney().MarkBeaten(setup.ThemeId);
-            SaveJourney();
+            IReadOnlyList<WoarldPlace> opened = (_raiding ? LoadRaidWorld().Journey : LoadJourney()).MarkBeaten(setup.ThemeId);
+            SaveMapProgress();
             if (opened.Count > 0)
             {
                 _woarldNews = $"{string.Join(" and ", opened.Select(place => place.Name))} has opened! Find it on the Woarld Map.";

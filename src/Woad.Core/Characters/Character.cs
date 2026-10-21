@@ -196,6 +196,34 @@ public sealed class Character
         return gained;
     }
 
+    /// <summary>Pays gold. False (and nothing paid) if the character hasn't that much.</summary>
+    public bool SpendGold(int amount)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(amount);
+        if (amount > Gold)
+        {
+            return false;
+        }
+
+        Gold -= amount;
+        return true;
+    }
+
+    public void EarnGold(int amount)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(amount);
+        Gold += amount;
+    }
+
+    /// <summary>Gives the character a card (bought, won or handed over): equipped if its slot is free, else belted or packed.</summary>
+    public void GiveCard(CardDefinition card, ContentCatalog content) => Place(card, content);
+
+    /// <summary>
+    /// Takes one copy of a card away (sold or given up): from the backpack first, then the belt,
+    /// then what's equipped. False if the character hasn't got one.
+    /// </summary>
+    public bool TakeCard(string cardId) => _backpack.Remove(cardId) || _belt.Remove(cardId) || _equipped.Remove(cardId);
+
     /// <summary>
     /// Records a finished run: XP (and any levels it brings), gold, runs played and wins, and the
     /// gear the hero came home with. Returns what changed, for the results screen.

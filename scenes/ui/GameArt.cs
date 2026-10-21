@@ -27,6 +27,9 @@ public static class GameArt
     /// <summary>The Woarld Map's terrain and place art.</summary>
     public static Texture2D? Woarld(string name) => Texture($"res://assets/woarld/{name}.png");
 
+    /// <summary>A tavern's floor and furniture art.</summary>
+    public static Texture2D? Tavern(string name) => Texture($"res://assets/tavern/{name}.png");
+
     /// <summary>
     /// The body text font: Pixelify Sans (SIL Open Font License, see assets/fonts/PixelifySans-OFL.txt)
     /// at its bold weight, drawn crisp with no smoothing to match the pixel art. Null if it's missing.

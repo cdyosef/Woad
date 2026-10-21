@@ -14,17 +14,23 @@ public sealed record StepResult(string? Error = null, bool NewDay = false, bool 
     public bool Moved => Error is null;
 }
 
-/// <summary>One hero's Rest roll: the dice rolled and the hearts it heals.</summary>
-public sealed record RestRoll(IReadOnlyList<int> Dice, int Hearts)
+/// <summary>What food and drink add to a hero's Rest roll: extra dice, and a bonus to the total.</summary>
+public readonly record struct RestBoost(int Dice, int Bonus)
+{
+    public bool IsNone => Dice == 0 && Bonus == 0;
+}
+
+/// <summary>One hero's Rest roll: the dice rolled, the bonus added, and the hearts it heals.</summary>
+public sealed record RestRoll(IReadOnlyList<int> Dice, int Hearts, int Bonus = 0)
 {
     /// <summary>Most dice one Rest roll can chain into, so a lucky streak still ends.</summary>
     public const int MaxDice = 12;
 
     /// <summary>
-    /// Rolls a d6; a 6 heals a heart and rolls again. Every 10 of the dice's total heals a heart too.
-    /// <paramref name="extraDice"/> (from food and drink) starts the roll with more dice.
+    /// Rolls a d6; a 6 heals a heart and rolls again. Every 10 of the total heals a heart too.
+    /// Food and drink can start the roll with <paramref name="extraDice"/> and add <paramref name="bonus"/> to the total.
     /// </summary>
-    public static RestRoll Roll(IRandomSource random, int extraDice = 0)
+    public static RestRoll Roll(IRandomSource random, int extraDice = 0, int bonus = 0)
     {
         var dice = new List<int>();
         int toRoll = 1 + Math.Max(0, extraDice);
@@ -39,7 +45,7 @@ public sealed record RestRoll(IReadOnlyList<int> Dice, int Hearts)
             }
         }
 
-        return new RestRoll(dice, dice.Count(die => die == 6) + dice.Sum() / 10);
+        return new RestRoll(dice, dice.Count(die => die == 6) + (dice.Sum() + Math.Max(0, bonus)) / 10, Math.Max(0, bonus));
     }
 }
 
@@ -65,21 +71,22 @@ public sealed class WoarldJourney
     private static readonly JsonSerializerOptions Options = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
     private readonly bool[,] _revealed;
-    private readonly List<GridPosition> _trail = [];
+    private PartyLine _line;
     private readonly HashSet<string> _beaten = [];
 
     private WoarldJourney(WoarldMap map)
     {
         Map = map;
         _revealed = new bool[map.Width, map.Height];
+        _line = new PartyLine(map.Start);
     }
 
     public WoarldMap Map { get; }
 
-    public GridPosition Leader { get; private set; }
+    public GridPosition Leader => _line.Leader;
 
     /// <summary>Where the followers stand, nearest the leader first.</summary>
-    public IReadOnlyList<GridPosition> Trail => _trail;
+    public IReadOnlyList<GridPosition> Trail => _line.Trail;
 
     public int Day { get; private set; } = 1;
 
@@ -99,7 +106,7 @@ public sealed class WoarldJourney
     /// <summary>A new journey from the map's start, with the open dungeons' sites already known.</summary>
     public static WoarldJourney Begin(WoarldMap map, int partySize)
     {
-        var journey = new WoarldJourney(map) { Leader = map.Start };
+        var journey = new WoarldJourney(map);
         journey.SetPartySize(partySize);
         journey.Reveal(map.Start, SightRadius);
         foreach (WoarldPlace place in map.Places.Where(journey.IsOpen))
@@ -118,20 +125,22 @@ public sealed class WoarldJourney
     /// <summary>The place the leader stands on, if any.</summary>
     public WoarldPlace? PlaceHere => Map.PlaceAt(Leader);
 
-    /// <summary>Makes room in the line for this many heroes (the leader and their followers).</summary>
-    public void SetPartySize(int size)
+    /// <summary>Puts the party at a place (a new raid sets out from the inn), the line gathered there.</summary>
+    public void ReturnTo(GridPosition tile)
     {
-        int followers = Math.Max(0, size - 1);
-        while (_trail.Count > followers)
+        if (!Map.IsWalkable(tile))
         {
-            _trail.RemoveAt(_trail.Count - 1);
+            throw new ArgumentException("The party can't stand there.", nameof(tile));
         }
 
-        while (_trail.Count < followers)
-        {
-            _trail.Add(_trail.Count > 0 ? _trail[^1] : Leader);
-        }
+        int size = Trail.Count + 1;
+        _line = new PartyLine(tile);
+        _line.SetSize(size);
+        Reveal(tile, SightRadius);
     }
+
+    /// <summary>Makes room in the line for this many heroes (the leader and their followers).</summary>
+    public void SetPartySize(int size) => _line.SetSize(size);
 
     /// <summary>The leader steps one tile; everyone else steps into the place of the hero ahead.</summary>
     public StepResult Step(Direction direction)
@@ -147,13 +156,7 @@ public sealed class WoarldJourney
             return new StepResult(Map.TerrainAt(next) == Terrain.Water ? "Water blocks the way. Find a bridge." : "The mountains are too steep to cross.");
         }
 
-        if (_trail.Count > 0)
-        {
-            _trail.Insert(0, Leader);
-            _trail.RemoveAt(_trail.Count - 1);
-        }
-
-        Leader = next;
+        _line.MoveTo(next);
         Reveal(next, SightRadius);
         (bool newDay, bool nightFell) = PassSteps(1);
         return new StepResult(NewDay: newDay, NightFell: nightFell, Arrived: Map.PlaceAt(next));
@@ -163,55 +166,18 @@ public sealed class WoarldJourney
     /// The shortest walk from the leader to a tile, over ground the clouds have cleared from: the
     /// steps to take in order (none if the leader is there). Null if there's no way.
     /// </summary>
-    public IReadOnlyList<Direction>? PathTo(GridPosition target)
-    {
-        if (!IsRevealed(target) || !Map.IsWalkable(target))
-        {
-            return null;
-        }
-
-        var cameFrom = new Dictionary<GridPosition, (GridPosition From, Direction Step)>();
-        var frontier = new Queue<GridPosition>([Leader]);
-        var seen = new HashSet<GridPosition> { Leader };
-        Direction[] directions = [Direction.North, Direction.East, Direction.South, Direction.West];
-        while (frontier.Count > 0)
-        {
-            GridPosition tile = frontier.Dequeue();
-            if (tile == target)
-            {
-                var path = new List<Direction>();
-                while (tile != Leader)
-                {
-                    (GridPosition from, Direction step) = cameFrom[tile];
-                    path.Add(step);
-                    tile = from;
-                }
-
-                path.Reverse();
-                return path;
-            }
-
-            foreach (Direction direction in directions)
-            {
-                GridPosition next = tile.Step(direction);
-                if (IsRevealed(next) && Map.IsWalkable(next) && seen.Add(next))
-                {
-                    cameFrom[next] = (tile, direction);
-                    frontier.Enqueue(next);
-                }
-            }
-        }
-
-        return null;
-    }
+    public IReadOnlyList<Direction>? PathTo(GridPosition target) =>
+        IsRevealed(target) && Map.IsWalkable(target) ? PartyLine.PathTo(Leader, target, tile => IsRevealed(tile) && Map.IsWalkable(tile)) : null;
 
     /// <summary>
     /// The party rests for <see cref="RestSteps"/> steps: everyone gets a Rest roll, in party order.
-    /// <paramref name="extraDice"/> gives a hero (by party index) more dice, from food and drink.
+    /// <paramref name="boosts"/> holds what food and drink add to each hero's roll (by party index).
     /// </summary>
-    public (IReadOnlyList<RestRoll> Rolls, bool NewDay, bool NightFell) Rest(IRandomSource random, int partySize, IReadOnlyDictionary<int, int>? extraDice = null)
+    public (IReadOnlyList<RestRoll> Rolls, bool NewDay, bool NightFell) Rest(IRandomSource random, int partySize, IReadOnlyList<RestBoost>? boosts = null)
     {
-        var rolls = Enumerable.Range(0, partySize).Select(hero => RestRoll.Roll(random, extraDice?.GetValueOrDefault(hero) ?? 0)).ToList();
+        var rolls = Enumerable.Range(0, partySize)
+            .Select(hero => boosts is not null && hero < boosts.Count ? RestRoll.Roll(random, boosts[hero].Dice, boosts[hero].Bonus) : RestRoll.Roll(random))
+            .ToList();
         (bool newDay, bool nightFell) = PassSteps(RestSteps);
         return (rolls, newDay, nightFell);
     }
@@ -251,7 +217,7 @@ public sealed class WoarldJourney
             Version = CurrentVersion,
             WoarldId = Map.Id,
             Leader = Leader,
-            Trail = [.. _trail],
+            Trail = [.. Trail],
             Day = Day,
             StepsToday = StepsToday,
             TotalSteps = TotalSteps,
@@ -285,12 +251,11 @@ public sealed class WoarldJourney
 
         var journey = new WoarldJourney(map)
         {
-            Leader = data.Leader,
             Day = Math.Max(1, data.Day),
             StepsToday = Math.Clamp(data.StepsToday, 0, StepsPerDay - 1),
             TotalSteps = Math.Max(0, data.TotalSteps),
         };
-        journey._trail.AddRange(data.Trail);
+        journey._line = PartyLine.Restore(data.Leader, data.Trail);
         journey._beaten.UnionWith(data.Beaten);
         for (int y = 0; y < map.Height; y++)
         {
@@ -315,7 +280,8 @@ public sealed class WoarldJourney
         }
     }
 
-    private void Reveal(GridPosition center, int radius)
+    /// <summary>Clears the clouds within <paramref name="radius"/> of a tile (exploring, or a rumor of what's there).</summary>
+    public void Reveal(GridPosition center, int radius)
     {
         for (int y = center.Y - radius; y <= center.Y + radius; y++)
         {

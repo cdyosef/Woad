@@ -52,7 +52,16 @@ public partial class WoarldMapScreen : Control
     /// <summary>Shown when the map opens, such as news of a place that just opened.</summary>
     public string Greeting { get; init; } = "";
 
+    /// <summary>What food and drink add to each hero's Rest roll (heroes in walking order); used up by the Rest. Null: nothing.</summary>
+    public Func<IReadOnlyList<Character>, IReadOnlyList<RestBoost>>? RestBoosts { get; init; }
+
+    /// <summary>What the Back button says it does.</summary>
+    public string BackTooltip { get; init; } = "Back to the Dungeon Run list. Your travels are saved.";
+
     public event Action? BackRequested;
+
+    /// <summary>The party went into a place that isn't a dungeon (a tavern). Without a handler, such places aren't open yet.</summary>
+    public event Action<WoarldPlace>? PlaceEntered;
 
     /// <summary>The party set out to raid a dungeon.</summary>
     public event Action<WoarldPlace>? RaidRequested;
@@ -98,7 +107,7 @@ public partial class WoarldMapScreen : Control
         AddChild(_message);
 
         AddChild(new Panel { Position = new Vector2(0, ButtonsTop - 4), Size = new Vector2(Size.X, Size.Y - ButtonsTop + 4), MouseFilter = MouseFilterEnum.Ignore });
-        BackButton = AddButton(new Vector2(8, ButtonsTop), 80, "Back", "Back to the Dungeon Run list. Your travels are saved.");
+        BackButton = AddButton(new Vector2(8, ButtonsTop), 80, "Back", BackTooltip);
         BackButton.Pressed += () => BackRequested?.Invoke();
         LeaderButton = AddButton(new Vector2(94, ButtonsTop), 150, "", "Who walks at the head of the line. Click for the next player.");
         LeaderButton.Pressed += NextLeader;
@@ -242,10 +251,10 @@ public partial class WoarldMapScreen : Control
         _path.Clear();
         _view.Destination = null;
         List<Character> walkers = [.. WalkingOrder];
-        (IReadOnlyList<RestRoll> rolls, bool newDay, _) = Journey.Rest(_random, walkers.Count);
+        (IReadOnlyList<RestRoll> rolls, bool newDay, _) = Journey.Rest(_random, walkers.Count, RestBoosts?.Invoke(walkers));
         Sfx.Play("dice");
         IEnumerable<string> lines = walkers.Zip(rolls, (hero, roll) =>
-            $"{hero.Name} {string.Join(" ", roll.Dice)}{(roll.Hearts > 0 ? $" (+{UiTheme.Count(roll.Hearts, "heart", "hearts")})" : "")}");
+            $"{hero.Name} {string.Join(" ", roll.Dice)}{(roll.Bonus > 0 ? $" +{roll.Bonus}" : "")}{(roll.Hearts > 0 ? $" (+{UiTheme.Count(roll.Hearts, "heart", "hearts")})" : "")}");
         Say($"{(newDay ? $"Rested into day {Journey.Day}" : "Rested")}: {string.Join(", ", lines)}.");
         JourneyChanged?.Invoke();
         Refresh();
@@ -283,7 +292,15 @@ public partial class WoarldMapScreen : Control
                 BeginRaid.Ask($"{place.Name}, with {UiTheme.Count(Party.Count, "hero", "heroes")}. A raid takes the rest of the day." + (ReplacesSavedRun ? " This replaces your saved run." : ""));
                 break;
             default:
-                Say($"{place.Name} opens its doors with Raiding Party. Coming soon.");
+                if (PlaceEntered is null)
+                {
+                    Say($"{place.Name} opens its doors in Raiding Party.");
+                }
+                else
+                {
+                    PlaceEntered(place);
+                }
+
                 break;
         }
     }

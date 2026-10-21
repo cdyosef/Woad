@@ -33,7 +33,7 @@ public partial class RunSetupScreen : MenuScreen
     /// <summary>The chosen characters in seat order, the seed for the dungeon and dice, and whether friendly fire is on.</summary>
     public event Action<IReadOnlyList<Character>, ulong, bool, string>? StartRequested;
 
-    /// <summary>The dungeon the run will be in, picked on the Dungeon Run list; empty to set out on the Woarld Map.</summary>
+    /// <summary>The dungeon the run will be in, picked on the Dungeon Run list; empty to set out somewhere else (named by <see cref="DungeonName"/>).</summary>
     public string ThemeId { get; init; } = "";
 
     /// <summary>The dungeon's name (or the Woarld Map's), shown at the bottom.</summary>

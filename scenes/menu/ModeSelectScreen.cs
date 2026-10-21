@@ -15,6 +15,8 @@ public partial class ModeSelectScreen : MenuScreen
 
     public event Action? DungeonRunRequested;
 
+    public event Action? RaidingPartyRequested;
+
     internal Button DungeonRunButton { get; private set; } = null!;
 
     internal Button RaidingPartyButton { get; private set; } = null!;
@@ -35,7 +37,8 @@ public partial class ModeSelectScreen : MenuScreen
 
         DungeonRunButton = Mode(0, "Dungeon Run", "Pick a dungeon and dive straight in with your party.", ready: true);
         DungeonRunButton.Pressed += () => DungeonRunRequested?.Invoke();
-        RaidingPartyButton = Mode(1, "Raiding Party", "Set out from The Waylay Inn into the Woarld shared by everyone on this PC. Saved as a Raid.");
+        RaidingPartyButton = Mode(1, "Raiding Party", "Set out from The Waylay Inn into the Woarld shared by everyone on this PC.", ready: true);
+        RaidingPartyButton.Pressed += () => RaidingPartyRequested?.Invoke();
         FrontierRaidButton = Mode(2, "Frontier Raid", "Raid a Woarld made fresh at random. Saved as an Expedition.");
         BalladButton = Mode(3, "Ballad of the Woad Raiders", "The long campaign, in a Woarld your party's own. Saved as a Ballad.");
         MapEditorButton = Mode(4, "Map Editor", "Draw your own Woarlds and dungeons.");
