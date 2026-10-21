@@ -36,6 +36,12 @@ public partial class TavernView : Control
         }
     }
 
+    /// <summary>Where the party is drawn as they glide from tile to tile.</summary>
+    internal WalkerMotion Motion { get; } = new();
+
+    /// <summary>The leader and their followers' tiles, in walking order.</summary>
+    private List<GridPosition> Walkers => _visit is null ? [] : [_visit.Leader, .. _visit.Trail];
+
     private Vector2 Camera
     {
         get
@@ -46,8 +52,9 @@ public partial class TavernView : Control
             }
 
             TavernDefinition tavern = _visit.Tavern;
-            Vector2 center = new Vector2(_visit.Leader.X + 0.5f, _visit.Leader.Y + 0.5f) * TileSize;
-            // Follows the leader inside the room; a room smaller than the view sits in its middle.
+            Motion.Update(Walkers, 0);
+            Vector2 center = (Motion.Leader + new Vector2(0.5f, 0.5f)) * TileSize;
+            // Follows the leader (as drawn) inside the room; a room smaller than the view sits in its middle.
             static float Axis(float center, float view, float room) =>
                 room <= view ? (room - view) / 2 : Math.Clamp(center - view / 2, 0, room - view);
             return new Vector2(
@@ -64,6 +71,15 @@ public partial class TavernView : Control
     {
         ClipContents = true;
         MouseFilter = MouseFilterEnum.Stop;
+    }
+
+    public override void _Process(double delta)
+    {
+        bool wasMoving = Motion.IsMoving;
+        if (Motion.Update(Walkers, delta) || wasMoving)
+        {
+            QueueRedraw();
+        }
     }
 
     public override void _GuiInput(InputEvent @event)
@@ -115,11 +131,10 @@ public partial class TavernView : Control
             }
         }
 
-        var walkers = new List<GridPosition> { _visit.Leader };
-        walkers.AddRange(_visit.Trail);
-        for (int i = Math.Min(walkers.Count, Party.Count) - 1; i >= 0; i--)
+        int walkers = Math.Min(Walkers.Count, Party.Count);
+        for (int i = walkers - 1; i >= 0; i--)
         {
-            Rect2 rect = TileRect(walkers[i]);
+            var rect = new Rect2((Motion.Shown(i) * TileSize - camera).Round(), new Vector2(TileSize, TileSize));
             if (!Looks.Draw(this, rect, Party[i]))
             {
                 DrawCircle(rect.GetCenter(), 10, Party[i].Main);

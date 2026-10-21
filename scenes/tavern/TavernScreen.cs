@@ -110,7 +110,8 @@ public partial class TavernScreen : Control
 
     internal string DialogText => _dialogText.Text;
 
-    internal bool IsWalking => _path.Count > 0;
+    /// <summary>The party is on its way: steps still to take, or the last one still being walked.</summary>
+    internal bool IsWalking => _path.Count > 0 || _view.Motion.IsMoving;
 
     internal Character Payer => _payer;
 
@@ -185,6 +186,7 @@ public partial class TavernScreen : Control
         {
             TakeStep(_path.Dequeue());
             _stepCooldown = PathStepSeconds;
+            _view.Motion.StepSeconds = PathStepSeconds;
             if (_path.Count == 0 && _walkingTo is { } npc && _visit.NpcInReach == npc)
             {
                 _walkingTo = null;
@@ -201,6 +203,7 @@ public partial class TavernScreen : Control
                 _walkingTo = null;
                 TakeStep(direction);
                 _stepCooldown = HeldStepSeconds;
+                _view.Motion.StepSeconds = HeldStepSeconds;
                 return;
             }
         }

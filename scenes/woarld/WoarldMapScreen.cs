@@ -89,7 +89,8 @@ public partial class WoarldMapScreen : Control
 
     internal string Message => _message.Text;
 
-    internal bool IsWalking => _path.Count > 0;
+    /// <summary>The party is on its way: steps still to take, or the last one still being walked.</summary>
+    internal bool IsWalking => _path.Count > 0 || _view.Motion.IsMoving;
 
     /// <summary>The party in walking order: the leader, then everyone else in seat order.</summary>
     private IEnumerable<Character> WalkingOrder => Party.Skip(Leader).Take(1).Concat(Party.Where((_, index) => index != Leader));
@@ -153,6 +154,7 @@ public partial class WoarldMapScreen : Control
         {
             TakeStep(_path.Dequeue());
             _stepCooldown = PathStepSeconds;
+            _view.Motion.StepSeconds = PathStepSeconds;
             return;
         }
 
@@ -163,6 +165,7 @@ public partial class WoarldMapScreen : Control
                 _view.Destination = null;
                 TakeStep(direction);
                 _stepCooldown = HeldStepSeconds;
+                _view.Motion.StepSeconds = HeldStepSeconds;
                 return;
             }
         }

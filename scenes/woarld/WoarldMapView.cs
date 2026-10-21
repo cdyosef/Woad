@@ -60,7 +60,13 @@ public partial class WoarldMapView : Control
         }
     }
 
-    /// <summary>The map pixel at the view's top-left: centered on the leader, kept inside the map.</summary>
+    /// <summary>Where the party is drawn as they glide from tile to tile.</summary>
+    internal WalkerMotion Motion { get; } = new();
+
+    /// <summary>The leader and their followers' tiles, in walking order.</summary>
+    private List<GridPosition> Walkers => _journey is null ? [] : [_journey.Leader, .. _journey.Trail];
+
+    /// <summary>The map pixel at the view's top-left: centered on the leader as drawn, kept inside the map.</summary>
     private Vector2 Camera
     {
         get
@@ -71,7 +77,8 @@ public partial class WoarldMapView : Control
             }
 
             WoarldMap map = _journey.Map;
-            Vector2 center = new Vector2(_journey.Leader.X + 0.5f, _journey.Leader.Y + 0.5f) * TileSize;
+            Motion.Update(Walkers, 0);
+            Vector2 center = (Motion.Leader + new Vector2(0.5f, 0.5f)) * TileSize;
             float x = Math.Clamp(center.X - Size.X / 2, 0, Math.Max(0, map.Width * TileSize - Size.X));
             float y = Math.Clamp(center.Y - Size.Y / 2, 0, Math.Max(0, map.Height * TileSize - Size.Y));
             return new Vector2(MathF.Round(x), MathF.Round(y));
@@ -86,6 +93,15 @@ public partial class WoarldMapView : Control
     {
         ClipContents = true;
         MouseFilter = MouseFilterEnum.Stop;
+    }
+
+    public override void _Process(double delta)
+    {
+        bool wasMoving = Motion.IsMoving;
+        if (Motion.Update(Walkers, delta) || wasMoving)
+        {
+            QueueRedraw();
+        }
     }
 
     public override void _GuiInput(InputEvent @event)
@@ -152,11 +168,10 @@ public partial class WoarldMapView : Control
         }
 
         // Followers from the back of the line, so the leader is drawn on top.
-        var walkers = new List<GridPosition> { _journey.Leader };
-        walkers.AddRange(_journey.Trail);
-        for (int i = Math.Min(walkers.Count, Party.Count) - 1; i >= 0; i--)
+        int walkers = Math.Min(Walkers.Count, Party.Count);
+        for (int i = walkers - 1; i >= 0; i--)
         {
-            Rect2 rect = TileRect(walkers[i]);
+            var rect = new Rect2((Motion.Shown(i) * TileSize - camera).Round(), new Vector2(TileSize, TileSize));
             if (!Looks.Draw(this, rect, Party[i]))
             {
                 DrawCircle(rect.GetCenter(), 6, Party[i].Main);
