@@ -35,6 +35,9 @@ public sealed record HeroRunResult
 
     public required int DeepestFloor { get; init; }
 
+    /// <summary>The hearts the hero ended the run with (0 if they fell).</summary>
+    public int Hearts { get; init; }
+
     /// <summary>For a hero who died, what killed them ("Slain by a Goblin"); otherwise null.</summary>
     public string? Epitaph { get; init; }
 
@@ -73,6 +76,7 @@ public static class RunResults
             Xp = hero.Xp,
             Gold = hero.Status == HeroStatus.Escaped ? hero.TreasureValue : 0,
             DeepestFloor = hero.DeepestFloor,
+            Hearts = hero.Hearts,
             Epitaph = hero.Status == HeroStatus.Dead ? hero.Bane : null,
             Equipped = Gear(hero.EquippedCards),
             Belt = Gear(hero.Belt),

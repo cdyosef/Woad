@@ -2,6 +2,7 @@ using Godot;
 using Woad.Core.Characters;
 using Woad.Core.Content;
 using Woad.Core.Dungeon;
+using Woad.Core.Grid;
 using Woad.Core.Rules;
 using Woad.Core.Saves;
 using Woad.Core.Tavern;
@@ -65,6 +66,15 @@ public partial class Main : Control
 
     /// <summary>The Raiding Party's shared Woarld, loaded when first needed.</summary>
     private RaidWorld? _raidWorld;
+
+    /// <summary>The saved raids.</summary>
+    private RaidSaveStore _raidStore = null!;
+
+    /// <summary>The raid being played, while raiding.</summary>
+    private RaidSave? _raid;
+
+    /// <summary>Where the run being played is saved: the Dungeon Run's slot, or the raid's own.</summary>
+    private SavedRunFile _activeRunFile = null!;
     private Control? _screen;
 
     public override void _Ready()
@@ -87,6 +97,8 @@ public partial class Main : Control
         _raidWorldPath = throwawaySaves
             ? Path.Combine(saveFolder, "woarld", "raiding-party.json")
             : ProjectSettings.GlobalizePath("user://woarld/raiding-party.json");
+        _raidStore = new RaidSaveStore(throwawaySaves ? Path.Combine(saveFolder, "raids") : ProjectSettings.GlobalizePath("user://raids"));
+        _activeRunFile = _runFile;
 
         AudioSettings.Load(throwawaySaves ? Path.Combine(saveFolder, "settings.cfg") : "user://settings.cfg");
         AddChild(new Sfx());
@@ -238,11 +250,134 @@ public partial class Main : Control
         screen.RaidingPartyRequested += () =>
         {
             _raiding = true;
-            _themeId = "";
-            ShowRunSetup();
+            ShowRaidList();
         };
         ShowMenu(screen);
     }
+
+    private void ShowRaidList() => ShowRaidList("");
+
+    /// <summary>Raiding Party's saved raids, to continue one or begin a new one.</summary>
+    /// <param name="problem">Why a raid just failed to continue, if one did.</param>
+    private async void ShowRaidList(string problem)
+    {
+        (IReadOnlyList<RaidSave> raids, IReadOnlyList<string> problems) = _raidStore.LoadAll();
+        foreach (string unreadable in problems)
+        {
+            GD.PushWarning($"A raid couldn't be read: {unreadable}");
+        }
+
+        IReadOnlyList<Character> characters = (await _characters.LoadAllAsync()).Characters;
+        string Names(RaidSave raid) => string.Join(", ", raid.Party.Select(id => characters.FirstOrDefault(character => character.Id == id)?.Name ?? "(deleted)"));
+        var screen = new RaidListScreen
+        {
+            Raids = [.. raids],
+            Problem = problem.Length > 0 ? problem : problems.Count > 0 ? $"{UiTheme.Count(problems.Count, "raid", "raids")} couldn't be read." : "",
+            Describe = raid => $"{Names(raid)}. Day {raid.Place?.Day ?? 1}, " +
+                               (_raidStore.RunFile(raid).Exists ? "in the middle of a dungeon." : raid.Location == RaidLocation.Inn ? "at The Waylay Inn." : "on the Woarld Map."),
+        };
+        screen.BackRequested += ShowModeSelect;
+        screen.NewRaidRequested += () =>
+        {
+            _raid = null;
+            _themeId = "";
+            ShowRunSetup();
+        };
+        screen.ContinueRequested += ContinueRaid;
+        screen.DeleteRequested += raid =>
+        {
+            try
+            {
+                _raidStore.Delete(raid);
+            }
+            catch (IOException exception)
+            {
+                GD.PushWarning($"{raid.Name} couldn't be deleted: {exception.Message}");
+            }
+        };
+        ShowMenu(screen);
+    }
+
+    /// <summary>Picks a raid up where it was left: in a dungeon, at the inn or out on the map.</summary>
+    private async void ContinueRaid(RaidSave raid)
+    {
+        IReadOnlyList<Character> saved = (await _characters.LoadAllAsync()).Characters;
+        List<Character> party = [.. raid.Party.Select(id => saved.FirstOrDefault(character => character.Id == id)).OfType<Character>()];
+        if (!party.Any(member => !member.IsCompanion))
+        {
+            ShowRaidList($"{raid.Name} can't go on: its players' characters have been deleted.");
+            return;
+        }
+
+        _raiding = true;
+        _raid = raid;
+        _woarldParty = party;
+        _woarldLeader = party.FindIndex(member => member.Id == raid.Leader && !member.IsCompanion) is var leader and >= 0 ? leader : party.FindIndex(member => !member.IsCompanion);
+        _friendlyFire = raid.FriendlyFire;
+        WoarldJourney journey = LoadRaidWorld().Journey;
+        try
+        {
+            journey.Resume(raid.Place ?? AtTheInn(party.Count));
+        }
+        catch (ArgumentException)
+        {
+            journey.Resume(AtTheInn(party.Count));
+        }
+
+        journey.SetPartySize(party.Count);
+        SavedRunFile runFile = _raidStore.RunFile(raid);
+        if (runFile.Exists)
+        {
+            _runFromMap = true;
+            ContinueRun(runFile, party);
+        }
+        else if (raid.Location == RaidLocation.Map)
+        {
+            ShowWoarldMap();
+        }
+        else
+        {
+            ShowTavern();
+        }
+    }
+
+    /// <summary>A new raid's place: gathered at The Waylay Inn on the first day.</summary>
+    private static JourneyPlace AtTheInn(int partySize)
+    {
+        GridPosition inn = WoarldMap.LoadDefault().Places.Single(place => place.Id == TavernDefinition.LoadDefault().PlaceId).Position;
+        return new JourneyPlace(inn, [.. Enumerable.Repeat(inn, Math.Max(0, partySize - 1))], 1, 0, 0);
+    }
+
+    /// <summary>Saves the raid being played: its party and leader, and where and when it is.</summary>
+    private void SaveRaid(RaidLocation? location = null)
+    {
+        if (!_raiding || _raid is null)
+        {
+            return;
+        }
+
+        _raid.Party.Clear();
+        _raid.Party.AddRange(_woarldParty.Select(member => member.Id));
+        _raid.Leader = _woarldParty.Count > 0 ? _woarldParty[Math.Clamp(_woarldLeader, 0, _woarldParty.Count - 1)].Id : default;
+        _raid.FriendlyFire = _friendlyFire;
+        _raid.Place = LoadRaidWorld().Journey.Place;
+        if (location is { } where)
+        {
+            _raid.Location = where;
+        }
+
+        try
+        {
+            _raidStore.Save(_raid);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            GD.PushWarning($"{_raid.Name} couldn't be saved: {exception.Message}");
+        }
+    }
+
+    /// <summary>A hero's hearts in the raid, out of their full health.</summary>
+    private string RaidHearts(Character hero) => $"{_raid!.HeartsOf(hero.Id, hero.MaxHearts(_content))}/{hero.MaxHearts(_content)}";
 
     private void ShowDungeonSelect() => ShowDungeonSelect(null);
 
@@ -301,7 +436,7 @@ public partial class Main : Control
         {
             if (_raiding)
             {
-                ShowModeSelect();
+                ShowRaidList();
             }
             else
             {
@@ -323,11 +458,10 @@ public partial class Main : Control
             _woarldLeader = Math.Max(0, _woarldParty.FindIndex(hero => !hero.IsCompanion));
             if (_raiding)
             {
-                // Every Raiding Party sets out from the inn.
-                RaidWorld world = LoadRaidWorld();
-                world.Journey.SetPartySize(_woarldParty.Count);
-                world.Journey.ReturnTo(world.Journey.Map.Places.Single(place => place.Id == TavernDefinition.LoadDefault().PlaceId).Position);
-                SaveRaidWorld();
+                // A new raid sets out from the inn, on its first day.
+                LoadRaidWorld().Journey.Resume(AtTheInn(_woarldParty.Count));
+                _raid = new RaidSave { Name = _raidStore.NameFor(_woarldParty[_woarldLeader].Name), Location = RaidLocation.Inn };
+                SaveRaid();
                 ShowTavern();
             }
             else
@@ -343,42 +477,72 @@ public partial class Main : Control
     {
         _friendlyFire = friendlyFire;
         _themeId = themeId;
-        var save = new SavedRun { ThemeId = themeId, Seed = seed, FriendlyFire = friendlyFire, Heroes = Party.ToHeroSetups(party) };
+        IReadOnlyList<HeroSetup> heroes = Party.ToHeroSetups(party);
+        if (_raiding && _raid is not null)
+        {
+            // In a raid, heroes go in with the hearts they have left.
+            heroes = [.. heroes.Select((hero, seat) => hero with { Hearts = _raid.HeartsOf(party[seat].Id, party[seat].MaxHearts(_content)) })];
+            _activeRunFile = _raidStore.RunFile(_raid);
+        }
+        else
+        {
+            _activeRunFile = _runFile;
+        }
+
+        var save = new SavedRun { ThemeId = themeId, Seed = seed, FriendlyFire = friendlyFire, Heroes = heroes };
         WriteSave(save);
         ShowGame(save.CreateSetup(_content), party, save);
     }
 
-    /// <summary>Picks the saved run up where it was left, with its characters as they are now.</summary>
-    private async void ContinueRun()
+    /// <summary>Picks the Dungeon Run's saved run up where it was left.</summary>
+    private void ContinueRun()
+    {
+        _raiding = false;
+        _runFromMap = false;
+        ContinueRun(_runFile, null);
+    }
+
+    /// <summary>Picks a saved run up where it was left.</summary>
+    /// <param name="party">The characters playing it (a raid's own); null loads them as they are now.</param>
+    private async void ContinueRun(SavedRunFile file, IReadOnlyList<Character>? party)
     {
         SavedRun run;
         GameSession session;
         try
         {
-            run = _runFile.Load() ?? throw new InvalidDataException("It's gone.");
+            run = file.Load() ?? throw new InvalidDataException("It's gone.");
             session = run.Restore(_content);
         }
         catch (Exception exception) when (exception is InvalidDataException or IOException)
         {
             GD.PushWarning($"The saved run can't be continued: {exception.Message}");
-            ShowDungeonSelect(exception.Message);
+            if (_raiding)
+            {
+                ShowRaidList($"The dungeon can't be continued: {exception.Message}");
+            }
+            else
+            {
+                ShowDungeonSelect(exception.Message);
+            }
+
             return;
         }
 
-        CharacterLoadResult saved = await _characters.LoadAllAsync();
-        List<Character> party = [.. run.Heroes
-            .Select(hero => saved.Characters.FirstOrDefault(character => character.Id == hero.CharacterId))
+        IReadOnlyList<Character> characters = party ?? (await _characters.LoadAllAsync()).Characters;
+        List<Character> playing = [.. run.Heroes
+            .Select(hero => characters.FirstOrDefault(character => character.Id == hero.CharacterId))
             .OfType<Character>()];
         _themeId = run.ThemeId;
         _friendlyFire = run.FriendlyFire;
-        _runFromMap = false;
-        ShowGame(run.CreateSetup(_content), party, run, session);
+        _activeRunFile = file;
+        ShowGame(run.CreateSetup(_content), playing, run, session);
     }
 
     /// <param name="save">Where the run is saved as it's played, or null for a run that isn't (debug runs).</param>
     /// <param name="restored">The saved run, already replayed, to play on from.</param>
     private void ShowGame(RunSetup setup, IReadOnlyList<Character> party, SavedRun? save = null, GameSession? restored = null)
     {
+        SavedRunFile runFile = _activeRunFile;
         var game = new GameScreen { Setup = setup, Content = _content, Restored = restored, SavesRun = save is not null };
         if (save is not null)
         {
@@ -389,7 +553,13 @@ public partial class Main : Control
             };
             game.ExitRequested += () =>
             {
-                if (_runFromMap)
+                if (_raiding)
+                {
+                    // The raid waits, mid-dungeon, to be continued.
+                    SaveRaid(RaidLocation.Map);
+                    ShowRaidList();
+                }
+                else if (_runFromMap)
                 {
                     ShowWoarldMap();
                 }
@@ -408,7 +578,7 @@ public partial class Main : Control
         {
             if (save is not null)
             {
-                _runFile.Delete();
+                runFile.Delete();
             }
 
             FinishRun(results, setup, party);
@@ -428,27 +598,41 @@ public partial class Main : Control
             Party = _woarldParty,
             Leader = _woarldLeader,
             Greeting = _woarldNews,
-            ReplacesSavedRun = _runFile.Exists,
-            BackTooltip = world is null ? "Back to the Dungeon Run list. Your travels are saved." : "Back to Select Mode. The Woarld is saved.",
+            ReplacesSavedRun = world is null && _runFile.Exists,
+            BackTooltip = world is null ? "Back to the Dungeon Run list. Your travels are saved." : "Back to your raids. This raid and the Woarld are saved.",
             RestBoosts = world is null ? null : walkers => world.TakeRestBoosts([.. walkers.Select(hero => hero.Id)], TavernDefinition.LoadDefault()),
+            HeartsText = _raid is null || world is null ? null : RaidHearts,
         };
         _woarldNews = "";
+        SaveRaid(RaidLocation.Map);
         screen.BackRequested += () =>
         {
             SaveMapProgress();
+            SaveRaid();
             if (world is null)
             {
                 ShowDungeonSelect();
             }
             else
             {
-                ShowModeSelect();
+                ShowRaidList();
             }
         };
         screen.JourneyChanged += () =>
         {
             _woarldLeader = screen.Leader;
             SaveMapProgress();
+            SaveRaid();
+        };
+        screen.Rested += (walkers, rolls) =>
+        {
+            if (world is not null && _raid is not null)
+            {
+                foreach ((Character hero, RestRoll roll) in walkers.Zip(rolls))
+                {
+                    _raid.Heal(hero.Id, roll.Hearts, hero.MaxHearts(_content));
+                }
+            }
         };
         if (world is not null)
         {
@@ -480,6 +664,8 @@ public partial class Main : Control
         // The roster, with the party's own copies of its members, so changes show everywhere.
         List<Character> roster = [.. (await _characters.LoadAllAsync()).Characters
             .Select(saved => _woarldParty.FirstOrDefault(member => member.Id == saved.Id) ?? saved)];
+        RaidSave raid = _raid!;
+        raid.HealRooms(world.Journey.Day, id => roster.FirstOrDefault(character => character.Id == id)?.MaxHearts(_content) ?? 1);
         var screen = new TavernScreen
         {
             Tavern = tavern,
@@ -489,15 +675,25 @@ public partial class Main : Control
             Roster = roster,
             Leader = _woarldLeader,
             Greeting = _woarldNews,
+            Raid = raid,
         };
         _woarldNews = "";
+        SaveRaid(RaidLocation.Inn);
         screen.LeaveRequested += () =>
         {
             _woarldLeader = screen.Leader;
             ShowWoarldMap();
         };
-        screen.PartyChanged += () => _woarldLeader = screen.Leader;
-        screen.WorldChanged += SaveRaidWorld;
+        screen.PartyChanged += () =>
+        {
+            _woarldLeader = screen.Leader;
+            SaveRaid();
+        };
+        screen.WorldChanged += () =>
+        {
+            SaveRaidWorld();
+            SaveRaid();
+        };
         screen.CharacterChanged += SaveCharacter;
         screen.RecruitHired += SaveCharacter;
         ShowMenu(screen);
@@ -613,7 +809,7 @@ public partial class Main : Control
     {
         try
         {
-            _runFile.Save(save);
+            _activeRunFile.Save(save);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
@@ -643,6 +839,11 @@ public partial class Main : Control
             }
 
             rows.Add(new ResultRow(result, character, reward));
+        }
+
+        if (_raiding && _raid is not null)
+        {
+            _raid.ApplyRun(results, id => party.FirstOrDefault(member => member.Id == id)?.MaxHearts(_content) ?? 1);
         }
 
         if (results.Any(result => result.Won))

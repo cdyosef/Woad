@@ -88,6 +88,10 @@ public sealed class Character
 
     public Stats BaseStats => PointBuy.ToStats(Allocation);
 
+    /// <summary>Hearts at full health: the base stats plus what equipped gear adds.</summary>
+    public int MaxHearts(ContentCatalog content) =>
+        Math.Max(1, _equipped.Aggregate(BaseStats, (stats, id) => stats + content.GetCard(id).Modifiers).Hearts);
+
     /// <summary>A new level 1 character with the starter kit. Points not spent are kept for later.</summary>
     /// <param name="isCompanion">Make a companion instead of a player's hero; it can't be changed later.</param>
     /// <exception cref="ArgumentException">The name, portrait or allocation isn't allowed.</exception>

@@ -175,20 +175,6 @@ public class WoarldTests
     }
 
     [Fact]
-    public void ANewRaidGathersThePartyAtTheInn()
-    {
-        WoarldJourney journey = WoarldJourney.Begin(Map, 3);
-        journey.Step(Direction.East);
-        journey.Step(Direction.East);
-
-        journey.ReturnTo(Map.Start);
-
-        Assert.Equal(Map.Start, journey.Leader);
-        Assert.Equal([Map.Start, Map.Start], journey.Trail);
-        Assert.Throws<ArgumentException>(() => journey.ReturnTo(new GridPosition(0, 0)));
-    }
-
-    [Fact]
     public void TheLineGrowsAndShrinksWithTheParty()
     {
         WoarldJourney journey = WoarldJourney.Begin(Map, 3);

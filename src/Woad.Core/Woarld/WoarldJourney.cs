@@ -4,6 +4,9 @@ using Woad.Core.Randomness;
 
 namespace Woad.Core.Woarld;
 
+/// <summary>A party's spot on the map and the time: the leader, the line behind, the day and the steps walked.</summary>
+public sealed record JourneyPlace(GridPosition Leader, IReadOnlyList<GridPosition> Trail, int Day, int StepsToday, int TotalSteps);
+
 /// <summary>What a step on the map led to.</summary>
 /// <param name="Error">Why the party couldn't step there, or null if it did.</param>
 /// <param name="NewDay">The step began a new day.</param>
@@ -125,18 +128,22 @@ public sealed class WoarldJourney
     /// <summary>The place the leader stands on, if any.</summary>
     public WoarldPlace? PlaceHere => Map.PlaceAt(Leader);
 
-    /// <summary>Puts the party at a place (a new raid sets out from the inn), the line gathered there.</summary>
-    public void ReturnTo(GridPosition tile)
+    /// <summary>Where a party stands and when: what a raid saves of its own, as the map and its clouds are shared.</summary>
+    public JourneyPlace Place => new(Leader, [.. Trail], Day, StepsToday, TotalSteps);
+
+    /// <summary>Picks a raid's party up where and when it was (the clouds stay as they are: the Woarld is shared).</summary>
+    public void Resume(JourneyPlace place)
     {
-        if (!Map.IsWalkable(tile))
+        if (!Map.IsWalkable(place.Leader) || place.Trail.Any(tile => !Map.IsWalkable(tile)))
         {
-            throw new ArgumentException("The party can't stand there.", nameof(tile));
+            throw new ArgumentException("The party can't stand there.", nameof(place));
         }
 
-        int size = Trail.Count + 1;
-        _line = new PartyLine(tile);
-        _line.SetSize(size);
-        Reveal(tile, SightRadius);
+        _line = PartyLine.Restore(place.Leader, place.Trail);
+        Day = Math.Max(1, place.Day);
+        StepsToday = Math.Clamp(place.StepsToday, 0, StepsPerDay - 1);
+        TotalSteps = Math.Max(0, place.TotalSteps);
+        Reveal(place.Leader, SightRadius);
     }
 
     /// <summary>Makes room in the line for this many heroes (the leader and their followers).</summary>

@@ -4,6 +4,7 @@ using Woad.Core.Grid;
 using Woad.Core.Woarld;
 using Woad.Core.Content;
 using Woad.Core.Model;
+using Woad.Core.Saves;
 using Woad.Core.Tavern;
 using Woad.Scenes.Game;
 using Woad.Scenes.Menu;
@@ -319,6 +320,9 @@ public partial class Main
     private async Task RunTavernTest(ModeSelectScreen modes)
     {
         await Click(this, modes.RaidingPartyButton);
+        RaidListScreen raids = await Screen<RaidListScreen>();
+        Check(raids.RaidCount == 0, "Raiding Party opens the raids list, empty at first");
+        await Click(this, raids.NewRaidButton);
         RunSetupScreen setup = await Screen<RunSetupScreen>();
         await WaitFor(this, () => setup.IsLoaded, "the roster to load");
         await NextFrame(this);
@@ -332,7 +336,10 @@ public partial class Main
         TavernScreen inn = await Screen<TavernScreen>();
         Character wren = inn.Party[0];
         Check(wren.Name == "Wren" && inn.LeaderButton.Text == "Leader: Wren" && inn.Visit.Leader == inn.Tavern.Start, "the party comes in at the inn's door, Wren leading");
+        Check(_raid?.Name == "Wren's Raid" && _raidStore.LoadAll().Raids.Count == 1, "the raid is saved as Wren's Raid");
         wren.EarnGold(60);
+        int full = wren.MaxHearts(_content);
+        _raid.SetHearts(wren.Id, 1, full);
 
         TavernNpc Npc(NpcRole role) => inn.Tavern.Npcs.First(npc => npc.Role == role);
         async Task TalkTo(TavernNpc npc)
@@ -375,8 +382,13 @@ public partial class Main
         await Click(this, inn.ByeButton);
 
         await TalkTo(Npc(NpcRole.Innkeeper));
-        await Click(this, inn.ListButton("Go upstairs", 5)!);
-        Check(inn.Party.Count == 3 && inn.Party.All(member => member.Name != "Morgan"), "the innkeeper lets Morgan wait upstairs");
+        gold = wren.Gold;
+        await Click(this, inn.ListButton("Sleep the night")!);
+        Check(inn.World.Journey.Day == 2 && _raid.HeartsOf(wren.Id, full) == 2 && wren.Gold == gold - 8,
+            "sleeping the night costs a room each, passes a day, and heals Wren a heart");
+        await Click(this, inn.ListButton("Room", 5)!);
+        Check(inn.Party.Count == 3 && inn.Party.All(member => member.Name != "Morgan") && _raid.Rooms.Count == 1 && wren.Gold == gold - 10,
+            "a room upstairs for Morgan costs 2 gold");
         await Click(this, inn.ListButton("Join", 6)!);
         Check(inn.Party.Count == 4 && inn.Party[3].Name == "Morgan", "and Morgan comes back down to join");
         await Click(this, inn.ByeButton);
@@ -392,8 +404,39 @@ public partial class Main
         Check(inn.Party.Count == 4, "the inn on the map leads back inside");
         await Click(this, inn.DoorButton);
         map = await Screen<WoarldMapScreen>();
+        int hearts = _raid.HeartsOf(wren.Id, full);
+        Check(map.Message.Length > 0 && hearts >= 2, "resting healed Wren by her roll");
         await Click(this, map.BackButton);
         Check(File.ReadAllText(_raidWorldPath).Contains("\"waylay_inn\":1"), "the shared Woarld is saved, with the inn's reputation");
+
+        raids = await Screen<RaidListScreen>();
+        Check(raids.RaidCount == 1, "the raids list shows Wren's Raid");
+        await Click(this, raids.ContinueButton(0));
+        map = await Screen<WoarldMapScreen>();
+        Check(map.Party.Count == 4 && map.Journey.PlaceHere?.Id == "waylay_inn" && map.Journey.Day == 2 && _raid.HeartsOf(wren.Id, full) == hearts,
+            "Continue picks the raid up on the map, at the inn on day 2, hearts and all");
+
+        // Off down the road to raid the Keep, and back out mid-dungeon.
+        map.Walk([.. Enumerable.Repeat(Direction.East, 16), .. Enumerable.Repeat(Direction.North, 5), .. Enumerable.Repeat(Direction.East, 6), Direction.North]);
+        await WaitFor(this, () => !map.IsWalking, "the walk to the Keep");
+        await Click(this, map.EnterButton);
+        Check(!map.BeginRaid.DetailText.Contains("replaces"), "a raid's dungeon doesn't touch the Dungeon Run's saved run");
+        await Click(this, map.BeginRaid.RaidButton);
+        GameScreen game = await Screen<GameScreen>();
+        await game.WaitUntilIdle();
+        Check(game.Session.State.Heroes[0].Name == "Wren" && game.Session.State.Heroes[0].Hearts == hearts, "Wren goes into the Keep wounded, with the hearts she had");
+        await Click(this, game.MenuButton);
+        await Click(this, game.MenuButton);
+        raids = await Screen<RaidListScreen>();
+        Check(_raidStore.RunFile(_raid).Exists, "leaving the dungeon keeps it, saved with the raid");
+        await Click(this, raids.ContinueButton(0));
+        game = await Screen<GameScreen>();
+        await game.WaitUntilIdle();
+        Check(game.Session.State.ThemeId == "emerald_keep" && game.Session.State.Heroes[0].Hearts == hearts, "Continue goes back into the Keep");
+        await Click(this, game.MenuButton);
+        await Click(this, game.MenuButton);
+        raids = await Screen<RaidListScreen>();
+        await Click(this, raids.BackButton);
     }
 
     private async Task<T> Screen<T>() where T : Control

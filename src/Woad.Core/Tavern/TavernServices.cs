@@ -2,6 +2,8 @@ using Woad.Core.Characters;
 using Woad.Core.Content;
 using Woad.Core.Model;
 using Woad.Core.Randomness;
+using Woad.Core.Saves;
+using Woad.Core.Woarld;
 
 namespace Woad.Core.Tavern;
 
@@ -22,6 +24,9 @@ public sealed record RecruitOffer(string Name, Appearance Appearance, string Por
 public static class TavernServices
 {
     public const int MaxWager = 20;
+
+    /// <summary>A room at the inn, for a night or for as long as someone waits upstairs.</summary>
+    public const int RoomPrice = 2;
 
     /// <summary>Recruits on offer at a time.</summary>
     public const int RecruitsOffered = 3;
@@ -223,6 +228,39 @@ public static class TavernServices
         return (new ServiceResult(true, $"{buyer.Name} hires {offer.Name} for {offer.Price} gold. {offer.Name} joins as {buyer.Name}'s companion."), recruit);
     }
 
+    /// <summary>
+    /// Rents a room for someone leaving the party to wait upstairs: they heal a heart for every day
+    /// they rest there.
+    /// </summary>
+    public static ServiceResult RentRoom(RaidSave raid, int day, Character payer, Character guest)
+    {
+        if (!payer.SpendGold(RoomPrice))
+        {
+            return NotEnough(payer, RoomPrice);
+        }
+
+        raid.RentRoom(guest.Id, day);
+        return new ServiceResult(true, $"{payer.Name} rents {guest.Name} a room for {RoomPrice} gold. {guest.Name} will heal a heart a day up there.");
+    }
+
+    /// <summary>
+    /// Rooms for the whole party for the night: a day passes, and everyone heals a heart (and those
+    /// resting upstairs, a heart for the day). <paramref name="maxHearts"/> gives any character's full health.
+    /// </summary>
+    public static ServiceResult SleepTheNight(RaidSave raid, WoarldJourney journey, Character payer, IReadOnlyList<Character> party, Func<Guid, int> maxHearts)
+    {
+        int price = RoomPrice * party.Count;
+        if (!payer.SpendGold(price))
+        {
+            return NotEnough(payer, price);
+        }
+
+        journey.PassDay();
+        raid.HealRooms(journey.Day, maxHearts);
+        int healed = party.Sum(member => raid.Heal(member.Id, 1, maxHearts(member.Id)));
+        return new ServiceResult(true, $"{payer.Name} pays {price} gold for rooms. Everyone sleeps soundly: day {journey.Day} dawns, and {UiCount(healed, "heart is", "hearts are")} healed.");
+    }
+
     /// <summary>The next rumor an NPC tells: one that marks the map clears the clouds there.</summary>
     public static Rumor? NextRumor(RaidWorld world, TavernNpc npc)
     {
@@ -249,6 +287,8 @@ public static class TavernServices
         2 => new StatAllocation { OdHandDice = 1, Luck = 3 },
         _ => new StatAllocation { Hearts = 4, Luck = 2 },
     };
+
+    private static string UiCount(int amount, string singular, string plural) => $"{amount} {(amount == 1 ? singular : plural)}";
 
     private static ServiceResult NotEnough(Character who, int price) =>
         ServiceResult.Refused($"{who.Name} has {who.Gold} gold; that costs {price}.");

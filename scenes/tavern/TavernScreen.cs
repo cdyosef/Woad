@@ -3,6 +3,7 @@ using Woad.Core.Characters;
 using Woad.Core.Content;
 using Woad.Core.Grid;
 using Woad.Core.Randomness;
+using Woad.Core.Saves;
 using Woad.Core.Tavern;
 using Woad.Scenes.Ui;
 
@@ -68,6 +69,9 @@ public partial class TavernScreen : Control
     }
 
     public string Greeting { get; init; } = "";
+
+    /// <summary>The raid being played: everyone's hearts, and who rests in a room.</summary>
+    public RaidSave Raid { get; init; } = null!;
 
     /// <summary>The party walked out of the door.</summary>
     public event Action? LeaveRequested;
@@ -136,6 +140,7 @@ public partial class TavernScreen : Control
         AddChild(new Panel { Size = new Vector2(Size.X, BarHeight), MouseFilter = MouseFilterEnum.Ignore });
         _status = UiTheme.Label(new Vector2(8, 2), new Vector2(Size.X - 16, 14), color: Palette.TrimBright);
         _status.AutowrapMode = TextServer.AutowrapMode.Off;
+        _status.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
         AddChild(_status);
         _message = UiTheme.Label(new Vector2(8, 16), new Vector2(Size.X - 16, 14), Greeting.Length > 0 ? Greeting : $"Welcome to {Tavern.Name}. Walk up to anyone to talk, or click them.");
         _message.AutowrapMode = TextServer.AutowrapMode.Off;
@@ -308,8 +313,8 @@ public partial class TavernScreen : Control
         }
 
         _visit.SetPartySize(Party.Count);
-        _status.Text = $"{Tavern.Name.ToUpperInvariant()}   Reputation {World.Reputation(Tavern.Id)}   Gold: " +
-                       string.Join(", ", Party.Select(member => $"{member.Name} {member.Gold}"));
+        _status.Text = $"{Tavern.Name.ToUpperInvariant()}   Day {World.Journey.Day}   Reputation {World.Reputation(Tavern.Id)}   " +
+                       string.Join("   ", Party.Select(member => $"{member.Name} {HeartsOf(member)}/{member.MaxHearts(Content)} hearts {member.Gold} gold"));
         LeaderButton.Text = $"Leader: {_leader.Name}";
         LeaderButton.Disabled = Party.Count(member => !member.IsCompanion) < 2;
         TavernNpc? near = _visit.NpcInReach;
@@ -523,22 +528,81 @@ public partial class TavernScreen : Control
 
     private void ShowRooms()
     {
-        Row("Renting a room to heal comes with Raid saves. For now: who travels with you?", 536);
+        RowButton(Row($"Rooms for the whole party tonight ({TavernServices.RoomPrice * Party.Count} gold): a day passes, and everyone heals a heart.", 436),
+            "Sleep the night", 96, () => Done(TavernServices.SleepTheNight(Raid, World.Journey, _payer, Party, MaxHeartsOf), _payer));
         Row("IN THE PARTY", 536).GetChild<Label>(0).AddThemeColorOverride("font_color", Palette.Trim);
         foreach (Character member in Party.ToList())
         {
             string owner = member.IsCompanion && OwnerOf(member) is { } player ? $", {player.Name}'s companion" : "";
-            Button leave = RowButton(Row($"{member.Name}, level {member.Level}{owner}", 436), "Go upstairs", 96, () => Unseat(member));
+            int leaving = Leaving(member).Count;
+            Button leave = RowButton(Row($"{member.Name}, level {member.Level}, {HeartsOf(member)}/{member.MaxHearts(Content)} hearts{owner}", 436),
+                $"Room, {TavernServices.RoomPrice * leaving} gold", 96, () => GoUpstairs(member));
             leave.Disabled = member == _leader;
-            leave.TooltipText = member == _leader ? "The leader can't leave. Pass the lead first." : "";
+            leave.TooltipText = member == _leader
+                ? "The leader can't leave. Pass the lead first."
+                : $"A room upstairs for {(leaving > 1 ? $"{member.Name} and their companions" : member.Name)}, healing a heart a day until they rejoin.";
         }
 
         Row("WAITING UPSTAIRS", 536).GetChild<Label>(0).AddThemeColorOverride("font_color", Palette.Trim);
         foreach (Character waiting in Roster.Where(character => !Party.Contains(character)))
         {
-            Button join = RowButton(Row($"{waiting.Name}, level {waiting.Level}{(waiting.IsCompanion ? $", companion: joins {SeatOwner().Name}" : "")}", 436), "Join", 96, () => Seat(waiting));
+            string room = Raid.Rooms.ContainsKey(waiting.Id) ? ", resting in a room" : "";
+            Button join = RowButton(Row($"{waiting.Name}, level {waiting.Level}, {HeartsOf(waiting)}/{waiting.MaxHearts(Content)} hearts{room}{(waiting.IsCompanion ? $", companion: joins {SeatOwner().Name}" : "")}", 436),
+                "Join", 96, () => Rejoin(waiting));
             join.Disabled = Party.Count >= Woad.Core.Rules.GameRules.MaxHeroes;
         }
+    }
+
+    private int HeartsOf(Character character) => Raid.HeartsOf(character.Id, character.MaxHearts(Content));
+
+    private int MaxHeartsOf(Guid id) => Roster.FirstOrDefault(character => character.Id == id)?.MaxHearts(Content) ?? 1;
+
+    /// <summary>Who goes upstairs with someone: a player takes their companions along.</summary>
+    private List<Character> Leaving(Character character)
+    {
+        int index = Party.IndexOf(character);
+        int count = 1;
+        while (!character.IsCompanion && index + count < Party.Count && Party[index + count].IsCompanion)
+        {
+            count++;
+        }
+
+        return Party.GetRange(index, count);
+    }
+
+    /// <summary>Rents rooms for someone (and their companions) and sends them up to rest.</summary>
+    private void GoUpstairs(Character member)
+    {
+        List<Character> leaving = Leaving(member);
+        int price = TavernServices.RoomPrice * leaving.Count;
+        if (_payer.Gold < price)
+        {
+            Done(ServiceResult.Refused($"{_payer.Name} has {_payer.Gold} gold; rooms cost {price}."), null);
+            return;
+        }
+
+        foreach (Character guest in leaving)
+        {
+            TavernServices.RentRoom(Raid, World.Journey.Day, _payer, guest);
+        }
+
+        Unseat(member);
+        Done(new ServiceResult(true, $"{_payer.Name} pays {price} gold for rooms. {DialogText}"), _payer);
+    }
+
+    /// <summary>Brings someone back down, healed for the days they rested in their room.</summary>
+    private void Rejoin(Character waiting)
+    {
+        int before = HeartsOf(waiting);
+        Raid.LeaveRoom(waiting.Id, World.Journey.Day, waiting.MaxHearts(Content));
+        int healed = HeartsOf(waiting) - before;
+        Seat(waiting);
+        if (healed > 0)
+        {
+            _dialogText.Text += $" Rested, {waiting.Name} healed {UiTheme.Count(healed, "heart", "hearts")}.";
+        }
+
+        WorldChanged?.Invoke();
     }
 
     private void ShowBones()

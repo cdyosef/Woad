@@ -58,7 +58,13 @@ public partial class WoarldMapScreen : Control
     /// <summary>What the Back button says it does.</summary>
     public string BackTooltip { get; init; } = "Back to the Dungeon Run list. Your travels are saved.";
 
+    /// <summary>A hero's hearts, for the status bar ("3/5"); null when hearts don't carry over (a Dungeon Run).</summary>
+    public Func<Character, string>? HeartsText { get; init; }
+
     public event Action? BackRequested;
+
+    /// <summary>The party rested: the heroes (in walking order) and their Rest rolls, to heal them.</summary>
+    public event Action<IReadOnlyList<Character>, IReadOnlyList<RestRoll>>? Rested;
 
     /// <summary>The party went into a place that isn't a dungeon (a tavern). Without a handler, such places aren't open yet.</summary>
     public event Action<WoarldPlace>? PlaceEntered;
@@ -100,6 +106,7 @@ public partial class WoarldMapScreen : Control
         AddChild(new Panel { Size = new Vector2(Size.X, BarHeight), MouseFilter = MouseFilterEnum.Ignore });
         _status = UiTheme.Label(new Vector2(8, 2), new Vector2(Size.X - 16, 14), color: Palette.TrimBright);
         _status.AutowrapMode = TextServer.AutowrapMode.Off;
+        _status.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
         AddChild(_status);
         _message = UiTheme.Label(new Vector2(8, 16), new Vector2(Size.X - 16, 14), Greeting, color: Palette.Text);
         _message.AutowrapMode = TextServer.AutowrapMode.Off;
@@ -253,6 +260,7 @@ public partial class WoarldMapScreen : Control
         List<Character> walkers = [.. WalkingOrder];
         (IReadOnlyList<RestRoll> rolls, bool newDay, _) = Journey.Rest(_random, walkers.Count, RestBoosts?.Invoke(walkers));
         Sfx.Play("dice");
+        Rested?.Invoke(walkers, rolls);
         IEnumerable<string> lines = walkers.Zip(rolls, (hero, roll) =>
             $"{hero.Name} {string.Join(" ", roll.Dice)}{(roll.Bonus > 0 ? $" +{roll.Bonus}" : "")}{(roll.Hearts > 0 ? $" (+{UiTheme.Count(roll.Hearts, "heart", "hearts")})" : "")}");
         Say($"{(newDay ? $"Rested into day {Journey.Day}" : "Rested")}: {string.Join(", ", lines)}.");
@@ -309,7 +317,8 @@ public partial class WoarldMapScreen : Control
     {
         Character leader = Party[Leader];
         string time = Journey.IsDay ? $"Daylight, {Journey.StepsUntilChange} steps to nightfall" : $"Night, {Journey.StepsUntilChange} steps to dawn";
-        _status.Text = $"{Journey.Map.Name.ToUpperInvariant()}   Day {Journey.Day}   {time}   {UiTheme.Count(Journey.TotalSteps, "step", "steps")} walked";
+        _status.Text = $"{Journey.Map.Name.ToUpperInvariant()}   Day {Journey.Day}   {time}   {UiTheme.Count(Journey.TotalSteps, "step", "steps")} walked" +
+                       (HeartsText is null ? "" : "   " + string.Join("  ", WalkingOrder.Select(hero => $"{hero.Name} {HeartsText(hero)}")));
         LeaderButton.Text = $"Leader: {leader.Name}";
         LeaderButton.Disabled = Party.Count(hero => !hero.IsCompanion) < 2;
 
