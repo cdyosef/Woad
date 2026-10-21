@@ -114,6 +114,7 @@ public partial class MinimapView : Control
         RoomRole.Boss => room.Monsters.Any(monster => monster.Definition.Boss) ? "!" : "exit",
         RoomRole.Treasure or RoomRole.Secret => "$",
         RoomRole.Vault => "key",
+        RoomRole.Den => room.Monsters.Count > 0 ? "!" : "$",
         RoomRole.Arrival when room.Floor > 1 => "^",
         _ => null,
     };

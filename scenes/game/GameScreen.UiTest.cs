@@ -1,4 +1,5 @@
 using Godot;
+using Woad.Core.Commands;
 using Woad.Core.Content;
 using Woad.Core.Grid;
 using Woad.Core.Model;
@@ -412,6 +413,81 @@ public partial class GameScreen
         catch (Exception exception)
         {
             GD.PushError($"Rumble test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
+    /// <summary>
+    /// Debug mode (<c>-- --dentest</c>, with <see cref="DemoRun.Den"/>): Aria walks through the door into
+    /// the Ogre Champ's den, which starts its song, then fights it for a few rounds (its blows may well
+    /// knock her into the pits and down to the cellar).
+    /// </summary>
+    private async void RunDenTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            await ExecuteAsync(new RollMovement(aria.Id));
+            await WaitUntilIdle();
+            await ConfirmIfHeld();
+            await ExecuteAsync(new GoThroughDoor(aria.Id, Direction.North));
+            await WaitUntilIdle();
+            Check(aria.RoomId == "den", "Aria goes through the door into the den");
+            Check(Music.Current == "ogre", "the Ogre Champ's song plays");
+            Monster champ = ShownRoom.Monsters.Single();
+            Check(champ.Definition.Id == "ogre_champ" && _figures.ContainsKey(champ.Id), "the Ogre Champ waits on its platform");
+
+            for (int round = 0; round < 4 && _session.State.Phase == RunPhase.InProgress && aria.IsActive; round++)
+            {
+                await Click(this, _endTurn);
+                await WaitUntilIdle();
+            }
+
+            GD.Print($"Den test passed (Aria ends in {aria.RoomId} at {aria.Position}).");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Den test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
+    /// <summary>
+    /// Debug mode (<c>-- --monstertest</c>, with <see cref="DemoRun.Menagerie"/>): clicking the chest
+    /// beside Aria wakes a Mimic in its place, whose grab (when it lands) shuts off Wend; then a few
+    /// rounds of the new monsters acting on the board, the Necromancer raising the dead among them.
+    /// </summary>
+    private async void RunMonsterTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            var chest = new GridPosition(5, 4);
+
+            await ClickTile(chest);
+            await WaitUntilIdle();
+            Check(ShownRoom.Layout[chest] == TileKind.Floor && ShownRoom.MonsterAt(chest)?.Definition.Id == "mimic", "clicking the chest wakes a Mimic where it stood");
+            Check(_figures.Values.Any(figure => figure.Position == chest && !figure.IsHero), "the Mimic is on the board");
+            Check(_session.HeldBy(aria) is null || _roll.Disabled, "held by the Mimic, Aria can't roll to move");
+
+            for (int round = 0; round < 3 && _session.State.Phase == RunPhase.InProgress; round++)
+            {
+                await Click(this, _endTurn);
+                await WaitUntilIdle();
+            }
+
+            Check(ShownRoom.Monsters.Any(monster => monster.RaisedBy is not null), "the Necromancer has raised the dead");
+            Check(ShownRoom.Monsters.All(monster => _figures.ContainsKey(monster.Id)), "every monster has a figure");
+
+            GD.Print("Monster test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Monster test failed: {exception.Message}");
             Sfx.QuitGame(this, 1);
         }
     }

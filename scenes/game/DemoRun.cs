@@ -197,6 +197,57 @@ public static class DemoRun
         StartRoomId = "vault",
     };
 
+    /// <summary>
+    /// For --monstertest: a tough Aria beside a chest that's really a Mimic, with an Ogre, a
+    /// Necromancer, a Hexer and a Gelatinous Cube in the corners.
+    /// </summary>
+    public static RunSetup Menagerie(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 30, Luck = 2 } }],
+        Rooms =
+        [
+            new RoomSetup(
+                "den",
+                RoomTemplate.Parse("n.......h\n.........\n.........\n.........\n....1C...\n.........\n.........\n.........\no.......u", ContentCatalog.LoadDefault()),
+                Features: new RoomFeatures { Mimics = new Dictionary<Woad.Core.Grid.GridPosition, int> { [new(5, 4)] = 20 } }),
+        ],
+        StartRoomId = "den",
+    };
+
+    /// <summary>
+    /// For --dentest: a tough Aria in the doorway of a hall that leads north into the Ogre Champ's
+    /// den, with a room under the den for its pits to drop into.
+    /// </summary>
+    public static RunSetup Den(ulong seed)
+    {
+        ContentCatalog content = ContentCatalog.LoadDefault();
+        RoomTemplate den = DungeonGenerator.DenLayout(content.GetMonster("ogre_champ"), Woad.Core.Grid.Direction.South);
+        Woad.Core.Grid.GridPosition chest = den.TilesOf(Woad.Core.Grid.TileKind.Chest).Single();
+        return new RunSetup
+        {
+            Seed = seed,
+            ThemeId = "emerald_keep",
+            Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 30 } }],
+            Rooms =
+            [
+                new RoomSetup("hall", RoomTemplate.Parse("....1....\n.........\n.........\n.........\n.........\n.........\n.........\n.........\n.........", content),
+                    new Dictionary<Woad.Core.Grid.Direction, string> { [Woad.Core.Grid.Direction.North] = "den" }, MapPosition: new(2, 3)),
+                new RoomSetup("den", den,
+                    new Dictionary<Woad.Core.Grid.Direction, string> { [Woad.Core.Grid.Direction.South] = "hall" }, MapPosition: new(2, 2), Role: RoomRole.Den,
+                    Features: new RoomFeatures
+                    {
+                        LockedChests = new Dictionary<Woad.Core.Grid.GridPosition, int> { [chest] = GameRules.GrandChestLockDifficulty(1) },
+                        GrandChests = [chest],
+                    }),
+                new RoomSetup("cellar", RoomTemplate.Parse(".........\n.........\n.........\n.........\n.........\n.........\n.........\n.........\n.........", content),
+                    Floor: 2, MapPosition: new(2, 2)),
+            ],
+            StartRoomId = "hall",
+        };
+    }
+
     /// <summary>For --tradetest: Aria with two potions and her companion Pip beside her, a Knight's Sword in its pack.</summary>
     public static RunSetup Camp(ulong seed) => new()
     {

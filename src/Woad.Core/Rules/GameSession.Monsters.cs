@@ -104,6 +104,7 @@ public sealed partial class GameSession
 
         monster.TurnsTaken++;
         MonsterDefinition definition = monster.Definition;
+        RaiseDead(room, monster, events);
 
         // A thief with loot runs from everyone, and does nothing else.
         if (definition.Thief && monster.HasLoot)
@@ -139,6 +140,11 @@ public sealed partial class GameSession
             {
                 monster.FireDice = 0;
                 events.Add(new FireOut(monster.Id, FireOutCause.Water));
+            }
+
+            if (definition.Engulfs)
+            {
+                Engulf(room, monster, path, events);
             }
         }
 

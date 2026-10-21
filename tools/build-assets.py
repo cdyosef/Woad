@@ -430,6 +430,123 @@ MONSTERS = {
         "........",
     ], {"o": "#2a2420", "w": "#e8e2d0", "e": "#c03030", "t": "#2a2420"}, mirror=True)),
 
+    "ogre": (sprite([  # big, green and tusked
+        "........",
+        "....oooo",
+        "...ossss",
+        "..osssss",
+        "..osesss",
+        "..osssss",
+        "..osswss",
+        "...ossss",
+        ".obbbbbb",
+        "obsbbbbb",
+        "osobbbbb",
+        "osolllll",
+        "..oppppp",
+        "..oppo..",
+        "..okko..",
+        "..oooo..",
+    ], {"o": "#1e140c", "s": "#c8844a", "e": "#ffe060", "w": "#f0ead8", "b": "#6a4a2a",
+        "l": "#3a2a18", "p": "#5a4a6a", "k": "#2a1e14"}, mirror=True)),
+
+    "ogre_champ": (sprite([  # bigger, fatter, shirtless and horned, with a great club
+        ".............cc.",
+        "..o.........occc",
+        "...ho......oh.cc",
+        "....hooooooh..cc",
+        "....osssssso..cc",
+        "....osesseso..cc",
+        "....owsssswo..cc",
+        "..oossssssssoocc",
+        ".ossssssssssssso",
+        "ossossddddssosso",
+        "ossoddddddddosso",
+        ".oo.bbbbbbbb.oo.",
+        "....pppppppp....",
+        "....ppp..ppp....",
+        "....kkk..kkk....",
+        "................",
+    ], {"o": "#1e140c", "s": "#d0864a", "d": "#a8642e", "h": "#f0e6c8", "e": "#ff4030", "w": "#ffffff",
+        "c": "#7a4a20", "b": "#5a3a1a", "p": "#4a3a5a", "k": "#2a1e14"})),
+
+    "necromancer": (sprite([  # a hooded skull with glowing green eyes and hands
+        "........",
+        "......oo",
+        ".....ohh",
+        "....ohhh",
+        "....ohww",
+        "....ohew",
+        "....ohww",
+        "...ohhhh",
+        "..ohhhgh",
+        "..ohhhhh",
+        ".oghhhhh",
+        ".ohhhhhh",
+        ".ohhhhhh",
+        "ohhhhhhh",
+        "oooooooo",
+        "........",
+    ], {"o": "#120c18", "h": "#3a2650", "w": "#e8e2d0", "e": "#60ff80", "g": "#60ff80"}, mirror=True)),
+
+    "hexer": (sprite([  # a green-faced witch in a pointed hat
+        ".......o",
+        "......oh",
+        "......oh",
+        ".....ohh",
+        "....ohhh",
+        "..oooooo",
+        "....osss",
+        "....oses",
+        "....osss",
+        "...orrrr",
+        "..orrrrr",
+        "..orrrrr",
+        ".orrrrrr",
+        ".orrrrrr",
+        ".ooooooo",
+        "........",
+    ], {"o": "#140e1a", "h": "#2a1a3a", "s": "#8ac070", "e": "#1a1410", "r": "#6a2a5a"}, mirror=True)),
+
+    "gelatinous_cube": (sprite([  # a quivering block of jelly
+        "........",
+        "........",
+        ".ooooooo",
+        ".oliiiii",
+        ".oliiiii",
+        ".oiiiiii",
+        ".oiiiiii",
+        ".oiiiiii",
+        ".oiiiiii",
+        ".oiiiiii",
+        ".oiiiiii",
+        ".oiiiiii",
+        ".odddddd",
+        ".ooooooo",
+        "........",
+        "........",
+    ], {"o": "#2a6a6a", "i": "#7ae0d8", "l": "#d8fff8", "d": "#4ab0a8"}, mirror=True)),
+
+    "mimic": (sprite([  # a chest gaping open: teeth, a tongue, and eyes on the lid
+        "........",
+        "........",
+        "..oooooo",
+        ".owwewww",
+        ".oddgddd",
+        ".otototo",
+        ".okkkkkk",
+        ".okkrrrr",
+        ".okkrrrr",
+        ".otototo",
+        ".owwwwww",
+        ".oddgddd",
+        ".owwwwww",
+        ".ooooooo",
+        "........",
+        "........",
+    ], {"o": "#2a1a10", "w": "#b07840", "d": "#8a5a2b", "g": "#e2c47a", "t": "#f0ead8",
+        "k": "#1a0a08", "r": "#c83a4a", "e": "#ff5040"}, mirror=True)),
+
     "cinder_imp": (sprite([
         "........",
         "........",
@@ -565,6 +682,9 @@ MONSTERS = {
 WOOD = {"o": "#2a1a10", "w": "#b07840", "d": "#8a5a2b", "g": "#e2c47a", "y": "#3a2a10", "i": "#1a0f08"}
 
 # The Sunken Temple's own monsters (its other monsters borrow the Emerald Keep's sprites).
+# Monsters only the Emerald Keep has.
+KEEP_ONLY = {"ogre", "ogre_champ", "necromancer", "hexer", "gelatinous_cube", "mimic"}
+
 TEMPLE_MONSTERS = {
     "snapper_eel": sprite([
         "........", "........", "........",
@@ -835,6 +955,26 @@ OBJECTS["chest_boss"] = sprite([
     ".oooooooooooooo.",
     "................", "................",
 ], {**WOOD, "g": "#c8343e", "y": "#f0c94a", "Y": "#b08020", "w": "#c89040", "k": "#1a1410"})
+
+# A den's grand chest: gilded and royal purple, a ruby on the lid and a heavy lock.
+OBJECTS["chest_grand"] = sprite([
+    "................",
+    "...oooooooooo...",
+    "..oyyyyyyyyyyo..",
+    ".oyYppppppppYyo.",
+    "oyYppppyyppppYyo",
+    "oyppppyrryppppyo",
+    "oyppppyrryppppyo",
+    "oyYppppyyppppYyo",
+    "oggggggYYggggggo",
+    "oyppppYkkYppppyo",
+    "oyppppYkkYppppyo",
+    "oyppppYYYYppppyo",
+    "oyYppppppppppYyo",
+    "oyyyyyyyyyyyyyyo",
+    "oooooooooooooooo",
+    "................",
+], {"o": "#2a1a10", "y": "#f0c94a", "Y": "#b08020", "p": "#6a2a8a", "r": "#e0304a", "g": "#b08020", "k": "#1a1410"})
 
 # ---- Stat and key icons (12x12) -------------------------------------------------------------
 
@@ -1323,6 +1463,16 @@ def write_wav(path, samples):
         file.writeframes(b"".join(struct.pack("<h", int(max(-1.0, min(1.0, s)) * 32000)) for s in samples))
 
 
+def laugh():
+    """A big, low "HAR HAR HAR!": three buzzing syllables, each falling in pitch, the last held longest."""
+    samples = []
+    for start, length in [(150, 0.17), (138, 0.17), (126, 0.34)]:
+        voice = tone(lambda t, f=start: f * (1 - 0.35 * t) + 6 * math.sin(t * 70), length, square, 0.2, release=0.06)
+        breath = noise(length, 0.12, decay=6, seed=int(start), lowpass=0.6)
+        samples += mix(voice, breath) + [0.0] * int(RATE * 0.05)
+    return samples
+
+
 def build_sounds(directory):
     clack = lambda seed: noise(0.035, 0.55, decay=90, seed=seed, lowpass=0.2)
     dice = []
@@ -1348,6 +1498,7 @@ def build_sounds(directory):
         "boom": mix(noise(0.7, 0.75, decay=5, seed=41, lowpass=0.12), tone(lambda t: 85 - 50 * t, 0.55, volume=0.3, release=0.35)),
         "fuse": noise(0.25, 0.18, decay=8, seed=43, lowpass=0.9),
         "victory": notes([(523, 0.1), (659, 0.1), (784, 0.1), (1047, 0.12), (784, 0.08), (1047, 0.35)], volume=0.25),
+        "laugh": laugh(),
     }
     for name, samples in sounds.items():
         write_wav(directory / f"{name}.wav", samples)
@@ -1551,6 +1702,31 @@ def boss_theme():
     return song.samples
 
 
+OGRE_BEAT = [  # a heavy stomp: kick on the beat, a snare on two and four, toms rolling into each new phrase
+    "c...s...k.k.s...", "k...s...k.k.s...", "k...s...k.k.s...", "k...s...k.k.s.ss",
+    "c...s...k.k.s...", "k...s...k.k.s...", "k...s...k.k.s...", "k.k.s.k.s.s.sskk",
+    "c...s...k.k.s...", "k...s...k.k.s...", "k...s...k.k.s...", "k...s...k.k.s.ss",
+    "c...s...k.k.s...", "k...s...k.k.s...", "k...s...k.k.s...", "s.s.s.s.ssssskkk",
+]
+
+
+def ogre_theme():
+    """The Ogre Champ's den: a brutish C minor march, chugging bass and a stomping beat."""
+    chords = ["Cm", "Cm", "G#", "G", "Cm", "Cm", "F", "G", "G#", "A#", "Cm", "Cm", "F", "G#", "G", "G"]
+    song = Song(bpm=150, beats=64)
+    melody = ("C5/1 C5/0.5 D#5/0.5 F5/1 F#5/1 | G5/1.5 F5/0.5 D#5/1 C5/1 | G#5/1 G5/1 F5/1 D#5/1 | D5/2 G4/2 |"
+              "C5/1 C5/0.5 D#5/0.5 F5/1 F#5/1 | G5/1 A#5/1 G5/1 F5/1 | D#5/1 F5/1 D5/1 B4/1 | C5/2 -/2 |"
+              "G#5/1.5 G5/0.5 G#5/1 A#5/1 | C6/2 A#5/1 G#5/1 | G5/1.5 F5/0.5 D#5/1 F5/1 | G5/2 C5/2 |"
+              "F5/1 G#5/1 C6/1 A#5/1 | G#5/1 G5/1 F5/1 D#5/1 | D5/1 D#5/1 F5/1 G5/1 | G5/2 B4/2")
+    song.voice(melody, pulse(0.5), 0.09, transpose=-12)
+    song.voice(melody, pulse(0.25), 0.05)
+    song.bass(chords, [(0, 0.5), (0, 0.5), (12, 0.5), (0, 0.5), (0, 0.5), (0, 0.5), (12, 0.5), (10, 0.5)], 0.22)
+    song.arpeggio(chords, [0, 2, 1, 2] * 4, pulse(0.125), 0.025, step=0.25)
+    for bar, pattern in enumerate(OGRE_BEAT):
+        song.drum_bar(bar, pattern, 0.15)
+    return song.samples
+
+
 def victory_tune():
     """The results screen after someone escapes: a rising C major fanfare."""
     song = Song(bpm=132, beats=8, tail_seconds=0.8)
@@ -1577,6 +1753,7 @@ def build_music(directory):
         "dungeon": dungeon_theme(),
         "temple": temple_theme(),
         "boss": boss_theme(),
+        "ogre": ogre_theme(),
         "victory": victory_tune(),
         "defeat": defeat_tune(),
     }
@@ -1614,7 +1791,7 @@ def build_theme(name, monsters, colors, floors):
 def main():
     build_theme("emerald_keep", MONSTERS, KEEP_TILES,
                 [("#6fa48a", "#5a8f78", "#3d6555", "#4f7f6a"), ("#68a084", "#548a72", "#3a6152", "#4a7863")])
-    build_theme("sunken_temple", {**MONSTERS, **TEMPLE_MONSTERS}, TEMPLE_TILES,
+    build_theme("sunken_temple", {**{name: art for name, art in MONSTERS.items() if name not in KEEP_ONLY}, **TEMPLE_MONSTERS}, TEMPLE_TILES,
                 [("#c9b48e", "#b39d78", "#7d6a4e", "#9c8664"), ("#c4ae88", "#ad9772", "#78664a", "#968060")])
 
     heroes = ASSETS / "heroes"

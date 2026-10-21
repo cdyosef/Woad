@@ -431,6 +431,12 @@ public sealed partial class GameSession
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
         SpendLoot();
+        if (room.MimicAt(command.Chest) is not null)
+        {
+            WakeMimic(room, command.Chest, hero, events);
+            return null;
+        }
+
         if (room.ChestLockAt(command.Chest) is not null)
         {
             hero.Keys--;
@@ -449,13 +455,21 @@ public sealed partial class GameSession
             }
         }
 
-        // A chest that was locked holds two cards, dealt as if from a floor deeper.
+        // A chest that was locked holds two cards, dealt as if from a floor deeper; a grand chest three,
+        // as if from two floors deeper, and gold besides.
         bool superior = room.IsSuperiorChest(command.Chest);
+        bool grand = room.IsGrandChest(command.Chest);
         bool bossKey = room.HoldsBossKey(command.Chest);
         room.OpenChest(command.Chest);
-        List<CardInstance> cards = Enumerable.Range(0, superior ? 2 : 1)
-            .Select(_ => new CardInstance(State.NextId(), State.LootDeck.Draw(superior ? room.Floor + 1 : room.Floor), broughtInByHeroId: null))
+        int depth = room.Floor + (grand ? 2 : superior ? 1 : 0);
+        List<CardInstance> cards = Enumerable.Range(0, grand ? 3 : superior ? 2 : 1)
+            .Select(_ => new CardInstance(State.NextId(), State.LootDeck.Draw(depth), broughtInByHeroId: null))
             .ToList();
+        if (grand)
+        {
+            GiveGold(hero, GameRules.GrandChestGold, events);
+        }
+
         // Coins go straight into the purse; the rest stay in the chest to take or leave.
         foreach (CardInstance coins in cards.Where(card => card.Definition.Coins))
         {

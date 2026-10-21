@@ -12,6 +12,8 @@ public sealed class Room
     private readonly Dictionary<GridPosition, Trap> _traps = [];
     private readonly Dictionary<GridPosition, Trap> _chestTraps = [];
     private readonly Dictionary<GridPosition, int> _chestLocks = [];
+    private readonly Dictionary<GridPosition, int> _mimics = [];
+    private readonly HashSet<GridPosition> _grandChests = [];
     private readonly Dictionary<GridPosition, int> _gates = [];
     private readonly Dictionary<GridPosition, int> _hiddenGates = [];
     private readonly Dictionary<GridPosition, (string RoomId, GridPosition Tile)> _breaches = [];
@@ -99,6 +101,14 @@ public sealed class Room
     public Trap? TrapAt(GridPosition position) => _traps.GetValueOrDefault(position);
 
     public Trap? ChestTrapAt(GridPosition position) => _chestTraps.GetValueOrDefault(position);
+
+    /// <summary>The search needed to see that a chest is a mimic, or null when it's a real chest.</summary>
+    public int? MimicAt(GridPosition position) => _mimics.TryGetValue(position, out int difficulty) ? difficulty : null;
+
+    public IReadOnlyDictionary<GridPosition, int> Mimics => _mimics;
+
+    /// <summary>A den's grand chest: three cards dealt as if from two floors deeper, and gold.</summary>
+    public bool IsGrandChest(GridPosition position) => _grandChests.Contains(position);
 
     /// <summary>The Od Hand needed to pick a chest's lock, or null when it isn't locked.</summary>
     public int? ChestLockAt(GridPosition position) => _chestLocks.TryGetValue(position, out int difficulty) ? difficulty : null;
@@ -208,6 +218,20 @@ public sealed class Room
     }
 
     internal void UnlockChest(GridPosition position) => _chestLocks.Remove(position);
+
+    internal void HideMimic(GridPosition position, int difficulty) => _mimics[position] = difficulty;
+
+    internal void MakeGrandChest(GridPosition position) => _grandChests.Add(position);
+
+    /// <summary>A mimic wakes: its chest is gone, leaving floor where it stood.</summary>
+    internal void WakeMimic(GridPosition position)
+    {
+        _mimics.Remove(position);
+        _chestLocks.Remove(position);
+        _chestTraps.Remove(position);
+        _superiorChests.Remove(position);
+        Layout.Set(position, TileKind.Floor);
+    }
 
     /// <summary>A locked gate on a wall that divides the room: a <see cref="TileKind.Gate"/> tile until opened.</summary>
     internal void LockGate(GridPosition position, int difficulty)

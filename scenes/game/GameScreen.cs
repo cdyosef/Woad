@@ -121,6 +121,14 @@ public partial class GameScreen : Control
         {
             RunTradeTest();
         }
+        else if (args.Contains("--monstertest"))
+        {
+            RunMonsterTest();
+        }
+        else if (args.Contains("--dentest"))
+        {
+            RunDenTest();
+        }
     }
 
     /// <summary>Hotkeys, before any focused button can take them as a press: R or Space is Rumble, W rolls Wend.</summary>
@@ -397,6 +405,11 @@ public partial class GameScreen : Control
                     Log("The doors slam shut behind you!", Palette.Danger);
                 }
 
+                if (entered.FirstVisit)
+                {
+                    await Taunt(_session.State.Rooms[entered.RoomId]);
+                }
+
                 break;
 
             case HeroDescended descended:
@@ -437,6 +450,43 @@ public partial class GameScreen : Control
             case Pulled pulled:
                 CalloutOver(pulled.HeroId, "PULLED!", Palette.Danger);
                 await Walk(pulled.HeroId, [pulled.To]);
+                break;
+
+            case KnockedBack knocked:
+                CalloutOver(knocked.HeroId, "KNOCKED BACK!", Palette.Danger);
+                await Walk(knocked.HeroId, [knocked.To]);
+                break;
+
+            case Grabbed grabbed:
+                CalloutOver(grabbed.HeroId, "GRABBED!", Palette.Danger);
+                await Pause(0.3);
+                break;
+
+            case Hexed hexed:
+                CalloutOver(hexed.HeroId, "HEXED!", Palette.Power);
+                await Pause(0.3);
+                break;
+
+            case MimicWoke woke:
+                // The chest is gone from the board; the Mimic stands where it was.
+                _board.QueueRedraw();
+                CalloutOver(woke.MonsterId, "MIMIC!", Palette.Danger);
+                await Pause(0.4);
+                break;
+
+            case Engulfed engulfed:
+                _board.QueueRedraw();
+                FloatOver(engulfed.MonsterId, "gulp!", Palette.TextDim);
+                await Pause(0.2);
+                break;
+
+            case MonsterRaised raised:
+                CalloutOver(raised.MonsterId, "RISE!", Palette.Power);
+                await Pause(0.3);
+                break;
+
+            case Crumbled crumbled:
+                await RemoveFigure(crumbled.MonsterId);
                 break;
 
             case ShoveResisted resisted:
@@ -850,6 +900,18 @@ public partial class GameScreen : Control
             case Pulled:
                 Sfx.Play("block", 0.9f);
                 break;
+            case KnockedBack:
+                Sfx.Play("block", 0.7f);
+                break;
+            case Grabbed or MimicWoke:
+                Sfx.Play("hit", 0.7f);
+                break;
+            case Hexed or MonsterRaised:
+                Sfx.Play("block", 1.6f);
+                break;
+            case Crumbled:
+                Sfx.Play("pot", 0.8f);
+                break;
             case ShoveResisted:
                 Sfx.Play("block", 0.8f);
                 break;
@@ -936,9 +998,25 @@ public partial class GameScreen : Control
             return;
         }
 
-        bool bossFight = state.Heroes.Any(hero => hero.Status == HeroStatus.Active
-            && state.RoomOf(hero).Monsters.Any(monster => monster.Definition.Boss));
-        Music.Play(bossFight ? "boss" : DungeonSong);
+        List<Monster> facing = state.Heroes
+            .Where(hero => hero.Status == HeroStatus.Active)
+            .SelectMany(hero => state.RoomOf(hero).Monsters)
+            .ToList();
+        bool bossFight = facing.Any(monster => monster.Definition.Boss);
+        string? ownSong = facing.Select(monster => monster.Definition.Music).FirstOrDefault(song => song is not null);
+        Music.Play(bossFight ? "boss" : ownSong ?? DungeonSong);
+    }
+
+    /// <summary>Monsters with something to say bellow it when heroes first walk in (the Ogre Champ laughs).</summary>
+    private async Task Taunt(Room room)
+    {
+        foreach (Monster monster in room.Monsters.Where(monster => monster.Definition.Taunt is not null))
+        {
+            Log($"The {monster.Definition.Name} roars with laughter: \"{monster.Definition.Taunt}\"", Palette.Danger);
+            CalloutOver(monster.Id, monster.Definition.Taunt!, Palette.Danger);
+            Sfx.Play("laugh");
+            await Pause(0.9);
+        }
     }
 
     /// <summary>Each dungeon's own exploring song.</summary>
@@ -955,6 +1033,7 @@ public partial class GameScreen : Control
         OdHandRolled rolled => rolled.HeroId,
         Shoved shoved => shoved.TargetId,
         Pulled pulled => pulled.HeroId,
+        KnockedBack knocked => knocked.HeroId,
         Flipped flipped => flipped.MonsterId,
         Leaped leap => leap.HeroId,
         HeroKeeledOver keeled => keeled.HeroId,
@@ -1013,6 +1092,13 @@ public partial class GameScreen : Control
         ClimbedOut climbed => FigureRoom(climbed.EntityId),
         Shoved shoved => FigureRoom(shoved.TargetId),
         Pulled pulled => FigureRoom(pulled.HeroId),
+        KnockedBack knocked => FigureRoom(knocked.HeroId),
+        Grabbed grabbed => FigureRoom(grabbed.HeroId),
+        Hexed hexed => FigureRoom(hexed.HeroId),
+        MimicWoke woke => woke.RoomId,
+        Engulfed engulfed => FigureRoom(engulfed.MonsterId),
+        MonsterRaised raised => FigureRoom(raised.MonsterId),
+        Crumbled crumbled => FigureRoom(crumbled.MonsterId),
         Flipped flipped => FigureRoom(flipped.MonsterId),
         ShoveResisted resisted => FigureRoom(resisted.TargetId),
         MonsterTrapped trapped => FigureRoom(trapped.MonsterId),

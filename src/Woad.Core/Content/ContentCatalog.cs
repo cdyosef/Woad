@@ -200,6 +200,16 @@ public sealed class ContentCatalog
                 errors.Add($"Theme '{theme.Id}' needs at least 1 floor.");
             }
 
+            if (theme.Den is { } den && (!monsterIds.Contains(den.Monster) || den.Floor < 1 || den.Floor > theme.Floors))
+            {
+                errors.Add($"Theme '{theme.Id}' den needs a known monster and a floor from 1 to {theme.Floors}.");
+            }
+
+            if (theme.Mimics is { } mimics && !monsterIds.Contains(mimics.Monster))
+            {
+                errors.Add($"Theme '{theme.Id}' mimics are unknown monster '{mimics.Monster}'.");
+            }
+
             foreach (RosterEntry entry in theme.Roster)
             {
                 if (!monsterIds.Contains(entry.Monster))
@@ -329,6 +339,11 @@ public sealed class ContentCatalog
             {
                 errors.Add($"{name} splits but has a splitCount below 1.");
             }
+        }
+
+        if (monster.Raises is { } raisedId && !monsterIds.Contains(raisedId))
+        {
+            errors.Add($"{name} raises unknown monster '{raisedId}'.");
         }
 
         if (monster.Sweep is { Radius: < 1 } or { Every: < 1 })

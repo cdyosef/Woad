@@ -212,6 +212,11 @@ public sealed partial class GameSession
 
     private string? CheckCanMove(int cost)
     {
+        if (CheckHeld(ActiveHero) is { } held)
+        {
+            return held;
+        }
+
         if (Turn.MovementRoll is null)
         {
             return MoveDiceLeft > 0 ? "Roll to move first." : "You've used all your Move dice this turn.";

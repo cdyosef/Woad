@@ -78,7 +78,18 @@ public sealed record MonsterCollapsed(int MonsterId) : GameEvent;
 
 public sealed record MonsterReassembled(int MonsterId, int Hearts) : GameEvent;
 
-public sealed record MonsterSpawned(int MonsterId, string MonsterDefinitionId, string RoomId, GridPosition Position, int Hearts) : GameEvent;
+public sealed record MonsterSpawned(int MonsterId, string MonsterDefinitionId, string RoomId, GridPosition Position, int Hearts) : GameEvent
+{
+    /// <summary>Where it came from: a split (the default), a mimic waking or the dead raised.</summary>
+    public SpawnCause Cause { get; init; }
+}
+
+public enum SpawnCause
+{
+    Split,
+    Mimic,
+    Raised,
+}
 
 public sealed record MonsterMoved(int MonsterId, IReadOnlyList<GridPosition> Path) : GameEvent;
 
@@ -369,3 +380,25 @@ public sealed record MonsterStole(int MonsterId, int HeroId, int Hits, int Gold,
 
 /// <summary>A mugging monster's hit took gold from a hero.</summary>
 public sealed record Mugged(int MonsterId, int HeroId, int Gold) : GameEvent;
+
+/// <summary>A chest was a mimic: it woke (opened, picked or found out by a search) and the chest is gone. Its <see cref="MonsterSpawned"/> comes just before.</summary>
+/// <param name="HeroId">Who woke it by trying the chest (they're bitten), or 0 when a search found it out.</param>
+public sealed record MimicWoke(int MonsterId, string RoomId, GridPosition Chest, int HeroId) : GameEvent;
+
+/// <summary>A grabbing monster's hit took hold of a hero: they can't move until it lets go.</summary>
+public sealed record Grabbed(int MonsterId, int HeroId) : GameEvent;
+
+/// <summary>A heavy blow knocked a hero straight back (a tile, or more with a mighty blow's sixes).</summary>
+public sealed record KnockedBack(int MonsterId, int HeroId, GridPosition From, GridPosition To) : GameEvent;
+
+/// <summary>A hex drained one of a hero's Luck rerolls (with none left, it stunned them instead).</summary>
+public sealed record Hexed(int MonsterId, int HeroId, bool Drained, int LuckLeft) : GameEvent;
+
+/// <summary>A monster swallowed the loot on a tile it crawled over; it drops it where it falls.</summary>
+public sealed record Engulfed(int MonsterId, GridPosition Tile, IReadOnlyList<int> CardIds, int Gold) : GameEvent;
+
+/// <summary>A monster raised another from the dead beside it (just after its <see cref="MonsterSpawned"/>).</summary>
+public sealed record MonsterRaised(int RaiserId, int MonsterId) : GameEvent;
+
+/// <summary>A raised monster fell to dust when the one that raised it was defeated.</summary>
+public sealed record Crumbled(int MonsterId) : GameEvent;

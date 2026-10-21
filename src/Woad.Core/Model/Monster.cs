@@ -69,6 +69,12 @@ public sealed class Monster
 
     public bool HasReassembled { get; internal set; }
 
+    /// <summary>The monster that raised it from the dead (a Necromancer), or null.</summary>
+    public int? RaisedBy { get; internal set; }
+
+    /// <summary>How many of the dead it has raised.</summary>
+    public int Raised { get; internal set; }
+
     /// <summary>Turns acted (not counting skipped or rising turns); paces sweep attacks.</summary>
     public int TurnsTaken { get; internal set; }
 

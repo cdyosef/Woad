@@ -244,6 +244,10 @@ public sealed partial class GameSession
         int damage = DamageFor(attackTotal, defense.Total + armor);
         monster.Hearts = Math.Max(0, monster.Hearts - damage);
         events.Add(new Damaged(monster.Id, damage, monster.Hearts));
+        if (damage > 0)
+        {
+            LetGo(monster);
+        }
 
         if (damage > 0 && monster.Hearts == 0)
         {
@@ -264,13 +268,23 @@ public sealed partial class GameSession
         }
 
         room.RemoveMonster(monster);
+        LetGo(monster);
         DropStolen(room, monster, SafeTile(room, monster.Position), events);
-        if (killer is not null)
+        if (killer is not null && monster.RaisedBy is null)
         {
             killer.Kills++;
         }
 
         events.Add(new MonsterDefeated(monster.Id, killer?.Id ?? 0));
+        CrumbleRaised(room, monster, events);
+
+        // The raised dead are worth nothing: no XP, no loot, no key.
+        if (monster.RaisedBy is not null)
+        {
+            ClearRoomIfEmpty(room, events);
+            return;
+        }
+
         if (killer is not null)
         {
             GrantXp(killer, definition.Xp, events);
@@ -384,6 +398,19 @@ public sealed partial class GameSession
             if (dealt > 0 && monster.Definition.Pulls && hero.IsActive)
             {
                 Pull(room, monster, hero, events);
+            }
+
+            if (dealt > 0 && hero.IsActive)
+            {
+                AfterMonsterHit(room, monster, hero, events);
+            }
+
+            // A heavy blow knocks the hero back a tile, and with a mighty one every 6 knocks them a tile further, hit or miss.
+            int knockback = (dealt > 0 && monster.Definition.KnocksBack ? 1 : 0)
+                            + (monster.Definition.KnockbackOnSix ? roll.Faces.Count(face => face == GameRules.PowerDieFace) : 0);
+            if (knockback > 0 && hero.IsActive)
+            {
+                KnockBack(room, monster, hero, knockback, events);
             }
         }
 

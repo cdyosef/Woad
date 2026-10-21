@@ -455,6 +455,11 @@ public partial class GameScreen
             return $"You're on fire ({hero.FireDice} {(hero.FireDice == 1 ? "die" : "dice")})! Stop, drop and roll to put it out (your whole turn), or get into water.";
         }
 
+        if (turn.PendingRoll is null && _session.HeldBy(hero) is { } holder)
+        {
+            return $"The {holder.Definition.Name} has hold of you: you can't move until you hurt it, shove it or stun it.";
+        }
+
         if (turn.PendingRoll is not null)
         {
             return "Click a die to reroll it with Luck, or Confirm the roll.";
@@ -513,7 +518,8 @@ public partial class GameScreen
             string companion = standing.OwnerId is int ownerId ? $" ({NameOf(ownerId)}'s companion, {Describe(standing.Order)})" : "";
             string onFire = standing.FireDice > 0 ? $", ON FIRE ({standing.FireDice} {(standing.FireDice == 1 ? "die" : "dice")})" : "";
             string lying = (_session.IsDiving(standing) ? ", diving" : standing.Prone ? ", prone" : "")
-                + (standing.Stun.IsStunned ? $", stunned (+{standing.Stun.AttackBonus} to hit)" : "");
+                + (standing.Stun.IsStunned ? $", stunned (+{standing.Stun.AttackBonus} to hit)" : "")
+                + (_session.HeldBy(standing) is { } holder ? $", held by the {holder.Definition.Name}" : "");
             return $"{standing.Name}{companion}: {standing.Hearts}/{standing.MaxHearts} hearts{power}{onFire}{lying}";
         }
 
@@ -619,6 +625,11 @@ public partial class GameScreen
             return "The vault chest, banded in crimson: the Boss Key lies inside. Stand next to it and click it to open it.";
         }
 
+        if (room.IsGrandChest(chest) && room.ChestLockAt(chest) is int grandLock)
+        {
+            return $"A grand chest, gilded and jeweled: three treasures from deep below, and gold. Open it with a key, or pick the lock with Od Hand ({grandLock}+).";
+        }
+
         return room.ChestLockAt(chest) is int difficulty
             ? $"A locked chest with better loot. Open it with a key, or pick the lock with Od Hand ({difficulty}+).{trap}"
             : $"A closed chest. Stand next to it and click it to open it.{trap}";
@@ -719,6 +730,36 @@ public partial class GameScreen
         if (definition.Reassembles && !monster.HasReassembled)
         {
             traits.Add("reassembles");
+        }
+
+        if (definition.Grabs)
+        {
+            traits.Add("grabs: no moving away");
+        }
+
+        if (definition.KnocksBack)
+        {
+            traits.Add("knocks you back");
+        }
+
+        if (definition.Hexes)
+        {
+            traits.Add("hexes away Luck");
+        }
+
+        if (definition.Raises is not null)
+        {
+            traits.Add($"raises the dead ({monster.Raised} of {definition.RaiseTotal})");
+        }
+
+        if (definition.Engulfs)
+        {
+            traits.Add("swallows loot");
+        }
+
+        if (monster.RaisedBy is not null)
+        {
+            traits.Add("raised: crumbles with its master");
         }
 
         if (monster.FrozenTurns > 0)

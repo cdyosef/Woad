@@ -14,8 +14,18 @@
     { "monster": "archer_guard", "weight": 6, "minFloor": 2 },
     { "monster": "skeleton", "weight": 6, "minFloor": 2 },
     { "monster": "cinder_imp", "weight": 6, "minFloor": 2 },
-    { "monster": "fire_beetle", "weight": 3, "minFloor": 2 }
+    { "monster": "fire_beetle", "weight": 3, "minFloor": 2 },
+    { "monster": "ogre", "weight": 1, "minFloor": 2 },
+    { "monster": "necromancer", "weight": 1, "minFloor": 2 },
+    { "monster": "hexer", "weight": 1, "minFloor": 2 },
+    { "monster": "gelatinous_cube", "weight": 1, "minFloor": 2 }
   ],
+
+  // The first floor always has the Ogre Champ's den, off one ordinary room.
+  "den": { "monster": "ogre_champ", "floor": 1 },
+
+  // About one ordinary chest in ten is a Mimic (never the Boss Key's, nor one in an arrival room).
+  "mimics": { "monster": "mimic", "chance": 10 },
 
   // Chests and monster drops deal from this deck; minFloor keeps the best cards for deeper floors.
   "lootDeck": [

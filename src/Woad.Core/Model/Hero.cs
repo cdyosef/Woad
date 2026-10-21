@@ -141,6 +141,9 @@ public sealed class Hero
     /// </summary>
     public bool Prone { get; internal set; }
 
+    /// <summary>The monster whose grab last caught them (a Mimic); see <c>GameSession.HeldBy</c> for whether it still holds them.</summary>
+    public int? GrabbedBy { get; internal set; }
+
     /// <summary>
     /// Keel rolls made since keeling over. Every roll after the first adds that many more Doom Dice (the
     /// creeping doom): none on the first, 1 on the second, 2 on the third...

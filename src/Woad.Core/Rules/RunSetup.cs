@@ -56,6 +56,12 @@ public sealed record RoomFeatures
     /// <summary>Hidden needle traps in chests.</summary>
     public IReadOnlyDictionary<GridPosition, TrapSetup> ChestTraps { get; init; } = new Dictionary<GridPosition, TrapSetup>();
 
+    /// <summary>Grand chests (a den's): three cards dealt as if from two floors deeper, and gold.</summary>
+    public IReadOnlyCollection<GridPosition> GrandChests { get; init; } = [];
+
+    /// <summary>Chests that are mimics, and the search needed to see through each.</summary>
+    public IReadOnlyDictionary<GridPosition, int> Mimics { get; init; } = new Dictionary<GridPosition, int>();
+
     /// <summary>The chest holding the Boss Key, if it's in this room.</summary>
     public GridPosition? BossKeyChest { get; init; }
 
