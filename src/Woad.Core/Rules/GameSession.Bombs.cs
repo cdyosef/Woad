@@ -284,10 +284,9 @@ public sealed partial class GameSession
             return;
         }
 
-        Stats stats = hero.EffectiveStats;
-        int armor = Math.Max(0, stats.Armor);
-        DiceRoll defense = RollDefense(hero.Id, hero.Power, DefenseDiceOf(hero), armor, blast.Total, canSpend: true, events);
-        int hits = Hits(blast, defense.Total + armor);
+        // To take no hits, the defense has to reach the blast's highest die.
+        int defense = HeroDefense(hero, blast.Faces.DefaultIfEmpty(0).Max(), events);
+        int hits = Hits(blast, defense);
         events.Add(new BlastHit(hero.Id, hits));
         string bane = credit is null ? "Blown up" : credit == hero ? "Blown up by their own bomb" : $"Blown up by {credit.Name}";
         if (hits == 0)

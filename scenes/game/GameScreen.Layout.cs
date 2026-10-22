@@ -46,14 +46,16 @@ public partial class GameScreen
     private Button _menu = null!;
     private GridPosition? _hovered;
 
-    // Dice the player has deselected in the pool; everything else is used by the next attack or move.
-    private int _attackDiceHeld;
+    // Wend dice and bonuses the player has deselected in the pool; everything else is used by the next move or roll.
     private int _moveDiceHeld;
     private bool _weaponHeld;
     private bool _speedHeld;
     private int _powerDiceSelected;
-    private int _odHandDiceHeld;
     private bool _toolsHeld;
+
+    // How many Rumble and Od Hand dice each hero (by id) rolls at a time: their last choice, 1 to begin with.
+    private readonly Dictionary<int, int> _rumbleChoice = [];
+    private readonly Dictionary<int, int> _odHandChoice = [];
 
     /// <summary>Steal was pressed: the next click on an adjacent monster or hero tries to rob them.</summary>
     private bool _stealing;
@@ -303,6 +305,7 @@ public partial class GameScreen
             pool.ShowPool(DicePool.Wend, 0, 0, 0, false);
             pool.ShowPool(DicePool.OdHand, 0, 0, 0, false);
             pool.ShowPool(DicePool.Power, ActiveHero?.Power.Banked ?? 0, SelectedPowerDice, 0, false);
+            ShowDefense(pool);
             return;
         }
 
@@ -310,16 +313,44 @@ public partial class GameScreen
         pool.ShowPool(DicePool.Wend, _session.MoveDiceLeft, SelectedMoveDice, speed, speed < 0 || (speed > 0 && !_speedHeld), steps);
         pool.ShowPool(DicePool.OdHand, _session.OdHandDiceLeft, SelectedOdHandDice, tools, tools > 0 && !_toolsHeld, bonusDice: _session.ToolDiceLeft);
         pool.ShowPool(DicePool.Power, ActiveHero?.Power.Banked ?? 0, SelectedPowerDice, 0, false);
+        ShowDefense(pool);
+    }
+
+    private void ShowDefense(DicePoolView pool)
+    {
+        if (ActiveHero is not { } hero)
+        {
+            return;
+        }
+
+        int baseDice = GameSession.BaseDefenseDice(hero);
+        Stats stats = hero.EffectiveStats;
+        pool.ShowDefense(baseDice, GameSession.ExtraDefenseDice(hero), GameSession.ExtraDefenseDiceReady(hero), Math.Max(0, stats.Armor), Math.Max(0, stats.Block), GameSession.BlockReady(hero) > 0);
     }
 
     /// <summary>Banked Power Dice start unselected: they're only spent when the player picks them.</summary>
     private int SelectedPowerDice => Math.Clamp(_powerDiceSelected, 0, ActiveHero?.Power.Banked ?? 0);
 
-    private int SelectedAttackDice => Math.Clamp(_session.AttackDiceLeft - _attackDiceHeld, 0, _session.AttackDiceLeft);
+    /// <summary>
+    /// Rumble and Od Hand roll the number of dice each hero last chose (1 to begin with), or as many as are
+    /// left; the choice carries over from roll to roll and turn to turn. Wend rolls everything unless held back.
+    /// </summary>
+    private int SelectedAttackDice => Math.Min(ChosenDice(_rumbleChoice), _session.AttackDiceLeft);
 
     private int SelectedMoveDice => Math.Clamp(_session.MoveDiceLeft - _moveDiceHeld, 0, _session.MoveDiceLeft);
 
-    private int SelectedOdHandDice => Math.Clamp(_session.OdHandDiceLeft - _odHandDiceHeld, 0, _session.OdHandDiceLeft);
+    private int SelectedOdHandDice => Math.Min(ChosenDice(_odHandChoice), _session.OdHandDiceLeft);
+
+    private int ChosenDice(Dictionary<int, int> choices) => ActiveHero is { } hero && choices.TryGetValue(hero.Id, out int dice) ? dice : 1;
+
+    /// <summary>Clicking a lit die drops one from the choice, a dark one adds one; never fewer than 1.</summary>
+    private void Choose(Dictionary<int, int> choices, int index, int selected)
+    {
+        if (ActiveHero is { } hero)
+        {
+            choices[hero.Id] = Math.Max(1, index < selected ? selected - 1 : selected + 1);
+        }
+    }
 
     /// <summary>Clicking a selected die deselects one; clicking an unselected one selects it again. Bonus tokens toggle.</summary>
     private void OnPoolTokenClicked(DicePool pool, int index)
@@ -335,7 +366,7 @@ public partial class GameScreen
                 _weaponHeld = !_weaponHeld;
                 break;
             case DicePool.Rumble:
-                _attackDiceHeld += index < SelectedAttackDice ? 1 : -1;
+                Choose(_rumbleChoice, index, SelectedAttackDice);
                 break;
             case DicePool.Wend when index < 0:
                 _speedHeld = _session.SpeedBonusLeft > 0 && !_speedHeld;
@@ -347,7 +378,7 @@ public partial class GameScreen
                 _toolsHeld = !_toolsHeld;
                 break;
             case DicePool.OdHand:
-                _odHandDiceHeld += index < SelectedOdHandDice ? 1 : -1;
+                Choose(_odHandChoice, index, SelectedOdHandDice);
                 break;
             case DicePool.Power:
                 _powerDiceSelected += index < SelectedPowerDice ? -1 : 1;
@@ -357,10 +388,10 @@ public partial class GameScreen
         RefreshPanels();
     }
 
-    /// <summary>Selects everything again, after each command and at the start of a turn.</summary>
+    /// <summary>Selects all the Wend dice and bonuses again (Rumble and Od Hand keep each hero's choice), after each command and at the start of a turn.</summary>
     private void ResetPool()
     {
-        _attackDiceHeld = _moveDiceHeld = _odHandDiceHeld = _powerDiceSelected = 0;
+        _moveDiceHeld = _powerDiceSelected = 0;
         _weaponHeld = _speedHeld = _toolsHeld = _stealing = _shoving = _leaping = _rumbling = false;
     }
 
@@ -479,7 +510,7 @@ public partial class GameScreen
         _heroPanel.CardSelected += SelectCard;
         _heroPanel.Pool.TokenClicked += OnPoolTokenClicked;
         AddChild(_heroPanel);
-        _minimap = new MinimapView { Position = new Vector2(8, 264), Size = new Vector2(160, 90) };
+        _minimap = new MinimapView { Position = new Vector2(8, 266), Size = new Vector2(160, 90) };
         AddChild(_minimap);
 
         AddChild(new Panel { Position = new Vector2(SideWidth, 0), Size = new Vector2(BoardView.Pixels, StripHeight) });

@@ -49,6 +49,7 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         Hexed hexed => $"The {nameOf(hexed.MonsterId)}'s hex finds no luck to drain, and leaves {nameOf(hexed.HeroId)} reeling!",
         Engulfed engulfed => $"The {nameOf(engulfed.MonsterId)} swallows the loot in its path.",
         MonsterRaised raised => $"The {nameOf(raised.RaiserId)} raises a {nameOf(raised.MonsterId)} from the dead!",
+        LastChanceUsed lucky => $"{nameOf(lucky.HeroId)}'s {cardNameOf(lucky.CardId)} turns the blow aside... and breaks!",
         Crumbled crumbled => $"The {nameOf(crumbled.MonsterId)} crumbles to dust.",
         MonsterFrozen frozen => $"{nameOf(frozen.MonsterId)} is frozen solid.",
         Stunned { Powerful: true } stunned => $"{nameOf(stunned.EntityId)} is knocked senseless (+{stunned.Stacks + 3 * stunned.PowerfulStacks} to hit).",

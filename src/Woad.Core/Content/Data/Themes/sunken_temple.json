@@ -35,7 +35,11 @@
     { "card": "longsword", "minFloor": 2 },
     { "card": "short_bow", "minFloor": 2 },
     { "card": "tower_shield", "minFloor": 2 },
-    { "card": "chain_mail", "minFloor": 2 },
+    { "card": "leather_armor" },
+    { "card": "lucky_helmet" },
+    { "card": "studded_armor", "minFloor": 2 },
+    { "card": "knights_shield", "minFloor": 2 },
+    { "card": "chain_mail", "minFloor": 3 },
     { "card": "dash_boots", "minFloor": 2 },
     { "card": "pearl", "copies": 3, "minFloor": 2 },
     { "card": "golden_idol", "minFloor": 3 }

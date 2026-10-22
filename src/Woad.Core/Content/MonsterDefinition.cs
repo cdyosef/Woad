@@ -166,4 +166,15 @@ public sealed record MonsterDefinition
 
     /// <summary>Cards dropped when the drop chance comes up.</summary>
     public int Drops { get; init; } = 1;
+
+    /// <summary>A special card it may drop besides its loot (the Iron Warden's Warden's Plate), or null.</summary>
+    public RareDrop? RareDrop { get; init; }
+}
+
+/// <summary>A special card a monster drops on defeat, with a percent chance, besides its usual loot.</summary>
+public sealed record RareDrop
+{
+    public required string Card { get; init; }
+
+    public int Chance { get; init; }
 }

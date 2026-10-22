@@ -34,7 +34,7 @@ public partial class HeroPanel : Panel
     internal CardSlot EquipmentSlot(EquipSlot slot) => _slots[slot];
 
     /// <summary>The dice left this turn, kept up to date by the game screen.</summary>
-    public DicePoolView Pool { get; } = new() { Position = new(8, 200), Size = new(160, 60) };
+    public DicePoolView Pool { get; } = new() { Position = new(8, 200), Size = new(160, 65) };
 
     public override void _Ready()
     {
@@ -106,7 +106,7 @@ public partial class HeroPanel : Panel
         _stats.Text = $"{UiTheme.Icon("icon_rumble", "Rumble")} {UiTheme.Dice(stats.AttackDice, stats.Weapon)}{weaponDice}  " +
                       $"{UiTheme.Icon("icon_wend", "Wend")} {UiTheme.Dice(stats.MoveDice, stats.Speed)}  " +
                       $"{UiTheme.Icon("icon_odhand", "Od Hand")} {UiTheme.Dice(stats.OdHandDice, 0)}{toolDice}\n" +
-                      $"Defense {UiTheme.Dice(stats.DefenseDice, stats.Armor)}   Luck {hero.LuckRemaining}/{stats.Luck}";
+                      $"{UiTheme.Icon("icon_defense", "Defense")} {DefenseText(hero, stats)}   {UiTheme.Icon("icon_luck", "Luck")} {hero.LuckRemaining}/{stats.Luck}";
         // Gold, the treasure carried (what escaping now is worth on top), and keys, together on one line.
         string dim = Palette.Hex(Palette.TextDim);
         int treasure = hero.TreasureValue - hero.Gold;
@@ -157,5 +157,24 @@ public partial class HeroPanel : Panel
     {
         AddChild(node);
         return node;
+    }
+
+    /// <summary>The base die and armor, then the extras (dice and Block) that back it up: "1d6+1 (+1d6, Block 1)".</summary>
+    private static string DefenseText(Hero hero, Stats stats)
+    {
+        int extra = Math.Max(0, stats.DefenseDice - 1);
+        var extras = new List<string>();
+        if (extra > 0)
+        {
+            extras.Add($"+{extra}d6");
+        }
+
+        if (stats.Block > 0)
+        {
+            extras.Add($"Block {stats.Block}");
+        }
+
+        string main = UiTheme.Dice(Math.Min(1, stats.DefenseDice), stats.Armor);
+        return extras.Count == 0 ? main : $"{main} ({string.Join(", ", extras)})";
     }
 }

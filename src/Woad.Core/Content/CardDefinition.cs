@@ -107,6 +107,12 @@ public sealed record CardDefinition
     /// <summary>Gear: water costs the wearer 1 step a tile, and deep water needs no Rumble die to stay afloat.</summary>
     public bool Swims { get; init; }
 
+    /// <summary>
+    /// Worn, it's the last line of defense: when a defense is still losing after everything else, it
+    /// rolls one more die in, and then breaks (the Lucky Helmet).
+    /// </summary>
+    public bool LastChanceDie { get; init; }
+
     /// <summary>Weapons: this much more on attacks while nothing is in the off hand (wielded two-handed).</summary>
     public int Versatile { get; init; }
 

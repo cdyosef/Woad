@@ -39,7 +39,7 @@ public partial class CharacterEditor : MenuScreen
         [StatKind.Hearts] = "HEARTS\nHow much punishment you can take: each hit that gets through costs one. With none left you Keel Over and roll the Keel Die each turn until you stand back up, or die. Each point buys another heart.",
         [StatKind.Speed] = "WEND\nHow far you move. Each move rolls one or more Wend dice for that many steps, plus your Wend bonus once a turn. Each point adds +1 to your Wend bonus.",
         [StatKind.AttackDice] = "RUMBLE\nYour attack dice. Each attack or shove uses one or more, and your weapon adds to one attack a turn. Beat the defender's roll to hit. Each point buys another die.",
-        [StatKind.DefenseDice] = "DEFENSE\nThe dice you roll, all of them, whenever you're attacked; your armor adds to each roll. Tie or beat the attack to block it. Each point buys another die.",
+        [StatKind.DefenseDice] = "DEFENSE\nYour base die and armor defend against every attack. Each point buys an extra die: it rolls in only when a defense is losing, then it's spent until your next turn.",
         [StatKind.OdHandDice] = "OD HAND\nYour dice for picking locks, searching, disarming traps, stealing and rousing allies who've Keeled Over. Lockpicks help with locks. Each point buys another die.",
         [StatKind.Luck] = "LUCK\nRerolls of a single die, refilled on each new floor: after any roll, click a die to roll it again. Each point buys another reroll.",
     };
