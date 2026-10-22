@@ -170,6 +170,7 @@ Then build and upload in one go (the build lands in `export/windows`, which git 
 powershell -ExecutionPolicy Bypass -File tools/publish-itch.ps1 -Target cdyosef/woad
 ```
 
-`-SkipUpload` only builds. Each upload goes to the page's `windows` channel, labeled with the git
-commit; the itch app updates players automatically. The build isn't code-signed, so Windows shows
+`-SkipUpload` only builds. Each upload goes to the page's `windows` channel, labeled with the game's
+version (`config/version` in `project.godot`, now "2.0 Open Woarld") and the git commit; the itch app
+updates players automatically. The build isn't code-signed, so Windows shows
 "Windows protected your PC" the first time: **More info → Run anyway**.

@@ -35,7 +35,8 @@ public partial class MainMenu : MenuScreen
         Button quit = Add(UiTheme.Button(new Vector2(240, 266), new Vector2(160, 26), "Quit"));
         quit.Pressed += () => Sfx.QuitGame(this);
 
-        Label footer = Add(UiTheme.Label(new Vector2(0, 326), new Vector2(Width, 12), "Early build: two dungeons, local hot-seat for 1-8 players", color: Palette.TextDim));
+        string version = ProjectSettings.GetSetting("application/config/version").AsString();
+        Label footer = Add(UiTheme.Label(new Vector2(0, 326), new Vector2(Width, 12), $"Woad {version}   Local hot-seat for 1-8 players", color: Palette.TextDim));
         footer.HorizontalAlignment = HorizontalAlignment.Center;
     }
 }
