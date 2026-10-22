@@ -11,6 +11,7 @@ config_version=5
 [application]
 
 config/name="Woad"
+config/version="2.0 Open Woarld"
 config/description="A turn-based roguelite dungeon-crawler board game."
 run/main_scene="res://scenes/main/Main.tscn"
 config/features=PackedStringArray("4.7", "C#", "GL Compatibility")

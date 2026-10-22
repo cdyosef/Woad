@@ -5,7 +5,8 @@
 .DESCRIPTION
     Exports the "Windows Desktop" preset (export_presets.cfg) into export/windows, then pushes that
     folder to itch.io with butler, as the "windows" channel of the game's page. Each push is labeled
-    with the git commit it was built from, and itch's app updates players to it automatically.
+    with the game's version (config/version in project.godot, e.g. "2.0 Open Woarld") and the git
+    commit it was built from, and itch's app updates players to it automatically.
 
     Needs, once: Godot's .NET export templates for this Godot version (Editor > Manage Export
     Templates, or unpacked into %APPDATA%\Godot\export_templates), and butler (unzipped into
@@ -53,7 +54,9 @@ if ($SkipUpload) {
     return
 }
 
-$version = (git -C $root rev-parse --short HEAD).Trim()
+$commit = (git -C $root rev-parse --short HEAD).Trim()
+$release = (Select-String -Path (Join-Path $root 'project.godot') -Pattern '^config/version="(.*)"').Matches | Select-Object -First 1
+$version = if ($release) { "$($release.Groups[1].Value) ($commit)" } else { $commit }
 $butler = if (Test-Path (Join-Path $PSScriptRoot 'butler\butler.exe')) { Join-Path $PSScriptRoot 'butler\butler.exe' }
           elseif (Get-Command butler -ErrorAction SilentlyContinue) { 'butler' }
           else { Join-Path $env:LOCALAPPDATA 'butler\butler.exe' }
