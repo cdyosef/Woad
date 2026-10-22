@@ -233,23 +233,30 @@ public sealed class Hero
         : [];
 
     /// <summary>
-    /// The slots equipping <paramref name="card"/> would fill: its own, or its other slot (the Boomerang's
-    /// off hand) when its own is taken and the other is free.
+    /// The slots equipping <paramref name="card"/> would fill: the <paramref name="hand"/> chosen for a
+    /// card that goes in either (the Boomerang), else its own slot, or its other one when its own is
+    /// taken and the other is free.
     /// </summary>
-    public IReadOnlyList<EquipSlot> SlotsToFill(CardDefinition card) =>
-        card.AltSlot is { } alt && card.Slot is { } own && _equipment.ContainsKey(own) && !_equipment.ContainsKey(alt) ? [alt] : SlotsFor(card);
+    public IReadOnlyList<EquipSlot> SlotsToFill(CardDefinition card, EquipSlot? hand = null) =>
+        hand is { } chosen && !card.TwoHanded && (chosen == card.Slot || chosen == card.AltSlot) ? [chosen]
+        : card.AltSlot is { } alt && card.Slot is { } own && _equipment.ContainsKey(own) && !_equipment.ContainsKey(alt) ? [alt]
+        : SlotsFor(card);
 
-    /// <summary>Cards that equipping <paramref name="card"/> would push out of their slots.</summary>
-    public IReadOnlyList<CardInstance> CardsDisplacedBy(CardDefinition card) =>
-        SlotsToFill(card)
+    /// <summary>Cards that equipping <paramref name="card"/> (in <paramref name="hand"/>, if chosen) would push out of their slots.</summary>
+    public IReadOnlyList<CardInstance> CardsDisplacedBy(CardDefinition card, EquipSlot? hand = null) =>
+        SlotsToFill(card, hand)
             .Select(slot => _equipment.GetValueOrDefault(slot))
             .OfType<CardInstance>()
             .Distinct()
             .ToList();
 
-    internal void Equip(CardInstance card)
+    /// <summary>The slot an equipped card is in, or null if it isn't equipped.</summary>
+    public EquipSlot? SlotOf(CardInstance card) =>
+        _equipment.Where(entry => entry.Value == card).Select(entry => (EquipSlot?)entry.Key).FirstOrDefault();
+
+    internal void Equip(CardInstance card, EquipSlot? hand = null)
     {
-        foreach (EquipSlot slot in SlotsToFill(card.Definition))
+        foreach (EquipSlot slot in SlotsToFill(card.Definition, hand))
         {
             _equipment[slot] = card;
         }

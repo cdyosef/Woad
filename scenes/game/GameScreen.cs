@@ -38,8 +38,17 @@ public partial class GameScreen : Control
 
     public ContentCatalog Content { get; init; } = ContentCatalog.LoadDefault();
 
-    /// <summary>The player abandoned the run. Nothing is saved.</summary>
+    /// <summary>A saved run, already replayed to where it was left: played on instead of starting <see cref="Setup"/> afresh.</summary>
+    public GameSession? Restored { get; init; }
+
+    /// <summary>The run is saved as it goes (see <see cref="CommandPlayed"/>), so leaving keeps it.</summary>
+    public bool SavesRun { get; init; }
+
+    /// <summary>The player left the run.</summary>
     public event Action? ExitRequested;
+
+    /// <summary>The rules accepted a command: the state is as it stands after it.</summary>
+    public event Action<GameCommand, GameState>? CommandPlayed;
 
     /// <summary>The run ended; raised once, shortly after the final events have played.</summary>
     public event Action<IReadOnlyList<HeroRunResult>>? RunFinished;
@@ -175,7 +184,7 @@ public partial class GameScreen : Control
         _finished = false;
         _dice.Clear();
 
-        _session = new GameSession(Content, setup);
+        _session = Restored ?? new GameSession(Content, setup);
         _board.ThemeId = setup.ThemeId;
         ReloadFigures();
         ShowRoom(_session.State.RoomOf(_session.State.Heroes[0]).Id);
@@ -183,6 +192,13 @@ public partial class GameScreen : Control
         if (setup.FriendlyFire)
         {
             Log("Friendly fire is on (FF): blasts, attacks and shoves can hit your allies.", Palette.Danger);
+        }
+
+        if (Restored is not null)
+        {
+            Log($"Welcome back: round {_session.State.Round}, where you left off.", Palette.TrimBright);
+            await PlayEvents([]);
+            return;
         }
 
         await PlayEvents(_session.Begin());
@@ -204,6 +220,7 @@ public partial class GameScreen : Control
             return false;
         }
 
+        CommandPlayed?.Invoke(command, _session.State);
         _confirmingLeave = false;
         ResetPool();
         if (command is UseCard)

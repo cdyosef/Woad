@@ -52,6 +52,9 @@ public partial class Main
             Check(saved.Count == 2 && saved.All(character => character.RunsPlayed == 1 && character.Xp == GameRules.XpForEscaping),
                 "each character's run and XP are saved");
             Check(saved.All(character => character.Wins == 1), "tied winners each get the win");
+            Check(LoadJourney().Beaten.Contains("emerald_keep") && LoadJourney().IsOpen(LoadJourney().Map.Places.Single(place => place.Id == "sunken_temple")),
+                "beating the Emerald Keep opens the Sunken Temple on the Woarld Map");
+            Check(_woarldNews.StartsWith("The Sunken Temple has opened"), "and the map will say so when it next opens");
             Check(saved.Single(character => character.Name == "Morgan").Equipped.SequenceEqual(["wooden_sword", "buckler"]),
                 "escaped heroes keep their gear");
 

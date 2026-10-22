@@ -5,8 +5,10 @@ namespace Woad.Scenes.Ui;
 /// <summary>The gothic look: dark panels in gold-trimmed, riveted frames, and serif pixel headings.</summary>
 public static class UiTheme
 {
-    public const int FontSize = 8;
-    public const int HeadingSize = 12;
+    /// <summary>The body font's size: Jersey 10 is drawn on a 10-pixel grid, so this keeps it crisp.</summary>
+    public const int FontSize = 10;
+    /// <summary>Names and titles in the body font: one and a half times its grid, still crisp.</summary>
+    public const int HeadingSize = 15;
 
     /// <summary>The heading font is drawn 9 pixels tall; sizes are multiples of that.</summary>
     public const int HeadingPixelSize = 9;
@@ -176,6 +178,17 @@ public static class UiTheme
     {
         string path = $"res://assets/ui/{name}.png";
         return ResourceLoader.Exists(path) ? $"[img=11x11]{path}[/img]" : fallback;
+    }
+
+    /// <summary>Gold for a <see cref="RichLabel"/>: a coin and the amount in gold, easy to spot.</summary>
+    public static string Gold(int amount) => $"{Icon("icon_gold", "")} [color={Palette.Hex(Palette.Loot)}]{amount} gold[/color]";
+
+    /// <summary>Hearts for a <see cref="RichLabel"/>: a heart and how many are left of how many.</summary>
+    public static string Hearts(int now, int max)
+    {
+        string heart = ResourceLoader.Exists("res://assets/ui/heart_full.png") ? "[img=7x7]res://assets/ui/heart_full.png[/img] " : "";
+        Color color = now < max ? Palette.Danger : Palette.Heal;
+        return $"{heart}[color={Palette.Hex(color)}]{now}/{max}[/color]";
     }
 
     /// <summary>A button with almost no side padding, for short labels in a tight row.</summary>

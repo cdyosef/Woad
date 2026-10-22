@@ -658,7 +658,7 @@ public partial class BoardView : Control
 
         if (bomb.Lit)
         {
-            DrawString(ThemeDB.FallbackFont, rect.Position + new Vector2(2, 10), bomb.FuseTurns.ToString(), fontSize: 9, modulate: Palette.FireCore);
+            DrawString(ThemeDB.FallbackFont, rect.Position + new Vector2(2, 10), bomb.FuseTurns.ToString(), fontSize: UiTheme.FontSize, modulate: Palette.FireCore);
         }
     }
 
@@ -674,7 +674,7 @@ public partial class BoardView : Control
     {
         Vector2 corner = TileOrigin(tile) + new Vector2(TileSize - 9, 1);
         DrawRect(new Rect2(corner, new Vector2(8, 10)), Palette.Danger);
-        DrawString(ThemeDB.FallbackFont, corner + new Vector2(2, 8), "!", fontSize: 8, modulate: Palette.Text);
+        DrawString(ThemeDB.FallbackFont, corner + new Vector2(2, 8), "!", fontSize: UiTheme.FontSize, modulate: Palette.Text);
     }
 
     private void DrawKey(GridPosition tile, string icon, int count)
@@ -691,7 +691,7 @@ public partial class BoardView : Control
 
         if (count > 1)
         {
-            DrawString(ThemeDB.FallbackFont, origin + new Vector2(16, 18), count.ToString(), fontSize: 8, modulate: Palette.Loot);
+            DrawString(ThemeDB.FallbackFont, origin + new Vector2(16, 18), count.ToString(), fontSize: UiTheme.FontSize, modulate: Palette.Loot);
         }
     }
 
@@ -726,7 +726,7 @@ public partial class BoardView : Control
             DrawRect(coin, Palette.PotRim, filled: false, width: 1);
         }
 
-        DrawString(ThemeDB.FallbackFont, origin + new Vector2(11, 9), amount.ToString(), fontSize: 8, modulate: Palette.Loot);
+        DrawString(ThemeDB.FallbackFont, origin + new Vector2(11, 9), amount.ToString(), fontSize: UiTheme.FontSize, modulate: Palette.Loot);
     }
 
     /// <summary>
@@ -743,7 +743,7 @@ public partial class BoardView : Control
             canvas.DrawPolyline([origin + new Vector2(4, 0), origin + new Vector2(8, 5), origin + new Vector2(4, 10), origin + new Vector2(0, 5), origin + new Vector2(4, 0)], Palette.Ink, 1);
             if (count > 1)
             {
-                canvas.DrawString(ThemeDB.FallbackFont, origin + new Vector2(-6, 9), count.ToString(), fontSize: 8, modulate: Palette.Loot);
+                canvas.DrawString(ThemeDB.FallbackFont, origin + new Vector2(-6, 9), count.ToString(), fontSize: UiTheme.FontSize, modulate: Palette.Loot);
             }
 
             return;

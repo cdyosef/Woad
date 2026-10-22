@@ -398,7 +398,9 @@ public partial class GameScreen
         var hints = new Dictionary<CardAction, string>
         {
             [CardAction.Use] = location == CardLocation.Belt ? "Free: one belt item a turn." : "Takes your action.",
-            [CardAction.Equip] = gearCost,
+            [CardAction.Equip] = card.Definition.AltSlot is null ? gearCost
+                : hero.SlotOf(card) is { } held ? $"Moves it to your {(held == EquipSlot.MainHand ? "off" : "main")} hand. {gearCost}"
+                : $"Goes in either hand: you'll choose which. {gearCost}",
             [CardAction.Belt] = gearCost,
             [CardAction.Stow] = gearCost,
             [CardAction.Drop] = "Leave it on the floor here. Free.",
@@ -492,7 +494,7 @@ public partial class GameScreen
             }
 
             _confirmingLeave = true;
-            Log("Click Leave? again to abandon this run. Nothing will be saved.", Palette.TrimBright);
+            Log(SavesRun ? "Click Leave? again to leave. The run is saved: continue it from Dungeon Run." : "Click Leave? again to abandon this run. Nothing will be saved.", Palette.TrimBright);
             RefreshPanels();
         };
         AddChild(_menu);
@@ -523,6 +525,7 @@ public partial class GameScreen
 
         _inventory = new InventoryPanel();
         _inventory.CardSelected += SelectCard;
+        _inventory.HandChosen += (cardId, hand) => ExecuteForActiveHero(heroId => new EquipCard(heroId, cardId, hand));
         _inventory.ActionRequested += OnCardAction;
         _inventory.BlockedActionClicked += action =>
             Log($"{action}: {AvailableCardActions(ActiveHero, _session.State.Turn).Explain(action)}", Palette.TextDim);

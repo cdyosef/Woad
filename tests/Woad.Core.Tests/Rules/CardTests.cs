@@ -68,6 +68,52 @@ public class CardTests
     }
 
     [Fact]
+    public void ABoomerangGoesInTheOffHandUnlessTheMainHandIsChosen()
+    {
+        GameSession session = TestRun.Start(Open, cards: ["sword", "shield", "boomerang", "boomerang"]);
+        Hero hero = session.HeroInSeat();
+        CardInstance sword = hero.Card("sword"), shield = hero.Card("shield");
+        CardInstance first = hero.Backpack[0], second = hero.Backpack[1];
+
+        session.Do(new EquipCard(hero.Id, first.Id));
+        Assert.Same(first, hero.Equipment[EquipSlot.OffHand]);
+        Assert.Same(sword, hero.Equipment[EquipSlot.MainHand]);
+        Assert.Contains(shield, hero.Backpack);
+
+        session.Do(new EquipCard(hero.Id, second.Id, EquipSlot.MainHand));
+        Assert.Same(second, hero.Equipment[EquipSlot.MainHand]);
+        Assert.Same(first, hero.Equipment[EquipSlot.OffHand]);
+        Assert.Contains(sword, hero.Backpack);
+    }
+
+    [Fact]
+    public void AnEquippedBoomerangSwitchesHands()
+    {
+        GameSession session = TestRun.Start(Open, cards: ["sword", "boomerang"]);
+        Hero hero = session.HeroInSeat();
+        CardInstance sword = hero.Card("sword"), boomerang = hero.Card("boomerang");
+        Assert.Same(boomerang, hero.Equipment[EquipSlot.OffHand]);
+
+        Assert.Null(session.CheckEquip(boomerang.Id));
+        session.Do(new EquipCard(hero.Id, boomerang.Id));
+
+        Assert.Same(boomerang, hero.Equipment[EquipSlot.MainHand]);
+        Assert.False(hero.Equipment.ContainsKey(EquipSlot.OffHand));
+        Assert.Equal([sword], hero.Backpack);
+        Assert.Contains("already in your main hand", session.Refuse(new EquipCard(hero.Id, boomerang.Id, EquipSlot.MainHand)));
+    }
+
+    [Fact]
+    public void OnlyACardsOwnHandsCanBeChosen()
+    {
+        GameSession session = TestRun.Start(Open, cards: ["shield", "sword", "shield"]);
+        Hero hero = session.HeroInSeat();
+
+        Assert.Contains("can't go in your main hand", session.Refuse(new EquipCard(hero.Id, hero.Backpack[0].Id, EquipSlot.MainHand)));
+        Assert.Contains("already equipped", session.Refuse(new EquipCard(hero.Id, hero.Card("sword").Id)));
+    }
+
+    [Fact]
     public void ChangingGearIsFreeWithNoMonstersInTheRoom()
     {
         GameSession session = TestRun.Start(Open, new ScriptedDice(3), cards: ["sword", "shield", "big_sword", "potion", "potion", "potion"]);

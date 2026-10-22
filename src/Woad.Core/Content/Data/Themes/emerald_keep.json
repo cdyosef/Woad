@@ -1,6 +1,7 @@
 {
   "id": "emerald_keep",
   "name": "The Emerald Keep",
+  "description": "Three floors of slimes, bats and thieves under a mossy keep. The Iron Warden guards the deepest hall.",
   "floors": 3,
   "boss": "iron_warden",
   "miniboss": "key_warden",

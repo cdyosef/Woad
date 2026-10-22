@@ -1,4 +1,5 @@
 using Godot;
+using Woad.Core.Content;
 using Woad.Core.Model;
 using Woad.Core.Rules;
 using Woad.Scenes.Ui;
@@ -41,6 +42,12 @@ public partial class InventoryPanel : Control
     private readonly CardSlot[] _backpack = new CardSlot[GameRules.BackpackCapacity];
     private readonly Dictionary<CardAction, Button> _actions = [];
     private Label _details = null!;
+    private Panel _handChoice = null!;
+    private Label _handQuestion = null!;
+    private readonly List<Button> _hands = [];
+
+    /// <summary>The card the hand choice is for, while it's showing.</summary>
+    private int? _choosingFor;
 
     public event Action<int>? CardSelected;
 
@@ -48,6 +55,9 @@ public partial class InventoryPanel : Control
 
     /// <summary>A greyed-out button was clicked; the game says why it's unavailable.</summary>
     public event Action<CardAction>? BlockedActionClicked;
+
+    /// <summary>A hand was picked for a card that goes in either (the Boomerang).</summary>
+    public event Action<int, EquipSlot>? HandChosen;
 
     public override void _Ready()
     {
@@ -85,6 +95,54 @@ public partial class InventoryPanel : Control
             AddChild(button);
             _actions[action] = button;
         }
+
+        // Asks which hand a card that goes in either (the Boomerang) is equipped into, over its text.
+        _handChoice = new Panel { Position = new Vector2(4, 103), Size = new Vector2(168, 64), Visible = false };
+        _handQuestion = UiTheme.Label(new Vector2(6, 3), new Vector2(156, 14), color: Palette.TrimBright);
+        _handChoice.AddChild(_handQuestion);
+        for (int i = 0; i < 2; i++)
+        {
+            Button hand = UiTheme.Button(new Vector2(4, 20 + i * 20), new Vector2(160, 18), "");
+            hand.Pressed += () =>
+            {
+                if (_choosingFor is int cardId && hand.GetMeta("slot").AsInt32() is var slot)
+                {
+                    _handChoice.Visible = false;
+                    _choosingFor = null;
+                    HandChosen?.Invoke(cardId, (EquipSlot)slot);
+                }
+            };
+            _handChoice.AddChild(hand);
+            _hands.Add(hand);
+        }
+
+        AddChild(_handChoice);
+    }
+
+    internal Button HandButton(int index) => _hands[index];
+
+    internal bool IsChoosingHand => _handChoice.Visible;
+
+    /// <summary>Asks which hand to equip a card into: each choice says what it would stow, or why it can't be.</summary>
+    public void AskHand(int cardId, string cardName, IReadOnlyList<(EquipSlot Slot, string Text, string? Blocked)> hands)
+    {
+        _choosingFor = cardId;
+        _handQuestion.Text = $"Which hand for the {cardName}?";
+        for (int i = 0; i < _hands.Count; i++)
+        {
+            Button button = _hands[i];
+            button.Visible = i < hands.Count;
+            if (i < hands.Count)
+            {
+                (EquipSlot slot, string text, string? blocked) = hands[i];
+                button.SetMeta("slot", (int)slot);
+                button.Text = text;
+                button.Disabled = blocked is not null;
+                button.TooltipText = blocked ?? "";
+            }
+        }
+
+        _handChoice.Visible = true;
     }
 
     internal CardSlot BeltSlot(int index) => _belt[index];
@@ -105,6 +163,12 @@ public partial class InventoryPanel : Control
         {
             CardInstance? card = hero is not null && i < hero.Backpack.Count ? hero.Backpack[i] : null;
             _backpack[i].ShowCard(card, "", card is not null && card.Id == selectedCardId);
+        }
+
+        if (_choosingFor != selectedCardId)
+        {
+            _handChoice.Visible = false;
+            _choosingFor = null;
         }
 
         CardInstance? selected = selectedCardId is int id ? hero?.FindCard(id)?.Card : null;

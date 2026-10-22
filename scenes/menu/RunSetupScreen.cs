@@ -21,6 +21,9 @@ public partial class RunSetupScreen : MenuScreen
     private Label _hint = null!;
     private LineEdit _seed = null!;
 
+    /// <summary>What Raid! starts: the party and seed from the latest Start.</summary>
+    private Action? _raid;
+
     public ICharacterRepository Repository { get; init; } = null!;
 
     public event Action? BackRequested;
@@ -30,13 +33,18 @@ public partial class RunSetupScreen : MenuScreen
     /// <summary>The chosen characters in seat order, the seed for the dungeon and dice, and whether friendly fire is on.</summary>
     public event Action<IReadOnlyList<Character>, ulong, bool, string>? StartRequested;
 
-    /// <summary>The dungeons to choose from (id and name), in the order the Dungeon button steps through them.</summary>
-    public IReadOnlyList<(string Id, string Name)> Dungeons { get; init; } = [];
+    /// <summary>The dungeon the run will be in, picked on the Dungeon Run list; empty to set out somewhere else (named by <see cref="DungeonName"/>).</summary>
+    public string ThemeId { get; init; } = "";
 
-    /// <summary>The dungeon the run will be in.</summary>
-    public string ThemeId { get; set; } = "";
+    /// <summary>The dungeon's name (or the Woarld Map's), shown at the bottom.</summary>
+    public string DungeonName { get; init; } = "";
 
-    internal Button DungeonButton { get; private set; } = null!;
+    internal Label DungeonLabel { get; private set; } = null!;
+
+    /// <summary>Starting a run replaces the saved one, so Begin Raid? says so.</summary>
+    public bool ReplacesSavedRun { get; init; }
+
+    internal BeginRaidDialog BeginRaid { get; private set; } = null!;
 
     /// <summary>Heroes can hurt each other this run (see <see cref="Woad.Core.Rules.RunSetup.FriendlyFire"/>).</summary>
     public bool FriendlyFire { get; set; }
@@ -44,6 +52,8 @@ public partial class RunSetupScreen : MenuScreen
     internal Button FriendlyFireButton { get; private set; } = null!;
 
     internal Button StartButton { get; private set; } = null!;
+
+    internal Button BackButton { get; private set; } = null!;
 
     internal bool IsLoaded { get; private set; }
 
@@ -98,20 +108,16 @@ public partial class RunSetupScreen : MenuScreen
         };
         _hint = Add(UiTheme.Label(new Vector2(338, 274), new Vector2(280, 30), color: Palette.TextDim));
 
-        Button back = Add(UiTheme.Button(new Vector2(20, 316), new Vector2(88, 26), "Back"));
-        back.Pressed += () => BackRequested?.Invoke();
+        BackButton = Add(UiTheme.Button(new Vector2(20, 316), new Vector2(88, 26), "Back"));
+        BackButton.Pressed += () => BackRequested?.Invoke();
         Button create = Add(UiTheme.Button(new Vector2(114, 316), new Vector2(130, 26), "New character"));
         create.Pressed += () => NewCharacterRequested?.Invoke();
-        DungeonButton = Add(UiTheme.Button(new Vector2(250, 316), new Vector2(252, 26), ""));
-        DungeonButton.TooltipText = "Which dungeon to delve. Click to choose another.";
-        DungeonButton.Pressed += () =>
-        {
-            int index = Dungeons.Select(dungeon => dungeon.Id).ToList().IndexOf(ThemeId);
-            ThemeId = Dungeons[(index + 1) % Dungeons.Count].Id;
-            Refresh();
-        };
+        DungeonLabel = Add(UiTheme.Label(new Vector2(256, 316), new Vector2(246, 26), (ThemeId.Length > 0 ? "Dungeon: " : "Off to: ") + DungeonName, color: Palette.Trim));
+        DungeonLabel.VerticalAlignment = VerticalAlignment.Center;
         StartButton = Add(UiTheme.Button(new Vector2(508, 316), new Vector2(110, 26), "Start run"));
         StartButton.Pressed += Start;
+        BeginRaid = Add(new BeginRaidDialog());
+        BeginRaid.Raided += () => _raid?.Invoke();
 
         Load();
     }
@@ -206,13 +212,6 @@ public partial class RunSetupScreen : MenuScreen
         }
 
         StartButton.Disabled = _party.Count == 0;
-        if (Dungeons.Count > 0 && !Dungeons.Any(dungeon => dungeon.Id == ThemeId))
-        {
-            ThemeId = Dungeons[0].Id;
-        }
-
-        DungeonButton.Text = "Dungeon: " + (Dungeons.FirstOrDefault(dungeon => dungeon.Id == ThemeId).Name ?? ThemeId);
-        DungeonButton.Disabled = Dungeons.Count < 2;
         FriendlyFireButton.SetPressedNoSignal(FriendlyFire);
         FriendlyFireButton.Text = FriendlyFire ? "Friendly fire: on" : "Friendly fire: off";
         int companions = _party.Count(seated => seated.IsCompanion);
@@ -233,6 +232,8 @@ public partial class RunSetupScreen : MenuScreen
             return;
         }
 
-        StartRequested?.Invoke([.. _party], seed, FriendlyFire, ThemeId);
+        List<Character> party = [.. _party];
+        _raid = () => StartRequested?.Invoke(party, seed, FriendlyFire, ThemeId);
+        BeginRaid.Ask($"{DungeonName}, with {UiTheme.Count(party.Count, "hero", "heroes")}." + (ReplacesSavedRun ? " This replaces your saved run." : ""));
     }
 }

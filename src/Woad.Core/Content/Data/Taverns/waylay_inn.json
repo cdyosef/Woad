@@ -1,0 +1,89 @@
+{
+  "id": "waylay_inn",
+  "name": "The Waylay Inn",
+  "placeId": "waylay_inn",
+  // # wall, . planks, B bar, K barrel, F hearth, S stairs to the rooms, s stool, T table,
+  // G dice table, d innkeeper's desk, C merchant's stall, R rug, D the door out.
+  "rows": [
+    "########################",
+    "#KK......KK#FF#.....SSS#",
+    "#BBBBBBBBBB#..#.....SSS#",
+    "#.s.s.s.s..........d...#",
+    "#..................dd..#",
+    "#.sTs..sTs....RRRR.....#",
+    "#.............RRRR..CC.#",
+    "#.sTs..sTs....RRRR..C..#",
+    "#..............sGs.....#",
+    "#..............sGs.....#",
+    "#......................#",
+    "###########D############"
+  ],
+  "start": { "x": 11, "y": 10 },
+  "npcs": [
+    {
+      "id": "bartender", "name": "Mags", "role": "bartender", "x": 5, "y": 1,
+      "appearance": { "look": "brute", "main": "umber", "trim": "bone", "skin": "tan", "hair": "ginger" },
+      "greeting": "What'll it be? First round's not free, but it's cheap.",
+      "rumors": [
+        { "text": "A temple sank off the southern shore, down the road past the river. Folk say it glows at night.", "reveal": { "x": 33, "y": 26, "radius": 2 } },
+        { "text": "The Keep's warden is iron through and through. Don't bother hitting it with sticks." },
+        { "text": "Bats in the Keep carry off your coin. Or was it the thieves? One of them does." }
+      ]
+    },
+    {
+      "id": "merchant", "name": "Oswin", "role": "merchant", "x": 21, "y": 7,
+      "appearance": { "look": "noble", "main": "gilt", "trim": "violet", "skin": "pale", "hair": "grey" },
+      "greeting": "Everything has a price. Most things have two: mine, and yours.",
+      "rumors": [
+        { "text": "Traveling merchants vanish in the dungeons. Free one and we all eat better: better stock for every stall." },
+        { "text": "Pearls from the Sunken Temple fetch twenty gold at my stall. Bring me pearls." }
+      ]
+    },
+    {
+      "id": "recruiter", "name": "Bryn", "role": "recruiter", "x": 9, "y": 5,
+      "appearance": { "look": "barbarian", "main": "woad", "trim": "bone", "skin": "fair", "hair": "blonde" },
+      "greeting": "Looking for blades? The better your name in this bar, the better the folk who'll follow you.",
+      "rumors": [
+        { "text": "There's a wide wood east of the river, thick round the Keep. The road cuts north through it.", "reveal": { "x": 34, "y": 11, "radius": 3 } },
+        { "text": "The mountains to the west go on forever. Nobody's come back over them." }
+      ]
+    },
+    {
+      "id": "innkeeper", "name": "Hollis", "role": "innkeeper", "x": 20, "y": 3,
+      "appearance": { "look": "monk", "main": "moss", "trim": "gilt", "skin": "brown" },
+      "greeting": "Rooms upstairs, quiet as the grave. Friends of yours waiting up there too.",
+      "rumors": [
+        { "text": "A lake lies north of here, past the hills. Clean water, if you can stand the frogs.", "reveal": { "x": 11, "y": 11, "radius": 3 } },
+        { "text": "The temple's doors stay shut until someone beats the Keep. Some old pact." }
+      ]
+    },
+    {
+      "id": "gambler", "name": "Lucky Fen", "role": "gambler", "x": 17, "y": 8,
+      "appearance": { "look": "rogue", "main": "coal", "trim": "blood", "skin": "olive", "hair": "black" },
+      "greeting": "Fancy a game of Bones? Two dice each, high roll takes the pot.",
+      "rumors": [
+        { "text": "There's a dragon's hoard under the hills east of the Keep. Swear on my dice.", "reveal": { "x": 41, "y": 19, "radius": 2 } },
+        { "text": "Never bet against a six. Unless I'm rolling it." }
+      ]
+    },
+    {
+      "id": "patron", "name": "Old Dunstan", "role": "patron", "x": 2, "y": 5,
+      "appearance": { "look": "wizard", "main": "violet", "trim": "gilt", "skin": "pale", "hair": "white" },
+      "greeting": "Eh? Oh, adventurers. Mind the bridge, it creaks.",
+      "rumors": [
+        { "text": "Two bridges span the river: one on the east road, one on the south. The rest is swimming.", "reveal": { "x": 24, "y": 22, "radius": 2 } },
+        { "text": "When I was young the clouds didn't cover half the world. Or my eyes were better." }
+      ]
+    }
+  ],
+  "menu": [
+    { "id": "woad_ale", "name": "Woad Ale", "kind": "drink", "price": 1, "restBonus": 2, "text": "+2 to your next Rest roll." },
+    { "id": "honey_mead", "name": "Honey Mead", "kind": "drink", "price": 2, "restBonus": 4, "text": "+4 to your next Rest roll." },
+    { "id": "hearth_stew", "name": "Hearth Stew", "kind": "food", "price": 3, "restDice": 1, "text": "An extra die on your next Rest roll." },
+    { "id": "hunters_pie", "name": "Hunter's Pie", "kind": "food", "price": 4, "restDice": 1, "restBonus": 2, "text": "An extra die and +2 on your next Rest roll." },
+    { "id": "dragons_breath", "name": "Dragon's Breath", "kind": "drink", "price": 5, "restDice": 2, "text": "Two extra dice on your next Rest roll." }
+  ],
+  "roundForTheBar": 10,
+  "stock": ["health_potion", "health_potion", "bomb", "bomb", "leather_cap", "buckler", "lockpicks", "short_bow", "chain_mail"],
+  "recruitNames": ["Ailsa", "Brodie", "Cait", "Dougal", "Effie", "Fergus", "Greer", "Hamish", "Isla", "Lachlan", "Morven", "Rory", "Seona", "Tam"]
+}

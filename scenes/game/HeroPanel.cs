@@ -113,7 +113,7 @@ public partial class HeroPanel : Panel
         string keys = hero.Keys > 0 || hero.HasBossKey
             ? $"   {UiTheme.Icon("icon_key", "Keys")} {hero.Keys}{(hero.HasBossKey ? " " + UiTheme.Icon("icon_boss_key", "Boss Key") : "")}"
             : "";
-        _gold.Text = $"{UiTheme.Icon("icon_gold", "Gold")} [color={Palette.Hex(Palette.Loot)}]{hero.Gold}[/color]" +
+        _gold.Text = UiTheme.Gold(hero.Gold) +
                      (treasure > 0 ? $"  [color={dim}]+{treasure} in treasure[/color]" : "") + keys;
         _record.Text = $"[color={dim}]Kills {hero.Kills}   XP {hero.Xp}[/color]";
         if (_goldHeroId == hero.Id && hero.Gold != _goldShown)

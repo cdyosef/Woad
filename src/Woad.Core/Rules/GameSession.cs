@@ -397,7 +397,7 @@ public sealed partial class GameSession
                 }
             }
 
-            hero.Hearts = hero.MaxHearts;
+            hero.Hearts = Math.Clamp(heroSetup.Hearts ?? hero.MaxHearts, 1, hero.MaxHearts);
             hero.LuckRemaining = hero.EffectiveStats.Luck;
         }
 

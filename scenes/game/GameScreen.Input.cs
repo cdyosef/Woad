@@ -807,6 +807,18 @@ public partial class GameScreen
         RefreshPanels();
     }
 
+    /// <summary>Offers both hands for a card that goes in either (the Boomerang), saying what each would stow.</summary>
+    private void AskHand(Hero hero, CardInstance card)
+    {
+        (EquipSlot Slot, string Text, string? Blocked) Choice(EquipSlot slot, string name)
+        {
+            string stows = hero.CardsDisplacedBy(card.Definition, slot) is [var held, ..] ? $" (stows {held.Definition.Name})" : "";
+            return (slot, name + stows, _session.CheckEquip(card.Id, slot));
+        }
+
+        _inventory.AskHand(card.Id, card.Definition.Name, [Choice(EquipSlot.MainHand, "Main hand"), Choice(EquipSlot.OffHand, "Off hand")]);
+    }
+
     private void OnCardAction(CardAction action)
     {
         if (Locked || _selectedCardId is not int cardId || ActiveHero is not { } hero || hero.FindCard(cardId) is not var (card, _))
@@ -823,6 +835,9 @@ public partial class GameScreen
                 _targeting = true;
                 Log($"Choose a target for the {card.Definition.Name}. Right-click to cancel.", Palette.Target with { A = 1 });
                 RefreshPanels();
+                break;
+            case CardAction.Equip when card.Definition.AltSlot is not null && hero.SlotOf(card) is null:
+                AskHand(hero, card);
                 break;
             case CardAction.Equip:
                 Execute(new EquipCard(hero.Id, cardId));

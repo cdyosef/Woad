@@ -24,9 +24,15 @@ public static class GameArt
 
     public static Texture2D? Ui(string name) => Texture($"res://assets/ui/{name}.png");
 
+    /// <summary>The Woarld Map's terrain and place art.</summary>
+    public static Texture2D? Woarld(string name) => Texture($"res://assets/woarld/{name}.png");
+
+    /// <summary>A tavern's floor and furniture art.</summary>
+    public static Texture2D? Tavern(string name) => Texture($"res://assets/tavern/{name}.png");
+
     /// <summary>
-    /// The body text font: Pixelify Sans (SIL Open Font License, see assets/fonts/PixelifySans-OFL.txt)
-    /// at its bold weight, drawn crisp with no smoothing to match the pixel art. Null if it's missing.
+    /// The body text font: Jersey 10 (SIL Open Font License, see assets/fonts/Jersey10-OFL.txt), drawn
+    /// on its 10-pixel grid (<see cref="UiTheme.FontSize"/>) so its letters stay crisp and clear. Null if it's missing.
     /// </summary>
     public static Font? BodyFont
     {
@@ -38,20 +44,13 @@ public static class GameArt
             }
 
             Font? body = null;
-            if (Load("res://assets/fonts/PixelifySans.ttf") is FontFile file)
+            if (Load("res://assets/fonts/Jersey10-Regular.ttf") is FontFile file)
             {
                 file.Antialiasing = TextServer.FontAntialiasing.Gray;
                 file.Hinting = TextServer.Hinting.None;
                 file.SubpixelPositioning = TextServer.SubpixelPositioning.Disabled;
-                TextServer text = TextServerManager.GetPrimaryInterface();
-                body = new FontVariation
-                {
-                    BaseFont = file,
-                    VariationOpentype = new Godot.Collections.Dictionary { [text.NameToTag("wght")] = 700 },
-
-                    // Its "fi" and "fl" ligatures look like an "A" ("JellyAsh"): letters stay separate.
-                    OpentypeFeatures = new Godot.Collections.Dictionary { [text.NameToTag("liga")] = 0, [text.NameToTag("clig")] = 0 },
-                };
+                // Its spaces are a single pixel wide on its grid: a pixel more keeps words apart.
+                body = new FontVariation { BaseFont = file, SpacingSpace = 1 };
             }
 
             Cache[BodyFontKey] = body;

@@ -129,26 +129,45 @@ public sealed partial class GameSession
     public bool GearIsFree => State.Turn is not null && ActiveRoom.Monsters.Count == 0;
 
     /// <summary>Why the active hero can't equip the card right now, or null if they can.</summary>
-    public string? CheckEquip(int cardId)
+    public string? CheckEquip(int cardId, EquipSlot? hand = null)
     {
         if (CheckCardQuery(cardId, out CardInstance? card, out CardLocation location) is { } error)
         {
             return error;
         }
 
-        if (card!.Definition.Slot is null)
+        CardDefinition definition = card!.Definition;
+        if (definition.Slot is null)
         {
-            return $"The {card.Definition.Name} isn't worn or held, so it can't be equipped.";
+            return $"The {definition.Name} isn't worn or held, so it can't be equipped.";
         }
 
-        if (location != CardLocation.Backpack)
+        if (hand is { } chosen && chosen != definition.Slot && chosen != definition.AltSlot)
         {
-            return $"The {card.Definition.Name} is already {(location == CardLocation.Belt ? "on your belt" : "equipped")}.";
+            return $"The {definition.Name} can't go in your {HandName(chosen)}.";
         }
 
         Hero hero = ActiveHero;
-        IReadOnlyList<CardInstance> displaced = hero.CardsDisplacedBy(card.Definition);
-        if (hero.Backpack.Count - 1 + displaced.Count > GameRules.BackpackCapacity)
+        if (location == CardLocation.Belt)
+        {
+            return $"The {definition.Name} is already on your belt.";
+        }
+
+        if (location == CardLocation.Equipped)
+        {
+            if (definition.AltSlot is null)
+            {
+                return $"The {definition.Name} is already equipped.";
+            }
+
+            if (HandFor(hero, card, hand) == hero.SlotOf(card))
+            {
+                return $"The {definition.Name} is already in your {HandName(hero.SlotOf(card)!.Value)}.";
+            }
+        }
+
+        IReadOnlyList<CardInstance> displaced = hero.CardsDisplacedBy(definition, HandFor(hero, card, hand));
+        if (hero.Backpack.Count - (location == CardLocation.Backpack ? 1 : 0) + displaced.Count > GameRules.BackpackCapacity)
         {
             return "There's no room in your backpack for what you'd take off.";
         }
@@ -270,14 +289,15 @@ public sealed partial class GameSession
 
     private string? Handle(EquipCard command, List<GameEvent> events)
     {
-        if (CheckEquip(command.CardId) is { } error)
+        if (CheckEquip(command.CardId, command.Hand) is { } error)
         {
             return error;
         }
 
         Hero hero = ActiveHero;
         CardInstance card = hero.FindCard(command.CardId)!.Value.Card;
-        IReadOnlyList<CardInstance> displaced = hero.CardsDisplacedBy(card.Definition);
+        EquipSlot? hand = HandFor(hero, card, command.Hand);
+        IReadOnlyList<CardInstance> displaced = hero.CardsDisplacedBy(card.Definition, hand);
         SpendGearAction();
         hero.Remove(card);
         foreach (CardInstance old in displaced)
@@ -287,11 +307,33 @@ public sealed partial class GameSession
             events.Add(new CardStowed(hero.Id, old.Id));
         }
 
-        hero.Equip(card);
+        hero.Equip(card, hand);
         hero.ClampHearts();
         events.Add(new CardEquipped(hero.Id, card.Id));
         return null;
     }
+
+    /// <summary>
+    /// The hand a card that goes in either (the Boomerang) is equipped into: the one chosen, or, if
+    /// it's already equipped, the other one. Null for other cards, and for a free choice.
+    /// </summary>
+    private static EquipSlot? HandFor(Hero hero, CardInstance card, EquipSlot? chosen = null)
+    {
+        if (chosen is not null || card.Definition.AltSlot is not { } alt || card.Definition.Slot is not { } own)
+        {
+            return chosen;
+        }
+
+        EquipSlot? current = hero.SlotOf(card);
+        return current is null ? null : current == own ? alt : own;
+    }
+
+    private static string HandName(EquipSlot slot) => slot switch
+    {
+        EquipSlot.MainHand => "main hand",
+        EquipSlot.OffHand => "off hand",
+        _ => slot.ToString().ToLowerInvariant(),
+    };
 
     private string? Handle(BeltCard command, List<GameEvent> events)
     {

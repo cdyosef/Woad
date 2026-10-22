@@ -186,7 +186,7 @@ public partial class CharacterEditor : MenuScreen
         Add(new Panel { Position = new Vector2(356, 46), Size = new Vector2(262, 262), MouseFilter = MouseFilterEnum.Ignore });
         _figure = Add(new FigureView { Position = new Vector2(364, 50), Size = new Vector2(48, 48) });
         _preview = Add(new PortraitView { Position = new Vector2(418, 58), Size = new Vector2(24, 29) });
-        _previewName = Add(UiTheme.Label(new Vector2(450, 56), new Vector2(162, 22), fontSize: 16, color: Palette.TrimBright));
+        _previewName = Add(UiTheme.Label(new Vector2(450, 56), new Vector2(162, 22), fontSize: UiTheme.HeadingSize, color: Palette.TrimBright));
         _previewHearts = Add(new HeartsView { Position = new Vector2(450, 82), Size = new Vector2(160, 9) });
         RandomButton = Add(UiTheme.Button(new Vector2(562, 102), new Vector2(50, 19), "Random"));
         RandomButton.TooltipText = "A random look and colors.";

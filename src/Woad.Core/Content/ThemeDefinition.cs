@@ -118,6 +118,9 @@ public sealed record ThemeDefinition
 
     public required string Name { get; init; }
 
+    /// <summary>A line about the dungeon for the Dungeon Run list.</summary>
+    public string Description { get; init; } = "";
+
     public int Floors { get; init; } = 3;
 
     /// <summary>A flooded dungeon: built rooms get pools, the boss arena a great pool, and streams are never chasms.</summary>
