@@ -141,6 +141,12 @@ public sealed class Hero
     /// </summary>
     public bool Prone { get; internal set; }
 
+    /// <summary>Extra Defense dice spent since the start of their turn.</summary>
+    public int DefenseDiceSpent { get; internal set; }
+
+    /// <summary>Their Block is spent until the start of their turn.</summary>
+    public bool BlockSpent { get; internal set; }
+
     /// <summary>The monster whose grab last caught them (a Mimic); see <c>GameSession.HeldBy</c> for whether it still holds them.</summary>
     public int? GrabbedBy { get; internal set; }
 

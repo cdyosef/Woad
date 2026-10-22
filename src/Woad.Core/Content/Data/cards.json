@@ -7,13 +7,18 @@
   { "id": "short_bow", "name": "Short Bow", "type": "weapon", "slot": "mainHand", "twoHanded": true, "modifiers": { "weapon": 1 }, "attackRange": 4, "value": 8, "text": "Two-handed. Weapon 1. Attack at range 4." },
 
   // Shields (off hand)
-  { "id": "buckler", "name": "Buckler", "type": "shield", "slot": "offHand", "modifiers": { "armor": 2 }, "value": 2, "text": "Armor 2: adds 2 to every defense." },
-  { "id": "tower_shield", "name": "Tower Shield", "type": "shield", "slot": "offHand", "modifiers": { "armor": 3, "speed": -1 }, "value": 10, "text": "Armor 3, -1 Wend." },
+  { "id": "buckler", "name": "Buckler", "type": "shield", "slot": "offHand", "modifiers": { "armor": 1, "block": 1 }, "value": 2, "text": "Armor 1. Block 1: +1 to the first defense that's losing, back each turn." },
+  { "id": "tower_shield", "name": "Tower Shield", "type": "shield", "slot": "offHand", "modifiers": { "armor": 3, "block": 3, "speed": -1 }, "value": 10, "text": "Armor 3. Block 3: +3 to the first defense that's losing, back each turn. -1 Wend." },
+  { "id": "knights_shield", "name": "Knight's Shield", "type": "shield", "slot": "offHand", "modifiers": { "armor": 2, "defenseDice": 1 }, "value": 10, "text": "Armor 2, and an extra Defense die: it rolls in when a defense is losing, back each turn." },
 
   // Armor and boots
   { "id": "leather_cap", "name": "Leather Cap", "type": "armor", "slot": "head", "modifiers": { "hearts": 1 }, "value": 3, "text": "+1 Heart." },
   { "id": "diving_helm", "name": "Diving Helm", "type": "armor", "slot": "head", "modifiers": { "armor": 1 }, "swims": true, "value": 8, "text": "Armor 1. Water costs you 1 step a tile, and you stay afloat in deep water without spending a Rumble die." },
-  { "id": "chain_mail", "name": "Chain Mail", "type": "armor", "slot": "body", "modifiers": { "armor": 1 }, "value": 8, "text": "Armor 1: adds 1 to every defense." },
+  { "id": "lucky_helmet", "name": "Lucky Helmet", "type": "armor", "slot": "head", "modifiers": { "armor": 1 }, "lastChanceDie": true, "value": 5, "text": "Armor 1. Your last line of defense: when you'd be hit anyway, it rolls one more die in, then breaks." },
+  { "id": "leather_armor", "name": "Leather Armor", "type": "armor", "slot": "body", "modifiers": { "armor": 1 }, "value": 3, "text": "Armor 1: adds 1 to every defense." },
+  { "id": "studded_armor", "name": "Studded Armor", "type": "armor", "slot": "body", "modifiers": { "armor": 2 }, "value": 6, "text": "Armor 2: adds 2 to every defense." },
+  { "id": "chain_mail", "name": "Chain Mail", "type": "armor", "slot": "body", "modifiers": { "armor": 3 }, "value": 10, "text": "Armor 3: adds 3 to every defense." },
+  { "id": "wardens_plate", "name": "Warden's Plate", "type": "armor", "slot": "body", "modifiers": { "armor": 3, "defenseDice": 1 }, "value": 25, "text": "The Iron Warden's own. Armor 3, and an extra Defense die: it rolls in when a defense is losing, back each turn." },
   { "id": "dash_boots", "name": "Dash Boots", "type": "boots", "slot": "feet", "modifiers": { "moveDice": 1 }, "value": 10, "text": "+1 Wend die." },
 
   // Spells and tools

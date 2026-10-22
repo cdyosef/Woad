@@ -55,9 +55,10 @@ Stats are expressed directly as dice and points. Gear cards add to them.
 | Rumble (fist) | d6 for attacking each turn; each attack uses one or more | 1 | 3 per die |
 | Od Hand (hamsa) | d6 each turn for picking locks, searching, disarming traps, stealing and rousing allies Keeling Over | 1 | 3 per die |
 | Tools | Fixed value and dice added to one lock-picking roll per turn | 0 | Gear only (Lockpicks: +1 and 1d6) |
-| Defense | d6 rolled, all of them, whenever you're attacked | 1 | 3 per die |
+| Defense | The first d6 (the base die) rolled against every attack; the rest are extra dice, rolled in one at a time only while a defense is losing, then spent until your next turn | 1 | 3 per die |
 | Weapon | Fixed value added to one attack per turn | 0 | Gear only (weapons) |
 | Armor | Fixed value added to every defense | 0 | Gear only (shields, armor) |
+| Block | Added, all of it, to the first defense that's losing (before extra dice), then spent until your next turn | 0 | Gear only (shields) |
 | Luck | Rerolls of a single die, per floor | 0 | 1 per reroll |
 
 - **Creation:** name (1–16 letters, numbers, spaces, apostrophes or hyphens), look, crest, and 6 points to
@@ -107,8 +108,8 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 | Type | Usage | Examples (placeholder names) |
 | --- | --- | --- |
 | Weapon | Persistent | Wooden Sword (weapon 1), Knight's Sword (weapon 2), Longsword (weapon 1 + 1d6, versatile +1), Short Bow (weapon 1, ranged 4) |
-| Shield | Persistent | Buckler (armor 2), Tower Shield (armor 3, −1 Wend) |
-| Armor | Persistent | Leather Cap (+1 Heart), Chain Mail (armor 1) |
+| Shield | Persistent | Buckler (armor 1, Block 1), Tower Shield (armor 3, Block 3, −1 Wend), Knight's Shield (armor 2, an extra Defense die; floor 2+) |
+| Armor | Persistent | Head: Leather Cap (+1 Heart), Lucky Helmet (armor 1; when you'd be hit anyway it rolls one more die in, last of all, then breaks), Diving Helm (Temple). Body: Leather Armor (armor 1), Studded Armor (armor 2, floor 2+), Chain Mail (armor 3, floor 3), Warden's Plate (armor 3 and an extra Defense die: the Iron Warden drops it one time in four) |
 | Boots | Persistent | Dash Boots (+1 Move die) |
 | Spell | Charges or single-use | Flame Scroll (a 3-dice fire attack at range 3: any 6 sets the target alight), Frost Wand (2 charges: freeze for a round) |
 | Tool | Persistent | Grapple Hook (pull yourself up to 4 tiles in a line; not built yet) |
@@ -207,8 +208,11 @@ every room that holds at least one player. Rooms with no players stay paused.
 
 On screen, the dice you have left this turn sit under **This turn**, a row each led by its symbol:
 Rumble (a fist) and your weapon, Wend (a boot) and your Wend bonus, Od Hand (a hamsa) and your tools, and
-your banked Power Dice. All but the Power Dice start selected, so clicking a monster, **Wend** or
-**Search** uses everything in that row. Click dice to deselect some and split them across several rolls.
+your Defense (a shield), and your banked Power Dice. Wend starts with every die selected; Rumble and Od Hand
+roll **one die at a time** to begin with, and remember how many each hero last chose (clicking a lit die drops
+one, a dark one adds one; never fewer than one), from roll to roll and turn to turn, using what's left when
+fewer remain. Power Dice start unselected. The Defense row can't be clicked: it shows your base die (framed,
+always rolled), your extra dice (lit while ready, dark once spent), your armor and your Block.
 
 **Doors** sit at the middle tile of each room edge. Stepping through costs 1 step and places you at the
 facing door of the next room.
@@ -217,7 +221,10 @@ facing door of the next room.
 
 - The attacker rolls the Rumble dice they chose and adds them up, plus their weapon's value if they
   used it.
-- The defender rolls all their Defense dice and adds their armor.
+- The defender rolls their base Defense die and adds their armor (a monster rolls all its Defense dice).
+  While a hero's defense is losing, it's backed up in order: all their Block, then their extra Defense dice
+  one at a time until it holds, then banked Power Dice, and last a Lucky Helmet's die. Block and extra dice
+  stay spent until the start of the hero's next turn; a stun takes the extra dice before the base die.
 - If the attack total is higher, the defender loses **1 heart**. Ties go to the defender. The dice bar
   tags the defender's dice HIT, MISS or BLOCKED, and the board calls it out (see Presentation).
 - Rolling dice together makes one attack more likely to land; splitting them gives more chances.
@@ -381,7 +388,7 @@ when the total reaches its number:
 | Hexer | 2 | 3 | 1d6+1 | 1d6 | Rare, from floor 2. Ranged 4; keeps its distance. Each hit drains a Luck reroll; with none left, it stuns |
 | Gelatinous Cube | 4 | 1 | 2d6 | 0d6+1 | Rare, from floor 2. Swallows the cards and gold on every tile it crawls over, dropping them where it falls; splits into two Slimes |
 | **Miniboss: Key Warden** | 5 | 2 | 2d6+1 | 1d6+1 | Guards the Boss Key in the last floor's vault; can't be shoved |
-| **Boss: Iron Warden** | 8 | 3 | 2d6+1 | 1d6+1 | Every other turn, a flail sweep: one roll with all its dice against every hero within 2 |
+| **Boss: Iron Warden** | 8 | 3 | 2d6+1 | 1d6+1 | Every other turn, a flail sweep: one roll with all its dice against every hero within 2. One time in four it drops Warden's Plate besides its loot |
 
 Monsters follow the same dice rules; the +1s are weapon and armor values. Whatever a monster stole drops where it falls. Each turn a monster splits its
 Attack dice into whichever attacks are likeliest to land the most hits on its target (its weapon goes on
@@ -703,7 +710,7 @@ These defaults were not covered in the kickoff questions:
 
 1. Movement and monster melee are **orthogonal only**. Heroes can also attack diagonally.
 2. Base stats and point costs as in [Stats](#stats). Movement is 1d6 + 2 at the start, and boots add dice. Starting heroes attack with 1d6 + 1 (Wooden Sword)
-   and defend with 1d6 + 2 (Buckler).
+   and defend with 1d6 + 1 and Block 1 (Buckler).
 3. The **belt** holds 2 consumables, and using one doesn't take your action.
 4. **No friendly fire at all**, including bombs.
 5. Players at 0 hearts **Keel Over** and can be roused or stand up again; three marks of death kill them for the run.

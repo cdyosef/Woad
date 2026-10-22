@@ -157,6 +157,14 @@ public sealed class ContentCatalog
         }
 
         var cardIds = cards.Select(card => card.Id).ToHashSet(StringComparer.Ordinal);
+        foreach (MonsterDefinition monster in monsters)
+        {
+            if (monster.RareDrop is { } rare && (!cardIds.Contains(rare.Card) || rare.Chance is < 1 or > 100))
+            {
+                errors.Add($"Monster '{monster.Id}' rare drop needs a known card and a chance from 1 to 100.");
+            }
+        }
+
         foreach (ThemeDefinition theme in themes)
         {
             if (theme.LootDeck.Count == 0)

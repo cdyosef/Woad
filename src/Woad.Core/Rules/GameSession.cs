@@ -252,6 +252,7 @@ public sealed partial class GameSession
     {
         State.Turn = new TurnState(hero.Id) { KeelingOver = hero.IsKeelingOver };
         events.Add(new TurnStarted(hero.Id));
+        RechargeDefense(hero);
         ApplyStun(hero);
 
         // A burning hero burns first; if that brings them down, play moves on.

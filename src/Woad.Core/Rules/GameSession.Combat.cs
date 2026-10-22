@@ -304,6 +304,11 @@ public sealed partial class GameSession
             }
         }
 
+        if (definition.RareDrop is { } rare && _random.Loot.NextInt(0, 100) < rare.Chance)
+        {
+            DropLoot(room, SafeTile(room, monster.Position), new CardInstance(State.NextId(), Content.GetCard(rare.Card), broughtInByHeroId: null), events);
+        }
+
         DropKey(room, monster.Position, events);
         ClearRoomIfEmpty(room, events);
     }
@@ -483,12 +488,10 @@ public sealed partial class GameSession
     private int DamageHero(Room room, Hero hero, int attackTotal, string bane, int attackerId, List<GameEvent> events, bool ranged = false)
     {
         attackTotal += hero.Stun.AttackBonus;
-        Stats stats = hero.EffectiveStats;
-        int armor = Math.Max(0, stats.Armor);
         int lyingLow = ranged && hero.IsProne ? 1 : 0;
-        DiceRoll defense = RollDefense(hero.Id, hero.Power, DefenseDiceOf(hero) + lyingLow, armor, attackTotal, canSpend: true, events);
+        int defense = HeroDefense(hero, attackTotal, events, lyingLow);
 
-        int damage = DamageFor(attackTotal, defense.Total + armor);
+        int damage = DamageFor(attackTotal, defense);
         if (hero.IsKeelingOver)
         {
             events.Add(new Damaged(hero.Id, damage, 0));

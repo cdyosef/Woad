@@ -414,11 +414,9 @@ public sealed partial class GameSession
     /// </summary>
     private void ShoveAlly(Hero hero, Room room, Hero ally, int total, List<GameEvent> events)
     {
-        Stats stats = ally.EffectiveStats;
-        int armor = Math.Max(0, stats.Armor);
         total += ally.Stun.AttackBonus;
-        DiceRoll defense = RollDefense(ally.Id, ally.Power, DefenseDiceOf(ally), armor, total, canSpend: true, events);
-        if (total <= defense.Total + armor || ShoveDestination(room, hero, ally.Position, flying: false) is not { } to)
+        int defense = HeroDefense(ally, total, events);
+        if (total <= defense || ShoveDestination(room, hero, ally.Position, flying: false) is not { } to)
         {
             events.Add(new ShoveResisted(hero.Id, ally.Id));
             return;

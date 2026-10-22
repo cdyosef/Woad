@@ -136,10 +136,12 @@ public sealed partial class GameSession
 
     /// <summary>
     /// A defense roll for a hero or monster. Each 6 is banked if there's room, or else rolled in.
-    /// While the defense is losing and the banked dice could still make up the difference, they're
-    /// rolled in one at a time. Emits the roll, then what was spent and banked.
+    /// A hero's <paramref name="guard"/> backs it up while it's losing: their Block, then their extra
+    /// Defense dice one at a time. Then, while it's still losing and the banked dice could still make up
+    /// the difference, they're rolled in one at a time; and last a lucky die. Emits the roll, then what
+    /// was spent and banked.
     /// </summary>
-    private DiceRoll RollDefense(int ownerId, PowerBank bank, int dice, int armor, int attackTotal, bool canSpend, List<GameEvent> events)
+    private DiceRoll RollDefense(int ownerId, PowerBank bank, int dice, int armor, int attackTotal, bool canSpend, List<GameEvent> events, Guard? guard = null)
     {
         DiceRoll roll = _dice.Roll(dice);
         int power = 0, banked = 0, spent = 0;
@@ -167,8 +169,27 @@ public sealed partial class GameSession
         }
 
         Settle();
-        while (canSpend && bank.Banked > 0 && attackTotal > roll.Total + armor
-               && attackTotal - (roll.Total + armor) <= 6 * bank.Banked)
+        int bonus = armor;
+        if (guard is not null)
+        {
+            if (attackTotal > roll.Total + bonus && guard.Block > 0)
+            {
+                guard.BlockUsed = guard.Block;
+                bonus += guard.Block;
+            }
+
+            while (attackTotal > roll.Total + bonus && guard.DiceUsed < guard.Dice)
+            {
+                guard.DiceUsed++;
+                int face = RollOneDie();
+                roll = roll.With(face);
+                unsettled += face == GameRules.PowerDieFace ? 1 : 0;
+                Settle();
+            }
+        }
+
+        while (canSpend && bank.Banked > 0 && attackTotal > roll.Total + bonus
+               && attackTotal - (roll.Total + bonus) <= 6 * bank.Banked)
         {
             bank.Banked--;
             spent++;
@@ -179,7 +200,18 @@ public sealed partial class GameSession
             Settle();
         }
 
-        events.Add(new DefenseRolled(ownerId, roll, armor, roll.Total + armor, power));
+        if (guard is { Lucky: true } && attackTotal > roll.Total + bonus)
+        {
+            guard.LuckyUsed = true;
+            roll = roll.With(RollOneDie());
+        }
+
+        events.Add(new DefenseRolled(ownerId, roll, bonus, roll.Total + bonus, power)
+        {
+            Block = guard?.BlockUsed ?? 0,
+            ExtraDice = guard?.DiceUsed ?? 0,
+            LastChance = guard?.LuckyUsed ?? false,
+        });
         if (spent > 0)
         {
             events.Add(new PowerDiceSpent(ownerId, spent, bank.Banked));

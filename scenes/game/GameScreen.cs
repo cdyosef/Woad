@@ -506,6 +506,11 @@ public partial class GameScreen : Control
                 await RemoveFigure(crumbled.MonsterId);
                 break;
 
+            case LastChanceUsed lucky:
+                CalloutOver(lucky.HeroId, "LUCKY!", Palette.TrimBright);
+                await Pause(0.3);
+                break;
+
             case ShoveResisted resisted:
                 _dice.ShowOutcome(false);
                 if (_figures.TryGetValue(resisted.TargetId, out Figure? firm) && firm.RoomId == _shownRoomId)
@@ -1116,6 +1121,7 @@ public partial class GameScreen : Control
         Engulfed engulfed => FigureRoom(engulfed.MonsterId),
         MonsterRaised raised => FigureRoom(raised.MonsterId),
         Crumbled crumbled => FigureRoom(crumbled.MonsterId),
+        LastChanceUsed lucky => FigureRoom(lucky.HeroId),
         Flipped flipped => FigureRoom(flipped.MonsterId),
         ShoveResisted resisted => FigureRoom(resisted.TargetId),
         MonsterTrapped trapped => FigureRoom(trapped.MonsterId),

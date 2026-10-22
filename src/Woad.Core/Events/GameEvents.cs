@@ -67,7 +67,18 @@ public sealed record LockpickSnapped(int HeroId, int CardId, int Left) : GameEve
 /// last <paramref name="PowerDice"/> faces are Power Dice it added (sixes with a full bank, or banked
 /// dice spent to block).
 /// </summary>
-public sealed record DefenseRolled(int DefenderId, DiceRoll Roll, int Armor, int Total, int PowerDice = 0) : GameEvent;
+/// <param name="Armor">The fixed part: armor, plus any Block spent.</param>
+public sealed record DefenseRolled(int DefenderId, DiceRoll Roll, int Armor, int Total, int PowerDice = 0) : GameEvent
+{
+    /// <summary>Block a hero spent on it (part of <see cref="Armor"/>).</summary>
+    public int Block { get; init; }
+
+    /// <summary>A hero's extra Defense dice spent on it, rolled in after the base die (and before any Power Dice).</summary>
+    public int ExtraDice { get; init; }
+
+    /// <summary>A last-chance die (the Lucky Helmet's) was rolled in at the end.</summary>
+    public bool LastChance { get; init; }
+}
 
 /// <summary>An attack's result: 1 heart when its total beat the defense, otherwise 0 (blocked).</summary>
 public sealed record Damaged(int TargetId, int Amount, int HeartsLeft) : GameEvent;
@@ -402,3 +413,6 @@ public sealed record MonsterRaised(int RaiserId, int MonsterId) : GameEvent;
 
 /// <summary>A raised monster fell to dust when the one that raised it was defeated.</summary>
 public sealed record Crumbled(int MonsterId) : GameEvent;
+
+/// <summary>A hero's last-chance gear (the Lucky Helmet) rolled its die to save them, and broke.</summary>
+public sealed record LastChanceUsed(int HeroId, int CardId) : GameEvent;

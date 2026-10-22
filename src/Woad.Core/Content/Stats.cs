@@ -20,7 +20,10 @@ public sealed record Stats
     /// <summary>Rumble: d6 for attacking each turn. Each attack uses one or more of them.</summary>
     public int AttackDice { get; init; }
 
-    /// <summary>d6 rolled, all of them, whenever attacked.</summary>
+    /// <summary>
+    /// Defense d6. Heroes roll the first (the base die) against every attack; the rest are extra dice,
+    /// rolled in one at a time only while a defense is losing, and spent until the hero's next turn.
+    /// </summary>
     public int DefenseDice { get; init; }
 
     /// <summary>A weapon's fixed value, added to one attack per turn, like a die that always rolls this.</summary>
@@ -47,6 +50,12 @@ public sealed record Stats
     /// <summary>Rerolls of a single die, per floor.</summary>
     public int Luck { get; init; }
 
+    /// <summary>
+    /// A shield's Block: added, all of it, to the first defense that's losing, then spent until the
+    /// start of the hero's next turn. Goes in before extra Defense dice.
+    /// </summary>
+    public int Block { get; init; }
+
     public static Stats operator +(Stats left, Stats right) => new()
     {
         Hearts = left.Hearts + right.Hearts,
@@ -61,5 +70,6 @@ public sealed record Stats
         ToolDice = left.ToolDice + right.ToolDice,
         WeaponDice = left.WeaponDice + right.WeaponDice,
         Luck = left.Luck + right.Luck,
+        Block = left.Block + right.Block,
     };
 }
