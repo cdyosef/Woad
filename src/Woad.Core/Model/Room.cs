@@ -6,6 +6,7 @@ namespace Woad.Core.Model;
 public sealed class Room
 {
     private readonly List<Monster> _monsters = [];
+    private readonly List<Merchant> _merchants = [];
     private readonly Dictionary<GridPosition, List<CardInstance>> _loot = [];
     private readonly HashSet<GridPosition> _openedChests = [];
     private readonly Dictionary<Direction, Passage> _passages = [];
@@ -174,6 +175,17 @@ public sealed class Room
     public Monster? MonsterAt(GridPosition position) => _monsters.FirstOrDefault(monster => monster.Position == position);
 
     public Monster? FindMonster(int monsterId) => _monsters.FirstOrDefault(monster => monster.Id == monsterId);
+
+    /// <summary>Merchants here: chained to the wall, or following the party.</summary>
+    public IReadOnlyList<Merchant> Merchants => _merchants;
+
+    public Merchant? MerchantAt(GridPosition position) => _merchants.FirstOrDefault(merchant => merchant.Position == position);
+
+    public Merchant? FindMerchant(int merchantId) => _merchants.FirstOrDefault(merchant => merchant.Id == merchantId);
+
+    internal void AddMerchant(Merchant merchant) => _merchants.Add(merchant);
+
+    internal void RemoveMerchant(Merchant merchant) => _merchants.Remove(merchant);
 
     internal void AddMonster(Monster monster) => _monsters.Add(monster);
 

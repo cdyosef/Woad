@@ -421,6 +421,65 @@ public partial class GameScreen
     }
 
     /// <summary>
+    /// Debug mode (<c>-- --merchanttest</c>, with <see cref="DemoRun.Market"/>): Aria picks up the key
+    /// she stands on; clicking Silas, chained beside her, frees him with it; clicking him again opens his
+    /// wares, where she sells her potion and buys what she can; then, with Aria walked off, he follows her.
+    /// </summary>
+    private async void RunMerchantTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            await ClickTile(aria.Position);
+            await WaitUntilIdle();
+            Check(aria.Keys == 1, "Aria picks up the key at her feet");
+            Merchant silas = ShownRoom.Merchants.Single();
+            Check(_figures.ContainsKey(silas.Id) && _figures[silas.Id].Chained, "Silas is on the board, in chains");
+
+            await ClickTile(silas.Position);
+            await WaitUntilIdle();
+            Check(!silas.Chained && aria.Keys == 0, "clicking him with a key frees him");
+
+            await ClickTile(silas.Position);
+            await WaitUntilIdle();
+            Check(_merchantPanel.Visible && _merchantPanel.MerchantId == silas.Id, "clicking him again opens his wares");
+            int wares = silas.Stock.Count;
+            await Click(this, _merchantPanel.GetChildren().OfType<Button>().First(button => button.Text == "Sell"));
+            await WaitUntilIdle();
+            Check(aria.Gold > 0 && silas.Stock.Count == wares + 1, "Sell sells him something for gold");
+            int gold = aria.Gold;
+            if (_merchantPanel.GetChildren().OfType<Button>().FirstOrDefault(button => button.Text == "Buy" && !button.Disabled) is { } buy)
+            {
+                await Click(this, buy);
+                await WaitUntilIdle();
+                Check(aria.Gold < gold, "Buy buys what she can afford");
+            }
+
+            await Click(this, _merchantPanel.GetChildren().OfType<Button>().First(button => button.Text == "Close"));
+
+            await ExecuteAsync(new RollMovement(aria.Id));
+            await WaitUntilIdle();
+            await ConfirmIfHeld();
+            GridPosition away = _session.GetReachableTiles().Keys.OrderByDescending(tile => tile.ManhattanDistanceTo(silas.Position)).First();
+            await ExecuteAsync(new MoveHero(aria.Id, away));
+            await WaitUntilIdle();
+            GridPosition chainedAt = silas.Position;
+            await Click(this, _endTurn);
+            await WaitUntilIdle();
+            Check(silas.Position != chainedAt && silas.Position.ManhattanDistanceTo(aria.Position) < chainedAt.ManhattanDistanceTo(aria.Position), "with Aria gone off, he follows her");
+
+            GD.Print("Merchant test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Merchant test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
+    /// <summary>
     /// Debug mode (<c>-- --dentest</c>, with <see cref="DemoRun.Den"/>): Aria walks through the door into
     /// the Ogre Champ's den, which starts its song, then fights it for a few rounds (its blows may well
     /// knock her into the pits and down to the cellar).

@@ -104,6 +104,7 @@ on the Godot command line:
 | `--loottest` | Checks a stack of lockpicks fills one slot, dropping part of a stack asks how many, a bag of loot opens to Take one thing or Take all (the picks rejoin their stack), and an opened chest shows what's inside. |
 | `--tradetest` | Checks clicking a companion beside you opens trading, giving part of a stack asks how many, its owner can have it equip a sword, and the Orders panel's Find me button gives the order. |
 | `--monstertest` | Checks clicking a chest that's a Mimic wakes it on the board (and its grab shuts off Wend), then plays three rounds against an Ogre, a Necromancer (checking it raises the dead), a Hexer and a Gelatinous Cube. |
+| `--merchanttest` | Frees Silas, a merchant chained beside the hero, with a key; opens his wares and buys one; then checks he follows the hero. |
 | `--dentest` | Walks a hero through the door into the Ogre Champ's den, checks its song starts and the Champ waits on its platform, then fights it for a few rounds. |
 | `--clicktest` | Checks that double-clicking a far-off monster rolls the Wend dice, clicking it again walks up to it with Rumble aimed, R puts Rumble away and back, and one more click attacks. |
 | `--resultstest` | Two saved characters click their way out of the exit; checks that their results are saved and shown. Uses a throwaway save folder. |

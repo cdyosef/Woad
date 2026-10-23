@@ -20,6 +20,7 @@ public sealed partial class GameSession
                 continue;
             }
 
+            MoveMerchants(room, events);
             foreach (Monster monster in room.Monsters.OrderBy(monster => monster.Id).ToList())
             {
                 TakeMonsterTurn(room, monster, events);
@@ -162,6 +163,10 @@ public sealed partial class GameSession
         {
             StrikeKeeler(room, monster, keeler, events);
         }
+        else
+        {
+            MonsterAttacksMerchant(room, monster, events);
+        }
     }
 
     /// <summary>Of the heroes attackable from a tile, the one with the fewest hearts (then lowest seat).</summary>
@@ -183,6 +188,7 @@ public sealed partial class GameSession
     private bool CanMonsterEnter(Room room, Monster monster, GridPosition position) =>
         CanMonsterStand(room.Layout[position], monster)
         && (room.MonsterAt(position) is not { } other || other == monster)
+        && room.MerchantAt(position) is null
         && !State.HeroesIn(room).Any(hero => hero.Position == position);
 
     private static bool CanMonsterStand(TileKind tile, Monster monster) =>

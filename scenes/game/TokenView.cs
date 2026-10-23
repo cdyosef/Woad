@@ -84,6 +84,14 @@ public partial class TokenView : Node2D
         set { _carriesLoot = value; QueueRedraw(); }
     }
 
+    /// <summary>A merchant chained to the wall: a shackle and chain at their feet.</summary>
+    public bool Chained
+    {
+        set { _chained = value; QueueRedraw(); }
+    }
+
+    private bool _chained;
+
     /// <summary>Stun on it: one star for each Stun, three for each Powerful Stun, in the top corner.</summary>
     public int StunMarks
     {
@@ -158,6 +166,17 @@ public partial class TokenView : Node2D
         if (_stunMarks > 0)
         {
             DrawStars();
+        }
+
+        if (_chained)
+        {
+            // A shackle at the ankle and a chain of links running off to the wall.
+            Color iron = new(0.55f, 0.57f, 0.62f);
+            DrawArc(new Vector2(BoardView.TileSize / 2f, 25), 3, 0, Mathf.Tau, 10, iron, 1.5f);
+            for (int link = 0; link < 4; link++)
+            {
+                DrawArc(new Vector2(BoardView.TileSize / 2f - 5 - link * 4, 26), 2, 0, Mathf.Tau, 8, iron, 1);
+            }
         }
 
         if (_carriesLoot)

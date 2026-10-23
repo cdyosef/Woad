@@ -105,8 +105,8 @@ public static class TavernServices
         return new ServiceResult(true, $"{buyer.Name} buys the whole bar a round! Cheers go up. Reputation in {tavern.Name}: {world.Reputation(tavern.Id)}.");
     }
 
-    /// <summary>What the merchant asks for a card: twice its worth.</summary>
-    public static int BuyPrice(CardDefinition card) => Math.Max(1, card.Value * 2);
+    /// <summary>What the merchant asks a hero for a card: twice its worth, less for good standing with the Merchant Guild (more for bad).</summary>
+    public static int BuyPrice(CardDefinition card, int guildStanding = 0) => Rules.GameSession.MerchantPrice(card, guildStanding);
 
     /// <summary>What the merchant pays for a card: its worth.</summary>
     public static int SellPrice(CardDefinition card) => Math.Max(1, card.Value);
@@ -119,14 +119,23 @@ public static class TavernServices
             return ServiceResult.Refused("The merchant hasn't got one of those.");
         }
 
-        if (!buyer.SpendGold(BuyPrice(card)))
+        if (buyer.GuildStanding <= Rules.GameSession.ShunnedStanding)
         {
-            return NotEnough(buyer, BuyPrice(card));
+            return ServiceResult.Refused($"The merchant won't deal with {buyer.Name}: the Guild knows that name.");
+        }
+
+        int price = BuyPrice(card, buyer.GuildStanding);
+        if (!buyer.SpendGold(price))
+        {
+            return NotEnough(buyer, price);
         }
 
         stock.Remove(cardId);
         buyer.GiveCard(card, content);
-        return new ServiceResult(true, $"{buyer.Name} buys the {card.Name} for {BuyPrice(card)} gold.");
+        IReadOnlyList<string> newWares = world.SpendWithMerchants(price, content);
+        string news = newWares.Count == 0 ? ""
+            : $" The Merchant Guild rises to level {world.GuildLevel}: new wares ({string.Join(", ", newWares.Select(ware => content.GetCard(ware).Name))})!";
+        return new ServiceResult(true, $"{buyer.Name} buys the {card.Name} for {price} gold.{news}");
     }
 
     /// <summary>Sells a card the hero owns (from the backpack first); the merchant keeps it for sale.</summary>

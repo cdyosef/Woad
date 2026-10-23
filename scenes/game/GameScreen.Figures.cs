@@ -64,6 +64,7 @@ public partial class GameScreen
             }
         }
 
+        LoadMerchantFigures();
         RememberCardNames();
     }
 
@@ -121,6 +122,7 @@ public partial class GameScreen
         token.FireDice = figure.FireDice;
         token.StunMarks = figure.StunMarks;
         token.CarriesLoot = figure.CarriesLoot;
+        token.Chained = figure.Chained;
         token.Prone = figure.Prone;
         token.Diving = figure.Diving;
         token.Active = figure.Id == ActiveHero?.Id;
@@ -372,6 +374,9 @@ public partial class GameScreen
         public int StunMarks { get; set; }
 
         public bool CarriesLoot { get; set; }
+
+        /// <summary>A merchant still chained to the wall.</summary>
+        public bool Chained { get; set; }
 
         public bool Prone { get; set; }
 

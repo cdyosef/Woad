@@ -141,6 +141,15 @@ public sealed class Hero
     /// </summary>
     public bool Prone { get; internal set; }
 
+    /// <summary>Their name with the Merchant Guild coming into the run (it sets merchants' prices).</summary>
+    public int GuildStanding { get; internal init; }
+
+    /// <summary>What this run has done to their Guild standing: rescues raise it, thefts and murders lower it.</summary>
+    public int GuildStandingChange { get; internal set; }
+
+    /// <summary>What this run has done to their standing with the Law (crimes lower it).</summary>
+    public int LawStandingChange { get; internal set; }
+
     /// <summary>Extra Defense dice spent since the start of their turn.</summary>
     public int DefenseDiceSpent { get; internal set; }
 

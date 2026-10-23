@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Woad.Core.Content;
+using Woad.Core.Randomness;
 using Woad.Core.Woarld;
 
 namespace Woad.Core.Tavern;
@@ -23,13 +25,93 @@ public sealed class RaidWorld
     private readonly Dictionary<string, int> _rumorsHeard = [];
     private readonly Dictionary<Guid, RestBoost> _fed = [];
     private readonly Dictionary<Guid, List<string>> _provisions = [];
+    private readonly List<string> _guildWares = [];
+    private readonly List<RememberedMerchant> _remembered = [];
 
     private RaidWorld(WoarldJourney journey) => Journey = journey;
 
     public WoarldJourney Journey { get; }
 
-    /// <summary>Traveling merchants freed from dungeons: each betters every merchant's stock.</summary>
+    /// <summary>Traveling merchants freed from dungeons: each raises the Merchant Guild a level.</summary>
     public int MerchantsRescued { get; set; }
+
+    /// <summary>Gold spent with the Guild's merchants: business raises the Guild too.</summary>
+    public int GoldSpentWithMerchants { get; private set; }
+
+    /// <summary>Gold spent with merchants that each Guild level past the first takes.</summary>
+    public static IReadOnlyList<int> GuildGoldLevels { get; } = [50, 150, 300, 500, 750, 1050, 1400, 1800];
+
+    /// <summary>
+    /// The Merchant Guild's level, shared by every merchant: 1, plus a level for each rescue and for each
+    /// step of gold spent with them. Each level brings every merchant a new ware.
+    /// </summary>
+    public int GuildLevel => 1 + MerchantsRescued + GuildGoldLevels.Count(threshold => GoldSpentWithMerchants >= threshold);
+
+    /// <summary>Wares the Guild has gained by leveling up: every merchant stocks one of each.</summary>
+    public IReadOnlyList<string> GuildWares => _guildWares;
+
+    /// <summary>Merchants the party has rescued, and the heroes they remember.</summary>
+    public IReadOnlyList<RememberedMerchant> RememberedMerchants => _remembered;
+
+    /// <summary>Notes gold spent with a merchant; any levels the Guild gains bring new wares.</summary>
+    public IReadOnlyList<string> SpendWithMerchants(int gold, ContentCatalog content)
+    {
+        int before = GuildLevel;
+        GoldSpentWithMerchants += Math.Max(0, gold);
+        return LevelUp(before, content);
+    }
+
+    /// <summary>
+    /// Rescued merchants join the Guild (a level each, with its new ware) and remember who helped them:
+    /// everyone in the party, and most of all whoever freed them.
+    /// </summary>
+    public IReadOnlyList<string> RescueMerchants(IEnumerable<RememberedMerchant> rescued, ContentCatalog content)
+    {
+        int before = GuildLevel;
+        foreach (RememberedMerchant merchant in rescued)
+        {
+            _remembered.Add(merchant);
+            MerchantsRescued++;
+        }
+
+        return LevelUp(before, content);
+    }
+
+    /// <summary>
+    /// For each level gained, a new ware for every merchant, picked at random from the gear and items
+    /// the dungeons hold: the higher the level, the deeper (better) it may come from.
+    /// </summary>
+    private List<string> LevelUp(int before, ContentCatalog content)
+    {
+        var added = new List<string>();
+        for (int level = before + 1; level <= GuildLevel; level++)
+        {
+            var random = new Pcg32((ulong)(level * 7919 + _guildWares.Count), 11);
+            int tier = Math.Min(3, 1 + (level - 1) / 2);
+            List<string> wares = content.Themes.Values
+                .SelectMany(theme => theme.LootDeck)
+                .Where(entry => entry.MinFloor <= tier && content.GetCard(entry.Card) is { Type: not CardType.Treasure, Coins: false })
+                .Select(entry => entry.Card)
+                .Distinct()
+                .Order(StringComparer.Ordinal)
+                .ToList();
+            if (wares.Count == 0)
+            {
+                continue;
+            }
+
+            string ware = random.Pick(wares);
+            _guildWares.Add(ware);
+            foreach (List<string> stock in _stock.Values)
+            {
+                stock.Add(ware);
+            }
+
+            added.Add(ware);
+        }
+
+        return added;
+    }
 
     public static RaidWorld Begin(WoarldMap map) => new(WoarldJourney.Begin(map, 1));
 
@@ -48,7 +130,7 @@ public sealed class RaidWorld
     {
         if (!_stock.TryGetValue(tavern.Id, out List<string>? stock))
         {
-            _stock[tavern.Id] = stock = [.. tavern.Stock];
+            _stock[tavern.Id] = stock = [.. tavern.Stock, .. _guildWares];
         }
 
         return stock;
@@ -125,6 +207,9 @@ public sealed class RaidWorld
         Fed = _fed.ToDictionary(entry => entry.Key, entry => new[] { entry.Value.Dice, entry.Value.Bonus }),
         Provisions = _provisions,
         MerchantsRescued = MerchantsRescued,
+        GoldSpentWithMerchants = GoldSpentWithMerchants,
+        GuildWares = _guildWares,
+        RememberedMerchants = _remembered,
     }, Options);
 
     /// <exception cref="InvalidDataException">Not a Woarld this version can read.</exception>
@@ -145,7 +230,13 @@ public sealed class RaidWorld
             throw new InvalidDataException("The Raiding Party's Woarld is from another version of the game.");
         }
 
-        var world = new RaidWorld(WoarldJourney.FromJson(data.Journey.GetRawText(), map)) { MerchantsRescued = Math.Max(0, data.MerchantsRescued) };
+        var world = new RaidWorld(WoarldJourney.FromJson(data.Journey.GetRawText(), map))
+        {
+            MerchantsRescued = Math.Max(0, data.MerchantsRescued),
+            GoldSpentWithMerchants = Math.Max(0, data.GoldSpentWithMerchants),
+        };
+        world._guildWares.AddRange(data.GuildWares);
+        world._remembered.AddRange(data.RememberedMerchants);
         foreach ((string key, int value) in data.Reputation)
         {
             world._reputation[key] = value;
@@ -200,5 +291,14 @@ public sealed class RaidWorld
         public Dictionary<Guid, List<string>> Provisions { get; init; } = [];
 
         public int MerchantsRescued { get; init; }
+
+        public int GoldSpentWithMerchants { get; init; }
+
+        public List<string> GuildWares { get; init; } = [];
+
+        public List<RememberedMerchant> RememberedMerchants { get; init; } = [];
     }
 }
+
+/// <summary>A merchant the party rescued: who freed them, and everyone who came out of the dungeon with them.</summary>
+public sealed record RememberedMerchant(string Name, Guid? FreedBy, IReadOnlyList<Guid> Helpers, int Day);

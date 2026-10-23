@@ -47,6 +47,15 @@ public sealed record HeroRunResult
     public required IReadOnlyList<string> Belt { get; init; }
 
     public required IReadOnlyList<string> Backpack { get; init; }
+
+    /// <summary>What the run did to the character's name with the Merchant Guild.</summary>
+    public int GuildStandingChange { get; init; }
+
+    /// <summary>What the run did to the character's standing with the Law.</summary>
+    public int LawStandingChange { get; init; }
+
+    /// <summary>Merchants the party rescued this run (by name), and whether this hero freed each.</summary>
+    public IReadOnlyList<(string Name, bool FreedByThisHero)> MerchantsRescued { get; init; } = [];
 }
 
 public static class RunResults
@@ -78,6 +87,9 @@ public static class RunResults
             DeepestFloor = hero.DeepestFloor,
             Hearts = hero.Hearts,
             Epitaph = hero.Status == HeroStatus.Dead ? hero.Bane : null,
+            GuildStandingChange = hero.GuildStandingChange,
+            LawStandingChange = hero.LawStandingChange,
+            MerchantsRescued = state.RescuedMerchants.Select(rescued => (rescued.Name, rescued.FreedByHeroId == hero.Id)).ToList(),
             Equipped = Gear(hero.EquippedCards),
             Belt = Gear(hero.Belt),
             Backpack = Gear(hero.Backpack),

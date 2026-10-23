@@ -80,6 +80,8 @@ public static partial class DungeonGenerator
             BuildFloor(plan, below, theme, content, layouts, GameRules.PartyStrength(heroes), random, rooms);
         }
 
+        List<BreachSetup> breaches = PlanBreaches(rooms, random);
+        PlaceMerchant(rooms, theme.Floors, random);
         return new RunSetup
         {
             Seed = seed,
@@ -88,7 +90,7 @@ public static partial class DungeonGenerator
             Rooms = rooms,
             StartRoomId = rooms.First(room => room.Floor == 1 && room.Role == RoomRole.Arrival).Id,
             Passages = passages,
-            Breaches = PlanBreaches(rooms, random),
+            Breaches = breaches,
         };
     }
 

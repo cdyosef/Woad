@@ -32,6 +32,9 @@ public sealed class SavedRun
 
     public bool FriendlyFire { get; init; }
 
+    /// <summary>The Merchant Guild's level when the run began (it decides a dungeon merchant's wares).</summary>
+    public int MerchantGuildLevel { get; init; } = 1;
+
     public required IReadOnlyList<HeroSetup> Heroes { get; init; }
 
     /// <summary>Every accepted command, in the order played.</summary>
@@ -47,7 +50,7 @@ public sealed class SavedRun
 
     /// <summary>The run's starting point, generated the same way a new run is.</summary>
     public RunSetup CreateSetup(ContentCatalog content) =>
-        DungeonGenerator.CreateRun(content, ThemeId, Heroes, Seed) with { FriendlyFire = FriendlyFire };
+        DungeonGenerator.CreateRun(content, ThemeId, Heroes, Seed) with { FriendlyFire = FriendlyFire, MerchantGuildLevel = Math.Max(1, MerchantGuildLevel) };
 
     /// <summary>Notes a command the rules accepted, and where the run stands after it.</summary>
     public void Record(GameCommand command, GameState state)

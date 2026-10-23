@@ -101,6 +101,10 @@ public sealed partial class GameSession
             UseCard c => Handle(c, events),
             EquipCard c => Handle(c, events),
             ReloadWeapon c => Handle(c, events),
+            FreeMerchant c => Handle(c, events),
+            BuyFromMerchant c => Handle(c, events),
+            SellToMerchant c => Handle(c, events),
+            AttackMerchant c => Handle(c, events),
             BeltCard c => Handle(c, events),
             StowCard c => Handle(c, events),
             DropCard c => Handle(c, events),
@@ -155,6 +159,11 @@ public sealed partial class GameSession
         foreach (Hero hero in State.Heroes.Where(hero => hero.IsActive && State.RoomOf(hero).Layout[hero.Position].IsWalkable()))
         {
             hero.Footing = hero.Position;
+        }
+
+        if (State.Phase == RunPhase.InProgress)
+        {
+            MerchantsFollow(events);
         }
 
         return CommandResult.Accept(events);
@@ -302,7 +311,7 @@ public sealed partial class GameSession
     private bool IsOccupied(Room room, GridPosition position) => IsOccupied(State, room, position);
 
     private static bool IsOccupied(GameState state, Room room, GridPosition position) =>
-        room.MonsterAt(position) is not null || state.HeroesIn(room).Any(hero => hero.Position == position);
+        room.MonsterAt(position) is not null || room.MerchantAt(position) is not null || state.HeroesIn(room).Any(hero => hero.Position == position);
 
     private static GameState CreateState(ContentCatalog content, RunSetup setup, GameRandom random)
     {
@@ -335,6 +344,7 @@ public sealed partial class GameSession
             state.AddRoom(room);
         }
 
+        AddMerchants(state, content, setup, random);
         ValidateDoors(state);
         AddPassages(state, setup.Passages);
         AddBreaches(state, setup.Breaches);
@@ -381,6 +391,7 @@ public sealed partial class GameSession
             {
                 OwnerId = ownerId,
                 PlayerNumber = ownerId is null ? state.Heroes.Count(other => !other.IsCompanion) + 1 : 0,
+                GuildStanding = heroSetup.GuildStanding,
             };
             state.AddHero(hero);
 

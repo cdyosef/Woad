@@ -248,6 +248,25 @@ public static class DemoRun
         };
     }
 
+    /// <summary>For --merchanttest: Aria on a key, beside Silas, a merchant chained to the wall, and a slime across the room.</summary>
+    public static RunSetup Market(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20 } }],
+        Rooms =
+        [
+            new RoomSetup("market", RoomTemplate.Parse(".........\n.........\n.........\n.........\n.1.......\n.........\n.........\n.........\n.......s.", ContentCatalog.LoadDefault()),
+                Features: new RoomFeatures
+                {
+                    Merchant = new MerchantSetup(new Woad.Core.Grid.GridPosition(0, 4), 6, "Silas"),
+                    Keys = new Dictionary<Woad.Core.Grid.GridPosition, int> { [new(1, 4)] = 1 },
+                }),
+        ],
+        StartRoomId = "market",
+        MerchantGuildLevel = 3,
+    };
+
     /// <summary>For --tradetest: Aria with two potions and her companion Pip beside her, a Knight's Sword in its pack.</summary>
     public static RunSetup Camp(ulong seed) => new()
     {
