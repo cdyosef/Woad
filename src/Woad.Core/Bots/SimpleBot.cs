@@ -57,6 +57,12 @@ public static class SimpleBot
             return new Rouse(hero.Id, fallen.Id);
         }
 
+        // A spent crossbow is reloaded straight away, while there are dice for it.
+        if (session.CheckReload() is null)
+        {
+            return new ReloadWeapon(hero.Id);
+        }
+
         if (FleeBlast(session, hero, room) is { } flee)
         {
             return flee;

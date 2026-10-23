@@ -297,9 +297,20 @@ public sealed partial class GameSession
         Hero hero = ActiveHero;
         CardInstance card = hero.FindCard(command.CardId)!.Value.Card;
         EquipSlot? hand = HandFor(hero, card, command.Hand);
+
+        // A stack of Daggers held in one hand, equipped again: one of them goes to the other hand.
+        if (card.Count > 1 && card.Definition.OffHandStrike && hero.SlotOf(card) is { } holding && hand is { } other && other != holding)
+        {
+            card = card.Split(State.NextId(), 1);
+        }
+
         IReadOnlyList<CardInstance> displaced = hero.CardsDisplacedBy(card.Definition, hand);
         SpendGearAction();
-        hero.Remove(card);
+        if (hero.FindCard(card.Id) is not null)
+        {
+            hero.Remove(card);
+        }
+
         foreach (CardInstance old in displaced)
         {
             hero.Remove(old);

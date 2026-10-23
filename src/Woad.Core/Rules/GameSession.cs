@@ -40,12 +40,6 @@ public sealed partial class GameSession
     /// <summary>Move dice the active hero hasn't used this turn.</summary>
     public int MoveDiceLeft => State.Turn is { } turn ? Math.Max(0, ActiveHero.EffectiveStats.MoveDice - turn.MoveDiceUsed) : 0;
 
-    /// <summary>The weapon value the active hero can still add to an attack this turn (0 once used).</summary>
-    public int WeaponBonusLeft => State.Turn is { WeaponUsed: false } ? Math.Max(0, ActiveHero.EffectiveStats.Weapon) + Versatile(ActiveHero) : 0;
-
-    /// <summary>The weapon's own dice the active hero can still add to an attack this turn (the Longsword's d6).</summary>
-    public int WeaponDiceLeft => State.Turn is { WeaponUsed: false } ? Math.Max(0, ActiveHero.MainWeapon?.Definition.Modifiers.WeaponDice ?? 0) : 0;
-
     /// <summary>The tools' own dice the active hero can still add to a lock-picking roll this turn (a lockpick's d6).</summary>
     public int ToolDiceLeft => State.Turn is { ToolsUsed: false } ? Math.Max(0, ActiveHero.EffectiveStats.ToolDice) : 0;
 
@@ -106,6 +100,7 @@ public sealed partial class GameSession
             GoThroughBreach c => Handle(c, events),
             UseCard c => Handle(c, events),
             EquipCard c => Handle(c, events),
+            ReloadWeapon c => Handle(c, events),
             BeltCard c => Handle(c, events),
             StowCard c => Handle(c, events),
             DropCard c => Handle(c, events),

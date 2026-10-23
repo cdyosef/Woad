@@ -56,6 +56,9 @@ public sealed record UseCard(int HeroId, int CardId, GridPosition? Target = null
 /// </summary>
 public sealed record EquipCard(int HeroId, int CardId, EquipSlot? Hand = null) : GameCommand(HeroId);
 
+/// <summary>Reloads the hero's crossbow, spending its reload dice (Od Hand, and Wend for a heavy one).</summary>
+public sealed record ReloadWeapon(int HeroId) : GameCommand(HeroId);
+
 /// <summary>Move a single-use card from the backpack to the belt. Uses the action.</summary>
 public sealed record BeltCard(int HeroId, int CardId) : GameCommand(HeroId);
 

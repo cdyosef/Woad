@@ -53,18 +53,15 @@ public sealed partial class GameSession
             return powerError;
         }
 
-        (int weaponBonus, bool stunOnSix, int weaponDice) = WeaponFor(hero, room, monster.Position);
-        if (monster.Definition.Swimmer)
-        {
-            weaponBonus += hero.MainWeapon?.Definition.SwimmerBonus ?? 0;
-        }
-
-        bool armed = command.UseWeapon && !Turn.WeaponUsed && (weaponBonus > 0 || weaponDice > 0);
+        Wielding wielding = Wield(hero, room, monster.Position, monster);
+        int weaponBonus = wielding.Bonus + (monster.Definition.Swimmer && wielding.HasStrike && !wielding.OffHand ? wielding.Weapon?.SwimmerBonus ?? 0 : 0);
+        bool armed = command.UseWeapon && wielding.HasStrike && (weaponBonus > 0 || wielding.Dice > 0);
         int bonus = armed ? weaponBonus : 0;
         Turn.AttackDiceUsed += dice;
-        Turn.WeaponUsed |= armed;
+        UseWeapon(hero, room, wielding, armed, monster.Position, events);
         SpendBankedPowerDice(hero, command.PowerDice, events);
-        RollHeroAttack(hero, dice + ProneBonus(monster, hero.Position), bonus, [monster.Id], DamageSource.Weapon, events, command.PowerDice, stunOnSix: stunOnSix, weaponDice: armed ? weaponDice : 0);
+        RollHeroAttack(hero, dice + ProneBonus(monster, hero.Position), bonus, [monster.Id], DamageSource.Weapon, events, command.PowerDice,
+            stunOnSix: wielding.Weapon?.StunOnSix ?? false, weaponDice: armed ? wielding.Dice : 0, weapon: wielding.Weapon);
         return null;
     }
 
@@ -79,7 +76,7 @@ public sealed partial class GameSession
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
         return State.ActiveHeroesIn(room)
-            .Where(ally => ally != hero && Targeting.CanHeroAttack(room.Layout, hero.AttackRange, hero.Position, ally.Position))
+            .Where(ally => ally != hero && CanHeroReach(hero, room.Layout, hero.Position, ally.Position))
             .Where(ally => !Diving(room, ally) || ally.Position.ChebyshevDistanceTo(hero.Position) <= 1)
             .ToList();
     }
@@ -109,13 +106,14 @@ public sealed partial class GameSession
             return powerError;
         }
 
-        (int weaponBonus, bool stunOnSix, int weaponDice) = WeaponFor(hero, ActiveRoom, target.Position);
-        bool armed = command.UseWeapon && !Turn.WeaponUsed && (weaponBonus > 0 || weaponDice > 0);
-        int bonus = armed ? weaponBonus : 0;
+        Wielding wielding = Wield(hero, ActiveRoom, target.Position);
+        bool armed = command.UseWeapon && wielding.HasStrike && (wielding.Bonus > 0 || wielding.Dice > 0);
+        int bonus = armed ? wielding.Bonus : 0;
         Turn.AttackDiceUsed += dice;
-        Turn.WeaponUsed |= armed;
+        UseWeapon(hero, ActiveRoom, wielding, armed, target.Position, events);
         SpendBankedPowerDice(hero, command.PowerDice, events);
-        RollHeroAttack(hero, dice + ProneBonus(target, hero.Position), bonus, [target.Id], DamageSource.Weapon, events, command.PowerDice, stunOnSix: stunOnSix, weaponDice: armed ? weaponDice : 0);
+        RollHeroAttack(hero, dice + ProneBonus(target, hero.Position), bonus, [target.Id], DamageSource.Weapon, events, command.PowerDice,
+            stunOnSix: wielding.Weapon?.StunOnSix ?? false, weaponDice: armed ? wielding.Dice : 0, weapon: wielding.Weapon);
         return null;
     }
 
@@ -175,7 +173,7 @@ public sealed partial class GameSession
     }
 
     private static bool CanHeroAttack(Hero hero, Room room, Monster monster) =>
-        Targeting.CanHeroAttack(room.Layout, hero.AttackRange, hero.Position, monster.Position)
+        CanHeroReach(hero, room.Layout, hero.Position, monster.Position)
         && (!Submerged(room, monster) || monster.Position.ChebyshevDistanceTo(hero.Position) <= 1 || (hero.MainWeapon?.Definition.SwimmerBonus ?? 0) > 0);
 
     /// <summary>
@@ -187,19 +185,20 @@ public sealed partial class GameSession
     /// <param name="fire">Fire dice: any 6 sets the targets alight (see <see cref="IgniteTargets"/>).</param>
     /// <param name="stunOnSix">A stunning weapon (the Boomerang): every 6 stuns the targets.</param>
     /// <param name="weaponDice">The weapon's own dice (the Longsword's d6), whose sixes roll straight in.</param>
-    private void RollHeroAttack(Hero hero, int dice, int bonus, IReadOnlyList<int> targetIds, DamageSource source, List<GameEvent> events, int powerDice = 0, bool fire = false, bool stunOnSix = false, int weaponDice = 0)
+    /// <param name="weapon">The weapon swung or shot, for what it does as the attack lands (see <see cref="WeaponAftermath"/>).</param>
+    private void RollHeroAttack(Hero hero, int dice, int bonus, IReadOnlyList<int> targetIds, DamageSource source, List<GameEvent> events, int powerDice = 0, bool fire = false, bool stunOnSix = false, int weaponDice = 0, CardDefinition? weapon = null)
     {
         dice = Math.Max(0, dice);
         DiceRoll rolled = _dice.Roll(dice + powerDice);
-        (int[] weapon, int crits) = RollBonusDice(weaponDice);
-        var roll = new DiceRoll([.. rolled.Faces.Take(dice), .. weapon[..weaponDice], .. rolled.Faces.Skip(dice), .. weapon[weaponDice..]]);
+        (int[] weaponFaces, int crits) = RollBonusDice(weaponDice);
+        var roll = new DiceRoll([.. rolled.Faces.Take(dice), .. weaponFaces[..weaponDice], .. rolled.Faces.Skip(dice), .. weaponFaces[weaponDice..]]);
         events.Add(new AttackRolled(hero.Id, roll, bonus, roll.Total + bonus, targetIds, powerDice + crits, source == DamageSource.Shove) { WeaponDice = weaponDice });
         if (crits > 0)
         {
             events.Add(new CritRolled(hero.Id, crits));
         }
 
-        Turn.PendingRoll = new PendingRoll(hero.Id, roll, bonus, targetIds, source, fire: fire, stunOnSix: stunOnSix) { NonPowerDice = dice + weaponDice };
+        Turn.PendingRoll = new PendingRoll(hero.Id, roll, bonus, targetIds, source, fire: fire, stunOnSix: stunOnSix) { NonPowerDice = dice + weaponDice, Weapon = weapon };
         EarnPowerDice(hero, Sixes(rolled.Faces), events);
     }
 
@@ -215,7 +214,7 @@ public sealed partial class GameSession
         {
             if (room.FindMonster(targetId) is { } monster)
             {
-                DamageMonster(hero, room, monster, attack.Total, attack.Source, events, ranged: monster.Position.ChebyshevDistanceTo(hero.Position) > 1);
+                DamageMonster(hero, room, monster, attack.Total, attack.Source, events, ranged: monster.Position.ChebyshevDistanceTo(hero.Position) > 1, crush: attack.Weapon?.Crush ?? false);
             }
             else if (State.ActiveHeroesIn(room).FirstOrDefault(ally => ally.Id == targetId) is { } ally)
             {
@@ -225,6 +224,7 @@ public sealed partial class GameSession
 
         IgniteTargets(hero, room, attack, events);
         StunTargets(hero, room, attack, events);
+        WeaponAftermath(hero, room, attack, events);
     }
 
     /// <summary>An attack hits, for 1 heart, when its total beats the defense total; ties go to the defender.</summary>
@@ -232,7 +232,8 @@ public sealed partial class GameSession
         attackTotal > defenseTotal ? GameRules.DamagePerHit : 0;
 
     /// <param name="ranged">From a distance: a prone monster rolls an extra defense die.</param>
-    private void DamageMonster(Hero? attacker, Room room, Monster monster, int attackTotal, DamageSource source, List<GameEvent> events, bool ranged = false)
+    /// <param name="crush">A crushing blow (the War Hammer): a hit knocks a shelled monster onto its back, and bones it breaks stay broken.</param>
+    private void DamageMonster(Hero? attacker, Room room, Monster monster, int attackTotal, DamageSource source, List<GameEvent> events, bool ranged = false, bool crush = false)
     {
         // A stunned monster is easier to hit; a collapsed heap of bones has no defense at all.
         attackTotal += monster.Stun.AttackBonus;
@@ -251,14 +252,20 @@ public sealed partial class GameSession
 
         if (damage > 0 && monster.Hearts == 0)
         {
-            DefeatMonster(attacker, room, monster, source, events);
+            DefeatMonster(attacker, room, monster, source, events, crushed: crush);
+        }
+        else if (damage > 0 && crush && monster.Definition.Shell && !monster.Prone && !monster.Collapsed)
+        {
+            monster.Prone = true;
+            events.Add(new Flipped(monster.Id));
         }
     }
 
-    private void DefeatMonster(Hero? killer, Room room, Monster monster, DamageSource source, List<GameEvent> events)
+    /// <param name="crushed">Broken by a crushing blow: bones don't reassemble.</param>
+    private void DefeatMonster(Hero? killer, Room room, Monster monster, DamageSource source, List<GameEvent> events, bool crushed = false)
     {
         MonsterDefinition definition = monster.Definition;
-        if (definition.Reassembles && !monster.HasReassembled && source == DamageSource.Weapon)
+        if (definition.Reassembles && !monster.HasReassembled && source == DamageSource.Weapon && !crushed)
         {
             monster.Collapsed = true;
             monster.HasReassembled = true;

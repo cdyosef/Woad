@@ -172,6 +172,16 @@ public sealed partial class GameSession
         int bonus = armor;
         if (guard is not null)
         {
+            // Allies' Guard Dice first; a 6 on one rolls another straight in.
+            while (attackTotal > roll.Total + bonus && guard.GuardUsed < guard.GuardDice)
+            {
+                guard.GuardUsed++;
+                foreach (int face in RollBonusDice(1).Faces)
+                {
+                    roll = roll.With(face);
+                }
+            }
+
             if (attackTotal > roll.Total + bonus && guard.Block > 0)
             {
                 guard.BlockUsed = guard.Block;
@@ -210,6 +220,7 @@ public sealed partial class GameSession
         {
             Block = guard?.BlockUsed ?? 0,
             ExtraDice = guard?.DiceUsed ?? 0,
+            GuardDice = guard?.GuardUsed ?? 0,
             LastChance = guard?.LuckyUsed ?? false,
         });
         if (spent > 0)

@@ -144,6 +144,9 @@ public sealed class Hero
     /// <summary>Extra Defense dice spent since the start of their turn.</summary>
     public int DefenseDiceSpent { get; internal set; }
 
+    /// <summary>Guard Dice spent on allies since the start of their turn.</summary>
+    public int GuardDiceSpent { get; internal set; }
+
     /// <summary>Their Block is spent until the start of their turn.</summary>
     public bool BlockSpent { get; internal set; }
 
@@ -183,7 +186,12 @@ public sealed class Hero
     public IEnumerable<CardInstance> AllCards => EquippedCards.Concat(_belt).Concat(_backpack);
 
     /// <summary>Base stats plus the bonuses of everything equipped.</summary>
-    public Stats EffectiveStats => EquippedCards.Aggregate(BaseStats, (stats, card) => stats + card.Definition.Modifiers);
+    public Stats EffectiveStats => EquippedCards.Aggregate(BaseStats, (stats, card) =>
+        stats + card.Definition.Modifiers + (HasSetBonus(card.Definition) ? card.Definition.Set!.Modifiers : Stats.None));
+
+    /// <summary>Whether the card's set bonus is on: it has one, and its partner is equipped too.</summary>
+    public bool HasSetBonus(CardDefinition card) =>
+        card.Set is { } set && EquippedCards.Any(other => other.Definition.Id == set.With);
 
     public int MaxHearts => Math.Max(1, EffectiveStats.Hearts);
 
@@ -194,8 +202,14 @@ public sealed class Hero
     public CardInstance? ThrownOffHand =>
         _equipment.TryGetValue(EquipSlot.OffHand, out CardInstance? off) && off != MainWeapon && off.Definition.Type == CardType.Weapon ? off : null;
 
-    /// <summary>Reach of the Attack action: the main-hand weapon's range (melee when unarmed), or a thrown off-hand weapon's if further.</summary>
-    public int AttackRange => Math.Max(MainWeapon?.Definition.AttackRange ?? 1, ThrownOffHand?.Definition.AttackRange ?? 1);
+    /// <summary>
+    /// Furthest reach of the Attack action: the main-hand weapon's range (melee when unarmed, or with an
+    /// unloaded crossbow), or an off-hand weapon's, or how far a Dagger can be thrown. See <c>GameSession.CanHeroReach</c>
+    /// for whether a tile can be hit.
+    /// </summary>
+    public int AttackRange => new[] { MainWeapon, ThrownOffHand }
+        .Select(card => card is null ? 1 : Math.Max(card.Unloaded ? 1 : card.Definition.AttackRange, card.Definition.ThrownRange))
+        .Max();
 
     /// <summary>Wearing gear that swims (the Diving Helm): water is no harder than floor, and deep water needs no effort to stay afloat.</summary>
     public bool Swims => _equipment.Values.Any(card => card.Definition.Swims);

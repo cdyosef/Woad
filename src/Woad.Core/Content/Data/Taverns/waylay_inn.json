@@ -84,6 +84,6 @@
     { "id": "dragons_breath", "name": "Dragon's Breath", "kind": "drink", "price": 5, "restDice": 2, "text": "Two extra dice on your next Rest roll." }
   ],
   "roundForTheBar": 10,
-  "stock": ["health_potion", "health_potion", "bomb", "bomb", "leather_cap", "buckler", "lockpicks", "short_bow", "chain_mail"],
+  "stock": ["health_potion", "health_potion", "bomb", "bomb", "leather_cap", "buckler", "lockpicks", "short_bow", "chain_mail", "dagger", "dagger", "dagger"],
   "recruitNames": ["Ailsa", "Brodie", "Cait", "Dougal", "Effie", "Fergus", "Greer", "Hamish", "Isla", "Lachlan", "Morven", "Rory", "Seona", "Tam"]
 }

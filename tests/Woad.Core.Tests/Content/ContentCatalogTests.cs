@@ -24,7 +24,7 @@ public class ContentCatalogTests
         CardDefinition bow = content.GetCard("short_bow");
         Assert.Equal(EquipSlot.MainHand, bow.Slot);
         Assert.True(bow.TwoHanded);
-        Assert.Equal(4, bow.AttackRange);
+        Assert.Equal(6, bow.AttackRange);
         Assert.Equal(1, bow.Modifiers.Weapon);
 
         CardDefinition bomb = content.GetCard("bomb");

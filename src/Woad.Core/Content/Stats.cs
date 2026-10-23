@@ -56,6 +56,13 @@ public sealed record Stats
     /// </summary>
     public int Block { get; init; }
 
+    /// <summary>
+    /// Guard Dice (the Knight's set): while an ally beside you (diagonals too) is losing a defense, each
+    /// rolls in for them, right after their base die and armor (a 6 rolls another straight in), then is
+    /// spent until the start of your next turn.
+    /// </summary>
+    public int GuardDice { get; init; }
+
     public static Stats operator +(Stats left, Stats right) => new()
     {
         Hearts = left.Hearts + right.Hearts,
@@ -71,5 +78,6 @@ public sealed record Stats
         WeaponDice = left.WeaponDice + right.WeaponDice,
         Luck = left.Luck + right.Luck,
         Block = left.Block + right.Block,
+        GuardDice = left.GuardDice + right.GuardDice,
     };
 }

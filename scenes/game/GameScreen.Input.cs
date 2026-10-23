@@ -146,7 +146,7 @@ public partial class GameScreen
         Hero hero = ActiveHero!;
         IReadOnlyDictionary<GridPosition, int> reachable = _session.GetReachableTiles();
         return reachable.Keys.Append(hero.Position)
-            .Where(tile => Targeting.CanHeroAttack(room.Layout, hero.AttackRange, tile, target))
+            .Where(tile => GameSession.CanHeroReach(hero, room.Layout, tile, target))
             .OrderBy(tile => tile == hero.Position ? 0 : reachable[tile])
             .ThenBy(tile => tile.ManhattanDistanceTo(target))
             .Select(tile => (GridPosition?)tile)
@@ -828,6 +828,9 @@ public partial class GameScreen
 
         switch (action)
         {
+            case CardAction.Use when card.Definition.Reload is not null:
+                Execute(new ReloadWeapon(hero.Id));
+                break;
             case CardAction.Use when card.Definition.Effect?.Kind == CardEffectKind.Heal:
                 Execute(new UseCard(hero.Id, cardId));
                 break;

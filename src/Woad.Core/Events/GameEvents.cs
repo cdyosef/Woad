@@ -73,6 +73,9 @@ public sealed record DefenseRolled(int DefenderId, DiceRoll Roll, int Armor, int
     /// <summary>Block a hero spent on it (part of <see cref="Armor"/>).</summary>
     public int Block { get; init; }
 
+    /// <summary>Allies' Guard Dice spent on it, rolled in right after the base die.</summary>
+    public int GuardDice { get; init; }
+
     /// <summary>A hero's extra Defense dice spent on it, rolled in after the base die (and before any Power Dice).</summary>
     public int ExtraDice { get; init; }
 
@@ -416,3 +419,15 @@ public sealed record Crumbled(int MonsterId) : GameEvent;
 
 /// <summary>A hero's last-chance gear (the Lucky Helmet) rolled its die to save them, and broke.</summary>
 public sealed record LastChanceUsed(int HeroId, int CardId) : GameEvent;
+
+/// <summary>A hero's Guard Die rolled in for the ally beside them (its <see cref="DefenseRolled"/> comes just before).</summary>
+public sealed record Guarded(int GuardianId, int HeroId) : GameEvent;
+
+/// <summary>A hero reloaded their crossbow.</summary>
+public sealed record WeaponReloaded(int HeroId, int CardId) : GameEvent;
+
+/// <summary>A hero threw a dagger at a target; it lies at <paramref name="LandedAt"/> to be picked up.</summary>
+public sealed record DaggerThrown(int HeroId, int CardId, string RoomId, GridPosition LandedAt) : GameEvent;
+
+/// <summary>A cleaving blow (the Great Axe's 6) carried on into another monster beside the attacker.</summary>
+public sealed record Cleaved(int HeroId, int MonsterId) : GameEvent;

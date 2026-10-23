@@ -1,3 +1,4 @@
+using Woad.Core.Content;
 using Woad.Core.Dice;
 using Woad.Core.Grid;
 
@@ -97,6 +98,9 @@ public sealed class PendingRoll
     /// <summary>How many of the dice, from the first, aren't Power Dice (the rest are, and those added later).</summary>
     public int NonPowerDice { get; internal init; } = int.MaxValue;
 
+    /// <summary>The weapon the attack was made with, for what it does as the attack lands (cleave, shove, crush); null bare-handed.</summary>
+    public CardDefinition? Weapon { get; internal init; }
+
     /// <summary>The tools (lockpicks) went into this roll: if it fails with a 1 among its non-Power dice, a pick snaps.</summary>
     public bool UsedTools { get; internal init; }
 }
@@ -117,8 +121,11 @@ public sealed class TurnState
 
     public int AttackDiceUsed { get; internal set; }
 
-    /// <summary>The weapon's value has been added to an attack this turn.</summary>
-    public bool WeaponUsed { get; internal set; }
+    /// <summary>Main-hand weapon strikes used this turn: each adds the weapon's value to an attack (most weapons get one a turn, a Rapier two).</summary>
+    public int StrikesUsed { get; internal set; }
+
+    /// <summary>An off-hand Dagger has added its value to an attack this turn.</summary>
+    public bool OffHandStrikeUsed { get; internal set; }
 
     public int MoveDiceUsed { get; internal set; }
 

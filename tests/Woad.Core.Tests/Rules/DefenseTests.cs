@@ -112,6 +112,45 @@ public sealed class DefenseTests
     }
 
     [Fact]
+    public void ASetBonusComesOnlyWithBothHalvesWorn()
+    {
+        GameSession session = TestRun.Start(TwoSluggers, cards: ["ksword", "kshield"]);
+        Hero hero = session.HeroInSeat();
+        Assert.Equal((3, 1, 1), (hero.EffectiveStats.Weapon, hero.EffectiveStats.Block, hero.EffectiveStats.GuardDice));
+
+        GameSession swordOnly = TestRun.Start(TwoSluggers, cards: ["ksword"]);
+        Hero alone = swordOnly.HeroInSeat();
+        Assert.Equal((2, 0, 0), (alone.EffectiveStats.Weapon, alone.EffectiveStats.Block, alone.EffectiveStats.GuardDice));
+    }
+
+    [Fact]
+    public void AGuardDieRollsInForAnAllyBesideYouBeforeTheirOwnBlock()
+    {
+        // The Slugger's 5+4=9 against the hero's base 1 and armor 2: losing, so their neighbor's Guard Die
+        // rolls in: a 6, which rolls a 2 straight in, for 11. Their own Block and extra die stay unspent.
+        GameSession session = TestRun.Start("""
+            .........
+            .........
+            .........
+            .........
+            ..U12....
+            .........
+            .........
+            .........
+            .........
+            """, new ScriptedDice(5, 1, 6, 2), heroes: 2, cards: ["ksword", "kshield"]);
+        Hero hero = session.HeroInSeat(0);
+        Hero knight = session.HeroInSeat(1);
+
+        IReadOnlyList<GameEvent> events = session.EndRound();
+
+        DefenseRolled defense = events.SingleOf<DefenseRolled>();
+        Assert.Equal((1, 0, 0, 11), (defense.GuardDice, defense.Block, defense.ExtraDice, defense.Total));
+        Assert.Equal(new Guarded(knight.Id, hero.Id), events.SingleOf<Guarded>());
+        Assert.Equal(0, GameSession.GuardDiceReady(knight));
+    }
+
+    [Fact]
     public void AMonsterCanDropARareCardBesidesItsLoot()
     {
         GameSession session = TestRun.Start("""

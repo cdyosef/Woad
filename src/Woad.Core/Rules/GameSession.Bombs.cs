@@ -47,7 +47,7 @@ public sealed partial class GameSession
             return "There's no bomb there.";
         }
 
-        return Targeting.CanHeroAttack(room.Layout, hero.AttackRange, hero.Position, bomb.Position) ? null : "That bomb is out of reach.";
+        return CanHeroReach(hero, room.Layout, hero.Position, bomb.Position) ? null : "That bomb is out of reach.";
     }
 
     private string? Handle(AttackBomb command, List<GameEvent> events)
@@ -72,9 +72,10 @@ public sealed partial class GameSession
 
         Room room = ActiveRoom;
         Bomb bomb = room.FindBomb(command.BombId)!;
-        int bonus = command.UseWeapon && !Turn.WeaponUsed ? WeaponFor(hero, room, bomb.Position).Bonus : 0;
+        Wielding wielding = Wield(hero, room, bomb.Position);
+        int bonus = command.UseWeapon && wielding.HasStrike ? wielding.Bonus : 0;
         Turn.AttackDiceUsed += dice;
-        Turn.WeaponUsed |= bonus > 0;
+        UseWeapon(hero, room, wielding, bonus > 0, bomb.Position, events);
         SpendBankedPowerDice(hero, command.PowerDice, events);
         StrikeBomb(hero, room, bomb, dice + command.PowerDice, bonus, events);
         return null;
