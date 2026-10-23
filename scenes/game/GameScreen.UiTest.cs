@@ -517,7 +517,7 @@ public partial class GameScreen
 
             await ClickTile(slime.Position);
             await WaitUntilIdle();
-            Check(Woad.Core.Rules.Targeting.CanHeroAttack(ShownRoom.Layout, aria.AttackRange, aria.Position, slime.Position), "clicking it again walks her up to it");
+            Check(Woad.Core.Rules.GameSession.CanHeroReach(aria, ShownRoom.Layout, aria.Position, slime.Position), "clicking it again walks her up to it");
             Check(_rumbling, "and Rumble is aimed at it");
             await PressKey(Key.R);
             Check(!_rumbling, "R puts Rumble away");

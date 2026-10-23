@@ -14,26 +14,6 @@ namespace Woad.Core.Rules;
 /// </summary>
 public sealed partial class GameSession
 {
-    /// <summary>
-    /// The bonus an attack on <paramref name="target"/> gets from the weapon that reaches it: the main
-    /// hand if it can (and there is one), else a thrown weapon in the off hand (whose own bonus replaces the main hand's),
-    /// and whether that weapon stuns on sixes.
-    /// </summary>
-    private static (int Bonus, bool StunOnSix, int Dice) WeaponFor(Hero hero, Room room, GridPosition target)
-    {
-        int weapon = Math.Max(0, hero.EffectiveStats.Weapon);
-        CardDefinition? main = hero.MainWeapon?.Definition;
-        if (hero.ThrownOffHand is not { } thrown || (main is not null && Targeting.CanHeroAttack(room.Layout, main.AttackRange, hero.Position, target)))
-        {
-            // A versatile weapon (the Longsword) hits harder held in both hands: nothing in the off hand.
-            int versatile = main is { Versatile: > 0 } && !hero.Equipment.ContainsKey(EquipSlot.OffHand) ? main.Versatile : 0;
-            return (weapon + (main?.AttackBonus ?? 0) + versatile, main?.StunOnSix ?? false, main?.Modifiers.WeaponDice ?? 0);
-        }
-
-        CardDefinition off = thrown.Definition;
-        return (Math.Max(0, weapon - (main?.Modifiers.Weapon ?? 0) + off.Modifiers.Weapon + off.AttackBonus), off.StunOnSix, off.Modifiers.WeaponDice);
-    }
-
     /// <summary>A melee attack (from right beside it) on a prone monster rolls an extra die.</summary>
     private static int ProneBonus(Monster target, GridPosition from) =>
         target.Prone && target.Position.ChebyshevDistanceTo(from) <= 1 ? 1 : 0;

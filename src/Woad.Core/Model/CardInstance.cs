@@ -33,6 +33,9 @@ public sealed class CardInstance
 
     public int ChargesRemaining { get; internal set; }
 
+    /// <summary>A crossbow that's been shot and not yet reloaded. Every crossbow is loaded again on reaching a new floor.</summary>
+    public bool Unloaded { get; internal set; }
+
     /// <summary>
     /// The hero who brought this card into the run, or null if it was found in the dungeon.
     /// A downed hero keeps only the cards they brought in.

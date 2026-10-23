@@ -227,6 +227,11 @@ public sealed partial class GameSession
             card.ChargesRemaining = card.Definition.Charges;
         }
 
+        foreach (CardInstance crossbow in hero.AllCards.Where(card => card.Definition.Reload is not null))
+        {
+            crossbow.Unloaded = false;
+        }
+
         GrantXp(hero, GameRules.XpPerNewFloor, events);
     }
 

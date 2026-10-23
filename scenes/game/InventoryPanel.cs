@@ -174,7 +174,7 @@ public partial class InventoryPanel : Control
         CardInstance? selected = selectedCardId is int id ? hero?.FindCard(id)?.Card : null;
         _details.Text = selected is null
             ? "Select a card to see what it does."
-            : $"{CardSlot.Title(selected)}: {selected.Definition.Text}";
+            : $"{CardSlot.Title(selected)}: {selected.Definition.Text}" + (hero!.HasSetBonus(selected.Definition) ? " SET BONUS ON!" : "");
 
         foreach ((CardAction action, Button button) in _actions)
         {

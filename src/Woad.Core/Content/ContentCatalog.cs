@@ -157,6 +157,11 @@ public sealed class ContentCatalog
         }
 
         var cardIds = cards.Select(card => card.Id).ToHashSet(StringComparer.Ordinal);
+        foreach (CardDefinition card in cards.Where(card => card.Set is { } set && !cardIds.Contains(set.With)))
+        {
+            errors.Add($"Card '{card.Id}' has a set bonus with unknown card '{card.Set!.With}'.");
+        }
+
         foreach (MonsterDefinition monster in monsters)
         {
             if (monster.RareDrop is { } rare && (!cardIds.Contains(rare.Card) || rare.Chance is < 1 or > 100))

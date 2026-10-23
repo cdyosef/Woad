@@ -113,6 +113,45 @@ public sealed record CardDefinition
     /// </summary>
     public bool LastChanceDie { get; init; }
 
+    /// <summary>Weapons: its reach is a straight line, up and down or left and right (the Spear), rather than any direction in sight.</summary>
+    public bool Reach { get; init; }
+
+    /// <summary>
+    /// Weapons: its bonus goes on two attacks a turn rather than one, while the off hand is empty or holds
+    /// something <see cref="Light"/> (the Rapier).
+    /// </summary>
+    public bool TwinStrike { get; init; }
+
+    /// <summary>Light enough not to get in the way of a <see cref="TwinStrike"/> blade (the Buckler, a Dagger).</summary>
+    public bool Light { get; init; }
+
+    /// <summary>Weapons: held in the off hand, it adds its bonus to a second attack of its own each turn (a Dagger).</summary>
+    public bool OffHandStrike { get; init; }
+
+    /// <summary>
+    /// Weapons: thrown at a target this far off (in sight), it leaves the hand and lands at the target's feet
+    /// (a Dagger, one from the stack). 0 for weapons that can't be thrown away.
+    /// </summary>
+    public int ThrownRange { get; init; }
+
+    /// <summary>Weapons: its bonus doubles against a monster that's stunned or lying prone (a Dagger).</summary>
+    public bool Ambush { get; init; }
+
+    /// <summary>Weapons: each 6 on its attack also strikes one more monster beside the attacker, with the same total (the Great Axe).</summary>
+    public bool Cleave { get; init; }
+
+    /// <summary>Weapons: any 6 on its attack shoves the target a tile back, hit or miss (the Maul).</summary>
+    public bool ShoveOnSix { get; init; }
+
+    /// <summary>Weapons: its hits crush: a shelled monster is knocked onto its back, and bones it breaks stay broken (the War Hammer).</summary>
+    public bool Crush { get; init; }
+
+    /// <summary>Weapons: after a shot it's unloaded until reloaded with these dice (a crossbow); null for weapons that need none.</summary>
+    public ReloadCost? Reload { get; init; }
+
+    /// <summary>A set bonus: more modifiers while worn together with its partner card (the Knight's Sword and Shield).</summary>
+    public CardSet? Set { get; init; }
+
     /// <summary>Weapons: this much more on attacks while nothing is in the off hand (wielded two-handed).</summary>
     public int Versatile { get; init; }
 
@@ -132,4 +171,21 @@ public sealed record CardDefinition
 
     /// <summary>Rules text shown on the card.</summary>
     public string Text { get; init; } = "";
+}
+
+/// <summary>Extra modifiers a card grants while its partner card is equipped too.</summary>
+public sealed record CardSet
+{
+    /// <summary>The partner card's id.</summary>
+    public required string With { get; init; }
+
+    public Stats Modifiers { get; init; } = Stats.None;
+}
+
+/// <summary>The dice a crossbow takes to reload: Od Hand dice, and Wend dice for a heavy one.</summary>
+public sealed record ReloadCost
+{
+    public int OdHand { get; init; }
+
+    public int Wend { get; init; }
 }

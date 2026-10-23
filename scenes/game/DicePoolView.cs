@@ -32,7 +32,7 @@ public partial class DicePoolView : Control
         new("icon_rumble", "Rumble: your attack dice this turn, plus your weapon's value on one attack. Click dice to hold some back.") { Color = Palette.DieRumble },
         new("icon_wend", "Wend: your move dice this turn, plus your flat Wend bonus on one move. Click dice to hold some back.") { Color = Palette.DieWend },
         new("icon_odhand", "Od Hand: dice for picking locks, searching, disarming traps and stealing. Your tools (lockpicks) add their value and dice to one lock-picking roll a turn.") { Color = Palette.DieOdHand },
-        new("icon_defense", "Defense: your base die (framed) and armor defend against every attack. When a defense is losing, your Block goes in, then your extra dice one at a time; they're spent until your next turn.") { IsDefense = true, Color = Palette.DieDefense },
+        new("icon_defense", "Defense: your base die (framed) and armor defend against every attack. When a defense is losing, your Block goes in, then your extra dice one at a time; they're spent until your next turn. Gold dice are Guard Dice, for an ally beside you.") { IsDefense = true, Color = Palette.DieDefense },
         new("icon_power", "Power Dice, earned by rolling a 6. Click to add banked ones to your next roll.") { IsPower = true, Color = Palette.Power },
     ];
 
@@ -57,9 +57,12 @@ public partial class DicePoolView : Control
     }
 
     /// <summary>The Defense row: the base die, the extra dice (the first <paramref name="ready"/> of them ready, the rest spent), armor and Block.</summary>
-    public void ShowDefense(int baseDice, int extraDice, int ready, int armor, int block, bool blockReady)
+    /// <param name="guard">Guard Dice for allies beside you (the Knight's set), the first <paramref name="guardReady"/> ready.</param>
+    public void ShowDefense(int baseDice, int extraDice, int ready, int armor, int block, bool blockReady, int guard = 0, int guardReady = 0)
     {
         Row row = _rows[(int)DicePool.Defense];
+        row.Guard = guard;
+        row.GuardReady = guardReady;
         row.Dice = baseDice + extraDice;
         row.Base = baseDice;
         row.Selected = baseDice + ready;
@@ -214,6 +217,13 @@ public partial class DicePoolView : Control
             DrawRect(rect, row.BlockReady ? Palette.PanelPressed : Palette.PanelDark);
             DrawRect(rect, row.BlockReady ? row.Color : Palette.TrimDim, filled: false, width: 1);
             DrawString(font, rect.Position + new Vector2(3, 9), $"Block {row.Block}", fontSize: UiTheme.FontSize, modulate: row.BlockReady ? row.Color : Palette.TextDim);
+            x = rect.End.X + Gap;
+        }
+
+        // Guard Dice, for allies beside you: gold while ready.
+        for (int i = 0; i < row.Guard; i++)
+        {
+            DrawDieToken(new Rect2(new Vector2(x + i * (Token + Gap), top), new Vector2(Token, Token)), i < row.GuardReady, Palette.TrimBright);
         }
     }
 
@@ -252,6 +262,10 @@ public partial class DicePoolView : Control
         public int Block { get; set; }
 
         public bool BlockReady { get; set; }
+
+        public int Guard { get; set; }
+
+        public int GuardReady { get; set; }
 
         /// <summary>The pool's dice color, matching its dice in the dice bar and its buttons.</summary>
         public Color Color { get; init; } = Palette.Text;

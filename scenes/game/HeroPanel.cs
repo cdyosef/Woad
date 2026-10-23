@@ -174,6 +174,11 @@ public partial class HeroPanel : Panel
             extras.Add($"Block {stats.Block}");
         }
 
+        if (stats.GuardDice > 0)
+        {
+            extras.Add($"Guard {stats.GuardDice}");
+        }
+
         string main = UiTheme.Dice(Math.Min(1, stats.DefenseDice), stats.Armor);
         return extras.Count == 0 ? main : $"{main} ({string.Join(", ", extras)})";
     }

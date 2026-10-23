@@ -107,8 +107,8 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 
 | Type | Usage | Examples (placeholder names) |
 | --- | --- | --- |
-| Weapon | Persistent | Wooden Sword (weapon 1), Knight's Sword (weapon 2), Longsword (weapon 1 + 1d6, versatile +1), Short Bow (weapon 1, ranged 4) |
-| Shield | Persistent | Buckler (armor 1, Block 1), Tower Shield (armor 3, Block 3, −1 Wend), Knight's Shield (armor 2, an extra Defense die; floor 2+) |
+| Weapon | Persistent | Wooden Sword (weapon 1), Knight's Sword (weapon 2), Longsword (weapon 1 + 1d6, versatile +1), Short Bow (weapon 1, ranged 6), Longbow (weapon 1 + 1d6, ranged 10; floor 3), Spear (weapon 2, reach 2 in a straight line), Dagger (either hand, stacks: +1 on an attack of its own from the off hand, doubled on a stunned or prone monster; thrown at range 3 it lands at the target's feet; one in each hand +1 each; the Waylay Inn sells them), War Hammer (weapon 2; crushes: hits flip shelled monsters, broken bones stay broken; floor 2), Rapier (weapon 2, Block 1; two strikes a turn with an empty or light off hand; floor 2), Maul (two-handed, weapon 3; any 6 shoves the target a tile, hit or miss; floor 2), Crossbow (two-handed, weapon 3 every loaded shot, range 8; reload with an Od Hand die; floor 2), Great Axe (two-handed, weapon 2 + 1d6; each 6 cleaves into another monster beside you; floor 3), Heavy Crossbow (two-handed, weapon 4 every loaded shot, range 9; reload with an Od Hand die and a Wend die; floor 3). A weapon's dice always go with its bonus on one attack. Crossbows are loaded on each new floor; reload one with **Use** |
+| Shield | Persistent | Buckler (armor 1, Block 1), Tower Shield (armor 3, Block 3, −1 Wend), Knight's Shield (armor 2, an extra Defense die; floor 2+). **Knight's set:** worn with the Knight's Sword, the sword gains +1 Weapon and Block 1, and the shield a Guard Die |
 | Armor | Persistent | Head: Leather Cap (+1 Heart), Lucky Helmet (armor 1; when you'd be hit anyway it rolls one more die in, last of all, then breaks), Diving Helm (Temple). Body: Leather Armor (armor 1), Studded Armor (armor 2, floor 2+), Chain Mail (armor 3, floor 3), Warden's Plate (armor 3 and an extra Defense die: the Iron Warden drops it one time in four) |
 | Boots | Persistent | Dash Boots (+1 Move die) |
 | Spell | Charges or single-use | Flame Scroll (a 3-dice fire attack at range 3: any 6 sets the target alight), Frost Wand (2 charges: freeze for a round) |
@@ -222,9 +222,11 @@ facing door of the next room.
 - The attacker rolls the Rumble dice they chose and adds them up, plus their weapon's value if they
   used it.
 - The defender rolls their base Defense die and adds their armor (a monster rolls all its Defense dice).
-  While a hero's defense is losing, it's backed up in order: all their Block, then their extra Defense dice
-  one at a time until it holds, then banked Power Dice, and last a Lucky Helmet's die. Block and extra dice
-  stay spent until the start of the hero's next turn; a stun takes the extra dice before the base die.
+  While a hero's defense is losing, it's backed up in order: Guard Dice from allies beside them (diagonals
+  too; each a d6, and a 6 rolls another straight in), then all their Block, then their extra Defense dice
+  one at a time until it holds, then banked Power Dice, and last a Lucky Helmet's die. Guard Dice, Block and
+  extra dice stay spent until the start of their owner's next turn; a stun takes the extra dice before the
+  base die. Two knights side by side guard each other.
 - If the attack total is higher, the defender loses **1 heart**. Ties go to the defender. The dice bar
   tags the defender's dice HIT, MISS or BLOCKED, and the board calls it out (see Presentation).
 - Rolling dice together makes one attack more likely to land; splitting them gives more chances.

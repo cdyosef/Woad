@@ -220,7 +220,7 @@ public partial class GameScreen
         if (_rumbling)
         {
             List<GridPosition> reach = room.Positions
-                .Where(tile => tile != hero.Position && Targeting.CanHeroAttack(room.Layout, hero.AttackRange, hero.Position, tile))
+                .Where(tile => tile != hero.Position && GameSession.CanHeroReach(hero, room.Layout, hero.Position, tile))
                 .ToList();
             _board.SetHighlights([], RumbleTargets(room), [], [], range: reach);
             return;
@@ -325,7 +325,8 @@ public partial class GameScreen
 
         int baseDice = GameSession.BaseDefenseDice(hero);
         Stats stats = hero.EffectiveStats;
-        pool.ShowDefense(baseDice, GameSession.ExtraDefenseDice(hero), GameSession.ExtraDefenseDiceReady(hero), Math.Max(0, stats.Armor), Math.Max(0, stats.Block), GameSession.BlockReady(hero) > 0);
+        pool.ShowDefense(baseDice, GameSession.ExtraDefenseDice(hero), GameSession.ExtraDefenseDiceReady(hero), Math.Max(0, stats.Armor), Math.Max(0, stats.Block), GameSession.BlockReady(hero) > 0,
+            Math.Max(0, stats.GuardDice), GameSession.GuardDiceReady(hero));
     }
 
     /// <summary>Banked Power Dice start unselected: they're only spent when the player picks them.</summary>
@@ -412,7 +413,7 @@ public partial class GameScreen
         var blocked = new Dictionary<CardAction, string>();
         foreach ((CardAction action, string? reason) in new[]
         {
-            (CardAction.Use, _session.CheckUse(cardId)),
+            (CardAction.Use, card.Definition.Reload is not null ? _session.CheckReload() : _session.CheckUse(cardId)),
             (CardAction.Equip, _session.CheckEquip(cardId)),
             (CardAction.Belt, _session.CheckBelt(cardId)),
             (CardAction.Stow, _session.CheckStow(cardId)),
@@ -428,7 +429,9 @@ public partial class GameScreen
         string gearCost = _session.GearIsFree ? "Free while no monsters are in the room." : "In a fight, this takes your action.";
         var hints = new Dictionary<CardAction, string>
         {
-            [CardAction.Use] = location == CardLocation.Belt ? "Free: one belt item a turn." : "Takes your action.",
+            [CardAction.Use] = card.Definition.Reload is { } reload
+                ? $"Reload: takes {(reload.OdHand == 1 ? "an Od Hand die" : $"{reload.OdHand} Od Hand dice")}{(reload.Wend > 0 ? " and a Wend die" : "")}."
+                : location == CardLocation.Belt ? "Free: one belt item a turn." : "Takes your action.",
             [CardAction.Equip] = card.Definition.AltSlot is null ? gearCost
                 : hero.SlotOf(card) is { } held ? $"Moves it to your {(held == EquipSlot.MainHand ? "off" : "main")} hand. {gearCost}"
                 : $"Goes in either hand: you'll choose which. {gearCost}",

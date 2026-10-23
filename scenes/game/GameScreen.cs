@@ -506,6 +506,20 @@ public partial class GameScreen : Control
                 await RemoveFigure(crumbled.MonsterId);
                 break;
 
+            case DaggerThrown:
+                _board.QueueRedraw();
+                break;
+
+            case Cleaved cleaved:
+                CalloutOver(cleaved.MonsterId, "CLEAVE!", Palette.DieRumble);
+                await Pause(0.2);
+                break;
+
+            case Guarded guarded:
+                CalloutOver(guarded.HeroId, "GUARDED!", Palette.DieDefense);
+                await Pause(0.3);
+                break;
+
             case LastChanceUsed lucky:
                 CalloutOver(lucky.HeroId, "LUCKY!", Palette.TrimBright);
                 await Pause(0.3);
@@ -934,6 +948,9 @@ public partial class GameScreen : Control
             case Crumbled:
                 Sfx.Play("pot", 0.8f);
                 break;
+            case WeaponReloaded:
+                Sfx.Play("click");
+                break;
             case ShoveResisted:
                 Sfx.Play("block", 0.8f);
                 break;
@@ -1122,6 +1139,9 @@ public partial class GameScreen : Control
         MonsterRaised raised => FigureRoom(raised.MonsterId),
         Crumbled crumbled => FigureRoom(crumbled.MonsterId),
         LastChanceUsed lucky => FigureRoom(lucky.HeroId),
+        Guarded guarded => FigureRoom(guarded.HeroId),
+        DaggerThrown thrown => thrown.RoomId,
+        Cleaved cleaved => FigureRoom(cleaved.MonsterId),
         Flipped flipped => FigureRoom(flipped.MonsterId),
         ShoveResisted resisted => FigureRoom(resisted.TargetId),
         MonsterTrapped trapped => FigureRoom(trapped.MonsterId),
