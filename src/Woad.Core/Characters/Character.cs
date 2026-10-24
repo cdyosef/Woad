@@ -31,7 +31,9 @@ public sealed class Character
         int runsPlayed,
         int wins,
         bool isCompanion = false,
-        Appearance? appearance = null)
+        Appearance? appearance = null,
+        int guildStanding = 0,
+        int lawStanding = 0)
     {
         Id = id;
         Name = name;
@@ -48,6 +50,8 @@ public sealed class Character
         Wins = wins;
         IsCompanion = isCompanion;
         Appearance = appearance ?? Appearance.Default;
+        GuildStanding = guildStanding;
+        LawStanding = lawStanding;
     }
 
     public Guid Id { get; }
@@ -83,6 +87,12 @@ public sealed class Character
     public int Gold { get; private set; }
 
     public int RunsPlayed { get; private set; }
+
+    /// <summary>Their name with the Merchant Guild: rescuing merchants raises it, robbing or killing them lowers it. Better standing, better prices.</summary>
+    public int GuildStanding { get; private set; }
+
+    /// <summary>Their standing with the Law (guards, sheriffs and judges): crimes lower it.</summary>
+    public int LawStanding { get; private set; }
 
     public int Wins { get; private set; }
 
@@ -244,6 +254,8 @@ public sealed class Character
 
         int levels = GainXp(result.Xp);
         Gold += result.Gold;
+        GuildStanding += result.GuildStandingChange;
+        LawStanding += result.LawStandingChange;
         RunsPlayed++;
         if (result.Won)
         {
@@ -274,7 +286,7 @@ public sealed class Character
 
     /// <summary>The hero this character plays as in a run, carrying everything they own.</summary>
     /// <param name="ownerSeat">For a companion, the seat of the player it belongs to.</param>
-    public HeroSetup ToHeroSetup(int? ownerSeat = null) => new(Name, BaseStats, [.. _equipped, .. _belt, .. _backpack], Id, Portrait, ownerSeat, Appearance);
+    public HeroSetup ToHeroSetup(int? ownerSeat = null) => new(Name, BaseStats, [.. _equipped, .. _belt, .. _backpack], Id, Portrait, ownerSeat, Appearance, GuildStanding: GuildStanding);
 
     /// <summary>Puts a card where a new hero would: an empty matching slot, then the belt, then the backpack.</summary>
     private void Place(CardDefinition card, ContentCatalog content)

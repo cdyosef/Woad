@@ -431,3 +431,24 @@ public sealed record DaggerThrown(int HeroId, int CardId, string RoomId, GridPos
 
 /// <summary>A cleaving blow (the Great Axe's 6) carried on into another monster beside the attacker.</summary>
 public sealed record Cleaved(int HeroId, int MonsterId) : GameEvent;
+
+/// <summary>A hero freed a chained merchant, with a key or a picked lock: they follow that hero now.</summary>
+public sealed record MerchantFreed(int HeroId, int MerchantId, bool Picked) : GameEvent;
+
+/// <summary>A freed merchant moved: up beside the hero they follow, or away from monsters.</summary>
+public sealed record MerchantMoved(int MerchantId, IReadOnlyList<GridPosition> Path) : GameEvent;
+
+/// <summary>A freed merchant followed the hero they follow into another room (or down a floor).</summary>
+public sealed record MerchantFollowed(int MerchantId, string FromRoomId, string RoomId, GridPosition Position) : GameEvent;
+
+/// <summary>A hero bought from (or sold to) a merchant for <paramref name="Gold"/>.</summary>
+public sealed record MerchantTraded(int HeroId, int MerchantId, int CardId, int Gold, bool Bought) : GameEvent;
+
+/// <summary>A hero stole from a merchant (<paramref name="CardId"/>), or was caught trying (null); what it cost them with the Guild and the Law.</summary>
+public sealed record MerchantRobbed(int HeroId, int MerchantId, string? CardId, bool Caught, int GuildLost, int LawLost) : GameEvent;
+
+/// <summary>A merchant was struck down (by a hero, a crime; or by a monster); their wares lie at <paramref name="DroppedAt"/>.</summary>
+public sealed record MerchantSlain(int MerchantId, int KillerId, bool ByHero, GridPosition DroppedAt) : GameEvent;
+
+/// <summary>A merchant left the dungeon alive with the party: rescued.</summary>
+public sealed record MerchantRescued(int MerchantId, string Name, int FreedByHeroId) : GameEvent;

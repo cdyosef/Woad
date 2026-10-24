@@ -17,7 +17,7 @@ namespace Woad.Scenes;
 
 /// <summary>
 /// The app's root: owns the content and the character store, swaps between screens, and saves
-/// each character's results when a run ends. Debug flags: <c>--uitest</c>, <c>--floortest</c>, <c>--hazardtest</c>, <c>--keeltest</c>, <c>--firetest</c>, <c>--cameratest</c>, <c>--bombtest</c>, <c>--rumbletest</c>, <c>--clicktest</c>, <c>--loottest</c>, <c>--tradetest</c>, <c>--monstertest</c>, <c>--dentest</c> and
+/// each character's results when a run ends. Debug flags: <c>--uitest</c>, <c>--floortest</c>, <c>--hazardtest</c>, <c>--keeltest</c>, <c>--firetest</c>, <c>--cameratest</c>, <c>--bombtest</c>, <c>--rumbletest</c>, <c>--clicktest</c>, <c>--loottest</c>, <c>--tradetest</c>, <c>--monstertest</c>, <c>--dentest</c>, <c>--merchanttest</c>, <c>--wanderertest</c> and
 /// <c>--autoplay</c> jump straight into a run with the debug party (<c>--party N</c> heroes,
 /// <c>--theme id</c> for another dungeon); <c>--menutest</c> and
 /// <c>--resultstest</c> click through the menus using a throwaway save folder.
@@ -140,6 +140,14 @@ public partial class Main : Control
         else if (args.Contains("--tradetest"))
         {
             Show(new GameScreen { Setup = DemoRun.Camp(seed), Content = _content });
+        }
+        else if (args.Contains("--wanderertest"))
+        {
+            RunWandererTest();
+        }
+        else if (args.Contains("--merchanttest"))
+        {
+            Show(new GameScreen { Setup = DemoRun.Market(seed), Content = _content });
         }
         else if (args.Contains("--dentest"))
         {
@@ -489,7 +497,7 @@ public partial class Main : Control
             _activeRunFile = _runFile;
         }
 
-        var save = new SavedRun { ThemeId = themeId, Seed = seed, FriendlyFire = friendlyFire, Heroes = heroes };
+        var save = new SavedRun { ThemeId = themeId, Seed = seed, FriendlyFire = friendlyFire, Heroes = heroes, MerchantGuildLevel = LoadRaidWorld().GuildLevel };
         WriteSave(save);
         ShowGame(save.CreateSetup(_content), party, save);
     }
@@ -602,6 +610,20 @@ public partial class Main : Control
             BackTooltip = world is null ? "Back to the Dungeon Run list. Your travels are saved." : "Back to your raids. This raid and the Woarld are saved.",
             RestBoosts = world is null ? null : walkers => world.TakeRestBoosts([.. walkers.Select(hero => hero.Id)], TavernDefinition.LoadDefault()),
             Hearts = _raid is null || world is null ? null : RaidHearts,
+            World = world,
+            Content = _content,
+        };
+        screen.Traded += async trader =>
+        {
+            SaveRaidWorld();
+            try
+            {
+                await _characters.SaveAsync(trader);
+            }
+            catch (IOException exception)
+            {
+                GD.PushWarning($"Couldn't save {trader.Name}: {exception.Message}");
+            }
         };
         _woarldNews = "";
         SaveRaid(RaidLocation.Map);
@@ -844,6 +866,22 @@ public partial class Main : Control
         if (_raiding && _raid is not null)
         {
             _raid.ApplyRun(results, id => party.FirstOrDefault(member => member.Id == id)?.MaxHearts(_content) ?? 1);
+        }
+
+        // Merchants brought out alive join the Guild, which rises a level for each, and remember who helped them.
+        List<string> rescuedNames = results.SelectMany(result => result.MerchantsRescued.Select(rescued => rescued.Name)).Distinct().ToList();
+        if (rescuedNames.Count > 0)
+        {
+            RaidWorld world = LoadRaidWorld();
+            List<Guid> helpers = [.. results.Select(result => result.CharacterId).OfType<Guid>()];
+            IReadOnlyList<string> wares = world.RescueMerchants(rescuedNames.Select(name => new RememberedMerchant(
+                name,
+                results.FirstOrDefault(result => result.MerchantsRescued.Any(rescued => rescued.Name == name && rescued.FreedByThisHero))?.CharacterId,
+                helpers,
+                world.Journey.Day)), _content);
+            SaveRaidWorld();
+            _woarldNews = $"{string.Join(" and ", rescuedNames)} joined the Merchant Guild, now level {world.GuildLevel}" +
+                          (wares.Count > 0 ? $": new wares, {string.Join(", ", wares.Select(ware => _content.GetCard(ware).Name))}." : ".");
         }
 
         if (results.Any(result => result.Won))

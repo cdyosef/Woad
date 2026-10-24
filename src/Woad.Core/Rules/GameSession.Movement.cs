@@ -239,5 +239,5 @@ public sealed partial class GameSession
             stepCost: position => HeroStepCost(hero, room, position) * (hero.Prone ? GameRules.CrawlFactor : 1));
 
     private bool CanHeroStop(Room room, Hero hero, GridPosition position) =>
-        !State.HeroesIn(room).Any(other => other != hero && other.Position == position);
+        !State.HeroesIn(room).Any(other => other != hero && other.Position == position) && room.MerchantAt(position) is null;
 }

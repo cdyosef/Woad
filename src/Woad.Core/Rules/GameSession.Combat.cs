@@ -220,6 +220,10 @@ public sealed partial class GameSession
             {
                 DamageHero(room, ally, attack.Total, AllyBane(hero, attack.Source), hero.Id, events, ranged: ally.Position.ChebyshevDistanceTo(hero.Position) > 1);
             }
+            else if (room.FindMerchant(targetId) is { } merchant)
+            {
+                DamageMerchant(hero.Id, hero, room, merchant, attack.Total, events);
+            }
         }
 
         IgniteTargets(hero, room, attack, events);

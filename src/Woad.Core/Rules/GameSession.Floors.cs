@@ -88,8 +88,10 @@ public sealed partial class GameSession
             return "The exit is sealed until the boss here is defeated.";
         }
 
-        // The hero's companions in the room leave with them.
-        foreach (Hero leaving in State.ActiveHeroesIn(room).Where(other => other == hero || other.OwnerId == hero.Id).ToList())
+        // The hero's companions in the room leave with them, and the merchants following them.
+        List<Hero> party = State.ActiveHeroesIn(room).Where(other => other == hero || other.OwnerId == hero.Id).ToList();
+        RescueMerchants(party, room, events);
+        foreach (Hero leaving in party)
         {
             leaving.Status = HeroStatus.Escaped;
             events.Add(new HeroEscaped(leaving.Id, leaving.TreasureValue));

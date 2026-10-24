@@ -356,6 +356,30 @@ when the total reaches its number:
   leads to a little platform with a **grand chest** (gilded and jeweled, its lock 2 harder than the floor's
   other locks): three cards dealt as if from two floors deeper, and 10 gold. The Champ roars with laughter
   ("HAR HAR HAR!") when heroes first walk in, and its own pounding song plays while anyone is in there.
+- **Chained merchants (about one run in three):** a traveling merchant chained to the wall of an ordinary
+  room on a random floor. A key frees them, or pick the lock of their chains with Od Hand (like a chest's).
+  Freed, they follow whoever freed them (turning up beside them in the next room, or down the stairs),
+  move 3 tiles a turn away from any monster within 3 or else up beside their leader, and trade: click
+  beside them to buy their wares (4 cards from the dungeon's loot as good as the floor, better the
+  higher the Merchant Guild's level, sometimes one rarer) or sell yours, with the gold found this run.
+  One heart, no fighting; monsters go for them only when no hero is in reach (no blame if one dies that
+  way). Escape with them and they're **rescued**: everyone in the party gains 1 Guild standing, whoever
+  freed them 1 more, and the Merchant Guild gains a level. Stealing from one (Od Hand against their two
+  dice) costs the thief 2 Guild standing and 1 Law (1 and 1 if caught empty-handed); striking one down
+  costs 5 Guild and 3 Law, and spills their wares.
+- **The Merchant Guild:** one level shared by every merchant: 1, plus one for each merchant rescued and
+  for each step of gold spent with them (50, 150, 300, 500, 750...). Each level brings every merchant a new
+  ware, picked at random from the dungeons' gear and items, from deeper floors as the level climbs.
+  Prices are twice a card's worth, less 5% for each point of the buyer's Guild standing (up to half
+  off), more for each point below; at -10 merchants won't deal with them. Standing with the Guild and
+  the Law is kept on each character; rescued merchants remember who helped them. (The Law, its patrols
+  and bounties, are for a later update.)
+- **Wandering merchants (Raiding Party):** each day the Guild sends merchants out onto the Woarld Map: one,
+  plus one for every three Guild levels (at most three), waiting on open ground 4 to 12 tiles from where
+  the party greeted the day, and gone at its end. Merchants the party rescued are the first to come.
+  Walk onto one and **Trade** with the leader's gold: four wares as good as the Guild's level, and three
+  times in ten one from deeper down. A rescued merchant prices kindly for the heroes who helped them
+  (2 more standing), and buying from any wandering merchant counts toward the Guild's level.
 - **Shove:** roll Rumble dice (and the weapon) at an adjacent monster as for an attack; beat its
   defense and it's pushed one tile straight away from you (diagonally too) instead of hurt. Onto a
   trap, the trap goes off on it (spikes: 1 heart; trap door: it falls). Into a pit, it drops to the

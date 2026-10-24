@@ -1,5 +1,8 @@
 using Godot;
 using Woad.Core.Characters;
+using Woad.Core.Content;
+using Woad.Core.Model;
+using Woad.Core.Tavern;
 using Woad.Core.Grid;
 using Woad.Core.Randomness;
 using Woad.Core.Woarld;
@@ -61,6 +64,23 @@ public partial class WoarldMapScreen : Control
     /// <summary>A hero's hearts now and at full, for the status bar; null when hearts don't carry over (a Dungeon Run).</summary>
     public Func<Character, (int Now, int Max)>? Hearts { get; init; }
 
+    /// <summary>The Raiding Party's Woarld, whose wandering merchants are out on the map; null for none.</summary>
+    public RaidWorld? World { get; init; }
+
+    public ContentCatalog Content { get; init; } = ContentCatalog.LoadDefault();
+
+    /// <summary>A hero bought or sold something from a wandering merchant: save them and the Woarld.</summary>
+    public event Action<Character>? Traded;
+
+    private WandererPanel _wandererPanel = null!;
+
+    internal WandererPanel WandererPanel => _wandererPanel;
+
+    private static readonly string[] WandererLooks = ["noble", "bard", "sultan", "halfling", "dwarf", "monk"];
+
+    /// <summary>The wandering merchant the leader stands with, if any.</summary>
+    private WanderingMerchant? WandererHere => World?.WandererAt(Journey.Leader, Content);
+
     public event Action? BackRequested;
 
     /// <summary>The party rested: the heroes (in walking order) and their Rest rolls, to heal them.</summary>
@@ -121,6 +141,17 @@ public partial class WoarldMapScreen : Control
         RestButton.Pressed += Rest;
         EnterButton = AddButton(new Vector2(336, ButtonsTop), 296, "", "");
         EnterButton.Pressed += Enter;
+
+        _wandererPanel = new WandererPanel { Position = new Vector2(Size.X / 2 - 150, BarHeight + 12) };
+        _wandererPanel.Traded += result =>
+        {
+            Say(result.Message);
+            if (result.Done)
+            {
+                Traded?.Invoke(Party[Leader]);
+            }
+        };
+        AddChild(_wandererPanel);
 
         BeginRaid = new BeginRaidDialog();
         BeginRaid.Raided += () =>
@@ -241,6 +272,14 @@ public partial class WoarldMapScreen : Control
             _view.Destination = null;
             Say($"{place.Name}. {place.Description}");
         }
+        else if (WandererHere is { } wanderer)
+        {
+            _path.Clear();
+            _view.Destination = null;
+            Say(World!.GratitudeOf(wanderer, Party[Leader].Id) > 0
+                ? $"{wanderer.Name}, the merchant you rescued, waves you over: \"Friends! Come and see what I've got.\""
+                : $"You meet {wanderer.Name}, a wandering merchant of the Guild, with a pack of wares.");
+        }
         else if (result.NewDay)
         {
             Say($"Dawn breaks on day {Journey.Day}.");
@@ -285,6 +324,13 @@ public partial class WoarldMapScreen : Control
 
     private void Enter()
     {
+        if (WandererHere is { } wanderer && Journey.PlaceHere is null)
+        {
+            _path.Clear();
+            _wandererPanel.Open(World!, wanderer, Party[Leader], Content);
+            return;
+        }
+
         if (Journey.PlaceHere is not { } place)
         {
             return;
@@ -314,7 +360,7 @@ public partial class WoarldMapScreen : Control
         }
     }
 
-    private void Refresh()
+    internal void Refresh()
     {
         Character leader = Party[Leader];
         string time = Journey.IsDay ? $"Daylight, {Journey.StepsUntilChange} steps to nightfall" : $"Night, {Journey.StepsUntilChange} steps to dawn";
@@ -324,13 +370,27 @@ public partial class WoarldMapScreen : Control
         LeaderButton.Disabled = Party.Count(hero => !hero.IsCompanion) < 2;
 
         WoarldPlace? here = Journey.PlaceHere;
-        EnterButton.Visible = here is not null;
+        WanderingMerchant? wanderer = WandererHere;
+        EnterButton.Visible = here is not null || wanderer is not null;
         if (here is not null)
         {
             bool raid = here.Kind == PlaceKind.Dungeon && Journey.IsOpen(here);
             EnterButton.Text = raid ? $"Raid {here.Name}" : $"Enter {here.Name}";
             EnterButton.TooltipText = here.Description;
         }
+        else if (wanderer is not null)
+        {
+            EnterButton.Text = $"Trade with {wanderer.Name}";
+            EnterButton.TooltipText = "Buy and sell with the leader's gold. Good standing with the Merchant Guild means better prices.";
+        }
+
+        if (wanderer is null)
+        {
+            _wandererPanel.Visible = false;
+        }
+
+        _view.Merchants = World is null ? [] : [.. World.Wanderers(Content).Select((merchant, index) =>
+            (merchant.Position, Looks.Resolve(new Appearance(WandererLooks[(merchant.Name.Length + index) % WandererLooks.Length], Main: "gilt"), "")))];
 
         _view.Party = [.. WalkingOrder.Select(hero => Looks.Resolve(hero.Appearance, hero.Portrait))];
         _view.Journey = Journey;

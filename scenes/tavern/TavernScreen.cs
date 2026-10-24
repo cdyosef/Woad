@@ -492,11 +492,14 @@ public partial class TavernScreen : Control
 
     private void ShowMerchant()
     {
+        int standing = _payer.GuildStanding;
+        string prices = standing > 0 ? $"{Math.Min(standing, 10) * 5}% off for {_payer.Name}" : standing < 0 ? $"{Math.Min(-standing, 10) * 5}% more for {_payer.Name}" : "full price";
+        Row($"Merchant Guild level {World.GuildLevel}. {_payer.Name}'s standing with the Guild: {standing} ({prices}). The Law: {_payer.LawStanding}.", 536);
         Row("FOR SALE", 536).GetChild<Label>(0).AddThemeColorOverride("font_color", Palette.Trim);
         foreach (IGrouping<string, string> group in World.Stock(Tavern).GroupBy(id => id).OrderBy(group => Content.GetCard(group.Key).Name))
         {
             CardDefinition card = Content.GetCard(group.Key);
-            HBoxContainer row = Row($"{card.Name}{(group.Count() > 1 ? $" x{group.Count()}" : "")}, {TavernServices.BuyPrice(card)} gold: {card.Text}", 456);
+            HBoxContainer row = Row($"{card.Name}{(group.Count() > 1 ? $" x{group.Count()}" : "")}, {TavernServices.BuyPrice(card, standing)} gold: {card.Text}", 456);
             RowButton(row, "Buy", 76, () => Done(TavernServices.Buy(World, Tavern, Content, _payer, card.Id), _payer));
         }
 

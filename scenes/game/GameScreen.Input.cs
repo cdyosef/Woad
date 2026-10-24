@@ -39,6 +39,10 @@ public partial class GameScreen
         {
             Execute(new AttackBomb(hero.Id, bomb.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
         }
+        else if (room.MerchantAt(tile) is { } merchant)
+        {
+            Execute(new AttackMerchant(hero.Id, merchant.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
+        }
     }
 
     /// <summary>The enemy a double-click rolled Wend toward: clicking it again walks up to it.</summary>
@@ -214,7 +218,7 @@ public partial class GameScreen
 
         if (_stealing)
         {
-            int? victim = room.MonsterAt(tile)?.Id ?? _session.State.ActiveHeroesIn(room).FirstOrDefault(other => other.Position == tile && other != hero)?.Id;
+            int? victim = room.MonsterAt(tile)?.Id ?? room.MerchantAt(tile)?.Id ?? _session.State.ActiveHeroesIn(room).FirstOrDefault(other => other.Position == tile && other != hero)?.Id;
             if (victim is int targetId)
             {
                 ExecuteOdHand((heroId, dice, tools, power) => new Steal(heroId, targetId, dice, tools, power));
@@ -244,6 +248,12 @@ public partial class GameScreen
         if (_rumbling)
         {
             RumbleAt(hero, room, tile);
+            return;
+        }
+
+        // A merchant: free them, or trade with them.
+        if (ClickMerchant(hero, room, tile))
+        {
             return;
         }
 
@@ -503,6 +513,13 @@ public partial class GameScreen
     private string DescribeTile(GridPosition tile)
     {
         Room room = ShownRoom;
+        if (room.MerchantAt(tile) is { } merchant)
+        {
+            return merchant.Chained
+                ? $"{merchant.Name}, a traveling merchant, chained to the wall. Free them with a key, or pick the lock with Od Hand ({merchant.LockDifficulty}+); bring them out of the dungeon alive and the Merchant Guild will remember it."
+                : $"{merchant.Name}, a traveling merchant ({merchant.Stock.Count} wares). They follow the party; click beside them to trade. Bring them out alive to rescue them.";
+        }
+
         if (room.MonsterAt(tile) is { } monster)
         {
             MonsterDefinition definition = monster.Definition;

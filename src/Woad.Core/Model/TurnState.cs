@@ -46,6 +46,9 @@ public enum OdHandCheckKind
 
     /// <summary>Put out a lit bomb next to you (or under you): 10 or more, or it goes off in your hands.</summary>
     DefuseBomb,
+
+    /// <summary>Pick the lock of the chains holding a merchant beside you.</summary>
+    PickChains,
 }
 
 /// <summary>

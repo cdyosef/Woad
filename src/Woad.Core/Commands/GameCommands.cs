@@ -56,6 +56,18 @@ public sealed record UseCard(int HeroId, int CardId, GridPosition? Target = null
 /// </summary>
 public sealed record EquipCard(int HeroId, int CardId, EquipSlot? Hand = null) : GameCommand(HeroId);
 
+/// <summary>Frees a chained merchant beside the hero with a key (their lock can be picked with <see cref="PickLock"/> instead).</summary>
+public sealed record FreeMerchant(int HeroId, int MerchantId) : GameCommand(HeroId);
+
+/// <summary>Buys a card from a freed merchant beside the hero, with the gold they've found this run.</summary>
+public sealed record BuyFromMerchant(int HeroId, int MerchantId, string CardId) : GameCommand(HeroId);
+
+/// <summary>Sells one of a card the hero carries (by its instance id) to a freed merchant beside them.</summary>
+public sealed record SellToMerchant(int HeroId, int MerchantId, int CardId) : GameCommand(HeroId);
+
+/// <summary>Attacks a merchant with Rumble dice: a crime against the Guild and the Law.</summary>
+public sealed record AttackMerchant(int HeroId, int MerchantId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0) : GameCommand(HeroId);
+
 /// <summary>Reloads the hero's crossbow, spending its reload dice (Od Hand, and Wend for a heavy one).</summary>
 public sealed record ReloadWeapon(int HeroId) : GameCommand(HeroId);
 

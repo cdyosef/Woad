@@ -167,6 +167,17 @@ public sealed partial class GameSession
             return null;
         }
 
+        if (room.MerchantAt(target) is { Chained: true } chained)
+        {
+            if (hero.Position.ChebyshevDistanceTo(target) != 1)
+            {
+                return $"Stand next to {chained.Name} to pick the lock of their chains.";
+            }
+
+            check = new OdHandCheck(OdHandCheckKind.PickChains, chained.LockDifficulty, target, chained.Id);
+            return null;
+        }
+
         return "There's no lock there. Stand in a locked doorway, or next to a locked chest.";
     }
 
@@ -205,6 +216,22 @@ public sealed partial class GameSession
         if (Turn.HasStolen)
         {
             return "You've already tried to steal this turn.";
+        }
+
+        if (room.FindMerchant(targetId) is { } merchant)
+        {
+            if (merchant.Position.ChebyshevDistanceTo(hero.Position) != 1)
+            {
+                return $"Stand next to {merchant.Name} to steal from them.";
+            }
+
+            if (merchant.Robbed || merchant.Stock.Count == 0)
+            {
+                return $"{merchant.Name} is watching their wares too closely now.";
+            }
+
+            check = new OdHandCheck(OdHandCheckKind.Steal, 0, merchant.Position, targetId);
+            return null;
         }
 
         if (room.FindMonster(targetId) is { } monster)
@@ -246,7 +273,7 @@ public sealed partial class GameSession
         room.Passages.Where(door => room.DoorTile(door.Key) == tile && !door.Value.IsHidden).Select(door => door.Value).FirstOrDefault();
 
     /// <summary>Locks: doors, chests and gates. Only these take tools.</summary>
-    private static bool IsLock(OdHandCheckKind kind) => kind is OdHandCheckKind.PickDoor or OdHandCheckKind.PickChest or OdHandCheckKind.PickGate;
+    private static bool IsLock(OdHandCheckKind kind) => kind is OdHandCheckKind.PickDoor or OdHandCheckKind.PickChest or OdHandCheckKind.PickGate or OdHandCheckKind.PickChains;
 
     /// <summary>
     /// Rolls the chosen dice, plus on a lock the tools (their value and their dice, whose sixes roll
@@ -345,6 +372,10 @@ public sealed partial class GameSession
                 passage.IsLocked = false;
                 Direction side = room.Passages.First(door => door.Value == passage).Key;
                 events.Add(new DoorUnlocked(hero.Id, room.Id, side, Picked: true, BossDoor: false));
+                break;
+
+            case OdHandCheckKind.PickChains when success && room.FindMerchant(check.TargetId) is { Chained: true } freed:
+                Free(hero, freed, picked: true, events);
                 break;
 
             case OdHandCheckKind.PickChest when success:
@@ -470,6 +501,12 @@ public sealed partial class GameSession
     /// </summary>
     private void ResolveSteal(Hero thief, Room room, int targetId, int total, List<GameEvent> events)
     {
+        if (room.FindMerchant(targetId) is { } merchant)
+        {
+            StealFromMerchant(thief, room, merchant, total, events);
+            return;
+        }
+
         if (room.FindMonster(targetId) is { } monster)
         {
             DiceRoll guard = _dice.Roll(monster.Definition.DefenseDice);

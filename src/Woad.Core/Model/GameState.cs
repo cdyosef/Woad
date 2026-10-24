@@ -11,6 +11,9 @@ public enum RunPhase
 public sealed class GameState
 {
     private readonly List<Hero> _heroes = [];
+
+    /// <summary>Merchants brought out of the dungeon alive this run, and who freed each.</summary>
+    public List<RescuedMerchant> RescuedMerchants { get; } = [];
     private readonly Dictionary<string, Room> _rooms = new(StringComparer.Ordinal);
     private int _nextId = 1;
 
@@ -66,3 +69,6 @@ public sealed class GameState
 
     internal void AddRoom(Room room) => _rooms.Add(room.Id, room);
 }
+
+/// <summary>A merchant the party brought out of a dungeon, and the hero who freed them.</summary>
+public sealed record RescuedMerchant(string Name, int FreedByHeroId);

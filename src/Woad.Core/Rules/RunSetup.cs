@@ -11,6 +11,7 @@ namespace Woad.Core.Rules;
 /// companion names the seat of the player it belongs to in <paramref name="OwnerSeat"/>; the game
 /// plays its turns, following that player's orders. <paramref name="Hearts"/> starts the hero
 /// wounded (a raid carries hearts from one dungeon to the next); null starts them at full.
+/// <paramref name="GuildStanding"/> is their name with the Merchant Guild, which sets a merchant's prices.
 /// </summary>
 public sealed record HeroSetup(
     string Name,
@@ -20,7 +21,11 @@ public sealed record HeroSetup(
     string Portrait = "",
     int? OwnerSeat = null,
     Appearance? Appearance = null,
-    int? Hearts = null);
+    int? Hearts = null,
+    int GuildStanding = 0);
+
+/// <summary>A merchant chained up in a room, the Od Hand needed to pick the lock of their chains, and their name.</summary>
+public sealed record MerchantSetup(GridPosition Position, int LockDifficulty, string Name);
 
 /// <summary>
 /// One room of the dungeon and the rooms its doors lead to. <paramref name="MapPosition"/> is
@@ -63,6 +68,9 @@ public sealed record RoomFeatures
 
     /// <summary>Chests that are mimics, and the search needed to see through each.</summary>
     public IReadOnlyDictionary<GridPosition, int> Mimics { get; init; } = new Dictionary<GridPosition, int>();
+
+    /// <summary>A traveling merchant chained up here, if any.</summary>
+    public MerchantSetup? Merchant { get; init; }
 
     /// <summary>The chest holding the Boss Key, if it's in this room.</summary>
     public GridPosition? BossKeyChest { get; init; }
@@ -109,6 +117,9 @@ public sealed record RunSetup
 
     /// <summary>Where the heroes begin, on the template's <c>1</c>-<c>4</c> marks or near the center.</summary>
     public required string StartRoomId { get; init; }
+
+    /// <summary>The Merchant Guild's level: the better the guild, the better a dungeon merchant's wares.</summary>
+    public int MerchantGuildLevel { get; init; } = 1;
 
     /// <summary>Doors that aren't plain open doors (each listed from one side only).</summary>
     public IReadOnlyList<PassageSetup> Passages { get; init; } = [];

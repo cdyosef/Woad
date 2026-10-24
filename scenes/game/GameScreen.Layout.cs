@@ -71,6 +71,7 @@ public partial class GameScreen
 
     private void RefreshPanels()
     {
+        RefreshMerchantPanel();
         GameState state = _session.State;
         Hero? hero = ActiveHero;
         TurnState? turn = state.Turn;
@@ -186,6 +187,7 @@ public partial class GameScreen
     private List<GridPosition> RumbleTargets(Room room) =>
     [
         .. _session.GetAttackableMonsters().Select(monster => monster.Position),
+        .. _session.GetAttackableMerchants().Select(merchant => merchant.Position),
         .. _session.GetAttackableAllies().Select(ally => ally.Position),
         .. room.Bombs.Where(bomb => _session.CheckAttackBomb(bomb.Id) is null).Select(bomb => bomb.Position),
     ];
@@ -661,6 +663,7 @@ public partial class GameScreen
         BuildOrders(right);
 
         BuildLootWindows();
+        BuildMerchantWindow();
         BuildTradeWindow();
         _banner = new TurnBanner { Position = BoardOrigin, Size = new Vector2(BoardView.Pixels, BoardView.Pixels) };
         AddChild(_banner);

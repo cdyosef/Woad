@@ -138,6 +138,10 @@ public partial class GameScreen : Control
         {
             RunDenTest();
         }
+        else if (args.Contains("--merchanttest"))
+        {
+            RunMerchantTest();
+        }
     }
 
     /// <summary>Hotkeys, before any focused button can take them as a press: R or Space is Rumble, W rolls Wend.</summary>
@@ -504,6 +508,10 @@ public partial class GameScreen : Control
 
             case Crumbled crumbled:
                 await RemoveFigure(crumbled.MonsterId);
+                break;
+
+            case MerchantFreed or MerchantMoved or MerchantFollowed or MerchantSlain or MerchantRescued or MerchantTraded or MerchantRobbed:
+                await PlayMerchantEvent(gameEvent);
                 break;
 
             case DaggerThrown:
@@ -1141,6 +1149,10 @@ public partial class GameScreen : Control
         LastChanceUsed lucky => FigureRoom(lucky.HeroId),
         Guarded guarded => FigureRoom(guarded.HeroId),
         DaggerThrown thrown => thrown.RoomId,
+        MerchantFreed freed => FigureRoom(freed.MerchantId),
+        MerchantMoved moved => FigureRoom(moved.MerchantId),
+        MerchantSlain slain => FigureRoom(slain.MerchantId),
+        MerchantTraded traded => FigureRoom(traded.HeroId),
         Cleaved cleaved => FigureRoom(cleaved.MonsterId),
         Flipped flipped => FigureRoom(flipped.MonsterId),
         ShoveResisted resisted => FigureRoom(resisted.TargetId),
