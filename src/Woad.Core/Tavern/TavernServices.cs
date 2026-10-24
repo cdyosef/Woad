@@ -138,6 +138,49 @@ public static class TavernServices
         return new ServiceResult(true, $"{buyer.Name} buys the {card.Name} for {price} gold.{news}");
     }
 
+    /// <summary>What a wandering merchant asks a hero: their price by the hero's Guild standing, kinder still if they remember the hero's help.</summary>
+    public static int WandererPrice(RaidWorld world, WanderingMerchant wanderer, CardDefinition card, Character buyer) =>
+        BuyPrice(card, buyer.GuildStanding + world.GratitudeOf(wanderer, buyer.Id));
+
+    /// <summary>Buys a card from a wandering merchant on the Woarld Map; the business raises the Guild too.</summary>
+    public static ServiceResult BuyFromWanderer(RaidWorld world, WanderingMerchant wanderer, ContentCatalog content, Character buyer, string cardId)
+    {
+        if (!wanderer.Stock.Contains(cardId) || content.FindCard(cardId) is not { } card)
+        {
+            return ServiceResult.Refused($"{wanderer.Name} hasn't got one of those.");
+        }
+
+        if (buyer.GuildStanding <= Rules.GameSession.ShunnedStanding && world.GratitudeOf(wanderer, buyer.Id) == 0)
+        {
+            return ServiceResult.Refused($"{wanderer.Name} won't deal with {buyer.Name}: the Guild knows that name.");
+        }
+
+        int price = WandererPrice(world, wanderer, card, buyer);
+        if (!buyer.SpendGold(price))
+        {
+            return NotEnough(buyer, price);
+        }
+
+        wanderer.Stock.Remove(cardId);
+        buyer.GiveCard(card, content);
+        IReadOnlyList<string> newWares = world.SpendWithMerchants(price, content);
+        string news = newWares.Count == 0 ? "" : $" The Merchant Guild rises to level {world.GuildLevel}!";
+        return new ServiceResult(true, $"{buyer.Name} buys the {card.Name} from {wanderer.Name} for {price} gold.{news}");
+    }
+
+    /// <summary>Sells a card the hero owns to a wandering merchant, who carries it on.</summary>
+    public static ServiceResult SellToWanderer(WanderingMerchant wanderer, ContentCatalog content, Character seller, string cardId)
+    {
+        if (content.FindCard(cardId) is not { } card || !seller.TakeCard(cardId))
+        {
+            return ServiceResult.Refused($"{seller.Name} hasn't got one to sell.");
+        }
+
+        seller.EarnGold(SellPrice(card));
+        wanderer.Stock.Add(cardId);
+        return new ServiceResult(true, $"{seller.Name} sells {wanderer.Name} the {card.Name} for {SellPrice(card)} gold.");
+    }
+
     /// <summary>Sells a card the hero owns (from the backpack first); the merchant keeps it for sale.</summary>
     public static ServiceResult Sell(RaidWorld world, TavernDefinition tavern, ContentCatalog content, Character seller, string cardId)
     {

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Woad.Core.Content;
+using Woad.Core.Grid;
 using Woad.Core.Randomness;
 using Woad.Core.Woarld;
 
@@ -27,6 +28,19 @@ public sealed class RaidWorld
     private readonly Dictionary<Guid, List<string>> _provisions = [];
     private readonly List<string> _guildWares = [];
     private readonly List<RememberedMerchant> _remembered = [];
+    private List<WanderingMerchant> _wanderers = [];
+    private int _wanderersDay;
+
+    /// <summary>Most wandering merchants out on the roads at once.</summary>
+    public const int MaxWanderers = 3;
+
+    /// <summary>A wandering merchant's usual wares (one more, rarer, now and then).</summary>
+    public const int WandererStock = 4;
+
+    /// <summary>A rescued merchant's thanks: this much better standing, on their prices, for the heroes who helped them.</summary>
+    public const int Gratitude = 2;
+
+    private static readonly string[] WandererNames = ["Agnes", "Barnaby", "Corwin", "Delphine", "Ebenezer", "Fiona", "Gideon", "Hester", "Jasper", "Lavinia", "Mortimer", "Prudence"];
 
     private RaidWorld(WoarldJourney journey) => Journey = journey;
 
@@ -52,6 +66,75 @@ public sealed class RaidWorld
 
     /// <summary>Merchants the party has rescued, and the heroes they remember.</summary>
     public IReadOnlyList<RememberedMerchant> RememberedMerchants => _remembered;
+
+    /// <summary>
+    /// The Guild's wandering merchants out on the Woarld Map today: one, plus one for every three Guild
+    /// levels (at most <see cref="MaxWanderers"/>), met a short walk from where the party greeted the day.
+    /// Merchants the party rescued are the first to come. They're gone at the end of the day.
+    /// </summary>
+    public IReadOnlyList<WanderingMerchant> Wanderers(ContentCatalog content)
+    {
+        if (_wanderersDay != Journey.Day)
+        {
+            _wanderersDay = Journey.Day;
+            _wanderers = SendOutWanderers(content);
+        }
+
+        return _wanderers;
+    }
+
+    public WanderingMerchant? WandererAt(GridPosition tile, ContentCatalog content) => Wanderers(content).FirstOrDefault(wanderer => wanderer.Position == tile);
+
+    /// <summary>How much a rescued merchant's thanks improve their prices for a hero (0 for anyone else).</summary>
+    public int GratitudeOf(WanderingMerchant wanderer, Guid hero) =>
+        _remembered.Any(merchant => merchant.Name == wanderer.Name && (merchant.FreedBy == hero || merchant.Helpers.Contains(hero))) ? Gratitude : 0;
+
+    /// <summary>Whether a wandering merchant is one the party rescued.</summary>
+    public bool Remembers(WanderingMerchant wanderer) => _remembered.Any(merchant => merchant.Name == wanderer.Name);
+
+    private List<WanderingMerchant> SendOutWanderers(ContentCatalog content)
+    {
+        var random = new Pcg32((ulong)(Journey.Day * 7919 + MerchantsRescued * 31 + GuildLevel), 13);
+        int count = Math.Min(MaxWanderers, 1 + GuildLevel / 3);
+        WoarldMap map = Journey.Map;
+        GridPosition leader = Journey.Leader;
+        List<GridPosition> roadside = [.. Enumerable.Range(0, map.Width)
+            .SelectMany(x => Enumerable.Range(0, map.Height).Select(y => new GridPosition(x, y)))
+            .Where(tile => map.IsWalkable(tile) && map.PlaceAt(tile) is null && tile.ChebyshevDistanceTo(leader) is >= 4 and <= 12)];
+        List<string> names = [.. _remembered.Select(merchant => merchant.Name).Distinct().OrderBy(_ => random.NextInt(0, 1000)), .. WandererNames.OrderBy(_ => random.NextInt(0, 1000))];
+        int tier = Math.Min(3, 1 + (GuildLevel - 1) / 2);
+        List<(string Card, int Floor)> wares = [.. content.Themes.Values
+            .SelectMany(theme => theme.LootDeck)
+            .Where(entry => content.GetCard(entry.Card) is { Type: not CardType.Treasure, Coins: false })
+            .GroupBy(entry => entry.Card)
+            .Select(group => (group.Key, group.Min(entry => entry.MinFloor)))
+            .OrderBy(ware => ware.Key, StringComparer.Ordinal)];
+        var wanderers = new List<WanderingMerchant>();
+        for (int i = 0; i < count && roadside.Count > 0 && i < names.Count; i++)
+        {
+            GridPosition spot = random.Pick(roadside);
+            roadside.RemoveAll(tile => tile.ChebyshevDistanceTo(spot) < 3);
+            List<string> fair = [.. wares.Where(ware => ware.Floor <= tier).Select(ware => ware.Card)];
+            var stock = new List<string>();
+            while (stock.Count < WandererStock && fair.Count > 0)
+            {
+                string card = random.Pick(fair);
+                fair.Remove(card);
+                stock.Add(card);
+            }
+
+            // Out on the roads, a wandering merchant now and then carries something from deeper down.
+            List<string> rare = [.. wares.Where(ware => ware.Floor > tier).Select(ware => ware.Card)];
+            if (rare.Count > 0 && random.NextInt(0, 100) < 30)
+            {
+                stock.Add(random.Pick(rare));
+            }
+
+            wanderers.Add(new WanderingMerchant(names[i], spot.X, spot.Y, stock));
+        }
+
+        return wanderers;
+    }
 
     /// <summary>Notes gold spent with a merchant; any levels the Guild gains bring new wares.</summary>
     public IReadOnlyList<string> SpendWithMerchants(int gold, ContentCatalog content)
@@ -210,6 +293,8 @@ public sealed class RaidWorld
         GoldSpentWithMerchants = GoldSpentWithMerchants,
         GuildWares = _guildWares,
         RememberedMerchants = _remembered,
+        Wanderers = _wanderers,
+        WanderersDay = _wanderersDay,
     }, Options);
 
     /// <exception cref="InvalidDataException">Not a Woarld this version can read.</exception>
@@ -237,6 +322,8 @@ public sealed class RaidWorld
         };
         world._guildWares.AddRange(data.GuildWares);
         world._remembered.AddRange(data.RememberedMerchants);
+        world._wanderers = [.. data.Wanderers];
+        world._wanderersDay = data.WanderersDay;
         foreach ((string key, int value) in data.Reputation)
         {
             world._reputation[key] = value;
@@ -297,8 +384,18 @@ public sealed class RaidWorld
         public List<string> GuildWares { get; init; } = [];
 
         public List<RememberedMerchant> RememberedMerchants { get; init; } = [];
+
+        public List<WanderingMerchant> Wanderers { get; init; } = [];
+
+        public int WanderersDay { get; init; }
     }
 }
 
 /// <summary>A merchant the party rescued: who freed them, and everyone who came out of the dungeon with them.</summary>
 public sealed record RememberedMerchant(string Name, Guid? FreedBy, IReadOnlyList<Guid> Helpers, int Day);
+
+/// <summary>A merchant of the Guild out on the Woarld Map for the day, and what they carry.</summary>
+public sealed record WanderingMerchant(string Name, int X, int Y, List<string> Stock)
+{
+    public GridPosition Position => new(X, Y);
+}

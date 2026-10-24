@@ -50,6 +50,9 @@ public partial class WoarldMapView : Control
     /// <summary>Where a click sent the party, marked until they get there.</summary>
     public GridPosition? Destination { get; set; }
 
+    /// <summary>Wandering merchants out today, where they stand and how they look.</summary>
+    public IReadOnlyList<(GridPosition Tile, LookColors Look)> Merchants { get; set; } = [];
+
     public WoarldJourney? Journey
     {
         get => _journey;
@@ -146,6 +149,17 @@ public partial class WoarldMapView : Control
             if (!_journey.IsOpen(place))
             {
                 DrawArt("place_lock", TileRect(place.Position), Palette.Danger);
+            }
+        }
+
+        // Wandering merchants, where the clouds have cleared: a gold ring under them.
+        foreach ((GridPosition tile, LookColors look) in Merchants.Where(merchant => _journey.IsRevealed(merchant.Tile)))
+        {
+            Rect2 rect = TileRect(tile);
+            DrawArc(rect.GetCenter() + new Vector2(0, 5), 6, 0, Mathf.Tau, 16, Palette.Loot, 1.5f);
+            if (!Looks.Draw(this, rect, look))
+            {
+                DrawCircle(rect.GetCenter(), 5, Palette.Loot);
             }
         }
 

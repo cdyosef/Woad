@@ -374,6 +374,12 @@ when the total reaches its number:
   off), more for each point below; at -10 merchants won't deal with them. Standing with the Guild and
   the Law is kept on each character; rescued merchants remember who helped them. (The Law, its patrols
   and bounties, are for a later update.)
+- **Wandering merchants (Raiding Party):** each day the Guild sends merchants out onto the Woarld Map: one,
+  plus one for every three Guild levels (at most three), waiting on open ground 4 to 12 tiles from where
+  the party greeted the day, and gone at its end. Merchants the party rescued are the first to come.
+  Walk onto one and **Trade** with the leader's gold: four wares as good as the Guild's level, and three
+  times in ten one from deeper down. A rescued merchant prices kindly for the heroes who helped them
+  (2 more standing), and buying from any wandering merchant counts toward the Guild's level.
 - **Shove:** roll Rumble dice (and the weapon) at an adjacent monster as for an attack; beat its
   defense and it's pushed one tile straight away from you (diagonally too) instead of hurt. Onto a
   trap, the trap goes off on it (spikes: 1 heart; trap door: it falls). Into a pit, it drops to the

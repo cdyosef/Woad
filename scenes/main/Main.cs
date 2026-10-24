@@ -17,7 +17,7 @@ namespace Woad.Scenes;
 
 /// <summary>
 /// The app's root: owns the content and the character store, swaps between screens, and saves
-/// each character's results when a run ends. Debug flags: <c>--uitest</c>, <c>--floortest</c>, <c>--hazardtest</c>, <c>--keeltest</c>, <c>--firetest</c>, <c>--cameratest</c>, <c>--bombtest</c>, <c>--rumbletest</c>, <c>--clicktest</c>, <c>--loottest</c>, <c>--tradetest</c>, <c>--monstertest</c>, <c>--dentest</c>, <c>--merchanttest</c> and
+/// each character's results when a run ends. Debug flags: <c>--uitest</c>, <c>--floortest</c>, <c>--hazardtest</c>, <c>--keeltest</c>, <c>--firetest</c>, <c>--cameratest</c>, <c>--bombtest</c>, <c>--rumbletest</c>, <c>--clicktest</c>, <c>--loottest</c>, <c>--tradetest</c>, <c>--monstertest</c>, <c>--dentest</c>, <c>--merchanttest</c>, <c>--wanderertest</c> and
 /// <c>--autoplay</c> jump straight into a run with the debug party (<c>--party N</c> heroes,
 /// <c>--theme id</c> for another dungeon); <c>--menutest</c> and
 /// <c>--resultstest</c> click through the menus using a throwaway save folder.
@@ -140,6 +140,10 @@ public partial class Main : Control
         else if (args.Contains("--tradetest"))
         {
             Show(new GameScreen { Setup = DemoRun.Camp(seed), Content = _content });
+        }
+        else if (args.Contains("--wanderertest"))
+        {
+            RunWandererTest();
         }
         else if (args.Contains("--merchanttest"))
         {
@@ -606,6 +610,20 @@ public partial class Main : Control
             BackTooltip = world is null ? "Back to the Dungeon Run list. Your travels are saved." : "Back to your raids. This raid and the Woarld are saved.",
             RestBoosts = world is null ? null : walkers => world.TakeRestBoosts([.. walkers.Select(hero => hero.Id)], TavernDefinition.LoadDefault()),
             Hearts = _raid is null || world is null ? null : RaidHearts,
+            World = world,
+            Content = _content,
+        };
+        screen.Traded += async trader =>
+        {
+            SaveRaidWorld();
+            try
+            {
+                await _characters.SaveAsync(trader);
+            }
+            catch (IOException exception)
+            {
+                GD.PushWarning($"Couldn't save {trader.Name}: {exception.Message}");
+            }
         };
         _woarldNews = "";
         SaveRaid(RaidLocation.Map);
