@@ -380,6 +380,36 @@ when the total reaches its number:
   Walk onto one and **Trade** with the leader's gold: four wares as good as the Guild's level, and three
   times in ten one from deeper down. A rescued merchant prices kindly for the heroes who helped them
   (2 more standing), and buying from any wandering merchant counts toward the Guild's level.
+- **Travel on the Woarld Map:** a day is 1,000 steps of time (500 of daylight). A tile of road takes 5,
+  grass, sand or a bridge 10, hills 15 and forest 20. The party's **pace** takes a step off every tile for
+  each Wend die its members have beyond their base one (to half the tile's time at best).
+- **Party checks:** the best hero's dice for it, plus a die for each other hero (up to three more).
+- **Dangers (Raiding Party):** bands of monsters roam the map, three by day and five by night (night's go
+  home at dawn). What they are depends on where they come from: near a dungeon, its monsters; otherwise
+  Dire Wolves from the forest, Goblin Raiders from the hills, Wild Boars from the grass, Giant Scorpions
+  from the sand, and Bandits on the roads; bigger further from the start, at night and for bigger parties.
+  A band within 5 tiles closes in on the party (or a wandering merchant, whom it corners: save them by
+  beating the band, Guild +1 each, within 100 steps or they're lost). Caught, the party chooses **Fight**
+  or **Flee** (the party's Wend check against the band's chase: two dice and one more per monster past the
+  first; get away and lose 50 steps, or be caught and they strike first). Some spots lie in wait, hidden,
+  and at night something may spring out of the dark (2% a step): the party's Od Hand check against how
+  well it was hidden, or the monsters strike first. **Scout** (50 steps, a party Od Hand check) finds what
+  lies in wait within 6 tiles that the total reaches, and gives +2 to ambush checks for the rest of the day.
+  A **Bridge Troll** lurks under a bridge or two (a hard ambush): it fills four tiles, has 12 hearts and gets
+  one back at the end of each turn it didn't start burning. Fights are one open field shaped by the ground
+  (trees, rocks, a river under a bridge), the party on one side and the band on the other; beating the band
+  ends it and the party walks on.
+- **Toll posts:** on bridges and roads, a Guard Captain and his guards ask 2 gold a head. **Pay**, **Turn
+  back**, **Fight**, or **Suss Out** (once): each hero's own Od Hand roll against the captain's hidden
+  Convince roll (5 and a die for real guards, 5 and three dice for bandits); match it and you see the truth
+  ("These are real guards" / "These guys are not who they say they are", and they show as bandits), or
+  "You can't suss out any trouble." Beat bandits: Law +3 each; beat real guards: Law -2 each. The
+  Captains (Guard and Bandit) are big, heavily armored (2d6 defense +3), quick, with a two-handed spiked
+  mace (2d6+2 and a die of its own): a hit stuns, and each 6 on the mace's die stuns once more.
+- **Cowards:** fleeing a band or turning back from a toll raises each character's standing with Cowards.
+  At 10, **Craven the Cowherder** in the Waylay Inn gives them the **Coward's Cloak** (once): worn on the
+  head, used once and gone, it makes the monsters beside you move at half speed on their next turn and
+  turns your Rumble and Od Hand dice left this turn into Wend dice.
 - **Shove:** roll Rumble dice (and the weapon) at an adjacent monster as for an attack; beat its
   defense and it's pushed one tile straight away from you (diagonally too) instead of hurt. Onto a
   trap, the trap goes off on it (spikes: 1 heart; trap door: it falls). Into a pit, it drops to the

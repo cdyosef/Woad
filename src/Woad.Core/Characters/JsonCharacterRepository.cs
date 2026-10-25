@@ -93,6 +93,8 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
         Appearance = character.Appearance,
         GuildStanding = character.GuildStanding,
         LawStanding = character.LawStanding,
+        CowardStanding = character.CowardStanding,
+        HasCowardsCloak = character.HasCowardsCloak,
     };
 
     /// <summary>Rebuilds a character, dropping cards that no longer exist in the game's content.</summary>
@@ -124,7 +126,7 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
         return new Character(
             file.Id, file.Name, file.Portrait, file.CreatedUtc, Math.Max(0, file.Xp), file.Allocation,
             Math.Max(0, file.UnspentPoints), Known(file.Equipped), Known(file.Belt), Known(file.Backpack),
-            Math.Max(0, file.Gold), Math.Max(0, file.RunsPlayed), Math.Max(0, file.Wins), file.IsCompanion, file.Appearance, file.GuildStanding, file.LawStanding);
+            Math.Max(0, file.Gold), Math.Max(0, file.RunsPlayed), Math.Max(0, file.Wins), file.IsCompanion, file.Appearance, file.GuildStanding, file.LawStanding, file.CowardStanding, file.HasCowardsCloak);
     }
 
     /// <summary>The on-disk shape of a character, kept separate so the model can change without breaking saves.</summary>
@@ -168,5 +170,9 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
         public int GuildStanding { get; init; }
 
         public int LawStanding { get; init; }
+
+        public int CowardStanding { get; init; }
+
+        public bool HasCowardsCloak { get; init; }
     }
 }

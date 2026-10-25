@@ -173,7 +173,7 @@ public sealed partial class GameSession
     }
 
     private static bool CanHeroAttack(Hero hero, Room room, Monster monster) =>
-        CanHeroReach(hero, room.Layout, hero.Position, monster.Position)
+        monster.Tiles.Any(tile => CanHeroReach(hero, room.Layout, hero.Position, tile))
         && (!Submerged(room, monster) || monster.Position.ChebyshevDistanceTo(hero.Position) <= 1 || (hero.MainWeapon?.Definition.SwimmerBonus ?? 0) > 0);
 
     /// <summary>
@@ -332,6 +332,20 @@ public sealed partial class GameSession
             return;
         }
 
+        // Out on the Woarld Map, the fight's won: the party gathers itself and walks on.
+        if (State.Skirmish)
+        {
+            events.Add(new RoomCleared(room.Id));
+            foreach (Hero hero in State.Heroes.Where(hero => hero.IsInPlay))
+            {
+                hero.Status = HeroStatus.Escaped;
+                events.Add(new HeroEscaped(hero.Id, hero.TreasureValue));
+            }
+
+            EndRunIfOver(events);
+            return;
+        }
+
         RoomClearedKey(room, events);
         events.Add(new RoomCleared(room.Id));
         foreach (Hero hero in State.ActiveHeroesIn(room))
@@ -388,12 +402,13 @@ public sealed partial class GameSession
         int prone = ProneBonus(target, monster.Position);
         for (int i = 0; i < attacks.Count && target.IsActive; i++)
         {
-            RollMonsterAttack(room, monster, attacks[i] + (i == 0 ? prone : 0), i == 0 ? definition.Weapon : 0, [target], events);
+            RollMonsterAttack(room, monster, attacks[i] + (i == 0 ? prone : 0), i == 0 ? definition.Weapon : 0, [target], events, weaponDice: i == 0 ? definition.WeaponDice : 0);
         }
     }
 
     /// <summary>One attack roll that every target defends against separately (a sweep hits them all with the same roll).</summary>
-    private void RollMonsterAttack(Room room, Monster monster, int dice, int bonus, IReadOnlyList<Hero> targets, List<GameEvent> events)
+    /// <param name="weaponDice">Its weapon's own dice (a Captain's mace), rolled in, a 6 rolling another straight in.</param>
+    private void RollMonsterAttack(Room room, Monster monster, int dice, int bonus, IReadOnlyList<Hero> targets, List<GameEvent> events, int weaponDice = 0)
     {
         if (dice < 1)
         {
@@ -401,6 +416,14 @@ public sealed partial class GameSession
         }
 
         (DiceRoll roll, int powerDice) = RollMonsterDice(dice);
+        (int[] weaponFaces, int crits) = RollBonusDice(weaponDice);
+        foreach (int face in weaponFaces)
+        {
+            roll = roll.With(face);
+        }
+
+        powerDice += crits;
+        int weaponSixes = weaponFaces.Count(face => face == GameRules.PowerDieFace);
         int total = roll.Total + bonus;
         events.Add(new AttackRolled(monster.Id, roll, bonus, total, targets.Select(hero => hero.Id).ToList(), powerDice));
         foreach (Hero hero in targets.Where(hero => hero.IsActive))
@@ -419,6 +442,11 @@ public sealed partial class GameSession
             if (dealt > 0 && hero.IsActive)
             {
                 AfterMonsterHit(room, monster, hero, events);
+            }
+
+            if (dealt > 0 && hero.IsActive && monster.Definition.StunOnHit)
+            {
+                Stun(hero, powerful: false, 1 + weaponSixes, events);
             }
 
             // A heavy blow knocks the hero back a tile, and with a mighty one every 6 knocks them a tile further, hit or miss.

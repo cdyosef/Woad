@@ -24,7 +24,7 @@ public sealed partial class GameSession
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
         CardEffect effect = held.Card.Definition.Effect!;
-        if (effect.Kind == CardEffectKind.Heal)
+        if (effect.Kind is CardEffectKind.Heal or CardEffectKind.CowardsFlight)
         {
             return CheckEffectTarget(hero, room, effect, null, out _) is null ? [hero.Position] : [];
         }
@@ -80,6 +80,11 @@ public sealed partial class GameSession
         {
             card.ChargesRemaining--;
         }
+        else if (card.Definition.BreaksOnUse)
+        {
+            hero.Remove(card);
+            events.Add(new CardConsumed(hero.Id, card.Id));
+        }
 
         switch (effect.Kind)
         {
@@ -109,6 +114,21 @@ public sealed partial class GameSession
                     RollHeroAttack(hero, effect.Amount, 0, caught, SourceOf(card.Definition), events, fire: effect.Fire);
                 }
 
+                break;
+
+            case CardEffectKind.CowardsFlight:
+                // Everything left for fighting and fiddling goes into running; whatever's beside you slows.
+                int fleeing = AttackDiceLeft + OdHandDiceLeft;
+                Turn.ExtraMoveDice += fleeing;
+                Turn.AttackDiceUsed += AttackDiceLeft;
+                Turn.OdHandDiceUsed += OdHandDiceLeft;
+                List<int> slowed = [.. room.Monsters.Where(monster => monster.Tiles.Any(tile => tile.ChebyshevDistanceTo(hero.Position) <= 1)).Select(monster => monster.Id)];
+                foreach (Monster monster in room.Monsters.Where(monster => slowed.Contains(monster.Id)))
+                {
+                    monster.Slowed = true;
+                }
+
+                events.Add(new CowardsFlight(hero.Id, fleeing, slowed));
                 break;
 
             case CardEffectKind.Freeze:
@@ -759,6 +779,9 @@ public sealed partial class GameSession
                 }
 
                 return hero.Hearts >= hero.MaxHearts ? "You're already at full hearts." : null;
+
+            case CardEffectKind.CowardsFlight:
+                return target is { } fleeTile && fleeTile != hero.Position ? "That can only be used on yourself." : null;
 
             case CardEffectKind.Attack:
                 if (target is not { } attackTile)

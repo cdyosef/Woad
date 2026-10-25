@@ -69,6 +69,9 @@ public sealed class Monster
 
     public bool HasReassembled { get; internal set; }
 
+    /// <summary>Slowed (by a Coward's Cloak): half its moves on its next turn.</summary>
+    public bool Slowed { get; internal set; }
+
     /// <summary>The monster that raised it from the dead (a Necromancer), or null.</summary>
     public int? RaisedBy { get; internal set; }
 
@@ -80,6 +83,16 @@ public sealed class Monster
 
     /// <summary>A frozen monster can't be frozen again until this round has passed.</summary>
     internal int FreezeImmuneThroughRound { get; set; }
+
+    /// <summary>Whether it stands on a tile: its own, or for a huge monster any of the 2x2 it fills (from its top-left).</summary>
+    public bool Occupies(GridPosition tile) =>
+        tile.X >= Position.X && tile.Y >= Position.Y && tile.X < Position.X + Definition.Size && tile.Y < Position.Y + Definition.Size;
+
+    /// <summary>Every tile it fills.</summary>
+    public IEnumerable<GridPosition> Tiles =>
+        from dx in Enumerable.Range(0, Definition.Size)
+        from dy in Enumerable.Range(0, Definition.Size)
+        select new GridPosition(Position.X + dx, Position.Y + dy);
 
     public override string ToString() => $"{Definition.Name} #{Id} at {Position}";
 }

@@ -107,6 +107,12 @@ public partial class GameScreen
             Swimmer = monster is { Swimmer: true },
             SpriteScale = monster is null ? 1f : GameArt.MonsterScale(monster),
         };
+        if (monster is { Size: > 1 })
+        {
+            // A huge monster (the Bridge Troll) fills a square of tiles: its token is drawn that much bigger.
+            token.Scale = new Vector2(monster.Size, monster.Size);
+        }
+
         _tokens[figure.Id] = token;
         _board.AddChild(token);
         ApplyFigure(figure, token);

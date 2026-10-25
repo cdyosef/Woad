@@ -24,6 +24,7 @@
   { "id": "leather_cap", "name": "Leather Cap", "type": "armor", "slot": "head", "modifiers": { "hearts": 1 }, "value": 3, "text": "+1 Heart." },
   { "id": "diving_helm", "name": "Diving Helm", "type": "armor", "slot": "head", "modifiers": { "armor": 1 }, "swims": true, "value": 8, "text": "Armor 1. Water costs you 1 step a tile, and you stay afloat in deep water without spending a Rumble die." },
   { "id": "lucky_helmet", "name": "Lucky Helmet", "type": "armor", "slot": "head", "modifiers": { "armor": 1 }, "lastChanceDie": true, "value": 5, "text": "Armor 1. Your last line of defense: when you'd be hit anyway, it rolls one more die in, then breaks." },
+  { "id": "cowards_cloak", "name": "Coward's Cloak", "type": "armor", "slot": "head", "breaksOnUse": true, "effect": { "kind": "cowardsFlight", "amount": 1 }, "value": 15, "text": "Worn on the head, a hood to hide in. Use it (once, then it's gone): monsters beside you move at half speed on their next turn, and your Rumble and Od Hand dice left this turn become Wend dice." },
   { "id": "leather_armor", "name": "Leather Armor", "type": "armor", "slot": "body", "modifiers": { "armor": 1 }, "value": 3, "text": "Armor 1: adds 1 to every defense." },
   { "id": "studded_armor", "name": "Studded Armor", "type": "armor", "slot": "body", "modifiers": { "armor": 2 }, "value": 6, "text": "Armor 2: adds 2 to every defense." },
   { "id": "chain_mail", "name": "Chain Mail", "type": "armor", "slot": "body", "modifiers": { "armor": 3 }, "value": 10, "text": "Armor 3: adds 3 to every defense." },

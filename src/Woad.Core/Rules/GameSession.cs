@@ -28,7 +28,11 @@ public sealed partial class GameSession
         _random = random ?? new GameRandom(setup.Seed);
         _dice = new DiceRoller(_random.Dice);
         State = CreateState(content, setup, _random);
+        _monstersFirst = setup.MonstersFirst;
     }
+
+    /// <summary>The monsters take a turn before the heroes' first (see <see cref="RunSetup.MonstersFirst"/>).</summary>
+    private readonly bool _monstersFirst;
 
     public ContentCatalog Content { get; }
 
@@ -38,7 +42,7 @@ public sealed partial class GameSession
     public int AttackDiceLeft => State.Turn is { } turn ? Math.Max(0, ActiveHero.EffectiveStats.AttackDice - turn.AttackDiceUsed) : 0;
 
     /// <summary>Move dice the active hero hasn't used this turn.</summary>
-    public int MoveDiceLeft => State.Turn is { } turn ? Math.Max(0, ActiveHero.EffectiveStats.MoveDice - turn.MoveDiceUsed) : 0;
+    public int MoveDiceLeft => State.Turn is { } turn ? Math.Max(0, ActiveHero.EffectiveStats.MoveDice + turn.ExtraMoveDice - turn.MoveDiceUsed) : 0;
 
     /// <summary>The tools' own dice the active hero can still add to a lock-picking roll this turn (a lockpick's d6).</summary>
     public int ToolDiceLeft => State.Turn is { ToolsUsed: false } ? Math.Max(0, ActiveHero.EffectiveStats.ToolDice) : 0;
@@ -66,7 +70,16 @@ public sealed partial class GameSession
 
         State.Phase = RunPhase.InProgress;
         var events = new List<GameEvent>();
-        StartRound(events);
+        if (_monstersFirst)
+        {
+            RunEnemyPhase(events);
+        }
+
+        if (State.Phase == RunPhase.InProgress)
+        {
+            StartRound(events);
+        }
+
         return events;
     }
 
@@ -321,7 +334,7 @@ public sealed partial class GameSession
         }
 
         ThemeDefinition theme = content.GetTheme(setup.ThemeId);
-        var state = new GameState(setup.Seed, theme.Id, new LootDeck(theme, content, random.Loot)) { FriendlyFire = setup.FriendlyFire };
+        var state = new GameState(setup.Seed, theme.Id, new LootDeck(theme, content, random.Loot)) { FriendlyFire = setup.FriendlyFire, Skirmish = setup.Skirmish };
 
         foreach (RoomSetup roomSetup in setup.Rooms)
         {
@@ -368,8 +381,10 @@ public sealed partial class GameSession
                 throw new ArgumentException($"The hero in seat {seat + 1} needs a name.", nameof(setup));
             }
 
+            // In a skirmish, heroes past the marked starts gather by the first, on the party's side of the field.
             GridPosition start = startTemplate.HeroStarts.TryGetValue(seat, out GridPosition marked)
                 ? marked
+                : setup.Skirmish && startTemplate.HeroStarts.TryGetValue(0, out GridPosition first) ? FreeTileNear(state, startRoom, first)
                 : FreeTileNearCenter(state, startRoom);
             if (!startRoom.Layout[start].IsWalkable() || IsOccupied(state, startRoom, start))
             {
@@ -531,6 +546,14 @@ public sealed partial class GameSession
     /// <summary>A new monster; a boss is toughened for a party bigger than <see cref="GameRules.FullParty"/>.</summary>
     private static Monster CreateMonster(int id, MonsterDefinition definition, GridPosition position, int partySize) =>
         new(id, definition, position, GameRules.ExtraMonsterHearts(partySize, definition.Boss));
+
+    private static GridPosition FreeTileNear(GameState state, Room room, GridPosition near) =>
+        room.Positions
+            .Where(position => room.Layout[position].IsWalkable() && !IsOccupied(state, room, position))
+            .OrderBy(position => position.ManhattanDistanceTo(near))
+            .ThenBy(position => position.Y)
+            .ThenBy(position => position.X)
+            .First();
 
     private static GridPosition FreeTileNearCenter(GameState state, Room room)
     {

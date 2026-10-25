@@ -50,6 +50,15 @@ public partial class WoarldMapView : Control
     /// <summary>Where a click sent the party, marked until they get there.</summary>
     public GridPosition? Destination { get; set; }
 
+    /// <summary>Roaming bands: where, the monster leading them, and whether they've a merchant cornered.</summary>
+    public IReadOnlyList<(GridPosition Tile, string Monster, bool Cornering)> Bands { get; set; } = [];
+
+    /// <summary>Ambushes a Scout found: marked so the party can go round.</summary>
+    public IReadOnlyList<GridPosition> Lurking { get; set; } = [];
+
+    /// <summary>Toll posts, and whether they're known to be bandits.</summary>
+    public IReadOnlyList<(GridPosition Tile, bool Bandits)> Tolls { get; set; } = [];
+
     /// <summary>Wandering merchants out today, where they stand and how they look.</summary>
     public IReadOnlyList<(GridPosition Tile, LookColors Look)> Merchants { get; set; } = [];
 
@@ -163,6 +172,31 @@ public partial class WoarldMapView : Control
             }
         }
 
+        // Dangers, where the clouds have cleared: toll posts, found ambushes and roaming bands.
+        foreach ((GridPosition tile, bool bandits) in Tolls.Where(toll => _journey.IsRevealed(toll.Tile)))
+        {
+            Rect2 rect = TileRect(tile);
+            DrawSpriteOr(bandits ? "bandit_spearman" : "spear_guard", rect, bandits ? Palette.Danger : Palette.TrimBright);
+        }
+
+        foreach (GridPosition tile in Lurking.Where(_journey.IsRevealed))
+        {
+            Rect2 rect = TileRect(tile);
+            DrawRect(rect.Grow(-2), Palette.Danger, filled: false, width: 1.5f);
+            DrawString(GameArt.BodyFont ?? ThemeDB.FallbackFont, rect.Position + new Vector2(6, 13), "!", fontSize: UiTheme.FontSize, modulate: Palette.Danger);
+        }
+
+        foreach ((GridPosition tile, string monster, bool cornering) in Bands.Where(band => _journey.IsRevealed(band.Tile)))
+        {
+            Rect2 rect = TileRect(tile);
+            DrawArc(rect.GetCenter() + new Vector2(0, 5), 6, 0, Mathf.Tau, 16, Palette.Danger, 1.5f);
+            DrawSpriteOr(monster, rect, Palette.Danger);
+            if (cornering)
+            {
+                DrawString(GameArt.BodyFont ?? ThemeDB.FallbackFont, rect.Position + new Vector2(10, 6), "!", fontSize: UiTheme.FontSize, modulate: Palette.Loot);
+            }
+        }
+
         // Clouds over the unexplored; Parts Unknown shows as itself.
         for (int y = top; y <= bottom; y++)
         {
@@ -231,6 +265,19 @@ public partial class WoarldMapView : Control
         else
         {
             DrawRect(rect, fallback);
+        }
+    }
+
+    /// <summary>A monster's sprite (from whichever dungeon draws it), or a colored dot.</summary>
+    private void DrawSpriteOr(string monster, Rect2 rect, Color fallback)
+    {
+        if ((GameArt.Monster("emerald_keep", monster) ?? GameArt.Monster("sunken_temple", monster)) is { } sprite)
+        {
+            DrawTextureRect(sprite, rect, tile: false);
+        }
+        else
+        {
+            DrawCircle(rect.GetCenter(), 5, fallback);
         }
     }
 }

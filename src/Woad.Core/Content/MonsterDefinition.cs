@@ -109,6 +109,18 @@ public sealed record MonsterDefinition
     /// <summary>Drawn bigger than a tile (it still fills only one).</summary>
     public bool Big { get; init; }
 
+    /// <summary>How many tiles across it is: 1, or 2 for a huge monster that fills a 2x2 square (the Bridge Troll).</summary>
+    public int Size { get; init; } = 1;
+
+    /// <summary>Its weapon's own dice, rolled in with its first attack each turn (a 6 rolls another straight in).</summary>
+    public int WeaponDice { get; init; }
+
+    /// <summary>A hit stuns, and each 6 on its weapon dice stuns once more (a Captain's spiked mace).</summary>
+    public bool StunOnHit { get; init; }
+
+    /// <summary>Gets a heart back at the end of each turn it didn't start burning (a troll).</summary>
+    public bool Regenerates { get; init; }
+
     /// <summary>A hit also drains one of the hero's Luck rerolls; with none left, the hex stuns them instead.</summary>
     public bool Hexes { get; init; }
 

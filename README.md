@@ -104,6 +104,8 @@ on the Godot command line:
 | `--loottest` | Checks a stack of lockpicks fills one slot, dropping part of a stack asks how many, a bag of loot opens to Take one thing or Take all (the picks rejoin their stack), and an opened chest shows what's inside. |
 | `--tradetest` | Checks clicking a companion beside you opens trading, giving part of a stack asks how many, its owner can have it equip a sword, and the Orders panel's Find me button gives the order. |
 | `--monstertest` | Checks clicking a chest that's a Mimic wakes it on the board (and its grab shuts off Wend), then plays three rounds against an Ogre, a Necromancer (checking it raises the dead), a Hexer and a Gelatinous Cube. |
+| `--encountertest` | On a fresh Woarld kept in memory: steps onto a toll post (Suss Out, then Turn back, which Cowards note), lets a band catch up and chooses Fight, and Scouts. |
+| `--skirmishtest` | A fight under a bridge where the Bridge Troll strikes first, checking it fills four tiles. |
 | `--wanderertest` | On a fresh Woarld kept in memory, goes to the day's first wandering merchant, opens their wares with the Trade button and buys one. |
 | `--merchanttest` | Frees Silas, a merchant chained beside the hero, with a key; opens his wares and buys one; then checks he follows the hero. |
 | `--dentest` | Walks a hero through the door into the Ogre Champ's den, checks its song starts and the Champ waits on its platform, then fights it for a few rounds. |

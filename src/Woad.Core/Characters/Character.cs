@@ -33,7 +33,9 @@ public sealed class Character
         bool isCompanion = false,
         Appearance? appearance = null,
         int guildStanding = 0,
-        int lawStanding = 0)
+        int lawStanding = 0,
+        int cowardStanding = 0,
+        bool hasCowardsCloak = false)
     {
         Id = id;
         Name = name;
@@ -52,6 +54,8 @@ public sealed class Character
         Appearance = appearance ?? Appearance.Default;
         GuildStanding = guildStanding;
         LawStanding = lawStanding;
+        CowardStanding = cowardStanding;
+        HasCowardsCloak = hasCowardsCloak;
     }
 
     public Guid Id { get; }
@@ -94,13 +98,32 @@ public sealed class Character
     /// <summary>Their standing with the Law (guards, sheriffs and judges): crimes lower it.</summary>
     public int LawStanding { get; private set; }
 
+    /// <summary>Their name among Cowards: every time they flee, it rises. (Craven the Cowherder takes note.)</summary>
+    public int CowardStanding { get; private set; }
+
+    /// <summary>Craven the Cowherder has given them the Coward's Cloak already.</summary>
+    public bool HasCowardsCloak { get; private set; }
+
+    /// <summary>Changes their standing with the Merchant Guild, the Law and Cowards (out on the Woarld Map, say).</summary>
+    public void ChangeStanding(int guild = 0, int law = 0, int cowards = 0)
+    {
+        GuildStanding += guild;
+        LawStanding += law;
+        CowardStanding += cowards;
+    }
+
+    /// <summary>Notes that Craven gave them the Coward's Cloak (once a character).</summary>
+    public void ReceiveCowardsCloak() => HasCowardsCloak = true;
+
     public int Wins { get; private set; }
 
     public Stats BaseStats => PointBuy.ToStats(Allocation);
 
     /// <summary>Hearts at full health: the base stats plus what equipped gear adds.</summary>
-    public int MaxHearts(ContentCatalog content) =>
-        Math.Max(1, _equipped.Aggregate(BaseStats, (stats, id) => stats + content.GetCard(id).Modifiers).Hearts);
+    public int MaxHearts(ContentCatalog content) => Math.Max(1, Stats(content).Hearts);
+
+    /// <summary>The base stats plus what equipped gear adds.</summary>
+    public Stats Stats(ContentCatalog content) => _equipped.Aggregate(BaseStats, (stats, id) => stats + content.GetCard(id).Modifiers);
 
     /// <summary>A new level 1 character with the starter kit. Points not spent are kept for later.</summary>
     /// <param name="isCompanion">Make a companion instead of a player's hero; it can't be changed later.</param>

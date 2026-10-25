@@ -133,7 +133,7 @@ public class RaidSaveTests
 
         Assert.Equal(place.Leader, shared.Leader);
         Assert.Equal(place.Trail, shared.Trail);
-        Assert.Equal((2, 0, 2), (shared.Day, shared.StepsToday, shared.TotalSteps));
+        Assert.Equal((2, 0, place.TotalSteps), (shared.Day, shared.StepsToday, shared.TotalSteps));
         Assert.Throws<ArgumentException>(() => shared.Resume(place with { Leader = new GridPosition(0, 0) }));
     }
 
