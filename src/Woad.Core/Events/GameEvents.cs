@@ -452,3 +452,9 @@ public sealed record MerchantSlain(int MerchantId, int KillerId, bool ByHero, Gr
 
 /// <summary>A merchant left the dungeon alive with the party: rescued.</summary>
 public sealed record MerchantRescued(int MerchantId, string Name, int FreedByHeroId) : GameEvent;
+
+/// <summary>A regenerating monster (a troll) got a heart back.</summary>
+public sealed record MonsterRegenerated(int MonsterId, int Hearts) : GameEvent;
+
+/// <summary>A hero threw on the Coward's Cloak: Rumble and Od Hand dice turned to <paramref name="WendDice"/> Wend dice, and the monsters beside them slowed.</summary>
+public sealed record CowardsFlight(int HeroId, int WendDice, IReadOnlyList<int> SlowedMonsterIds) : GameEvent;

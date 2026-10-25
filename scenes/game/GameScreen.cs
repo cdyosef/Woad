@@ -510,6 +510,11 @@ public partial class GameScreen : Control
                 await RemoveFigure(crumbled.MonsterId);
                 break;
 
+            case MonsterRegenerated regenerated:
+                FloatOver(regenerated.MonsterId, "+1", Palette.Heal);
+                await UpdateFigure(regenerated.MonsterId, figure => figure.Hearts = regenerated.Hearts, 0.2);
+                break;
+
             case MerchantFreed or MerchantMoved or MerchantFollowed or MerchantSlain or MerchantRescued or MerchantTraded or MerchantRobbed:
                 await PlayMerchantEvent(gameEvent);
                 break;
@@ -1146,6 +1151,7 @@ public partial class GameScreen : Control
         Engulfed engulfed => FigureRoom(engulfed.MonsterId),
         MonsterRaised raised => FigureRoom(raised.MonsterId),
         Crumbled crumbled => FigureRoom(crumbled.MonsterId),
+        MonsterRegenerated regenerated => FigureRoom(regenerated.MonsterId),
         LastChanceUsed lucky => FigureRoom(lucky.HeroId),
         Guarded guarded => FigureRoom(guarded.HeroId),
         DaggerThrown thrown => thrown.RoomId,

@@ -67,6 +67,15 @@
       ]
     },
     {
+      "id": "cowherder", "name": "Craven the Cowherder", "role": "cowherder", "x": 5, "y": 9,
+      "appearance": { "look": "halfling", "main": "moss", "trim": "bone", "skin": "fair", "hair": "brown" },
+      "greeting": "Run away, I always say! Live to herd another day. The bravest thing a body can do is know when to leg it.",
+      "rumors": [
+        { "text": "Them toll posts on the roads? Half of 'em aren't guards at all. Bandits, in borrowed helms. Look 'em in the eye." },
+        { "text": "There's something big under one of the bridges. Heard it eat a cow. My cow." }
+      ]
+    },
+    {
       "id": "patron", "name": "Old Dunstan", "role": "patron", "x": 2, "y": 5,
       "appearance": { "look": "wizard", "main": "violet", "trim": "gilt", "skin": "pale", "hair": "white" },
       "greeting": "Eh? Oh, adventurers. Mind the bridge, it creaks.",

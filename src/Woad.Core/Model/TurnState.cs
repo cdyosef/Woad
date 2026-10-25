@@ -132,6 +132,9 @@ public sealed class TurnState
 
     public int MoveDiceUsed { get; internal set; }
 
+    /// <summary>Wend dice gained this turn (the Coward's Cloak turns Rumble and Od Hand dice into them).</summary>
+    public int ExtraMoveDice { get; internal set; }
+
     /// <summary>Speed has been added to a move this turn.</summary>
     public bool SpeedUsed { get; internal set; }
 

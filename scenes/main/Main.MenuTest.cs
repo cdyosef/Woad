@@ -284,12 +284,13 @@ public partial class Main
         await ClickAt(this, map.View.TileCenter(inn with { X = inn.X + 2 }));
         await WaitFor(this, () => !map.IsWalking, "the party to walk");
         Check(journey.Leader == inn with { X = inn.X + 2 } && journey.Trail[0] == inn with { X = inn.X + 1 } && journey.Trail[1] == inn, "clicking walks the party there in a line");
-        Check(journey.TotalSteps == 2 && !map.EnterButton.Visible, "two steps walked, and nothing to enter here");
+        int twoTiles = journey.StepCost(inn with { X = inn.X + 1 }) + journey.StepCost(inn with { X = inn.X + 2 });
+        Check(journey.TotalSteps == twoTiles && !map.EnterButton.Visible, "two tiles walked (by their ground's time), and nothing to enter here");
 
         await Click(this, map.LeaderButton);
         Check(map.LeaderButton.Text == "Leader: Morgan", "the Leader button passes the lead to the next player, skipping the companion");
         await Click(this, map.RestButton);
-        Check(journey.TotalSteps == 2 + WoarldJourney.RestSteps && map.Message.StartsWith("Rested"), "resting rolls for everyone and takes 50 steps");
+        Check(journey.TotalSteps == twoTiles + WoarldJourney.RestSteps && map.Message.StartsWith("Rested"), "resting rolls for everyone and takes 50 steps");
 
         // Back along the road east, over the bridge and north to the Keep.
         Direction[] road = [.. Enumerable.Repeat(Direction.East, 14), .. Enumerable.Repeat(Direction.North, 5), .. Enumerable.Repeat(Direction.East, 6), Direction.North];
@@ -423,7 +424,8 @@ public partial class Main
         Check(map.Party.Count == 4 && map.Journey.PlaceHere?.Id == "waylay_inn" && map.Journey.Day == 2 && _raid.HeartsOf(wren.Id, full) == hearts,
             "Continue picks the raid up on the map, at the inn on day 2, hearts and all");
 
-        // Off down the road to raid the Keep, and back out mid-dungeon.
+        // Off down the road to raid the Keep (a quiet road, today), and back out mid-dungeon.
+        LoadRaidWorld().Dangers(_content).Calm = true;
         map.Walk([.. Enumerable.Repeat(Direction.East, 16), .. Enumerable.Repeat(Direction.North, 5), .. Enumerable.Repeat(Direction.East, 6), Direction.North]);
         await WaitFor(this, () => !map.IsWalking, "the walk to the Keep");
         await Click(this, map.EnterButton);

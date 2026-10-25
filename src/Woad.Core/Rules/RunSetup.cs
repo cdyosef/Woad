@@ -118,6 +118,12 @@ public sealed record RunSetup
     /// <summary>Where the heroes begin, on the template's <c>1</c>-<c>4</c> marks or near the center.</summary>
     public required string StartRoomId { get; init; }
 
+    /// <summary>A fight out on the Woarld Map (see <c>Skirmish</c>): it ends, and the party walks on, once the room's monsters are beaten.</summary>
+    public bool Skirmish { get; init; }
+
+    /// <summary>The monsters act before any hero: an ambush nobody saw coming, or a failed escape.</summary>
+    public bool MonstersFirst { get; init; }
+
     /// <summary>The Merchant Guild's level: the better the guild, the better a dungeon merchant's wares.</summary>
     public int MerchantGuildLevel { get; init; } = 1;
 

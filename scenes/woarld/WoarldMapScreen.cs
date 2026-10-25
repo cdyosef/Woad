@@ -78,6 +78,9 @@ public partial class WoarldMapScreen : Control
 
     private static readonly string[] WandererLooks = ["noble", "bard", "sultan", "halfling", "dwarf", "monk"];
 
+    /// <summary>The party's pace: Wend dice to spare take a step off every tile.</summary>
+    private int WendBonus => WoarldJourney.PartyWendBonus(Party.Select(hero => hero.Stats(Content)));
+
     /// <summary>The wandering merchant the leader stands with, if any.</summary>
     private WanderingMerchant? WandererHere => World?.WandererAt(Journey.Leader, Content);
 
@@ -135,11 +138,14 @@ public partial class WoarldMapScreen : Control
         AddChild(new Panel { Position = new Vector2(0, ButtonsTop - 4), Size = new Vector2(Size.X, Size.Y - ButtonsTop + 4), MouseFilter = MouseFilterEnum.Ignore });
         BackButton = AddButton(new Vector2(8, ButtonsTop), 80, "Back", BackTooltip);
         BackButton.Pressed += () => BackRequested?.Invoke();
-        LeaderButton = AddButton(new Vector2(94, ButtonsTop), 150, "", "Who walks at the head of the line. Click for the next player.");
+        LeaderButton = AddButton(new Vector2(94, ButtonsTop), 130, "", "Who walks at the head of the line. Click for the next player.");
         LeaderButton.Pressed += NextLeader;
-        RestButton = AddButton(new Vector2(250, ButtonsTop), 80, "Rest", $"Rest for {WoarldJourney.RestSteps} steps: everyone rolls a d6, and a 6 heals a heart and rolls again. Every 10 rolled in all heals a heart too.");
+        RestButton = AddButton(new Vector2(230, ButtonsTop), 70, "Rest", $"Rest for {WoarldJourney.RestSteps} steps: everyone rolls a d6, and a 6 heals a heart and rolls again. Every 10 rolled in all heals a heart too.");
         RestButton.Pressed += Rest;
-        EnterButton = AddButton(new Vector2(336, ButtonsTop), 296, "", "");
+        ScoutButton = AddButton(new Vector2(306, ButtonsTop), 70, "Scout", $"A party Od Hand check ({WoarldDangers.ScoutSteps} steps): find what lies in wait within {WoarldDangers.ScoutRange} tiles, and +{WoarldDangers.ScoutBonus} to ambush checks for the rest of the day.");
+        ScoutButton.Pressed += Scout;
+        ScoutButton.Visible = World is not null;
+        EnterButton = AddButton(new Vector2(382, ButtonsTop), 250, "", "");
         EnterButton.Pressed += Enter;
 
         _wandererPanel = new WandererPanel { Position = new Vector2(Size.X / 2 - 150, BarHeight + 12) };
@@ -153,6 +159,7 @@ public partial class WoarldMapScreen : Control
         };
         AddChild(_wandererPanel);
 
+        BuildEncounters();
         BeginRaid = new BeginRaidDialog();
         BeginRaid.Raided += () =>
         {
@@ -248,9 +255,13 @@ public partial class WoarldMapScreen : Control
         _view.QueueRedraw();
     }
 
-    private void TakeStep(Direction direction)
+    internal void TakeStep(Direction direction)
     {
-        StepResult result = Journey.Step(direction);
+        StepResult result = Journey.Step(direction, WendBonus);
+        if (result.Moved)
+        {
+            _lastStep = direction;
+        }
         if (!result.Moved)
         {
             _path.Clear();
@@ -271,6 +282,9 @@ public partial class WoarldMapScreen : Control
             _path.Clear();
             _view.Destination = null;
             Say($"{place.Name}. {place.Description}");
+        }
+        else if (MeetDangers(result))
+        {
         }
         else if (WandererHere is { } wanderer)
         {
@@ -364,7 +378,8 @@ public partial class WoarldMapScreen : Control
     {
         Character leader = Party[Leader];
         string time = Journey.IsDay ? $"Daylight, {Journey.StepsUntilChange} steps to nightfall" : $"Night, {Journey.StepsUntilChange} steps to dawn";
-        _status.Text = $"[color={Palette.Hex(Palette.TrimBright)}]{Journey.Map.Name.ToUpperInvariant()}[/color]  Day {Journey.Day}  {time}  {UiTheme.Count(Journey.TotalSteps, "step", "steps")} walked" +
+        string pace = WendBonus > 0 ? $"  Pace +{WendBonus}" : "";
+        _status.Text = $"[color={Palette.Hex(Palette.TrimBright)}]{Journey.Map.Name.ToUpperInvariant()}[/color]  Day {Journey.Day}  {time}  {UiTheme.Count(Journey.TotalSteps, "step", "steps")} walked{pace}" +
                        (Hearts is null ? "" : "   " + string.Join("   ", WalkingOrder.Select(hero => $"{hero.Name} {UiTheme.Hearts(Hearts(hero).Now, Hearts(hero).Max)}")));
         LeaderButton.Text = $"Leader: {leader.Name}";
         LeaderButton.Disabled = Party.Count(hero => !hero.IsCompanion) < 2;
@@ -387,6 +402,14 @@ public partial class WoarldMapScreen : Control
         if (wanderer is null)
         {
             _wandererPanel.Visible = false;
+        }
+
+        if (World is not null)
+        {
+            WoarldDangers dangers = World.Dangers(Content);
+            _view.Bands = [.. dangers.Bands.Select(band => (band.Position, band.Monsters[0], band.Cornering is not null))];
+            _view.Lurking = [.. dangers.Ambushes.Where(ambush => ambush.Revealed).Select(ambush => ambush.Position)];
+            _view.Tolls = [.. dangers.Tolls.Select(toll => (toll.Position, toll.ShowsAsBandits))];
         }
 
         _view.Merchants = World is null ? [] : [.. World.Wanderers(Content).Select((merchant, index) =>

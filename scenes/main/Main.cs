@@ -17,7 +17,7 @@ namespace Woad.Scenes;
 
 /// <summary>
 /// The app's root: owns the content and the character store, swaps between screens, and saves
-/// each character's results when a run ends. Debug flags: <c>--uitest</c>, <c>--floortest</c>, <c>--hazardtest</c>, <c>--keeltest</c>, <c>--firetest</c>, <c>--cameratest</c>, <c>--bombtest</c>, <c>--rumbletest</c>, <c>--clicktest</c>, <c>--loottest</c>, <c>--tradetest</c>, <c>--monstertest</c>, <c>--dentest</c>, <c>--merchanttest</c>, <c>--wanderertest</c> and
+/// each character's results when a run ends. Debug flags: <c>--uitest</c>, <c>--floortest</c>, <c>--hazardtest</c>, <c>--keeltest</c>, <c>--firetest</c>, <c>--cameratest</c>, <c>--bombtest</c>, <c>--rumbletest</c>, <c>--clicktest</c>, <c>--loottest</c>, <c>--tradetest</c>, <c>--monstertest</c>, <c>--dentest</c>, <c>--merchanttest</c>, <c>--wanderertest</c>, <c>--encountertest</c>, <c>--skirmishtest</c> and
 /// <c>--autoplay</c> jump straight into a run with the debug party (<c>--party N</c> heroes,
 /// <c>--theme id</c> for another dungeon); <c>--menutest</c> and
 /// <c>--resultstest</c> click through the menus using a throwaway save folder.
@@ -66,6 +66,9 @@ public partial class Main : Control
 
     /// <summary>The Raiding Party's shared Woarld, loaded when first needed.</summary>
     private RaidWorld? _raidWorld;
+
+    /// <summary>The fight out on the Woarld Map being played, if the run is one: settled on the map when it ends.</summary>
+    private SkirmishSpec? _skirmish;
 
     /// <summary>The saved raids.</summary>
     private RaidSaveStore _raidStore = null!;
@@ -140,6 +143,14 @@ public partial class Main : Control
         else if (args.Contains("--tradetest"))
         {
             Show(new GameScreen { Setup = DemoRun.Camp(seed), Content = _content });
+        }
+        else if (args.Contains("--encountertest"))
+        {
+            RunEncounterTest();
+        }
+        else if (args.Contains("--skirmishtest"))
+        {
+            RunSkirmishTest(seed);
         }
         else if (args.Contains("--wanderertest"))
         {
@@ -481,8 +492,10 @@ public partial class Main : Control
     }
 
     /// <summary>Generates a dungeon for the party (carrying their current gear) and starts playing it.</summary>
-    private void StartRun(IReadOnlyList<Character> party, ulong seed, bool friendlyFire, string themeId)
+    /// <param name="skirmish">A fight out on the Woarld Map instead of a dungeon.</param>
+    private void StartRun(IReadOnlyList<Character> party, ulong seed, bool friendlyFire, string themeId, SkirmishSpec? skirmish = null)
     {
+        _skirmish = skirmish;
         _friendlyFire = friendlyFire;
         _themeId = themeId;
         IReadOnlyList<HeroSetup> heroes = Party.ToHeroSetups(party);
@@ -497,7 +510,7 @@ public partial class Main : Control
             _activeRunFile = _runFile;
         }
 
-        var save = new SavedRun { ThemeId = themeId, Seed = seed, FriendlyFire = friendlyFire, Heroes = heroes, MerchantGuildLevel = LoadRaidWorld().GuildLevel };
+        var save = new SavedRun { ThemeId = themeId, Seed = seed, FriendlyFire = friendlyFire, Heroes = heroes, MerchantGuildLevel = LoadRaidWorld().GuildLevel, Skirmish = skirmish };
         WriteSave(save);
         ShowGame(save.CreateSetup(_content), party, save);
     }
@@ -542,6 +555,7 @@ public partial class Main : Control
             .OfType<Character>()];
         _themeId = run.ThemeId;
         _friendlyFire = run.FriendlyFire;
+        _skirmish = run.Skirmish;
         _activeRunFile = file;
         ShowGame(run.CreateSetup(_content), playing, run, session);
     }
@@ -612,6 +626,28 @@ public partial class Main : Control
             Hearts = _raid is null || world is null ? null : RaidHearts,
             World = world,
             Content = _content,
+        };
+        screen.FightRequested += spec =>
+        {
+            SaveMapProgress();
+            SaveRaidWorld();
+            _runFromMap = true;
+            StartRun(_woarldParty, (ulong)DateTime.UtcNow.Ticks, _friendlyFire, spec.ThemeId, spec);
+        };
+        screen.CharactersChanged += async heroes =>
+        {
+            SaveRaidWorld();
+            foreach (Character hero in heroes)
+            {
+                try
+                {
+                    await _characters.SaveAsync(hero);
+                }
+                catch (IOException exception)
+                {
+                    GD.PushWarning($"Couldn't save {hero.Name}: {exception.Message}");
+                }
+            }
         };
         screen.Traded += async trader =>
         {
@@ -839,6 +875,66 @@ public partial class Main : Control
         }
     }
 
+    /// <summary>
+    /// After a fight out on the Woarld Map: if the party won, what they fought is gone from the map. A
+    /// band that had a merchant cornered sets them free (the Guild is grateful); a toll post's company
+    /// were bandits (the Law is grateful) or real guards (the Law remembers).
+    /// </summary>
+    private void SettleSkirmish(IReadOnlyList<HeroRunResult> results, IReadOnlyList<Character> party)
+    {
+        if (_skirmish is not { } fight || !_raiding)
+        {
+            _skirmish = null;
+            return;
+        }
+
+        _skirmish = null;
+        if (!results.Any(result => result.Status == Woad.Core.Model.HeroStatus.Escaped))
+        {
+            return;
+        }
+
+        RaidWorld world = LoadRaidWorld();
+        WoarldDangers dangers = world.Dangers(_content);
+        var news = new List<string>();
+        switch (fight.Kind)
+        {
+            case EncounterKind.Band when world.DefeatBand(_content, fight.BandId) is { } saved:
+                foreach (Character hero in party)
+                {
+                    hero.ChangeStanding(guild: 1);
+                }
+
+                news.Add($"{saved} is saved from the band! The Merchant Guild is grateful (Guild +1).");
+                break;
+
+            case EncounterKind.Toll when dangers.TollAt(fight.Spot) is { } toll:
+                dangers.Tolls.Remove(toll);
+                foreach (Character hero in party)
+                {
+                    hero.ChangeStanding(law: toll.Bandits ? 3 : -2);
+                }
+
+                news.Add(toll.Bandits ? "They were bandits all along: the road is clear, and the Law is grateful (Law +3)." : "They were real guards. The Law won't forget this (Law -2).");
+                break;
+
+            case EncounterKind.Ambush:
+                dangers.Ambushes.RemoveAll(ambush => ambush.Position == fight.Spot);
+                break;
+        }
+
+        SaveRaidWorld();
+        foreach (Character hero in party)
+        {
+            _ = _characters.SaveAsync(hero);
+        }
+
+        if (news.Count > 0)
+        {
+            _woarldNews = string.Join(" ", news);
+        }
+    }
+
     /// <summary>Saves what each character earned, then shows the results.</summary>
     private async void FinishRun(IReadOnlyList<HeroRunResult> results, RunSetup setup, IReadOnlyList<Character> party)
     {
@@ -884,7 +980,11 @@ public partial class Main : Control
                           (wares.Count > 0 ? $": new wares, {string.Join(", ", wares.Select(ware => _content.GetCard(ware).Name))}." : ".");
         }
 
-        if (results.Any(result => result.Won))
+        if (setup.Skirmish)
+        {
+            SettleSkirmish(results, party);
+        }
+        else if (results.Any(result => result.Won))
         {
             IReadOnlyList<WoarldPlace> opened = (_raiding ? LoadRaidWorld().Journey : LoadJourney()).MarkBeaten(setup.ThemeId);
             SaveMapProgress();

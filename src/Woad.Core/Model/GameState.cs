@@ -31,6 +31,9 @@ public sealed class GameState
     /// <summary>Heroes can hurt each other (see <see cref="Rules.RunSetup.FriendlyFire"/>).</summary>
     public bool FriendlyFire { get; internal init; }
 
+    /// <summary>A fight out on the Woarld Map: beating the monsters ends it, the party walking on.</summary>
+    public bool Skirmish { get; internal init; }
+
     public int Round { get; internal set; }
 
     public RunPhase Phase { get; internal set; }

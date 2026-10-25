@@ -64,6 +64,8 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         Cleaved cleaved => $"{nameOf(cleaved.HeroId)}'s swing cleaves on into the {nameOf(cleaved.MonsterId)}!",
         Guarded guarded => $"{nameOf(guarded.GuardianId)} throws their shield in front of {nameOf(guarded.HeroId)}!",
         LastChanceUsed lucky => $"{nameOf(lucky.HeroId)}'s {cardNameOf(lucky.CardId)} turns the blow aside... and breaks!",
+        MonsterRegenerated regenerated => $"The {nameOf(regenerated.MonsterId)}'s wounds knit back together.",
+        CowardsFlight flight => $"{nameOf(flight.HeroId)} pulls the Coward's Cloak tight and makes ready to run ({flight.WendDice} more Wend {(flight.WendDice == 1 ? "die" : "dice")}){(flight.SlowedMonsterIds.Count > 0 ? "; the monsters beside them falter" : "")}!",
         Crumbled crumbled => $"The {nameOf(crumbled.MonsterId)} crumbles to dust.",
         MonsterFrozen frozen => $"{nameOf(frozen.MonsterId)} is frozen solid.",
         Stunned { Powerful: true } stunned => $"{nameOf(stunned.EntityId)} is knocked senseless (+{stunned.Stacks + 3 * stunned.PowerfulStacks} to hit).",

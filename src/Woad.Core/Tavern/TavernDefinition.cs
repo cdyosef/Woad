@@ -26,6 +26,9 @@ public enum NpcRole
 
     /// <summary>Just a customer, with rumors.</summary>
     Patron,
+
+    /// <summary>Craven the Cowherder: honors the cowardly with the Coward's Cloak.</summary>
+    Cowherder,
 }
 
 /// <summary>Something an NPC has heard. Some are true; a rumor with <see cref="Reveal"/> clears the clouds from a spot on the map.</summary>

@@ -53,7 +53,7 @@ public sealed partial class GameSession
             return "Stand next to them to shove them.";
         }
 
-        if (monster is { Definition.Boss: true } or { Definition.Miniboss: true })
+        if (monster is { Definition.Boss: true } or { Definition.Miniboss: true } or { Definition.Size: > 1 })
         {
             return $"The {monster.Definition.Name} is too mighty to shove.";
         }

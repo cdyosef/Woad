@@ -194,6 +194,27 @@ public static class TavernServices
         return new ServiceResult(true, $"{seller.Name} sells the {card.Name} for {SellPrice(card)} gold.");
     }
 
+    /// <summary>How much Cowards' standing earns Craven's respect, and his Cloak.</summary>
+    public const int CowardsForTheCloak = 10;
+
+    /// <summary>Craven the Cowherder honors a hero who's fled often enough with the Coward's Cloak (once).</summary>
+    public static ServiceResult CowardsCloak(Character hero, ContentCatalog content)
+    {
+        if (hero.HasCowardsCloak)
+        {
+            return ServiceResult.Refused($"\"You've had your cloak, {hero.Name}. Wear it with pride. Or, better, run in it.\"");
+        }
+
+        if (hero.CowardStanding < CowardsForTheCloak)
+        {
+            return ServiceResult.Refused($"\"Not yet, {hero.Name}. You've run off {hero.CowardStanding} times; come back when it's {CowardsForTheCloak}.\"");
+        }
+
+        hero.GiveCard(content.GetCard("cowards_cloak"), content);
+        hero.ReceiveCowardsCloak();
+        return new ServiceResult(true, $"Craven drapes the Coward's Cloak over {hero.Name}'s shoulders: \"A sign of respect, from one coward to another.\"");
+    }
+
     /// <summary>A game of Bones for <paramref name="wager"/> gold: two dice each, high total wins; a tie hands the wagers back.</summary>
     public static BonesResult Bones(IRandomSource random, Character player, int wager)
     {

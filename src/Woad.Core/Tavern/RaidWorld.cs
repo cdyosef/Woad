@@ -30,6 +30,7 @@ public sealed class RaidWorld
     private readonly List<RememberedMerchant> _remembered = [];
     private List<WanderingMerchant> _wanderers = [];
     private int _wanderersDay;
+    private WoarldDangers? _dangers;
 
     /// <summary>Most wandering merchants out on the roads at once.</summary>
     public const int MaxWanderers = 3;
@@ -84,6 +85,37 @@ public sealed class RaidWorld
     }
 
     public WanderingMerchant? WandererAt(GridPosition tile, ContentCatalog content) => Wanderers(content).FirstOrDefault(wanderer => wanderer.Position == tile);
+
+    /// <summary>The Woarld's dangers: roaming bands, hidden ambushes and toll posts (made the first time they're asked for).</summary>
+    public WoarldDangers Dangers(ContentCatalog content) => _dangers ??= WoarldDangers.Create(Journey.Map, content, 0x5eed);
+
+    /// <summary>
+    /// What happens after the party takes a step: the dangers move, and perhaps meet the party. A wandering
+    /// merchant a band has cornered too long is lost.
+    /// </summary>
+    public Encounter? AfterStep(ContentCatalog content, int partySize, int steps, IRandomSource random, out IReadOnlyList<string> lostMerchants)
+    {
+        var lost = new List<string>();
+        Encounter? encounter = Dangers(content).AfterStep(Journey, content, partySize, steps,
+            [.. Wanderers(content).Select(wanderer => (wanderer.Name, wanderer.Position))], random, lost);
+        _wanderers.RemoveAll(wanderer => lost.Contains(wanderer.Name));
+        lostMerchants = lost;
+        return encounter;
+    }
+
+    /// <summary>A band beaten: gone from the map. True if it had a merchant cornered (now saved).</summary>
+    public string? DefeatBand(ContentCatalog content, int bandId)
+    {
+        WoarldDangers dangers = Dangers(content);
+        Band? band = dangers.Bands.FirstOrDefault(each => each.Id == bandId);
+        if (band is null)
+        {
+            return null;
+        }
+
+        dangers.Bands.Remove(band);
+        return band.Cornering;
+    }
 
     /// <summary>How much a rescued merchant's thanks improve their prices for a hero (0 for anyone else).</summary>
     public int GratitudeOf(WanderingMerchant wanderer, Guid hero) =>
@@ -295,6 +327,7 @@ public sealed class RaidWorld
         RememberedMerchants = _remembered,
         Wanderers = _wanderers,
         WanderersDay = _wanderersDay,
+        Dangers = _dangers,
     }, Options);
 
     /// <exception cref="InvalidDataException">Not a Woarld this version can read.</exception>
@@ -324,6 +357,7 @@ public sealed class RaidWorld
         world._remembered.AddRange(data.RememberedMerchants);
         world._wanderers = [.. data.Wanderers];
         world._wanderersDay = data.WanderersDay;
+        world._dangers = data.Dangers;
         foreach ((string key, int value) in data.Reputation)
         {
             world._reputation[key] = value;
@@ -388,6 +422,8 @@ public sealed class RaidWorld
         public List<WanderingMerchant> Wanderers { get; init; } = [];
 
         public int WanderersDay { get; init; }
+
+        public WoarldDangers? Dangers { get; init; }
     }
 }
 

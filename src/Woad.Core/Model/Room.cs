@@ -172,7 +172,7 @@ public sealed class Room
     public GridPosition DoorTile(Direction side) => _doorTiles.TryGetValue(side, out GridPosition tile) ? tile : Layout.MiddleOf(side);
 
 
-    public Monster? MonsterAt(GridPosition position) => _monsters.FirstOrDefault(monster => monster.Position == position);
+    public Monster? MonsterAt(GridPosition position) => _monsters.FirstOrDefault(monster => monster.Occupies(position));
 
     public Monster? FindMonster(int monsterId) => _monsters.FirstOrDefault(monster => monster.Id == monsterId);
 

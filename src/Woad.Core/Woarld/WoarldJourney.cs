@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Woad.Core.Content;
 using Woad.Core.Grid;
 using Woad.Core.Randomness;
 
@@ -12,7 +13,8 @@ public sealed record JourneyPlace(GridPosition Leader, IReadOnlyList<GridPositio
 /// <param name="NewDay">The step began a new day.</param>
 /// <param name="NightFell">The step brought night.</param>
 /// <param name="Arrived">The place the leader stepped onto, if any.</param>
-public sealed record StepResult(string? Error = null, bool NewDay = false, bool NightFell = false, WoarldPlace? Arrived = null)
+/// <param name="Steps">The steps of time the tile took (by its terrain, and the party's pace).</param>
+public sealed record StepResult(string? Error = null, bool NewDay = false, bool NightFell = false, WoarldPlace? Arrived = null, int Steps = 0)
 {
     public bool Moved => Error is null;
 }
@@ -68,6 +70,31 @@ public sealed class WoarldJourney
 
     /// <summary>How far around the leader the clouds clear.</summary>
     public const int SightRadius = 3;
+
+    /// <summary>
+    /// Steps of time a tile takes to cross: roads are quickest (twice as fast as open ground), hills
+    /// slower, forest slowest. A day is <see cref="StepsPerDay"/> steps, so about 100 tiles of grass.
+    /// </summary>
+    public static int TerrainSteps(Terrain terrain) => terrain switch
+    {
+        Terrain.Road => 5,
+        Terrain.Hills => 15,
+        Terrain.Forest => 20,
+        _ => 10,
+    };
+
+    /// <summary>
+    /// The party's pace: every Wend die its members have beyond each one's base die. Each point takes
+    /// a step off every tile, down to half the tile's time at best.
+    /// </summary>
+    public static int PartyWendBonus(IEnumerable<Stats> members) => members.Sum(stats => Math.Max(0, stats.MoveDice - 1));
+
+    /// <summary>Steps of time a tile takes this party.</summary>
+    public int StepCost(GridPosition tile, int wendBonus = 0)
+    {
+        int steps = TerrainSteps(Map.TerrainAt(tile));
+        return Math.Max((steps + 1) / 2, steps - Math.Max(0, wendBonus));
+    }
 
     private const int CurrentVersion = 1;
 
@@ -149,8 +176,11 @@ public sealed class WoarldJourney
     /// <summary>Makes room in the line for this many heroes (the leader and their followers).</summary>
     public void SetPartySize(int size) => _line.SetSize(size);
 
-    /// <summary>The leader steps one tile; everyone else steps into the place of the hero ahead.</summary>
-    public StepResult Step(Direction direction)
+    /// <summary>
+    /// The leader steps one tile; everyone else steps into the place of the hero ahead. It takes the
+    /// tile's time (see <see cref="StepCost"/>), less for a party with Wend dice to spare.
+    /// </summary>
+    public StepResult Step(Direction direction, int wendBonus = 0)
     {
         GridPosition next = Leader.Step(direction);
         if (!Map.InBounds(next) || Map.TerrainAt(next) == Terrain.Unknown)
@@ -165,8 +195,9 @@ public sealed class WoarldJourney
 
         _line.MoveTo(next);
         Reveal(next, SightRadius);
-        (bool newDay, bool nightFell) = PassSteps(1);
-        return new StepResult(NewDay: newDay, NightFell: nightFell, Arrived: Map.PlaceAt(next));
+        int steps = StepCost(next, wendBonus);
+        (bool newDay, bool nightFell) = PassSteps(steps);
+        return new StepResult(NewDay: newDay, NightFell: nightFell, Arrived: Map.PlaceAt(next), Steps: steps);
     }
 
     /// <summary>
@@ -188,6 +219,9 @@ public sealed class WoarldJourney
         (bool newDay, bool nightFell) = PassSteps(RestSteps);
         return (rolls, newDay, nightFell);
     }
+
+    /// <summary>Time passing on the map without walking (scouting, getting away from a band).</summary>
+    public (bool NewDay, bool NightFell) PassTime(int steps) => PassSteps(Math.Max(0, steps));
 
     /// <summary>Raiding a dungeon takes the rest of the day: the party comes out at dawn of the next.</summary>
     public void PassDay()

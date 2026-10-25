@@ -29,7 +29,7 @@ public class TavernTests
     {
         Assert.Equal("The Waylay Inn", Inn.Name);
         Assert.Contains(Map.Places, place => place.Id == Inn.PlaceId);
-        Assert.Equal([NpcRole.Bartender, NpcRole.Merchant, NpcRole.Recruiter, NpcRole.Innkeeper, NpcRole.Gambler, NpcRole.Patron], Inn.Npcs.Select(npc => npc.Role));
+        Assert.Equal([NpcRole.Bartender, NpcRole.Merchant, NpcRole.Recruiter, NpcRole.Innkeeper, NpcRole.Gambler, NpcRole.Cowherder, NpcRole.Patron], Inn.Npcs.Select(npc => npc.Role));
         Assert.True(Inn.IsDoor(Inn.Start with { Y = Inn.Start.Y + 1 }), "the party starts just inside the door");
     }
 

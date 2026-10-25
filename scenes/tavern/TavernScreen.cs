@@ -466,6 +466,9 @@ public partial class TavernScreen : Control
             case NpcRole.Gambler:
                 ShowBones();
                 break;
+            case NpcRole.Cowherder:
+                ShowCraven();
+                break;
         }
 
         Refresh();
@@ -513,6 +516,14 @@ public partial class TavernScreen : Control
             RowButton(Row($"{card.Name} ({where}), {TavernServices.SellPrice(card)} gold", 456), "Sell", 76,
                 () => Done(TavernServices.Sell(World, Tavern, Content, _payer, id), _payer));
         }
+    }
+
+    private void ShowCraven()
+    {
+        Row($"{_payer.Name} has fled {_payer.CowardStanding} times (Cowards {_payer.CowardStanding}). At {TavernServices.CowardsForTheCloak}, Craven gives a sign of respect.", 536);
+        Button ask = RowButton(Row("The Coward's Cloak: a hood to hide in. Once, it slows the monsters beside you and turns your Rumble and Od Hand dice to Wend dice.", 436),
+            _payer.HasCowardsCloak ? "Given" : "Ask for it", 96, () => Done(TavernServices.CowardsCloak(_payer, Content), _payer));
+        ask.Disabled = _payer.HasCowardsCloak || _payer.CowardStanding < TavernServices.CowardsForTheCloak;
     }
 
     private void ShowRecruits()

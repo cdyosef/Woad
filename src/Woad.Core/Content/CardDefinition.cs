@@ -45,6 +45,12 @@ public enum CardEffectKind
 
     /// <summary>Freeze: the target monster skips its next <see cref="CardEffect.Amount"/> turns.</summary>
     Freeze,
+
+    /// <summary>
+    /// The Coward's Cloak: monsters beside you move at half speed on their next turn, and your Rumble and
+    /// Od Hand dice left this turn become Wend dice. Used on yourself.
+    /// </summary>
+    CowardsFlight,
 }
 
 /// <summary>What happens when a card is used.</summary>
@@ -148,6 +154,9 @@ public sealed record CardDefinition
 
     /// <summary>Weapons: after a shot it's unloaded until reloaded with these dice (a crossbow); null for weapons that need none.</summary>
     public ReloadCost? Reload { get; init; }
+
+    /// <summary>Worn gear with a use that destroys it (the Coward's Cloak): equip it, use it once, and it's gone.</summary>
+    public bool BreaksOnUse { get; init; }
 
     /// <summary>A set bonus: more modifiers while worn together with its partner card (the Knight's Sword and Shield).</summary>
     public CardSet? Set { get; init; }

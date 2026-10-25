@@ -186,7 +186,7 @@ public partial class GameScreen
     /// <summary>What Rumble can strike from where the active hero stands: monsters, bombs and (with friendly fire on) allies.</summary>
     private List<GridPosition> RumbleTargets(Room room) =>
     [
-        .. _session.GetAttackableMonsters().Select(monster => monster.Position),
+        .. _session.GetAttackableMonsters().SelectMany(monster => monster.Tiles),
         .. _session.GetAttackableMerchants().Select(merchant => merchant.Position),
         .. _session.GetAttackableAllies().Select(ally => ally.Position),
         .. room.Bombs.Where(bomb => _session.CheckAttackBomb(bomb.Id) is null).Select(bomb => bomb.Position),

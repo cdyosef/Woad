@@ -848,7 +848,7 @@ public partial class GameScreen
             case CardAction.Use when card.Definition.Reload is not null:
                 Execute(new ReloadWeapon(hero.Id));
                 break;
-            case CardAction.Use when card.Definition.Effect?.Kind == CardEffectKind.Heal:
+            case CardAction.Use when card.Definition.Effect?.Kind is CardEffectKind.Heal or CardEffectKind.CowardsFlight:
                 Execute(new UseCard(hero.Id, cardId));
                 break;
             case CardAction.Use:

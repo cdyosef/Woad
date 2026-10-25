@@ -52,13 +52,17 @@ public class WoarldTests
         GridPosition start = Map.Start;
         Assert.Equal([start, start], journey.Trail);
 
-        Assert.True(journey.Step(Direction.East).Moved);
-        Assert.True(journey.Step(Direction.East).Moved);
-        Assert.True(journey.Step(Direction.East).Moved);
+        int steps = 0;
+        for (int i = 0; i < 3; i++)
+        {
+            StepResult step = journey.Step(Direction.East);
+            Assert.True(step.Moved);
+            steps += step.Steps;
+        }
 
         Assert.Equal(start with { X = start.X + 3 }, journey.Leader);
         Assert.Equal([start with { X = start.X + 2 }, start with { X = start.X + 1 }], journey.Trail);
-        Assert.Equal(3, journey.TotalSteps);
+        Assert.Equal(steps, journey.TotalSteps);
     }
 
     [Fact]
@@ -66,16 +70,19 @@ public class WoarldTests
     {
         WoarldJourney journey = WoarldJourney.Begin(Map, 1);
         // North from the inn to the lake's eastern shore.
-        foreach (Direction step in new[] { Direction.North, Direction.North, Direction.North, Direction.West })
+        int steps = 0;
+        foreach (Direction direction in new[] { Direction.North, Direction.North, Direction.North, Direction.West })
         {
-            Assert.True(journey.Step(step).Moved);
+            StepResult step = journey.Step(direction);
+            Assert.True(step.Moved);
+            steps += step.Steps;
         }
 
         StepResult intoTheLake = journey.Step(Direction.West);
         Assert.False(intoTheLake.Moved);
         Assert.Contains("Water", intoTheLake.Error);
         Assert.Equal(new GridPosition(13, 12), journey.Leader);
-        Assert.Equal(4, journey.TotalSteps);
+        Assert.Equal(steps, journey.TotalSteps);
     }
 
     [Fact]
@@ -101,7 +108,7 @@ public class WoarldTests
         Assert.Equal(500, journey.StepsUntilChange);
 
         StepResult step = default!;
-        for (int i = 0; i < 500; i++)
+        for (int i = 0; journey.IsDay; i++)
         {
             step = journey.Step(i % 2 == 0 ? Direction.East : Direction.West);
         }
@@ -110,7 +117,7 @@ public class WoarldTests
         Assert.False(journey.IsDay);
         Assert.Equal(1, journey.Day);
 
-        for (int i = 0; i < 500; i++)
+        for (int i = 0; journey.Day == 1; i++)
         {
             step = journey.Step(i % 2 == 0 ? Direction.East : Direction.West);
         }
@@ -118,6 +125,22 @@ public class WoarldTests
         Assert.True(step.NewDay);
         Assert.Equal(2, journey.Day);
         Assert.True(journey.IsDay);
+    }
+
+    [Fact]
+    public void RoadsAreQuickForestsSlowAndSpareWendDiceQuickenThePace()
+    {
+        Assert.Equal((5, 10, 15, 20), (WoarldJourney.TerrainSteps(Terrain.Road), WoarldJourney.TerrainSteps(Terrain.Grass),
+            WoarldJourney.TerrainSteps(Terrain.Hills), WoarldJourney.TerrainSteps(Terrain.Forest)));
+
+        // Two heroes with 2 Wend dice each, one with 1: two to spare, off every tile, but never under half.
+        Stats[] party = [new() { MoveDice = 2 }, new() { MoveDice = 2 }, new() { MoveDice = 1 }];
+        Assert.Equal(2, WoarldJourney.PartyWendBonus(party));
+        WoarldJourney journey = WoarldJourney.Begin(Map, 3);
+        GridPosition forest = Enumerable.Range(0, Map.Width).SelectMany(x => Enumerable.Range(0, Map.Height).Select(y => new GridPosition(x, y)))
+            .First(tile => Map.TerrainAt(tile) == Terrain.Forest);
+        Assert.Equal(18, journey.StepCost(forest, 2));
+        Assert.Equal(10, journey.StepCost(forest, 50));
     }
 
     [Fact]
@@ -169,7 +192,7 @@ public class WoarldTests
 
         Assert.Equal(journey.Leader, loaded.Leader);
         Assert.Equal(journey.Trail, loaded.Trail);
-        Assert.Equal((2, 0, 2), (loaded.Day, loaded.StepsToday, loaded.TotalSteps));
+        Assert.Equal((2, 0, journey.TotalSteps), (loaded.Day, loaded.StepsToday, loaded.TotalSteps));
         Assert.Equal(["emerald_keep"], loaded.Beaten);
         Assert.Equal(journey.ToJson(), loaded.ToJson());
     }

@@ -38,9 +38,15 @@ public sealed partial class GameSession
     private void TakeMonsterTurn(Room room, Monster monster, List<GameEvent> events)
     {
         monster.Stun.WearsOffThisTurn = monster.Stun.IsStunned;
+        bool burning = monster.FireDice > 0;
         MonsterDefinition own = monster.Definition;
         (int wendLost, int rumbleLost, _) = monster.Stun.Lost(own.OdHandDice > 0, own.WendDice, own.AttackDice, own.DefenseDice);
         monster.MovesThisTurn = Math.Max(0, own.Move - 2 * wendLost);
+        if (monster.Slowed)
+        {
+            monster.MovesThisTurn /= 2;
+            monster.Slowed = false;
+        }
         monster.AttackDiceThisTurn = Math.Max(0, own.AttackDice - rumbleLost);
         _actingMonsterId = monster.Id;
         try
@@ -56,6 +62,13 @@ public sealed partial class GameSession
         {
             monster.Stun.Clear();
             events.Add(new StunWoreOff(monster.Id));
+        }
+
+        // A troll knits its wounds back together, unless fire got at it.
+        if (own.Regenerates && !burning && room.FindMonster(monster.Id) is not null && !monster.Collapsed && monster.Hearts < monster.MaxHearts)
+        {
+            monster.Hearts++;
+            events.Add(new MonsterRegenerated(monster.Id, monster.Hearts));
         }
 
         if (State.Phase == RunPhase.InProgress)
@@ -172,7 +185,7 @@ public sealed partial class GameSession
     /// <summary>Of the heroes attackable from a tile, the one with the fewest hearts (then lowest seat).</summary>
     private static Hero? ChooseTarget(Room room, Monster monster, GridPosition from, IEnumerable<Hero> heroes) =>
         heroes
-            .Where(hero => Targeting.CanAttack(room.Layout, monster.Definition.AttackPattern, monster.Definition.AttackRange, from, hero.Position))
+            .Where(hero => FootprintAt(monster, from).Any(tile => Targeting.CanAttack(room.Layout, monster.Definition.AttackPattern, monster.Definition.AttackRange, tile, hero.Position)))
             // Someone diving in deep water can only be reached up close.
             .Where(hero => !Diving(room, hero) || hero.Position.ChebyshevDistanceTo(from) <= 1)
             // A mugger goes for the gold.
@@ -186,10 +199,15 @@ public sealed partial class GameSession
     /// only flyers and swimmers deep water. A water-only swimmer never leaves the water.
     /// </summary>
     private bool CanMonsterEnter(Room room, Monster monster, GridPosition position) =>
-        CanMonsterStand(room.Layout[position], monster)
-        && (room.MonsterAt(position) is not { } other || other == monster)
-        && room.MerchantAt(position) is null
-        && !State.HeroesIn(room).Any(hero => hero.Position == position);
+        FootprintAt(monster, position).All(tile => room.Layout.Contains(tile)
+            && CanMonsterStand(room.Layout[tile], monster)
+            && (room.MonsterAt(tile) is not { } other || other == monster)
+            && room.MerchantAt(tile) is null
+            && !State.HeroesIn(room).Any(hero => hero.Position == tile));
+
+    /// <summary>The tiles a monster would fill standing at <paramref name="at"/> (just it, unless it's huge).</summary>
+    private static IEnumerable<GridPosition> FootprintAt(Monster monster, GridPosition at) =>
+        monster.Definition.Size <= 1 ? [at] : Woarld.Skirmish.Footprint(monster.Definition, at);
 
     private static bool CanMonsterStand(TileKind tile, Monster monster) =>
         monster.Definition.WaterOnly
