@@ -207,7 +207,7 @@ public partial class WoarldMapScreen
             .OrderBy(place => place.Position.ChebyshevDistanceTo(Journey.Leader))
             .Select(place => place.ThemeId!)
             .FirstOrDefault() ?? "emerald_keep";
-        FightRequested?.Invoke(new SkirmishSpec(theme, met.Terrain, met.Monsters, monstersFirst, met.Title, met.Kind, met.Band?.Id ?? 0, Journey.Leader));
+        FightRequested?.Invoke(new SkirmishSpec(theme, met.Terrain, met.Monsters, monstersFirst, met.Title, met.Kind, met.Band?.Id ?? 0, Journey.Leader, _lastStep));
     }
 
     private void Scout()

@@ -53,7 +53,9 @@ Stats are expressed directly as dice and points. Gear cards add to them.
 | Wend (boot) | d6 for moving each turn; each move uses one or more | 1 | Gear only (e.g. boots) |
 | Wend bonus | Tiles added to one move per turn (shown as the "+2" in "Wend 1d6+2"; the editor calls it Wend) | 2 | 2 per point |
 | Rumble (fist) | d6 for attacking each turn; each attack uses one or more | 1 | 3 per die |
-| Od Hand (hamsa) | d6 each turn for picking locks, searching, disarming traps, stealing and rousing allies Keeling Over | 1 | 3 per die |
+| Od Hand (hamsa) | d6 each turn for picking locks, searching, disarming traps, stealing and rousing allies Keeling Over | 1 | 2 per die |
+
+At level 1 a character may buy at most **2** extra Rumble, Defense and Od Hand dice each.
 | Tools | Fixed value and dice added to one lock-picking roll per turn | 0 | Gear only (Lockpicks: +1 and 1d6) |
 | Defense | The first d6 (the base die) rolled against every attack; the rest are extra dice, rolled in one at a time only while a defense is losing, then spent until your next turn | 1 | 3 per die |
 | Weapon | Fixed value added to one attack per turn | 0 | Gear only (weapons) |
@@ -111,8 +113,8 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 | Shield | Persistent | Buckler (armor 1, Block 1), Tower Shield (armor 3, Block 3, −1 Wend), Knight's Shield (armor 2, an extra Defense die; floor 2+). **Knight's set:** worn with the Knight's Sword, the sword gains +1 Weapon and Block 1, and the shield a Guard Die |
 | Armor | Persistent | Head: Leather Cap (+1 Heart), Lucky Helmet (armor 1; when you'd be hit anyway it rolls one more die in, last of all, then breaks), Diving Helm (Temple). Body: Leather Armor (armor 1), Studded Armor (armor 2, floor 2+), Chain Mail (armor 3, floor 3), Warden's Plate (armor 3 and an extra Defense die: the Iron Warden drops it one time in four) |
 | Boots | Persistent | Dash Boots (+1 Move die) |
-| Spell | Charges or single-use | Flame Scroll (a 3-dice fire attack at range 3: any 6 sets the target alight), Frost Wand (2 charges: freeze for a round) |
-| Tool | Persistent | Grapple Hook (pull yourself up to 4 tiles in a line; not built yet) |
+| Spell | Charges or single-use | Flame Scroll (a 3-dice fire attack at range 3: any 6 sets the target alight; aimed at bare floor it sets it burning for 3 rounds), Frost Wand (2 charges: freeze for a round) |
+| Tool | Persistent | Torch (stacks in one slot, one to a hand; see below), Grapple Hook (pull yourself up to 4 tiles in a line; not built yet) |
 | Bomb | Single-use | Bomb (thrown up to 3 tiles, lit: a 4-dice blast over a 3×3 area at the end of your next turn; see [Bombs](#bombs)) |
 | Potion | Single-use | Health Potion (restore 3 hearts) |
 | Treasure | Kept for score | Emerald (15g), Golden Idol (40g). Coins (Loose Coins 2g, Coin Pouch 5g) aren't cards: they go straight into your purse as gold |
@@ -141,8 +143,15 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 - **Chests** keep what's inside: opening one shows its contents to take or leave (coins go straight to
   your purse), and what you leave stays in the open chest for anyone to rummage through later.
 - **Targeted cards** need line of sight and must have a target: a bomb lands on any open tile (or water,
-  which puts it out), a Flame Scroll needs a monster (or a bomb, which it sets off), and potions only heal
-  yourself and can't be used at full hearts.
+  which puts it out), a Flame Scroll a monster, a bomb (which it sets off) or bare floor to set burning,
+  and potions only heal yourself and can't be used at full hearts. A card that can't be used says why
+  under its text.
+- **Burning floor** (a Flame Scroll aimed at bare floor) burns for **3** rounds: anyone who stands on it
+  or walks through it catches fire, and monsters keep off it unless fire can't hurt them.
+- **Torches** (tool, stack: a stack fills one backpack slot, and only one goes in each hand): every
+  character starts with one, and merchants sell them. Held, a torch is lit: **+1d6** on Search rolls, a
+  warm light, and a **fire die** on your Rumble attacks. A 6 on the fire die rolls another, and on a hit
+  sets the target alight; any **1** in the attack burns the torch out.
 - **Lockpicks** (tool, off hand, stack): +1 and 1d6 on one lock-picking roll a turn (doors, chests,
   gates, and any locks added later; not searching, disarming or stealing). A 6 on the pick's die rolls
   another die straight in. A failed lock-picking roll with a 1 showing (not on a Power Die) snaps one
@@ -294,6 +303,11 @@ facing door of the next room.
 - **Defense:** sixes are banked automatically. While a defense is losing and the banked dice could still
   make up the gap, they're rolled in one at a time to try to block.
 - **Monsters** roll the sixes on their attacks straight in, and bank and spend on defense like heroes.
+  They spend banked dice on attacks too (one at a time, while the roll looks short of the target's armor
+  and a middling defense die), and on movement (while a die could still get them to where they can
+  strike). Their sixes show **6!** over them.
+- **Between runs:** Power Dice still banked at the end of a dungeon or a fight go home with the character
+  and come along to the next one.
 - A Luck reroll that comes up 6 earns a Power Die too. Od Hand rolls earn and use Power Dice like
   attacks and moves.
 
@@ -406,6 +420,12 @@ when the total reaches its number:
   "You can't suss out any trouble." Beat bandits: Law +3 each; beat real guards: Law -2 each. The
   Captains (Guard and Bandit) are big, heavily armored (2d6 defense +3), quick, with a two-handed spiked
   mace (2d6+2 and a die of its own): a hit stuns, and each 6 on the mace's die stuns once more.
+- **Retreat:** in a fight out on the Woarld Map the Od Hand button is **Retreat**: your Od Hand dice look
+  for a way out, against the monsters' chase (a die more than there are of them, and 3: harder than
+  fleeing on the map). Get away, and you and your companions beside you leave the field; when everyone
+  still standing has got away, the party is back on the tile it came from, and the band (or the Bridge
+  Troll, on its bridge) is still there (Cowards +1). Fail, and you bolt in a panic as far from the monsters
+  as your Wend dice take you, and fall flat.
 - **Cowards:** fleeing a band or turning back from a toll raises each character's standing with Cowards.
   At 10, **Craven the Cowherder** in the Waylay Inn gives them the **Coward's Cloak** (once): worn on the
   head, used once and gone, it makes the monsters beside you move at half speed on their next turn and
@@ -417,7 +437,7 @@ when the total reaches its number:
   be shoved (nor the Key Warden), and the tile behind must be free floor, a trap, water or a pit. Flyers
   don't fall; a monster shoved into deep water loses a heart and scrambles out. Monsters
   don't shove yet.
-- **Friendly fire** (a switch on the party screen, off by default, kept for Play again): blasts also
+- **Friendly fire** (a switch on the party screen, off by default): blasts also
   catch heroes and companions in range, the thrower included, and you can attack and shove other
   heroes and companions in reach just like monsters (click them; Shove works on them too). Each
   defends with their own Defense dice and armor. A hero brought to 0 hearts this way Keels Over as if by a
@@ -444,7 +464,7 @@ when the total reaches its number:
 | Hexer | 2 | 3 | 1d6+1 | 1d6 | Rare, from floor 2. Ranged 4; keeps its distance. Each hit drains a Luck reroll; with none left, it stuns |
 | Gelatinous Cube | 4 | 1 | 2d6 | 0d6+1 | Rare, from floor 2. Swallows the cards and gold on every tile it crawls over, dropping them where it falls; splits into two Slimes |
 | **Miniboss: Key Warden** | 5 | 2 | 2d6+1 | 1d6+1 | Guards the Boss Key in the last floor's vault; can't be shoved |
-| **Boss: Iron Warden** | 8 | 3 | 2d6+1 | 1d6+1 | Every other turn, a flail sweep: one roll with all its dice against every hero within 2. One time in four it drops Warden's Plate besides its loot |
+| **Boss: Iron Warden** | 8 | 3 | 2d6+1 | 1d6+3, an extra die | Wears its Warden's Plate (armor 3, and an extra Defense die rolled in while a defense is losing). Each turn: first a **chain** flung at the nearest hero in sight within 6 who isn't beside it (3 dice): a hit drags them beside it, **shackled** (no Wend until a key or a picked lock, 9+, frees them: their own, or an ally's beside them). Then its **arc**: a swing through the 3 tiles toward its target (straight on, the tile ahead and the two beside it; on a diagonal, that corner and the two tiles next to it), striking everyone there, monsters too, with one roll; each 6 **cleaves** on into one more creature beside it. Then a **spin**: one roll with all its dice against every hero within 2. One time in four it drops Warden's Plate besides its loot |
 
 Monsters follow the same dice rules; the +1s are weapon and armor values. Whatever a monster stole drops where it falls. Each turn a monster splits its
 Attack dice into whichever attacks are likeliest to land the most hits on its target (its weapon goes on
@@ -591,7 +611,7 @@ Its loot deck adds three cards:
   Single-use cards used up during the run are gone. Spending gold comes after the MVP.
 - **Results screen:** when a run ends, results are saved automatically and the game moves to a results
   screen. It shows the winner(s), and for each hero how the run ended, kills, XP and any level-up, and
-  the cards found and lost. **Play again** starts the same party in a new dungeon. Abandoning a run
+  the cards found and lost; **Done** goes back to the map (or the party screen). Abandoning a run
   from the Menu saves nothing.
 
 ## Companions
@@ -606,6 +626,13 @@ them up there like any character.
   a player's seat frees their companions too.
 - **Standing orders:** on your turn, **Orders** (beside End turn) sets each companion's order. It
   costs nothing and lasts until changed.
+- **The Party menu** (**Party**, beside Menu in a dungeon and beside Enter on the Woarld Map) shows
+  everyone's level, hearts and gear. On your turn you spend the points a level brings, yours and your
+  companions', without waiting for the run to end (they're kept); on the map, **Level up** opens a
+  character's points, and clicking a card then a name hands it to them. Each companion has three
+  switches for its own things, whatever its order: **drinks potions** when badly hurt (on by default),
+  **picks up loot** within reach when there's no fight, and **wears better gear** it carries (worth more
+  than what it has on).
   - **Follow** (the default): stays within 2 steps of you, through doors and down the stairs, attacks
     what comes within reach and goes after monsters closing in on you.
   - **Hold:** stays on the tile it stood on when told, attacking what comes within reach.

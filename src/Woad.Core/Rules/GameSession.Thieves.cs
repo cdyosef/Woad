@@ -36,7 +36,7 @@ public sealed partial class GameSession
         }
 
         Hero? mark = heroes
-            .Where(hero => hero.Position.ManhattanDistanceTo(monster.Position) == 1 && WorthStealing(monster, hero))
+            .Where(hero => hero.Position.ManhattanDistanceTo(monster.NearestTile(hero.Position)) == 1 && WorthStealing(monster, hero))
             .OrderByDescending(hero => hero.Gold)
             .ThenBy(hero => hero.Seat)
             .FirstOrDefault();

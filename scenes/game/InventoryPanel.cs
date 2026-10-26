@@ -174,7 +174,9 @@ public partial class InventoryPanel : Control
         CardInstance? selected = selectedCardId is int id ? hero?.FindCard(id)?.Card : null;
         _details.Text = selected is null
             ? "Select a card to see what it does."
-            : $"{CardSlot.Title(selected)}: {selected.Definition.Text}" + (hero!.HasSetBonus(selected.Definition) ? " SET BONUS ON!" : "");
+            : $"{CardSlot.Title(selected)}: {selected.Definition.Text}" + (hero!.HasSetBonus(selected.Definition) ? " SET BONUS ON!" : "")
+              // Why a card you'd use can't be used right now (out of range, say), where it's easy to see.
+              + (selected.Definition.Effect is not null && !actions.Allows(CardAction.Use) ? $"\nCan't use: {actions.Explain(CardAction.Use)}" : "");
 
         foreach ((CardAction action, Button button) in _actions)
         {

@@ -1,3 +1,4 @@
+using Woad.Core.Characters;
 using Woad.Core.Content;
 using Woad.Core.Grid;
 using Woad.Core.Rules;
@@ -88,7 +89,7 @@ public sealed class Hero
 
     public string Name { get; }
 
-    public Stats BaseStats { get; }
+    public Stats BaseStats { get; internal set; }
 
     public int Hearts { get; internal set; }
 
@@ -144,6 +145,28 @@ public sealed class Hero
     /// <summary>Their name with the Merchant Guild coming into the run (it sets merchants' prices).</summary>
     public int GuildStanding { get; internal init; }
 
+    /// <summary>The character's level, counting the XP earned in this run.</summary>
+    public int Level => Progression.LevelForXp(StartXp + Xp);
+
+    /// <summary>The character's XP coming into the run.</summary>
+    public int StartXp { get; internal init; }
+
+    /// <summary>The character's points bought coming into the run; null for a debug hero (who can't level up in a run).</summary>
+    public StatAllocation? StartAllocation { get; internal init; }
+
+    /// <summary>The points bought so far, counting any spent during the run; null for a debug hero.</summary>
+    public StatAllocation? Allocation { get; internal set; }
+
+    /// <summary>Points the character had to spend coming into the run.</summary>
+    public int StartUnspentPoints { get; internal init; }
+
+    /// <summary>Points to spend now: those brought in, plus a level's worth for each level gained in the run, less what's been spent.</summary>
+    public int PointsToSpend => StartAllocation is not { } start || Allocation is not { } now ? 0
+        : StartUnspentPoints + (Level - Progression.LevelForXp(StartXp)) * Progression.PointsPerLevel - (PointBuy.Cost(now) - PointBuy.Cost(start));
+
+    /// <summary>How it manages its own things on its turns, as a companion.</summary>
+    public CompanionPolicy Policy { get; internal set; } = CompanionPolicy.Default;
+
     /// <summary>What this run has done to their Guild standing: rescues raise it, thefts and murders lower it.</summary>
     public int GuildStandingChange { get; internal set; }
 
@@ -161,6 +184,12 @@ public sealed class Hero
 
     /// <summary>The monster whose grab last caught them (a Mimic); see <c>GameSession.HeldBy</c> for whether it still holds them.</summary>
     public int? GrabbedBy { get; internal set; }
+
+    /// <summary>Torches held (and so lit): one in each hand at most.</summary>
+    public int TorchesHeld => EquippedCards.Count(card => card.Definition.Torch);
+
+    /// <summary>Shackled by a monster's chain: the lock's difficulty. No moving until it's picked or a key frees them.</summary>
+    public int? Shackled { get; internal set; }
 
     /// <summary>
     /// Keel rolls made since keeling over. Every roll after the first adds that many more Doom Dice (the
@@ -229,7 +258,8 @@ public sealed class Hero
 
     /// <summary>The stack this hero already holds of a stackable card (anywhere), which more copies join.</summary>
     public CardInstance? StackOf(CardDefinition definition) =>
-        definition.IsStackable ? AllCards.FirstOrDefault(card => card.Definition == definition) : null;
+        // A torch in hand is one torch: more join the stack carried, not the hand.
+        definition.IsStackable ? AllCards.FirstOrDefault(card => card.Definition == definition && !(definition.Torch && EquippedCards.Contains(card))) : null;
 
     /// <summary>Whether the hero can take this card: it joins a stack they hold, or there's room in the backpack.</summary>
     public bool CanCarry(CardDefinition definition) =>

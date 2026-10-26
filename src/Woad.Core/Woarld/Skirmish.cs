@@ -11,8 +11,9 @@ namespace Woad.Core.Woarld;
 /// <param name="Monsters">Monster ids, the band's strongest first.</param>
 /// <param name="MonstersFirst">An ambush the party didn't see coming, or a failed escape: the monsters act before anyone.</param>
 /// <param name="Kind">What the fight was, so its end can be settled on the map: a band (<paramref name="BandId"/>), an ambush or a toll post (at <paramref name="Spot"/>).</param>
+/// <param name="CameFrom">The way the party stepped onto the spot, so a retreat goes back that way; null if they didn't move.</param>
 public sealed record SkirmishSpec(string ThemeId, Terrain Terrain, IReadOnlyList<string> Monsters, bool MonstersFirst, string Title,
-    EncounterKind Kind = EncounterKind.Band, int BandId = 0, GridPosition Spot = default);
+    EncounterKind Kind = EncounterKind.Band, int BandId = 0, GridPosition Spot = default, Direction? CameFrom = null);
 
 /// <summary>
 /// A fight out on the Woarld Map: one open field shaped by the ground it's on (trees in a forest, rocks

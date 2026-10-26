@@ -47,7 +47,8 @@ public partial class GameScreen
         };
         right.AddChild(_orders);
 
-        _ordersPanel = new Panel { Visible = false };
+        // Drawn over the log it opens across.
+        _ordersPanel = new Panel { Visible = false, ZIndex = 1 };
         right.AddChild(_ordersPanel);
     }
 

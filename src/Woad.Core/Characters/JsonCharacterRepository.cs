@@ -95,6 +95,8 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
         LawStanding = character.LawStanding,
         CowardStanding = character.CowardStanding,
         HasCowardsCloak = character.HasCowardsCloak,
+        PowerDice = character.PowerDice,
+        Policy = character.Policy,
     };
 
     /// <summary>Rebuilds a character, dropping cards that no longer exist in the game's content.</summary>
@@ -126,7 +128,7 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
         return new Character(
             file.Id, file.Name, file.Portrait, file.CreatedUtc, Math.Max(0, file.Xp), file.Allocation,
             Math.Max(0, file.UnspentPoints), Known(file.Equipped), Known(file.Belt), Known(file.Backpack),
-            Math.Max(0, file.Gold), Math.Max(0, file.RunsPlayed), Math.Max(0, file.Wins), file.IsCompanion, file.Appearance, file.GuildStanding, file.LawStanding, file.CowardStanding, file.HasCowardsCloak);
+            Math.Max(0, file.Gold), Math.Max(0, file.RunsPlayed), Math.Max(0, file.Wins), file.IsCompanion, file.Appearance, file.GuildStanding, file.LawStanding, file.CowardStanding, file.HasCowardsCloak, file.PowerDice, file.Policy);
     }
 
     /// <summary>The on-disk shape of a character, kept separate so the model can change without breaking saves.</summary>
@@ -172,6 +174,12 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
         public int LawStanding { get; init; }
 
         public int CowardStanding { get; init; }
+
+        /// <summary>Missing in files saved before Power Dice carried over: none banked.</summary>
+        public int PowerDice { get; init; }
+
+        /// <summary>Missing in files saved before companion policies: the default.</summary>
+        public CompanionPolicy? Policy { get; init; }
 
         public bool HasCowardsCloak { get; init; }
     }

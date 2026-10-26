@@ -94,5 +94,9 @@ public sealed class Monster
         from dy in Enumerable.Range(0, Definition.Size)
         select new GridPosition(Position.X + dx, Position.Y + dy);
 
+    /// <summary>The tile it fills nearest <paramref name="from"/>: its own, or for a huge monster the closest of its four.</summary>
+    public GridPosition NearestTile(GridPosition from) =>
+        new(Math.Clamp(from.X, Position.X, Position.X + Definition.Size - 1), Math.Clamp(from.Y, Position.Y, Position.Y + Definition.Size - 1));
+
     public override string ToString() => $"{Definition.Name} #{Id} at {Position}";
 }

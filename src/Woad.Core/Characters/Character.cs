@@ -35,7 +35,9 @@ public sealed class Character
         int guildStanding = 0,
         int lawStanding = 0,
         int cowardStanding = 0,
-        bool hasCowardsCloak = false)
+        bool hasCowardsCloak = false,
+        int powerDice = 0,
+        CompanionPolicy? policy = null)
     {
         Id = id;
         Name = name;
@@ -56,6 +58,8 @@ public sealed class Character
         LawStanding = lawStanding;
         CowardStanding = cowardStanding;
         HasCowardsCloak = hasCowardsCloak;
+        PowerDice = Math.Clamp(powerDice, 0, GameRules.MaxBankedPowerDice);
+        Policy = policy ?? CompanionPolicy.Default;
     }
 
     public Guid Id { get; }
@@ -111,6 +115,14 @@ public sealed class Character
         LawStanding += law;
         CowardStanding += cowards;
     }
+
+    /// <summary>How it manages its own things on its turns, as a companion (see <see cref="CompanionPolicy"/>).</summary>
+    public CompanionPolicy Policy { get; private set; }
+
+    public void SetPolicy(CompanionPolicy policy) => Policy = policy;
+
+    /// <summary>Power Dice banked and carried from one dungeon or fight to the next (up to the bank's limit).</summary>
+    public int PowerDice { get; private set; }
 
     /// <summary>Notes that Craven gave them the Coward's Cloak (once a character).</summary>
     public void ReceiveCowardsCloak() => HasCowardsCloak = true;
@@ -276,9 +288,17 @@ public sealed class Character
         List<string> after = [.. result.Equipped, .. result.Belt, .. result.Backpack];
 
         int levels = GainXp(result.Xp);
+        // Points spent during the run (levels gained in the dungeon) are kept.
+        if (result.Allocation is { } spent && spent != Allocation)
+        {
+            Allocate(spent);
+        }
+
+        Policy = result.Policy ?? Policy;
         Gold += result.Gold;
         GuildStanding += result.GuildStandingChange;
         LawStanding += result.LawStandingChange;
+        PowerDice = Math.Clamp(result.PowerDice, 0, GameRules.MaxBankedPowerDice);
         RunsPlayed++;
         if (result.Won)
         {
@@ -309,7 +329,8 @@ public sealed class Character
 
     /// <summary>The hero this character plays as in a run, carrying everything they own.</summary>
     /// <param name="ownerSeat">For a companion, the seat of the player it belongs to.</param>
-    public HeroSetup ToHeroSetup(int? ownerSeat = null) => new(Name, BaseStats, [.. _equipped, .. _belt, .. _backpack], Id, Portrait, ownerSeat, Appearance, GuildStanding: GuildStanding);
+    public HeroSetup ToHeroSetup(int? ownerSeat = null) => new(Name, BaseStats, [.. _equipped, .. _belt, .. _backpack], Id, Portrait, ownerSeat, Appearance, GuildStanding: GuildStanding, PowerDice: PowerDice,
+        Allocation: Allocation, Xp: Xp, UnspentPoints: UnspentPoints, Policy: Policy);
 
     /// <summary>Puts a card where a new hero would: an empty matching slot, then the belt, then the backpack.</summary>
     private void Place(CardDefinition card, ContentCatalog content)

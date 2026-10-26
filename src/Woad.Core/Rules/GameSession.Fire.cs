@@ -296,6 +296,63 @@ public sealed partial class GameSession
         }
     }
 
+    /// <summary>Floor that can burn: open ground, not water or a pit.</summary>
+    private static bool CanBurn(Room room, GridPosition tile) =>
+        room.Layout.Contains(tile) && room.Layout[tile].IsWalkable() && !InWater(room, tile);
+
+    /// <summary>Sets the floor alight for <see cref="GameRules.FlameRounds"/> rounds; a bomb there goes off.</summary>
+    private void SetFloorAlight(Room room, IReadOnlyList<GridPosition> tiles, List<GameEvent> events, Hero? by = null)
+    {
+        List<GridPosition> burning = [.. tiles.Where(tile => CanBurn(room, tile))];
+        if (burning.Count == 0)
+        {
+            return;
+        }
+
+        foreach (GridPosition tile in burning)
+        {
+            room.SetBurning(tile, GameRules.FlameRounds);
+        }
+
+        events.Add(new FloorIgnited(room.Id, burning, GameRules.FlameRounds));
+        foreach (GridPosition tile in burning)
+        {
+            if (room.BombAt(tile) is { } bomb)
+            {
+                Explode(room, bomb, events, setOffBy: by);
+            }
+        }
+    }
+
+    /// <summary>After every command: anyone not yet alight who stands on burning floor catches fire.</summary>
+    private void CatchFireFromFloor(List<GameEvent> events)
+    {
+        foreach (Room room in State.Rooms.Values.Where(room => room.Flames.Count > 0))
+        {
+            foreach (Hero hero in State.HeroesIn(room).Where(hero => hero.IsInPlay && hero.FireDice == 0 && room.IsBurning(hero.Position)))
+            {
+                Ignite(hero, hero.Id, events);
+            }
+
+            foreach (Monster monster in room.Monsters.Where(monster => monster.FireDice == 0 && monster.Tiles.Any(room.IsBurning)).ToList())
+            {
+                Ignite(room, monster, monster.Id, null, events);
+            }
+        }
+    }
+
+    /// <summary>At the end of each round burning floor burns down, and goes out after its rounds.</summary>
+    private void BurnDownFloors(List<GameEvent> events)
+    {
+        foreach (Room room in State.Rooms.Values.Where(room => room.Flames.Count > 0))
+        {
+            if (room.BurnDown() is { Count: > 0 } spent)
+            {
+                events.Add(new FloorBurnedOut(room.Id, spent));
+            }
+        }
+    }
+
     /// <summary>A burning hero in water is put out. True if it was.</summary>
     private static bool DouseInWater(Room room, Hero hero, List<GameEvent> events)
     {

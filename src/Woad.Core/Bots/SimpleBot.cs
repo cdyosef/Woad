@@ -57,6 +57,11 @@ public static class SimpleBot
             return new Rouse(hero.Id, fallen.Id);
         }
 
+        if (FreeShackles(session, hero, room) is { } unshackle)
+        {
+            return unshackle;
+        }
+
         // A spent crossbow is reloaded straight away, while there are dice for it.
         if (session.CheckReload() is null)
         {
@@ -184,7 +189,7 @@ public static class SimpleBot
             lootTiles = lootTiles.Append(bossKey);
         }
 
-        GridPosition? goal = fighting ? BesideNearestMonster(room, hero)
+        GridPosition? goal = fighting ? BesideNearestMonster(state, room, hero)
             : Nearest(state, room, hero, lootTiles)
               ?? Nearest(state, room, hero, OpenableChests(room, hero).SelectMany(tile => tile.OrthogonalNeighbors()))
               ?? Nearest(state, room, hero, room.TilesOfKind(TileKind.Pot).SelectMany(tile => tile.OrthogonalNeighbors()))
@@ -196,7 +201,7 @@ public static class SimpleBot
         }
 
         // A locked gate in the way: of where it's going, or of a monster it can't otherwise reach.
-        GridPosition? gateGoal = goal ?? (fighting ? room.Monsters.MinBy(monster => monster.Position.ManhattanDistanceTo(hero.Position))!.Position : null);
+        GridPosition? gateGoal = goal ?? (fighting ? room.Monsters.MinBy(monster => monster.NearestTile(hero.Position).ManhattanDistanceTo(hero.Position))!.NearestTile(hero.Position) : null);
         if (gateGoal is { } beyond && ThroughGate(session, hero, room, beyond) is { } gateCommand)
         {
             return gateCommand;
@@ -210,7 +215,7 @@ public static class SimpleBot
             return new MoveHero(hero.Id, aside);
         }
 
-        if (fighting && StepToward(session, hero, tile => room.Monsters.Min(monster => monster.Position.ManhattanDistanceTo(tile))) is { } closer)
+        if (fighting && StepToward(session, hero, tile => room.Monsters.Min(monster => monster.NearestTile(tile).ManhattanDistanceTo(tile))) is { } closer)
         {
             return new MoveHero(hero.Id, closer);
         }
@@ -219,12 +224,27 @@ public static class SimpleBot
     }
 
     /// <summary>The closest walkable tile a monster can be hit from in melee (diagonals too), if any can be reached.</summary>
-    internal static GridPosition? BesideNearestMonster(Room room, Hero hero)
+    /// <summary>Shackles, the hero's own or an ally's beside them: unlocked with a key, or the lock picked. Null if there are none, or no way to.</summary>
+    internal static GameCommand? FreeShackles(GameSession session, Hero hero, Room room)
+    {
+        if (session.State.HeroesIn(room).FirstOrDefault(other => other.Shackled is not null && other.IsInPlay && other.Position.ChebyshevDistanceTo(hero.Position) <= 1) is not { } prisoner)
+        {
+            return null;
+        }
+
+        return session.CheckUnshackle(prisoner.Id) is null ? new Unshackle(hero.Id, prisoner.Id)
+            : session.CheckPickLock(prisoner.Position) is null ? new PickLock(hero.Id, prisoner.Position)
+            : null;
+    }
+
+    /// <summary>The nearest free tile the hero can reach to strike a monster from (one an ally or merchant stands on won't do), or null.</summary>
+    internal static GridPosition? BesideNearestMonster(GameState state, Room room, Hero hero)
     {
         PathSearch search = PathSearch.Run(hero.Position, tile => Walkable(room, tile));
         return room.Monsters
-            .SelectMany(monster => monster.Position.SurroundingTiles()
-                .Where(tile => room.Layout.Contains(tile) && Targeting.CanHeroAttack(room.Layout, 1, tile, monster.Position)))
+            .SelectMany(monster => monster.Tiles.SelectMany(part => part.SurroundingTiles()
+                .Where(tile => room.Layout.Contains(tile) && !monster.Occupies(tile) && Targeting.CanHeroAttack(room.Layout, 1, tile, part))))
+            .Where(tile => FreeFor(state, room, hero, tile))
             .Where(search.CanReach)
             .OrderBy(tile => search.Distances[tile])
             .ThenBy(tile => tile.Y)
@@ -251,8 +271,8 @@ public static class SimpleBot
         }
 
         PathSearch search = PathSearch.Run(hero.Position, tile => Walkable(room, tile) || room.Layout[tile] == TileKind.Gate);
-        return room.Monsters.Any(monster => monster.Position.SurroundingTiles()
-            .Any(tile => room.Layout.Contains(tile) && search.CanReach(tile) && Targeting.CanHeroAttack(room.Layout, 1, tile, monster.Position)));
+        return room.Monsters.Any(monster => monster.Tiles.Any(part => part.SurroundingTiles()
+            .Any(tile => room.Layout.Contains(tile) && !monster.Occupies(tile) && search.CanReach(tile) && Targeting.CanHeroAttack(room.Layout, 1, tile, part))));
     }
 
     /// <summary>
@@ -299,6 +319,10 @@ public static class SimpleBot
     }
 
     /// <summary>Where the bot can walk: like the rules, around monsters and the traps it knows of.</summary>
+    /// <summary>Nobody else (an ally or a merchant) stands on the tile: the hero could end a move there.</summary>
+    internal static bool FreeFor(GameState state, Room room, Hero hero, GridPosition tile) =>
+        room.MerchantAt(tile) is null && !state.HeroesIn(room).Any(other => other != hero && other.Position == tile);
+
     internal static bool Walkable(Room room, GridPosition tile) =>
         room.Layout[tile].IsWalkable() && room.MonsterAt(tile) is null && room.TrapAt(tile) is not { Revealed: true } && !InBlast(room, tile);
 

@@ -114,7 +114,7 @@ public class RunResultsTests
         Assert.Equal(["bomb"], character.Belt);
         Assert.Equal(["wooden_sword"], character.Backpack);
         Assert.Equal(["knights_sword", "bomb"], reward.CardsGained);
-        Assert.Equal(["health_potion"], reward.CardsLost);
+        Assert.Equal(["health_potion", "torch"], reward.CardsLost);
     }
 
     [Fact]

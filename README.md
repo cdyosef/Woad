@@ -103,6 +103,10 @@ on the Godot command line:
 | `--rumbletest` | Checks W rolls the Wend dice, clicking a monster no longer attacks, that Space readies Rumble with the monster in reach, that a click off target puts it away, that double-clicking the monster aims Rumble without attacking, and that the Rumble button then a click attacks. |
 | `--loottest` | Checks a stack of lockpicks fills one slot, dropping part of a stack asks how many, a bag of loot opens to Take one thing or Take all (the picks rejoin their stack), and an opened chest shows what's inside. |
 | `--tradetest` | Checks clicking a companion beside you opens trading, giving part of a stack asks how many, its owner can have it equip a sword, and the Orders panel's Find me button gives the order. |
+| `--companiontest` | Checks a companion ordered to Fight from the Orders panel walks over to a slime and attacks it. |
+| `--spelltest` | Checks the Frost Wand freezes a slime and the Flame Scroll burns another (and is used up), by selecting each, pressing Use and clicking the slime. |
+| `--partytest` | Checks the Party button says when there's a point to spend, opens the Party menu, spends Aria's point on a heart and tells Pip to pick up loot. |
+| `--bosstest` | In a generated Emerald Keep's boss room, Aria orders Pip to Fight and ends her turns for four rounds, checking Pip attacks the Iron Warden's company. |
 | `--monstertest` | Checks clicking a chest that's a Mimic wakes it on the board (and its grab shuts off Wend), then plays three rounds against an Ogre, a Necromancer (checking it raises the dead), a Hexer and a Gelatinous Cube. |
 | `--encountertest` | On a fresh Woarld kept in memory: steps onto a toll post (Suss Out, then Turn back, which Cowards note), lets a band catch up and chooses Fight, and Scouts. |
 | `--skirmishtest` | A fight under a bridge where the Bridge Troll strikes first, checking it fills four tiles. |

@@ -25,6 +25,7 @@ public sealed class Room
     private readonly Dictionary<GridPosition, int> _gold = [];
     private readonly List<Tombstone> _tombstones = [];
     private readonly List<Bomb> _bombs = [];
+    private readonly Dictionary<GridPosition, int> _flames = [];
     private readonly IReadOnlyDictionary<Direction, GridPosition> _doorTiles;
 
     internal Room(
@@ -150,6 +151,29 @@ public sealed class Room
     /// <summary>Anything on the tile to pick up: cards, gold, keys, the Boss Key or an unlit bomb.</summary>
     public bool HasLootAt(GridPosition position) =>
         LootAt(position).Count > 0 || GoldAt(position) > 0 || KeysAt(position) > 0 || BossKeyAt == position || BombAt(position) is { Lit: false };
+
+    /// <summary>Burning floor, and the rounds each tile has left to burn.</summary>
+    public IReadOnlyDictionary<GridPosition, int> Flames => _flames;
+
+    public bool IsBurning(GridPosition position) => _flames.ContainsKey(position);
+
+    internal void SetBurning(GridPosition position, int rounds) => _flames[position] = Math.Max(rounds, _flames.GetValueOrDefault(position));
+
+    /// <summary>A round of burning off every tile; returns those that went out.</summary>
+    internal List<GridPosition> BurnDown()
+    {
+        List<GridPosition> spent = [];
+        foreach (GridPosition tile in _flames.Keys.ToList())
+        {
+            if (--_flames[tile] <= 0)
+            {
+                _flames.Remove(tile);
+                spent.Add(tile);
+            }
+        }
+
+        return spent;
+    }
 
     /// <summary>Bombs lying here, lit or not.</summary>
     public IReadOnlyList<Bomb> Bombs => _bombs;

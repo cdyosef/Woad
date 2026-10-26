@@ -47,6 +47,9 @@ public static class GameRules
     /// <summary>Search total to find a hidden stash of keys or loot.</summary>
     public static int StashDifficulty(int floor) => 5 + floor;
 
+    /// <summary>Rounds a patch of burning floor (from a Flame Scroll) keeps burning.</summary>
+    public const int FlameRounds = 3;
+
     /// <summary>A die showing this earns a Power Die.</summary>
     public const int PowerDieFace = 6;
 
@@ -108,7 +111,7 @@ public static class GameRules
     public const int BackpackCapacity = 6;
 
     /// <summary>Cards every new character starts with.</summary>
-    public static IReadOnlyList<string> StarterKit { get; } = ["wooden_sword", "buckler", "health_potion"];
+    public static IReadOnlyList<string> StarterKit { get; } = ["wooden_sword", "buckler", "health_potion", "torch"];
 
     /// <summary>Stats every new character starts with, before spending creation points.</summary>
     public static Stats HeroBaseStats { get; } = new()

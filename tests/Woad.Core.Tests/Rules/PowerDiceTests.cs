@@ -217,4 +217,62 @@ public class PowerDiceTests
         Assert.Equal(0, events.SingleOf<Damaged>().Amount);
         Assert.Equal(0, brute.Power.Banked);
     }
+    [Fact]
+    public void MonstersRollBankedPowerDiceIntoAnAttackThatLooksShort()
+    {
+        // The grunt rolls a 1: short of an unarmored hero's 4, so a banked die (3) goes in; 4 is still
+        // short, so the other (2) too. The hero defends with a 1.
+        GameSession session = TestRun.Start(Duel('m'), new ScriptedDice(1, 3, 2, 1));
+        Monster grunt = session.OnlyMonster();
+        grunt.Power.Banked = 2;
+
+        IReadOnlyList<GameEvent> events = session.EndRound();
+
+        var attack = events.SingleOf<AttackRolled>();
+        Assert.Equal([1, 3, 2], attack.Roll.Faces);
+        Assert.Equal((2, 6), (attack.PowerDice, attack.Total));
+        Assert.Equal(new PowerDiceSpent(grunt.Id, 2, 0), events.SingleOf<PowerDiceSpent>());
+    }
+
+    [Fact]
+    public void AMonsterThatCantReachAHeroRollsBankedPowerDiceIntoItsMove()
+    {
+        // The grunt (2 moves) is 3 steps from the tile beside the hero: a banked die (2) gets it there.
+        GameSession session = TestRun.Start("""
+            ....m....
+            .........
+            .........
+            .........
+            ....1....
+            .........
+            .........
+            .........
+            .........
+            """, new ScriptedDice(2, 1, 5));
+        Monster grunt = session.OnlyMonster();
+        grunt.Power.Banked = 1;
+
+        IReadOnlyList<GameEvent> events = session.EndRound();
+
+        Assert.Equal([2], events.SingleOf<MonsterSurged>().Faces);
+        Assert.Equal(new GridPosition(4, 3), grunt.Position);
+        Assert.Single(events.OfType<AttackRolled>());
+    }
+
+    [Fact]
+    public void BankedPowerDiceCarryIntoTheNextRunAndBackOut()
+    {
+        var setup = new RunSetup
+        {
+            Seed = 1,
+            ThemeId = TestContent.ThemeId,
+            Heroes = [new HeroSetup("Hero", TestRun.HeroStats, [], PowerDice: 2)],
+            Rooms = [new RoomSetup("A", TestRun.Room(Open))],
+            StartRoomId = "A",
+        };
+        var session = new GameSession(TestContent.Catalog, setup);
+        session.Begin();
+
+        Assert.Equal(2, session.HeroInSeat().Power.Banked);
+    }
 }

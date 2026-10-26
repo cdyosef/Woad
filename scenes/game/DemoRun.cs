@@ -187,6 +187,16 @@ public static class DemoRun
         StartRoomId = "yard",
     };
 
+    /// <summary>For --spelltest: Aria with a Flame Scroll on her belt and a Frost Wand in her off hand, two slimes across the room.</summary>
+    public static RunSetup Spells(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20 }, CardIds = ["wooden_sword", "frost_wand", "flame_scroll"] }],
+        Rooms = [new RoomSetup("study", RoomTemplate.Parse(".........\n.........\n.........\n...s.....\n.1.......\n...s.....\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
+        StartRoomId = "study",
+    };
+
     /// <summary>For --loottest: Aria with a stack of lockpicks, an emerald and a bomb, beside a chest.</summary>
     public static RunSetup Treasury(ulong seed) => new()
     {
@@ -279,6 +289,42 @@ public static class DemoRun
         ],
         Rooms = [new RoomSetup("camp", RoomTemplate.Parse(".........\n.........\n.........\n.........\n....1....\n.....2...\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
         StartRoomId = "camp",
+    };
+
+    /// <summary>For --partytest: Aria (level 2, a point to spend) and her companion Pip, a slime across the room.</summary>
+    public static RunSetup PartyCheck(ulong seed) => Escort(seed) with
+    {
+        Heroes =
+        [
+            DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20 }, Allocation = Woad.Core.Characters.StatAllocation.None, Xp = 10, UnspentPoints = 1 },
+            new HeroSetup("Pip", GameRules.HeroBaseStats with { Hearts = 20, Luck = 2 }, ["wooden_sword"], OwnerSeat: 0),
+        ],
+    };
+
+    /// <summary>For --bosstest: Aria and her companion Pip, starting in a generated Emerald Keep's boss room.</summary>
+    public static RunSetup BossRoom(ulong seed)
+    {
+        ContentCatalog content = ContentCatalog.LoadDefault();
+        RunSetup run = Woad.Core.Dungeon.DungeonGenerator.CreateRun(content, "emerald_keep",
+        [
+            DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 60 } },
+            new HeroSetup("Pip", GameRules.HeroBaseStats with { Hearts = 60, Luck = 2 }, ["wooden_sword"], OwnerSeat: 0),
+        ], seed);
+        return run with { StartRoomId = run.Rooms.Single(room => room.Role == RoomRole.Boss).Id };
+    }
+
+    /// <summary>For --companiontest: Aria and her lucky companion Pip, a slime across the room.</summary>
+    public static RunSetup Escort(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes =
+        [
+            DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20 } },
+            new HeroSetup("Pip", GameRules.HeroBaseStats with { Hearts = 20, Luck = 2 }, ["wooden_sword"], OwnerSeat: 0),
+        ],
+        Rooms = [new RoomSetup("yard", RoomTemplate.Parse(".........\n.........\n.........\n.........\n.1.....s.\n.2.......\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
+        StartRoomId = "yard",
     };
 
     /// <summary>For --clicktest: a quick Aria (3 Wend dice) across the yard from a slime.</summary>

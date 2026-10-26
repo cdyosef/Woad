@@ -56,6 +56,11 @@ public static class CompanionBot
             return new Rouse(hero.Id, fallen.Id);
         }
 
+        if (SimpleBot.FreeShackles(session, hero, room) is { } unshackle)
+        {
+            return unshackle;
+        }
+
         // The Boss Key is for the players: it hands it to its leader as soon as they're side by side.
         if (hero.HasBossKey && Leader(state, hero) is { } keeper && session.GetTradePartners().Contains(keeper))
         {
@@ -67,13 +72,13 @@ public static class CompanionBot
             return flee;
         }
 
-        if (hero.Hearts <= hero.MaxHearts - 2 && SimpleBot.UsableBeltCard(session, hero, CardEffectKind.Heal) is { } potion)
+        if (hero.Policy.DrinksPotions && hero.Hearts <= hero.MaxHearts - 2 && SimpleBot.UsableBeltCard(session, hero, CardEffectKind.Heal) is { } potion)
         {
             return new UseCard(hero.Id, potion.Id);
         }
 
         if (session.GetAttackableMonsters()
-                .FirstOrDefault(monster => hero.Order != CompanionOrder.StayBack || monster.Position.ChebyshevDistanceTo(hero.Position) == 1)
+                .FirstOrDefault(monster => hero.Order != CompanionOrder.StayBack || monster.NearestTile(hero.Position).ChebyshevDistanceTo(hero.Position) == 1)
             is { } target)
         {
             return new AttackMonster(hero.Id, target.Id);
@@ -170,12 +175,12 @@ public static class CompanionBot
             case CompanionOrder.Hold when hero.HoldAt is { } post && post.RoomId == room.Id:
                 return new Plan { Tile = post.Position };
 
-            case CompanionOrder.Fight when fighting && SimpleBot.BesideNearestMonster(room, hero) is { } beside:
+            case CompanionOrder.Fight when fighting && SimpleBot.BesideNearestMonster(state, room, hero) is { } beside:
                 return new Plan { Tile = beside };
 
             case CompanionOrder.StayBack when fighting:
                 // Further from the nearest monster (up to 4 steps away) is better.
-                int Danger(GridPosition tile) => -Math.Min(4, room.Monsters.Min(monster => monster.Position.ManhattanDistanceTo(tile)));
+                int Danger(GridPosition tile) => -Math.Min(4, room.Monsters.Min(monster => monster.NearestTile(tile).ManhattanDistanceTo(tile)));
                 return Danger(hero.Position) > -4 ? new Plan { Score = Danger } : Plan.Stay;
         }
 
@@ -193,9 +198,9 @@ public static class CompanionBot
         // A companion with its leader guards them: it goes after a monster closing in on them.
         if (hero.Order is CompanionOrder.Follow or CompanionOrder.FindMe or CompanionOrder.Burgle or CompanionOrder.Loot or CompanionOrder.Explore
             && fighting && leader.RoomId == room.Id
-            && room.Monsters.Where(monster => monster.Position.ChebyshevDistanceTo(leader.Position) <= Guarding)
-                .OrderBy(monster => monster.Position.ManhattanDistanceTo(leader.Position))
-                .Select(monster => Beside(room, hero, monster))
+            && room.Monsters.Where(monster => monster.NearestTile(leader.Position).ChebyshevDistanceTo(leader.Position) <= Guarding)
+                .OrderBy(monster => monster.NearestTile(leader.Position).ManhattanDistanceTo(leader.Position))
+                .Select(monster => Beside(state, room, hero, monster))
                 .FirstOrDefault(tile => tile is not null) is { } guard)
         {
             return new Plan { Tile = guard };
@@ -322,8 +327,33 @@ public static class CompanionBot
                 break;
         }
 
+        // Its own ways, whatever its order: loot within reach is picked up, and better gear put on.
+        if (hero.Policy.PicksUpLoot)
+        {
+            foreach (GridPosition tile in new[] { hero.Position }.Concat(hero.Position.SurroundingTiles()).Where(room.Layout.Contains))
+            {
+                if (room.HasLootAt(tile) && session.CheckPickUp(tile) is null && WorthTaking(room, hero, tile))
+                {
+                    return new PickUpLoot(hero.Id, tile);
+                }
+            }
+        }
+
+        if (hero.Policy.EquipsBetterGear && BetterGear(session, hero) is { } better)
+        {
+            return new EquipCard(hero.Id, better.Id);
+        }
+
         return null;
     }
+
+    /// <summary>Gear in its backpack worth more than what it would take off to wear it, and that it can put on now; or null.</summary>
+    private static CardInstance? BetterGear(GameSession session, Hero hero) =>
+        hero.Backpack
+            .Where(card => card.Definition is { Slot: not null, Torch: false } && session.CheckEquip(card.Id) is null)
+            .Where(card => card.Definition.Value > hero.CardsDisplacedBy(card.Definition, null).Sum(worn => worn.Definition.Value))
+            .OrderByDescending(card => card.Definition.Value)
+            .FirstOrDefault();
 
     /// <summary>Where a burgling or looting companion goes next in the room: beside the nearest thing left to do, or null.</summary>
     private static GridPosition? Work(GameSession session, Hero hero, Room room)
@@ -362,11 +392,13 @@ public static class CompanionBot
         : null;
 
     /// <summary>The closest tile the companion can reach to strike <paramref name="monster"/> from, if any.</summary>
-    private static GridPosition? Beside(Room room, Hero hero, Monster monster)
+    private static GridPosition? Beside(GameState state, Room room, Hero hero, Monster monster)
     {
         PathSearch search = PathSearch.Run(hero.Position, tile => SimpleBot.Walkable(room, tile));
-        return monster.Position.SurroundingTiles()
-            .Where(tile => room.Layout.Contains(tile) && search.CanReach(tile) && Targeting.CanHeroAttack(room.Layout, 1, tile, monster.Position))
+        return monster.Tiles.SelectMany(part => part.SurroundingTiles()
+                .Where(tile => room.Layout.Contains(tile) && !monster.Occupies(tile) && search.CanReach(tile) && Targeting.CanHeroAttack(room.Layout, 1, tile, part)
+                               && SimpleBot.FreeFor(state, room, hero, tile)))
+            .Distinct()
             .OrderBy(tile => search.Distances[tile])
             .Select(tile => (GridPosition?)tile)
             .FirstOrDefault();

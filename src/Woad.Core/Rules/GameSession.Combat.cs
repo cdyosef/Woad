@@ -61,7 +61,7 @@ public sealed partial class GameSession
         UseWeapon(hero, room, wielding, armed, monster.Position, events);
         SpendBankedPowerDice(hero, command.PowerDice, events);
         RollHeroAttack(hero, dice + ProneBonus(monster, hero.Position), bonus, [monster.Id], DamageSource.Weapon, events, command.PowerDice,
-            stunOnSix: wielding.Weapon?.StunOnSix ?? false, weaponDice: armed ? wielding.Dice : 0, weapon: wielding.Weapon);
+            stunOnSix: wielding.Weapon?.StunOnSix ?? false, weaponDice: armed ? wielding.Dice : 0, weapon: wielding.Weapon, torches: hero.TorchesHeld);
         return null;
     }
 
@@ -174,7 +174,7 @@ public sealed partial class GameSession
 
     private static bool CanHeroAttack(Hero hero, Room room, Monster monster) =>
         monster.Tiles.Any(tile => CanHeroReach(hero, room.Layout, hero.Position, tile))
-        && (!Submerged(room, monster) || monster.Position.ChebyshevDistanceTo(hero.Position) <= 1 || (hero.MainWeapon?.Definition.SwimmerBonus ?? 0) > 0);
+        && (!Submerged(room, monster) || monster.NearestTile(hero.Position).ChebyshevDistanceTo(hero.Position) <= 1 || (hero.MainWeapon?.Definition.SwimmerBonus ?? 0) > 0);
 
     /// <summary>
     /// Rolls a hero's attack. It waits while there's something to decide: Luck rerolls (until
@@ -186,19 +186,28 @@ public sealed partial class GameSession
     /// <param name="stunOnSix">A stunning weapon (the Boomerang): every 6 stuns the targets.</param>
     /// <param name="weaponDice">The weapon's own dice (the Longsword's d6), whose sixes roll straight in.</param>
     /// <param name="weapon">The weapon swung or shot, for what it does as the attack lands (see <see cref="WeaponAftermath"/>).</param>
-    private void RollHeroAttack(Hero hero, int dice, int bonus, IReadOnlyList<int> targetIds, DamageSource source, List<GameEvent> events, int powerDice = 0, bool fire = false, bool stunOnSix = false, int weaponDice = 0, CardDefinition? weapon = null)
+    private void RollHeroAttack(Hero hero, int dice, int bonus, IReadOnlyList<int> targetIds, DamageSource source, List<GameEvent> events, int powerDice = 0, bool fire = false, bool stunOnSix = false, int weaponDice = 0, CardDefinition? weapon = null, int torches = 0)
     {
         dice = Math.Max(0, dice);
         DiceRoll rolled = _dice.Roll(dice + powerDice);
-        (int[] weaponFaces, int crits) = RollBonusDice(weaponDice);
-        var roll = new DiceRoll([.. rolled.Faces.Take(dice), .. weaponFaces[..weaponDice], .. rolled.Faces.Skip(dice), .. weaponFaces[weaponDice..]]);
-        events.Add(new AttackRolled(hero.Id, roll, bonus, roll.Total + bonus, targetIds, powerDice + crits, source == DamageSource.Shove) { WeaponDice = weaponDice });
+        (int[] weaponFaces, int weaponCrits) = RollBonusDice(weaponDice);
+        // Each torch's fire die: a 6 rolls another fire die straight in.
+        (int[] torchFaces, int torchCrits) = RollBonusDice(torches);
+        int crits = weaponCrits + torchCrits;
+        var roll = new DiceRoll([.. rolled.Faces.Take(dice), .. weaponFaces[..weaponDice], .. torchFaces[..torches], .. rolled.Faces.Skip(dice), .. weaponFaces[weaponDice..], .. torchFaces[torches..]]);
+        events.Add(new AttackRolled(hero.Id, roll, bonus, roll.Total + bonus, targetIds, powerDice + crits, source == DamageSource.Shove) { WeaponDice = weaponDice, TorchDice = torches });
         if (crits > 0)
         {
             events.Add(new CritRolled(hero.Id, crits));
         }
 
-        Turn.PendingRoll = new PendingRoll(hero.Id, roll, bonus, targetIds, source, fire: fire, stunOnSix: stunOnSix) { NonPowerDice = dice + weaponDice, Weapon = weapon };
+        Turn.PendingRoll = new PendingRoll(hero.Id, roll, bonus, targetIds, source, fire: fire, stunOnSix: stunOnSix)
+        {
+            NonPowerDice = dice + weaponDice + torches,
+            Weapon = weapon,
+            Torches = torches,
+            TorchSix = torchCrits > 0,
+        };
         EarnPowerDice(hero, Sixes(rolled.Faces), events);
     }
 
@@ -214,7 +223,13 @@ public sealed partial class GameSession
         {
             if (room.FindMonster(targetId) is { } monster)
             {
-                DamageMonster(hero, room, monster, attack.Total, attack.Source, events, ranged: monster.Position.ChebyshevDistanceTo(hero.Position) > 1, crush: attack.Weapon?.Crush ?? false);
+                int before = events.Count;
+                DamageMonster(hero, room, monster, attack.Total, attack.Source, events, ranged: monster.NearestTile(hero.Position).ChebyshevDistanceTo(hero.Position) > 1, crush: attack.Weapon?.Crush ?? false);
+                // A torch's 6 sets what it hits alight.
+                if (attack.TorchSix && events.Skip(before).Any(gameEvent => gameEvent is Damaged { Amount: > 0 } hit && hit.TargetId == monster.Id) && room.FindMonster(monster.Id) is not null)
+                {
+                    Ignite(room, monster, hero.Id, hero.Id, events);
+                }
             }
             else if (State.ActiveHeroesIn(room).FirstOrDefault(ally => ally.Id == targetId) is { } ally)
             {
@@ -229,6 +244,13 @@ public sealed partial class GameSession
         IgniteTargets(hero, room, attack, events);
         StunTargets(hero, room, attack, events);
         WeaponAftermath(hero, room, attack, events);
+
+        // Any 1 in a torch-lit attack burns one of the torches out.
+        if (attack.Torches > 0 && attack.Roll.Faces.Contains(1) && hero.EquippedCards.LastOrDefault(card => card.Definition.Torch) is { } torch)
+        {
+            hero.Remove(torch);
+            events.Add(new TorchBurnedOut(hero.Id, torch.Id));
+        }
     }
 
     /// <summary>An attack hits, for 1 heart, when its total beats the defense total; ties go to the defender.</summary>
@@ -244,7 +266,8 @@ public sealed partial class GameSession
         bool collapsed = monster.Collapsed;
         int armor = collapsed ? 0 : ArmorOf(monster);
         int dice = collapsed ? 0 : DefenseDiceOf(monster) + (ranged && monster.Prone ? 1 : 0);
-        DiceRoll defense = RollDefense(monster.Id, monster.Power, dice, armor, attackTotal, canSpend: !collapsed, events);
+        Guard? extra = !collapsed && monster.Definition.ExtraDefenseDice > 0 ? new Guard { Dice = monster.Definition.ExtraDefenseDice } : null;
+        DiceRoll defense = RollDefense(monster.Id, monster.Power, dice, armor, attackTotal, canSpend: !collapsed, events, extra);
 
         int damage = DamageFor(attackTotal, defense.Total + armor);
         monster.Hearts = Math.Max(0, monster.Hearts - damage);
@@ -396,6 +419,12 @@ public sealed partial class GameSession
     private void MonsterAttacks(Room room, Monster monster, Hero target, List<GameEvent> events)
     {
         MonsterDefinition definition = monster.Definition;
+        if (definition.Arc)
+        {
+            SwingArc(room, monster, target, events);
+            return;
+        }
+
         IReadOnlyList<int> attacks = definition.SeparateAttacks
             ? Enumerable.Repeat(1, monster.AttackDiceThisTurn).ToList()
             : PlanAttacks(monster.AttackDiceThisTurn, definition.Weapon, target.EffectiveStats);
@@ -424,11 +453,33 @@ public sealed partial class GameSession
 
         powerDice += crits;
         int weaponSixes = weaponFaces.Count(face => face == GameRules.PowerDieFace);
+
+        // Banked Power Dice go in, one at a time, while the roll looks short of getting past the
+        // best-defended target (their armor and a middling defense die); a 6 rolls another straight in.
+        int spent = 0;
+        int needed = targets.Where(hero => hero.IsActive).Select(hero => hero.EffectiveStats.Armor + 4).DefaultIfEmpty(0).Max();
+        while (monster.Power.Banked > 0 && roll.Total + bonus <= needed)
+        {
+            monster.Power.Banked--;
+            spent++;
+            (DiceRoll extra, int more) = RollMonsterDice(1);
+            foreach (int face in extra.Faces)
+            {
+                roll = roll.With(face);
+            }
+
+            powerDice += 1 + more;
+        }
+
         int total = roll.Total + bonus;
         events.Add(new AttackRolled(monster.Id, roll, bonus, total, targets.Select(hero => hero.Id).ToList(), powerDice));
+        if (spent > 0)
+        {
+            events.Add(new PowerDiceSpent(monster.Id, spent, monster.Power.Banked));
+        }
         foreach (Hero hero in targets.Where(hero => hero.IsActive))
         {
-            int dealt = DamageHero(room, hero, total, MonsterBane(monster), monster.Id, events, ranged: hero.Position.ChebyshevDistanceTo(monster.Position) > 1);
+            int dealt = DamageHero(room, hero, total, MonsterBane(monster), monster.Id, events, ranged: hero.Position.ChebyshevDistanceTo(monster.NearestTile(hero.Position)) > 1);
             if (dealt > 0 && monster.Definition.Mugger)
             {
                 Mug(monster, hero, events);

@@ -1,3 +1,4 @@
+using Woad.Core.Characters;
 using Woad.Core.Content;
 using Woad.Core.Grid;
 using Woad.Core.Model;
@@ -59,6 +60,15 @@ public sealed record EquipCard(int HeroId, int CardId, EquipSlot? Hand = null) :
 /// <summary>Frees a chained merchant beside the hero with a key (their lock can be picked with <see cref="PickLock"/> instead).</summary>
 public sealed record FreeMerchant(int HeroId, int MerchantId) : GameCommand(HeroId);
 
+/// <summary>Spends a level's point on a stat, for yourself or a companion of yours (from the Party menu). Free.</summary>
+public sealed record SpendPoint(int HeroId, int TargetId, StatKind Stat) : GameCommand(HeroId);
+
+/// <summary>Sets how a companion of yours manages its things on its turns (from the Party menu). Free.</summary>
+public sealed record SetCompanionPolicy(int HeroId, int CompanionId, CompanionPolicy Policy) : GameCommand(HeroId);
+
+/// <summary>Unlocks the shackles of a hero (yourself, or an ally beside you) with a key.</summary>
+public sealed record Unshackle(int HeroId, int TargetId) : GameCommand(HeroId);
+
 /// <summary>Buys a card from a freed merchant beside the hero, with the gold they've found this run.</summary>
 public sealed record BuyFromMerchant(int HeroId, int MerchantId, string CardId) : GameCommand(HeroId);
 
@@ -113,6 +123,10 @@ public abstract record OdHandCommand(int HeroId, int? Dice, bool UseTools, int P
 
 /// <summary>Pick the lock of the door you stand in (<paramref name="Target"/> is your own tile) or of an adjacent chest.</summary>
 public sealed record PickLock(int HeroId, GridPosition Target, int? Dice = null, bool UseTools = true, int PowerDice = 0)
+    : OdHandCommand(HeroId, Dice, UseTools, PowerDice);
+
+/// <summary>Retreat from a fight out on the Woarld Map: an Od Hand roll against the monsters' chase.</summary>
+public sealed record Retreat(int HeroId, int? Dice = null, bool UseTools = false, int PowerDice = 0)
     : OdHandCommand(HeroId, Dice, UseTools, PowerDice);
 
 /// <summary>Search the room: reveals every secret door, trap and stash whose difficulty the total reaches.</summary>

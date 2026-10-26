@@ -375,7 +375,7 @@ public partial class CharacterEditor : MenuScreen
             (_isCompanion ? "A companion: joins a player's party and follows their orders.\n" : "") +
             gear;
         _points.TooltipText = _level <= 1
-            ? $"At level 1 you can buy at most {PointBuy.LevelOneDiceLimit} extra Rumble, Defense and Od Hand die each. Unspent points are kept."
+            ? $"At level 1 you can buy at most {PointBuy.LevelOneDiceLimit} extra Rumble, Defense and Od Hand dice each. Unspent points are kept."
             : "Unspent points are kept.";
         if (_explaining is { } explained)
         {

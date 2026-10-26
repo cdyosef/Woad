@@ -1,3 +1,4 @@
+using Woad.Core.Bots;
 using Woad.Core.Characters;
 using Woad.Core.Commands;
 using Woad.Core.Content;
@@ -70,6 +71,96 @@ public class WoarldDangerTests
         troll.Hearts = 5;
         IReadOnlyList<GameEvent> round = session.Execute(new EndTurn(hero.Id)).Events;
         Assert.Equal(6, round.SingleOf<MonsterRegenerated>().Hearts);
+    }
+
+    [Fact]
+    public void TheBridgeTrollCanBeStolenFromAndShovedAtFromAnyOfItsTiles()
+    {
+        GameSession session = Fight(["bridge_troll"], terrain: Terrain.Bridge);
+        Monster troll = session.State.Rooms[Skirmish.RoomId].Monsters.Single();
+        Hero hero = session.State.Heroes[0];
+
+        // Beside its bottom-right tile, well away from its top-left one.
+        hero.Position = new GridPosition(troll.Position.X + 2, troll.Position.Y + 1);
+
+        Assert.Null(session.CheckSteal(troll.Id));
+        Assert.Contains("too mighty", session.CheckShove(troll.Id));
+    }
+
+    [Fact]
+    public void AHiredCompanionGoesAfterTheBridgeTroll()
+    {
+        Character owner = Character.Create("Owner", "frost", StatAllocation.None, Content, DateTimeOffset.UtcNow);
+        owner.EarnGold(10);
+        var offer = new RecruitOffer("Hired", new Appearance("knight"), "blood", new StatAllocation { Hearts = 4, Luck = 2 }, [], Level: 1, Price: 10);
+        Character recruit = TavernServices.Hire(owner, offer, Content, DateTimeOffset.UtcNow).Recruit!;
+        RunSetup setup = Skirmish.CreateRun(Content, new SkirmishSpec("emerald_keep", Terrain.Bridge, ["bridge_troll"], false, "Test"),
+            [owner.ToHeroSetup() with { BaseStats = owner.BaseStats with { Hearts = 40 } }, recruit.ToHeroSetup(0)], seed: 1);
+        var session = new GameSession(Content, setup, new GameRandom(1));
+        session.Begin();
+        Hero player = session.State.Heroes[0], companion = session.State.Heroes[1];
+        session.Execute(new OrderCompanion(player.Id, companion.Id, CompanionOrder.Fight));
+
+        bool attacked = false;
+        for (int i = 0; i < 200 && !attacked && session.State.Phase == RunPhase.InProgress; i++)
+        {
+            Hero active = session.State.ActiveHero!;
+            GameCommand command = active.IsCompanion ? CompanionBot.NextCommand(session) : new EndTurn(active.Id);
+            attacked = command is AttackMonster;
+            Assert.True(session.Execute(command).IsAccepted, $"{command} was refused");
+        }
+
+        Assert.True(attacked, "the companion never attacked the troll");
+    }
+
+    [Fact]
+    public void RetreatingBeatsTheChaseAndLeavesTheFieldWithoutWinningIt()
+    {
+        // The hero's Od Hand 5 against the wolf's chase: two dice (1, 1) and 3.
+        GameSession session = Fight(["dire_wolf"], dice: new ScriptedDice(5, 1, 1));
+        Hero hero = session.State.Heroes[0];
+
+        IReadOnlyList<GameEvent> events = session.Execute(new Retreat(hero.Id)).Events;
+
+        Assert.Contains(new HeroRetreated(hero.Id), events);
+        Assert.Equal(RunPhase.Ended, session.State.Phase);
+        Assert.Empty(session.State.WinnerIds);
+        Assert.True(RunResults.For(session.State).Single().Retreated);
+    }
+
+    [Fact]
+    public void AFailedRetreatBoltsAwayFromTheMonstersAndFallsFlat()
+    {
+        // Od Hand 1 against 5 + 5 + 3; then the Wend die (4) carries the hero off.
+        GameSession session = Fight(["dire_wolf"], dice: new ScriptedDice(1, 5, 5, 4));
+        Hero hero = session.State.Heroes[0];
+        Monster wolf = session.State.Rooms[Skirmish.RoomId].Monsters.Single();
+        int before = hero.Position.ManhattanDistanceTo(wolf.Position);
+
+        IReadOnlyList<GameEvent> events = session.Execute(new Retreat(hero.Id)).Events;
+
+        Assert.Single(events.OfType<Routed>());
+        Assert.True(hero.Prone);
+        Assert.True(hero.Position.ManhattanDistanceTo(wolf.Position) > before);
+        Assert.Equal(RunPhase.InProgress, session.State.Phase);
+    }
+
+    [Fact]
+    public void ThereIsNoRetreatingInADungeon()
+    {
+        GameSession session = TestRun.Start("""
+            .........
+            .........
+            .........
+            .........
+            ....1....
+            .........
+            .........
+            .........
+            ......m..
+            """);
+
+        Assert.Contains("dungeon", session.CheckRetreat());
     }
 
     [Fact]

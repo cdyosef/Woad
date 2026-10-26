@@ -33,7 +33,9 @@ public class ContentCatalogTests
 
         MonsterDefinition boss = content.GetMonster("iron_warden");
         Assert.True(boss.Boss);
-        Assert.Equal(new SweepAttack { Radius = 2, Every = 2 }, boss.Sweep);
+        Assert.Equal(new SweepAttack { Radius = 2, Every = 1, Bonus = true }, boss.Sweep);
+        Assert.Equal(new ChainAttack { Range = 6, Dice = 3, Lock = 9 }, boss.Chain);
+        Assert.True(boss.Arc);
         Assert.Same(boss, content.FindMonsterByGlyph(boss.Glyph));
     }
 

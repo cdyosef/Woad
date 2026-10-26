@@ -20,6 +20,22 @@ public sealed record SweepAttack
 
     /// <summary>The sweep is used on every Nth turn the monster takes.</summary>
     public required int Every { get; init; }
+
+    /// <summary>A spin on top of its turn (after its own attack), not instead of it.</summary>
+    public bool Bonus { get; init; }
+}
+
+/// <summary>A chain flung at a hero (the Iron Warden's): a hit drags them beside the monster, shackled.</summary>
+public sealed record ChainAttack
+{
+    /// <summary>How far it reaches (in sight, Manhattan distance).</summary>
+    public required int Range { get; init; }
+
+    /// <summary>Its attack dice.</summary>
+    public required int Dice { get; init; }
+
+    /// <summary>The Od Hand total that picks the shackles' lock.</summary>
+    public required int Lock { get; init; }
 }
 
 public sealed record MonsterDefinition
@@ -154,6 +170,18 @@ public sealed record MonsterDefinition
     public int SplitCount { get; init; }
 
     public SweepAttack? Sweep { get; init; }
+
+    /// <summary>
+    /// Its attack swings through a 3-tile arc toward its target (it can strike diagonally): everyone
+    /// there, monsters too, faces the same roll, and each 6 cleaves on into one more creature beside it.
+    /// </summary>
+    public bool Arc { get; init; }
+
+    /// <summary>A chain it flings each turn before moving, or null.</summary>
+    public ChainAttack? Chain { get; init; }
+
+    /// <summary>Extra Defense dice, rolled in one at a time while a defense is losing (the Warden's Plate's).</summary>
+    public int ExtraDefenseDice { get; init; }
 
     public bool StunImmune { get; init; }
 

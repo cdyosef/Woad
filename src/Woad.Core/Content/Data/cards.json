@@ -32,9 +32,10 @@
   { "id": "dash_boots", "name": "Dash Boots", "type": "boots", "slot": "feet", "modifiers": { "moveDice": 1 }, "value": 10, "text": "+1 Wend die." },
 
   // Spells and tools
-  { "id": "flame_scroll", "name": "Flame Scroll", "type": "spell", "usage": "singleUse", "stacks": true, "effect": { "kind": "attack", "amount": 3, "range": 3, "fire": true }, "value": 4, "text": "Single use. A 3-dice fire attack on a monster within 3 (not your Rumble dice). Any 6 sets it alight." },
+  { "id": "flame_scroll", "name": "Flame Scroll", "type": "spell", "usage": "singleUse", "stacks": true, "effect": { "kind": "attack", "amount": 3, "range": 3, "fire": true }, "value": 4, "text": "Single use. Hurl fire up to 3 tiles: a 3-dice fire attack on whoever is there (not your Rumble dice), any 6 setting them alight. Aimed at bare floor, it sets it burning for 3 rounds: anyone on it or walking through catches fire." },
   { "id": "frost_wand", "name": "Frost Wand", "type": "spell", "slot": "offHand", "usage": "charges", "charges": 2, "effect": { "kind": "freeze", "amount": 1, "range": 3 }, "value": 8, "text": "2 charges per floor. Freeze a monster within 3: it skips its next turn." },
   { "id": "boomerang", "name": "Boomerang", "type": "weapon", "slot": "offHand", "altSlot": "mainHand", "attackRange": 4, "attackBonus": 1, "stunOnSix": true, "value": 6, "text": "Off hand or main hand. Throw it with your Rumble dice +1 at a target within 4; every 6 stuns it (hit or miss)." },
+  { "id": "torch", "name": "Torch", "type": "tool", "slot": "offHand", "altSlot": "mainHand", "stacks": true, "torch": true, "value": 1, "text": "Stacks in one slot; one to a hand. Held, it's lit: +1d6 on Search rolls, it lights your way, and a fire die on your Rumble attacks. A 6 on the fire die rolls another, and on a hit sets the target alight. Any 1 in the attack burns the torch out." },
   { "id": "lockpicks", "name": "Lockpicks", "type": "tool", "slot": "offHand", "stacks": true, "modifiers": { "tools": 1, "toolDice": 1 }, "value": 6, "text": "Stacks. +1 and 1d6 on one lock-picking roll a turn (doors, chests, gates; a 6 on its die rolls another straight in). A failed pick with a 1 showing snaps one." },
 
   // Consumables

@@ -66,6 +66,11 @@ public sealed partial class GameSession
 
     private string? Handle(RollMovement command, List<GameEvent> events)
     {
+        if (ActiveHero.Shackled is not null)
+        {
+            return CheckHeld(ActiveHero);
+        }
+
         int left = MoveDiceLeft;
         if (left < 1)
         {
@@ -138,6 +143,11 @@ public sealed partial class GameSession
         Turn.HasMoved = true;
         events.Add(new HeroMoved(hero.Id, path, Turn.MovementPoints));
         DouseOnPath(room, hero, path, events);
+        if (hero.FireDice == 0 && path.Any(tile => room.IsBurning(tile) && !InWater(room, tile)))
+        {
+            Ignite(hero, hero.Id, events);
+        }
+
         if (sprung >= 0)
         {
             Turn.EndMove();

@@ -1,3 +1,4 @@
+using Woad.Core.Characters;
 using Woad.Core.Dice;
 using Woad.Core.Grid;
 using Woad.Core.Model;
@@ -54,6 +55,12 @@ public sealed record AttackRolled(int AttackerId, DiceRoll Roll, int Bonus, int 
 {
     /// <summary>Of the faces, after the Rumble dice: the weapon's own dice (the Longsword's d6). Power Dice come last.</summary>
     public int WeaponDice { get; init; }
+
+    /// <summary>Of the faces, after the weapon's: the torches' fire dice.</summary>
+    public int TorchDice { get; init; }
+
+    /// <summary>A flung chain (the Iron Warden's), which drags and shackles whoever it hits.</summary>
+    public bool Chain { get; init; }
 }
 
 /// <summary>A tool's or weapon's die came up 6: that many more dice rolled straight into the roll (as Power Dice).</summary>
@@ -106,6 +113,9 @@ public enum SpawnCause
 }
 
 public sealed record MonsterMoved(int MonsterId, IReadOnlyList<GridPosition> Path) : GameEvent;
+
+/// <summary>A monster rolled banked Power Dice (<paramref name="Faces"/>) into its move, for <paramref name="Moves"/> in all.</summary>
+public sealed record MonsterSurged(int MonsterId, IReadOnlyList<int> Faces, int Moves) : GameEvent;
 
 public sealed record MonsterFrozen(int MonsterId, int Turns) : GameEvent;
 
@@ -248,6 +258,12 @@ public sealed record HeroAscended(int HeroId, string FromRoomId, string RoomId, 
 
 public sealed record HeroEscaped(int HeroId, int TreasureValue) : GameEvent;
 
+/// <summary>A hero got away from a fight on the Woarld Map; the monsters are still there.</summary>
+public sealed record HeroRetreated(int HeroId) : GameEvent;
+
+/// <summary>A retreat failed: the hero bolts in a panic (their Wend dice, <paramref name="Roll"/>), then falls flat.</summary>
+public sealed record Routed(int HeroId, DiceRoll Roll, int Steps) : GameEvent;
+
 /// <summary>The last monster in a room was defeated. A trap room's doors open again.</summary>
 public sealed record RoomCleared(string RoomId) : GameEvent;
 
@@ -337,6 +353,12 @@ public sealed record FireBurned(int EntityId, DiceRoll Roll, int FireDiceLeft) :
 
 /// <summary>A 6 on a burn roll spread the fire to a neighbor.</summary>
 public sealed record FireSpread(int FromId, int ToId, int FireDice) : GameEvent;
+
+/// <summary>The floor caught fire: <paramref name="Tiles"/> burn for <paramref name="Rounds"/> rounds.</summary>
+public sealed record FloorIgnited(string RoomId, IReadOnlyList<GridPosition> Tiles, int Rounds) : GameEvent;
+
+/// <summary>Burning floor burned out.</summary>
+public sealed record FloorBurnedOut(string RoomId, IReadOnlyList<GridPosition> Tiles) : GameEvent;
 
 /// <summary>A hero's or monster's fire went out.</summary>
 public sealed record FireOut(int EntityId, FireOutCause Cause) : GameEvent;
@@ -431,6 +453,21 @@ public sealed record DaggerThrown(int HeroId, int CardId, string RoomId, GridPos
 
 /// <summary>A cleaving blow (the Great Axe's 6) carried on into another monster beside the attacker.</summary>
 public sealed record Cleaved(int HeroId, int MonsterId) : GameEvent;
+
+/// <summary>A point went into a stat mid-run (a level gained in the dungeon); <paramref name="PointsLeft"/> remain.</summary>
+public sealed record PointSpent(int HeroId, StatKind Stat, int Level, int PointsLeft) : GameEvent;
+
+/// <summary>A player set how their companion manages its things.</summary>
+public sealed record CompanionPolicySet(int OwnerId, int CompanionId, CompanionPolicy Policy) : GameEvent;
+
+/// <summary>A 1 in a torch-lit attack burned the torch out: it's gone.</summary>
+public sealed record TorchBurnedOut(int HeroId, int CardId) : GameEvent;
+
+/// <summary>A monster's chain shackled a hero: no moving until the lock (<paramref name="Lock"/>+) is picked or a key frees them.</summary>
+public sealed record HeroShackled(int MonsterId, int HeroId, int Lock) : GameEvent;
+
+/// <summary>A hero's shackles came off: a key, or a picked lock (<paramref name="Picked"/>), by <paramref name="ById"/>.</summary>
+public sealed record HeroUnshackled(int HeroId, int ById, bool Picked) : GameEvent;
 
 /// <summary>A hero freed a chained merchant, with a key or a picked lock: they follow that hero now.</summary>
 public sealed record MerchantFreed(int HeroId, int MerchantId, bool Picked) : GameEvent;

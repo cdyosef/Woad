@@ -195,7 +195,7 @@ public sealed partial class GameSession
             events.Add(new BombExploded(room.Id, bomb.Id, center));
             BreakWalls(room, CrackedWallsIn(room, center, 1), events);
 
-            List<Monster> monsters = room.Monsters.Where(monster => monster.Position.ChebyshevDistanceTo(center) <= 1 && !Submerged(room, monster)).ToList();
+            List<Monster> monsters = room.Monsters.Where(monster => monster.NearestTile(center).ChebyshevDistanceTo(center) <= 1 && !Submerged(room, monster)).ToList();
             List<Hero> heroes = State.HeroesIn(room).Where(hero => hero.Position.ChebyshevDistanceTo(center) <= 1 && !Diving(room, hero)).ToList();
             DiceRoll roll = RollBlast(room, center, events);
             foreach (Monster monster in monsters)

@@ -121,6 +121,16 @@ public partial class DiceBar : Control
     }
 
     /// <summary>A draw (as in a game of Bones): neither side glows, and the latest answer is tagged TIE.</summary>
+    /// <summary>Recaptions the roller's side, to say what came of the roll (what was stolen, say).</summary>
+    public void Retitle(string caption)
+    {
+        if (_roller is not null)
+        {
+            _roller.Caption = caption;
+            QueueRedraw();
+        }
+    }
+
     public void ShowTie()
     {
         if (_defenders.Count > 0)
@@ -197,7 +207,7 @@ public partial class DiceBar : Control
         if (row.Verdict is { } verdict)
         {
             float tagX = alignRight ? box.Position.X : Math.Min(box.Position.X + font.GetStringSize(row.Caption, fontSize: UiTheme.FontSize).X + 3, box.End.X - verdictWidth);
-            Color color = verdict switch { "HIT" or "YOU LOSE" => Palette.Danger, "BLOCKED" => Palette.Block, "YOU WIN" => Palette.Heal, _ => Palette.TextDim };
+            Color color = verdict switch { "HIT" or "YOU LOSE" or "CAUGHT" => Palette.Danger, "STOLEN" => Palette.Loot, "BLOCKED" => Palette.Block, "YOU WIN" => Palette.Heal, _ => Palette.TextDim };
             DrawString(font, new Vector2(tagX, 8), verdict, fontSize: UiTheme.FontSize, modulate: color);
         }
 
@@ -342,7 +352,7 @@ public partial class DiceBar : Control
         /// <summary>Faces from this index on are Power Dice.</summary>
         public int PowerFrom { get; } = powerFrom;
 
-        public string Caption { get; } = caption;
+        public string Caption { get; set; } = caption;
 
         public int[] Faces { get; } = faces;
 

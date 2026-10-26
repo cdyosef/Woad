@@ -11,6 +11,7 @@ public class PointBuyAndProgressionTests
         var allocation = new StatAllocation { Hearts = 2, Speed = 1, AttackDice = 1, DefenseDice = 1, Luck = 1 };
 
         Assert.Equal(2 * 1 + 1 * 2 + 1 * 3 + 1 * 3 + 1 * 1, PointBuy.Cost(allocation));
+        Assert.Equal(2, PointBuy.CostPerStep(StatKind.OdHandDice));
     }
 
     [Fact]
@@ -27,8 +28,9 @@ public class PointBuyAndProgressionTests
     [Theory]
     [InlineData(6, 0, 0, null)]
     [InlineData(7, 0, 0, "Not enough points")]
-    [InlineData(0, 2, 0, "at most 1 Rumble")]
-    [InlineData(0, 0, 2, "at most 1 Rumble")]
+    [InlineData(0, 2, 0, null)]
+    [InlineData(0, 0, 2, null)]
+    [InlineData(0, 3, 0, "Not enough points")]
     [InlineData(-1, 0, 0, "below")]
     public void CreationSpendingIsLimited(int hearts, int attack, int defense, string? problem)
     {
@@ -49,10 +51,10 @@ public class PointBuyAndProgressionTests
     [Fact]
     public void TheDiceLimitOnlyAppliesAtLevelOne()
     {
-        var allocation = new StatAllocation { AttackDice = 2 };
+        var allocation = new StatAllocation { OdHandDice = 3 };
 
-        Assert.NotNull(PointBuy.Check(allocation, level: 1, budget: 10));
-        Assert.Null(PointBuy.Check(allocation, level: 2, budget: 10));
+        Assert.Contains("at most 2", PointBuy.Check(allocation, level: 1, PointBuy.CreationPoints));
+        Assert.Null(PointBuy.Check(allocation, level: 2, PointBuy.CreationPoints));
     }
 
     [Fact]

@@ -49,6 +49,12 @@ public enum OdHandCheckKind
 
     /// <summary>Pick the lock of the chains holding a merchant beside you.</summary>
     PickChains,
+
+    /// <summary>Pick the lock of the shackles on yourself or an ally beside you.</summary>
+    PickShackles,
+
+    /// <summary>Find a way out of a fight on the Woarld Map (a contest against the monsters' chase).</summary>
+    Retreat,
 }
 
 /// <summary>
@@ -106,6 +112,12 @@ public sealed class PendingRoll
 
     /// <summary>The tools (lockpicks) went into this roll: if it fails with a 1 among its non-Power dice, a pick snaps.</summary>
     public bool UsedTools { get; internal init; }
+
+    /// <summary>Torches' fire dice went into this attack: a 1 anywhere in it burns one out.</summary>
+    public int Torches { get; internal init; }
+
+    /// <summary>A torch's fire die came up 6: on a hit, the target catches fire.</summary>
+    public bool TorchSix { get; internal init; }
 }
 
 /// <summary>
