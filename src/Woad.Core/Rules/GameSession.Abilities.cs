@@ -28,7 +28,8 @@ public sealed partial class GameSession
     }
 
     private string? CheckHeld(Hero hero) =>
-        HeldBy(hero) is { } holder ? $"The {holder.Definition.Name} has hold of you: hurt it, shove it or stun it to break free." : null;
+        hero.Shackled is int lockDifficulty ? $"You're in shackles: use a key, or pick the lock with Od Hand ({lockDifficulty}+). An ally beside you can too."
+        : HeldBy(hero) is { } holder ? $"The {holder.Definition.Name} has hold of you: hurt it, shove it or stun it to break free." : null;
 
     /// <summary>Being hurt makes a monster let go of whoever it holds.</summary>
     private void LetGo(Monster monster)
@@ -76,7 +77,8 @@ public sealed partial class GameSession
     private void KnockBack(Room room, Monster monster, Hero hero, int tiles, List<GameEvent> events)
     {
         GridPosition from = hero.Position;
-        int dx = Math.Sign(from.X - monster.Position.X), dy = Math.Sign(from.Y - monster.Position.Y);
+        GridPosition near = monster.NearestTile(from);
+        int dx = Math.Sign(from.X - near.X), dy = Math.Sign(from.Y - near.Y);
         GridPosition to = from;
         for (int moved = 0; moved < tiles && (dx, dy) != (0, 0); moved++)
         {

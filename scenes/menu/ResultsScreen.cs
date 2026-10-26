@@ -24,13 +24,9 @@ public partial class ResultsScreen : MenuScreen
     /// <summary>Shown when saving failed, so the player knows their progress may be missing.</summary>
     public string? SaveProblem { get; init; }
 
-    public event Action? PlayAgainRequested;
-
     public event Action? DoneRequested;
 
     internal Button DoneButton { get; private set; } = null!;
-
-    internal Button PlayAgainButton { get; private set; } = null!;
 
     public override void _Ready()
     {
@@ -57,8 +53,6 @@ public partial class ResultsScreen : MenuScreen
             AddRow(Rows[i], i * RowHeight);
         }
 
-        PlayAgainButton = Add(UiTheme.Button(new Vector2(408, 316), new Vector2(102, 26), "Play again"));
-        PlayAgainButton.Pressed += () => PlayAgainRequested?.Invoke();
         DoneButton = Add(UiTheme.Button(new Vector2(516, 316), new Vector2(102, 26), "Done"));
         DoneButton.Pressed += () => DoneRequested?.Invoke();
     }
@@ -72,6 +66,7 @@ public partial class ResultsScreen : MenuScreen
         Put(UiTheme.Label(new Vector2(50, top + 5), new Vector2(200, 18), result.Name, 14, Palette.Seat(result.Seat)));
         string outcome = result.Status switch
         {
+            HeroStatus.Escaped when result.Retreated => "Got away",
             HeroStatus.Escaped => $"Escaped with {result.Gold} gold",
             HeroStatus.Dead => $"Died on floor {result.DeepestFloor}{(result.Epitaph is { } epitaph ? $": {epitaph}" : "")}",
             HeroStatus.Active or HeroStatus.KeelingOver => $"Left behind on floor {result.DeepestFloor}",

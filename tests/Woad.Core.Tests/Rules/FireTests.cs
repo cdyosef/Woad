@@ -348,4 +348,82 @@ public class ProneTests
 
         Assert.Empty(events.OfType<AttackRolled>());
     }
+    /// <summary>The hero at (4,4), a dummy well off at (6,7).</summary>
+    private const string FloorRoom = """
+        .........
+        .........
+        .........
+        .........
+        ....1....
+        .........
+        .........
+        ......d..
+        .........
+        """;
+
+    [Fact]
+    public void FireAimedAtBareFloorSetsItBurningForThreeRounds()
+    {
+        GameSession session = TestRun.Start(FloorRoom, cards: ["firebolt"]);
+        Hero hero = session.HeroInSeat();
+        var floor = new GridPosition(5, 4);
+
+        IReadOnlyList<GameEvent> events = session.Do(new UseCard(hero.Id, hero.Card("firebolt").Id, floor));
+
+        Assert.Equal(new FloorIgnited("A", [floor], GameRules.FlameRounds), events.SingleOf<FloorIgnited>(), new FloorComparer());
+        Room room = session.RoomById();
+        session.EndRound();
+        session.EndRound();
+        Assert.True(room.IsBurning(floor));
+        Assert.Contains(session.EndRound(), gameEvent => gameEvent is FloorBurnedOut);
+        Assert.False(room.IsBurning(floor));
+    }
+
+    [Fact]
+    public void WalkingThroughBurningFloorSetsAHeroAlight()
+    {
+        GameSession session = TestRun.Start(FloorRoom, new ScriptedDice(3), cards: ["firebolt"]);
+        Hero hero = session.HeroInSeat();
+        session.Do(new UseCard(hero.Id, hero.Card("firebolt").Id, new GridPosition(5, 4)));
+
+        session.Do(new RollMovement(hero.Id));
+        IReadOnlyList<GameEvent> events = session.Do(new MoveHero(hero.Id, new GridPosition(6, 4)));
+
+        Assert.Equal(1, hero.FireDice);
+        Assert.Single(events.OfType<Ignited>());
+    }
+
+    [Fact]
+    public void MonstersKeepOffBurningFloor()
+    {
+        // The grunt (2 moves) at (4,1) would walk straight down to the hero at (4,4); (4,2) is burning.
+        GameSession session = TestRun.Start("""
+            .........
+            ....m....
+            .........
+            .........
+            ....1....
+            .........
+            .........
+            .........
+            .........
+            """, new ScriptedDice([.. Enumerable.Repeat(1, 10)]), cards: ["firebolt"]);
+        Hero hero = session.HeroInSeat();
+        session.Do(new UseCard(hero.Id, hero.Card("firebolt").Id, new GridPosition(4, 2)));
+
+        session.EndRound();
+
+        Monster grunt = session.OnlyMonster();
+        Assert.False(session.RoomById().IsBurning(grunt.Position));
+        Assert.Equal(0, grunt.FireDice);
+    }
+
+    /// <summary>Compares floor fires by value (their tile lists are lists).</summary>
+    private sealed class FloorComparer : IEqualityComparer<FloorIgnited>
+    {
+        public bool Equals(FloorIgnited? x, FloorIgnited? y) =>
+            x is not null && y is not null && x.RoomId == y.RoomId && x.Rounds == y.Rounds && x.Tiles.SequenceEqual(y.Tiles);
+
+        public int GetHashCode(FloorIgnited obj) => obj.RoomId.GetHashCode();
+    }
 }

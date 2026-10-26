@@ -10,7 +10,7 @@ public static class PointBuy
     public const int CreationPoints = 6;
 
     /// <summary>Extra Rumble, Defense or Od Hand dice a level 1 character may buy (each).</summary>
-    public const int LevelOneDiceLimit = 1;
+    public const int LevelOneDiceLimit = 2;
 
     public static IReadOnlyList<StatKind> AllStats { get; } = Enum.GetValues<StatKind>();
 
@@ -20,8 +20,20 @@ public static class PointBuy
         StatKind.Speed => 2,
         StatKind.AttackDice => 3,
         StatKind.DefenseDice => 3,
-        StatKind.OdHandDice => 3,
+        StatKind.OdHandDice => 2,
         StatKind.Luck => 1,
+        _ => throw new ArgumentOutOfRangeException(nameof(stat)),
+    };
+
+    /// <summary>What one step of a stat adds to the hero's stats.</summary>
+    public static Stats StepOf(StatKind stat) => stat switch
+    {
+        StatKind.Hearts => new Stats { Hearts = 1 },
+        StatKind.Speed => new Stats { Speed = 1 },
+        StatKind.AttackDice => new Stats { AttackDice = 1 },
+        StatKind.DefenseDice => new Stats { DefenseDice = 1 },
+        StatKind.OdHandDice => new Stats { OdHandDice = 1 },
+        StatKind.Luck => new Stats { Luck = 1 },
         _ => throw new ArgumentOutOfRangeException(nameof(stat)),
     };
 
@@ -55,7 +67,7 @@ public static class PointBuy
         if (level <= 1 && (allocation.AttackDice > LevelOneDiceLimit || allocation.DefenseDice > LevelOneDiceLimit
                            || allocation.OdHandDice > LevelOneDiceLimit))
         {
-            return $"At level 1 you can add at most {LevelOneDiceLimit} Rumble, Defense and Od Hand die each.";
+            return $"At level 1 you can add at most {LevelOneDiceLimit} Rumble, Defense and Od Hand dice each.";
         }
 
         return null;

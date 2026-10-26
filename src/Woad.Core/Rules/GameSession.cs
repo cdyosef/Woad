@@ -42,7 +42,7 @@ public sealed partial class GameSession
     public int AttackDiceLeft => State.Turn is { } turn ? Math.Max(0, ActiveHero.EffectiveStats.AttackDice - turn.AttackDiceUsed) : 0;
 
     /// <summary>Move dice the active hero hasn't used this turn.</summary>
-    public int MoveDiceLeft => State.Turn is { } turn ? Math.Max(0, ActiveHero.EffectiveStats.MoveDice + turn.ExtraMoveDice - turn.MoveDiceUsed) : 0;
+    public int MoveDiceLeft => State.Turn is { } turn && ActiveHero.Shackled is null ? Math.Max(0, ActiveHero.EffectiveStats.MoveDice + turn.ExtraMoveDice - turn.MoveDiceUsed) : 0;
 
     /// <summary>The tools' own dice the active hero can still add to a lock-picking roll this turn (a lockpick's d6).</summary>
     public int ToolDiceLeft => State.Turn is { ToolsUsed: false } ? Math.Max(0, ActiveHero.EffectiveStats.ToolDice) : 0;
@@ -115,6 +115,10 @@ public sealed partial class GameSession
             EquipCard c => Handle(c, events),
             ReloadWeapon c => Handle(c, events),
             FreeMerchant c => Handle(c, events),
+            Unshackle c => Handle(c, events),
+            Retreat c => Handle(c, events),
+            SpendPoint c => Handle(c, events),
+            SetCompanionPolicy c => Handle(c, events),
             BuyFromMerchant c => Handle(c, events),
             SellToMerchant c => Handle(c, events),
             AttackMerchant c => Handle(c, events),
@@ -167,6 +171,7 @@ public sealed partial class GameSession
         if (State.Phase == RunPhase.InProgress)
         {
             DouseEveryoneInWater(events);
+            CatchFireFromFloor(events);
         }
 
         foreach (Hero hero in State.Heroes.Where(hero => hero.IsActive && State.RoomOf(hero).Layout[hero.Position].IsWalkable()))
@@ -260,6 +265,7 @@ public sealed partial class GameSession
 
     private void StartRound(List<GameEvent> events)
     {
+        BurnDownFloors(events);
         State.Round++;
         events.Add(new RoundStarted(State.Round));
         StartTurn(State.Heroes.First(hero => hero.IsInPlay), events);
@@ -300,7 +306,7 @@ public sealed partial class GameSession
             companion.Gold = 0;
         }
 
-        List<Hero> escaped = State.Heroes.Where(hero => hero.Status == HeroStatus.Escaped && !hero.IsCompanion).ToList();
+        List<Hero> escaped = State.Heroes.Where(hero => hero.Status == HeroStatus.Escaped && !hero.IsCompanion && !State.RetreatedIds.Contains(hero.Id)).ToList();
         List<int> winners = [];
         if (escaped.Count > 0)
         {
@@ -407,7 +413,13 @@ public sealed partial class GameSession
                 OwnerId = ownerId,
                 PlayerNumber = ownerId is null ? state.Heroes.Count(other => !other.IsCompanion) + 1 : 0,
                 GuildStanding = heroSetup.GuildStanding,
+                StartAllocation = heroSetup.Allocation,
+                Allocation = heroSetup.Allocation,
+                StartXp = heroSetup.Xp,
+                StartUnspentPoints = heroSetup.UnspentPoints,
+                Policy = heroSetup.Policy ?? CompanionPolicy.Default,
             };
+            hero.Power.Banked = Math.Clamp(heroSetup.PowerDice, 0, GameRules.MaxBankedPowerDice);
             state.AddHero(hero);
 
             foreach (string cardId in heroSetup.CardIds)

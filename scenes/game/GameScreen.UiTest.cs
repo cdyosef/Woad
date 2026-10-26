@@ -517,6 +517,48 @@ public partial class GameScreen
     }
 
     /// <summary>
+    /// Debug mode (<c>-- --spelltest</c>, with <see cref="DemoRun.Spells"/>): Aria freezes one slime with
+    /// her Frost Wand and burns the other with her Flame Scroll, by selecting each, pressing Use and
+    /// clicking the slime.
+    /// </summary>
+    private async void RunSpellTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            Room study = ShownRoom;
+            Monster first = study.MonsterAt(new GridPosition(3, 3))!, second = study.MonsterAt(new GridPosition(3, 5))!;
+
+            CardInstance wand = aria.AllCards.Single(card => card.Definition.Id == "frost_wand");
+            await Click(this, _heroPanel.EquipmentSlot(EquipSlot.OffHand));
+            Check(_selectedCardId == wand.Id, "clicking the off-hand slot selects the Frost Wand");
+            await Click(this, _inventory.ActionButton(CardAction.Use));
+            Check(_targeting, $"Use enters targeting ({_inventory.ActionButton(CardAction.Use).TooltipText})");
+            await ClickTile(first.Position);
+            await WaitUntilIdle();
+            Check(first.FrozenTurns > 0, "clicking the slime freezes it");
+
+            CardInstance scroll = aria.Belt.Single(card => card.Definition.Id == "flame_scroll");
+            await Click(this, _inventory.BeltSlot(aria.Belt.ToList().IndexOf(scroll)));
+            await Click(this, _inventory.ActionButton(CardAction.Use));
+            Check(_targeting, $"Use enters targeting for the scroll ({_inventory.ActionButton(CardAction.Use).TooltipText})");
+            await ClickTile(second.Position);
+            await WaitUntilIdle();
+            await ConfirmIfHeld();
+            Check(aria.FindCard(scroll.Id) is null, "clicking the other slime burns it with the scroll, which is used up");
+
+            GD.Print("Spell test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Spell test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
+    /// <summary>
     /// Debug mode (<c>-- --monstertest</c>, with <see cref="DemoRun.Menagerie"/>): clicking the chest
     /// beside Aria wakes a Mimic in its place, whose grab (when it lands) shuts off Wend; then a few
     /// rounds of the new monsters acting on the board, the Necromancer raising the dead among them.
@@ -705,6 +747,119 @@ public partial class GameScreen
             Sfx.QuitGame(this, 1);
         }
     }
+
+    /// <summary>
+    /// Debug mode (<c>-- --companiontest</c>, with <see cref="DemoRun.Escort"/>): Aria orders Pip to
+    /// Fight from the Orders panel and ends her turns; Pip walks over to the slime and attacks it.
+    /// </summary>
+    private async void RunCompanionTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            Hero pip = _session.State.Heroes.Single(hero => hero.Name == "Pip");
+            await Click(this, _orders);
+            await Click(this, OrderButton(0, CompanionOrder.Fight));
+            await WaitUntilIdle();
+            Check(pip.Order == CompanionOrder.Fight, "the Fight order button gives the order");
+
+            bool attacked = false;
+            CommandPlayed += (command, _) => attacked |= command is AttackMonster && command.HeroId == pip.Id;
+            for (int round = 0; round < 8 && !attacked && _session.State.Phase == RunPhase.InProgress; round++)
+            {
+                await Click(this, _endTurn);
+                await WaitFor(this, () => ActiveHero == aria && !_busy || _session.State.Phase != RunPhase.InProgress, "Pip's turn and the slime's to pass");
+                await WaitUntilIdle();
+            }
+
+            Check(attacked, $"Pip attacks the slime (Pip at {pip.Position}, {_session.State.Rooms["yard"].Monsters.FirstOrDefault()?.ToString() ?? "no slime"})");
+            GD.Print("Companion test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Companion test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
+    /// <summary>
+    /// Debug mode (<c>-- --partytest</c>, with <see cref="DemoRun.PartyCheck"/>): Aria opens the Party menu,
+    /// spends her point on a heart, and tells Pip to pick up loot.
+    /// </summary>
+    private async void RunPartyTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            Hero pip = _session.State.Heroes.Single(hero => hero.Name == "Pip");
+            Check(_partyButton.Text == "Party!", "the Party button says when there's a point to spend");
+            await Click(this, _partyButton);
+            Check(_party.Visible, "the Party button opens the Party menu");
+
+            int max = aria.MaxHearts;
+            await Click(this, _party.Find($"Spend{aria.Id}Hearts")!);
+            await WaitUntilIdle();
+            Check(aria.MaxHearts == max + 1 && aria.PointsToSpend == 0, "spending the point on a heart raises her hearts");
+
+            await Click(this, _party.Find($"Policy{pip.Id}Loot")!);
+            await WaitUntilIdle();
+            Check(pip.Policy.PicksUpLoot, "the Loot switch tells Pip to pick up loot");
+
+            await Click(this, _party.Find("Close")!);
+            Check(!_party.Visible, "Close puts the Party menu away");
+            GD.Print("Party test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Party test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
+    /// <summary>
+    /// Debug mode (<c>-- --bosstest</c>, with <see cref="DemoRun.BossRoom"/>): Aria orders Pip to Fight in the
+    /// Iron Warden's room and ends her turns; the Warden and Pip both have to act where they can be seen.
+    /// </summary>
+    private async void RunBossTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            Hero pip = _session.State.Heroes.Single(hero => hero.Name == "Pip");
+            await Click(this, _orders);
+            await Click(this, OrderButton(0, CompanionOrder.Fight));
+            await WaitUntilIdle();
+
+            int pipAttacks = 0, monsterAttacks = 0;
+            CommandPlayed += (command, _) => pipAttacks += command is AttackMonster && command.HeroId == pip.Id ? 1 : 0;
+            for (int round = 0; round < 4 && _session.State.Phase == RunPhase.InProgress; round++)
+            {
+                int before = _session.State.Round;
+                await Click(this, _endTurn);
+                await WaitFor(this, () => (ActiveHero == aria && !_busy) || _session.State.Phase != RunPhase.InProgress, "the round to come back to Aria");
+                await WaitUntilIdle();
+                monsterAttacks += _session.State.Round - before;
+            }
+
+            GD.Print($"Boss test: Pip attacked {pipAttacks} times; Pip at {pip.Position}, Aria at {aria.Position}; {string.Join(", ", ShownRoom.Monsters)}.");
+            Check(pipAttacks > 0, "Pip attacks in the boss room");
+            GD.Print("Boss test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Boss test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
+    /// <summary>The Od Hand button: Search in a dungeon, Retreat out on the Woarld Map.</summary>
+    internal Button SearchButton => _search;
 
     private async Task PressKey(Key key)
     {

@@ -253,7 +253,7 @@ public sealed partial class GameSession
         if (weapon.Cleave && sixes > 0)
         {
             List<Monster> beside = room.Monsters
-                .Where(monster => !attack.TargetIds.Contains(monster.Id) && monster.Position.ChebyshevDistanceTo(hero.Position) <= 1)
+                .Where(monster => !attack.TargetIds.Contains(monster.Id) && monster.NearestTile(hero.Position).ChebyshevDistanceTo(hero.Position) <= 1)
                 .OrderBy(monster => monster.Hearts)
                 .ThenBy(monster => monster.Id)
                 .Take(sixes)

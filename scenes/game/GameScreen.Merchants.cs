@@ -151,7 +151,16 @@ public partial class GameScreen
                 await RemoveFigure(rescued.MerchantId);
                 return true;
 
-            case MerchantTraded or MerchantRobbed:
+            case MerchantRobbed { Caught: true }:
+                _dice.ShowOutcome(false, "CAUGHT");
+                return true;
+
+            case MerchantRobbed robbed:
+                _dice.ShowOutcome(true, "STOLEN");
+                _dice.Retitle($"{NameOf(robbed.HeroId)} steals {(robbed.CardId is { } taken ? $"the {Content.GetCard(taken).Name}" : "something")}");
+                return true;
+
+            case MerchantTraded:
                 return true;
 
             default:

@@ -364,6 +364,16 @@ public sealed class ContentCatalog
             errors.Add($"{name} sweep needs a radius and every of at least 1.");
         }
 
+        if (monster.Chain is { Range: < 2 } or { Dice: < 1 } or { Lock: < 1 })
+        {
+            errors.Add($"{name} chain needs a range of at least 2, and dice and a lock of at least 1.");
+        }
+
+        if (monster.ExtraDefenseDice < 0 || (monster.Arc && monster.Size > 1))
+        {
+            errors.Add($"{name} can't have negative extra defense dice, and a huge monster can't swing in an arc.");
+        }
+
         if (monster.DropChance is < 0 or > 100 || monster.Drops < 1)
         {
             errors.Add($"{name} dropChance must be 0-100 and drops at least 1.");

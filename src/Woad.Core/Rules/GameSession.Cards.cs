@@ -113,6 +113,11 @@ public sealed partial class GameSession
                 {
                     RollHeroAttack(hero, effect.Amount, 0, caught, SourceOf(card.Definition), events, fire: effect.Fire);
                 }
+                else if (effect.Fire)
+                {
+                    // Fire aimed at bare floor sets it burning.
+                    SetFloorAlight(room, [.. room.Positions.Where(tile => tile.ChebyshevDistanceTo(command.Target!.Value) <= effect.AreaRadius)], events, hero);
+                }
 
                 break;
 
@@ -320,6 +325,12 @@ public sealed partial class GameSession
 
         // A stack of Daggers held in one hand, equipped again: one of them goes to the other hand.
         if (card.Count > 1 && card.Definition.OffHandStrike && hero.SlotOf(card) is { } holding && hand is { } other && other != holding)
+        {
+            card = card.Split(State.NextId(), 1);
+        }
+
+        // Torches go one to a hand: the rest of the stack stays where it was.
+        if (card.Count > 1 && card.Definition.Torch)
         {
             card = card.Split(State.NextId(), 1);
         }
@@ -807,12 +818,12 @@ public sealed partial class GameSession
                 // Fire may be aimed at a bomb, to set it off.
                 if (effect.Fire && room.BombAt(attackTile) is not null)
                 {
-                    targets = room.Monsters.Where(monster => monster.Position.ChebyshevDistanceTo(attackTile) <= effect.AreaRadius).ToList();
+                    targets = room.Monsters.Where(monster => monster.NearestTile(attackTile).ChebyshevDistanceTo(attackTile) <= effect.AreaRadius).ToList();
                     return null;
                 }
 
-                targets = room.Monsters.Where(monster => monster.Position.ChebyshevDistanceTo(attackTile) <= effect.AreaRadius && SpellReaches(hero, room, monster)).ToList();
-                if (targets.Count == 0 && room.Monsters.Any(monster => monster.Position.ChebyshevDistanceTo(attackTile) <= effect.AreaRadius))
+                targets = room.Monsters.Where(monster => monster.NearestTile(attackTile).ChebyshevDistanceTo(attackTile) <= effect.AreaRadius && SpellReaches(hero, room, monster)).ToList();
+                if (targets.Count == 0 && room.Monsters.Any(monster => monster.NearestTile(attackTile).ChebyshevDistanceTo(attackTile) <= effect.AreaRadius))
                 {
                     return "It's under the water, out of reach.";
                 }
@@ -822,7 +833,10 @@ public sealed partial class GameSession
                     return null;
                 }
 
-                return targets.Count == 0 ? "There are no monsters there." : null;
+                // Fire can be aimed at bare floor, to set it burning.
+                return targets.Count > 0 || (effect.Fire && CanBurn(room, attackTile)) ? null
+                    : effect.Fire ? "Nothing there will burn."
+                    : "There are no monsters there.";
 
             case CardEffectKind.Freeze:
                 if (target is not { } stunTile || room.MonsterAt(stunTile) is not { Collapsed: false } monster)

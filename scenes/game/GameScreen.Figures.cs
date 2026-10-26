@@ -46,6 +46,8 @@ public partial class GameScreen
                 StunMarks = hero.Stun.Stacks + 3 * hero.Stun.PowerfulStacks,
                 Prone = hero.Prone,
                 Diving = _session.IsDiving(hero),
+                Chained = hero.Shackled is not null,
+                Torch = hero.TorchesHeld > 0,
             };
         }
 
@@ -128,10 +130,13 @@ public partial class GameScreen
         token.FireDice = figure.FireDice;
         token.StunMarks = figure.StunMarks;
         token.CarriesLoot = figure.CarriesLoot;
+        token.Torch = figure.Torch;
         token.Chained = figure.Chained;
         token.Prone = figure.Prone;
         token.Diving = figure.Diving;
-        token.Active = figure.Id == ActiveHero?.Id;
+        token.Active = figure.Id == TurnOnShow?.Id;
+        // The active hero (and the arrow over their head) is drawn over their neighbors.
+        token.ZIndex = figure.Id == TurnOnShow?.Id ? 1 : 0;
     }
 
     private string? FigureRoom(int entityId) => _figures.TryGetValue(entityId, out Figure? figure) ? figure.RoomId : null;
@@ -380,6 +385,8 @@ public partial class GameScreen
         public int StunMarks { get; set; }
 
         public bool CarriesLoot { get; set; }
+
+        public bool Torch { get; set; }
 
         /// <summary>A merchant still chained to the wall.</summary>
         public bool Chained { get; set; }

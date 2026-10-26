@@ -179,7 +179,7 @@ public sealed partial class GameSession
         (DiceRoll roll, int powerDice) = RollMonsterDice(monster.AttackDiceThisTurn + ProneBonus(keeler, monster.Position));
         int total = roll.Total + definition.Weapon;
         events.Add(new AttackRolled(monster.Id, roll, definition.Weapon, total, [keeler.Id], powerDice));
-        DamageHero(room, keeler, total, MonsterBane(monster), monster.Id, events, ranged: keeler.Position.ChebyshevDistanceTo(monster.Position) > 1);
+        DamageHero(room, keeler, total, MonsterBane(monster), monster.Id, events, ranged: keeler.Position.ChebyshevDistanceTo(monster.NearestTile(keeler.Position)) > 1);
         IgniteFromMonster(monster, [keeler], roll, events);
     }
 

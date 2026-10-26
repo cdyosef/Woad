@@ -17,12 +17,14 @@ public partial class TokenView : Node2D
     private int _hearts;
     private int _maxHearts;
     private bool _active;
+    private float _time;
     private bool _frozen;
     private bool _collapsed;
     private (int Life, int Death)? _keeling;
     private int _fireDice;
     private int _stunMarks;
     private bool _carriesLoot;
+    private bool _torch;
     private bool _prone;
     private bool _diving;
 
@@ -84,6 +86,12 @@ public partial class TokenView : Node2D
         set { _carriesLoot = value; QueueRedraw(); }
     }
 
+    /// <summary>Holding a lit torch: a warm glow around them, and a flame at the hand.</summary>
+    public bool Torch
+    {
+        set { _torch = value; QueueRedraw(); }
+    }
+
     /// <summary>A merchant chained to the wall: a shackle and chain at their feet.</summary>
     public bool Chained
     {
@@ -124,6 +132,18 @@ public partial class TokenView : Node2D
 
     public override void _Process(double delta)
     {
+        if (_torch && !_active)
+        {
+            _time += (float)delta;
+            QueueRedraw();
+        }
+
+        if (_active)
+        {
+            _time += (float)delta;
+            QueueRedraw();
+        }
+
         // A swimmer goes under as it moves into deep water and comes up out of it.
         bool submerged = Swimmer && !_collapsed && GetParent() is BoardView board && board.IsDeepWater(Tile);
         if (submerged != _submerged)
@@ -135,6 +155,17 @@ public partial class TokenView : Node2D
 
     public override void _Draw()
     {
+        if (_torch)
+        {
+            // The light the torch throws, flickering, under everything else.
+            float flicker = 0.04f * Mathf.Sin(_time * 11) + 0.03f * Mathf.Sin(_time * 7.3f);
+            var middle = new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f);
+            for (int ring = 3; ring >= 1; ring--)
+            {
+                DrawCircle(middle, 16 + ring * 10, Palette.FireCore with { A = 0.05f + flicker * 0.5f }, antialiased: true);
+            }
+        }
+
         if ((Look is not null && Looks.Strip(Look.Look) is not null) || Body is not null)
         {
             DrawSprite();
@@ -177,6 +208,27 @@ public partial class TokenView : Node2D
             {
                 DrawArc(new Vector2(BoardView.TileSize / 2f - 5 - link * 4, 26), 2, 0, Mathf.Tau, 8, iron, 1);
             }
+        }
+
+        if (_torch)
+        {
+            // The torch's flame at their hand.
+            var hand = new Vector2(BoardView.TileSize - 7, 15);
+            float lick = 1.5f * Mathf.Sin(_time * 13);
+            DrawColoredPolygon([hand + new Vector2(-3, 0), hand + new Vector2(3, 0), hand + new Vector2(0.5f, -8 - lick)], Palette.Fire);
+            DrawColoredPolygon([hand + new Vector2(-1.5f, 0), hand + new Vector2(1.5f, 0), hand + new Vector2(0, -4 - lick / 2)], Palette.FireCore);
+            DrawLine(hand, hand + new Vector2(-2, 6), new Color(0.45f, 0.3f, 0.18f), 2);
+        }
+
+        if (_active)
+        {
+            // Whose turn it is: a gold arrow bobbing over their head.
+            float bob = 2 * Mathf.Sin(_time * 5);
+            var tip = new Vector2(BoardView.TileSize / 2f, -1 + bob);
+            Vector2[] arrow = [tip, tip + new Vector2(-5, -6), tip + new Vector2(5, -6)];
+            Vector2[] outline = [tip + new Vector2(0, 1.5f), tip + new Vector2(-6.5f, -7), tip + new Vector2(6.5f, -7)];
+            DrawColoredPolygon(outline, Palette.Ink);
+            DrawColoredPolygon(arrow, Palette.TrimBright);
         }
 
         if (_carriesLoot)

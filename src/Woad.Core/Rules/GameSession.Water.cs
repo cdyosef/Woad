@@ -21,7 +21,7 @@ public sealed partial class GameSession
 
     /// <summary>A spell reaches a monster unless it's submerged and not right beside the caster.</summary>
     private static bool SpellReaches(Hero hero, Room room, Monster monster) =>
-        !Submerged(room, monster) || monster.Position.ChebyshevDistanceTo(hero.Position) <= 1;
+        !Submerged(room, monster) || monster.NearestTile(hero.Position).ChebyshevDistanceTo(hero.Position) <= 1;
 
     /// <summary>A monster's armor: none while a shelled one lies flipped on its back.</summary>
     private static int ArmorOf(Monster monster) =>

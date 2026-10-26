@@ -144,6 +144,22 @@ public partial class Main : Control
         {
             Show(new GameScreen { Setup = DemoRun.Camp(seed), Content = _content });
         }
+        else if (args.Contains("--bosstest"))
+        {
+            Show(new GameScreen { Setup = DemoRun.BossRoom(seed), Content = _content });
+        }
+        else if (args.Contains("--partytest"))
+        {
+            Show(new GameScreen { Setup = DemoRun.PartyCheck(seed), Content = _content });
+        }
+        else if (args.Contains("--companiontest"))
+        {
+            Show(new GameScreen { Setup = DemoRun.Escort(seed), Content = _content });
+        }
+        else if (args.Contains("--spelltest"))
+        {
+            Show(new GameScreen { Setup = DemoRun.Spells(seed), Content = _content });
+        }
         else if (args.Contains("--encountertest"))
         {
             RunEncounterTest();
@@ -627,6 +643,12 @@ public partial class Main : Control
             World = world,
             Content = _content,
         };
+        screen.LevelUpRequested += character =>
+        {
+            SaveMapProgress();
+            SaveRaidWorld();
+            ShowEditor(character, ShowWoarldMap);
+        };
         screen.FightRequested += spec =>
         {
             SaveMapProgress();
@@ -895,6 +917,25 @@ public partial class Main : Control
         }
 
         RaidWorld world = LoadRaidWorld();
+        if (results.All(result => result.Status != Woad.Core.Model.HeroStatus.Escaped || result.Retreated))
+        {
+            // Everyone left standing got away: the fight is still there, and the party back the way it came.
+            if (fight.CameFrom is { } came)
+            {
+                world.Journey.Step(came.Opposite());
+            }
+
+            foreach (Character hero in party)
+            {
+                hero.ChangeStanding(cowards: 1);
+                _ = _characters.SaveAsync(hero);
+            }
+
+            SaveRaidWorld();
+            _woarldNews = $"You got away. {fight.Title.Split(':').Last().Trim()} is still out there. (Cowards +1)";
+            return;
+        }
+
         WoarldDangers dangers = world.Dangers(_content);
         var news = new List<string>();
         switch (fight.Kind)
@@ -1005,18 +1046,6 @@ public partial class Main : Control
             else
             {
                 ShowRunSetup();
-            }
-        };
-        screen.PlayAgainRequested += () =>
-        {
-            ulong seed = (ulong)DateTime.UtcNow.Ticks;
-            if (party.Count > 0)
-            {
-                StartRun(party, seed, setup.FriendlyFire, setup.ThemeId);
-            }
-            else
-            {
-                ShowGame(DungeonGenerator.CreateRun(_content, setup.ThemeId, setup.Heroes, seed) with { FriendlyFire = setup.FriendlyFire }, party);
             }
         };
         Show(screen);

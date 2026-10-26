@@ -1,3 +1,4 @@
+using Woad.Core.Characters;
 using Woad.Core.Content;
 using Woad.Core.Dungeon;
 using Woad.Core.Grid;
@@ -22,7 +23,12 @@ public sealed record HeroSetup(
     int? OwnerSeat = null,
     Appearance? Appearance = null,
     int? Hearts = null,
-    int GuildStanding = 0);
+    int GuildStanding = 0,
+    int PowerDice = 0,
+    StatAllocation? Allocation = null,
+    int Xp = 0,
+    int UnspentPoints = 0,
+    CompanionPolicy? Policy = null);
 
 /// <summary>A merchant chained up in a room, the Od Hand needed to pick the lock of their chains, and their name.</summary>
 public sealed record MerchantSetup(GridPosition Position, int LockDifficulty, string Name);

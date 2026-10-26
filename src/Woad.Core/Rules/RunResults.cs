@@ -1,3 +1,4 @@
+using Woad.Core.Characters;
 using Woad.Core.Content;
 using Woad.Core.Model;
 
@@ -37,6 +38,18 @@ public sealed record HeroRunResult
 
     /// <summary>The hearts the hero ended the run with (0 if they fell).</summary>
     public int Hearts { get; init; }
+
+    /// <summary>The points bought by the end of the run (counting any spent in it); null for a debug hero.</summary>
+    public StatAllocation? Allocation { get; init; }
+
+    /// <summary>The companion policy it ended the run with.</summary>
+    public CompanionPolicy? Policy { get; init; }
+
+    /// <summary>They retreated from a fight on the Woarld Map (off the field, but it isn't won).</summary>
+    public bool Retreated { get; init; }
+
+    /// <summary>Power Dice the hero still had banked, carried into their next run.</summary>
+    public int PowerDice { get; init; }
 
     /// <summary>For a hero who died, what killed them ("Slain by a Goblin"); otherwise null.</summary>
     public string? Epitaph { get; init; }
@@ -86,6 +99,10 @@ public static class RunResults
             Gold = hero.Status == HeroStatus.Escaped ? hero.TreasureValue : 0,
             DeepestFloor = hero.DeepestFloor,
             Hearts = hero.Hearts,
+            PowerDice = hero.Power.Banked,
+            Retreated = state.RetreatedIds.Contains(hero.Id),
+            Allocation = hero.Allocation,
+            Policy = hero.Policy,
             Epitaph = hero.Status == HeroStatus.Dead ? hero.Bane : null,
             GuildStandingChange = hero.GuildStandingChange,
             LawStandingChange = hero.LawStandingChange,

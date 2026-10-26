@@ -252,4 +252,47 @@ public class CompanionTests
 
         return events;
     }
+    [Fact]
+    public void AFightingCompanionGoesRoundAnAllyStandingWhereItWouldStrikeFrom()
+    {
+        // The companion (2,4) is right behind its owner (3,4), who holds the nearest tile beside the brute
+        // (4,4); walls above and below the brute. It has to go round to a free tile to strike.
+        var setup = new RunSetup
+        {
+            Seed = TestRun.Seed,
+            ThemeId = TestContent.ThemeId,
+            Heroes =
+            [
+                new HeroSetup("Owner", TestRun.HeroStats with { Hearts = 40 }, []),
+                new HeroSetup("Pal", TestRun.HeroStats with { Hearts = 40, MoveDice = 2 }, [], OwnerSeat: 0),
+            ],
+            Rooms = [new RoomSetup("A", TestRun.Room("""
+                .........
+                .........
+                .........
+                ....#....
+                ..21B....
+                ....#....
+                .........
+                .........
+                .........
+                """))],
+            StartRoomId = "A",
+        };
+        var session = new GameSession(TestContent.Catalog, setup);
+        session.Begin();
+        Hero owner = session.HeroInSeat(), pal = session.HeroInSeat(1);
+        session.Do(new OrderCompanion(owner.Id, pal.Id, CompanionOrder.Fight));
+
+        bool attacked = false;
+        for (int i = 0; i < 100 && !attacked && session.State.Phase == RunPhase.InProgress; i++)
+        {
+            Hero active = session.State.ActiveHero!;
+            GameCommand command = active.IsCompanion ? CompanionBot.NextCommand(session) : new EndTurn(active.Id);
+            attacked = command is AttackMonster && active == pal;
+            session.Do(command);
+        }
+
+        Assert.True(attacked, $"the companion never got to strike (it's at {pal.Position})");
+    }
 }

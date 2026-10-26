@@ -48,6 +48,9 @@ public sealed class GameState
 
     public Hero? ActiveHero => Turn is null ? null : GetHero(Turn.HeroId);
 
+    /// <summary>Heroes who retreated from a fight out on the Woarld Map: off the field, but they didn't win it.</summary>
+    public HashSet<int> RetreatedIds { get; } = [];
+
     /// <summary>Set when the run ends: the escaped heroes with the most treasure (empty if nobody escaped).</summary>
     public IReadOnlyList<int> WinnerIds { get; internal set; } = [];
 

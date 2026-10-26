@@ -13,7 +13,8 @@ public partial class GameScreen
 {
     private const float SideWidth = 176;
     private const float StripHeight = 36;
-    private const int LogLines = 7;
+    /// <summary>How many lines the log keeps to scroll back through.</summary>
+    private const int LogLines = 100;
 
     private static readonly Vector2 BoardOrigin = new(SideWidth, StripHeight);
 
@@ -24,6 +25,9 @@ public partial class GameScreen
     private BoardView _board = null!;
     private HeroPanel _heroPanel = null!;
     private MinimapView _minimap = null!;
+    private TurnFrame _turnFrame = null!;
+    private PartyPanel _party = null!;
+    private Button _partyButton = null!;
     private InventoryPanel _inventory = null!;
     private DiceBar _dice = null!;
     private TurnBanner _banner = null!;
@@ -84,6 +88,23 @@ public partial class GameScreen
         _heroPanel.ShowHero(hero, turn, _selectedCardId);
         _inventory.ShowHero(hero, _selectedCardId, AvailableCardActions(hero, turn));
         _header.Text = HeaderText();
+        if (_party.Visible)
+        {
+            _party.ShowParty(_session, Locked ? null : hero);
+        }
+
+        // Someone with points to spend: the Party button says so.
+        bool levelUp = !Locked && hero is not null && _session.State.Heroes.Any(other => (other == hero || other.OwnerId == hero.Id) && other.IsInPlay && other.PointsToSpend > 0);
+        _partyButton.Text = levelUp ? "Party!" : "Party";
+        if (_playingTurn is { Set: true, HeroId: null })
+        {
+            _turnFrame.Show("THE MONSTERS' TURN", Palette.Danger);
+        }
+        else
+        {
+            Hero? onShow = TurnOnShow;
+            _turnFrame.Show(onShow is null || turn is null ? null : TurnTag(onShow), onShow is null ? Palette.TrimBright : Palette.Seat(onShow.Seat));
+        }
         if (_hovered is null)
         {
             _hoverInfo.Text = Hint();
@@ -97,8 +118,14 @@ public partial class GameScreen
         UpdatePool((idle && !pending) || keeling);
         bool held = hero is not null && _session.HeldBy(hero) is not null;
         _roll.Disabled = !(idle && !pending && _session.MoveDiceLeft > 0) || held;
-        _search.Disabled = !(idle && !pending) || _session.CheckSearch() is not null;
-        _search.TooltipText = _session.State.Turn is null ? "" : _session.CheckSearch() ?? "Search the room with your selected Od Hand dice: finds secret doors, traps and stashes your total reaches.";
+        // Out on the Woarld Map there's nothing to search: the button retreats instead.
+        bool skirmish = _session.State.Skirmish;
+        _search.Text = skirmish ? "Retreat" : "Search";
+        string? searchBlocked = skirmish ? _session.CheckRetreat() : _session.CheckSearch();
+        _search.Disabled = !(idle && !pending) || searchBlocked is not null;
+        _search.TooltipText = _session.State.Turn is null ? "" : searchBlocked ?? (skirmish
+            ? $"Retreat: your selected Od Hand dice look for a way out, against the monsters' chase (a die more than there are of them, +{GameSession.RetreatChaseBonus}). Get away and you're off the field, the monsters left where they are; fail and you bolt in a panic and fall flat."
+            : "Search the room with your selected Od Hand dice: finds secret doors, traps and stashes your total reaches.");
         _steal.Disabled = !(idle && !pending) || _session.OdHandDiceLeft < 1 || turn!.HasStolen;
         _stealing &= !_steal.Disabled;
         _steal.Text = _stealing ? "Cancel" : "Steal";
@@ -460,7 +487,7 @@ public partial class GameScreen
                 HeroStatus.KeelingOver when hero == ActiveHero => $"[color={Palette.Hex(Palette.Danger)}][u]{name}[/u] (down)[/color]",
                 HeroStatus.KeelingOver => $"[color={Palette.Hex(Palette.Danger)}]{name}{(compact ? "" : " (down)")}[/color]",
                 HeroStatus.Escaped => $"[color={dim}]{name} (out)[/color]",
-                _ when hero == ActiveHero => $"[color={color}][u]{name}[/u][/color]",
+                _ when hero == ActiveHero => $"[bgcolor={color}][color={Palette.Hex(Palette.Ink)}] {name} [/color][/bgcolor]",
                 _ => $"[color={color}]{name}[/color]",
             };
         });
@@ -468,6 +495,13 @@ public partial class GameScreen
         int floor = _shownRoomId.Length > 0 ? ShownRoom.Floor : 1;
         string friendlyFire = state.FriendlyFire ? $"  [color={Palette.Hex(Palette.Danger)}]FF[/color]" : "";
         return $"[color={Palette.Hex(Palette.Trim)}]ROUND {state.Round}   FLOOR {floor}[/color]{friendlyFire}   {string.Join(compact ? " " : "  ", heroes)}";
+    }
+
+    /// <summary>"ARIA'S TURN", or for a companion "PIP'S TURN (ARIA'S COMPANION)".</summary>
+    private string TurnTag(Hero hero)
+    {
+        string owner = hero.OwnerId is int ownerId ? $" ({NameOf(ownerId).ToUpperInvariant()}'S COMPANION)" : "";
+        return $"{hero.Name.ToUpperInvariant()}'S TURN{owner}";
     }
 
     private string NameOf(int entityId) => _names.GetValueOrDefault(entityId, "Someone");
@@ -519,7 +553,15 @@ public partial class GameScreen
         AddChild(_minimap);
 
         AddChild(new Panel { Position = new Vector2(SideWidth, 0), Size = new Vector2(BoardView.Pixels, StripHeight) });
-        _header = RichLabel(new Vector2(SideWidth + 6, 4), new Vector2(BoardView.Pixels - 56, 14));
+        _header = RichLabel(new Vector2(SideWidth + 6, 4), new Vector2(BoardView.Pixels - 102, 14));
+        _partyButton = UiTheme.Button(new Vector2(SideWidth + BoardView.Pixels - 94, 4), new Vector2(42, 15), "Party");
+        _partyButton.TooltipText = "The Party: everyone's level, hearts and gear; level up, and set how your companions manage their things.";
+        _partyButton.Pressed += () =>
+        {
+            _party.Visible = !_party.Visible;
+            RefreshPanels();
+        };
+        AddChild(_partyButton);
         _menu = UiTheme.Button(new Vector2(SideWidth + BoardView.Pixels - 48, 4), new Vector2(42, 15), "Menu");
         _menu.Pressed += () =>
         {
@@ -548,7 +590,21 @@ public partial class GameScreen
         _board.TileHovered += OnTileHovered;
         _board.CancelRequested += CancelSelection;
         frame.AddChild(_board);
+        frame.AddChild(new ScrollHints { Board = _board, Size = frame.Size });
+        _turnFrame = new TurnFrame { Size = frame.Size };
+        frame.AddChild(_turnFrame);
         AddChild(frame);
+
+        // The Party menu, over the board while it's open.
+        _party = new PartyPanel { Position = BoardOrigin, Size = new Vector2(BoardView.Pixels, BoardView.Pixels), Visible = false, ZIndex = 2 };
+        _party.SpendRequested += (heroId, stat) => ExecuteForActiveHero(ownerId => new SpendPoint(ownerId, heroId, stat));
+        _party.PolicyRequested += (companionId, policy) => ExecuteForActiveHero(ownerId => new SetCompanionPolicy(ownerId, companionId, policy));
+        _party.CloseRequested += () =>
+        {
+            _party.Visible = false;
+            RefreshPanels();
+        };
+        AddChild(_party);
 
         // Under the board, the dice bar: who rolls on the left, VS, who answers on the right.
         AddChild(new Panel { Position = new Vector2(SideWidth, StripHeight + BoardView.Pixels), Size = new Vector2(BoardView.Pixels, StripHeight) });
@@ -567,9 +623,12 @@ public partial class GameScreen
             Log($"{action}: {AvailableCardActions(ActiveHero, _session.State.Turn).Explain(action)}", Palette.TextDim);
         right.AddChild(_inventory);
 
-        // The message log, under the cards: the newest line bright, older ones dimmed.
+        // The message log, under the cards: the newest line bright, older ones dimmed; scroll back with the wheel.
         _log = RichLabel(new Vector2(SideWidth + BoardView.Pixels + 8, 189), new Vector2(160, 74));
         _log.AddThemeConstantOverride("line_separation", -2);
+        _log.ScrollActive = true;
+        _log.ScrollFollowing = true;
+        _log.MouseFilter = MouseFilterEnum.Stop;
 
         _luckHint = UiTheme.Label(new Vector2(8, 263), new Vector2(160, 14), "Luck: click a die to reroll it.", color: Palette.Heal);
         right.AddChild(_luckHint);
@@ -620,7 +679,8 @@ public partial class GameScreen
         right.AddChild(_leap);
 
         _search = UiTheme.Accent(UiTheme.CompactButton(new Vector2(88, 303), new Vector2(40, 20), "Search"), Palette.DieOdHand);
-        _search.Pressed += () => ExecuteOdHand((heroId, dice, tools, power) => new Search(heroId, dice, tools, power));
+        _search.Pressed += () => ExecuteOdHand((heroId, dice, tools, power) =>
+            _session.State.Skirmish ? new Retreat(heroId, dice, false, power) : new Search(heroId, dice, tools, power));
         right.AddChild(_search);
 
         _steal = UiTheme.Accent(UiTheme.CompactButton(new Vector2(130, 303), new Vector2(38, 20), "Steal"), Palette.DieOdHand);

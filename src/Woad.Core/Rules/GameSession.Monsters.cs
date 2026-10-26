@@ -23,6 +23,12 @@ public sealed partial class GameSession
             MoveMerchants(room, events);
             foreach (Monster monster in room.Monsters.OrderBy(monster => monster.Id).ToList())
             {
+                // One struck down earlier in the phase (by another's swing, say) is gone.
+                if (room.FindMonster(monster.Id) is null)
+                {
+                    continue;
+                }
+
                 TakeMonsterTurn(room, monster, events);
                 if (State.Phase != RunPhase.InProgress)
                 {
@@ -133,9 +139,9 @@ public sealed partial class GameSession
             return;
         }
 
-        if (definition.Sweep is { } sweep && monster.TurnsTaken % sweep.Every == 0)
+        if (definition.Sweep is { Bonus: false } sweep && monster.TurnsTaken % sweep.Every == 0)
         {
-            List<Hero> swept = standing.Where(hero => hero.Position.ChebyshevDistanceTo(monster.Position) <= sweep.Radius && !(Diving(room, hero) && hero.Position.ChebyshevDistanceTo(monster.Position) > 1)).ToList();
+            List<Hero> swept = standing.Where(hero => hero.Position.ChebyshevDistanceTo(monster.NearestTile(hero.Position)) <= sweep.Radius && !(Diving(room, hero) && hero.Position.ChebyshevDistanceTo(monster.NearestTile(hero.Position)) > 1)).ToList();
             if (swept.Count > 0)
             {
                 // One swing with every Attack die, which each hero in reach defends against.
@@ -144,7 +150,19 @@ public sealed partial class GameSession
             }
         }
 
-        bool cornered = definition.KeepsDistance && heroes.Any(hero => hero.Position.ManhattanDistanceTo(monster.Position) == 1);
+        FlingChain(room, monster, events);
+        if (State.Phase != RunPhase.InProgress)
+        {
+            return;
+        }
+
+        standing = [.. State.ActiveHeroesIn(room)];
+        bool cornered = definition.KeepsDistance && heroes.Any(hero => hero.Position.ManhattanDistanceTo(monster.NearestTile(hero.Position)) == 1);
+        if (!cornered && !definition.Erratic)
+        {
+            SurgeWithPowerDice(room, monster, heroes, events);
+        }
+
         IReadOnlyList<GridPosition> path = cornered ? PlanRetreat(room, monster, heroes) : PlanAdvance(room, monster, heroes);
         if (path.Count > 0)
         {
@@ -180,14 +198,24 @@ public sealed partial class GameSession
         {
             MonsterAttacksMerchant(room, monster, events);
         }
+
+        // A spin on top of it all, at everyone near.
+        if (definition.Sweep is { Bonus: true } spin && monster.TurnsTaken % spin.Every == 0 && room.FindMonster(monster.Id) is not null && State.Phase == RunPhase.InProgress)
+        {
+            List<Hero> spun = [.. State.ActiveHeroesIn(room).Where(hero => hero.Position.ChebyshevDistanceTo(monster.NearestTile(hero.Position)) <= spin.Radius && !(Diving(room, hero) && hero.Position.ChebyshevDistanceTo(monster.NearestTile(hero.Position)) > 1))];
+            if (spun.Count > 0)
+            {
+                RollMonsterAttack(room, monster, monster.AttackDiceThisTurn, definition.Weapon, spun, events);
+            }
+        }
     }
 
     /// <summary>Of the heroes attackable from a tile, the one with the fewest hearts (then lowest seat).</summary>
     private static Hero? ChooseTarget(Room room, Monster monster, GridPosition from, IEnumerable<Hero> heroes) =>
         heroes
-            .Where(hero => FootprintAt(monster, from).Any(tile => Targeting.CanAttack(room.Layout, monster.Definition.AttackPattern, monster.Definition.AttackRange, tile, hero.Position)))
+            .Where(hero => ArcReaches(monster, from, hero) || FootprintAt(monster, from).Any(tile => Targeting.CanAttack(room.Layout, monster.Definition.AttackPattern, monster.Definition.AttackRange, tile, hero.Position)))
             // Someone diving in deep water can only be reached up close.
-            .Where(hero => !Diving(room, hero) || hero.Position.ChebyshevDistanceTo(from) <= 1)
+            .Where(hero => !Diving(room, hero) || FootprintAt(monster, from).Any(tile => hero.Position.ChebyshevDistanceTo(tile) <= 1))
             // A mugger goes for the gold.
             .OrderByDescending(hero => monster.Definition.Mugger ? hero.Gold : 0)
             .ThenBy(hero => hero.Hearts)
@@ -201,6 +229,8 @@ public sealed partial class GameSession
     private bool CanMonsterEnter(Room room, Monster monster, GridPosition position) =>
         FootprintAt(monster, position).All(tile => room.Layout.Contains(tile)
             && CanMonsterStand(room.Layout[tile], monster)
+            // Monsters keep off burning floor, unless fire can't hurt them.
+            && (monster.Definition.FireImmune || !room.IsBurning(tile) || monster.Occupies(tile))
             && (room.MonsterAt(tile) is not { } other || other == monster)
             && room.MerchantAt(tile) is null
             && !State.HeroesIn(room).Any(hero => hero.Position == tile));
@@ -213,6 +243,37 @@ public sealed partial class GameSession
         monster.Definition.WaterOnly
             ? tile is TileKind.ShallowWater or TileKind.DeepWater
             : tile.IsWalkable(monster.Flies) || (monster.Definition.Swimmer && tile == TileKind.DeepWater);
+
+    /// <summary>
+    /// A monster that can't reach a tile to attack from this turn rolls banked Power Dice into its
+    /// move, one at a time, while that could still get it there.
+    /// </summary>
+    private void SurgeWithPowerDice(Room room, Monster monster, IReadOnlyList<Hero> heroes, List<GameEvent> events)
+    {
+        if (monster.Power.Banked == 0 || ChooseTarget(room, monster, monster.Position, heroes) is not null)
+        {
+            return;
+        }
+
+        PathSearch search = PathSearch.Run(monster.Position, position => CanMonsterEnter(room, monster, position), stepCost: position => StepCost(room, monster, position));
+        int? steps = search.Distances.Where(entry => ChooseTarget(room, monster, entry.Key, heroes) is not null).Select(entry => (int?)entry.Value).Min();
+        if (steps is not { } needed || needed <= monster.MovesThisTurn || needed > monster.MovesThisTurn + GameRules.PowerDieFace * monster.Power.Banked)
+        {
+            return;
+        }
+
+        var faces = new List<int>();
+        while (monster.Power.Banked > 0 && monster.MovesThisTurn < needed)
+        {
+            monster.Power.Banked--;
+            int face = RollOneDie();
+            faces.Add(face);
+            monster.MovesThisTurn += face;
+        }
+
+        events.Add(new MonsterSurged(monster.Id, faces, monster.MovesThisTurn));
+        events.Add(new PowerDiceSpent(monster.Id, faces.Count, monster.Power.Banked));
+    }
 
     /// <summary>Steps toward the nearest tile it can attack from, stopping as soon as it can attack.</summary>
     private IReadOnlyList<GridPosition> PlanAdvance(Room room, Monster monster, IReadOnlyList<Hero> heroes)

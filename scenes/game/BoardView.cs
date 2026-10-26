@@ -101,7 +101,7 @@ public partial class BoardView : Control
     public override void _Process(double delta)
     {
         // Lit fuses spark.
-        if (_room?.Bombs.Any(bomb => bomb.Lit) == true)
+        if (_room?.Bombs.Any(bomb => bomb.Lit) == true || _room?.Flames.Count > 0)
         {
             QueueRedraw();
         }
@@ -150,6 +150,19 @@ public partial class BoardView : Control
             : _lookAt is { } tile ? TileOrigin(tile) + new Vector2(TileSize / 2f, TileSize / 2f)
             : RoomPixels / 2;
         return Clamp(center - new Vector2(Pixels / 2f, Pixels / 2f));
+    }
+
+    /// <summary>
+    /// Which ways the room runs on past the view (left, up, right, down): where there's more of it to
+    /// pan to with a right-drag or the arrow keys.
+    /// </summary>
+    public (bool Left, bool Up, bool Right, bool Down) MoreBeyond
+    {
+        get
+        {
+            Vector2 room = RoomPixels;
+            return (_camera.X > 1, _camera.Y > 1, _camera.X + Pixels < room.X - 1, _camera.Y + Pixels < room.Y - 1);
+        }
     }
 
     private Vector2 RoomPixels => _room is null ? new Vector2(Pixels, Pixels) : new Vector2(_room.Layout.Width * TileSize, _room.Layout.Height * TileSize);
@@ -360,6 +373,11 @@ public partial class BoardView : Control
         foreach (Bomb bomb in _room.Bombs)
         {
             DrawBomb(bomb);
+        }
+
+        foreach ((GridPosition tile, int rounds) in _room.Flames)
+        {
+            DrawBurningFloor(tile, rounds);
         }
 
         _loot.QueueRedraw();
@@ -660,6 +678,24 @@ public partial class BoardView : Control
         {
             DrawString(ThemeDB.FallbackFont, rect.Position + new Vector2(2, 10), bomb.FuseTurns.ToString(), fontSize: UiTheme.FontSize, modulate: Palette.FireCore);
         }
+    }
+
+    /// <summary>Burning floor: a red-orange glow and three flickering tongues of flame, and the rounds it has left.</summary>
+    private void DrawBurningFloor(GridPosition tile, int rounds)
+    {
+        Rect2 rect = TileRect(tile);
+        float time = Time.GetTicksMsec() / 1000f;
+        DrawRect(rect.Grow(-2), Palette.Fire with { A = 0.28f + 0.08f * Mathf.Sin(time * 7 + tile.X) });
+        for (int i = 0; i < 3; i++)
+        {
+            float flicker = 3 * Mathf.Sin(time * 9 + i * 2.1f + tile.Y);
+            var foot = rect.Position + new Vector2(7 + i * 9, 27);
+            float height = 14 + flicker + (i == 1 ? 4 : 0);
+            DrawColoredPolygon([foot + new Vector2(-4, 0), foot + new Vector2(4, 0), foot + new Vector2(1, -height)], Palette.Fire);
+            DrawColoredPolygon([foot + new Vector2(-2, 0), foot + new Vector2(2, 0), foot + new Vector2(0, -height * 0.55f)], Palette.FireCore);
+        }
+
+        DrawString(ThemeDB.FallbackFont, rect.Position + new Vector2(TileSize - 7, 10), rounds.ToString(), fontSize: UiTheme.FontSize, modulate: Palette.FireCore);
     }
 
     /// <summary>A blast: a flash and a ring of fire spreading over the 3x3 around the bomb.</summary>

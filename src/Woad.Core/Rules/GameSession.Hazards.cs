@@ -47,7 +47,7 @@ public sealed partial class GameSession
             return "There's nobody here to shove.";
         }
 
-        GridPosition at = monster?.Position ?? ally!.Position;
+        GridPosition at = monster?.NearestTile(hero.Position) ?? ally!.Position;
         if (!Targeting.CanHeroAttack(room.Layout, 1, hero.Position, at) || hero.Position.ChebyshevDistanceTo(at) != 1)
         {
             return "Stand next to them to shove them.";
@@ -118,6 +118,11 @@ public sealed partial class GameSession
 
     private string? Handle(Leap command, List<GameEvent> events)
     {
+        if (ActiveHero.Shackled is not null)
+        {
+            return CheckHeld(ActiveHero);
+        }
+
         if (MoveDiceLeft < 1)
         {
             return "Leaping takes a Wend die, and you have none left this turn.";

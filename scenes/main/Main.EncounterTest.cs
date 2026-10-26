@@ -60,6 +60,11 @@ public partial class Main
             await Click(this, screen.ScoutButton);
             Check(dangers.ScoutedDay == world.Journey.Day, "Scout scouts");
 
+            await Click(this, screen.PartyButton);
+            Check(screen.PartyMenu.Visible, "the Party button opens the Party menu on the map");
+            await Click(this, screen.PartyMenu.Find("Close")!);
+            Check(!screen.PartyMenu.Visible, "and Close puts it away");
+
             GD.Print("Encounter test passed.");
             Sfx.QuitGame(this);
         }
@@ -82,6 +87,7 @@ public partial class Main
             Woad.Core.Model.Monster troll = game.Session.State.Rooms[Skirmish.RoomId].Monsters.Single();
             Check(troll.Tiles.Count() == 4, "the Bridge Troll fills four tiles");
             Check(game.Session.State.Round >= 1, "the troll got the first turn, and the round goes on");
+            Check(game.SearchButton.Text == "Retreat", "out on the Woarld Map, the Od Hand button retreats");
 
             GD.Print("Skirmish test passed.");
             Sfx.QuitGame(this);

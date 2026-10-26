@@ -167,6 +167,17 @@ public sealed partial class GameSession
             return null;
         }
 
+        if (ShackledAt(room, target) is { Shackled: int shackles } prisoner)
+        {
+            if (prisoner.Position.ChebyshevDistanceTo(hero.Position) > 1)
+            {
+                return $"Stand next to {prisoner.Name} to pick the lock of their shackles.";
+            }
+
+            check = new OdHandCheck(OdHandCheckKind.PickShackles, shackles, target, prisoner.Id);
+            return null;
+        }
+
         if (room.MerchantAt(target) is { Chained: true } chained)
         {
             if (hero.Position.ChebyshevDistanceTo(target) != 1)
@@ -236,7 +247,7 @@ public sealed partial class GameSession
 
         if (room.FindMonster(targetId) is { } monster)
         {
-            if (monster.Position.ManhattanDistanceTo(hero.Position) != 1)
+            if (monster.NearestTile(hero.Position).ManhattanDistanceTo(hero.Position) != 1)
             {
                 return "Stand next to it to steal from it.";
             }
@@ -246,7 +257,7 @@ public sealed partial class GameSession
                 return $"The {monster.Definition.Name} has nothing left worth stealing.";
             }
 
-            check = new OdHandCheck(OdHandCheckKind.Steal, 0, monster.Position, targetId);
+            check = new OdHandCheck(OdHandCheckKind.Steal, 0, monster.NearestTile(hero.Position), targetId);
             return null;
         }
 
@@ -283,7 +294,8 @@ public sealed partial class GameSession
     {
         Hero hero = ActiveHero;
         int bonus = command.UseTools && IsLock(check.Kind) ? ToolsBonusLeft : 0;
-        int toolDice = bonus > 0 ? Math.Max(0, hero.EffectiveStats.ToolDice) : 0;
+        // Lockpicks' own dice on a lock; held torches' on a search.
+        int toolDice = (bonus > 0 ? Math.Max(0, hero.EffectiveStats.ToolDice) : 0) + (check.Kind == OdHandCheckKind.Search ? hero.TorchesHeld : 0);
         Turn.OdHandDiceUsed += dice;
         Turn.ToolsUsed |= bonus > 0;
         SpendBankedPowerDice(hero, command.PowerDice, events);
@@ -378,6 +390,11 @@ public sealed partial class GameSession
                 Free(hero, freed, picked: true, events);
                 break;
 
+            case OdHandCheckKind.PickShackles when success && State.GetHero(check.TargetId) is { Shackled: not null } prisoner:
+                prisoner.Shackled = null;
+                events.Add(new HeroUnshackled(prisoner.Id, hero.Id, Picked: true));
+                break;
+
             case OdHandCheckKind.PickChest when success:
                 room.UnlockChest(check.Target);
                 events.Add(new ChestUnlocked(hero.Id, check.Target, Picked: true));
@@ -435,6 +452,10 @@ public sealed partial class GameSession
 
             case OdHandCheckKind.Steal:
                 ResolveSteal(hero, room, check.TargetId, total, events);
+                break;
+
+            case OdHandCheckKind.Retreat:
+                ResolveRetreat(hero, room, total, events);
                 break;
 
             default:

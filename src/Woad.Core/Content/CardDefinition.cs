@@ -135,6 +135,12 @@ public sealed record CardDefinition
     public bool OffHandStrike { get; init; }
 
     /// <summary>
+    /// A torch: held (one to a hand), it's lit: +1d6 to Search rolls, light, and a fire die on Rumble
+    /// attacks (a 6 rolls another, and on a hit sets the target alight); any 1 in the attack burns it out.
+    /// </summary>
+    public bool Torch { get; init; }
+
+    /// <summary>
     /// Weapons: thrown at a target this far off (in sight), it leaves the hand and lands at the target's feet
     /// (a Dagger, one from the stack). 0 for weapons that can't be thrown away.
     /// </summary>

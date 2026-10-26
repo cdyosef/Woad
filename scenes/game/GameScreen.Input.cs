@@ -257,6 +257,14 @@ public partial class GameScreen
             return;
         }
 
+        // Shackles on an ally beside you: a key, or pick the lock.
+        if (tile != hero.Position && _session.State.HeroesIn(room).FirstOrDefault(ally => ally.Position == tile && ally.Shackled is not null) is { } prisoner
+            && prisoner.Position.ChebyshevDistanceTo(hero.Position) == 1)
+        {
+            FreeFromShackles(hero, prisoner);
+            return;
+        }
+
         // An ally beside you: trade with them.
         if (tile != hero.Position && _session.GetTradePartners().FirstOrDefault(ally => ally.Position == tile && !ally.IsKeelingOver) is { } partner)
         {
@@ -374,13 +382,30 @@ public partial class GameScreen
         Execute(command(hero.Id, SelectedOdHandDice, !_toolsHeld, SelectedPowerDice));
     }
 
+    /// <summary>Unlocks shackles (your own, or an ally's beside you): with a key if you have one, else by picking the lock.</summary>
+    private void FreeFromShackles(Hero hero, Hero prisoner)
+    {
+        if (hero.Keys > 0)
+        {
+            Execute(new Unshackle(hero.Id, prisoner.Id));
+        }
+        else
+        {
+            ExecuteOdHand((heroId, dice, tools, power) => new PickLock(heroId, prisoner.Position, dice, tools, power));
+        }
+    }
+
     /// <summary>
     /// Clicking the tile you stand on: pick up loot, take the stairs, escape, or use the door: disarm
     /// its trap, unlock it (a key, or the Boss Key), pick its lock, or go through.
     /// </summary>
     private void UseOwnTile(Hero hero, Room room)
     {
-        if (room.HasLootAt(hero.Position))
+        if (hero.Shackled is not null)
+        {
+            FreeFromShackles(hero, hero);
+        }
+        else if (room.HasLootAt(hero.Position))
         {
             Rummage(hero, room, hero.Position);
         }

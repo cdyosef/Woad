@@ -134,6 +134,22 @@ public partial class GameScreen : Control
         {
             RunMonsterTest();
         }
+        else if (args.Contains("--spelltest"))
+        {
+            RunSpellTest();
+        }
+        else if (args.Contains("--companiontest"))
+        {
+            RunCompanionTest();
+        }
+        else if (args.Contains("--partytest"))
+        {
+            RunPartyTest();
+        }
+        else if (args.Contains("--bosstest"))
+        {
+            RunBossTest();
+        }
         else if (args.Contains("--dentest"))
         {
             RunDenTest();
@@ -293,6 +309,26 @@ public partial class GameScreen : Control
 
     // ---- Event playback -------------------------------------------------------------------
 
+    /// <summary>
+    /// Whose turn the events being played back belong to (the state has often moved on by then): set
+    /// while playing, a hero's id or null for the monsters; unset (the state's own) otherwise.
+    /// </summary>
+    private (bool Set, int? HeroId) _playingTurn;
+
+    /// <summary>The hero whose turn is on show, or null while the monsters act.</summary>
+    private Hero? TurnOnShow => _playingTurn.Set ? (_playingTurn.HeroId is int id ? _session.State.GetHero(id) : null) : ActiveHero;
+
+    /// <summary>Marks whose turn is being played back, and moves the turn arrow to them (or off everyone).</summary>
+    private void ShowTurnOf(int? heroId)
+    {
+        _playingTurn = (true, heroId);
+        foreach ((int id, TokenView token) in _tokens)
+        {
+            token.Active = id == heroId;
+            token.ZIndex = id == heroId ? 1 : 0;
+        }
+    }
+
     private async Task PlayEvents(IReadOnlyList<GameEvent> events)
     {
         _busy = true;
@@ -311,6 +347,7 @@ public partial class GameScreen : Control
         finally
         {
             _busy = false;
+            _playingTurn = default;
             ReloadFigures();
             ShowRoom(ActiveHero is { } hero ? hero.RoomId : _shownRoomId);
             RefreshPanels();
@@ -391,12 +428,15 @@ public partial class GameScreen : Control
                 CloseTrade();
                 ResetCombo();
                 ResetPool();
+                ShowTurnOf(turn.HeroId);
                 RefreshPanels();
                 Hero hero = _session.State.GetHero(turn.HeroId);
                 await _banner.Flash($"{hero.Name}'s turn", Palette.Seat(hero.Seat));
                 break;
 
             case EnemyPhaseStarted:
+                ShowTurnOf(null);
+                RefreshPanels();
                 await _banner.Flash("The monsters stir...", Palette.Danger, 0.3);
                 break;
 
@@ -416,6 +456,12 @@ public partial class GameScreen : Control
 
             case MonsterMoved moved:
                 await Walk(moved.MonsterId, moved.Path);
+                break;
+
+            case MonsterSurged surged:
+                _trayShowsMovement = false;
+                CalloutOver(surged.MonsterId, $"+{surged.Faces.Sum()} WEND!", Palette.Power);
+                await _dice.ShowRoll($"{NameOf(surged.MonsterId)} surges", new DiceRoll([.. surged.Faces]), 0, newGroup: true, surged.Faces.Count, DiceKind.Wend);
                 break;
 
             case HeroEnteredRoom entered:
@@ -519,8 +565,33 @@ public partial class GameScreen : Control
                 await PlayMerchantEvent(gameEvent);
                 break;
 
-            case DaggerThrown:
+            case DaggerThrown or FloorBurnedOut:
                 _board.QueueRedraw();
+                break;
+
+            case FloorIgnited ignited when ignited.RoomId == _shownRoomId:
+                _board.QueueRedraw();
+                _board.Shake(2);
+                await Pause(0.25);
+                break;
+
+            case PointSpent spent:
+                CalloutOver(spent.HeroId, "LEVEL UP!", Palette.Heal);
+                break;
+
+            case TorchBurnedOut burnedOut:
+                CalloutOver(burnedOut.HeroId, "TORCH OUT!", Palette.Fire);
+                await UpdateFigure(burnedOut.HeroId, figure => figure.Torch = _session.State.GetHero(burnedOut.HeroId).TorchesHeld > 0, 0.2);
+                break;
+
+            case HeroShackled shackled:
+                CalloutOver(shackled.HeroId, "SHACKLED!", Palette.Danger);
+                await UpdateFigure(shackled.HeroId, figure => figure.Chained = true, 0.3);
+                break;
+
+            case HeroUnshackled freed:
+                CalloutOver(freed.HeroId, "FREE!", Palette.Heal);
+                await UpdateFigure(freed.HeroId, figure => figure.Chained = false, 0.3);
                 break;
 
             case Cleaved cleaved:
@@ -590,7 +661,14 @@ public partial class GameScreen : Control
                 await _dice.ShowRoll($"{NameOf(rolled.HeroId)} {OdHandCaption(rolled.Kind)}{goal}", rolled.Roll, rolled.Bonus, newGroup: true, rolled.PowerDice, DiceKind.OdHand, rolled.ToolDice);
                 break;
 
-            case DoorUnlocked or ChestUnlocked or TrapDisarmed or Stole or GateOpened:
+            case Stole stole:
+                // What was taken, on the dice bar.
+                _dice.ShowOutcome(true, "STOLEN");
+                _dice.Retitle($"{NameOf(stole.ThiefId)} steals {(stole.Key ? "a key" : stole.CardId is int taken ? $"the {CardNameOf(taken)}" : "something")}");
+                _board.QueueRedraw();
+                break;
+
+            case DoorUnlocked or ChestUnlocked or TrapDisarmed or GateOpened:
                 _dice.ShowOutcome(true);
                 _board.QueueRedraw();
                 break;
@@ -640,12 +718,27 @@ public partial class GameScreen : Control
                 _trayShowsMovement = false;
                 BeginStrike(attack.AttackerId, attack.Total, attack.Roll.Faces.TakeLast(attack.PowerDice).Sum());
                 await Lunge(attack.AttackerId, attack.TargetIds.FirstOrDefault());
-                await _dice.ShowRoll($"{NameOf(attack.AttackerId)} {(attack.Shove ? "shoves" : "attacks")}", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice, DiceKind.Rumble);
+                await _dice.ShowRoll($"{NameOf(attack.AttackerId)} {(attack.Shove ? "shoves" : attack.Chain ? "flings its chain" : "attacks")}", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice, DiceKind.Rumble);
+                // A hero's sixes get their own events; a monster's roll straight in, so call them out here.
+                if (attack.PowerDice > 0 && !IsHero(attack.AttackerId))
+                {
+                    CalloutOver(attack.AttackerId, "6!", Palette.Power);
+                }
+
                 break;
 
             case DefenseRolled defense:
                 _defense = defense;
                 await _dice.ShowRoll($"{NameOf(defense.DefenderId)} defends", defense.Roll, defense.Armor, newGroup: false, defense.PowerDice, DiceKind.Defense);
+                if (defense.PowerDice > 0)
+                {
+                    CalloutOver(defense.DefenderId, "6!", Palette.Power);
+                }
+
+                break;
+
+            case PowerDiceBanked banked when !IsHero(banked.OwnerId) && _figures.TryGetValue(banked.OwnerId, out Figure? banker) && banker.RoomId == _shownRoomId:
+                _board.FloatText(banker.Position, banked.Count > 1 ? $"6! {banked.Count} Power Dice" : "6! Power Die", Palette.Power);
                 break;
 
             case PowerDiceEarned earned when _figures.TryGetValue(earned.HeroId, out Figure? lucky) && lucky.RoomId == _shownRoomId:
@@ -810,6 +903,17 @@ public partial class GameScreen : Control
             case HeroEscaped escaped:
                 await RemoveFigure(escaped.HeroId);
                 await _banner.Flash($"{NameOf(escaped.HeroId)} escapes!", Palette.TrimBright, 0.6);
+                break;
+
+            case HeroRetreated retreated:
+                _dice.ShowOutcome(true, "AWAY");
+                await RemoveFigure(retreated.HeroId);
+                await _banner.Flash($"{NameOf(retreated.HeroId)} gets away!", Palette.TrimBright, 0.6);
+                break;
+
+            case Routed routed:
+                CalloutOver(routed.HeroId, "ROUTED!", Palette.Danger);
+                await _dice.ShowRoll($"{NameOf(routed.HeroId)} bolts", routed.Roll, routed.Steps - routed.Roll.Total, newGroup: true, kind: DiceKind.Wend);
                 break;
 
             case MonsterCollapsed collapsed:
@@ -1178,10 +1282,12 @@ public partial class GameScreen : Control
 
     private static string OdHandCaption(OdHandCheckKind kind) => kind switch
     {
-        OdHandCheckKind.PickDoor or OdHandCheckKind.PickChest or OdHandCheckKind.PickGate => "picks the lock",
+        OdHandCheckKind.PickDoor or OdHandCheckKind.PickChest or OdHandCheckKind.PickGate or OdHandCheckKind.PickChains or OdHandCheckKind.PickShackles => "picks the lock",
         OdHandCheckKind.Search => "searches",
         OdHandCheckKind.Disarm => "disarms",
         OdHandCheckKind.Rouse => "rouses an ally",
+        OdHandCheckKind.DefuseBomb => "defuses",
+        OdHandCheckKind.Retreat => "looks for a way out",
         _ => "steals",
     };
 

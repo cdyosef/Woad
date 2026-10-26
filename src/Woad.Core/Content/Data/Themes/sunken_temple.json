@@ -26,6 +26,7 @@
     { "card": "flame_scroll" },
     { "card": "boomerang" },
     { "card": "lockpicks", "copies": 2 },
+    { "card": "torch", "copies": 2 },
     { "card": "leather_cap" },
     { "card": "coin_pouch", "copies": 6 },
     { "card": "diving_helm", "copies": 2 },

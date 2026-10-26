@@ -98,6 +98,13 @@ public partial class WoarldMapScreen : Control
     /// <summary>The journey moved on (a step, a rest, a new leader): time to save it.</summary>
     public event Action? JourneyChanged;
 
+    /// <summary>A character in the party wants to spend their points (from the Party menu).</summary>
+    public event Action<Character>? LevelUpRequested;
+
+    internal Button PartyButton { get; private set; } = null!;
+
+    internal PartyDialog PartyMenu { get; private set; } = null!;
+
     internal Button BackButton { get; private set; } = null!;
 
     internal Button LeaderButton { get; private set; } = null!;
@@ -145,7 +152,7 @@ public partial class WoarldMapScreen : Control
         ScoutButton = AddButton(new Vector2(306, ButtonsTop), 70, "Scout", $"A party Od Hand check ({WoarldDangers.ScoutSteps} steps): find what lies in wait within {WoarldDangers.ScoutRange} tiles, and +{WoarldDangers.ScoutBonus} to ambush checks for the rest of the day.");
         ScoutButton.Pressed += Scout;
         ScoutButton.Visible = World is not null;
-        EnterButton = AddButton(new Vector2(382, ButtonsTop), 250, "", "");
+        EnterButton = AddButton(new Vector2(382, ButtonsTop), 188, "", "");
         EnterButton.Pressed += Enter;
 
         _wandererPanel = new WandererPanel { Position = new Vector2(Size.X / 2 - 150, BarHeight + 12) };
@@ -159,6 +166,9 @@ public partial class WoarldMapScreen : Control
         };
         AddChild(_wandererPanel);
 
+        PartyButton = AddButton(new Vector2(576, ButtonsTop), 56, "Party", "The Party: everyone's level, hearts and gear. Hand things around, level up, and set how companions manage their things.");
+        PartyButton.Pressed += () => PartyMenu.Open();
+
         BuildEncounters();
         BeginRaid = new BeginRaidDialog();
         BeginRaid.Raided += () =>
@@ -169,6 +179,11 @@ public partial class WoarldMapScreen : Control
             }
         };
         AddChild(BeginRaid);
+
+        PartyMenu = new PartyDialog { Party = Party, Content = Content, Hearts = Hearts };
+        PartyMenu.Changed += heroes => CharactersChanged?.Invoke(heroes);
+        PartyMenu.LevelUpRequested += character => LevelUpRequested?.Invoke(character);
+        AddChild(PartyMenu);
 
         if (Greeting.Length == 0)
         {
