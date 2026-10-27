@@ -42,7 +42,7 @@ public sealed partial class GameSession
     public int AttackDiceLeft => State.Turn is { } turn ? Math.Max(0, ActiveHero.EffectiveStats.AttackDice - turn.AttackDiceUsed) : 0;
 
     /// <summary>Move dice the active hero hasn't used this turn.</summary>
-    public int MoveDiceLeft => State.Turn is { } turn && ActiveHero.Shackled is null ? Math.Max(0, ActiveHero.EffectiveStats.MoveDice + turn.ExtraMoveDice - turn.MoveDiceUsed) : 0;
+    public int MoveDiceLeft => State.Turn is { } turn && ActiveHero.Shackled is null && !ActiveHero.Conditions.Has(Condition.Buried) ? Math.Max(0, ActiveHero.EffectiveStats.MoveDice + turn.ExtraMoveDice - turn.MoveDiceUsed) : 0;
 
     /// <summary>The tools' own dice the active hero can still add to a lock-picking roll this turn (a lockpick's d6).</summary>
     public int ToolDiceLeft => State.Turn is { ToolsUsed: false } ? Math.Max(0, ActiveHero.EffectiveStats.ToolDice) : 0;
@@ -101,8 +101,6 @@ public sealed partial class GameSession
             AttackMonster c => Handle(c, events),
             RerollDie c => Handle(c, events),
             ConfirmAttack c => Handle(c, events),
-            AddPowerDie c => Handle(c, events),
-            BankPowerDie c => Handle(c, events),
             UnlockDoor c => Handle(c, events),
             PickLock c => Handle(c, events),
             Search c => Handle(c, events),
@@ -149,6 +147,8 @@ public sealed partial class GameSession
             GoProne c => Handle(c, events),
             GetUp c => Handle(c, events),
             StopDropRoll c => Handle(c, events),
+            DigOut c => Handle(c, events),
+            Tend c => Handle(c, events),
             AttackBomb c => Handle(c, events),
             _ => $"Unknown command {command.GetType().Name}.",
         };
@@ -163,7 +163,6 @@ public sealed partial class GameSession
             && (!current.IsInPlay || (current.IsKeelingOver && !turn.KeelingOver)))
         {
             State.Turn.PendingRoll = null;
-            State.Turn.UnsettledPowerDice = 0;
             events.Add(new TurnEnded(turn.HeroId));
             AdvanceTurn(State.GetHero(turn.HeroId).Seat, events);
         }
@@ -209,12 +208,12 @@ public sealed partial class GameSession
             return "You're Keeling Over: all you can do is roll the Keel Die.";
         }
 
-        if (Turn.UnsettledPowerDice > 0 && command is not (AddPowerDie or BankPowerDie or RerollDie))
+        if (ActiveHero.Conditions.Has(Condition.Buried) && NeedsToBeUnburied(command))
         {
-            return "You rolled a 6: add your Power Die to the roll or bank it first.";
+            return "You're buried: dig yourself out with your Rumble dice first.";
         }
 
-        if (Turn.PendingRoll is not null && command is not (RerollDie or ConfirmAttack or AddPowerDie or BankPowerDie))
+        if (Turn.PendingRoll is not null && command is not (RerollDie or ConfirmAttack))
         {
             return "Finish the roll first: reroll a die with Luck or confirm it.";
         }
@@ -242,6 +241,16 @@ public sealed partial class GameSession
         if (State.Turn is { } ended)
         {
             WearOffStun(State.GetHero(ended.HeroId), events);
+            if (!ended.KeelingOver)
+            {
+                ConditionsAtTurnEnd(State.GetHero(ended.HeroId), events);
+            }
+
+            if (State.Phase != RunPhase.InProgress)
+            {
+                return;
+            }
+
             BurnFuses(ended.HeroId, heroTurn: true, events);
             if (State.Phase != RunPhase.InProgress)
             {
@@ -278,8 +287,9 @@ public sealed partial class GameSession
         RechargeDefense(hero);
         ApplyStun(hero);
 
-        // A burning hero burns first; if that brings them down, play moves on.
-        if (!BurnAtTurnStart(hero, events) && State.Phase == RunPhase.InProgress)
+        // A burning hero burns first; if that brings them down, or they're frozen solid, play moves on.
+        bool burned = BurnAtTurnStart(hero, events);
+        if (State.Phase == RunPhase.InProgress && (!burned || (!State.Turn.KeelingOver && !ConditionsAtTurnStart(hero, events))))
         {
             State.Turn.PendingRoll = null;
             events.Add(new TurnEnded(hero.Id));
@@ -424,7 +434,7 @@ public sealed partial class GameSession
 
             foreach (string cardId in heroSetup.CardIds)
             {
-                var card = new CardInstance(state.NextId(), content.GetCard(cardId), hero.Id);
+                var card = new CardInstance(state.NextId(), content.GetCard(cardId), hero.Id) { Wear = CardKey.Wear(cardId) };
                 if (!hero.TryPlaceStartingCard(card))
                 {
                     throw new ArgumentException($"{hero.Name} is carrying more cards than fit.", nameof(setup));

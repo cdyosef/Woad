@@ -51,6 +51,16 @@
       "description": "A crossroads inn with plank floors and a warm hearth."
     },
     {
+      "id": "blacksmith",
+      "name": "The Blacksmith",
+      "kind": "smithy",
+      "icon": "smithy",
+      "x": 14,
+      "y": 17,
+      "description": "A smoky shack down the road from the inn: worn gear mended, arms and armor forged.",
+      "stock": ["autosmith_hammer", "leather_armor", "studded_armor", "chain_mail", "buckler", "tower_shield", "longsword", "war_hammer", "spear", "great_axe"]
+    },
+    {
       "id": "emerald_keep",
       "name": "The Emerald Keep",
       "kind": "dungeon",

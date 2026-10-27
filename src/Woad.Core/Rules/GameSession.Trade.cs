@@ -16,7 +16,7 @@ public sealed partial class GameSession
     /// <summary>The allies the active hero can trade with now: in play, in the same room and next to them.</summary>
     public IReadOnlyList<Hero> GetTradePartners()
     {
-        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0, KeelingOver: false })
+        if (State.Turn is not { PendingRoll: null, KeelingOver: false })
         {
             return [];
         }

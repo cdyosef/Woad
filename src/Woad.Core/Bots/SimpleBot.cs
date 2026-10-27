@@ -41,10 +41,9 @@ public static class SimpleBot
         TileKind standingOn = room.Layout[hero.Position];
         bool fighting = Fighting(session, room, hero);
 
-        // Sixes: add the Power Die to an attack, bank the ones from moves.
-        if (turn.UnsettledPowerDice > 0)
+        if (turn.PendingRoll is null && session.CheckDigOut() is null)
         {
-            return turn.PendingRoll is not null ? new AddPowerDie(hero.Id) : new BankPowerDie(hero.Id);
+            return new DigOut(hero.Id);
         }
 
         if (turn.PendingRoll is not null)

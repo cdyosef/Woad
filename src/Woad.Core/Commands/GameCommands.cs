@@ -32,12 +32,6 @@ public sealed record GoThroughDoor(int HeroId, Direction Door) : GameCommand(Her
 /// </summary>
 public sealed record AttackMonster(int HeroId, int MonsterId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0) : GameCommand(HeroId);
 
-/// <summary>Roll a Power Die just earned (by a 6) into the pending attack or the move in progress.</summary>
-public sealed record AddPowerDie(int HeroId) : GameCommand(HeroId);
-
-/// <summary>Bank a Power Die just earned (by a 6) for a later roll, if the bank has room.</summary>
-public sealed record BankPowerDie(int HeroId) : GameCommand(HeroId);
-
 /// <summary>Spend 1 Luck to reroll one die of the pending attack, or of the move in progress before any steps.</summary>
 public sealed record RerollDie(int HeroId, int DieIndex) : GameCommand(HeroId);
 
@@ -148,6 +142,10 @@ public sealed record Steal(int HeroId, int TargetId, int? Dice = null, bool UseT
 public sealed record Rouse(int HeroId, int TargetId, int? Dice = null, bool UseTools = true, int PowerDice = 0)
     : OdHandCommand(HeroId, Dice, UseTools, PowerDice);
 
+/// <summary>Od Hand: tend blind eyes, your own or an ally's beside you (10 plus their Blind tokens).</summary>
+public sealed record Tend(int HeroId, int TargetId, int? Dice = null, bool UseTools = true, int PowerDice = 0)
+    : OdHandCommand(HeroId, Dice, UseTools, PowerDice);
+
 /// <summary>
 /// Keeling Over, a hero's whole turn: roll the Keel Die, plus <paramref name="PowerDice"/> banked Power
 /// Dice whose sixes earn marks of life. Ends the turn.
@@ -238,6 +236,9 @@ public sealed record GetUp(int HeroId) : GameCommand(HeroId);
 
 /// <summary>On fire, with nothing done yet this turn: put the fire out, ending the turn prone.</summary>
 public sealed record StopDropRoll(int HeroId) : GameCommand(HeroId);
+
+/// <summary>Buried: dig at the earth with every Rumble die left this turn, every 3 of the roll throwing off a token.</summary>
+public sealed record DigOut(int HeroId) : GameCommand(HeroId);
 
 /// <summary>
 /// Strike a bomb in reach with <paramref name="Dice"/> Rumble dice: no roll to hit, but each die (and

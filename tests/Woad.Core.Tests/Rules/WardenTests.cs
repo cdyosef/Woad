@@ -116,8 +116,7 @@ public class WardenTests
         hero.Shackled = 9;
 
         // Od Hand: one die (6), then its Power Die (4): 10 against 9.
-        session.Do(new PickLock(hero.Id, hero.Position));
-        IReadOnlyList<GameEvent> events = session.Do(new AddPowerDie(hero.Id));
+        IReadOnlyList<GameEvent> events = session.Do(new PickLock(hero.Id, hero.Position));
         Assert.Contains(new HeroUnshackled(hero.Id, hero.Id, Picked: true), events);
         Assert.Null(hero.Shackled);
 

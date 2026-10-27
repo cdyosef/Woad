@@ -25,11 +25,11 @@ public sealed partial class GameSession
 
     /// <summary>A monster's armor: none while a shelled one lies flipped on its back.</summary>
     private static int ArmorOf(Monster monster) =>
-        monster.Definition.Shell && monster.Prone ? 0 : monster.Definition.Armor;
+        monster.Definition.Shell && monster.Prone ? 0 : Math.Max(0, monster.Definition.Armor - monster.Conditions[Condition.Corroded]);
 
     /// <summary>What a step onto <paramref name="tile"/> costs a hero: water is no harder than floor in swimming gear.</summary>
     private static int HeroStepCost(Hero hero, Room room, GridPosition tile) =>
-        hero.Swims && InWater(room, tile) ? 1 : room.Layout[tile].MoveCost();
+        (hero.Swims && InWater(room, tile) ? 1 : room.Layout[tile].MoveCost()) + (room.PlantsAgainst(tile, heroes: true) ? 1 : 0);
 
     /// <summary>
     /// Drags a hero straight toward the monster that hit them, tile by tile, until they're beside it

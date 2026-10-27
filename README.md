@@ -105,6 +105,7 @@ on the Godot command line:
 | `--tradetest` | Checks clicking a companion beside you opens trading, giving part of a stack asks how many, its owner can have it equip a sword, and the Orders panel's Find me button gives the order. |
 | `--companiontest` | Checks a companion ordered to Fight from the Orders panel walks over to a slime and attacks it. |
 | `--spelltest` | Checks the Frost Wand freezes a slime and the Flame Scroll burns another (and is used up), by selecting each, pressing Use and clicking the slime. |
+| `--dietypetest` | Reads eight scrolls of typed dice (ice, lightning, poison, wind, earth, life, mind, shadow) at an ogre, a skeleton, a scorpion and a necromancer, digging out or tending her eyes when she must, and checks every figure shows the tokens the rules give it and that typed dice show in their colors. |
 | `--partytest` | Checks the Party button says when there's a point to spend, opens the Party menu, spends Aria's point on a heart and tells Pip to pick up loot. |
 | `--bosstest` | In a generated Emerald Keep's boss room, Aria orders Pip to Fight and ends her turns for four rounds, checking Pip attacks the Iron Warden's company. |
 | `--monstertest` | Checks clicking a chest that's a Mimic wakes it on the board (and its grab shuts off Wend), then plays three rounds against an Ogre, a Necromancer (checking it raises the dead), a Hexer and a Gelatinous Cube. |

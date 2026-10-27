@@ -10,9 +10,9 @@ namespace Woad.Core.Tests.Rules;
 public class FireTests
 {
     [Fact]
-    public void ASixOnFireDiceSetsTheTargetAlightEvenOnAMiss()
+    public void FireDiceThatMissSetNothingAlight()
     {
-        // Firebolt 6, 1, 1 (8, the 6 banked as a Power Die) against the Knight's 6 + armor 2: a miss.
+        // Firebolt 6, 1, 1 and the 6's fire die (1): 9. The Knight's 6 is banked and spent (2): 8 + 2 armor holds.
         GameSession session = TestRun.Start("""
             .........
             .........
@@ -23,16 +23,44 @@ public class FireTests
             .........
             .........
             .........
-            """, new ScriptedDice(6, 1, 1, 6), cards: ["firebolt"]);
+            """, new ScriptedDice(6, 1, 1, 1, 6, 2), cards: ["firebolt"]);
         Hero hero = session.HeroInSeat();
         Monster knight = session.OnlyMonster();
 
-        session.Do(new UseCard(hero.Id, hero.Card("firebolt").Id, knight.Position));
-        IReadOnlyList<GameEvent> events = session.Do(new BankPowerDie(hero.Id));
+        IReadOnlyList<GameEvent> events = session.Do(new UseCard(hero.Id, hero.Card("firebolt").Id, knight.Position));
 
+        Assert.Equal(9, events.SingleOf<AttackRolled>().Total);
         Assert.Equal(0, events.SingleOf<Damaged>().Amount);
-        Assert.Equal(new Ignited(knight.Id, 1, hero.Id), events.SingleOf<Ignited>());
-        Assert.Equal((1, hero.Id), (knight.FireDice, knight.IgnitedBy));
+        Assert.Empty(events.OfType<Ignited>());
+        Assert.Equal(0, knight.FireDice);
+    }
+
+    [Fact]
+    public void FireDiceEarnNoPowerDiceButEachSixRollsAnotherAndOnAHitLightsAFireDie()
+    {
+        GameSession session = TestRun.Start("""
+            .........
+            .........
+            .........
+            .........
+            ....1.d..
+            .........
+            .........
+            .........
+            .........
+            """, new ScriptedDice(6, 6, 1, 2, 3), cards: ["firebolt"]);
+        Hero hero = session.HeroInSeat();
+        Monster dummy = session.OnlyMonster();
+
+        IReadOnlyList<GameEvent> events = session.Do(new UseCard(hero.Id, hero.Card("firebolt").Id, dummy.Position));
+
+        var attack = events.SingleOf<AttackRolled>();
+        Assert.Equal([6, 6, 1, 2, 3], attack.Roll.Faces);
+        Assert.All(attack.DieTypes, type => Assert.Equal(DieType.Fire, type));
+        Assert.Empty(events.OfType<PowerDieAdded>());
+        Assert.Equal(0, hero.Power.Banked);
+        Assert.Equal(2, events.OfType<Ignited>().Count());
+        Assert.Equal((2, hero.Id), (dummy.FireDice, dummy.IgnitedBy));
     }
 
     [Fact]

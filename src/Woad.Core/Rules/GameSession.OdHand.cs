@@ -92,7 +92,7 @@ public sealed partial class GameSession
     /// <summary>A roll needs a turn with nothing pending and Od Hand dice left.</summary>
     private string? CheckOdHandStart()
     {
-        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
+        if (State.Turn is not { PendingRoll: null })
         {
             return "Finish the roll first.";
         }
@@ -293,11 +293,12 @@ public sealed partial class GameSession
     private void RollOdHand(OdHandCommand command, int dice, OdHandCheck check, List<GameEvent> events)
     {
         Hero hero = ActiveHero;
-        int bonus = command.UseTools && IsLock(check.Kind) ? ToolsBonusLeft : 0;
+        int tools = command.UseTools && IsLock(check.Kind) ? ToolsBonusLeft : 0;
+        int bonus = tools - RollPenalty(hero.Conditions);
         // Lockpicks' own dice on a lock; held torches' on a search.
-        int toolDice = (bonus > 0 ? Math.Max(0, hero.EffectiveStats.ToolDice) : 0) + (check.Kind == OdHandCheckKind.Search ? hero.TorchesHeld : 0);
+        int toolDice = (tools > 0 ? Math.Max(0, hero.EffectiveStats.ToolDice) : 0) + (check.Kind == OdHandCheckKind.Search ? hero.TorchesHeld : 0);
         Turn.OdHandDiceUsed += dice;
-        Turn.ToolsUsed |= bonus > 0;
+        Turn.ToolsUsed |= tools > 0;
         SpendBankedPowerDice(hero, command.PowerDice, events);
 
         DiceRoll rolled = _dice.Roll(dice + command.PowerDice);
@@ -309,7 +310,7 @@ public sealed partial class GameSession
             events.Add(new CritRolled(hero.Id, crits));
         }
 
-        Turn.PendingRoll = new PendingRoll(hero.Id, roll, bonus, [], DamageSource.Weapon, check) { NonPowerDice = dice + toolDice, UsedTools = bonus > 0 };
+        Turn.PendingRoll = new PendingRoll(hero.Id, roll, bonus, [], DamageSource.Weapon, check) { NonPowerDice = dice + toolDice, UsedTools = tools > 0 };
         EarnPowerDice(hero, Sixes(rolled.Faces), events);
     }
 
@@ -448,6 +449,10 @@ public sealed partial class GameSession
 
             case OdHandCheckKind.Rouse:
                 ResolveRouse(hero, roll, check, events);
+                break;
+
+            case OdHandCheckKind.Tend:
+                ResolveTend(hero, State.GetHero(check.TargetId), success, events);
                 break;
 
             case OdHandCheckKind.Steal:

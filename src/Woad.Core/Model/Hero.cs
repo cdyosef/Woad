@@ -135,6 +135,9 @@ public sealed class Hero
     /// <summary>Fire dice burning on the hero (0 when not on fire): rolled against them at the start of their turn.</summary>
     public int FireDice { get; internal set; }
 
+    /// <summary>Tokens the typed dice have left on them: poison, freeze, blindness and the rest.</summary>
+    public Conditions Conditions { get; } = new();
+
     /// <summary>
     /// Lying down on purpose (or after stopping, dropping and rolling): every step costs double, melee
     /// attacks on them roll an extra die and ranged attacks face an extra defense die. In deep water it
@@ -163,6 +166,18 @@ public sealed class Hero
     /// <summary>Points to spend now: those brought in, plus a level's worth for each level gained in the run, less what's been spent.</summary>
     public int PointsToSpend => StartAllocation is not { } start || Allocation is not { } now ? 0
         : StartUnspentPoints + (Level - Progression.LevelForXp(StartXp)) * Progression.PointsPerLevel - (PointBuy.Cost(now) - PointBuy.Cost(start));
+
+    /// <summary>
+    /// Raised or grown in the fight (a zombie, a Sentient Shrub), not a character: it follows its owner
+    /// for the rest of the run, looking like the monster <see cref="Guise"/>, and is gone after.
+    /// </summary>
+    public bool Summoned { get; internal init; }
+
+    /// <summary>A summoned companion's look: the monster it is (or was).</summary>
+    public string? Guise { get; internal init; }
+
+    /// <summary>Its Wend dice always come up this (a Sentient Shrub's 1), or null to roll them.</summary>
+    public int? FixedWendFace { get; internal init; }
 
     /// <summary>How it manages its own things on its turns, as a companion.</summary>
     public CompanionPolicy Policy { get; internal set; } = CompanionPolicy.Default;
@@ -225,13 +240,19 @@ public sealed class Hero
 
     /// <summary>Base stats plus the bonuses of everything equipped.</summary>
     public Stats EffectiveStats => EquippedCards.Aggregate(BaseStats, (stats, card) =>
-        stats + card.Definition.Modifiers + (HasSetBonus(card.Definition) ? card.Definition.Set!.Modifiers : Stats.None));
+        stats + card.Modifiers + (HasSetBonus(card.Definition) ? card.Definition.Set!.Modifiers : Stats.None));
 
     /// <summary>Whether the card's set bonus is on: it has one, and its partner is equipped too.</summary>
     public bool HasSetBonus(CardDefinition card) =>
         card.Set is { } set && EquippedCards.Any(other => other.Definition.Id == set.With);
 
     public int MaxHearts => Math.Max(1, EffectiveStats.Hearts);
+
+    /// <summary>Hearts healing can bring them back up to: all of them, less any Black Hearts.</summary>
+    public int HealableTo => Math.Max(0, MaxHearts - Conditions[Condition.BlackHeart]);
+
+    /// <summary>Hearts healing could give back now.</summary>
+    public int HeartsToHeal => Math.Max(0, HealableTo - Hearts);
 
     /// <summary>The main-hand weapon, if any.</summary>
     public CardInstance? MainWeapon => _equipment.GetValueOrDefault(EquipSlot.MainHand);

@@ -55,6 +55,9 @@ public enum OdHandCheckKind
 
     /// <summary>Find a way out of a fight on the Woarld Map (a contest against the monsters' chase).</summary>
     Retreat,
+
+    /// <summary>Tend blind eyes, your own or an ally's beside you: 10 plus their Blind tokens.</summary>
+    Tend,
 }
 
 /// <summary>
@@ -69,7 +72,7 @@ public sealed record OdHandCheck(OdHandCheckKind Kind, int Difficulty, GridPosit
 /// </summary>
 public sealed class PendingRoll
 {
-    internal PendingRoll(int heroId, DiceRoll roll, int bonus, IReadOnlyList<int> targetIds, DamageSource source, OdHandCheck? check = null, bool fire = false, bool stunOnSix = false)
+    internal PendingRoll(int heroId, DiceRoll roll, int bonus, IReadOnlyList<int> targetIds, DamageSource source, OdHandCheck? check = null, bool stunOnSix = false)
     {
         HeroId = heroId;
         Roll = roll;
@@ -77,7 +80,6 @@ public sealed class PendingRoll
         TargetIds = targetIds;
         Source = source;
         Check = check;
-        Fire = fire;
         StunOnSix = stunOnSix;
     }
 
@@ -98,10 +100,7 @@ public sealed class PendingRoll
     /// <summary>The Od Hand check this roll is for, or null for an attack.</summary>
     public OdHandCheck? Check { get; }
 
-    /// <summary>The dice are fire (the Flame Scroll): any 6 among them sets the targets alight, hit or miss.</summary>
-    public bool Fire { get; }
-
-    /// <summary>A stunning weapon (the Boomerang): every 6 among the dice stuns the targets, hit or miss.</summary>
+    /// <summary>A stunning weapon (the Boomerang): on a hit, every 6 among the dice stuns the target.</summary>
     public bool StunOnSix { get; }
 
     /// <summary>How many of the dice, from the first, aren't Power Dice (the rest are, and those added later).</summary>
@@ -116,8 +115,11 @@ public sealed class PendingRoll
     /// <summary>Torches' fire dice went into this attack: a 1 anywhere in it burns one out.</summary>
     public int Torches { get; internal init; }
 
-    /// <summary>A torch's fire die came up 6: on a hit, the target catches fire.</summary>
-    public bool TorchSix { get; internal init; }
+    /// <summary>Stacks of Freeze laid on every target as the attack lands, hit or miss (the Frost Wand).</summary>
+    public int Chill { get; internal init; }
+
+    /// <summary>What each face is made of (fire, ice...), in order; Star past its end (Power Dice added later).</summary>
+    public IReadOnlyList<DieType> DieTypes { get; internal init; } = [];
 }
 
 /// <summary>
@@ -186,12 +188,6 @@ public sealed class TurnState
     public bool UsedBeltItem { get; internal set; }
 
     public PendingRoll? PendingRoll { get; internal set; }
-
-    /// <summary>
-    /// Power Dice just earned by sixes on the pending attack or the move in progress, waiting for
-    /// the hero to add each to that roll or bank it. Nothing else can happen until they're settled.
-    /// </summary>
-    public int UnsettledPowerDice { get; internal set; }
 
     /// <summary>Sets the steps from the move's roll (after a reroll or an added Power Die), plus the carried-over steps.</summary>
     internal void CountSteps() => MovementPoints = CarriedSteps + Math.Max(0, MovementRoll!.Total + MovementBonus);

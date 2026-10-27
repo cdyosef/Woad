@@ -45,8 +45,9 @@ public sealed partial class GameSession
             return false;
         }
 
-        (DiceRoll roll, int powerDice) = RollMonsterDice(monster.Definition.OdHandDice);
+        (DiceRoll roll, _, int powerDice, int banked) = RollMonsterDice(monster, monster.Definition.OdHandDice, star: true);
         events.Add(new AttackRolled(monster.Id, roll, 0, roll.Total, [mark.Id], powerDice));
+        NoteBanked(monster.Id, monster.Power, banked, events);
         Stats stats = mark.EffectiveStats;
         DiceRoll hold = _dice.Roll(Math.Max(0, stats.OdHandDice));
         events.Add(new DefenseRolled(mark.Id, hold, 0, hold.Total));

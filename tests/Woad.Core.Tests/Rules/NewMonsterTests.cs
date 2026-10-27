@@ -139,7 +139,7 @@ public sealed class NewMonsterTests
     [Fact]
     public void AChampsSixesKnockTheHeroFurtherBackEvenOnAMiss()
     {
-        // Two 6s (and their Power Dice's 1s) can't get past the hero's armor, but each 6 knocks them a tile back.
+        // Two 6s (their Power Dice's 1s, then the two they banked, spent: 1s) can't get past the hero's armor, but each 6 knocks them a tile back.
         GameSession session = TestRun.Start("""
             .........
             .........
@@ -150,7 +150,7 @@ public sealed class NewMonsterTests
             .........
             .........
             .........
-            """, new ScriptedDice(6, 6, 1, 1), stats: TestRun.HeroStats with { DefenseDice = 0, Armor = 20 });
+            """, new ScriptedDice(6, 6, 1, 1, 1, 1), stats: TestRun.HeroStats with { DefenseDice = 0, Armor = 20 });
         Hero hero = session.HeroInSeat();
 
         IReadOnlyList<GameEvent> events = session.Do(new EndTurn(hero.Id));

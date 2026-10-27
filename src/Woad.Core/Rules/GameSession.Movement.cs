@@ -96,10 +96,10 @@ public sealed partial class GameSession
         SpendBankedPowerDice(hero, command.PowerDice, events);
 
         // Steps left from an earlier move carry over into this one.
-        DiceRoll roll = _dice.Roll(dice + command.PowerDice);
+        DiceRoll roll = hero.FixedWendFace is int face ? new DiceRoll([.. Enumerable.Repeat(face, dice + command.PowerDice)]) : _dice.Roll(dice + command.PowerDice);
         Turn.CarriedSteps = Turn.MovementPoints;
         Turn.MovementRoll = roll;
-        Turn.MovementBonus = bonus;
+        Turn.MovementBonus = bonus - RollPenalty(hero.Conditions);
         Turn.HasMoved = false;
         Turn.CountSteps();
         events.Add(new MovementRolled(command.HeroId, roll, bonus, Turn.MovementPoints, command.PowerDice));
@@ -246,7 +246,7 @@ public sealed partial class GameSession
             position => (room.Layout[position].IsWalkable() || room.Layout[position] is TileKind.Pit or TileKind.DeepWater) && room.MonsterAt(position) is null,
             Turn.MovementPoints,
             canPass: position => room.Layout[position] != TileKind.Pit && room.TrapAt(position) is not { Revealed: true },
-            stepCost: position => HeroStepCost(hero, room, position) * (hero.Prone ? GameRules.CrawlFactor : 1));
+            stepCost: position => HeroStepCost(hero, room, position) * CrawlOf(hero));
 
     private bool CanHeroStop(Room room, Hero hero, GridPosition position) =>
         !State.HeroesIn(room).Any(other => other != hero && other.Position == position) && room.MerchantAt(position) is null;

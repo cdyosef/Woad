@@ -50,6 +50,12 @@ public static class GameRules
     /// <summary>Rounds a patch of burning floor (from a Flame Scroll) keeps burning.</summary>
     public const int FlameRounds = 3;
 
+    /// <summary>Rumble it takes to dig off one token of earth when buried.</summary>
+    public const int DigPerToken = 3;
+
+    /// <summary>An Od Hand Tend clears blind eyes at this, plus one for each Blind token.</summary>
+    public const int TendDifficulty = 10;
+
     /// <summary>A die showing this earns a Power Die.</summary>
     public const int PowerDieFace = 6;
 

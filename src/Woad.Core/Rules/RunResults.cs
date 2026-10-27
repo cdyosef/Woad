@@ -82,9 +82,9 @@ public static class RunResults
         }
 
         static List<string> Gear(IEnumerable<CardInstance> cards) =>
-            cards.Where(card => card.Definition.Type != CardType.Treasure).SelectMany(card => Enumerable.Repeat(card.Definition.Id, card.Count)).ToList();
+            cards.Where(card => card.Definition.Type != CardType.Treasure).SelectMany(card => Enumerable.Repeat(card.Key, card.Count)).ToList();
 
-        return state.Heroes.Select(hero => new HeroRunResult
+        return state.Heroes.Where(hero => !hero.Summoned).Select(hero => new HeroRunResult
         {
             HeroId = hero.Id,
             CharacterId = hero.CharacterId,

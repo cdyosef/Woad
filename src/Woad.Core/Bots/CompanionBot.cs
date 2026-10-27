@@ -41,9 +41,9 @@ public static class CompanionBot
             return new StopDropRoll(hero.Id);
         }
 
-        if (turn.UnsettledPowerDice > 0)
+        if (turn.PendingRoll is null && session.CheckDigOut() is null)
         {
-            return turn.PendingRoll is not null ? new AddPowerDie(hero.Id) : new BankPowerDie(hero.Id);
+            return new DigOut(hero.Id);
         }
 
         if (turn.PendingRoll is not null)

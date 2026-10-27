@@ -1,5 +1,6 @@
 using Godot;
 using Woad.Core.Grid;
+using Woad.Core.Model;
 using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Game;
@@ -27,6 +28,7 @@ public partial class TokenView : Node2D
     private bool _torch;
     private bool _prone;
     private bool _diving;
+    private IReadOnlyDictionary<Condition, int> _conditions = new Dictionary<Condition, int>();
 
     public int EntityId { get; init; }
 
@@ -112,6 +114,18 @@ public partial class TokenView : Node2D
         set { _fireDice = value; QueueRedraw(); }
     }
 
+    /// <summary>
+    /// Tokens typed dice left on it: a colored pip for each kind down its left side (with the count when
+    /// there's more than one), a glow while it shines, ice over it while it freezes, earth over it while
+    /// buried, and Black Hearts among its heart pips.
+    /// </summary>
+    public IReadOnlyDictionary<Condition, int> Conditions
+    {
+        set { _conditions = value; QueueRedraw(); }
+    }
+
+    private int Count(Condition condition) => _conditions.GetValueOrDefault(condition);
+
     /// <summary>Lying down (prone): drawn on its side.</summary>
     public bool Prone
     {
@@ -155,6 +169,16 @@ public partial class TokenView : Node2D
 
     public override void _Draw()
     {
+        if (Count(Condition.Shine) > 0)
+        {
+            // It shines: a pale glow around it, brighter for each token.
+            var middle = new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f);
+            for (int ring = 3; ring >= 1; ring--)
+            {
+                DrawCircle(middle, 8 + ring * 5, DieTypes.Tint(Condition.Shine) with { A = 0.07f * Math.Min(3, Count(Condition.Shine)) }, antialiased: true);
+            }
+        }
+
         if (_torch)
         {
             // The light the torch throws, flickering, under everything else.
@@ -188,6 +212,8 @@ public partial class TokenView : Node2D
         {
             DrawString(ThemeDB.FallbackFont, new Vector2(Center.X + 7, 6), "z", fontSize: UiTheme.FontSize, modulate: Palette.TrimBright);
         }
+
+        DrawConditions();
 
         if (_fireDice > 0)
         {
@@ -403,10 +429,46 @@ public partial class TokenView : Node2D
             return;
         }
 
+        // Black Hearts are the last of the empty ones, drawn black.
+        int black = Math.Min(Count(Condition.BlackHeart), _maxHearts - _hearts);
         float pip = (width - (_maxHearts - 1)) / _maxHearts;
         for (int i = 0; i < _maxHearts; i++)
         {
-            DrawRect(new Rect2(left + i * (pip + 1), top, pip, 3), i < _hearts ? Palette.Heart : Palette.HeartEmpty);
+            Color color = i < _hearts ? Palette.Heart : i >= _maxHearts - black ? DieTypes.Tint(Condition.BlackHeart) : Palette.HeartEmpty;
+            DrawRect(new Rect2(left + i * (pip + 1), top, pip, 3), color);
+        }
+    }
+
+    private void DrawConditions()
+    {
+        if (Count(Condition.Freeze) > 0)
+        {
+            // Ice creeping over it: thicker the deeper it's frozen.
+            float depth = Math.Min(1, Count(Condition.Freeze) / 3f);
+            DrawRect(new Rect2(4, 30 - 24 * depth, BoardView.TileSize - 8, 24 * depth), DieTypes.Tint(Condition.Freeze) with { A = 0.35f });
+        }
+
+        if (Count(Condition.Buried) > 0)
+        {
+            // A mound of earth heaped over it.
+            Color earth = DieTypes.Tint(Condition.Buried);
+            DrawColoredPolygon([new Vector2(2, 30), new Vector2(8, 16), new Vector2(BoardView.TileSize / 2f, 12), new Vector2(BoardView.TileSize - 8, 16), new Vector2(BoardView.TileSize - 2, 30)], earth);
+            DrawPolyline([new Vector2(2, 30), new Vector2(8, 16), new Vector2(BoardView.TileSize / 2f, 12), new Vector2(BoardView.TileSize - 8, 16), new Vector2(BoardView.TileSize - 2, 30)], earth.Darkened(0.4f), 1);
+        }
+
+        // A pip for each kind of token down the left side, the count beside it.
+        float y = 5;
+        foreach ((Condition condition, int count) in _conditions.Where(entry => entry.Key is not Condition.BlackHeart).OrderBy(entry => entry.Key))
+        {
+            var at = new Vector2(4, y);
+            DrawCircle(at, 3.2f, Palette.Ink, antialiased: true);
+            DrawCircle(at, 2.4f, DieTypes.Tint(condition), antialiased: true);
+            if (count > 1)
+            {
+                DrawString(ThemeDB.FallbackFont, at + new Vector2(3, 3), count.ToString(), fontSize: 7, modulate: DieTypes.Tint(condition));
+            }
+
+            y += 7;
         }
     }
 }

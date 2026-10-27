@@ -20,6 +20,15 @@ public sealed class SavedRunFile(string path)
         File.Move(temporary, Path, overwrite: true);
     }
 
+    /// <summary>Moves a run that can't be played any more out of the way, beside it as ".old", so nothing is lost.</summary>
+    public void SetAside()
+    {
+        if (Exists)
+        {
+            File.Move(Path, Path + ".old", overwrite: true);
+        }
+    }
+
     public void Delete()
     {
         if (Exists)

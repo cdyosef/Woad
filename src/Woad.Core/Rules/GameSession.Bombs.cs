@@ -30,7 +30,7 @@ public sealed partial class GameSession
     /// <summary>Why the active hero can't strike the bomb, or null.</summary>
     public string? CheckAttackBomb(int bombId)
     {
-        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0, KeelingOver: false })
+        if (State.Turn is not { PendingRoll: null, KeelingOver: false })
         {
             return "Finish the roll first.";
         }
@@ -232,7 +232,8 @@ public sealed partial class GameSession
     /// <summary>A blast's dice: each 6 rolls another at once (and so on).</summary>
     private DiceRoll RollBlast(Room room, GridPosition center, List<GameEvent> events)
     {
-        (DiceRoll roll, int powerDice) = RollMonsterDice(GameRules.BlastDice);
+        (int[] faces, int powerDice) = RollBonusDice(GameRules.BlastDice);
+        var roll = new DiceRoll(faces);
         events.Add(new BlastRolled(room.Id, center, roll, powerDice));
         return roll;
     }

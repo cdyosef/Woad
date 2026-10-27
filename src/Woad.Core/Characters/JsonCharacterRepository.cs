@@ -112,7 +112,7 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
             var known = new List<string>();
             foreach (string cardId in cardIds)
             {
-                if (content.Cards.ContainsKey(cardId))
+                if (content.Cards.ContainsKey(CardKey.Id(cardId)))
                 {
                     known.Add(cardId);
                 }

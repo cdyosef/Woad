@@ -82,10 +82,11 @@ public sealed class ContentCatalog
     public IReadOnlyList<ThemeRoom> RoomsFor(string themeId) =>
         _themeRooms.TryGetValue(themeId, out IReadOnlyList<ThemeRoom>? rooms) ? rooms : throw new KeyNotFoundException($"Unknown theme '{themeId}'.");
 
+    /// <summary>A card by its id, or by a character's key for it (worn gear: see <see cref="CardKey"/>).</summary>
     public CardDefinition GetCard(string id) =>
-        _cards.TryGetValue(id, out CardDefinition? card) ? card : throw new KeyNotFoundException($"Unknown card '{id}'.");
+        _cards.TryGetValue(CardKey.Id(id), out CardDefinition? card) ? card : throw new KeyNotFoundException($"Unknown card '{id}'.");
 
-    public CardDefinition? FindCard(string id) => _cards.GetValueOrDefault(id);
+    public CardDefinition? FindCard(string id) => _cards.GetValueOrDefault(CardKey.Id(id));
 
     public MonsterDefinition GetMonster(string id) =>
         _monsters.TryGetValue(id, out MonsterDefinition? monster) ? monster : throw new KeyNotFoundException($"Unknown monster '{id}'.");
@@ -295,9 +296,14 @@ public sealed class ContentCatalog
 
         if (card.Effect is { } effect)
         {
-            if (effect.Amount < 1)
+            if (effect.Amount < 1 && effect.Kind is not (CardEffectKind.Cure or CardEffectKind.Repair))
             {
                 errors.Add($"{name} effect needs an amount of at least 1.");
+            }
+
+            if ((effect.Kind == CardEffectKind.Cure) != (effect.Cures is not null))
+            {
+                errors.Add($"{name} effect: a cure needs something to cure, and only a cure has one.");
             }
 
             if (effect.Range < 0 || effect.AreaRadius < 0)

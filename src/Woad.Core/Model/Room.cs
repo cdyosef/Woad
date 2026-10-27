@@ -26,6 +26,7 @@ public sealed class Room
     private readonly List<Tombstone> _tombstones = [];
     private readonly List<Bomb> _bombs = [];
     private readonly Dictionary<GridPosition, int> _flames = [];
+    private readonly Dictionary<GridPosition, bool> _plants = [];
     private readonly IReadOnlyDictionary<Direction, GridPosition> _doorTiles;
 
     internal Room(
@@ -151,6 +152,17 @@ public sealed class Room
     /// <summary>Anything on the tile to pick up: cards, gold, keys, the Boss Key or an unlit bomb.</summary>
     public bool HasLootAt(GridPosition position) =>
         LootAt(position).Count > 0 || GoldAt(position) > 0 || KeysAt(position) > 0 || BossKeyAt == position || BombAt(position) is { Lit: false };
+
+    /// <summary>Plants Life dice grew, and whose side they're on (true for the heroes'): rough going for that side's enemies, cover for its own.</summary>
+    public IReadOnlyDictionary<GridPosition, bool> Plants => _plants;
+
+    /// <summary>Whether plants on the tile are against <paramref name="heroes"/>' side (rough going for them).</summary>
+    public bool PlantsAgainst(GridPosition position, bool heroes) => _plants.TryGetValue(position, out bool heroesPlants) && heroesPlants != heroes;
+
+    /// <summary>Whether plants on the tile shelter <paramref name="heroes"/>' side.</summary>
+    public bool PlantsFor(GridPosition position, bool heroes) => _plants.TryGetValue(position, out bool heroesPlants) && heroesPlants == heroes;
+
+    internal void Grow(GridPosition position, bool heroes) => _plants[position] = heroes;
 
     /// <summary>Burning floor, and the rounds each tile has left to burn.</summary>
     public IReadOnlyDictionary<GridPosition, int> Flames => _flames;

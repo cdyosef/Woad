@@ -138,6 +138,10 @@ public partial class GameScreen : Control
         {
             RunSpellTest();
         }
+        else if (args.Contains("--dietypetest"))
+        {
+            RunDieTypeTest();
+        }
         else if (args.Contains("--companiontest"))
         {
             RunCompanionTest();
@@ -718,7 +722,7 @@ public partial class GameScreen : Control
                 _trayShowsMovement = false;
                 BeginStrike(attack.AttackerId, attack.Total, attack.Roll.Faces.TakeLast(attack.PowerDice).Sum());
                 await Lunge(attack.AttackerId, attack.TargetIds.FirstOrDefault());
-                await _dice.ShowRoll($"{NameOf(attack.AttackerId)} {(attack.Shove ? "shoves" : attack.Chain ? "flings its chain" : "attacks")}", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice, DiceKind.Rumble);
+                await _dice.ShowRoll($"{NameOf(attack.AttackerId)} {(attack.Shove ? "shoves" : attack.Chain ? "flings its chain" : "attacks")}", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice, DiceKind.Rumble, types: attack.DieTypes);
                 // A hero's sixes get their own events; a monster's roll straight in, so call them out here.
                 if (attack.PowerDice > 0 && !IsHero(attack.AttackerId))
                 {
@@ -737,12 +741,8 @@ public partial class GameScreen : Control
 
                 break;
 
-            case PowerDiceBanked banked when !IsHero(banked.OwnerId) && _figures.TryGetValue(banked.OwnerId, out Figure? banker) && banker.RoomId == _shownRoomId:
+            case PowerDiceBanked banked when _figures.TryGetValue(banked.OwnerId, out Figure? banker) && banker.RoomId == _shownRoomId:
                 _board.FloatText(banker.Position, banked.Count > 1 ? $"6! {banked.Count} Power Dice" : "6! Power Die", Palette.Power);
-                break;
-
-            case PowerDiceEarned earned when _figures.TryGetValue(earned.HeroId, out Figure? lucky) && lucky.RoomId == _shownRoomId:
-                _board.FloatText(lucky.Position, "6! Power Die", Palette.Power);
                 break;
 
             case CritRolled crit:
@@ -794,6 +794,71 @@ public partial class GameScreen : Control
             case FireOut { Cause: var cause } fireOut:
                 FloatOver(fireOut.EntityId, cause switch { FireOutCause.Water => "doused", FireOutCause.Rolled => "rolls it out", _ => "fire out" }, Palette.Text);
                 await UpdateFigure(fireOut.EntityId, figure => figure.FireDice = 0, 0.3);
+                break;
+
+            case ConditionChanged changed:
+                await ShowCondition(changed);
+                break;
+
+            case GearCorroded corroded:
+                CalloutOver(corroded.HeroId, "ARMOR MELTS!", DieTypes.Tint(DieType.Acid));
+                RefreshPanels();
+                await Pause(0.3);
+                break;
+
+            case GearMended mended:
+                FloatOver(mended.HeroId, "good as new", Palette.Heal);
+                RefreshPanels();
+                break;
+
+            case Slammed slammed:
+                _trayShowsMovement = false;
+                BeginStrike(0, slammed.Roll.Total, 0);
+                CalloutOver(slammed.EntityId, "SLAM!", DieTypes.Tint(DieType.Squall));
+                await _dice.ShowRoll($"{NameOf(slammed.EntityId)} slams into {(slammed.IntoId is int into ? NameOf(into) : "the wall")}", slammed.Roll, 0, newGroup: true, types: [.. slammed.Roll.Faces.Select(_ => DieType.Squall)]);
+                break;
+
+            case DugOut dug:
+                _trayShowsMovement = false;
+                await _dice.ShowRoll($"{NameOf(dug.EntityId)} digs", dug.Roll, 0, newGroup: true, types: [.. dug.Roll.Faces.Select(_ => DieType.Earth)]);
+                FloatOver(dug.EntityId, dug.BuriedLeft == 0 ? "digs free!" : $"{dug.BuriedLeft} to dig", DieTypes.Tint(DieType.Earth));
+                await UpdateFigure(dug.EntityId, figure => SetCondition(figure, Condition.Buried, dug.BuriedLeft), 0.2);
+                break;
+
+            case PoisonRolled poison:
+                FloatOver(poison.EntityId, poison.LostHeart ? $"poison bites ({poison.Face})" : poison.Face == GameRules.PowerDieFace ? "shakes off poison" : $"resists poison ({poison.Face})", DieTypes.Tint(DieType.Poison));
+                await UpdateFigure(poison.EntityId, figure => SetCondition(figure, Condition.Poison, poison.PoisonLeft), 0.3);
+                break;
+
+            case AcidBurned acid:
+                _trayShowsMovement = false;
+                BeginStrike(0, acid.Roll.Total, 0);
+                await _dice.ShowRoll($"Acid eats at {NameOf(acid.EntityId)}", acid.Roll, 0, newGroup: true, types: [.. acid.Roll.Faces.Select(_ => DieType.Acid)]);
+                break;
+
+            case FrozenSolid frozen:
+                CalloutOver(frozen.EntityId, "FROZEN SOLID!", DieTypes.Tint(DieType.Ice));
+                await Pause(0.4);
+                break;
+
+            case Staggered staggered:
+                CalloutOver(staggered.EntityId, "CONFUSED!", DieTypes.Tint(DieType.Psycho));
+                await Pause(0.3);
+                break;
+
+            case PlantsGrew grew:
+                _board.QueueRedraw();
+                if (grew.RoomId == _shownRoomId)
+                {
+                    _board.FloatText(grew.Tile, "plants grow", DieTypes.Tint(DieType.Life));
+                    await Pause(0.2);
+                }
+
+                break;
+
+            case HeroSummoned summoned:
+                await SummonFigure(summoned);
+                RefreshPanels();
                 break;
 
             case WentProne prone:
@@ -998,7 +1063,7 @@ public partial class GameScreen : Control
             case MovementRolled or AttackRolled or DefenseRolled or DieRerolled or PowerDieAdded:
                 Sfx.PlayVaried("dice");
                 break;
-            case PowerDiceEarned:
+            case PowerDiceBanked:
                 Sfx.Play("coin", 1.3f);
                 break;
             case Damaged { Amount: > 0 }:

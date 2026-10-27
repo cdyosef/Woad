@@ -143,8 +143,8 @@ public class StunTests
         Assert.Equal(EquipSlot.OffHand, hero.Equipment.Single(slot => slot.Value.Definition.Id == "boomerang").Key);
         Monster dummy = session.OnlyMonster();
 
-        Assert.Equal(1, session.Do(new AttackMonster(hero.Id, dummy.Id)).SingleOf<AttackRolled>().Bonus);
-        IReadOnlyList<GameEvent> events = session.Do(new AddPowerDie(hero.Id));
+        IReadOnlyList<GameEvent> events = session.Do(new AttackMonster(hero.Id, dummy.Id));
+        Assert.Equal(1, events.SingleOf<AttackRolled>().Bonus);
 
         Assert.Equal(new Stunned(dummy.Id, 1, 0, false), events.SingleOf<Stunned>());
     }
@@ -168,8 +168,7 @@ public class StunTests
         flyer.Position = new GridPosition(5, 4);
         flyer.Hearts = 3;
 
-        session.Do(new AttackMonster(hero.Id, flyer.Id));
-        IReadOnlyList<GameEvent> events = session.Do(new AddPowerDie(hero.Id));
+        IReadOnlyList<GameEvent> events = session.Do(new AttackMonster(hero.Id, flyer.Id));
 
         Assert.Contains(events, e => e is MonsterDefeated or MonsterFell);
         Assert.Empty(session.RoomById().Monsters);

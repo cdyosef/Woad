@@ -18,7 +18,7 @@ cooperate to survive the dungeon but compete for treasure: the richest player to
 | Players | 1–8, local hot-seat, mouse only |
 | Play mode | Semi-co-op: no direct PvP damage; the escaped player with the most treasure wins |
 | Rooms | 9×9 grids; players may split up into different rooms |
-| Dice | d6 pools for movement, attack and defense. Each Attack or Move die is an action of its own, or several can be rolled together for a stronger one. Every 6 earns a Power Die to add or bank |
+| Dice | d6 pools for movement, attack and defense. Each Attack or Move die is an action of its own, or several can be rolled together for a stronger one. A 6 on a plain (Star) die surges: a Power Die rolls in and another is banked. Typed dice (fire, ice, poison...) roll more of their type on a 6 and lay their effect on a hit |
 | Cards | Abilities and items (weapons, shields, armor, boots, spells, tools, bombs, potions, treasure); single-use or persistent; equipped into body slots |
 | Card source | Starter kit, then loot from chests and monsters drawn from the dungeon's loot deck |
 | Turn | Spend your Rumble, Wend and Od Hand dice on attacks, moves and Od Hand checks, plus 1 other action, 1 free loot and 1 free belt item, in any order |
@@ -150,26 +150,26 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
   or walks through it catches fire, and monsters keep off it unless fire can't hurt them.
 - **Torches** (tool, stack: a stack fills one backpack slot, and only one goes in each hand): every
   character starts with one, and merchants sell them. Held, a torch is lit: **+1d6** on Search rolls, a
-  warm light, and a **fire die** on your Rumble attacks. A 6 on the fire die rolls another, and on a hit
-  sets the target alight; any **1** in the attack burns the torch out.
+  warm light, and a **Fire die** on your Rumble attacks (see Damage types); any **1** in the attack burns
+  the torch out.
 - **Lockpicks** (tool, off hand, stack): +1 and 1d6 on one lock-picking roll a turn (doors, chests,
   gates, and any locks added later; not searching, disarming or stealing). A 6 on the pick's die rolls
   another die straight in. A failed lock-picking roll with a 1 showing (not on a Power Die) snaps one
   pick off the stack.
 - **Longsword** (main hand, from floor 2): Weapon 1 and 1d6 on one attack a turn; a 6 on its die rolls
   another straight in. Versatile: +1 more with nothing in your off hand (held two-handed).
-- **Tool and weapon dice:** a 6 on one doesn't wait to be banked: a Power Die rolls straight into that
-  roll, with a "6!" callout.
-- **Freezing** (the Frost Wand): a frozen monster skips its next turn and can't be frozen again during the
-  following round. Bosses can't be frozen.
-- **Stun** (the Boomerang's sixes) and **Powerful Stun** (bomb blasts) stack, and wear off at the end of
+- **Tool and weapon dice:** a 6 on one rolls another die straight into that roll, with a "6!" callout.
+  A typed weapon's dice (the Frost Brand's ice) are dice of its type.
+- **Frost Wand** (off hand, 2 charges a floor): 2 Ice dice at a monster within 3. It always lays a stack of
+  Freeze, hit or miss, and a stack more for each 6 on a hit (see Damage types).
+- **Stun** (the Boomerang's sixes and Elektrik dice, on a hit) and **Powerful Stun** (bomb blasts) stack, and wear off at the end of
   the stunned creature's next turn. The first stack takes its Od Hand action and its free actions (free
   loot, free belt item), or a Wend die if it has no Od Hand, and a flyer drops out of the air (into a pit
   or water under it). Each further Stun takes a die: Wend first, then Rumble, then Defense. A Powerful
   Stun takes 2 more dice to begin with (3 without Od Hand) and 3 for each further one. Attacks on a
   stunned creature get **+1 per Stun and +3 per Powerful Stun**. Bosses can't be stunned.
 - **Boomerang:** a weapon for either hand. Thrown at a target within 4 (line of sight) with your Rumble
-  dice +1 (in place of your main weapon's bonus); every 6 rolled adds a Stun, hit or miss. In the off hand
+  dice +1 (in place of your main weapon's bonus); on a hit, every 6 rolled adds a Stun. In the off hand
   it's used for targets your main weapon can't reach.
 - **Prone monsters** (knocked flat by a blast): melee on them rolls an extra die, ranged attacks face an
   extra defense die, and getting up costs them 2 of their moves.
@@ -268,8 +268,9 @@ facing door of the next room.
 
 ### Fire
 
-- **Catching fire:** fire dice (the Flame Scroll's, and the attacks of Cinder Imps and Fire Beetles) set
-  their target alight on **any 6**, hit or miss: 1 fire die, or one more on a creature already burning.
+- **Catching fire:** Fire dice (the Flame Scroll's, torches', and the attacks of Cinder Imps and Fire
+  Beetles) set their target alight on a hit, a fire die for each **6** (more on a creature already
+  burning). See Damage types.
 - **Burning:** at the start of a burning hero's or monster's turn its fire dice are rolled as an attack on
   it, defended as usual (1 heart on a hit; a mark of death for someone Keeling Over). Then each **6** adds
   a fire die and sets a random neighbor alight (diagonals too, anyone: hero, companion or monster), and
@@ -291,25 +292,83 @@ facing door of the next room.
 
 ### Power Dice
 
-- **Earning:** every **6** rolled earns a Power Die, on any roll by a hero or a monster: attacks,
-  moves and defense.
-- **Using one:** a Power Die is one more d6 rolled into a roll and added to it. If it also shows a 6,
-  it earns another.
+- **Power Surge:** a **6** on a plain (Star) die, on an attack, move or Od Hand roll by a hero or a
+  monster, surges: one Power Die rolls straight into that roll, and another goes into the bank, or with
+  the bank full, rolls in too. A Power Die is a Star die: its own 6 surges again. There's no choice to
+  make, so play never waits on it.
 - **The bank:** each hero and monster can bank up to **3** *(tunable)*, kept until used (across turns
-  and floors). A 6 rolled with a full bank is rolled into that roll straight away instead.
-- **Your attacks and moves:** after a 6 you choose **Add Power Die** (roll it in now) or **Bank it**.
-  Nothing else can happen until you choose. Banked dice show in the dice pool's POWER row, unselected;
-  select them to roll them into your next attack or move.
-- **Defense:** sixes are banked automatically. While a defense is losing and the banked dice could still
-  make up the gap, they're rolled in one at a time to try to block.
-- **Monsters** roll the sixes on their attacks straight in, and bank and spend on defense like heroes.
-  They spend banked dice on attacks too (one at a time, while the roll looks short of the target's armor
-  and a middling defense die), and on movement (while a die could still get them to where they can
-  strike). Their sixes show **6!** over them.
+  and floors). Banked dice show in the dice pool's POWER row, unselected; select them to roll them into
+  your next attack or move.
+- **Defense:** sixes are banked (rolled in when the bank is full). While a defense is losing and the
+  banked dice could still make up the gap, they're rolled in one at a time to try to block.
+- **Monsters** surge the same way, and bank and spend on defense like heroes. They spend banked dice on
+  attacks too (one at a time, while the roll looks short of the target's armor and a middling defense
+  die), and on movement (while a die could still get them to where they can strike). Their sixes show
+  **6!** over them.
+- **Typed dice** (below) earn no Power Dice at all.
 - **Between runs:** Power Dice still banked at the end of a dungeon or a fight go home with the character
   and come along to the next one.
-- A Luck reroll that comes up 6 earns a Power Die too. Od Hand rolls earn and use Power Dice like
-  attacks and moves.
+- A Luck reroll that comes up 6 surges too. Od Hand rolls earn and use Power Dice like attacks and
+  moves.
+
+### Damage types
+
+Dice can be made of something other than plain Star: **Fire, Poison, Ice, Acid, Necro, Squall, Radiate,
+Life, Earth, Elektrik, Psycho** and **Shadow**. Scrolls roll them (a Frost Scroll's 3 Ice dice), typed
+weapons roll their own dice as their type (the Frost Brand, the Quake Hammer), gear can turn your Rumble
+dice into a type (the Storm Mail's Elektrik), a held torch adds a Fire die, and some monsters attack with
+them (Cinder Imps and Fire Beetles with Fire, Giant Scorpions with Poison, Jellyfish with Elektrik, the
+Necromancer with Necro). A typed die earns **no Power Die**: each **6** rolls another die of its type
+straight in, and **if the attack hits**, lays a stack of its type's effect on the target. Items may do more
+of their own on top (a Flame Scroll aimed at bare floor sets it burning).
+
+- **Fire (Burn):** a fire die on the target (see Fire).
+- **Poison (Poisoned):** a Poison token. Each takes 1 off all their rolls (attacks, defense, moves, Od
+  Hand). At the end of their turn they roll a die: not higher than their tokens, they lose a heart; a 6
+  throws one off.
+- **Ice (Freeze):** a stack of Freeze. The first halves their speed (each step costs double; half a
+  monster's moves); each one after takes a Wend die (2 of a monster's moves). With no Wend left they're
+  **frozen solid**: their turn passes with nothing done, though they still defend. A stack melts at the
+  end of each of their turns, one more for each fire beside them as their turn starts (burning creatures,
+  burning floor, held torches), and one for every fire die that attacks them.
+- **Acid (Dissolve):** on a hero, a point of wear on the equipped piece giving the most armor (a card
+  shows "worn -1"). Wear stays with the card, between runs too, until the **Blacksmith** mends it or an
+  **Autosmith Hammer** does. On a monster, its armor is eaten for the rest of the fight. With no armor
+  left, an Acid token instead, which attacks them with an Acid die at the end of their next turn and is
+  used up.
+- **The Blacksmith** (a shack on the road south of The Waylay Inn): mends worn gear for **2 gold a point**
+  of wear, paid by whoever owns it, and sells arms, armor and **Autosmith Hammers** from the forge, which
+  never runs out. An Autosmith Hammer (single use, stacks; in the loot decks too) mends its user's most
+  worn card whole, anywhere. Weapons can be mended too, for whatever wears them later.
+- **Necro (Necrosis):** a Black Heart: one of the hearts the hit took can't be healed until cured (Holy
+  Water cures disease and curses). A last heart taken with one kills outright, and the dead rise as
+  zombies following whoever killed them: a monster a hero kills this way rises as that hero's companion
+  (not bosses), and a hero slain by a Necro monster rises as a zombie on the monsters' side.
+- **Squall:** blown a tile straight away from the attacker for each 6. For every tile a wall or someone
+  stops them, a die hits them, and whoever stopped them too. Bosses and huge monsters are shifted a tile
+  for every two 6s, and never into a pit or out of their water.
+- **Radiate (Shine):** a Shine token: -1 to their defense each, and they glow. One fades at the end of each
+  of their turns.
+- **Life:** plants grow on the target's tile, for the attacker's side: rough going for that side's enemies
+  (a step there costs 1 more) and +1 defense to its own standing in them. Where plants grow already, a
+  **Sentient Shrub** springs up beside the target to fight for the attacker's side (1 heart, 1 Rumble die,
+  a Wend die that's always a 1).
+- **Earth (Quake):** knocked prone; someone already prone is **buried** instead, a token for each 6. Buried,
+  they can't move or attack: they dig with their Rumble dice (the **Dig out** button), every 3 of the roll
+  throwing off a token. With none left they're only prone.
+- **Elektrik (Electroshock):** a Stun (see Stun).
+- **Psycho (Confuse):** a Confuse token. On their turn they lash out with every Rumble die at someone
+  beside them (anyone, friend or foe), then stagger off in a random direction as far as their Wend takes
+  them, and that's their turn. One wears off at the end of each of their turns.
+- **Shadow (Blind):** a Blind token: -1 to their attacks each, and they can't see past the tiles beside
+  them (a blind hero can only attack or aim at what's beside them, and the rest of the room goes dark on
+  their turn; a blind monster only finds heroes beside it and otherwise wanders). It lasts until cured:
+  an Od Hand **Tend** (the **Tend eyes** button, or on an ally beside you) of 10 plus their tokens, or
+  **Eye Drops**.
+
+Figures show their tokens as colored pips down their left side (with the count), a glow while they shine,
+ice over them while they freeze, a mound of earth while buried, and Black Hearts as purple heart pips.
+Typed dice show in their own colors in the dice bar.
 
 ## Od Hand
 
@@ -723,9 +782,10 @@ them up there like any character.
   (SIL Open Font License; `assets/fonts/Jersey10-OFL.txt`), drawn on its 10-pixel grid so every
   letter stays crisp and clear.
 - **Dice colors:** Rumble dice are red, Wend green, Od Hand yellow, Defense blue, tools' dice bronze,
-  Power Dice purple; weapon dice look like Rumble dice. Other rolls (the Keel Die, blasts, fire) are white.
+  Power Dice purple, typed dice their type's color; weapon dice look like Rumble dice. Other rolls (the Keel
+  Die, blasts, burning) are white.
   The **This turn** dice tokens and the buttons that spend them share those colors, as a stripe and tinted
-  text: Rumble and Shove red, Wend and Leap green, Search and Steal yellow, Add Power Die and Bank it purple.
+  text: Rumble and Shove red, Wend and Leap green, Search and Steal yellow.
 - **Dice bar:** under the board, fighting-game style. Whoever rolls is on the left with their dice,
   bonus and total; whoever answers is on the right of a slanted VS (several defenders, as in a blast,
   each get a smaller column). The winning side glows gold, and each defender is tagged HIT, MISS or

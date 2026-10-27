@@ -23,9 +23,6 @@ public sealed record TurnEnded(int HeroId) : GameEvent;
 /// </summary>
 public sealed record MovementRolled(int HeroId, DiceRoll Roll, int Bonus, int MovementPoints, int PowerDice = 0) : GameEvent;
 
-/// <summary>Sixes earned Power Dice the hero now chooses to add or bank (<paramref name="Unsettled"/> in all).</summary>
-public sealed record PowerDiceEarned(int HeroId, int Unsettled) : GameEvent;
-
 /// <summary>
 /// A Power Die was rolled into a hero's pending attack or move (by choice, or because their bank was
 /// full). <paramref name="Total"/> is the attack's new total, or the move's new steps.
@@ -56,8 +53,8 @@ public sealed record AttackRolled(int AttackerId, DiceRoll Roll, int Bonus, int 
     /// <summary>Of the faces, after the Rumble dice: the weapon's own dice (the Longsword's d6). Power Dice come last.</summary>
     public int WeaponDice { get; init; }
 
-    /// <summary>Of the faces, after the weapon's: the torches' fire dice.</summary>
-    public int TorchDice { get; init; }
+    /// <summary>What each face is made of (fire, ice...), in order; Star past its end. A typed die's 6 rolled another in.</summary>
+    public IReadOnlyList<DieType> DieTypes { get; init; } = [];
 
     /// <summary>A flung chain (the Iron Warden's), which drags and shackles whoever it hits.</summary>
     public bool Chain { get; init; }
@@ -110,6 +107,9 @@ public enum SpawnCause
     Split,
     Mimic,
     Raised,
+
+    /// <summary>A Sentient Shrub sprang up where plants grew (a monster's Life dice).</summary>
+    Grown,
 }
 
 public sealed record MonsterMoved(int MonsterId, IReadOnlyList<GridPosition> Path) : GameEvent;
@@ -495,3 +495,48 @@ public sealed record MonsterRegenerated(int MonsterId, int Hearts) : GameEvent;
 
 /// <summary>A hero threw on the Coward's Cloak: Rumble and Od Hand dice turned to <paramref name="WendDice"/> Wend dice, and the monsters beside them slowed.</summary>
 public sealed record CowardsFlight(int HeroId, int WendDice, IReadOnlyList<int> SlowedMonsterIds) : GameEvent;
+
+/// <summary>
+/// A typed die's token on a hero or monster changed (poison, freeze, blindness...): it now has
+/// <paramref name="Count"/>, put there (or taken off) by <paramref name="ById"/> (0 for nobody: it wore off).
+/// </summary>
+public sealed record ConditionChanged(int EntityId, Condition Condition, int Count, int ById) : GameEvent;
+
+/// <summary>
+/// A gust (a Squall die) couldn't push them as far as it should: they slammed into a wall, or into
+/// <paramref name="IntoId"/>, and the <paramref name="Roll"/> (a die for every tile it was stopped) hits them, and whoever stopped them too.
+/// </summary>
+public sealed record Slammed(int EntityId, int? IntoId, DiceRoll Roll) : GameEvent;
+
+/// <summary>A buried hero or monster dug at the earth: every 3 of <paramref name="Roll"/> threw off a token, <paramref name="BuriedLeft"/> left.</summary>
+public sealed record DugOut(int EntityId, DiceRoll Roll, int BuriedLeft) : GameEvent;
+
+/// <summary>
+/// The end of a poisoned hero's or monster's turn: they rolled <paramref name="Face"/> against their
+/// tokens, losing a heart if it wasn't higher; a 6 threw one off (<paramref name="PoisonLeft"/> left).
+/// </summary>
+public sealed record PoisonRolled(int EntityId, int Face, bool LostHeart, int PoisonLeft) : GameEvent;
+
+/// <summary>An Acid token ate in at the end of their turn: its die attacks them (the defense and damage follow).</summary>
+public sealed record AcidBurned(int EntityId, DiceRoll Roll) : GameEvent;
+
+/// <summary>A hero or monster is frozen solid: its turn passes with nothing done.</summary>
+public sealed record FrozenSolid(int EntityId) : GameEvent;
+
+/// <summary>A confused hero or monster lashed out at whoever was beside it and staggered off.</summary>
+public sealed record Staggered(int EntityId) : GameEvent;
+
+/// <summary>Plants grew on a tile (Life dice), for the heroes' side or the monsters'.</summary>
+public sealed record PlantsGrew(string RoomId, GridPosition Tile, bool ForHeroes) : GameEvent;
+
+/// <summary>
+/// A companion was raised or grown in the fight (a zombie, a Sentient Shrub) and follows
+/// <paramref name="OwnerId"/>'s player for the rest of the run; it looks like the monster <paramref name="Guise"/>.
+/// </summary>
+public sealed record HeroSummoned(int HeroId, int OwnerId, string Name, string Guise, string RoomId, GridPosition Position) : GameEvent;
+
+/// <summary>Acid ate at a hero's gear: the card is worn by <paramref name="Wear"/>, giving <paramref name="ArmorLeft"/> armor until mended.</summary>
+public sealed record GearCorroded(int HeroId, int CardId, int Wear, int ArmorLeft) : GameEvent;
+
+/// <summary>A worn card was mended whole (an Autosmith Hammer).</summary>
+public sealed record GearMended(int HeroId, int CardId) : GameEvent;

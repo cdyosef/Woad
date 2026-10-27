@@ -185,8 +185,8 @@ public sealed record MonsterDefinition
 
     public bool StunImmune { get; init; }
 
-    /// <summary>Its attacks are fire: any 6 on its attack roll sets the target alight, hit or miss.</summary>
-    public bool FireAttack { get; init; }
+    /// <summary>What its attack dice are made of (fire, poison...): their 6s roll more of them in, and on a hit lay their effect on the target. Null for plain Star dice.</summary>
+    public Model.DieType? DieType { get; init; }
 
     /// <summary>Never catches fire.</summary>
     public bool FireImmune { get; init; }

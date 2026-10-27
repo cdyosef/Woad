@@ -33,7 +33,7 @@ internal static class TestContent
           { "id": "potion", "name": "Potion", "type": "potion", "usage": "singleUse", "effect": { "kind": "heal", "amount": 3 } },
           { "id": "bomb", "name": "Bomb", "type": "bomb", "usage": "singleUse", "effect": { "kind": "attack", "amount": 4, "range": 3, "areaRadius": 1 } },
           { "id": "scroll", "name": "Scroll", "type": "spell", "usage": "singleUse", "effect": { "kind": "attack", "amount": 3, "range": 3 } },
-          { "id": "firebolt", "name": "Firebolt", "type": "spell", "usage": "singleUse", "effect": { "kind": "attack", "amount": 3, "range": 3, "fire": true } },
+          { "id": "firebolt", "name": "Firebolt", "type": "spell", "usage": "singleUse", "effect": { "kind": "attack", "amount": 3, "range": 3, "dieType": "fire" } },
           { "id": "wand", "name": "Wand", "type": "spell", "slot": "offHand", "usage": "charges", "charges": 2, "effect": { "kind": "freeze", "amount": 1, "range": 3 } },
           { "id": "icicle", "name": "Icicle", "type": "tool", "slot": "offHand", "effect": { "kind": "freeze", "amount": 1, "range": 4 } },
           { "id": "boomerang", "name": "Boomerang", "type": "weapon", "slot": "offHand", "altSlot": "mainHand", "attackRange": 4, "attackBonus": 1, "stunOnSix": true },
@@ -45,7 +45,24 @@ internal static class TestContent
           { "id": "tonic", "name": "Tonic", "type": "potion", "usage": "singleUse", "stacks": true, "effect": { "kind": "heal", "amount": 1 } },
           { "id": "coin", "name": "Coin", "type": "treasure", "value": 5 },
           { "id": "purse", "name": "Purse", "type": "treasure", "coins": true, "value": 3 },
-          { "id": "gem", "name": "Gem", "type": "treasure", "value": 15 }
+          { "id": "gem", "name": "Gem", "type": "treasure", "value": 15 },
+          { "id": "bolt_poison", "name": "Poison Bolt", "type": "spell", "usage": "singleUse", "stacks": true, "effect": { "kind": "attack", "amount": 1, "range": 6, "dieType": "poison" } },
+          { "id": "bolt_ice", "name": "Ice Bolt", "type": "spell", "usage": "singleUse", "stacks": true, "effect": { "kind": "attack", "amount": 1, "range": 6, "dieType": "ice" } },
+          { "id": "bolt_acid", "name": "Acid Bolt", "type": "spell", "usage": "singleUse", "stacks": true, "effect": { "kind": "attack", "amount": 1, "range": 6, "dieType": "acid" } },
+          { "id": "bolt_necro", "name": "Necro Bolt", "type": "spell", "usage": "singleUse", "stacks": true, "effect": { "kind": "attack", "amount": 1, "range": 6, "dieType": "necro" } },
+          { "id": "bolt_squall", "name": "Squall Bolt", "type": "spell", "usage": "singleUse", "stacks": true, "effect": { "kind": "attack", "amount": 1, "range": 6, "dieType": "squall" } },
+          { "id": "bolt_radiate", "name": "Radiate Bolt", "type": "spell", "usage": "singleUse", "stacks": true, "effect": { "kind": "attack", "amount": 1, "range": 6, "dieType": "radiate" } },
+          { "id": "bolt_life", "name": "Life Bolt", "type": "spell", "usage": "singleUse", "stacks": true, "effect": { "kind": "attack", "amount": 1, "range": 6, "dieType": "life" } },
+          { "id": "bolt_earth", "name": "Earth Bolt", "type": "spell", "usage": "singleUse", "stacks": true, "effect": { "kind": "attack", "amount": 1, "range": 6, "dieType": "earth" } },
+          { "id": "bolt_elektrik", "name": "Elektrik Bolt", "type": "spell", "usage": "singleUse", "stacks": true, "effect": { "kind": "attack", "amount": 1, "range": 6, "dieType": "elektrik" } },
+          { "id": "bolt_psycho", "name": "Psycho Bolt", "type": "spell", "usage": "singleUse", "stacks": true, "effect": { "kind": "attack", "amount": 1, "range": 6, "dieType": "psycho" } },
+          { "id": "bolt_shadow", "name": "Shadow Bolt", "type": "spell", "usage": "singleUse", "stacks": true, "effect": { "kind": "attack", "amount": 1, "range": 6, "dieType": "shadow" } },
+          { "id": "t_frost", "name": "T-Frost", "type": "spell", "slot": "offHand", "usage": "charges", "charges": 2, "effect": { "kind": "attack", "amount": 2, "range": 3, "dieType": "ice", "chill": 1 } },
+          { "id": "mender", "name": "Mender", "type": "tool", "usage": "singleUse", "stacks": true, "effect": { "kind": "repair" } },
+          { "id": "drops", "name": "Drops", "type": "potion", "usage": "singleUse", "effect": { "kind": "cure", "cures": "blind" } },
+          { "id": "holy", "name": "Holy", "type": "potion", "usage": "singleUse", "effect": { "kind": "cure", "cures": "blackHeart" } },
+          { "id": "storm", "name": "Storm", "type": "armor", "slot": "body", "rumbleType": "elektrik" },
+          { "id": "brand", "name": "Brand", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 1, "weaponDice": 1 }, "dieType": "ice" }
         ]
         """;
 
@@ -65,7 +82,7 @@ internal static class TestContent
           { "id": "hoarder", "name": "Hoarder", "glyph": "h", "hearts": 1, "move": 0, "attackDice": 0, "defenseDice": 0, "dropChance": 100, "drops": 2, "xp": 7 },
           { "id": "knight", "name": "Knight", "glyph": "K", "hearts": 1, "move": 0, "attackDice": 0, "defenseDice": 1, "armor": 2 },
           { "id": "duelist", "name": "Duelist", "glyph": "D", "hearts": 1, "move": 0, "attackDice": 2, "defenseDice": 0, "weapon": 2 },
-          { "id": "torch", "name": "Torch", "glyph": "t", "hearts": 1, "move": 0, "attackDice": 1, "defenseDice": 0, "fireAttack": true, "fireImmune": true },
+          { "id": "torch", "name": "Torch", "glyph": "t", "hearts": 1, "move": 0, "attackDice": 1, "defenseDice": 0, "dieType": "fire", "fireImmune": true },
           { "id": "sniper", "name": "Sniper", "glyph": "n", "hearts": 1, "move": 0, "attackDice": 1, "defenseDice": 0, "attackPattern": "ranged", "attackRange": 5 },
           { "id": "pickpocket", "name": "Pickpocket", "glyph": "T", "hearts": 2, "move": 4, "attackDice": 1, "defenseDice": 0, "odHandDice": 3, "thief": true },
           { "id": "mugger", "name": "Mugger", "glyph": "Y", "hearts": 1, "move": 0, "attackDice": 2, "defenseDice": 0, "odHandDice": 1, "mugger": true, "goldOnly": true, "separateAttacks": true },
@@ -81,7 +98,15 @@ internal static class TestContent
           { "id": "basher", "name": "Basher", "glyph": "o", "hearts": 3, "move": 0, "attackDice": 1, "defenseDice": 0, "knocksBack": true },
           { "id": "hexer", "name": "Hexer", "glyph": "H", "hearts": 1, "move": 0, "attackDice": 1, "defenseDice": 0, "attackPattern": "ranged", "attackRange": 4, "hexes": true },
           { "id": "raiser", "name": "Raiser", "glyph": "N", "hearts": 1, "move": 0, "attackDice": 0, "defenseDice": 0, "raises": "bones", "raiseMax": 2, "xp": 5 },
-          { "id": "blob", "name": "Blob", "glyph": "u", "hearts": 1, "move": 2, "attackDice": 1, "defenseDice": 0, "engulfs": true }
+          { "id": "blob", "name": "Blob", "glyph": "u", "hearts": 1, "move": 2, "attackDice": 1, "defenseDice": 0, "engulfs": true },
+          { "id": "zombie", "name": "Zombie", "glyph": "z", "hearts": 3, "move": 2, "attackDice": 1, "defenseDice": 1 },
+          { "id": "sentient_shrub", "name": "Sentient Shrub", "glyph": "S", "hearts": 1, "move": 1, "attackDice": 1, "defenseDice": 0 },
+          { "id": "venom", "name": "Venom", "glyph": "v", "hearts": 3, "move": 0, "attackDice": 1, "defenseDice": 0, "dieType": "poison" },
+          { "id": "sprout", "name": "Sprout", "glyph": "L", "hearts": 3, "move": 0, "attackDice": 1, "defenseDice": 0, "dieType": "life" },
+          { "id": "ghoul", "name": "Ghoul", "glyph": "G", "hearts": 3, "move": 0, "attackDice": 1, "defenseDice": 0, "dieType": "necro" },
+          { "id": "hulk", "name": "Hulk", "glyph": "O", "hearts": 5, "move": 0, "attackDice": 0, "defenseDice": 0, "size": 2 },
+          { "id": "spitter", "name": "Spitter", "glyph": "A", "hearts": 3, "move": 0, "attackDice": 1, "defenseDice": 0, "dieType": "acid" },
+          { "id": "gust", "name": "Gust", "glyph": "w", "hearts": 3, "move": 0, "attackDice": 1, "defenseDice": 0, "dieType": "squall" }
         ]
         """;
 
