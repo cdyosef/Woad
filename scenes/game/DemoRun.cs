@@ -197,6 +197,23 @@ public static class DemoRun
         StartRoomId = "study",
     };
 
+    /// <summary>
+    /// For --dietypetest: a tough Aria with eight scrolls of typed dice (two on her belt, six in her
+    /// pack) among an ogre, a skeleton, a scorpion (poison) and a necromancer (necro).
+    /// </summary>
+    public static RunSetup Elements(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = [DebugHeroes[0] with
+        {
+            BaseStats = DebugHeroes[0].BaseStats with { Hearts = 40, DefenseDice = 3 },
+            CardIds = ["frost_scroll", "spark_scroll", "venom_scroll", "gale_scroll", "quake_scroll", "bloom_scroll", "mind_scroll", "shadow_scroll"],
+        }],
+        Rooms = [new RoomSetup("lab", RoomTemplate.Parse(".........\n.........\n...o.z...\n.........\n....1....\n.........\n...k..n..\n.........\n.........", ContentCatalog.LoadDefault()))],
+        StartRoomId = "lab",
+    };
+
     /// <summary>For --loottest: Aria with a stack of lockpicks, an emerald and a bomb, beside a chest.</summary>
     public static RunSetup Treasury(ulong seed) => new()
     {

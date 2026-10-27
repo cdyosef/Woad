@@ -6,7 +6,7 @@ using Woad.Core.Model;
 namespace Woad.Core.Rules;
 
 /// <summary>
-/// Stuns (see <see cref="StunState"/>): the Boomerang's sixes add Stun, bomb blasts Powerful Stun.
+/// Stuns (see <see cref="StunState"/>): the Boomerang's sixes and Elektrik dice add Stun on a hit, bomb blasts Powerful Stun.
 /// A hero's stun takes its dice when their next turn starts; a monster's when its next turn does. Either
 /// way it wears off at the end of that turn. Stunned flyers drop out of the air, into whatever is under
 /// them. Bosses can't be stunned. Also here: which weapon an attack is made with, a thrown weapon from
@@ -17,28 +17,6 @@ public sealed partial class GameSession
     /// <summary>A melee attack (from right beside it) on a prone monster rolls an extra die.</summary>
     private static int ProneBonus(Monster target, GridPosition from) =>
         target.Prone && target.Position.ChebyshevDistanceTo(from) <= 1 ? 1 : 0;
-
-    /// <summary>A stunning weapon's attack: each 6 among its dice stuns every target still standing, hit or miss.</summary>
-    private void StunTargets(Hero attacker, Room room, PendingRoll attack, List<GameEvent> events)
-    {
-        int sixes = attack.StunOnSix ? attack.Roll.Faces.Count(face => face == GameRules.PowerDieFace) : 0;
-        if (sixes == 0)
-        {
-            return;
-        }
-
-        foreach (int targetId in attack.TargetIds)
-        {
-            if (room.FindMonster(targetId) is { } monster)
-            {
-                Stun(room, monster, powerful: false, sixes, attacker, events);
-            }
-            else if (State.HeroesIn(room).FirstOrDefault(ally => ally.Id == targetId) is { } ally)
-            {
-                Stun(ally, powerful: false, sixes, events);
-            }
-        }
-    }
 
     /// <summary>Stuns a monster (not a boss). A flyer stunned over a pit falls; over deep water, it flounders out.</summary>
     private void Stun(Room room, Monster monster, bool powerful, int stacks, Hero? by, List<GameEvent> events)

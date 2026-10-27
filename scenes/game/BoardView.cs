@@ -380,6 +380,11 @@ public partial class BoardView : Control
             DrawBurningFloor(tile, rounds);
         }
 
+        foreach ((GridPosition tile, bool heroes) in _room.Plants)
+        {
+            DrawPlants(tile, heroes);
+        }
+
         _loot.QueueRedraw();
 
         foreach ((GridPosition tile, int amount) in _room.Gold)
@@ -680,6 +685,21 @@ public partial class BoardView : Control
         }
     }
 
+    /// <summary>Plants Life dice grew: leafy green tufts for the party's side, dark thorny ones for the monsters'.</summary>
+    private void DrawPlants(GridPosition tile, bool heroes)
+    {
+        Rect2 rect = TileRect(tile);
+        Color leaf = heroes ? DieTypes.Tint(DieType.Life) : new Color("4a6a3a");
+        Color shade = leaf.Darkened(0.4f);
+        DrawRect(rect.Grow(-3), leaf with { A = 0.16f });
+        foreach ((float x, float y) in new[] { (6f, 26f), (16f, 29f), (26f, 25f), (11f, 14f), (22f, 12f) })
+        {
+            var foot = rect.Position + new Vector2(x, y);
+            DrawColoredPolygon([foot + new Vector2(-3, 0), foot + new Vector2(0, -7), foot + new Vector2(1, 0)], shade);
+            DrawColoredPolygon([foot + new Vector2(-1, 0), foot + new Vector2(2, -6), foot + new Vector2(3, 0)], leaf);
+        }
+    }
+
     /// <summary>Burning floor: a red-orange glow and three flickering tongues of flame, and the rounds it has left.</summary>
     private void DrawBurningFloor(GridPosition tile, int rounds)
     {
@@ -808,7 +828,32 @@ public partial class BoardView : Control
         {
             DrawLoot(canvas, tile, _room.LootAt(tile).Sum(card => card.Count), inChest: _room.Layout[tile] == TileKind.Chest);
         }
+
+        // A blind hero on their turn sees only the tiles beside them.
+        if (BlindAt is { } eyes)
+        {
+            foreach (GridPosition tile in _room.Positions.Where(tile => tile.ChebyshevDistanceTo(eyes) > 1))
+            {
+                canvas.DrawRect(TileRect(tile), Palette.Background with { A = 0.92f });
+            }
+        }
     }
+
+    /// <summary>Where the hero whose turn it is stands, while they're blind: the rest of the room goes dark.</summary>
+    public GridPosition? BlindAt
+    {
+        get => _blindAt;
+        set
+        {
+            if (_blindAt != value)
+            {
+                _blindAt = value;
+                _loot.QueueRedraw();
+            }
+        }
+    }
+
+    private GridPosition? _blindAt;
 
     /// <summary>The layer above the figures that loot marks are drawn on.</summary>
     private sealed partial class LootLayer : Node2D

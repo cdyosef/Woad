@@ -71,12 +71,13 @@ public sealed partial class GameSession
         }
 
         // A troll knits its wounds back together, unless fire got at it.
-        if (own.Regenerates && !burning && room.FindMonster(monster.Id) is not null && !monster.Collapsed && monster.Hearts < monster.MaxHearts)
+        if (own.Regenerates && !burning && room.FindMonster(monster.Id) is not null && !monster.Collapsed && monster.Hearts < monster.MaxHearts - monster.Conditions[Condition.BlackHeart])
         {
             monster.Hearts++;
             events.Add(new MonsterRegenerated(monster.Id, monster.Hearts));
         }
 
+        ConditionsAtTurnEnd(room, monster, events);
         if (State.Phase == RunPhase.InProgress)
         {
             BurnFuses(monster.Id, heroTurn: false, events);
@@ -102,6 +103,24 @@ public sealed partial class GameSession
         {
             monster.FrozenTurns--;
             events.Add(new MonsterTurnSkipped(monster.Id));
+            return;
+        }
+
+        if (!ConditionsAtTurnStart(room, monster, events))
+        {
+            return;
+        }
+
+        // Buried: it digs, and that's its turn.
+        if (DigOutMonster(monster, events))
+        {
+            return;
+        }
+
+        // Confused: it lashes out at whoever's beside it and staggers off, and that's its turn.
+        if (monster.Conditions.Has(Condition.Confused))
+        {
+            Stagger(room, monster, events);
             return;
         }
 
@@ -213,6 +232,8 @@ public sealed partial class GameSession
     /// <summary>Of the heroes attackable from a tile, the one with the fewest hearts (then lowest seat).</summary>
     private static Hero? ChooseTarget(Room room, Monster monster, GridPosition from, IEnumerable<Hero> heroes) =>
         heroes
+            // Blind, it can only find those right beside it.
+            .Where(hero => !IsBlind(monster.Conditions) || FootprintAt(monster, from).Any(tile => hero.Position.ChebyshevDistanceTo(tile) <= 1))
             .Where(hero => ArcReaches(monster, from, hero) || FootprintAt(monster, from).Any(tile => Targeting.CanAttack(room.Layout, monster.Definition.AttackPattern, monster.Definition.AttackRange, tile, hero.Position)))
             // Someone diving in deep water can only be reached up close.
             .Where(hero => !Diving(room, hero) || FootprintAt(monster, from).Any(tile => hero.Position.ChebyshevDistanceTo(tile) <= 1))
@@ -289,7 +310,7 @@ public sealed partial class GameSession
                 break;
             }
 
-            GridPosition? next = monster.Definition.Erratic && _random.Behavior.CoinFlip()
+            GridPosition? next = (monster.Definition.Erratic && _random.Behavior.CoinFlip()) || IsBlind(monster.Conditions)
                 ? RandomStep(room, monster, current)
                 : StepToward(room, monster, current, heroes);
             int cost = next is { } step ? StepCost(room, monster, step) : 0;
@@ -334,7 +355,8 @@ public sealed partial class GameSession
     }
 
     private static int StepCost(Room room, Monster monster, GridPosition tile) =>
-        monster.Definition.Swimmer && InWater(room, tile) ? 1 : room.Layout[tile].MoveCost(monster.Flies);
+        (monster.Definition.Swimmer && InWater(room, tile) ? 1 : room.Layout[tile].MoveCost(monster.Flies))
+        + (!monster.Flies && room.PlantsAgainst(tile, heroes: false) ? 1 : 0);
 
     private GridPosition? RandomStep(Room room, Monster monster, GridPosition from)
     {

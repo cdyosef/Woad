@@ -38,7 +38,7 @@ public partial class GameScreen
                 MaxHearts = hero.MaxHearts,
                 Glyph = hero.Name[..1].ToUpperInvariant(),
                 Fill = Palette.Seat(hero.Seat),
-                Look = Looks.Resolve(hero.Appearance, hero.Portrait),
+                Look = hero.Guise is null ? Looks.Resolve(hero.Appearance, hero.Portrait) : null,
                 Keeling = hero.IsKeelingOver,
                 LifeMarks = hero.LifeMarks,
                 DeathMarks = hero.DeathMarks,
@@ -48,6 +48,8 @@ public partial class GameScreen
                 Diving = _session.IsDiving(hero),
                 Chained = hero.Shackled is not null,
                 Torch = hero.TorchesHeld > 0,
+                Monster = hero.Guise is { } guise ? Content.GetMonster(guise) : null,
+                Conditions = new Dictionary<Condition, int>(hero.Conditions.All),
             };
         }
 
@@ -63,6 +65,7 @@ public partial class GameScreen
                 _figures[monster.Id].Prone = monster.Prone;
                 _figures[monster.Id].CarriesLoot = monster.HasLoot;
                 _figures[monster.Id].StunMarks = monster.Stun.Stacks + 3 * monster.Stun.PowerfulStacks;
+                _figures[monster.Id].Conditions = new Dictionary<Condition, int>(monster.Conditions.All);
             }
         }
 
@@ -134,6 +137,7 @@ public partial class GameScreen
         token.Chained = figure.Chained;
         token.Prone = figure.Prone;
         token.Diving = figure.Diving;
+        token.Conditions = figure.Conditions;
         token.Active = figure.Id == TurnOnShow?.Id;
         // The active hero (and the arrow over their head) is drawn over their neighbors.
         token.ZIndex = figure.Id == TurnOnShow?.Id ? 1 : 0;
@@ -311,6 +315,75 @@ public partial class GameScreen
         }
     }
 
+    private static void SetCondition(Figure figure, Condition condition, int count)
+    {
+        if (count == 0)
+        {
+            figure.Conditions.Remove(condition);
+        }
+        else
+        {
+            figure.Conditions[condition] = count;
+        }
+    }
+
+    /// <summary>A token came or went: called out when it lands, noted when it clears.</summary>
+    private async Task ShowCondition(ConditionChanged changed)
+    {
+        int before = _figures.TryGetValue(changed.EntityId, out Figure? marked) ? marked.Conditions.GetValueOrDefault(changed.Condition) : 0;
+        if (changed.Count > before)
+        {
+            CalloutOver(changed.EntityId, DieTypes.Callout(changed.Condition), DieTypes.Tint(changed.Condition));
+        }
+        else if (changed.Count == 0)
+        {
+            FloatOver(changed.EntityId, changed.Condition switch
+            {
+                Condition.Freeze => "thaws",
+                Condition.Buried => "digs free",
+                Condition.Blind => "sees again",
+                Condition.BlackHeart => "cured",
+                Condition.Poison => "poison gone",
+                Condition.Shine => "glow fades",
+                Condition.Confused => "comes to",
+                Condition.Corroded => "armor mended",
+                _ => "spent",
+            }, Palette.Text);
+        }
+
+        await UpdateFigure(changed.EntityId, figure => SetCondition(figure, changed.Condition, changed.Count), changed.Count > before ? 0.25 : 0.1);
+        RefreshPanels();
+    }
+
+    /// <summary>A zombie or Sentient Shrub joins the party mid-fight: it gets a figure, looking like its monster.</summary>
+    private async Task SummonFigure(HeroSummoned summoned)
+    {
+        Hero hero = _session.State.GetHero(summoned.HeroId);
+        _names[hero.Id] = hero.Name;
+        MonsterDefinition guise = Content.GetMonster(summoned.Guise);
+        var figure = new Figure
+        {
+            Id = hero.Id,
+            IsHero = true,
+            Monster = guise,
+            RoomId = summoned.RoomId,
+            Position = summoned.Position,
+            Hearts = hero.MaxHearts,
+            MaxHearts = hero.MaxHearts,
+            Glyph = char.ToUpperInvariant(guise.Glyph).ToString(),
+            Fill = Palette.Seat(hero.Seat),
+        };
+        _figures[figure.Id] = figure;
+        if (summoned.RoomId == _shownRoomId)
+        {
+            TokenView token = CreateToken(figure);
+            token.Modulate = Colors.Transparent;
+            CreateTween().TweenProperty(token, "modulate", Colors.White, 0.3);
+            CalloutOver(hero.Id, guise.Id == "sentient_shrub" ? "SPROUTS!" : "RISES!", Palette.Heal);
+            await Pause(0.4);
+        }
+    }
+
     private async Task SpawnFigure(MonsterSpawned spawned)
     {
         var definition = Content.GetMonster(spawned.MonsterDefinitionId);
@@ -353,7 +426,7 @@ public partial class GameScreen
 
         public bool IsHero { get; init; }
 
-        /// <summary>Null for heroes.</summary>
+        /// <summary>Null for heroes, but for a summoned one (a zombie, a Sentient Shrub): the monster it looks like.</summary>
         public MonsterDefinition? Monster { get; init; }
 
         public string RoomId { get; set; } = "";
@@ -394,5 +467,8 @@ public partial class GameScreen
         public bool Prone { get; set; }
 
         public bool Diving { get; set; }
+
+        /// <summary>Tokens typed dice left on it (poison, freeze...), and how many of each.</summary>
+        public Dictionary<Condition, int> Conditions { get; set; } = [];
     }
 }

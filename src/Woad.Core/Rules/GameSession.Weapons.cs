@@ -196,7 +196,7 @@ public sealed partial class GameSession
     /// <summary>Why the active hero can't reload their crossbow now, or null.</summary>
     public string? CheckReload()
     {
-        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
+        if (State.Turn is not { PendingRoll: null })
         {
             return "Finish the roll first.";
         }

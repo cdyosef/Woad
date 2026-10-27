@@ -73,6 +73,9 @@ public partial class WoarldMapScreen : Control
     public event Action<Character>? Traded;
 
     private WandererPanel _wandererPanel = null!;
+    private SmithyPanel _smithyPanel = null!;
+
+    internal SmithyPanel SmithyPanel => _smithyPanel;
 
     internal WandererPanel WandererPanel => _wandererPanel;
 
@@ -165,6 +168,17 @@ public partial class WoarldMapScreen : Control
             }
         };
         AddChild(_wandererPanel);
+
+        _smithyPanel = new SmithyPanel { Position = new Vector2(Size.X / 2 - 150, BarHeight + 12) };
+        _smithyPanel.Traded += (result, trader) =>
+        {
+            Say(result.Message);
+            if (trader is not null)
+            {
+                Traded?.Invoke(trader);
+            }
+        };
+        AddChild(_smithyPanel);
 
         PartyButton = AddButton(new Vector2(576, ButtonsTop), 56, "Party", "The Party: everyone's level, hearts and gear. Hand things around, level up, and set how companions manage their things.");
         PartyButton.Pressed += () => PartyMenu.Open();
@@ -372,6 +386,9 @@ public partial class WoarldMapScreen : Control
                 string waitsOn = Journey.Map.Places.FirstOrDefault(other => other.ThemeId == place.UnlockedBy)?.Name ?? "another dungeon";
                 Say($"{place.Name} is sealed. Beat {waitsOn} to open it.");
                 break;
+            case PlaceKind.Smithy:
+                _smithyPanel.Open(place, Party, Party[Leader], Content);
+                break;
             case PlaceKind.Dungeon:
                 BeginRaid.Ask($"{place.Name}, with {UiTheme.Count(Party.Count, "hero", "heroes")}. A raid takes the rest of the day." + (ReplacesSavedRun ? " This replaces your saved run." : ""));
                 break;
@@ -417,6 +434,11 @@ public partial class WoarldMapScreen : Control
         if (wanderer is null)
         {
             _wandererPanel.Visible = false;
+        }
+
+        if (here is not { Kind: PlaceKind.Smithy })
+        {
+            _smithyPanel.Visible = false;
         }
 
         if (World is not null)

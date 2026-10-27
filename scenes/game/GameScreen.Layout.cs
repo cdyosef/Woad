@@ -36,11 +36,11 @@ public partial class GameScreen
     private RichTextLabel _log = null!;
     private Label _luckHint = null!;
     private Button _confirm = null!;
-    private Button _addPower = null!;
-    private Button _bankPower = null!;
     private Button _rumble = null!;
     private Button _prone = null!;
     private Button _dropRoll = null!;
+    private Button _digOut = null!;
+    private Button _tend = null!;
     private Button _roll = null!;
     private Button _search = null!;
     private Button _steal = null!;
@@ -113,8 +113,7 @@ public partial class GameScreen
         // Keeling Over, the only thing to do is roll the Keel Die (the End turn button), with any Power Dice selected.
         bool keeling = !Locked && turn is { KeelingOver: true };
         bool idle = !Locked && turn is not null && !keeling;
-        bool choosingPower = turn?.UnsettledPowerDice > 0;
-        bool pending = turn?.PendingRoll is not null || choosingPower;
+        bool pending = turn?.PendingRoll is not null;
         UpdatePool((idle && !pending) || keeling);
         bool held = hero is not null && _session.HeldBy(hero) is not null;
         _roll.Disabled = !(idle && !pending && _session.MoveDiceLeft > 0) || held;
@@ -143,17 +142,14 @@ public partial class GameScreen
         _endTurn.TooltipText = turn is { KeelingOver: true }
             ? "Keeling Over: roll the Keel Die. A 6 is a mark of life and rolls a Power Die (another on a 6); a 1 is a mark of death and rolls a Doom Die (another on a 1). Every roll after the first adds Doom Dice: 1 on the second, 2 on the third... Select banked Power Dice to add them: their 6s are marks of life."
             : "";
-        _confirm.Visible = turn?.PendingRoll is not null && !choosingPower;
+        _confirm.Visible = turn?.PendingRoll is not null;
         _confirm.Disabled = Locked;
-        _addPower.Visible = _bankPower.Visible = choosingPower;
-        _addPower.Disabled = _bankPower.Disabled = Locked;
-        _bankPower.Text = hero is null ? "Bank it" : $"Bank it ({hero.Power.Banked}/{GameRules.MaxBankedPowerDice})";
 
         // Where Confirm and the Power Die buttons go, while there's no roll to settle: lie down or get up, and stop, drop and roll.
         bool lying = hero?.Prone == true;
         // The row above the dice buttons: Rumble, Shove and Prone (Drop & roll while burning), where Confirm
         // and the Power Die buttons go while a roll waits.
-        bool waiting = turn?.PendingRoll is not null || choosingPower;
+        bool waiting = turn?.PendingRoll is not null;
         _rumble.Visible = _shove.Visible = _prone.Visible = _dropRoll.Visible = !waiting;
         _prone.Text = lying ? "Get up" : "Prone";
         string? proneError = hero is null || turn is null ? "" : lying ? _session.CheckGetUp() : _session.CheckGoProne();
@@ -166,6 +162,20 @@ public partial class GameScreen
         _prone.Visible &= !_dropRoll.Visible;
         _dropRoll.Disabled = dropError is not null;
         _dropRoll.TooltipText = dropError ?? "Stop, drop and roll: put the fire out. It takes your whole turn and leaves you prone.";
+
+        // Buried, digging out takes the place of everything else; blind, the eyes can be tended.
+        bool buried = hero?.Conditions.Has(Condition.Buried) == true;
+        _digOut.Visible = !waiting && buried && !_dropRoll.Visible;
+        string? digError = hero is null || turn is null ? "" : _session.CheckDigOut();
+        _digOut.Disabled = digError is not null || Locked;
+        _digOut.TooltipText = digError ?? $"Dig at the earth with every Rumble die left: every {GameRules.DigPerToken} of the roll throws off a token ({hero!.Conditions[Condition.Buried]} to go).";
+        _rumble.Visible &= !buried;
+        bool blind = hero?.Conditions.Has(Condition.Blind) == true;
+        _tend.Visible = !waiting && blind && !_dropRoll.Visible && !_digOut.Visible;
+        string? tendError = hero is null || turn is null ? "" : _session.CheckTend(hero.Id);
+        _tend.Disabled = tendError is not null || Locked;
+        _tend.TooltipText = tendError ?? $"Od Hand: tend your eyes, {GameRules.TendDifficulty + hero!.Conditions[Condition.Blind]} or more to see again.";
+        _prone.Visible &= !_digOut.Visible && !_tend.Visible;
 
         bool canReroll = idle && hero!.LuckRemaining > 0
             && (pending || (_trayShowsMovement && turn!.MovementRoll is not null && !turn.HasMoved));
@@ -221,6 +231,7 @@ public partial class GameScreen
 
     private void UpdateHighlights()
     {
+        _board.BlindAt = !Locked && ActiveHero is { IsCompanion: false } blind && blind.RoomId == _shownRoomId && blind.Conditions.Has(Condition.Blind) ? blind.Position : null;
         if (Locked || ActiveHero is not { } hero || _session.State.Turn is not { } turn || hero.RoomId != _shownRoomId)
         {
             _board.ClearHighlights();
@@ -264,7 +275,7 @@ public partial class GameScreen
         }
 
         var interactive = new List<GridPosition>();
-        if (turn.PendingRoll is null && turn.UnsettledPowerDice == 0)
+        if (turn.PendingRoll is null)
         {
             interactive.AddRange(hero.Position.OrthogonalNeighbors().Where(tile =>
                 (room.Layout[tile] == TileKind.Chest && (_session.CheckOpenChest(tile) is null || _session.CheckPickLock(tile) is null || _session.CheckDisarm(tile) is null))
@@ -438,7 +449,7 @@ public partial class GameScreen
             return CardActions.Unavailable("Wait for the action to finish.");
         }
 
-        string? Drop() => turn.PendingRoll is not null || turn.UnsettledPowerDice > 0 ? "Finish the roll first." : null;
+        string? Drop() => turn.PendingRoll is not null ? "Finish the roll first." : null;
         var blocked = new Dictionary<CardAction, string>();
         foreach ((CardAction action, string? reason) in new[]
         {
@@ -637,14 +648,6 @@ public partial class GameScreen
         _confirm.Pressed += () => ExecuteForActiveHero(heroId => new ConfirmAttack(heroId));
         right.AddChild(_confirm);
 
-        // After a 6: roll the Power Die into this roll, or keep it for later.
-        _addPower = UiTheme.Accent(UiTheme.Button(new Vector2(8, 279), new Vector2(78, 18), "Add Power Die"), Palette.Power);
-        _addPower.Pressed += () => ExecuteForActiveHero(heroId => new AddPowerDie(heroId));
-        right.AddChild(_addPower);
-        _bankPower = UiTheme.Accent(UiTheme.Button(new Vector2(90, 279), new Vector2(78, 18), "Bank it"), Palette.Power);
-        _bankPower.Pressed += () => ExecuteForActiveHero(heroId => new BankPowerDie(heroId));
-        right.AddChild(_bankPower);
-
         _rumble = UiTheme.Accent(UiTheme.CompactButton(new Vector2(8, 279), new Vector2(52, 20), "Rumble"), Palette.DieRumble);
         _rumble.TooltipText = "Attack (R or Space): your attack range shows in red; click a target in it. Uses your selected Rumble dice and your weapon.";
         _rumble.Pressed += ToggleRumble;
@@ -656,6 +659,14 @@ public partial class GameScreen
         _dropRoll = UiTheme.CompactButton(new Vector2(116, 279), new Vector2(52, 20), "Drop&roll");
         _dropRoll.Pressed += () => ExecuteForActiveHero(heroId => new StopDropRoll(heroId));
         right.AddChild(_dropRoll);
+
+        _digOut = UiTheme.Accent(UiTheme.CompactButton(new Vector2(116, 279), new Vector2(52, 20), "Dig out"), DieTypes.Tint(DieType.Earth));
+        _digOut.Pressed += () => ExecuteForActiveHero(heroId => new DigOut(heroId));
+        right.AddChild(_digOut);
+
+        _tend = UiTheme.Accent(UiTheme.CompactButton(new Vector2(116, 279), new Vector2(52, 20), "Tend eyes"), Palette.DieOdHand);
+        _tend.Pressed += () => ExecuteForActiveHero(heroId => new Tend(heroId, heroId));
+        right.AddChild(_tend);
 
         // Five buttons in a row: Wend, Leap, Search, Steal and Shove.
         _roll = UiTheme.Accent(UiTheme.CompactButton(new Vector2(8, 303), new Vector2(38, 20), "Wend"), Palette.DieWend);

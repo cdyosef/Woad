@@ -35,7 +35,7 @@ public class TorchTests
 
         var attack = events.SingleOf<AttackRolled>();
         Assert.Equal([3, 6, 2], attack.Roll.Faces);
-        Assert.Equal(1, attack.TorchDice);
+        Assert.Equal([DieType.Star, DieType.Fire, DieType.Fire], attack.DieTypes);
         Assert.Equal(1, dummy.FireDice);
         Assert.Equal(1, hero.TorchesHeld);
     }

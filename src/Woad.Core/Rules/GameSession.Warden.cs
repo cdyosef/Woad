@@ -48,9 +48,11 @@ public sealed partial class GameSession
             return;
         }
 
-        (DiceRoll roll, int powerDice) = RollMonsterDice(dice);
-        int total = roll.Total + definition.Weapon;
-        events.Add(new AttackRolled(monster.Id, roll, definition.Weapon, total, [.. heroes.Select(hero => hero.Id), .. monsters.Select(other => other.Id)], powerDice));
+        (DiceRoll roll, IReadOnlyList<DieType> types, int powerDice, int banked) = RollMonsterDice(monster, dice);
+        int bonus = definition.Weapon - AttackPenalty(monster.Conditions);
+        int total = roll.Total + bonus;
+        events.Add(new AttackRolled(monster.Id, roll, bonus, total, [.. heroes.Select(hero => hero.Id), .. monsters.Select(other => other.Id)], powerDice) { DieTypes = types });
+        NoteBanked(monster.Id, monster.Power, banked, events);
         foreach (Hero hero in heroes.Where(hero => hero.IsActive))
         {
             DamageHero(room, hero, total, MonsterBane(monster), monster.Id, events);
@@ -112,8 +114,9 @@ public sealed partial class GameSession
             return;
         }
 
-        (DiceRoll roll, int powerDice) = RollMonsterDice(chain.Dice);
+        (DiceRoll roll, _, int powerDice, int banked) = RollMonsterDice(monster, chain.Dice, star: true);
         events.Add(new AttackRolled(monster.Id, roll, 0, roll.Total, [target.Id], powerDice) { Chain = true });
+        NoteBanked(monster.Id, monster.Power, banked, events);
         int dealt = DamageHero(room, target, roll.Total, MonsterBane(monster), monster.Id, events, ranged: true);
         if (dealt == 0 || !target.IsActive)
         {
@@ -147,7 +150,7 @@ public sealed partial class GameSession
     /// <summary>Why the active hero can't free <paramref name="targetId"/>'s shackles with a key now, or null.</summary>
     public string? CheckUnshackle(int targetId)
     {
-        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
+        if (State.Turn is not { PendingRoll: null })
         {
             return "Finish the roll first.";
         }

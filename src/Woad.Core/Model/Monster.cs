@@ -61,6 +61,12 @@ public sealed class Monster
     /// <summary>Fire dice burning on it (0 when not on fire): rolled against it at the start of its turn.</summary>
     public int FireDice { get; internal set; }
 
+    /// <summary>Tokens the typed dice have left on it: poison, freeze, blindness and the rest.</summary>
+    public Conditions Conditions { get; } = new();
+
+    /// <summary>The hero who last laid a token on it (poison, acid...), who gets the kill if that finishes it; null if nobody's.</summary>
+    public int? AfflictedBy { get; internal set; }
+
     /// <summary>The hero whose fire this is, who gets the kill if it burns to death; null if nobody's.</summary>
     public int? IgnitedBy { get; internal set; }
 

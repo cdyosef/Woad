@@ -51,6 +51,12 @@ public enum CardEffectKind
     /// Od Hand dice left this turn become Wend dice. Used on yourself.
     /// </summary>
     CowardsFlight,
+
+    /// <summary>Clears <see cref="CardEffect.Cures"/> from yourself (Eye Drops, Holy Water).</summary>
+    Cure,
+
+    /// <summary>Mends your most worn card whole (the Autosmith Hammer).</summary>
+    Repair,
 }
 
 /// <summary>What happens when a card is used.</summary>
@@ -66,8 +72,17 @@ public sealed record CardEffect
     /// <summary>Attack only: monsters within this many tiles (diagonals count as 1) of the target are hit.</summary>
     public int AreaRadius { get; init; }
 
-    /// <summary>Attack only: the dice are fire. Any 6 among them sets the target alight, hit or miss.</summary>
-    public bool Fire { get; init; }
+    /// <summary>Attack only: stacks of Freeze laid on every target, hit or miss (the Frost Wand's).</summary>
+    public int Chill { get; init; }
+
+    /// <summary>Cure only: the tokens it clears.</summary>
+    public Model.Condition? Cures { get; init; }
+
+    /// <summary>Attack only: what the dice are made of (fire, ice...), or null for plain Star dice.</summary>
+    public Model.DieType? DieType { get; init; }
+
+    /// <summary>Fire dice: aimed at bare floor they set it burning, and they set off a bomb they touch.</summary>
+    public bool Fire => DieType == Model.DieType.Fire;
 }
 
 public sealed record CardDefinition
@@ -154,6 +169,12 @@ public sealed record CardDefinition
 
     /// <summary>Weapons: any 6 on its attack shoves the target a tile back, hit or miss (the Maul).</summary>
     public bool ShoveOnSix { get; init; }
+
+    /// <summary>Weapons: what its own dice (<see cref="Stats.WeaponDice"/>) are made of (the Frost Brand's ice), or null for plain ones.</summary>
+    public Model.DieType? DieType { get; init; }
+
+    /// <summary>Worn: the wearer's Rumble dice are made of this (the Storm Mail's lightning). They earn no Power Dice, but their 6s roll more in.</summary>
+    public Model.DieType? RumbleType { get; init; }
 
     /// <summary>Weapons: its hits crush: a shelled monster is knocked onto its back, and bones it breaks stay broken (the War Hammer).</summary>
     public bool Crush { get; init; }

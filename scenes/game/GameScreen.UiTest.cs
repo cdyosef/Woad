@@ -536,8 +536,8 @@ public partial class GameScreen
             await Click(this, _inventory.ActionButton(CardAction.Use));
             Check(_targeting, $"Use enters targeting ({_inventory.ActionButton(CardAction.Use).TooltipText})");
             await ClickTile(first.Position);
-            await WaitUntilIdle();
-            Check(first.FrozenTurns > 0, "clicking the slime freezes it");
+            await ConfirmIfHeld();
+            Check(ShownRoom.FindMonster(first.Id) is null || first.Conditions.Has(Condition.Freeze), "clicking the slime freezes it (or its Ice dice finish it)");
 
             CardInstance scroll = aria.Belt.Single(card => card.Definition.Id == "flame_scroll");
             await Click(this, _inventory.BeltSlot(aria.Belt.ToList().IndexOf(scroll)));
@@ -557,6 +557,95 @@ public partial class GameScreen
             Sfx.QuitGame(this, 1);
         }
     }
+
+    /// <summary>
+    /// Debug mode (<c>-- --dietypetest</c>, with <see cref="DemoRun.Elements"/>): Aria reads her scrolls
+    /// of typed dice at the monsters, a belt one and a pack one a turn, digging out or tending her eyes
+    /// when she must. After every step each figure's tokens must match the rules', and the typed dice
+    /// must show in their own colors.
+    /// </summary>
+    private async void RunDieTypeTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            for (int turn = 0; turn < 8 && aria.IsInPlay && _session.State.Phase == RunPhase.InProgress; turn++)
+            {
+                if (aria.Conditions.Has(Condition.Buried) && _digOut.Visible && !_digOut.Disabled)
+                {
+                    await Click(this, _digOut);
+                    await WaitUntilIdle();
+                    CheckTokens();
+                }
+
+                if (aria.Conditions.Has(Condition.Blind) && _tend.Visible && !_tend.Disabled)
+                {
+                    await Click(this, _tend);
+                    await ConfirmIfHeld();
+                    CheckTokens();
+                }
+
+                foreach (bool fromBelt in new[] { true, false })
+                {
+                    if (ActiveHero != aria)
+                    {
+                        break;
+                    }
+
+                    IReadOnlyList<CardInstance> place = fromBelt ? aria.Belt : aria.Backpack;
+                    if (place.FirstOrDefault(card => card.Definition.Effect?.DieType is not null) is not { } scroll
+                        || _session.GetCardTargets(scroll.Id).Where(tile => ShownRoom.MonsterAt(tile) is not null).Select(tile => (GridPosition?)tile).FirstOrDefault() is not { } target)
+                    {
+                        continue;
+                    }
+
+                    int slot = place.ToList().IndexOf(scroll);
+                    await Click(this, fromBelt ? _inventory.BeltSlot(slot) : _inventory.BackpackSlot(slot));
+                    await Click(this, _inventory.ActionButton(CardAction.Use));
+                    Check(_targeting, $"Use enters targeting for the {scroll.Definition.Name}");
+                    await ClickTile(target);
+                    await ConfirmIfHeld();
+                    Check(aria.FindCard(scroll.Id) is null || aria.FindCard(scroll.Id)!.Value.Card.Count < scroll.Count + 1, $"the {scroll.Definition.Name} is read");
+                    CheckTokens();
+                }
+
+                if (ActiveHero == aria)
+                {
+                    await Click(this, _endTurn);
+                }
+
+                await WaitUntilIdle();
+                CheckTokens();
+            }
+
+            Check(_dice.ShowedTypedDice, "typed dice show in their own colors");
+            GD.Print("Die type test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Die type test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
+    /// <summary>Every figure on show carries the tokens the rules say it has.</summary>
+    private void CheckTokens()
+    {
+        foreach (Monster monster in ShownRoom.Monsters)
+        {
+            Check(_figures.TryGetValue(monster.Id, out Figure? figure) && SameTokens(figure.Conditions, monster.Conditions), $"the {monster.Definition.Name}'s figure shows its tokens ({string.Join(", ", monster.Conditions.All.Select(entry => $"{entry.Key} {entry.Value}"))})");
+        }
+
+        foreach (Hero hero in _session.State.HeroesIn(ShownRoom))
+        {
+            Check(_figures.TryGetValue(hero.Id, out Figure? figure) && SameTokens(figure.Conditions, hero.Conditions), $"{hero.Name}'s figure shows their tokens ({string.Join(", ", hero.Conditions.All.Select(entry => $"{entry.Key} {entry.Value}"))})");
+        }
+    }
+
+    private static bool SameTokens(IReadOnlyDictionary<Condition, int> shown, Conditions held) =>
+        shown.Count == held.All.Count && held.All.All(entry => shown.GetValueOrDefault(entry.Key) == entry.Value);
 
     /// <summary>
     /// Debug mode (<c>-- --monstertest</c>, with <see cref="DemoRun.Menagerie"/>): clicking the chest
@@ -878,20 +967,8 @@ public partial class GameScreen
         }
     }
 
-    /// <summary>
-    /// Waits for event playback to finish. The tests roll real dice, so any Power Die a lucky 6 earns
-    /// is added by clicking Add Power Die, keeping the scripted clicks on track.
-    /// </summary>
-    internal async Task WaitUntilIdle()
-    {
-        await WaitFor(this, () => !_busy, "event playback to finish");
-        while (_session.State.Turn?.UnsettledPowerDice > 0)
-        {
-            Check(_addPower.Visible, "a 6 offers to add or bank a Power Die");
-            await Click(this, _addPower);
-            await WaitFor(this, () => !_busy, "the Power Die to roll");
-        }
-    }
+    /// <summary>Waits for event playback to finish.</summary>
+    internal async Task WaitUntilIdle() => await WaitFor(this, () => !_busy, "event playback to finish");
 
     private Task ClickTile(GridPosition tile) =>
         ClickAt(this, _board.GetGlobalRect().Position + BoardView.TileOrigin(tile) + new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f));

@@ -480,11 +480,6 @@ public partial class GameScreen
             return $"{hero.Name} is Keeling Over (life {hero.LifeMarks}/3, death {hero.DeathMarks}/3). Roll the Keel Die: 6 is a mark of life, 1 a mark of death.{dooms} Select Power Dice to add their 6s.";
         }
 
-        if (turn.UnsettledPowerDice > 0)
-        {
-            return "You rolled a 6! Add a Power Die to this roll, or bank it for later.";
-        }
-
         if (hero.FireDice > 0 && _session.CheckStopDropRoll() is null)
         {
             return $"You're on fire ({hero.FireDice} {(hero.FireDice == 1 ? "die" : "dice")})! Stop, drop and roll to put it out (your whole turn), or get into water.";
@@ -550,8 +545,9 @@ public partial class GameScreen
             MonsterDefinition definition = monster.Definition;
             string power = monster.Power.Banked > 0 ? $", {PowerDiceText(monster.Power.Banked)} banked" : "";
             string burning = monster.FireDice > 0 ? $" ON FIRE ({monster.FireDice} {(monster.FireDice == 1 ? "die" : "dice")})." : "";
+            string plants = room.Plants.TryGetValue(tile, out bool heroes) ? heroes ? " In the party's plants (+1 defense to them, rough going for it)." : " In its side's plants (+1 defense)." : "";
             return $"{definition.Name}: {monster.Hearts}/{monster.MaxHearts} hearts{power}, move {definition.Move}, " +
-                   $"attack {UiTheme.Dice(definition.AttackDice, definition.Weapon)}, defense {UiTheme.Dice(definition.DefenseDice, definition.Armor)}{Traits(monster)}{burning}";
+                   $"attack {UiTheme.Dice(definition.AttackDice, definition.Weapon)}, defense {UiTheme.Dice(definition.DefenseDice, definition.Armor)}{Traits(monster)}{burning}{plants}";
         }
 
         if (_session.State.ActiveHeroesIn(room).FirstOrDefault(hero => hero.Position == tile) is { } standing)
@@ -561,7 +557,8 @@ public partial class GameScreen
             string onFire = standing.FireDice > 0 ? $", ON FIRE ({standing.FireDice} {(standing.FireDice == 1 ? "die" : "dice")})" : "";
             string lying = (_session.IsDiving(standing) ? ", diving" : standing.Prone ? ", prone" : "")
                 + (standing.Stun.IsStunned ? $", stunned (+{standing.Stun.AttackBonus} to hit)" : "")
-                + (_session.HeldBy(standing) is { } holder ? $", held by the {holder.Definition.Name}" : "");
+                + (_session.HeldBy(standing) is { } holder ? $", held by the {holder.Definition.Name}" : "")
+                + string.Concat(standing.Conditions.All.OrderBy(entry => entry.Key).Select(entry => $", {DieTypes.Describe(entry.Key, entry.Value)}"));
             return $"{standing.Name}{companion}: {standing.Hearts}/{standing.MaxHearts} hearts{power}{onFire}{lying}";
         }
 
@@ -729,9 +726,9 @@ public partial class GameScreen
             traits.Add($"carrying {monster.StolenGold} gold{(monster.StolenCards.Count > 0 ? $" and {UiTheme.Count(monster.StolenCards.Count, "card", "cards")}" : "")}");
         }
 
-        if (definition.FireAttack)
+        if (definition.DieType is { } type)
         {
-            traits.Add("fire attacks: a 6 sets you alight");
+            traits.Add($"{DieTypes.Name(type)} attacks: {DieTypes.SixOnHit(type)}");
         }
 
         if (definition.FireImmune)
@@ -819,6 +816,7 @@ public partial class GameScreen
             traits.Add("prone");
         }
 
+        traits.AddRange(monster.Conditions.All.OrderBy(entry => entry.Key).Select(entry => DieTypes.Describe(entry.Key, entry.Value)));
         return traits.Count == 0 ? "" : $" ({string.Join(", ", traits)})";
     }
 

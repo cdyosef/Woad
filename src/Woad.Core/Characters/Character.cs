@@ -135,7 +135,26 @@ public sealed class Character
     public int MaxHearts(ContentCatalog content) => Math.Max(1, Stats(content).Hearts);
 
     /// <summary>The base stats plus what equipped gear adds.</summary>
-    public Stats Stats(ContentCatalog content) => _equipped.Aggregate(BaseStats, (stats, id) => stats + content.GetCard(id).Modifiers);
+    public Stats Stats(ContentCatalog content) => _equipped.Aggregate(BaseStats, (stats, key) => stats + CardKey.Modifiers(content.GetCard(key), CardKey.Wear(key)));
+
+    /// <summary>Their worn gear (keys with wear), equipped first.</summary>
+    public IEnumerable<string> WornGear => _equipped.Concat(_belt).Concat(_backpack).Where(key => CardKey.Wear(key) > 0);
+
+    /// <summary>Mends one worn card (by its key) where it is. False if they haven't got it.</summary>
+    public bool Mend(string key)
+    {
+        foreach (List<string> place in new[] { _equipped, _belt, _backpack })
+        {
+            int at = place.IndexOf(key);
+            if (at >= 0)
+            {
+                place[at] = CardKey.Id(key);
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>A new level 1 character with the starter kit. Points not spent are kept for later.</summary>
     /// <param name="isCompanion">Make a companion instead of a player's hero; it can't be changed later.</param>
@@ -166,7 +185,7 @@ public sealed class Character
 
         foreach (string cardId in GameRules.StarterKit)
         {
-            character.Place(content.GetCard(cardId), content);
+            character.Place(cardId, content);
         }
 
         return character;
@@ -265,7 +284,10 @@ public sealed class Character
     }
 
     /// <summary>Gives the character a card (bought, won or handed over): equipped if its slot is free, else belted or packed.</summary>
-    public void GiveCard(CardDefinition card, ContentCatalog content) => Place(card, content);
+    public void GiveCard(CardDefinition card, ContentCatalog content) => Place(card.Id, content);
+
+    /// <summary>Gives them a card they're handed (worn gear keeps its wear).</summary>
+    public void GiveCard(string key, ContentCatalog content) => Place(key, content);
 
     /// <summary>
     /// Takes one copy of a card away (sold or given up): from the backpack first, then the belt,
@@ -333,20 +355,21 @@ public sealed class Character
         Allocation: Allocation, Xp: Xp, UnspentPoints: UnspentPoints, Policy: Policy);
 
     /// <summary>Puts a card where a new hero would: an empty matching slot, then the belt, then the backpack.</summary>
-    private void Place(CardDefinition card, ContentCatalog content)
+    private void Place(string key, ContentCatalog content)
     {
+        CardDefinition card = content.GetCard(key);
         IEnumerable<EquipSlot> occupied = _equipped.SelectMany(id => Hero.SlotsFor(content.GetCard(id)));
         if (card.Slot is not null && !Hero.SlotsFor(card).Intersect(occupied).Any())
         {
-            _equipped.Add(card.Id);
+            _equipped.Add(key);
         }
         else if (card.Usage == CardUsage.SingleUse && _belt.Count < GameRules.BeltCapacity)
         {
-            _belt.Add(card.Id);
+            _belt.Add(key);
         }
         else
         {
-            _backpack.Add(card.Id);
+            _backpack.Add(key);
         }
     }
 }

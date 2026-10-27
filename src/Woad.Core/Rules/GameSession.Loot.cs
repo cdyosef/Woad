@@ -17,7 +17,7 @@ public sealed partial class GameSession
     /// <summary>Why the active hero can't reach into the pile on a tile (or an opened chest) right now, or null.</summary>
     public string? CheckRummage(GridPosition tile)
     {
-        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
+        if (State.Turn is not { PendingRoll: null })
         {
             return "Finish the roll first.";
         }

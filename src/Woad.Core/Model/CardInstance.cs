@@ -33,6 +33,15 @@ public sealed class CardInstance
 
     public int ChargesRemaining { get; internal set; }
 
+    /// <summary>Wear it has taken (acid eats armor): off its armor, or a weapon's value, until mended.</summary>
+    public int Wear { get; internal set; }
+
+    /// <summary>What it adds while equipped, less its wear.</summary>
+    public Stats Modifiers => CardKey.Modifiers(Definition, Wear);
+
+    /// <summary>How a character keeps it between runs: its id and its wear.</summary>
+    public string Key => CardKey.Of(Definition.Id, Wear);
+
     /// <summary>A crossbow that's been shot and not yet reloaded. Every crossbow is loaded again on reaching a new floor.</summary>
     public bool Unloaded { get; internal set; }
 

@@ -127,7 +127,7 @@ public partial class PartyDialog : Control
         float x = 0, y = 16;
         foreach ((string cardId, string where) in character.Equipped.Select(id => (id, "worn")).Concat(character.Belt.Select(id => (id, "belt"))).Concat(character.Backpack.Select(id => (id, "pack"))))
         {
-            string name = Content.GetCard(cardId).Name;
+            string name = Content.GetCard(cardId).Name + (CardKey.Wear(cardId) is > 0 and var wear ? $" (worn -{wear})" : "");
             float width = Math.Max(48, name.Length * 5 + 10);
             if (x + width > 530)
             {
@@ -183,7 +183,7 @@ public partial class PartyDialog : Control
     {
         if (from.TakeCard(cardId))
         {
-            to.GiveCard(Content.GetCard(cardId), Content);
+            to.GiveCard(cardId, Content);
             Changed?.Invoke(Party);
         }
 

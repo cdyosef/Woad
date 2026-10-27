@@ -9,8 +9,8 @@ using Woad.Core.Randomness;
 namespace Woad.Core.Rules;
 
 /// <summary>
-/// Fire and lying down. Fire dice (the Flame Scroll, Cinder Imps, Fire Beetles) set a target alight
-/// on any 6, hit or miss. At the start of its turn a burning hero or monster is attacked by its fire
+/// Fire and lying down. Fire dice (the Flame Scroll, torches, Cinder Imps, Fire Beetles) set a target
+/// alight on a hit, a fire die for each 6 (see <see cref="DieType.Fire"/>). At the start of its turn a burning hero or monster is attacked by its fire
 /// dice (defended as usual); each 6 then adds a fire die and spreads a die to a random neighbor, and
 /// each 1 snuffs one out. Water puts fire out, and so does stopping, dropping and rolling, which takes
 /// a hero's whole turn and leaves them prone. Prone (1 step to lie down, 2 to get up) every step costs
@@ -25,7 +25,7 @@ public sealed partial class GameSession
     /// <summary>Why the active hero can't lie down now, or null.</summary>
     public string? CheckGoProne()
     {
-        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0, KeelingOver: false })
+        if (State.Turn is not { PendingRoll: null, KeelingOver: false })
         {
             return "Finish the roll first.";
         }
@@ -36,7 +36,7 @@ public sealed partial class GameSession
     /// <summary>Why the active hero can't get up now, or null.</summary>
     public string? CheckGetUp()
     {
-        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0, KeelingOver: false })
+        if (State.Turn is not { PendingRoll: null, KeelingOver: false })
         {
             return "Finish the roll first.";
         }
@@ -63,26 +63,12 @@ public sealed partial class GameSession
         return fresh ? null : "Stopping, dropping and rolling takes your whole turn: do it before anything else.";
     }
 
-    /// <summary>Each step costs double while the active hero is prone.</summary>
-    private int Crawl => ActiveHero.Prone ? GameRules.CrawlFactor : 1;
+    /// <summary>Each step costs double while the active hero is prone, and double again chilled by Freeze.</summary>
+    private int Crawl => CrawlOf(ActiveHero);
 
     /// <summary>A melee attack (from right beside them) on a prone hero rolls an extra die.</summary>
     private static int ProneBonus(Hero target, GridPosition from) =>
         target.IsProne && target.Position.ChebyshevDistanceTo(from) <= 1 ? 1 : 0;
-
-    /// <summary>A monster's fire attack: any 6 on its roll sets each of its targets alight, hit or miss.</summary>
-    private void IgniteFromMonster(Monster monster, IReadOnlyList<Hero> targets, DiceRoll roll, List<GameEvent> events)
-    {
-        if (!monster.Definition.FireAttack || !roll.Faces.Contains(GameRules.PowerDieFace))
-        {
-            return;
-        }
-
-        foreach (Hero target in targets)
-        {
-            Ignite(target, monster.Id, events);
-        }
-    }
 
     private static bool Diving(Room room, Hero hero) => hero.IsProne && room.Layout[hero.Position] == TileKind.DeepWater;
 
@@ -163,27 +149,6 @@ public sealed partial class GameSession
         events.Add(new Ignited(monster.Id, monster.FireDice, byId));
     }
 
-    /// <summary>A hero's fire attack: with any 6 among its dice, every target still standing catches fire, hit or miss.</summary>
-    private void IgniteTargets(Hero attacker, Room room, PendingRoll attack, List<GameEvent> events)
-    {
-        if (!attack.Fire || !attack.Roll.Faces.Contains(GameRules.PowerDieFace))
-        {
-            return;
-        }
-
-        foreach (int targetId in attack.TargetIds)
-        {
-            if (room.FindMonster(targetId) is { } monster)
-            {
-                Ignite(room, monster, attacker.Id, attacker.Id, events);
-            }
-            else if (State.HeroesIn(room).FirstOrDefault(ally => ally.Id == targetId) is { } ally)
-            {
-                Ignite(ally, attacker.Id, events);
-            }
-        }
-    }
-
     /// <summary>
     /// The start of a burning hero's turn: their fire attacks them. Returns false if that ended their
     /// turn (they keeled over or died), in which case play has moved on.
@@ -208,6 +173,7 @@ public sealed partial class GameSession
 
         bool keeling = hero.IsKeelingOver;
         DiceRoll roll = _dice.Roll(hero.FireDice);
+        Thaw(hero.Conditions, hero.Id, roll.Faces.Count, events);
         hero.FireDice = FireLeft(hero.FireDice, roll);
         events.Add(new FireBurned(hero.Id, roll, hero.FireDice));
         DamageHero(room, hero, roll.Total, "Burned to death", 0, events);
@@ -245,6 +211,7 @@ public sealed partial class GameSession
         }
 
         DiceRoll roll = _dice.Roll(monster.FireDice);
+        Thaw(monster.Conditions, monster.Id, roll.Faces.Count, events);
         monster.FireDice = FireLeft(monster.FireDice, roll);
         events.Add(new FireBurned(monster.Id, roll, monster.FireDice));
         Hero? credit = monster.IgnitedBy is int heroId && State.GetHero(heroId) is { IsInPlay: true } setter ? setter : null;

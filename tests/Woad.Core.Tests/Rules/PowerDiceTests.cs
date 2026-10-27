@@ -35,50 +35,45 @@ public class PowerDiceTests
         """;
 
     [Fact]
-    public void ASixOnAnAttackEarnsAPowerDieThatCanBeAddedToIt()
+    public void ASixOnAnAttackSurgesAPowerDieInAndAnotherIntoTheBank()
     {
+        // 6, and the Power Die (3) rolls straight in: 9 against the knight's 4 + 2.
         GameSession session = TestRun.Start(Duel('K'), new ScriptedDice(6, 3, 4));
         Hero hero = session.HeroInSeat();
         Monster knight = session.OnlyMonster();
 
         IReadOnlyList<GameEvent> events = session.Do(new AttackMonster(hero.Id, knight.Id));
-        Assert.Equal(new PowerDiceEarned(hero.Id, 1), events[^1]);
-        Assert.NotNull(session.State.Turn!.PendingRoll);
-        Assert.Contains("Power Die", session.Refuse(new EndTurn(hero.Id)));
-
-        events = session.Do(new AddPowerDie(hero.Id));
 
         var added = events.SingleOf<PowerDieAdded>();
         Assert.Equal((3, 9), (added.Face, added.Total));
+        Assert.Contains(new PowerDiceBanked(hero.Id, 1, 1), events);
+        Assert.Equal(1, hero.Power.Banked);
         Assert.Equal(6, events.SingleOf<DefenseRolled>().Total);
         Assert.Contains(new MonsterDefeated(knight.Id, hero.Id), events);
     }
 
     [Fact]
-    public void APowerDieThatRollsASixEarnsAnother()
+    public void APowerDieThatRollsASixSurgesAgain()
     {
         GameSession session = TestRun.Start(Duel('K'), new ScriptedDice(6, 6, 2, 4));
         Hero hero = session.HeroInSeat();
-        session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id));
 
-        Assert.Equal(new PowerDiceEarned(hero.Id, 1), session.Do(new AddPowerDie(hero.Id))[^1]);
-        IReadOnlyList<GameEvent> events = session.Do(new AddPowerDie(hero.Id));
+        IReadOnlyList<GameEvent> events = session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id));
 
-        Assert.Equal(14, events.SingleOf<PowerDieAdded>().Total);
+        Assert.Equal(14, events.OfType<PowerDieAdded>().Last().Total);
+        Assert.Equal(2, hero.Power.Banked);
         Assert.Equal(1, events.SingleOf<Damaged>().Amount);
     }
 
     [Fact]
     public void BankedPowerDiceCanBeRolledIntoALaterAttack()
     {
-        GameSession session = TestRun.Start(Duel('d'), new ScriptedDice(6, 1, 2), cards: ["sword"]);
+        GameSession session = TestRun.Start(Duel('d'), new ScriptedDice(6, 1, 1, 2), cards: ["sword"]);
         Hero hero = session.HeroInSeat();
         Monster dummy = session.OnlyMonster();
-        session.Do(new AttackMonster(hero.Id, dummy.Id));
-
-        IReadOnlyList<GameEvent> events = session.Do(new BankPowerDie(hero.Id));
-        Assert.Equal(new PowerDiceBanked(hero.Id, 1, 1), events[0]);
+        IReadOnlyList<GameEvent> events = session.Do(new AttackMonster(hero.Id, dummy.Id));
         Assert.Equal(1, events.SingleOf<Damaged>().Amount);
+        Assert.Equal(1, hero.Power.Banked);
 
         session.EndRound();
         events = session.Do(new AttackMonster(hero.Id, dummy.Id, PowerDice: 1));
@@ -101,47 +96,45 @@ public class PowerDiceTests
     }
 
     [Fact]
-    public void AFullBankAddsTheNewPowerDieToTheRollAtOnce()
+    public void WithTheBankFullBothPowerDiceRollIn()
     {
-        GameSession session = TestRun.Start(Duel('K'), new ScriptedDice(6, 4, 2));
+        GameSession session = TestRun.Start(Duel('K'), new ScriptedDice(6, 4, 2, 1));
         Hero hero = session.HeroInSeat();
         hero.Power.Banked = GameRules.MaxBankedPowerDice;
 
         IReadOnlyList<GameEvent> events = session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id));
 
-        Assert.Equal(10, events.SingleOf<PowerDieAdded>().Total);
-        Assert.DoesNotContain(events, gameEvent => gameEvent is PowerDiceEarned);
-        Assert.Contains("no Power Die to bank", session.Refuse(new BankPowerDie(hero.Id)));
+        Assert.Equal([10, 12], events.OfType<PowerDieAdded>().Select(added => added.Total));
+        Assert.DoesNotContain(events, gameEvent => gameEvent is PowerDiceBanked);
+        Assert.Equal(GameRules.MaxBankedPowerDice, hero.Power.Banked);
         Assert.Equal(1, events.SingleOf<Damaged>().Amount);
         Assert.Null(session.State.Turn!.PendingRoll);
     }
 
     [Fact]
-    public void ASixOnAMoveWaitsToBeAddedOrBanked()
+    public void ASixOnAMoveSurgesToo()
     {
         GameSession session = TestRun.Start(Open, new ScriptedDice(6, 2));
         Hero hero = session.HeroInSeat();
-        session.Do(new RollMovement(hero.Id));
 
-        Assert.Contains("Power Die", session.Refuse(new MoveHero(hero.Id, new GridPosition(4, 3))));
-        var added = session.Do(new AddPowerDie(hero.Id)).SingleOf<PowerDieAdded>();
+        var added = session.Do(new RollMovement(hero.Id)).SingleOf<PowerDieAdded>();
 
         Assert.Equal(10, added.Total);
         Assert.Equal(10, session.State.Turn!.MovementPoints);
+        Assert.Equal(1, hero.Power.Banked);
         session.Do(new MoveHero(hero.Id, new GridPosition(4, 0)));
     }
 
     [Fact]
-    public void ARerollThatComesUpSixEarnsAPowerDie()
+    public void ARerollThatComesUpSixSurges()
     {
-        GameSession session = TestRun.Start(Duel('K'), new ScriptedDice(1, 6, 1), stats: GameRules.HeroBaseStats with { Luck = 1 });
+        GameSession session = TestRun.Start(Duel('K'), new ScriptedDice(1, 6, 1, 1), stats: GameRules.HeroBaseStats with { Luck = 1 });
         Hero hero = session.HeroInSeat();
         session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id));
 
         IReadOnlyList<GameEvent> events = session.Do(new RerollDie(hero.Id, 0));
-        Assert.Equal(new PowerDiceEarned(hero.Id, 1), events[^1]);
 
-        events = session.Do(new BankPowerDie(hero.Id));
+        Assert.Equal(7, events.SingleOf<PowerDieAdded>().Total);
         Assert.Equal(1, hero.Power.Banked);
         Assert.Equal(3, events.SingleOf<DefenseRolled>().Total);
         Assert.Equal(1, events.SingleOf<Damaged>().Amount);
@@ -188,16 +181,17 @@ public class PowerDiceTests
     }
 
     [Fact]
-    public void MonstersRollTheirSixesStraightIntoTheAttack()
+    public void MonstersSurgeTooRollingAPowerDieInAndBankingAnother()
     {
         GameSession session = TestRun.Start(Duel('m'), new ScriptedDice(6, 2, 5));
-        Hero hero = session.HeroInSeat();
+        Monster grunt = session.OnlyMonster();
 
         IReadOnlyList<GameEvent> events = session.EndRound();
 
         var attack = events.SingleOf<AttackRolled>();
         Assert.Equal([6, 2], attack.Roll.Faces);
         Assert.Equal((1, 8), (attack.PowerDice, attack.Total));
+        Assert.Equal(1, grunt.Power.Banked);
         Assert.Equal(1, events.SingleOf<Damaged>().Amount);
     }
 

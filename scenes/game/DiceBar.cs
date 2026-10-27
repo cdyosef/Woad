@@ -1,5 +1,6 @@
 using Godot;
 using Woad.Core.Dice;
+using Woad.Core.Model;
 using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Game;
@@ -19,7 +20,8 @@ public enum DiceKind
 /// left, and when someone answers it, a VS and every defender's dice on the right (smaller when there
 /// are several, as in a blast). Each side shows its fixed bonus (weapon, armor or Speed) and total;
 /// dice tumble before they land with a small pop, and the side that wins glows gold. Dice are colored
-/// by what they are (see <see cref="DiceKind"/>); tools' dice are bronze and Power Dice purple. When
+/// by what they are (see <see cref="DiceKind"/>); tools' dice are bronze, Power Dice purple, and typed
+/// dice (fire, ice...) their type's own color. When
 /// Luck allows, the roller's dice can be clicked to reroll them.
 /// </summary>
 public partial class DiceBar : Control
@@ -46,6 +48,9 @@ public partial class DiceBar : Control
 
     public event Action<int>? DieClicked;
 
+    /// <summary>A typed die (fire, ice...) has been shown in its own color (for the tests).</summary>
+    internal bool ShowedTypedDice { get; private set; }
+
     public bool Rerollable
     {
         set { _rerollable = value; QueueRedraw(); }
@@ -62,9 +67,11 @@ public partial class DiceBar : Control
     /// <param name="bonus">The fixed value added to the dice (weapon, armor or Speed).</param>
     /// <param name="powerDice">How many of the last faces are Power Dice.</param>
     /// <param name="toolDice">How many faces, just before the Power Dice, are the tools' own dice (bronze).</param>
-    public async Task ShowRoll(string caption, DiceRoll roll, int bonus, bool newGroup, int powerDice = 0, DiceKind kind = DiceKind.Plain, int toolDice = 0)
+    /// <param name="types">What each face is made of, in order (Star past its end).</param>
+    public async Task ShowRoll(string caption, DiceRoll roll, int bonus, bool newGroup, int powerDice = 0, DiceKind kind = DiceKind.Plain, int toolDice = 0, IReadOnlyList<DieType>? types = null)
     {
-        var row = new Row(caption, [.. roll.Faces], bonus, roll.Faces.Count - powerDice) { Kind = kind, ToolFrom = roll.Faces.Count - powerDice - toolDice };
+        var row = new Row(caption, [.. roll.Faces], bonus, roll.Faces.Count - powerDice) { Kind = kind, ToolFrom = roll.Faces.Count - powerDice - toolDice, Types = [.. types ?? []] };
+        ShowedTypedDice |= row.Types.Any(type => type != DieType.Star);
         if (newGroup || _roller is null)
         {
             _roller = row;
@@ -91,7 +98,7 @@ public partial class DiceBar : Control
             return;
         }
 
-        _roller = new Row(old.Caption, [.. old.Faces, face], old.Bonus, old.PowerFrom) { Won = old.Won, Kind = old.Kind, ToolFrom = old.ToolFrom };
+        _roller = new Row(old.Caption, [.. old.Faces, face], old.Bonus, old.PowerFrom) { Won = old.Won, Kind = old.Kind, ToolFrom = old.ToolFrom, Types = old.Types };
         await Tumble(_roller, [_roller.Faces.Length - 1]);
     }
 
@@ -218,7 +225,8 @@ public partial class DiceBar : Control
             row.Rects[i] = rect;
             float scale = 1 + 0.35f * row.Pop[i];
             DrawSetTransform(rect.GetCenter() + row.Offset[i], row.Angle[i], new Vector2(scale, scale));
-            Color fill = i >= row.PowerFrom ? Palette.Power : i >= row.ToolFrom ? Palette.DieTool : DieColor(row.Kind);
+            Color fill = i < row.Types.Length && row.Types[i] != DieType.Star ? DieTypes.Tint(row.Types[i])
+                : i >= row.PowerFrom ? Palette.Power : i >= row.ToolFrom ? Palette.DieTool : DieColor(row.Kind);
             DrawDie(row.Shown[i], die, row.Won, clickable, fill);
             DrawSetTransform(Vector2.Zero, 0, Vector2.One);
         }
@@ -364,6 +372,9 @@ public partial class DiceBar : Control
 
         /// <summary>Faces from this index (up to <see cref="PowerFrom"/>) are the tools' own dice.</summary>
         public int ToolFrom { get; init; } = int.MaxValue;
+
+        /// <summary>What each face is made of (fire, ice...), in order; Star past its end.</summary>
+        public DieType[] Types { get; init; } = [];
 
         /// <summary>This side won; its dice glow.</summary>
         public bool Won { get; set; }

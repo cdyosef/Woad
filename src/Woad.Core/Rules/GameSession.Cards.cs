@@ -24,7 +24,7 @@ public sealed partial class GameSession
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
         CardEffect effect = held.Card.Definition.Effect!;
-        if (effect.Kind is CardEffectKind.Heal or CardEffectKind.CowardsFlight)
+        if (effect.Kind is CardEffectKind.Heal or CardEffectKind.CowardsFlight or CardEffectKind.Cure or CardEffectKind.Repair)
         {
             return CheckEffectTarget(hero, room, effect, null, out _) is null ? [hero.Position] : [];
         }
@@ -89,9 +89,18 @@ public sealed partial class GameSession
         switch (effect.Kind)
         {
             case CardEffectKind.Heal:
-                int healed = Math.Min(effect.Amount, hero.MaxHearts - hero.Hearts);
+                int healed = Math.Min(effect.Amount, hero.HeartsToHeal);
                 hero.Hearts += healed;
                 events.Add(new HeroHealed(hero.Id, healed, hero.Hearts));
+                break;
+
+            case CardEffectKind.Cure:
+                Cure(hero, effect, events);
+                break;
+
+            case CardEffectKind.Repair when MostWorn(hero) is { } worn:
+                worn.Wear = 0;
+                events.Add(new GearMended(hero.Id, worn.Id));
                 break;
 
             case CardEffectKind.Attack when IsBomb(card.Definition):
@@ -111,7 +120,8 @@ public sealed partial class GameSession
                 List<int> caught = [.. targets.Select(monster => monster.Id), .. AlliesCaught(room, command.Target!.Value, effect.AreaRadius).Select(ally => ally.Id)];
                 if (caught.Count > 0)
                 {
-                    RollHeroAttack(hero, effect.Amount, 0, caught, SourceOf(card.Definition), events, fire: effect.Fire);
+                    RollHeroAttack(hero, effect.DieType is null ? effect.Amount : 0, 0, caught, SourceOf(card.Definition), events,
+                        typed: effect.DieType is { } type ? [(type, effect.Amount)] : null, chill: effect.Chill);
                 }
                 else if (effect.Fire)
                 {
@@ -265,8 +275,9 @@ public sealed partial class GameSession
             return null;
         }
 
-        return card!.Definition.Effect!.Kind == CardEffectKind.Heal
-            ? "You're already at full hearts."
+        CardEffect effect = card!.Definition.Effect!;
+        return effect.Kind is CardEffectKind.Heal or CardEffectKind.Cure or CardEffectKind.Repair
+            ? CheckEffectTarget(ActiveHero, ActiveRoom, effect, null, out _) ?? "You can't use that now."
             : "There's no monster in range and in sight.";
     }
 
@@ -278,11 +289,6 @@ public sealed partial class GameSession
         if (State.Turn is not { } turn)
         {
             return "It isn't anyone's turn.";
-        }
-
-        if (turn.UnsettledPowerDice > 0)
-        {
-            return "Add or bank your Power Die first.";
         }
 
         if (turn.PendingRoll is not null)
@@ -434,7 +440,7 @@ public sealed partial class GameSession
     /// <summary>Why the active hero can't open the chest right now, or null if they can.</summary>
     public string? CheckOpenChest(GridPosition chest)
     {
-        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
+        if (State.Turn is not { PendingRoll: null })
         {
             return "Finish the roll first.";
         }
@@ -655,7 +661,7 @@ public sealed partial class GameSession
         }
         else if (pots is not null && roll < pots.TreasureChance + pots.HeartChance)
         {
-            hearts = Math.Min(GameRules.HeartsFromPot, hero.MaxHearts - hero.Hearts);
+            hearts = Math.Min(GameRules.HeartsFromPot, hero.HeartsToHeal);
             hero.Hearts += hearts;
         }
 
@@ -789,10 +795,19 @@ public sealed partial class GameSession
                     return "That can only be used on yourself.";
                 }
 
-                return hero.Hearts >= hero.MaxHearts ? "You're already at full hearts." : null;
+                return hero.HeartsToHeal == 0 ? hero.Hearts < hero.MaxHearts ? "Black Hearts can't be healed until they're cured." : "You're already at full hearts." : null;
 
             case CardEffectKind.CowardsFlight:
                 return target is { } fleeTile && fleeTile != hero.Position ? "That can only be used on yourself." : null;
+
+            case CardEffectKind.Cure:
+                return target is { } cureTile && cureTile != hero.Position ? "That can only be used on yourself."
+                    : effect.Cures is { } cures && hero.Conditions.Has(cures) ? null
+                    : "There's nothing for it to cure.";
+
+            case CardEffectKind.Repair:
+                return target is { } mendTile && mendTile != hero.Position ? "That can only be used on yourself."
+                    : MostWorn(hero) is null ? "Nothing you carry needs mending." : null;
 
             case CardEffectKind.Attack:
                 if (target is not { } attackTile)
@@ -804,6 +819,11 @@ public sealed partial class GameSession
                     || !Targeting.InRangeAndSight(room.Layout, hero.Position, attackTile, effect.Range))
                 {
                     return "That tile is out of range.";
+                }
+
+                if (IsBlind(hero.Conditions) && attackTile.ChebyshevDistanceTo(hero.Position) > 1)
+                {
+                    return "You're blind: you can't see past the tiles beside you.";
                 }
 
                 // A bomb is thrown onto open ground (or water, which puts it out), anywhere in range.
@@ -844,7 +864,8 @@ public sealed partial class GameSession
                     return "Choose a monster.";
                 }
 
-                if (!Targeting.InRangeAndSight(room.Layout, hero.Position, stunTile, effect.Range))
+                if (!Targeting.InRangeAndSight(room.Layout, hero.Position, stunTile, effect.Range)
+                    || (IsBlind(hero.Conditions) && stunTile.ChebyshevDistanceTo(hero.Position) > 1))
                 {
                     return "That monster is out of range.";
                 }

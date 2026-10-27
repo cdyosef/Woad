@@ -15,7 +15,7 @@ public sealed partial class GameSession
     /// <summary>Why the active player can't spend a point on <paramref name="stat"/> for <paramref name="targetId"/> (themselves or a companion of theirs) now, or null.</summary>
     public string? CheckSpendPoint(int targetId, StatKind stat)
     {
-        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
+        if (State.Turn is not { PendingRoll: null })
         {
             return "Finish the roll first.";
         }

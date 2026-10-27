@@ -26,6 +26,9 @@ public enum PlaceKind
     Dungeon,
     Tavern,
     Town,
+
+    /// <summary>A blacksmith's shack: mends worn gear and sells from the forge (<see cref="WoarldPlace.Stock"/>).</summary>
+    Smithy,
 }
 
 /// <summary>A place on the map: a dungeon to raid, a tavern or a town.</summary>
@@ -51,6 +54,9 @@ public sealed record WoarldPlace
     public string? UnlockedBy { get; init; }
 
     public string Description { get; init; } = "";
+
+    /// <summary>What a smithy sells (card ids); it never runs out.</summary>
+    public IReadOnlyList<string> Stock { get; init; } = [];
 
     [JsonIgnore]
     public GridPosition Position => new(X, Y);
@@ -178,6 +184,11 @@ public sealed class WoarldMap
                 if (!map.IsWalkable(place.Position))
                 {
                     errors.Add($"Woarld map {data.Id}: {place.Name} sits on {map.TerrainAt(place.Position)}.");
+                }
+
+                foreach (string ware in place.Stock.Where(ware => content.FindCard(ware) is null))
+                {
+                    errors.Add($"Woarld map {data.Id}: {place.Name} sells an unknown card \"{ware}\".");
                 }
 
                 if (place.Kind == PlaceKind.Dungeon && (place.ThemeId is null || !content.Themes.ContainsKey(place.ThemeId)))

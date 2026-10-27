@@ -1,5 +1,6 @@
 using Woad.Core.Events;
 using Woad.Core.Model;
+using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Game;
 
@@ -31,8 +32,19 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         Leaped leap => $"{nameOf(leap.HeroId)} leaps ({leap.Roll}) but comes down short!",
         StayedAfloat afloat => $"{nameOf(afloat.HeroId)} treads water, spending a Rumble die to stay afloat.",
         Drowned drowned => $"{nameOf(drowned.HeroId)} has no strength left to swim and is washed back to shore!",
-        PowerDiceEarned earned => $"{nameOf(earned.HeroId)} rolled a 6 and earns a Power Die!",
-        PowerDieAdded added => $"{nameOf(added.HeroId)} adds a Power Die: {added.Face}, for {added.Total}.",
+        PowerDieAdded added => $"{nameOf(added.HeroId)}'s 6 surges: a Power Die rolls in ({added.Face}), for {added.Total}.",
+        ConditionChanged { Count: 0 } cleared => $"{nameOf(cleared.EntityId)} is rid of {DieTypes.Label(cleared.Condition).ToLowerInvariant()}.",
+        ConditionChanged changed => $"{nameOf(changed.EntityId)}: {DieTypes.Describe(changed.Condition, changed.Count)}.",
+        GearCorroded corroded => $"Acid eats {nameOf(corroded.HeroId)}'s {cardNameOf(corroded.CardId)}: armor {corroded.ArmorLeft} until it's mended.",
+        GearMended mended => $"{nameOf(mended.HeroId)}'s {cardNameOf(mended.CardId)} is mended good as new.",
+        Slammed slammed => $"{nameOf(slammed.EntityId)} is slammed into {(slammed.IntoId is int into ? nameOf(into) : "the wall")} ({slammed.Roll.Total}).",
+        DugOut dug => dug.BuriedLeft == 0 ? $"{nameOf(dug.EntityId)} digs free ({dug.Roll.Total})." : $"{nameOf(dug.EntityId)} digs ({dug.Roll.Total}): still buried ({dug.BuriedLeft}).",
+        PoisonRolled poison => poison.LostHeart ? $"The poison bites {nameOf(poison.EntityId)} ({poison.Face}): a heart lost." : $"{nameOf(poison.EntityId)} fights the poison off ({poison.Face}){(poison.Face == 6 ? ", throwing off a token" : "")}.",
+        AcidBurned acid => $"Acid eats at {nameOf(acid.EntityId)} ({acid.Roll.Total}).",
+        FrozenSolid frozen => $"{nameOf(frozen.EntityId)} is frozen solid and can't move a muscle.",
+        Staggered staggered => $"{nameOf(staggered.EntityId)} is confused: lashing out and staggering about!",
+        PlantsGrew grew => $"Plants spring up{(grew.ForHeroes ? " for the party" : " for the monsters")}.",
+        HeroSummoned summoned => $"{summoned.Name} {(summoned.Guise == "sentient_shrub" ? "springs up" : "rises")} to follow {nameOf(summoned.OwnerId)}!",
         PowerDiceBanked banked => $"{nameOf(banked.OwnerId)} banks {PowerDice(banked.Count)} ({banked.Banked} banked).",
         PowerDiceSpent spent => $"{nameOf(spent.OwnerId)} spends {PowerDice(spent.Count)}.",
         MonsterSurged surged => $"{nameOf(surged.MonsterId)} surges forward: {string.Join(" + ", surged.Faces)} more moves ({surged.Moves} in all).",

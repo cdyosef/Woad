@@ -6,44 +6,14 @@ using Woad.Core.Model;
 namespace Woad.Core.Rules;
 
 /// <summary>
-/// Power Dice: every 6 rolled earns one. On their own attacks and moves heroes choose to add each to
-/// that roll or bank it; a full bank adds it at once. Defense banks its sixes and spends banked dice
-/// to block. Monsters add the sixes on their attacks straight away and defend like heroes.
+/// Power Dice. A 6 on a Star die (any plain die) on an attack, move or Od Hand roll surges: one Power
+/// Die rolls straight into the roll, and another goes into the bank, or with the bank full rolls in
+/// too; a Power Die's own 6 surges again. Monsters' attacks surge the same way. Defense banks its
+/// sixes, rolls them in when the bank is full, and spends banked dice to block. Typed dice (fire,
+/// ice...) earn none: their 6s roll more of their own type instead.
 /// </summary>
 public sealed partial class GameSession
 {
-    private string? Handle(AddPowerDie command, List<GameEvent> events)
-    {
-        if (Turn.UnsettledPowerDice < 1)
-        {
-            return "There's no Power Die to add.";
-        }
-
-        AddEarnedPowerDie(ActiveHero, events);
-        SettlePowerDice(ActiveHero, events);
-        return null;
-    }
-
-    private string? Handle(BankPowerDie command, List<GameEvent> events)
-    {
-        Hero hero = ActiveHero;
-        if (Turn.UnsettledPowerDice < 1)
-        {
-            return "There's no Power Die to bank.";
-        }
-
-        if (hero.Power.IsFull)
-        {
-            return "Your Power Dice bank is full.";
-        }
-
-        Turn.UnsettledPowerDice--;
-        hero.Power.Banked++;
-        events.Add(new PowerDiceBanked(hero.Id, 1, hero.Power.Banked));
-        SettlePowerDice(hero, events);
-        return null;
-    }
-
     private static int Sixes(IEnumerable<int> faces) => faces.Count(face => face == GameRules.PowerDieFace);
 
     private int RollOneDie() => _dice.Roll(1).Faces[0];
@@ -63,39 +33,42 @@ public sealed partial class GameSession
         }
     }
 
-    /// <summary>Sixes on the hero's pending attack or move: each waits to be added or banked.</summary>
+    /// <summary>
+    /// Sixes on the hero's pending roll or move surge (see <see cref="GameSession"/>). Then a pending roll
+    /// with no Luck left to reroll it resolves.
+    /// </summary>
     private void EarnPowerDice(Hero hero, int sixes, List<GameEvent> events)
     {
-        Turn.UnsettledPowerDice += sixes;
-        SettlePowerDice(hero, events);
-    }
-
-    /// <summary>
-    /// After Power Dice change: a full bank rolls the rest in at once; any still waiting for the
-    /// hero's choice are announced; and a pending attack with nothing left to decide resolves.
-    /// </summary>
-    private void SettlePowerDice(Hero hero, List<GameEvent> events)
-    {
-        while (Turn.UnsettledPowerDice > 0 && hero.Power.IsFull)
+        int banked = 0;
+        for (int left = sixes; left > 0; left--)
         {
-            AddEarnedPowerDie(hero, events);
+            left += AddPowerDie(hero, events);
+            if (!hero.Power.IsFull)
+            {
+                hero.Power.Banked++;
+                banked++;
+            }
+            else
+            {
+                left += AddPowerDie(hero, events);
+            }
         }
 
-        if (Turn.UnsettledPowerDice > 0)
+        if (banked > 0)
         {
-            events.Add(new PowerDiceEarned(hero.Id, Turn.UnsettledPowerDice));
+            events.Add(new PowerDiceBanked(hero.Id, banked, hero.Power.Banked));
         }
-        else if (Turn.PendingRoll is { } pending && hero.LuckRemaining < 1)
+
+        if (Turn.PendingRoll is { } pending && hero.LuckRemaining < 1)
         {
             Turn.PendingRoll = null;
             ResolvePendingRoll(pending, events);
         }
     }
 
-    /// <summary>Rolls one earned Power Die into the pending attack, or else the move in progress. Its own 6 earns another.</summary>
-    private void AddEarnedPowerDie(Hero hero, List<GameEvent> events)
+    /// <summary>Rolls a Power Die into the pending roll, or else the move in progress. Returns 1 when it came up 6 (to surge again).</summary>
+    private int AddPowerDie(Hero hero, List<GameEvent> events)
     {
-        Turn.UnsettledPowerDice--;
         int face = RollOneDie();
         if (Turn.PendingRoll is { } attack)
         {
@@ -109,29 +82,53 @@ public sealed partial class GameSession
             events.Add(new PowerDieAdded(hero.Id, face, Turn.MovementRoll, Turn.MovementPoints));
         }
 
-        if (face == GameRules.PowerDieFace)
-        {
-            Turn.UnsettledPowerDice++;
-        }
+        return face == GameRules.PowerDieFace ? 1 : 0;
     }
 
-    /// <summary>A monster's attack roll: every 6 rolls another die in at once, and so on.</summary>
-    private (DiceRoll Roll, int PowerDice) RollMonsterDice(int dice)
+    /// <summary>
+    /// A monster's attack dice. Star dice surge: each 6 rolls a Power Die straight in and banks another
+    /// (or with its bank full, rolls that in too), and so on. Typed dice (its <see cref="MonsterDefinition.DieType"/>)
+    /// roll another of their type in for each 6 instead. Returns the faces' types, the Power Dice
+    /// rolled in (the last faces) and the dice banked.
+    /// </summary>
+    /// <param name="star">Plain dice whatever the monster's type (its banked Power Dice, its chain).</param>
+    private (DiceRoll Roll, IReadOnlyList<DieType> Types, int PowerDice, int Banked) RollMonsterDice(Monster monster, int dice, bool star = false)
     {
-        DiceRoll roll = _dice.Roll(dice);
-        int power = 0;
-        for (int earned = Sixes(roll.Faces); earned > 0; earned--)
+        if (monster.Definition.DieType is { } type && !star)
         {
-            int face = RollOneDie();
-            roll = roll.With(face);
-            power++;
-            if (face == GameRules.PowerDieFace)
+            (int[] faces, _) = RollBonusDice(dice);
+            return (new DiceRoll(faces), [.. faces.Select(_ => type)], 0, 0);
+        }
+
+        DiceRoll roll = _dice.Roll(dice);
+        int power = 0, banked = 0;
+        for (int left = Sixes(roll.Faces); left > 0; left--)
+        {
+            for (int surge = monster.Power.IsFull ? 2 : 1; surge > 0; surge--)
             {
-                earned++;
+                int face = RollOneDie();
+                roll = roll.With(face);
+                power++;
+                left += face == GameRules.PowerDieFace ? 1 : 0;
+            }
+
+            if (!monster.Power.IsFull)
+            {
+                monster.Power.Banked++;
+                banked++;
             }
         }
 
-        return (roll, power);
+        return (roll, [], power, banked);
+    }
+
+    /// <summary>Announces Power Dice a roll put in the bank.</summary>
+    private static void NoteBanked(int ownerId, PowerBank bank, int banked, List<GameEvent> events)
+    {
+        if (banked > 0)
+        {
+            events.Add(new PowerDiceBanked(ownerId, banked, bank.Banked));
+        }
     }
 
     /// <summary>
