@@ -101,6 +101,8 @@ public sealed partial class GameSession
             AttackMonster c => Handle(c, events),
             RerollDie c => Handle(c, events),
             ConfirmAttack c => Handle(c, events),
+            AddPowerDie c => Handle(c, events),
+            BankPowerDie c => Handle(c, events),
             UnlockDoor c => Handle(c, events),
             PickLock c => Handle(c, events),
             Search c => Handle(c, events),
@@ -163,6 +165,7 @@ public sealed partial class GameSession
             && (!current.IsInPlay || (current.IsKeelingOver && !turn.KeelingOver)))
         {
             State.Turn.PendingRoll = null;
+            State.Turn.UnsettledPowerDice = 0;
             events.Add(new TurnEnded(turn.HeroId));
             AdvanceTurn(State.GetHero(turn.HeroId).Seat, events);
         }
@@ -213,7 +216,12 @@ public sealed partial class GameSession
             return "You're buried: dig yourself out with your Rumble dice first.";
         }
 
-        if (Turn.PendingRoll is not null && command is not (RerollDie or ConfirmAttack))
+        if (Turn.UnsettledPowerDice > 0 && command is not (AddPowerDie or BankPowerDie or RerollDie))
+        {
+            return "You rolled a 6: add your Power Die to the roll or bank it first.";
+        }
+
+        if (Turn.PendingRoll is not null && command is not (RerollDie or ConfirmAttack or AddPowerDie or BankPowerDie))
         {
             return "Finish the roll first: reroll a die with Luck or confirm it.";
         }

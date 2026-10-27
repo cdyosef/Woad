@@ -126,6 +126,7 @@ public class WoarldDangerTests
         Assert.Equal(RunPhase.Ended, session.State.Phase);
         Assert.Empty(session.State.WinnerIds);
         Assert.True(RunResults.For(session.State).Single().Retreated);
+        Assert.NotNull(session.CheckRetreat());
     }
 
     [Fact]

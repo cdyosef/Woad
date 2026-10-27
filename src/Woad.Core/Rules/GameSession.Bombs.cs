@@ -30,7 +30,7 @@ public sealed partial class GameSession
     /// <summary>Why the active hero can't strike the bomb, or null.</summary>
     public string? CheckAttackBomb(int bombId)
     {
-        if (State.Turn is not { PendingRoll: null, KeelingOver: false })
+        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0, KeelingOver: false })
         {
             return "Finish the roll first.";
         }

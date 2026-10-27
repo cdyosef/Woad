@@ -12,7 +12,7 @@ public sealed partial class GameSession
     /// <summary>Tiles the active hero can walk to right now, with the steps each costs.</summary>
     public IReadOnlyDictionary<GridPosition, int> GetReachableTiles()
     {
-        if (State.Turn is not { PendingRoll: null } || CheckCanMove(Crawl) is not null)
+        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 } || CheckCanMove(Crawl) is not null)
         {
             return new Dictionary<GridPosition, int>();
         }
@@ -27,7 +27,7 @@ public sealed partial class GameSession
     /// <summary>Doors the active hero is standing in and could step through right now.</summary>
     public IReadOnlyList<Direction> GetUsableDoors()
     {
-        if (State.Turn is not { PendingRoll: null } || CheckCanMove(Crawl) is not null)
+        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 } || CheckCanMove(Crawl) is not null)
         {
             return [];
         }

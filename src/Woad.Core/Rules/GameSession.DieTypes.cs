@@ -13,14 +13,17 @@ namespace Woad.Core.Rules;
 /// </summary>
 public sealed partial class GameSession
 {
-    /// <summary>Rolls typed dice, a type at a time: each 6 rolls another of its type straight in.</summary>
+    /// <summary>
+    /// Rolls typed dice, a type at a time: each 6 rolls another of its type straight in. Star dice
+    /// roll just once (their sixes surge with Power instead: see <see cref="SurgePowerDice"/>).
+    /// </summary>
     private (int[] Faces, DieType[] Types) RollTypedDice(IReadOnlyList<(DieType Type, int Dice)> dice)
     {
         List<int> faces = [];
         List<DieType> types = [];
         foreach ((DieType type, int count) in dice.Where(typed => typed.Dice > 0))
         {
-            (int[] rolled, _) = RollBonusDice(count);
+            int[] rolled = type is DieType.Plain or DieType.Star ? [.. _dice.Roll(count).Faces] : RollBonusDice(count).Faces;
             faces.AddRange(rolled);
             types.AddRange(rolled.Select(_ => type));
         }
@@ -34,7 +37,7 @@ public sealed partial class GameSession
         var sixes = new Dictionary<DieType, int>();
         for (int i = 0; i < Math.Min(roll.Faces.Count, types.Count); i++)
         {
-            if (types[i] != DieType.Star && roll.Faces[i] == GameRules.PowerDieFace)
+            if (types[i] is not (DieType.Plain or DieType.Star) && roll.Faces[i] == GameRules.PowerDieFace)
             {
                 sixes[types[i]] = sixes.GetValueOrDefault(types[i]) + 1;
             }
@@ -42,6 +45,10 @@ public sealed partial class GameSession
 
         return sixes;
     }
+
+    /// <summary>The 6s among a roll's Star dice.</summary>
+    private static int StarSixes(DiceRoll roll, IReadOnlyList<DieType> types) =>
+        Enumerable.Range(0, Math.Min(roll.Faces.Count, types.Count)).Count(i => types[i] == DieType.Star && roll.Faces[i] == GameRules.PowerDieFace);
 
     /// <summary>Changes a token count on a hero or monster, and says so.</summary>
     private static void AddCondition(Conditions conditions, int entityId, Condition condition, int change, int byId, List<GameEvent> events)
@@ -336,7 +343,7 @@ public sealed partial class GameSession
     /// <summary>Why the active hero can't dig themselves out now, or null.</summary>
     public string? CheckDigOut()
     {
-        if (State.Turn is not { PendingRoll: null, KeelingOver: false })
+        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0, KeelingOver: false })
         {
             return "Finish the roll first.";
         }

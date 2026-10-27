@@ -14,7 +14,7 @@ public sealed partial class GameSession
     /// </summary>
     public IReadOnlyList<GridPosition> GetCardTargets(int cardId)
     {
-        if (State.Turn is not { PendingRoll: null }
+        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 }
             || ActiveHero.FindCard(cardId) is not { } held
             || CheckCardUsable(held.Card, held.Location) is not null)
         {
@@ -291,6 +291,11 @@ public sealed partial class GameSession
             return "It isn't anyone's turn.";
         }
 
+        if (turn.UnsettledPowerDice > 0)
+        {
+            return "Add or bank your Power Die first.";
+        }
+
         if (turn.PendingRoll is not null)
         {
             return "Finish the attack first.";
@@ -440,7 +445,7 @@ public sealed partial class GameSession
     /// <summary>Why the active hero can't open the chest right now, or null if they can.</summary>
     public string? CheckOpenChest(GridPosition chest)
     {
-        if (State.Turn is not { PendingRoll: null })
+        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
         {
             return "Finish the roll first.";
         }

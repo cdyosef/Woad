@@ -98,7 +98,7 @@ public sealed partial class GameSession
     /// <summary>Why the active hero can't free the merchant now (with a key; a lock can be picked with Od Hand instead), or null.</summary>
     public string? CheckFreeMerchant(int merchantId)
     {
-        if (State.Turn is not { PendingRoll: null })
+        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
         {
             return "Finish the roll first.";
         }
@@ -146,7 +146,7 @@ public sealed partial class GameSession
     /// <summary>Why the active hero can't trade with the merchant now, or null: a freed merchant beside them, who'll still deal with them.</summary>
     public string? CheckTrade(int merchantId)
     {
-        if (State.Turn is not { PendingRoll: null })
+        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
         {
             return "Finish the roll first.";
         }
@@ -282,7 +282,7 @@ public sealed partial class GameSession
     /// <summary>Merchants the active hero could attack right now (striking one is a crime).</summary>
     public IReadOnlyList<Merchant> GetAttackableMerchants()
     {
-        if (State.Turn is not { PendingRoll: null } || AttackDiceLeft < 1)
+        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 } || AttackDiceLeft < 1)
         {
             return [];
         }
@@ -332,10 +332,9 @@ public sealed partial class GameSession
             return false;
         }
 
-        (DiceRoll roll, IReadOnlyList<DieType> types, int powerDice, int banked) = RollMonsterDice(monster, monster.AttackDiceThisTurn);
+        (DiceRoll roll, IReadOnlyList<DieType> types, int powerDice) = RollMonsterDice(monster, monster.AttackDiceThisTurn);
         int total = roll.Total + monster.Definition.Weapon;
         events.Add(new AttackRolled(monster.Id, roll, monster.Definition.Weapon, total, [prey.Id], powerDice) { DieTypes = types });
-        NoteBanked(monster.Id, monster.Power, banked, events);
         DamageMerchant(monster.Id, null, room, prey, total, events);
         return true;
     }

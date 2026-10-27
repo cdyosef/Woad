@@ -67,11 +67,11 @@ public partial class DiceBar : Control
     /// <param name="bonus">The fixed value added to the dice (weapon, armor or Speed).</param>
     /// <param name="powerDice">How many of the last faces are Power Dice.</param>
     /// <param name="toolDice">How many faces, just before the Power Dice, are the tools' own dice (bronze).</param>
-    /// <param name="types">What each face is made of, in order (Star past its end).</param>
+    /// <param name="types">What each face is made of, in order (Plain past its end).</param>
     public async Task ShowRoll(string caption, DiceRoll roll, int bonus, bool newGroup, int powerDice = 0, DiceKind kind = DiceKind.Plain, int toolDice = 0, IReadOnlyList<DieType>? types = null)
     {
         var row = new Row(caption, [.. roll.Faces], bonus, roll.Faces.Count - powerDice) { Kind = kind, ToolFrom = roll.Faces.Count - powerDice - toolDice, Types = [.. types ?? []] };
-        ShowedTypedDice |= row.Types.Any(type => type != DieType.Star);
+        ShowedTypedDice |= row.Types.Any(type => type != DieType.Plain);
         if (newGroup || _roller is null)
         {
             _roller = row;
@@ -225,7 +225,7 @@ public partial class DiceBar : Control
             row.Rects[i] = rect;
             float scale = 1 + 0.35f * row.Pop[i];
             DrawSetTransform(rect.GetCenter() + row.Offset[i], row.Angle[i], new Vector2(scale, scale));
-            Color fill = i < row.Types.Length && row.Types[i] != DieType.Star ? DieTypes.Tint(row.Types[i])
+            Color fill = i < row.Types.Length && row.Types[i] != DieType.Plain ? DieTypes.Tint(row.Types[i])
                 : i >= row.PowerFrom ? Palette.Power : i >= row.ToolFrom ? Palette.DieTool : DieColor(row.Kind);
             DrawDie(row.Shown[i], die, row.Won, clickable, fill);
             DrawSetTransform(Vector2.Zero, 0, Vector2.One);
@@ -373,7 +373,7 @@ public partial class DiceBar : Control
         /// <summary>Faces from this index (up to <see cref="PowerFrom"/>) are the tools' own dice.</summary>
         public int ToolFrom { get; init; } = int.MaxValue;
 
-        /// <summary>What each face is made of (fire, ice...), in order; Star past its end.</summary>
+        /// <summary>What each face is made of (fire, ice...), in order; Plain past its end.</summary>
         public DieType[] Types { get; init; } = [];
 
         /// <summary>This side won; its dice glow.</summary>

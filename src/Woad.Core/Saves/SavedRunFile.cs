@@ -20,12 +20,21 @@ public sealed class SavedRunFile(string path)
         File.Move(temporary, Path, overwrite: true);
     }
 
-    /// <summary>Moves a run that can't be played any more out of the way, beside it as ".old", so nothing is lost.</summary>
+    /// <summary>
+    /// Moves a run that can't be played any more out of the way, beside it as ".old" (".old2" and on
+    /// if that's taken), so nothing is lost.
+    /// </summary>
     public void SetAside()
     {
         if (Exists)
         {
-            File.Move(Path, Path + ".old", overwrite: true);
+            string aside = Path + ".old";
+            for (int n = 2; File.Exists(aside); n++)
+            {
+                aside = $"{Path}.old{n}";
+            }
+
+            File.Move(Path, aside);
         }
     }
 

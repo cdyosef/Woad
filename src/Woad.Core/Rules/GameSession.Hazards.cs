@@ -21,7 +21,7 @@ public sealed partial class GameSession
     /// </summary>
     public string? CheckShove(int targetId)
     {
-        if (State.Turn is not { PendingRoll: null })
+        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
         {
             return "Finish the roll first.";
         }
@@ -79,7 +79,7 @@ public sealed partial class GameSession
     /// <summary>Tiles the active hero could aim a leap at right now (see <see cref="Leap"/>).</summary>
     public IReadOnlyList<GridPosition> GetLeapTargets()
     {
-        if (State.Turn is not { PendingRoll: null } || MoveDiceLeft < 1 || ActiveHero.Prone || HeldBy(ActiveHero) is not null)
+        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 } || MoveDiceLeft < 1 || ActiveHero.Prone || HeldBy(ActiveHero) is not null)
         {
             return [];
         }

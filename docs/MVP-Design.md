@@ -18,7 +18,7 @@ cooperate to survive the dungeon but compete for treasure: the richest player to
 | Players | 1–8, local hot-seat, mouse only |
 | Play mode | Semi-co-op: no direct PvP damage; the escaped player with the most treasure wins |
 | Rooms | 9×9 grids; players may split up into different rooms |
-| Dice | d6 pools for movement, attack and defense. Each Attack or Move die is an action of its own, or several can be rolled together for a stronger one. A 6 on a plain (Star) die surges: a Power Die rolls in and another is banked. Typed dice (fire, ice, poison...) roll more of their type on a 6 and lay their effect on a hit |
+| Dice | d6 pools for movement, attack and defense. Each Attack or Move die is an action of its own, or several can be rolled together for a stronger one. A 6 on a plain die earns a Power Die, to add to the roll or bank; a 6 on a Star die surges (a Power Die rolls in and another is banked). Other typed dice (fire, ice, poison...) roll more of their type on a 6 and lay their effect on a hit |
 | Cards | Abilities and items (weapons, shields, armor, boots, spells, tools, bombs, potions, treasure); single-use or persistent; equipped into body slots |
 | Card source | Starter kit, then loot from chests and monsters drawn from the dungeon's loot deck |
 | Turn | Spend your Rumble, Wend and Od Hand dice on attacks, moves and Od Hand checks, plus 1 other action, 1 free loot and 1 free belt item, in any order |
@@ -292,28 +292,33 @@ facing door of the next room.
 
 ### Power Dice
 
-- **Power Surge:** a **6** on a plain (Star) die, on an attack, move or Od Hand roll by a hero or a
-  monster, surges: one Power Die rolls straight into that roll, and another goes into the bank, or with
-  the bank full, rolls in too. A Power Die is a Star die: its own 6 surges again. There's no choice to
-  make, so play never waits on it.
+- **Earning:** every **6** rolled on a plain die earns a Power Die, on any roll by a hero or a monster:
+  attacks, moves, Od Hand rolls and defense.
+- **Using one:** a Power Die is one more d6 rolled into a roll and added to it. If it also shows a 6,
+  it earns another.
 - **The bank:** each hero and monster can bank up to **3** *(tunable)*, kept until used (across turns
-  and floors). Banked dice show in the dice pool's POWER row, unselected; select them to roll them into
-  your next attack or move.
-- **Defense:** sixes are banked (rolled in when the bank is full). While a defense is losing and the
-  banked dice could still make up the gap, they're rolled in one at a time to try to block.
-- **Monsters** surge the same way, and bank and spend on defense like heroes. They spend banked dice on
-  attacks too (one at a time, while the roll looks short of the target's armor and a middling defense
-  die), and on movement (while a die could still get them to where they can strike). Their sixes show
-  **6!** over them.
-- **Typed dice** (below) earn no Power Dice at all.
+  and floors). A 6 rolled with a full bank is rolled into that roll straight away instead.
+- **Your attacks, moves and Od Hand rolls:** after a 6 you choose **Add Power Die** (roll it in now) or
+  **Bank it**. Nothing else can happen until you choose. Banked dice show in the dice pool's POWER row,
+  unselected; select them to roll them into your next attack or move.
+- **Star dice** are a damage type of their own (below): a **6** on one **surges**, with no choice to make:
+  one Power Die rolls straight into that roll, and another goes into the bank, or with the bank full,
+  rolls in too. A surging Power Die's own 6 surges again.
+- **Defense:** sixes are banked automatically (rolled in when the bank is full). While a defense is losing
+  and the banked dice could still make up the gap, they're rolled in one at a time to try to block.
+- **Monsters** roll the sixes on their attacks straight in, and bank and spend on defense like heroes.
+  They spend banked dice on attacks too (one at a time, while the roll looks short of the target's armor
+  and a middling defense die), and on movement (while a die could still get them to where they can
+  strike). Their sixes show **6!** over them.
+- **Other typed dice** (below) earn no Power Dice at all.
 - **Between runs:** Power Dice still banked at the end of a dungeon or a fight go home with the character
   and come along to the next one.
-- A Luck reroll that comes up 6 surges too. Od Hand rolls earn and use Power Dice like attacks and
+- A Luck reroll that comes up 6 earns a Power Die too. Od Hand rolls earn and use Power Dice like attacks and
   moves.
 
 ### Damage types
 
-Dice can be made of something other than plain Star: **Fire, Poison, Ice, Acid, Necro, Squall, Radiate,
+Dice can be made of something other than plain: **Star** (see Power Dice), **Fire, Poison, Ice, Acid, Necro, Squall, Radiate,
 Life, Earth, Elektrik, Psycho** and **Shadow**. Scrolls roll them (a Frost Scroll's 3 Ice dice), typed
 weapons roll their own dice as their type (the Frost Brand, the Quake Hammer), gear can turn your Rumble
 dice into a type (the Storm Mail's Elektrik), a held torch adds a Fire die, and some monsters attack with
@@ -479,7 +484,8 @@ when the total reaches its number:
   "You can't suss out any trouble." Beat bandits: Law +3 each; beat real guards: Law -2 each. The
   Captains (Guard and Bandit) are big, heavily armored (2d6 defense +3), quick, with a two-handed spiked
   mace (2d6+2 and a die of its own): a hit stuns, and each 6 on the mace's die stuns once more.
-- **Retreat:** in a fight out on the Woarld Map the Od Hand button is **Retreat**: your Od Hand dice look
+- **Retreat:** in a fight out on the Woarld Map a **Retreat** button sits in the top strip beside Party and
+  Menu, well away from the other actions: your Od Hand dice look
   for a way out, against the monsters' chase (a die more than there are of them, and 3: harder than
   fleeing on the map). Get away, and you and your companions beside you leave the field; when everyone
   still standing has got away, the party is back on the tile it came from, and the band (or the Bridge

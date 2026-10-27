@@ -87,7 +87,7 @@ public partial class Main
             Woad.Core.Model.Monster troll = game.Session.State.Rooms[Skirmish.RoomId].Monsters.Single();
             Check(troll.Tiles.Count() == 4, "the Bridge Troll fills four tiles");
             Check(game.Session.State.Round >= 1, "the troll got the first turn, and the round goes on");
-            Check(game.SearchButton.Text == "Retreat", "out on the Woarld Map, the Od Hand button retreats");
+            Check(game.RetreatButton.Visible && game.SearchButton.Text == "Search", "out on the Woarld Map, Retreat is up top and Search stays");
 
             GD.Print("Skirmish test passed.");
             Sfx.QuitGame(this);

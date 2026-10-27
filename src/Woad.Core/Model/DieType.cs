@@ -1,13 +1,16 @@
 namespace Woad.Core.Model;
 
 /// <summary>
-/// What a die is made of. Plain dice are Star: a 6 surges with Power (one Power Die rolls straight in,
-/// another goes to the bank or, with the bank full, rolls in too). Every other type earns no Power Die:
-/// its 6 rolls another die of the same type straight in, and on a hit lays that type's effect on the
-/// target, a stack for each 6.
+/// What a die is made of. A Plain die's 6 earns a Power Die, to add to the roll or bank. A Star die's 6
+/// surges: one Power Die rolls straight in, another goes to the bank or, with the bank full, rolls in
+/// too. Every other type earns no Power Die: its 6 rolls another die of the same type straight in, and
+/// on a hit lays that type's effect on the target, a stack for each 6.
 /// </summary>
 public enum DieType
 {
+    /// <summary>An ordinary die: see <see cref="DieType"/>.</summary>
+    Plain,
+
     /// <summary>Power Surge: see <see cref="DieType"/>.</summary>
     Star,
 

@@ -741,8 +741,12 @@ public partial class GameScreen : Control
 
                 break;
 
-            case PowerDiceBanked banked when _figures.TryGetValue(banked.OwnerId, out Figure? banker) && banker.RoomId == _shownRoomId:
+            case PowerDiceBanked banked when !IsHero(banked.OwnerId) && _figures.TryGetValue(banked.OwnerId, out Figure? banker) && banker.RoomId == _shownRoomId:
                 _board.FloatText(banker.Position, banked.Count > 1 ? $"6! {banked.Count} Power Dice" : "6! Power Die", Palette.Power);
+                break;
+
+            case PowerDiceEarned earned when _figures.TryGetValue(earned.HeroId, out Figure? lucky) && lucky.RoomId == _shownRoomId:
+                _board.FloatText(lucky.Position, "6! Power Die", Palette.Power);
                 break;
 
             case CritRolled crit:
@@ -1063,7 +1067,7 @@ public partial class GameScreen : Control
             case MovementRolled or AttackRolled or DefenseRolled or DieRerolled or PowerDieAdded:
                 Sfx.PlayVaried("dice");
                 break;
-            case PowerDiceBanked:
+            case PowerDiceEarned:
                 Sfx.Play("coin", 1.3f);
                 break;
             case Damaged { Amount: > 0 }:

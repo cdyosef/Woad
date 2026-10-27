@@ -206,15 +206,26 @@ public class SetupAndTurnFlowTests
             }
 
             log.AddRange(session.Do(new RollMovement(hero.Id)).Select(Describe));
+            SettlePowerDice(session, hero, log);
             if (session.GetAttackableMonsters().FirstOrDefault() is { } target)
             {
                 log.AddRange(session.Do(new AttackMonster(hero.Id, target.Id)).Select(Describe));
+                SettlePowerDice(session, hero, log);
             }
 
             log.AddRange(session.Do(new EndTurn(hero.Id)).Select(Describe));
         }
 
         return log;
+    }
+
+    /// <summary>Adds every Power Die the sixes earned (each may earn another).</summary>
+    private static void SettlePowerDice(GameSession session, Hero hero, List<string> log)
+    {
+        while (session.State.Turn?.UnsettledPowerDice > 0)
+        {
+            log.AddRange(session.Do(new AddPowerDie(hero.Id)).Select(Describe));
+        }
     }
 
     private static string Describe(GameEvent gameEvent) =>

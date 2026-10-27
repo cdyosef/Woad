@@ -418,10 +418,9 @@ public sealed partial class GameSession
         if (beside.Count > 0 && monster.AttackDiceThisTurn > 0)
         {
             int victimId = _random.Behavior.Pick(beside.Order().ToList());
-            (DiceRoll roll, IReadOnlyList<DieType> types, int powerDice, int banked) = RollMonsterDice(monster, monster.AttackDiceThisTurn);
+            (DiceRoll roll, IReadOnlyList<DieType> types, int powerDice) = RollMonsterDice(monster, monster.AttackDiceThisTurn);
             int bonus = monster.Definition.Weapon - AttackPenalty(monster.Conditions);
             events.Add(new AttackRolled(monster.Id, roll, bonus, roll.Total + bonus, [victimId], powerDice) { DieTypes = types });
-            NoteBanked(monster.Id, monster.Power, banked, events);
             if (room.FindMonster(victimId) is { } other)
             {
                 DamageMonster(null, room, other, roll.Total + bonus, DamageSource.Monster, events);
