@@ -46,6 +46,7 @@ internal static class TestContent
           { "id": "coin", "name": "Coin", "type": "treasure", "value": 5 },
           { "id": "purse", "name": "Purse", "type": "treasure", "coins": true, "value": 3 },
           { "id": "gem", "name": "Gem", "type": "treasure", "value": 15 },
+          { "id": "bolt_star", "name": "Star Bolt", "type": "spell", "usage": "singleUse", "stacks": true, "effect": { "kind": "attack", "amount": 1, "range": 6, "dieType": "star" } },
           { "id": "bolt_poison", "name": "Poison Bolt", "type": "spell", "usage": "singleUse", "stacks": true, "effect": { "kind": "attack", "amount": 1, "range": 6, "dieType": "poison" } },
           { "id": "bolt_ice", "name": "Ice Bolt", "type": "spell", "usage": "singleUse", "stacks": true, "effect": { "kind": "attack", "amount": 1, "range": 6, "dieType": "ice" } },
           { "id": "bolt_acid", "name": "Acid Bolt", "type": "spell", "usage": "singleUse", "stacks": true, "effect": { "kind": "attack", "amount": 1, "range": 6, "dieType": "acid" } },

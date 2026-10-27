@@ -59,10 +59,40 @@ public class DieTypeTests
             """, new ScriptedDice(6, 1, 6), cards: ["boomerang"]);
         Hero hero = session.HeroInSeat();
 
-        IReadOnlyList<GameEvent> events = session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id));
+        session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id));
+        IReadOnlyList<GameEvent> events = session.Do(new AddPowerDie(hero.Id));
 
         Assert.Equal(0, events.SingleOf<Damaged>().Amount);
         Assert.Empty(events.OfType<Stunned>());
+    }
+
+    [Fact]
+    public void AStarDiesSixSurgesWithNoChoiceToMake()
+    {
+        // The Star die's 6 rolls a Power Die straight in (2) and banks another.
+        GameSession session = TestRun.Start(Across('d'), new ScriptedDice(6, 2, 1), cards: ["bolt_star"]);
+        Hero hero = session.HeroInSeat();
+
+        IReadOnlyList<GameEvent> events = Cast(session, "bolt_star", session.OnlyMonster().Position);
+
+        Assert.Equal([DieType.Star], events.SingleOf<AttackRolled>().DieTypes);
+        Assert.Equal(8, events.SingleOf<PowerDieAdded>().Total);
+        Assert.Equal(new PowerDiceBanked(hero.Id, 1, 1), events.SingleOf<PowerDiceBanked>());
+        Assert.Empty(events.OfType<PowerDiceEarned>());
+        Assert.Null(session.State.Turn!.PendingRoll);
+    }
+
+    [Fact]
+    public void AStarDiesSixWithTheBankFullRollsBothIn()
+    {
+        GameSession session = TestRun.Start(Across('d'), new ScriptedDice(6, 2, 3, 1), cards: ["bolt_star"]);
+        Hero hero = session.HeroInSeat();
+        hero.Power.Banked = GameRules.MaxBankedPowerDice;
+
+        IReadOnlyList<GameEvent> events = Cast(session, "bolt_star", session.OnlyMonster().Position);
+
+        Assert.Equal([2, 3], events.OfType<PowerDieAdded>().Select(added => added.Face));
+        Assert.Empty(events.OfType<PowerDiceBanked>());
     }
 
     [Fact]
@@ -387,6 +417,7 @@ public class DieTypeTests
         hero.Conditions.Add(Condition.Blind, 1);
 
         session.Do(new Tend(hero.Id, hero.Id));
+        session.Do(new AddPowerDie(hero.Id));
 
         Assert.False(hero.Conditions.Has(Condition.Blind));
     }
@@ -573,7 +604,7 @@ public class DieTypeTests
 
         IReadOnlyList<GameEvent> events = session.Do(new AttackMonster(hero.Id, dummy.Id));
 
-        Assert.Equal([DieType.Star, DieType.Ice, DieType.Ice], events.SingleOf<AttackRolled>().DieTypes);
+        Assert.Equal([DieType.Plain, DieType.Ice, DieType.Ice], events.SingleOf<AttackRolled>().DieTypes);
         Assert.Equal(1, dummy.Conditions[Condition.Freeze]);
     }
 

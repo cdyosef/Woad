@@ -25,7 +25,7 @@ public sealed partial class GameSession
     /// <summary>Why the active hero can't lie down now, or null.</summary>
     public string? CheckGoProne()
     {
-        if (State.Turn is not { PendingRoll: null, KeelingOver: false })
+        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0, KeelingOver: false })
         {
             return "Finish the roll first.";
         }
@@ -36,7 +36,7 @@ public sealed partial class GameSession
     /// <summary>Why the active hero can't get up now, or null.</summary>
     public string? CheckGetUp()
     {
-        if (State.Turn is not { PendingRoll: null, KeelingOver: false })
+        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0, KeelingOver: false })
         {
             return "Finish the roll first.";
         }
@@ -59,7 +59,7 @@ public sealed partial class GameSession
             return "You're not on fire.";
         }
 
-        bool fresh = turn is { MovementRoll: null, MoveDiceUsed: 0, AttackDiceUsed: 0, OdHandDiceUsed: 0, HasActed: false, UsedBeltItem: false, UsedFreeLoot: false, HasStolen: false, PendingRoll: null };
+        bool fresh = turn is { MovementRoll: null, MoveDiceUsed: 0, AttackDiceUsed: 0, OdHandDiceUsed: 0, HasActed: false, UsedBeltItem: false, UsedFreeLoot: false, HasStolen: false, PendingRoll: null, UnsettledPowerDice: 0 };
         return fresh ? null : "Stopping, dropping and rolling takes your whole turn: do it before anything else.";
     }
 

@@ -176,11 +176,10 @@ public sealed partial class GameSession
     private void StrikeKeeler(Room room, Monster monster, Hero keeler, List<GameEvent> events)
     {
         MonsterDefinition definition = monster.Definition;
-        (DiceRoll roll, IReadOnlyList<DieType> types, int powerDice, int banked) = RollMonsterDice(monster, monster.AttackDiceThisTurn + ProneBonus(keeler, monster.Position));
+        (DiceRoll roll, IReadOnlyList<DieType> types, int powerDice) = RollMonsterDice(monster, monster.AttackDiceThisTurn + ProneBonus(keeler, monster.Position));
         int bonus = definition.Weapon - AttackPenalty(monster.Conditions);
         int total = roll.Total + bonus;
         events.Add(new AttackRolled(monster.Id, roll, bonus, total, [keeler.Id], powerDice) { DieTypes = types });
-        NoteBanked(monster.Id, monster.Power, banked, events);
         if (DamageHero(room, keeler, total, MonsterBane(monster), monster.Id, events, ranged: keeler.Position.ChebyshevDistanceTo(monster.NearestTile(keeler.Position)) > 1) > 0)
         {
             LayTypedDice(room, keeler, TypedSixes(roll, types), monster.Id, monster.NearestTile(keeler.Position), events);

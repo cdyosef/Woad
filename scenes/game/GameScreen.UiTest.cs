@@ -947,8 +947,10 @@ public partial class GameScreen
         }
     }
 
-    /// <summary>The Od Hand button: Search in a dungeon, Retreat out on the Woarld Map.</summary>
     internal Button SearchButton => _search;
+
+    /// <summary>Out on the Woarld Map, up in the top strip by the Party button.</summary>
+    internal Button RetreatButton => _retreat;
 
     private async Task PressKey(Key key)
     {
@@ -967,8 +969,17 @@ public partial class GameScreen
         }
     }
 
-    /// <summary>Waits for event playback to finish.</summary>
-    internal async Task WaitUntilIdle() => await WaitFor(this, () => !_busy, "event playback to finish");
+    /// <summary>Waits for event playback to finish, adding any Power Dice a 6 earned.</summary>
+    internal async Task WaitUntilIdle()
+    {
+        await WaitFor(this, () => !_busy, "event playback to finish");
+        while (_session.State.Turn?.UnsettledPowerDice > 0)
+        {
+            Check(_addPower.Visible, "a 6 offers to add or bank a Power Die");
+            await Click(this, _addPower);
+            await WaitFor(this, () => !_busy, "the Power Die to roll");
+        }
+    }
 
     private Task ClickTile(GridPosition tile) =>
         ClickAt(this, _board.GetGlobalRect().Position + BoardView.TileOrigin(tile) + new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f));

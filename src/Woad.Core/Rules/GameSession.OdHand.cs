@@ -92,7 +92,7 @@ public sealed partial class GameSession
     /// <summary>A roll needs a turn with nothing pending and Od Hand dice left.</summary>
     private string? CheckOdHandStart()
     {
-        if (State.Turn is not { PendingRoll: null })
+        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
         {
             return "Finish the roll first.";
         }

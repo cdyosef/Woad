@@ -26,6 +26,11 @@ public sealed partial class GameSession
             return "There's no retreating in a dungeon: find the way out.";
         }
 
+        if (State.Turn is null)
+        {
+            return "It isn't anyone's turn.";
+        }
+
         if (ActiveRoom.Monsters.Count == 0)
         {
             return "There's nothing left to run from.";

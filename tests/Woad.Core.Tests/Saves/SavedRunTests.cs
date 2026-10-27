@@ -15,6 +15,29 @@ public class SavedRunTests
 {
     private static readonly ContentCatalog Content = ContentCatalog.LoadDefault();
 
+    [Fact]
+    public void ARunSetAsideNeverOverwritesOneSetAsideBefore()
+    {
+        string folder = Path.Combine(Path.GetTempPath(), "woad-runs-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try
+        {
+            var file = new SavedRunFile(Path.Combine(folder, "raid.run.json"));
+            File.WriteAllText(file.Path, "first");
+            file.SetAside();
+            File.WriteAllText(file.Path, "second");
+            file.SetAside();
+
+            Assert.False(file.Exists);
+            Assert.Equal("first", File.ReadAllText(file.Path + ".old"));
+            Assert.Equal("second", File.ReadAllText(file.Path + ".old2"));
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
     [Theory]
     [InlineData("emerald_keep", 31UL, 150)]
     [InlineData("sunken_temple", 32UL, 300)]

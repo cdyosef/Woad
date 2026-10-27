@@ -23,6 +23,7 @@ public static class DieTypes
         DieType.Elektrik => new Color("ffe03a"),
         DieType.Psycho => new Color("e878e8"),
         DieType.Shadow => new Color("5a5878"),
+        DieType.Star => Palette.Power,
         _ => Palette.DieRumble,
     };
 
@@ -41,7 +42,8 @@ public static class DieTypes
         DieType.Elektrik => "a 6 stuns you",
         DieType.Psycho => "a 6 confuses you",
         DieType.Shadow => "a 6 blinds you",
-        _ => "a 6 surges with Power",
+        DieType.Star => "a 6 surges with Power",
+        _ => "a 6 earns a Power Die",
     };
 
     public static Color Tint(Condition condition) => condition switch

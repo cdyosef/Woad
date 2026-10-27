@@ -12,7 +12,7 @@ public sealed partial class GameSession
     /// <summary>Monsters the active hero could attack with their weapon right now.</summary>
     public IReadOnlyList<Monster> GetAttackableMonsters()
     {
-        if (State.Turn is not { PendingRoll: null } || AttackDiceLeft < 1)
+        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 } || AttackDiceLeft < 1)
         {
             return [];
         }
@@ -69,7 +69,7 @@ public sealed partial class GameSession
     /// <summary>With friendly fire on, the other heroes and companions the active hero could attack right now.</summary>
     public IReadOnlyList<Hero> GetAttackableAllies()
     {
-        if (!State.FriendlyFire || State.Turn is not { PendingRoll: null } || AttackDiceLeft < 1)
+        if (!State.FriendlyFire || State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 } || AttackDiceLeft < 1)
         {
             return [];
         }
@@ -178,7 +178,7 @@ public sealed partial class GameSession
     /// What a Rumble attack rolls: Rumble dice (made of something else in gear like the Storm Mail), the
     /// weapon's own dice (typed ones roll as their type), and a held torch's fire die each.
     /// </summary>
-    private static (int Star, int WeaponDice, IReadOnlyList<(DieType Type, int Dice)> Typed) Arm(Hero hero, int dice, CardDefinition? weapon, int weaponDice, int torches)
+    private static (int Plain, int WeaponDice, IReadOnlyList<(DieType Type, int Dice)> Typed) Arm(Hero hero, int dice, CardDefinition? weapon, int weaponDice, int torches)
     {
         List<(DieType, int)> typed = [];
         if (hero.EquippedCards.Select(card => card.Definition.RumbleType).FirstOrDefault(type => type is not null) is { } rumble)
@@ -203,7 +203,7 @@ public sealed partial class GameSession
 
     /// <summary>
     /// Rolls a hero's attack. It waits while there's something to decide: Luck rerolls (until
-    /// confirmed) or Power Dice earned by sixes. Otherwise it resolves now.
+    /// confirmed) or Power Dice earned by plain sixes (Star sixes surge at once). Otherwise it resolves now.
     /// </summary>
     /// <param name="bonus">The weapon's fixed value added to the roll, or 0.</param>
     /// <param name="powerDice">Banked Power Dice rolled in with the dice (already taken from the bank).</param>
@@ -221,7 +221,7 @@ public sealed partial class GameSession
         (int[] weaponFaces, int crits) = RollBonusDice(weaponDice);
         (int[] typedFaces, DieType[] types) = RollTypedDice(typed ?? []);
         var roll = new DiceRoll([.. rolled.Faces.Take(dice), .. weaponFaces[..weaponDice], .. typedFaces, .. rolled.Faces.Skip(dice), .. weaponFaces[weaponDice..]]);
-        DieType[] dieTypes = [.. Enumerable.Repeat(DieType.Star, dice + weaponDice), .. types];
+        DieType[] dieTypes = [.. Enumerable.Repeat(DieType.Plain, dice + weaponDice), .. types];
         events.Add(new AttackRolled(hero.Id, roll, bonus, roll.Total + bonus, targetIds, powerDice + crits, source == DamageSource.Shove) { WeaponDice = weaponDice, DieTypes = dieTypes });
         if (crits > 0)
         {
@@ -236,6 +236,7 @@ public sealed partial class GameSession
             DieTypes = dieTypes,
             Chill = chill,
         };
+        SurgePowerDice(hero, StarSixes(roll, dieTypes), events);
         EarnPowerDice(hero, Sixes(rolled.Faces), events);
     }
 
@@ -489,7 +490,7 @@ public sealed partial class GameSession
             return;
         }
 
-        (DiceRoll roll, IReadOnlyList<DieType> types, int powerDice, int banked) = RollMonsterDice(monster, dice);
+        (DiceRoll roll, IReadOnlyList<DieType> types, int powerDice) = RollMonsterDice(monster, dice);
         (int[] weaponFaces, int crits) = RollBonusDice(weaponDice);
         foreach (int face in weaponFaces)
         {
@@ -507,14 +508,13 @@ public sealed partial class GameSession
         {
             monster.Power.Banked--;
             spent++;
-            (DiceRoll extra, _, int more, int alsoBanked) = RollMonsterDice(monster, 1, star: true);
+            (DiceRoll extra, _, int more) = RollMonsterDice(monster, 1, plain: true);
             foreach (int face in extra.Faces)
             {
                 roll = roll.With(face);
             }
 
             powerDice += 1 + more;
-            banked += alsoBanked;
         }
 
         bonus -= AttackPenalty(monster.Conditions);
@@ -525,7 +525,6 @@ public sealed partial class GameSession
             events.Add(new PowerDiceSpent(monster.Id, spent, monster.Power.Banked));
         }
 
-        NoteBanked(monster.Id, monster.Power, banked, events);
         Dictionary<DieType, int> sixes = TypedSixes(roll, types);
         int stuns = (monster.Definition.StunOnSix ? Sixes(roll.Faces) : 0) + (monster.Definition.StunOnHit ? 1 + weaponSixes : 0);
         foreach (Hero hero in targets.Where(hero => hero.IsActive))

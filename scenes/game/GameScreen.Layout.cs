@@ -36,6 +36,9 @@ public partial class GameScreen
     private RichTextLabel _log = null!;
     private Label _luckHint = null!;
     private Button _confirm = null!;
+    private Button _addPower = null!;
+    private Button _bankPower = null!;
+    private Button _retreat = null!;
     private Button _rumble = null!;
     private Button _prone = null!;
     private Button _dropRoll = null!;
@@ -113,18 +116,21 @@ public partial class GameScreen
         // Keeling Over, the only thing to do is roll the Keel Die (the End turn button), with any Power Dice selected.
         bool keeling = !Locked && turn is { KeelingOver: true };
         bool idle = !Locked && turn is not null && !keeling;
-        bool pending = turn?.PendingRoll is not null;
+        bool choosingPower = turn?.UnsettledPowerDice > 0;
+        bool pending = turn?.PendingRoll is not null || choosingPower;
         UpdatePool((idle && !pending) || keeling);
         bool held = hero is not null && _session.HeldBy(hero) is not null;
         _roll.Disabled = !(idle && !pending && _session.MoveDiceLeft > 0) || held;
-        // Out on the Woarld Map there's nothing to search: the button retreats instead.
-        bool skirmish = _session.State.Skirmish;
-        _search.Text = skirmish ? "Retreat" : "Search";
-        string? searchBlocked = skirmish ? _session.CheckRetreat() : _session.CheckSearch();
+        string? searchBlocked = _session.CheckSearch();
         _search.Disabled = !(idle && !pending) || searchBlocked is not null;
-        _search.TooltipText = _session.State.Turn is null ? "" : searchBlocked ?? (skirmish
-            ? $"Retreat: your selected Od Hand dice look for a way out, against the monsters' chase (a die more than there are of them, +{GameSession.RetreatChaseBonus}). Get away and you're off the field, the monsters left where they are; fail and you bolt in a panic and fall flat."
-            : "Search the room with your selected Od Hand dice: finds secret doors, traps and stashes your total reaches.");
+        _search.TooltipText = _session.State.Turn is null ? "" : searchBlocked ?? "Search the room with your selected Od Hand dice: finds secret doors, traps and stashes your total reaches.";
+        // Out on the Woarld Map, Retreat waits up in the top strip, well away from the other actions.
+        _retreat.Visible = _session.State.Skirmish;
+        string? retreatBlocked = _session.CheckRetreat();
+        _retreat.Disabled = !(idle && !pending) || retreatBlocked is not null;
+        _retreat.TooltipText = _session.State.Turn is null ? "" : retreatBlocked
+            ?? $"Retreat: your selected Od Hand dice look for a way out, against the monsters' chase (a die more than there are of them, +{GameSession.RetreatChaseBonus}). Get away and you're off the field, the monsters left where they are; fail and you bolt in a panic and fall flat.";
+        _header.Size = new Vector2(BoardView.Pixels - (_retreat.Visible ? 156 : 102), 14);
         _steal.Disabled = !(idle && !pending) || _session.OdHandDiceLeft < 1 || turn!.HasStolen;
         _stealing &= !_steal.Disabled;
         _steal.Text = _stealing ? "Cancel" : "Steal";
@@ -142,14 +148,17 @@ public partial class GameScreen
         _endTurn.TooltipText = turn is { KeelingOver: true }
             ? "Keeling Over: roll the Keel Die. A 6 is a mark of life and rolls a Power Die (another on a 6); a 1 is a mark of death and rolls a Doom Die (another on a 1). Every roll after the first adds Doom Dice: 1 on the second, 2 on the third... Select banked Power Dice to add them: their 6s are marks of life."
             : "";
-        _confirm.Visible = turn?.PendingRoll is not null;
+        _confirm.Visible = turn?.PendingRoll is not null && !choosingPower;
         _confirm.Disabled = Locked;
+        _addPower.Visible = _bankPower.Visible = choosingPower;
+        _addPower.Disabled = _bankPower.Disabled = Locked;
+        _bankPower.Text = hero is null ? "Bank it" : $"Bank it ({hero.Power.Banked}/{GameRules.MaxBankedPowerDice})";
 
         // Where Confirm and the Power Die buttons go, while there's no roll to settle: lie down or get up, and stop, drop and roll.
         bool lying = hero?.Prone == true;
         // The row above the dice buttons: Rumble, Shove and Prone (Drop & roll while burning), where Confirm
         // and the Power Die buttons go while a roll waits.
-        bool waiting = turn?.PendingRoll is not null;
+        bool waiting = turn?.PendingRoll is not null || choosingPower;
         _rumble.Visible = _shove.Visible = _prone.Visible = _dropRoll.Visible = !waiting;
         _prone.Text = lying ? "Get up" : "Prone";
         string? proneError = hero is null || turn is null ? "" : lying ? _session.CheckGetUp() : _session.CheckGoProne();
@@ -275,7 +284,7 @@ public partial class GameScreen
         }
 
         var interactive = new List<GridPosition>();
-        if (turn.PendingRoll is null)
+        if (turn.PendingRoll is null && turn.UnsettledPowerDice == 0)
         {
             interactive.AddRange(hero.Position.OrthogonalNeighbors().Where(tile =>
                 (room.Layout[tile] == TileKind.Chest && (_session.CheckOpenChest(tile) is null || _session.CheckPickLock(tile) is null || _session.CheckDisarm(tile) is null))
@@ -449,7 +458,7 @@ public partial class GameScreen
             return CardActions.Unavailable("Wait for the action to finish.");
         }
 
-        string? Drop() => turn.PendingRoll is not null ? "Finish the roll first." : null;
+        string? Drop() => turn.PendingRoll is not null || turn.UnsettledPowerDice > 0 ? "Finish the roll first." : null;
         var blocked = new Dictionary<CardAction, string>();
         foreach ((CardAction action, string? reason) in new[]
         {
@@ -573,6 +582,10 @@ public partial class GameScreen
             RefreshPanels();
         };
         AddChild(_partyButton);
+        _retreat = UiTheme.Accent(UiTheme.Button(new Vector2(SideWidth + BoardView.Pixels - 148, 4), new Vector2(50, 15), "Retreat"), Palette.Danger);
+        _retreat.Visible = false;
+        _retreat.Pressed += () => ExecuteOdHand((heroId, dice, _, power) => new Retreat(heroId, dice, false, power));
+        AddChild(_retreat);
         _menu = UiTheme.Button(new Vector2(SideWidth + BoardView.Pixels - 48, 4), new Vector2(42, 15), "Menu");
         _menu.Pressed += () =>
         {
@@ -648,6 +661,14 @@ public partial class GameScreen
         _confirm.Pressed += () => ExecuteForActiveHero(heroId => new ConfirmAttack(heroId));
         right.AddChild(_confirm);
 
+        // After a 6: roll the Power Die into this roll, or keep it for later.
+        _addPower = UiTheme.Accent(UiTheme.Button(new Vector2(8, 279), new Vector2(78, 18), "Add Power Die"), Palette.Power);
+        _addPower.Pressed += () => ExecuteForActiveHero(heroId => new AddPowerDie(heroId));
+        right.AddChild(_addPower);
+        _bankPower = UiTheme.Accent(UiTheme.Button(new Vector2(90, 279), new Vector2(78, 18), "Bank it"), Palette.Power);
+        _bankPower.Pressed += () => ExecuteForActiveHero(heroId => new BankPowerDie(heroId));
+        right.AddChild(_bankPower);
+
         _rumble = UiTheme.Accent(UiTheme.CompactButton(new Vector2(8, 279), new Vector2(52, 20), "Rumble"), Palette.DieRumble);
         _rumble.TooltipText = "Attack (R or Space): your attack range shows in red; click a target in it. Uses your selected Rumble dice and your weapon.";
         _rumble.Pressed += ToggleRumble;
@@ -690,8 +711,7 @@ public partial class GameScreen
         right.AddChild(_leap);
 
         _search = UiTheme.Accent(UiTheme.CompactButton(new Vector2(88, 303), new Vector2(40, 20), "Search"), Palette.DieOdHand);
-        _search.Pressed += () => ExecuteOdHand((heroId, dice, tools, power) =>
-            _session.State.Skirmish ? new Retreat(heroId, dice, false, power) : new Search(heroId, dice, tools, power));
+        _search.Pressed += () => ExecuteOdHand((heroId, dice, tools, power) => new Search(heroId, dice, tools, power));
         right.AddChild(_search);
 
         _steal = UiTheme.Accent(UiTheme.CompactButton(new Vector2(130, 303), new Vector2(38, 20), "Steal"), Palette.DieOdHand);

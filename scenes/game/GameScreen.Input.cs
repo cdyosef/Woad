@@ -480,6 +480,11 @@ public partial class GameScreen
             return $"{hero.Name} is Keeling Over (life {hero.LifeMarks}/3, death {hero.DeathMarks}/3). Roll the Keel Die: 6 is a mark of life, 1 a mark of death.{dooms} Select Power Dice to add their 6s.";
         }
 
+        if (turn.UnsettledPowerDice > 0)
+        {
+            return "You rolled a 6! Add a Power Die to this roll, or bank it for later.";
+        }
+
         if (hero.FireDice > 0 && _session.CheckStopDropRoll() is null)
         {
             return $"You're on fire ({hero.FireDice} {(hero.FireDice == 1 ? "die" : "dice")})! Stop, drop and roll to put it out (your whole turn), or get into water.";

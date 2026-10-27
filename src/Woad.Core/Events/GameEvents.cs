@@ -23,6 +23,9 @@ public sealed record TurnEnded(int HeroId) : GameEvent;
 /// </summary>
 public sealed record MovementRolled(int HeroId, DiceRoll Roll, int Bonus, int MovementPoints, int PowerDice = 0) : GameEvent;
 
+/// <summary>Sixes earned Power Dice the hero now chooses to add or bank (<paramref name="Unsettled"/> in all).</summary>
+public sealed record PowerDiceEarned(int HeroId, int Unsettled) : GameEvent;
+
 /// <summary>
 /// A Power Die was rolled into a hero's pending attack or move (by choice, or because their bank was
 /// full). <paramref name="Total"/> is the attack's new total, or the move's new steps.
@@ -53,7 +56,7 @@ public sealed record AttackRolled(int AttackerId, DiceRoll Roll, int Bonus, int 
     /// <summary>Of the faces, after the Rumble dice: the weapon's own dice (the Longsword's d6). Power Dice come last.</summary>
     public int WeaponDice { get; init; }
 
-    /// <summary>What each face is made of (fire, ice...), in order; Star past its end. A typed die's 6 rolled another in.</summary>
+    /// <summary>What each face is made of (fire, ice...), in order; Plain past its end. A typed die's 6 rolled another in.</summary>
     public IReadOnlyList<DieType> DieTypes { get; init; } = [];
 
     /// <summary>A flung chain (the Iron Warden's), which drags and shackles whoever it hits.</summary>

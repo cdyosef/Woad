@@ -118,7 +118,7 @@ public sealed class PendingRoll
     /// <summary>Stacks of Freeze laid on every target as the attack lands, hit or miss (the Frost Wand).</summary>
     public int Chill { get; internal init; }
 
-    /// <summary>What each face is made of (fire, ice...), in order; Star past its end (Power Dice added later).</summary>
+    /// <summary>What each face is made of (fire, ice...), in order; Plain past its end (Power Dice added later).</summary>
     public IReadOnlyList<DieType> DieTypes { get; internal init; } = [];
 }
 
@@ -188,6 +188,12 @@ public sealed class TurnState
     public bool UsedBeltItem { get; internal set; }
 
     public PendingRoll? PendingRoll { get; internal set; }
+
+    /// <summary>
+    /// Power Dice just earned by sixes on the pending attack or the move in progress, waiting for
+    /// the hero to add each to that roll or bank it. Nothing else can happen until they're settled.
+    /// </summary>
+    public int UnsettledPowerDice { get; internal set; }
 
     /// <summary>Sets the steps from the move's roll (after a reroll or an added Power Die), plus the carried-over steps.</summary>
     internal void CountSteps() => MovementPoints = CarriedSteps + Math.Max(0, MovementRoll!.Total + MovementBonus);

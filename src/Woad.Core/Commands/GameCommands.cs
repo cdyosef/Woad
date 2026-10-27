@@ -32,6 +32,12 @@ public sealed record GoThroughDoor(int HeroId, Direction Door) : GameCommand(Her
 /// </summary>
 public sealed record AttackMonster(int HeroId, int MonsterId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0) : GameCommand(HeroId);
 
+/// <summary>Roll a Power Die just earned (by a 6) into the pending attack or the move in progress.</summary>
+public sealed record AddPowerDie(int HeroId) : GameCommand(HeroId);
+
+/// <summary>Bank a Power Die just earned (by a 6) for a later roll, if the bank has room.</summary>
+public sealed record BankPowerDie(int HeroId) : GameCommand(HeroId);
+
 /// <summary>Spend 1 Luck to reroll one die of the pending attack, or of the move in progress before any steps.</summary>
 public sealed record RerollDie(int HeroId, int DieIndex) : GameCommand(HeroId);
 
