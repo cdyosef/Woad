@@ -10,7 +10,8 @@ namespace Woad.Core.Bots;
 /// Plays a companion's turn by its standing order (see <see cref="CompanionOrder"/>). Under any
 /// order it rolls its Keel Die when Keeling Over, rouses allies Keeling Over beside it, settles its
 /// rolls, drinks a potion when badly hurt and attacks what it can reach (staying
-/// back, only what's next to it). It follows its owner, or the first player still in the dungeon if
+/// back, only what's next to it). Fighting, it casts the spells it knows, when nothing is in its
+/// weapon's reach or it has Power to spare. It follows its owner, or the first player still in the dungeon if
 /// the owner is gone: through open doors and up or down the stairs. It loots, unlocks and searches only
 /// when told to: Find me (through locked doors and down pits to reach the owner), Burgle (the room's
 /// locks and chests), Loot (the room's loot) and Explore (search each room once).
@@ -81,6 +82,11 @@ public static class CompanionBot
         if (hero.Policy.DrinksPotions && hero.Hearts <= hero.MaxHearts - 2 && SimpleBot.UsableBeltCard(session, hero, CardEffectKind.Heal) is { } potion)
         {
             return new UseCard(hero.Id, potion.Id);
+        }
+
+        if (hero.Order == CompanionOrder.Fight && Spell(session, hero, room) is { } cast)
+        {
+            return cast;
         }
 
         if (session.GetAttackableMonsters()
@@ -161,6 +167,54 @@ public static class CompanionBot
         }
 
         return LeaveTheWay(session, hero, room, plan) ?? new EndTurn(hero.Id);
+    }
+
+    /// <summary>
+    /// A spell to cast at the monsters: when its weapon reaches none of them, or it has a Power Die to spare
+    /// beyond the spell's cost. It aims at the weakest monster it can reach, and never into a line or a
+    /// spot where it would catch its friends. Null for none.
+    /// </summary>
+    private static CastSpell? Spell(GameSession session, Hero hero, Room room)
+    {
+        bool weaponReaches = session.GetAttackableMonsters().Count > 0;
+        foreach (SpellDefinition spell in hero.Spells.OrderByDescending(spell => spell.Dice))
+        {
+            if (session.CheckCastSpell(spell.Id) is not null || (weaponReaches && hero.Power.Banked <= spell.Cost))
+            {
+                continue;
+            }
+
+            if (spell.Shape == SpellShape.Around)
+            {
+                if (session.CheckCastSpell(spell.Id, hero.Position) is null)
+                {
+                    return new CastSpell(hero.Id, spell.Id);
+                }
+
+                continue;
+            }
+
+            HashSet<GridPosition> friends = [.. session.State.ActiveHeroesIn(room).Where(other => other != hero).Select(other => other.Position)];
+            if (session.GetSpellTargets(spell.Id)
+                    .Where(tile => room.MonsterAt(tile) is not null && !friends.Contains(tile))
+                    .Where(tile => spell.Shape != SpellShape.Line || !friends.Any(friend => Between(hero.Position, tile, friend, spell.Range)))
+                    .OrderBy(tile => room.MonsterAt(tile)!.Hearts)
+                    .ThenBy(tile => tile.ManhattanDistanceTo(hero.Position))
+                    .Select(tile => (GridPosition?)tile)
+                    .FirstOrDefault() is { } aim)
+            {
+                return new CastSpell(hero.Id, spell.Id, aim);
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Whether <paramref name="tile"/> is on the straight line from <paramref name="from"/> toward <paramref name="toward"/>, within <paramref name="range"/>.</summary>
+    private static bool Between(GridPosition from, GridPosition toward, GridPosition tile, int range)
+    {
+        int dx = Math.Sign(toward.X - from.X), dy = Math.Sign(toward.Y - from.Y);
+        return Enumerable.Range(1, range).Any(step => tile == new GridPosition(from.X + dx * step, from.Y + dy * step));
     }
 
     /// <summary>Where the order sends the companion this turn.</summary>

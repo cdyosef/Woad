@@ -28,7 +28,8 @@ public sealed record HeroSetup(
     StatAllocation? Allocation = null,
     int Xp = 0,
     int UnspentPoints = 0,
-    CompanionPolicy? Policy = null);
+    CompanionPolicy? Policy = null,
+    IReadOnlyList<string>? Spells = null);
 
 /// <summary>A merchant chained up in a room, the Od Hand needed to pick the lock of their chains, and their name.</summary>
 public sealed record MerchantSetup(GridPosition Position, int LockDifficulty, string Name);

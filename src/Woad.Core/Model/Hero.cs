@@ -35,6 +35,7 @@ public sealed class Hero
     private readonly Dictionary<EquipSlot, CardInstance> _equipment = [];
     private readonly List<CardInstance> _belt = [];
     private readonly List<CardInstance> _backpack = [];
+    private readonly List<SpellDefinition> _spells = [];
 
     internal Hero(int id, int seat, string name, Stats baseStats, string roomId, GridPosition position, Guid? characterId = null, string portrait = "", Appearance? appearance = null)
     {
@@ -95,7 +96,9 @@ public sealed class Hero
 
     public int LuckRemaining { get; internal set; }
 
-    public PowerBank Power { get; } = new();
+    public PowerBank Power => _power ??= new PowerBank(() => GameRules.MaxBankedPowerDice + Math.Max(0, EffectiveStats.Magic));
+
+    private PowerBank? _power;
 
     /// <summary>Gold in the purse, from coins found this run. It doesn't take backpack space and counts as treasure.</summary>
     public int Gold { get; internal set; }
@@ -232,6 +235,11 @@ public sealed class Hero
     public IReadOnlyList<CardInstance> Belt => _belt;
 
     public IReadOnlyList<CardInstance> Backpack => _backpack;
+
+    /// <summary>The spells they know: a basic one for each rank of Magic, and any learned from scrolls.</summary>
+    public IReadOnlyList<SpellDefinition> Spells => _spells;
+
+    internal void Learn(SpellDefinition spell) => _spells.Add(spell);
 
     public IEnumerable<CardInstance> EquippedCards =>
         _equipment.OrderBy(entry => entry.Key).Select(entry => entry.Value).Distinct();

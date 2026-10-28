@@ -82,7 +82,7 @@ public partial class GameScreen : Control
             Engine.TimeScale = 8;
         }
 
-        _narrator = new EventNarrator(NameOf, CardNameOf);
+        _narrator = new EventNarrator(NameOf, CardNameOf, id => Content.FindSpell(id)?.Name ?? id);
         BuildLayout();
         StartRun(Setup);
 
@@ -141,6 +141,10 @@ public partial class GameScreen : Control
         else if (args.Contains("--dietypetest"))
         {
             RunDieTypeTest();
+        }
+        else if (args.Contains("--magictest"))
+        {
+            RunMagicTest();
         }
         else if (args.Contains("--companiontest"))
         {
@@ -579,6 +583,25 @@ public partial class GameScreen : Control
                 await Pause(0.25);
                 break;
 
+            case SpellCast cast when Content.FindSpell(cast.SpellId) is { } spell:
+                _spellCaption = $"{NameOf(cast.HeroId)} casts {spell.Name}";
+                CalloutOver(cast.HeroId, spell.Name.ToUpperInvariant() + "!", DieTypes.Tint(spell.DieType));
+                RefreshPanels();
+                await Pause(0.3);
+                break;
+
+            case ExtraDiceRolled extra:
+                foreach (int targetId in extra.TargetIds)
+                {
+                    FloatOver(targetId, $"+{extra.Roll.Total}", DieTypes.Tint(extra.DieTypes.FirstOrDefault()));
+                }
+
+                break;
+
+            case SpellLearned learned when Content.FindSpell(learned.SpellId) is { } spell:
+                FloatOver(learned.HeroId, $"learns {spell.Name}", DieTypes.Tint(spell.DieType));
+                break;
+
             case PointSpent spent:
                 CalloutOver(spent.HeroId, "LEVEL UP!", Palette.Heal);
                 break;
@@ -722,7 +745,8 @@ public partial class GameScreen : Control
                 _trayShowsMovement = false;
                 BeginStrike(attack.AttackerId, attack.Total, attack.Roll.Faces.TakeLast(attack.PowerDice).Sum());
                 await Lunge(attack.AttackerId, attack.TargetIds.FirstOrDefault());
-                await _dice.ShowRoll($"{NameOf(attack.AttackerId)} {(attack.Shove ? "shoves" : attack.Chain ? "flings its chain" : "attacks")}", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice, DiceKind.Rumble, types: attack.DieTypes);
+                await _dice.ShowRoll(_spellCaption ?? $"{NameOf(attack.AttackerId)} {(attack.Shove ? "shoves" : attack.Chain ? "flings its chain" : "attacks")}", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice, DiceKind.Rumble, types: attack.DieTypes);
+                _spellCaption = null;
                 // A hero's sixes get their own events; a monster's roll straight in, so call them out here.
                 if (attack.PowerDice > 0 && !IsHero(attack.AttackerId))
                 {

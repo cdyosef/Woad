@@ -178,6 +178,12 @@ public partial class GameScreen
             return;
         }
 
+        if (_casting is not null)
+        {
+            CastAt(hero, tile);
+            return;
+        }
+
         Room room = ShownRoom;
         if (_leaping)
         {
@@ -903,6 +909,7 @@ public partial class GameScreen
         _rumbling = false;
         _selectedCardId = null;
         _targeting = false;
+        StopCasting();
         _board.SetBlast([]);
         RefreshPanels();
     }

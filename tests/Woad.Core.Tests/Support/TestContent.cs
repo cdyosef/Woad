@@ -127,5 +127,5 @@ internal static class TestContent
         }
         """;
 
-    public static ContentCatalog Catalog { get; } = ContentCatalog.Parse(CardsJson, MonstersJson, [ThemeJson]);
+    public static ContentCatalog Catalog { get; } = ContentCatalog.Parse(CardsJson, MonstersJson, [ThemeJson], ContentCatalog.ReadEmbedded("spells.json"));
 }

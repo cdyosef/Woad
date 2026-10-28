@@ -21,6 +21,7 @@ public partial class CharacterEditor : MenuScreen
         (StatKind.DefenseDice, "Defense", "icon_defense"),
         (StatKind.OdHandDice, "Od Hand", "icon_odhand"),
         (StatKind.Luck, "Luck", "icon_luck"),
+        (StatKind.Magic, "Magic", "icon_magic"),
     ];
 
     private readonly List<PortraitView> _portraits = [];
@@ -42,7 +43,13 @@ public partial class CharacterEditor : MenuScreen
         [StatKind.DefenseDice] = "DEFENSE\nYour base die and armor defend against every attack. Each point buys an extra die: it rolls in only when a defense is losing, then it's spent until your next turn.",
         [StatKind.OdHandDice] = "OD HAND\nYour dice for picking locks, searching, disarming traps, stealing and rousing allies who've Keeled Over. Lockpicks help with locks. Each point buys another die.",
         [StatKind.Luck] = "LUCK\nRerolls of a single die, refilled on each new floor: after any roll, click a die to roll it again. Each point buys another reroll.",
+        [StatKind.Magic] = "MAGIC\nEach rank teaches a basic spell (you pick it) and holds another banked Power Die. Spells cost Power to cast, take your Rumble dice, and add your rank to their roll. Magic is dangerous, and people don't like it.",
     };
+
+    /// <summary>The basic spells picked for the ranks of Magic bought here, in order.</summary>
+    private readonly List<string> _newSpells = [];
+
+    private SpellPicker _spellPicker = null!;
     private int _budget;
     private int _level;
     private string _portrait = Portraits.All[0].Id;
@@ -156,7 +163,7 @@ public partial class CharacterEditor : MenuScreen
         for (int i = 0; i < StatRows.Length; i++)
         {
             (StatKind stat, string name, string icon) = StatRows[i];
-            float y = 164 + i * 21;
+            float y = 164 + i * 19;
             // The stat's symbol and name; hovering them explains the stat in the preview panel.
             Control hover = Add(new Control { Position = new Vector2(22, y + 2), Size = new Vector2(60, 16), MouseFilter = MouseFilterEnum.Stop, MouseDefaultCursorShape = CursorShape.Help });
             hover.AddChild(new TextureRect
@@ -207,6 +214,15 @@ public partial class CharacterEditor : MenuScreen
 
         _previewStats = Add(UiTheme.Label(new Vector2(366, 210), new Vector2(246, 96)));
 
+        // A new rank of Magic asks which basic spell it teaches.
+        _spellPicker = Add(new SpellPicker { Position = new Vector2(196, 80) });
+        _spellPicker.Picked += spell =>
+        {
+            _newSpells.Add(spell);
+            _allocation = _allocation.With(StatKind.Magic, _allocation.Magic + 1);
+            Refresh();
+        };
+
         _error = Add(UiTheme.Label(new Vector2(24, 298), new Vector2(320, 14), color: Palette.Danger));
         SaveButton = Add(UiTheme.Button(new Vector2(420, 316), new Vector2(96, 26), Editing is null ? "Create" : "Save"));
         SaveButton.Pressed += Save;
@@ -238,12 +254,29 @@ public partial class CharacterEditor : MenuScreen
     private void Step(StatKind stat, int delta)
     {
         StatAllocation next = _allocation.With(stat, _allocation[stat] + delta);
-        if (next[stat] >= _floor[stat] && PointBuy.Check(next, _level, _budget) is null)
+        if (next[stat] < _floor[stat] || PointBuy.Check(next, _level, _budget) is not null)
         {
-            _allocation = next;
-            Refresh();
+            return;
         }
+
+        if (stat == StatKind.Magic && delta > 0)
+        {
+            _spellPicker.Open("PICK A SPELL", Spellbook.Learnable([.. Editing?.Spells ?? [], .. _newSpells], Content)
+                .Select(spell => (spell, spell.Name, (string?)null)));
+            return;
+        }
+
+        if (stat == StatKind.Magic)
+        {
+            _newSpells.RemoveAt(_newSpells.Count - 1);
+        }
+
+        _allocation = next;
+        Refresh();
     }
+
+    /// <summary>For the click tests: the window that asks which spell a new rank of Magic teaches.</summary>
+    internal SpellPicker SpellPicker => _spellPicker;
 
     /// <summary>Steps a look row: the look itself, or one of its colors (wrapping around).</summary>
     private void StepStyle(int row, int delta)
@@ -372,6 +405,7 @@ public partial class CharacterEditor : MenuScreen
             $"Wend {stats.MoveDice}d6{speed}   Luck {UiTheme.Count(stats.Luck, "reroll", "rerolls")}\n" +
             $"Rumble {UiTheme.Count(stats.AttackDice, "die", "dice")}   Defense {UiTheme.Count(stats.DefenseDice, "die", "dice")}\n" +
             $"Od Hand {UiTheme.Count(stats.OdHandDice, "die", "dice")}   (before gear bonuses)\n" +
+            (stats.Magic > 0 ? $"Magic {stats.Magic}: {string.Join(", ", (Editing?.Spells ?? []).Concat(_newSpells).Select(id => Content.GetSpell(id).Name))}\n" : "") +
             (_isCompanion ? "A companion: joins a player's party and follows their orders.\n" : "") +
             gear;
         _points.TooltipText = _level <= 1
@@ -397,7 +431,7 @@ public partial class CharacterEditor : MenuScreen
             Character character;
             if (Editing is null)
             {
-                character = Character.Create(NameEdit.Text, _portrait, _allocation, Content, DateTimeOffset.UtcNow, _isCompanion, Appearance);
+                character = Character.Create(NameEdit.Text, _portrait, _allocation, Content, DateTimeOffset.UtcNow, _isCompanion, Appearance, _newSpells);
             }
             else
             {
@@ -405,7 +439,7 @@ public partial class CharacterEditor : MenuScreen
                 character.Rename(NameEdit.Text);
                 character.ChangePortrait(_portrait);
                 character.ChangeAppearance(Appearance);
-                character.Allocate(_allocation);
+                character.Allocate(_allocation, _newSpells, Content);
             }
 
             await Repository.SaveAsync(character);

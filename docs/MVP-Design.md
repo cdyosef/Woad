@@ -62,7 +62,7 @@ At level 1 a character may buy at most **2** extra Rumble, Defense and Od Hand d
 | Armor | Fixed value added to every defense | 0 | Gear only (shields, armor) |
 | Block | Added, all of it, to the first defense that's losing (before extra dice), then spent until your next turn | 0 | Gear only (shields) |
 | Luck | Rerolls of a single die, per floor | 0 | 1 per reroll |
-| Magic (pentacle) | A Power Dice bank slot and a basic spell per rank (see [Magic](#magic); planned) | 0 | 2 per rank |
+| Magic (pentacle) | A Power Dice bank slot and a basic spell per rank, and its rank added to spells cast (see [Magic](#magic)) | 0 | 2 per rank |
 
 - **Creation:** name (1–16 letters, numbers, spaces, apostrophes or hyphens), look, crest, and 6 points to
   spend. Unspent points are kept for later. Each stat is shown with its symbol (a heart, boot, fist, shield, hamsa or clover);
@@ -382,8 +382,10 @@ Typed dice show in their own colors in the dice bar.
 
 ## Magic
 
-*Planned: agreed in discussion, not built yet. Built in three batches: (1) the Magic stat, casting and the
-plain attack spells; (2) learning scrolls and backfires; (3) ice, light and darkness, and the buff spells.*
+*Built in three batches: (1) the Magic stat, casting and the spells' attacks (built); (2) learning scrolls
+and backfires; (3) ice, light and darkness, and the buff spells (Icicle Arrow's ice, Lifeforce, Shining
+Light and Shadowbind on yourself or an ally, and Shadowbind's darkness die). Until then those four cast as
+plain attacks.*
 
 Magic is dangerous in this world, and people don't like it, for good reason.
 
@@ -391,7 +393,8 @@ Magic is dangerous in this world, and people don't like it, for good reason.
 
 - **Magic** (a pentacle) costs **2 points** a rank and starts at **0** for everyone, like Luck.
 - Each rank adds a **Power Dice bank slot** (3, then 4, 5...) and teaches **one basic spell**, picked from
-  the list below.
+  the list below (up to rank 13, one for each). Raising Magic in the character editor, or with a level's
+  points from the Party menu in a run, asks which.
 - Companions can take Magic too, and cast their spells under the **Fight** order.
 
 ### Casting
@@ -403,7 +406,11 @@ Magic is dangerous in this world, and people don't like it, for good reason.
 - The attack is the spell's dice **plus your Magic rank**, against the target's defense and armor like
   any attack. Its dice are typed (see Damage types): a 6 rolls another of its type in and, on a hit, lays
   its effect.
-- Casting uses the turn's **Rumble action** (instead of attacking), once a turn.
+- Casting takes all your **Rumble dice** left this turn (you need at least one), so it's instead of
+  attacking, and once a turn.
+- **On screen:** the **Cast** button (beside End turn, for a hero who knows spells) lists your spells;
+  pick one, then click a target in red (its range is shaded). The cost comes out of the bank by itself;
+  select banked Power Dice in the dice pool first to put them in on top, a die each.
 - Durations "equal to the dice" count every die rolled, including the extra ones from 6s.
 
 ### Basic spells

@@ -23,6 +23,15 @@ public sealed record TurnEnded(int HeroId) : GameEvent;
 /// </summary>
 public sealed record MovementRolled(int HeroId, DiceRoll Roll, int Bonus, int MovementPoints, int PowerDice = 0) : GameEvent;
 
+/// <summary>A hero cast a spell at <paramref name="TargetIds"/>, spending <paramref name="Power"/> banked Power Dice.</summary>
+public sealed record SpellCast(int HeroId, string SpellId, int Power, IReadOnlyList<int> TargetIds) : GameEvent;
+
+/// <summary>Extra dice a spell rolls against only some of its targets (Quake's against those on rubble), added to their total.</summary>
+public sealed record ExtraDiceRolled(int HeroId, DiceRoll Roll, IReadOnlyList<DieType> DieTypes, IReadOnlyList<int> TargetIds) : GameEvent;
+
+/// <summary>A hero learned a spell: a basic one with a rank of Magic, or one from a scroll.</summary>
+public sealed record SpellLearned(int HeroId, string SpellId) : GameEvent;
+
 /// <summary>Sixes earned Power Dice the hero now chooses to add or bank (<paramref name="Unsettled"/> in all).</summary>
 public sealed record PowerDiceEarned(int HeroId, int Unsettled) : GameEvent;
 

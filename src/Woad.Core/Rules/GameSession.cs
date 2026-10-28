@@ -101,6 +101,7 @@ public sealed partial class GameSession
             AttackMonster c => Handle(c, events),
             RerollDie c => Handle(c, events),
             ConfirmAttack c => Handle(c, events),
+            CastSpell c => Handle(c, events),
             AddPowerDie c => Handle(c, events),
             BankPowerDie c => Handle(c, events),
             UnlockDoor c => Handle(c, events),
@@ -437,7 +438,6 @@ public sealed partial class GameSession
                 StartUnspentPoints = heroSetup.UnspentPoints,
                 Policy = heroSetup.Policy ?? CompanionPolicy.Default,
             };
-            hero.Power.Banked = Math.Clamp(heroSetup.PowerDice, 0, GameRules.MaxBankedPowerDice);
             state.AddHero(hero);
 
             foreach (string cardId in heroSetup.CardIds)
@@ -449,6 +449,12 @@ public sealed partial class GameSession
                 }
             }
 
+            foreach (string spellId in heroSetup.Spells ?? [])
+            {
+                hero.Learn(content.GetSpell(spellId));
+            }
+
+            hero.Power.Banked = Math.Clamp(heroSetup.PowerDice, 0, hero.Power.Capacity);
             hero.Hearts = Math.Clamp(heroSetup.Hearts ?? hero.MaxHearts, 1, hero.MaxHearts);
             hero.LuckRemaining = hero.EffectiveStats.Luck;
         }

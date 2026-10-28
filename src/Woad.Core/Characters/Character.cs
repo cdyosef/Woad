@@ -15,6 +15,7 @@ public sealed class Character
     private readonly List<string> _equipped;
     private readonly List<string> _belt;
     private readonly List<string> _backpack;
+    private readonly List<string> _spells;
 
     internal Character(
         Guid id,
@@ -37,7 +38,8 @@ public sealed class Character
         int cowardStanding = 0,
         bool hasCowardsCloak = false,
         int powerDice = 0,
-        CompanionPolicy? policy = null)
+        CompanionPolicy? policy = null,
+        IEnumerable<string>? spells = null)
     {
         Id = id;
         Name = name;
@@ -58,8 +60,9 @@ public sealed class Character
         LawStanding = lawStanding;
         CowardStanding = cowardStanding;
         HasCowardsCloak = hasCowardsCloak;
-        PowerDice = Math.Clamp(powerDice, 0, GameRules.MaxBankedPowerDice);
+        PowerDice = Math.Clamp(powerDice, 0, GameRules.MaxBankedPowerDice + allocation.Magic);
         Policy = policy ?? CompanionPolicy.Default;
+        _spells = [.. spells ?? []];
     }
 
     public Guid Id { get; }
@@ -91,6 +94,9 @@ public sealed class Character
     public IReadOnlyList<string> Belt => _belt;
 
     public IReadOnlyList<string> Backpack => _backpack;
+
+    /// <summary>Ids of the spells they know: a basic one for each rank of Magic, and any learned from scrolls.</summary>
+    public IReadOnlyList<string> Spells => _spells;
 
     public int Gold { get; private set; }
 
@@ -158,10 +164,11 @@ public sealed class Character
 
     /// <summary>A new level 1 character with the starter kit. Points not spent are kept for later.</summary>
     /// <param name="isCompanion">Make a companion instead of a player's hero; it can't be changed later.</param>
-    /// <exception cref="ArgumentException">The name, portrait or allocation isn't allowed.</exception>
+    /// <param name="spells">A basic spell for each rank of Magic bought.</param>
+    /// <exception cref="ArgumentException">The name, portrait, allocation or spells aren't allowed.</exception>
     public static Character Create(
         string name, string portrait, StatAllocation allocation, ContentCatalog content, DateTimeOffset createdUtc, bool isCompanion = false,
-        Appearance? appearance = null)
+        Appearance? appearance = null, IReadOnlyList<string>? spells = null)
     {
         string trimmed = name.Trim();
         if (CheckName(trimmed) is { } nameError)
@@ -179,9 +186,14 @@ public sealed class Character
             throw new ArgumentException(allocationError, nameof(allocation));
         }
 
+        if (Spellbook.Check(allocation.Magic, spells ?? [], content) is { } spellError)
+        {
+            throw new ArgumentException(spellError, nameof(spells));
+        }
+
         var character = new Character(
             Guid.NewGuid(), trimmed, portrait, createdUtc, xp: 0, allocation,
-            PointBuy.CreationPoints - PointBuy.Cost(allocation), [], [], [], gold: 0, runsPlayed: 0, wins: 0, isCompanion, appearance);
+            PointBuy.CreationPoints - PointBuy.Cost(allocation), [], [], [], gold: 0, runsPlayed: 0, wins: 0, isCompanion, appearance, spells: spells);
 
         foreach (string cardId in GameRules.StarterKit)
         {
@@ -235,8 +247,27 @@ public sealed class Character
 
     public void ChangeAppearance(Appearance appearance) => Appearance = appearance;
 
-    /// <summary>Spends unspent points. Points already spent can't be taken back.</summary>
-    public void Allocate(StatAllocation allocation)
+    /// <summary>
+    /// Spends unspent points. Points already spent can't be taken back. Each new rank of Magic needs a
+    /// basic spell in <paramref name="learned"/> (checked against <paramref name="content"/>).
+    /// </summary>
+    public void Allocate(StatAllocation allocation, IReadOnlyList<string>? learned = null, ContentCatalog? content = null)
+    {
+        if (allocation.Magic != Allocation.Magic || learned is { Count: > 0 })
+        {
+            List<string> spells = [.. _spells, .. learned ?? []];
+            string? spellError = content is null ? "Learning spells needs the game's content." : Spellbook.Check(allocation.Magic, spells, content);
+            if (spellError is not null)
+            {
+                throw new ArgumentException(spellError, nameof(learned));
+            }
+        }
+
+        Spend(allocation);
+        _spells.AddRange(learned ?? []);
+    }
+
+    private void Spend(StatAllocation allocation)
     {
         if (PointBuy.AllStats.Any(stat => allocation[stat] < Allocation[stat]))
         {
@@ -310,17 +341,23 @@ public sealed class Character
         List<string> after = [.. result.Equipped, .. result.Belt, .. result.Backpack];
 
         int levels = GainXp(result.Xp);
-        // Points spent during the run (levels gained in the dungeon) are kept.
+        // Points spent during the run (levels gained in the dungeon) are kept, and the spells learned there.
         if (result.Allocation is { } spent && spent != Allocation)
         {
-            Allocate(spent);
+            Spend(spent);
+        }
+
+        if (result.Spells is { } spells)
+        {
+            _spells.Clear();
+            _spells.AddRange(spells);
         }
 
         Policy = result.Policy ?? Policy;
         Gold += result.Gold;
         GuildStanding += result.GuildStandingChange;
         LawStanding += result.LawStandingChange;
-        PowerDice = Math.Clamp(result.PowerDice, 0, GameRules.MaxBankedPowerDice);
+        PowerDice = Math.Clamp(result.PowerDice, 0, GameRules.MaxBankedPowerDice + Allocation.Magic);
         RunsPlayed++;
         if (result.Won)
         {
@@ -352,7 +389,7 @@ public sealed class Character
     /// <summary>The hero this character plays as in a run, carrying everything they own.</summary>
     /// <param name="ownerSeat">For a companion, the seat of the player it belongs to.</param>
     public HeroSetup ToHeroSetup(int? ownerSeat = null) => new(Name, BaseStats, [.. _equipped, .. _belt, .. _backpack], Id, Portrait, ownerSeat, Appearance, GuildStanding: GuildStanding, PowerDice: PowerDice,
-        Allocation: Allocation, Xp: Xp, UnspentPoints: UnspentPoints, Policy: Policy);
+        Allocation: Allocation, Xp: Xp, UnspentPoints: UnspentPoints, Policy: Policy, Spells: [.. _spells]);
 
     /// <summary>Puts a card where a new hero would: an empty matching slot, then the belt, then the backpack.</summary>
     private void Place(string key, ContentCatalog content)

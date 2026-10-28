@@ -572,6 +572,60 @@ public partial class GameScreen
     }
 
     /// <summary>
+    /// Debug mode (<c>-- --magictest</c>, with <see cref="DemoRun.Magic"/>): Aria casts Hurl Fire at a slime
+    /// from the Cast window, then next turn puts an extra Power Die into Swirly Eyes on the ogre and picks
+    /// where it goes.
+    /// </summary>
+    private async void RunMagicTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            Check(_cast.Visible && !_cast.Disabled && _endTurn.Size.X < 160, "a hero who knows spells has a Cast button beside End turn");
+            await Click(this, _cast);
+            Check(_spellPicker.Visible && _spellPicker.ButtonFor("hurl_fire") is { Disabled: false }, "Cast opens the spells she knows");
+            Check(_spellPicker.ButtonFor("quake") is { Disabled: true }, "Quake is greyed out with nothing beside her");
+            await Click(this, _spellPicker.ButtonFor("hurl_fire")!);
+            Check(_casting == "hurl_fire", "picking Hurl Fire aims it");
+            Monster slime = ShownRoom.MonsterAt(new GridPosition(3, 3))!;
+            Check(_session.GetSpellTargets("hurl_fire").Contains(slime.Position), "the slime is in its range");
+            await ClickTile(slime.Position);
+            await WaitUntilIdle();
+            await ConfirmIfHeld();
+            Check(aria.Power.Banked == 3 && _session.AttackDiceLeft == 0, "casting spends a Power Die and her Rumble dice");
+            Check(_cast.Disabled, "with her Rumble dice spent there's no more casting this turn");
+
+            await Click(this, _endTurn);
+            await WaitFor(this, () => !_busy && ActiveHero == aria && _session.State.Turn is { PendingRoll: null }, "Aria's next turn");
+            Monster ogre = ShownRoom.MonsterAt(new GridPosition(3, 4)) ?? ShownRoom.Monsters.First(monster => monster.Definition.Id == "ogre");
+            // Her defense against the monsters may have banked more Power: count from here.
+            int banked = aria.Power.Banked;
+            OnPoolTokenClicked(DicePool.Power, 0);
+            Check(SelectedPowerDice == 1, "a banked Power Die selected");
+            await Click(this, _cast);
+            await Click(this, _spellPicker.ButtonFor("swirly_eyes")!);
+            Check(_session.GetSpellTargets("swirly_eyes").Contains(ogre.Position), "the ogre is in Swirly Eyes' range");
+            await ClickTile(ogre.Position);
+            Check(_swirling == ogre.Position, "Swirly Eyes asks where to move the ogre");
+            GridPosition to = SwirlDestinations(_session.Content.GetSpell("swirly_eyes"), ogre.Position).First();
+            await ClickTile(to);
+            await WaitUntilIdle();
+            await ConfirmIfHeld();
+            Check(aria.Power.Banked == banked - 2, $"the selected Power Die went in on top of the spell's cost ({banked} banked, {aria.Power.Banked} left)");
+            Check(_messages.Any(message => message.Contains("casts Swirly Eyes")), "the log says what she cast");
+
+            GD.Print("Magic test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Magic test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
+    /// <summary>
     /// Debug mode (<c>-- --dietypetest</c>, with <see cref="DemoRun.Elements"/>): Aria reads her scrolls
     /// of typed dice at the monsters, a belt one and a pack one a turn, digging out or tending her eyes
     /// when she must. After every step each figure's tokens must match the rules', and the typed dice

@@ -144,6 +144,7 @@ public partial class GameScreen
         _shoving &= !_shove.Disabled;
         _shove.Text = _shoving ? "Cancel" : "Shove";
         _endTurn.Disabled = !((idle && !pending) || keeling);
+        UpdateCastButton(hero, idle && !pending);
         _endTurn.Text = turn is { KeelingOver: true } ? "Roll Keel Die" : "End turn";
         _endTurn.TooltipText = turn is { KeelingOver: true }
             ? "Keeling Over: roll the Keel Die. A 6 is a mark of life and rolls a Power Die (another on a 6); a 1 is a mark of death and rolls a Doom Die (another on a 1). Every roll after the first adds Doom Dice: 1 on the second, 2 on the third... Select banked Power Dice to add them: their 6s are marks of life."
@@ -152,7 +153,7 @@ public partial class GameScreen
         _confirm.Disabled = Locked;
         _addPower.Visible = _bankPower.Visible = choosingPower;
         _addPower.Disabled = _bankPower.Disabled = Locked;
-        _bankPower.Text = hero is null ? "Bank it" : $"Bank it ({hero.Power.Banked}/{GameRules.MaxBankedPowerDice})";
+        _bankPower.Text = hero is null ? "Bank it" : $"Bank it ({hero.Power.Banked}/{hero.Power.Capacity})";
 
         // Where Confirm and the Power Die buttons go, while there's no roll to settle: lie down or get up, and stop, drop and roll.
         bool lying = hero?.Prone == true;
@@ -250,6 +251,11 @@ public partial class GameScreen
         if (_targeting && _selectedCardId is int cardId)
         {
             _board.SetHighlights([], [], _session.GetCardTargets(cardId), []);
+            return;
+        }
+
+        if (ShowCastingHighlights())
+        {
             return;
         }
 
@@ -625,7 +631,7 @@ public partial class GameScreen
 
         // The Party menu, over the board while it's open.
         _party = new PartyPanel { Position = BoardOrigin, Size = new Vector2(BoardView.Pixels, BoardView.Pixels), Visible = false, ZIndex = 2 };
-        _party.SpendRequested += (heroId, stat) => ExecuteForActiveHero(ownerId => new SpendPoint(ownerId, heroId, stat));
+        _party.SpendRequested += (heroId, stat, spell) => ExecuteForActiveHero(ownerId => new SpendPoint(ownerId, heroId, stat, spell));
         _party.PolicyRequested += (companionId, policy) => ExecuteForActiveHero(ownerId => new SetCompanionPolicy(ownerId, companionId, policy));
         _party.CloseRequested += () =>
         {
@@ -755,6 +761,7 @@ public partial class GameScreen
             ExecuteForActiveHero(heroId => _session.State.Turn is { KeelingOver: true } ? new RollKeel(heroId, SelectedPowerDice) : new EndTurn(heroId));
         };
         right.AddChild(_endTurn);
+        BuildCasting(right);
         BuildOrders(right);
 
         BuildLootWindows();

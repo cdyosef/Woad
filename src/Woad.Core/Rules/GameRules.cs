@@ -59,8 +59,11 @@ public static class GameRules
     /// <summary>A die showing this earns a Power Die.</summary>
     public const int PowerDieFace = 6;
 
-    /// <summary>Power Dice a hero or monster can bank. A 6 rolled with a full bank is added to its roll instead.</summary>
+    /// <summary>Power Dice a hero or monster can bank (a hero one more per rank of Magic). A 6 rolled with a full bank is added to its roll instead.</summary>
     public const int MaxBankedPowerDice = 3;
+
+    /// <summary>The highest rank of Magic: one for each basic spell.</summary>
+    public const int MaxMagic = 13;
 
     /// <summary>The farthest a leap can be aimed (a 6, halved).</summary>
     public const int MaxLeap = 3;

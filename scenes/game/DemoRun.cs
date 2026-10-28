@@ -198,6 +198,25 @@ public static class DemoRun
     };
 
     /// <summary>
+    /// For --magictest: Aria with two ranks of Magic, Hurl Fire, Swirly Eyes and Quake, and four banked Power
+    /// Dice, before two slimes and an ogre; armored so heavily that she never spends Power defending.
+    /// </summary>
+    public static RunSetup Magic(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = [DebugHeroes[0] with
+        {
+            BaseStats = DebugHeroes[0].BaseStats with { Hearts = 30, Armor = 20, Magic = 2 },
+            CardIds = ["wooden_sword"],
+            PowerDice = 4,
+            Spells = ["hurl_fire", "swirly_eyes", "quake"],
+        }],
+        Rooms = [new RoomSetup("tower", RoomTemplate.Parse(".........\n.........\n.........\n...s.....\n.1.o.....\n...s.....\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
+        StartRoomId = "tower",
+    };
+
+    /// <summary>
     /// For --dietypetest: a tough Aria with eight scrolls of typed dice (two on her belt, six in her
     /// pack) among an ogre, a skeleton, a scorpion (poison) and a necromancer (necro).
     /// </summary>

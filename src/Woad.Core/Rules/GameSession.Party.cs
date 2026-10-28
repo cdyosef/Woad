@@ -1,5 +1,6 @@
 using Woad.Core.Characters;
 using Woad.Core.Commands;
+using Woad.Core.Content;
 using Woad.Core.Events;
 using Woad.Core.Model;
 
@@ -12,8 +13,12 @@ namespace Woad.Core.Rules;
 /// </summary>
 public sealed partial class GameSession
 {
-    /// <summary>Why the active player can't spend a point on <paramref name="stat"/> for <paramref name="targetId"/> (themselves or a companion of theirs) now, or null.</summary>
-    public string? CheckSpendPoint(int targetId, StatKind stat)
+    /// <summary>
+    /// Why the active player can't spend a point on <paramref name="stat"/> for <paramref name="targetId"/>
+    /// (themselves or a companion of theirs) now, or null. A rank of Magic needs a basic spell they don't
+    /// know yet (<paramref name="spellId"/>; with none given, whether there's one left to pick).
+    /// </summary>
+    public string? CheckSpendPoint(int targetId, StatKind stat, string? spellId = null)
     {
         if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
         {
@@ -42,15 +47,29 @@ public sealed partial class GameSession
             return target.PointsToSpend == 0 ? $"{target.Name} has no points to spend." : $"That costs {cost} points; {target.Name} has {target.PointsToSpend}.";
         }
 
+        if (stat == StatKind.Magic)
+        {
+            List<SpellDefinition> learnable = [.. Spellbook.Learnable(target.Spells.Select(spell => spell.Id), Content)];
+            if (spellId is null ? learnable.Count == 0 : learnable.All(spell => spell.Id != spellId))
+            {
+                return spellId is null ? $"{target.Name} knows every basic spell already." : "Pick a basic spell they don't know yet.";
+            }
+        }
+
         int budget = PointBuy.Cost(start) + target.StartUnspentPoints + (target.Level - Progression.LevelForXp(target.StartXp)) * Progression.PointsPerLevel;
         return PointBuy.Check(now.With(stat, now[stat] + 1), target.Level, budget);
     }
 
     private string? Handle(SpendPoint command, List<GameEvent> events)
     {
-        if (CheckSpendPoint(command.TargetId, command.Stat) is { } error)
+        if (CheckSpendPoint(command.TargetId, command.Stat, command.SpellId) is { } error)
         {
             return error;
+        }
+
+        if (command.Stat == StatKind.Magic && command.SpellId is null)
+        {
+            return "Pick the basic spell this rank of Magic teaches.";
         }
 
         Hero target = State.GetHero(command.TargetId);
@@ -64,6 +83,13 @@ public sealed partial class GameSession
         }
 
         events.Add(new PointSpent(target.Id, command.Stat, target.Level, target.PointsToSpend));
+        if (command.Stat == StatKind.Magic)
+        {
+            SpellDefinition spell = Content.GetSpell(command.SpellId!);
+            target.Learn(spell);
+            events.Add(new SpellLearned(target.Id, spell.Id));
+        }
+
         return null;
     }
 

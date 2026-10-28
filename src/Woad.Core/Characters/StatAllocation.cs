@@ -8,6 +8,7 @@ public enum StatKind
     DefenseDice,
     OdHandDice,
     Luck,
+    Magic,
 }
 
 /// <summary>Points a character has spent on top of the base hero stats.</summary>
@@ -27,6 +28,8 @@ public sealed record StatAllocation
 
     public int Luck { get; init; }
 
+    public int Magic { get; init; }
+
     public int this[StatKind stat] => stat switch
     {
         StatKind.Hearts => Hearts,
@@ -35,6 +38,7 @@ public sealed record StatAllocation
         StatKind.DefenseDice => DefenseDice,
         StatKind.OdHandDice => OdHandDice,
         StatKind.Luck => Luck,
+        StatKind.Magic => Magic,
         _ => throw new ArgumentOutOfRangeException(nameof(stat)),
     };
 
@@ -46,6 +50,7 @@ public sealed record StatAllocation
         StatKind.DefenseDice => this with { DefenseDice = value },
         StatKind.OdHandDice => this with { OdHandDice = value },
         StatKind.Luck => this with { Luck = value },
+        StatKind.Magic => this with { Magic = value },
         _ => throw new ArgumentOutOfRangeException(nameof(stat)),
     };
 }

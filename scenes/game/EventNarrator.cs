@@ -5,7 +5,7 @@ using Woad.Scenes.Ui;
 namespace Woad.Scenes.Game;
 
 /// <summary>Turns game events into sentences for the message log. Returns null for events shown only visually.</summary>
-public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> cardNameOf)
+public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> cardNameOf, Func<string, string> spellNameOf)
 {
     public string? Describe(GameEvent gameEvent) => gameEvent switch
     {
@@ -76,6 +76,9 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         WeaponReloaded reloaded => $"{nameOf(reloaded.HeroId)} reloads the {cardNameOf(reloaded.CardId)}.",
         DaggerThrown thrown => $"{nameOf(thrown.HeroId)} throws a dagger!",
         Cleaved cleaved => $"{nameOf(cleaved.HeroId)}'s swing cleaves on into {nameOf(cleaved.MonsterId)}!",
+        SpellCast cast => $"{nameOf(cast.HeroId)} casts {spellNameOf(cast.SpellId)} ({cast.Power} Power).",
+        ExtraDiceRolled extra => $"The earth heaves under {Names(extra.TargetIds)}: +{extra.Roll.Total}.",
+        SpellLearned learned => $"{nameOf(learned.HeroId)} learns {spellNameOf(learned.SpellId)}.",
         PointSpent spent => $"{nameOf(spent.HeroId)} grows stronger: +1 {spent.Stat} (level {spent.Level}).",
         CompanionPolicySet => null,
         TorchBurnedOut burnedOut => $"{nameOf(burnedOut.HeroId)}'s torch gutters and burns out.",

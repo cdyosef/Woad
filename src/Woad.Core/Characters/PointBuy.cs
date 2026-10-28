@@ -22,6 +22,7 @@ public static class PointBuy
         StatKind.DefenseDice => 3,
         StatKind.OdHandDice => 2,
         StatKind.Luck => 1,
+        StatKind.Magic => 2,
         _ => throw new ArgumentOutOfRangeException(nameof(stat)),
     };
 
@@ -34,6 +35,7 @@ public static class PointBuy
         StatKind.DefenseDice => new Stats { DefenseDice = 1 },
         StatKind.OdHandDice => new Stats { OdHandDice = 1 },
         StatKind.Luck => new Stats { Luck = 1 },
+        StatKind.Magic => new Stats { Magic = 1 },
         _ => throw new ArgumentOutOfRangeException(nameof(stat)),
     };
 
@@ -48,6 +50,7 @@ public static class PointBuy
         DefenseDice = allocation.DefenseDice,
         OdHandDice = allocation.OdHandDice,
         Luck = allocation.Luck,
+        Magic = allocation.Magic,
     };
 
     /// <summary>Why the allocation isn't allowed, or null if it is.</summary>
@@ -62,6 +65,11 @@ public static class PointBuy
         if (Cost(allocation) > budget)
         {
             return "Not enough points.";
+        }
+
+        if (allocation.Magic > GameRules.MaxMagic)
+        {
+            return $"Magic goes up to rank {GameRules.MaxMagic}.";
         }
 
         if (level <= 1 && (allocation.AttackDice > LevelOneDiceLimit || allocation.DefenseDice > LevelOneDiceLimit

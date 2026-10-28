@@ -70,6 +70,13 @@ public sealed record OdHandCheck(OdHandCheckKind Kind, int Difficulty, GridPosit
 /// A hero's roll whose dice are rolled but not yet resolved, waiting for Luck rerolls or Power Dice
 /// choices: an attack, or an Od Hand <see cref="Check"/>.
 /// </summary>
+/// <summary>
+/// What a spell's roll carries besides its dice: the spell, the tile it was aimed at, extra dice
+/// rolled against some targets (by id: their total and their sixes), the Rumble dice for Squall Wave's
+/// shove and where Swirly Eyes moves the target.
+/// </summary>
+public sealed record SpellCasting(SpellDefinition Spell, GridPosition? Aim, IReadOnlyDictionary<int, (int Total, int Sixes)> Extra, int ShoveDice, GridPosition? MoveTo);
+
 public sealed class PendingRoll
 {
     internal PendingRoll(int heroId, DiceRoll roll, int bonus, IReadOnlyList<int> targetIds, DamageSource source, OdHandCheck? check = null, bool stunOnSix = false)
@@ -120,6 +127,9 @@ public sealed class PendingRoll
 
     /// <summary>What each face is made of (fire, ice...), in order; Plain past its end (Power Dice added later).</summary>
     public IReadOnlyList<DieType> DieTypes { get; internal init; } = [];
+
+    /// <summary>The spell this roll casts, and what comes of it besides the roll (null for anything else).</summary>
+    public SpellCasting? Casting { get; internal init; }
 }
 
 /// <summary>

@@ -35,8 +35,8 @@ public partial class Main : Control
 
     private ContentCatalog _content = null!;
 
-    /// <summary>The party screen's friendly fire switch, remembered between runs this session.</summary>
-    private bool _friendlyFire;
+    /// <summary>The party screen's friendly fire switch, remembered between runs this session: on to begin with.</summary>
+    private bool _friendlyFire = true;
     private ICharacterRepository _characters = null!;
 
     /// <summary>The Dungeon Run in progress, saved after every move.</summary>
@@ -159,6 +159,10 @@ public partial class Main : Control
         else if (args.Contains("--spelltest"))
         {
             Show(new GameScreen { Setup = DemoRun.Spells(seed), Content = _content });
+        }
+        else if (args.Contains("--magictest"))
+        {
+            Show(new GameScreen { Setup = DemoRun.Magic(seed), Content = _content });
         }
         else if (args.Contains("--dietypetest"))
         {

@@ -1274,6 +1274,20 @@ ICONS["icon_defense"] = sprite([  # a kite shield, blue like the Defense dice
     "....oggo....",
     ".....oo.....",
 ], {"o": OUTLINE, "g": "#e2c47a", "b": "#5d8de0", "l": "#a8c8f8"})
+ICONS["icon_magic"] = sprite([  # a pentacle: a star in a ring
+    "....oooo....",
+    "..ooossooo..",
+    ".oo..ss..oo.",
+    ".o...ss...o.",
+    "osssssssssso",
+    "o.sss..sss.o",
+    "o..ss..ss..o",
+    "oo.ssssss.oo",
+    ".o.ssssss.o.",
+    ".ooss..ssoo.",
+    "..ooo..ooo..",
+    "....oooo....",
+], {"o": "#8f78b0", "s": "#e8d8ff"})
 ICONS["icon_luck"] = sprite([  # a four-leaf clover
     ".ooo.ooo....",
     "olggolggo...",

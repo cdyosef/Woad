@@ -1,5 +1,6 @@
 using Godot;
 using Woad.Core.Characters;
+using Woad.Core.Content;
 using Woad.Core.Model;
 using Woad.Core.Rules;
 using Woad.Scenes.Ui;
@@ -19,13 +20,18 @@ public partial class PartyPanel : Panel
     private static readonly (StatKind Stat, string Label)[] Stats =
     [
         (StatKind.Hearts, "Heart"), (StatKind.Speed, "Wend"), (StatKind.AttackDice, "Rmbl"),
-        (StatKind.DefenseDice, "Def"), (StatKind.OdHandDice, "Od"), (StatKind.Luck, "Luck"),
+        (StatKind.DefenseDice, "Def"), (StatKind.OdHandDice, "Od"), (StatKind.Luck, "Luck"), (StatKind.Magic, "Mag"),
     ];
 
     private VBoxContainer _rows = null!;
+    private SpellPicker _spellPicker = null!;
+    private int _learnerId;
 
-    /// <summary>A point for a hero (themselves or a companion) on a stat.</summary>
-    public event Action<int, StatKind>? SpendRequested;
+    /// <summary>A point for a hero (themselves or a companion) on a stat, and for Magic the basic spell it teaches.</summary>
+    public event Action<int, StatKind, string?>? SpendRequested;
+
+    /// <summary>For the click tests: the window that asks which spell a new rank of Magic teaches.</summary>
+    internal SpellPicker SpellPicker => _spellPicker;
 
     /// <summary>A new policy for a companion.</summary>
     public event Action<int, CompanionPolicy>? PolicyRequested;
@@ -52,6 +58,9 @@ public partial class PartyPanel : Panel
         _rows = new VBoxContainer { CustomMinimumSize = new Vector2(Size.X - 24, 0) };
         _rows.AddThemeConstantOverride("separation", (int)RowGap);
         scroll.AddChild(_rows);
+        _spellPicker = new SpellPicker { Position = new Vector2((Size.X - 248) / 2, 30) };
+        _spellPicker.Picked += spell => SpendRequested?.Invoke(_learnerId, StatKind.Magic, spell);
+        AddChild(_spellPicker);
     }
 
     /// <summary>Lists the party; <paramref name="viewer"/> (the hero whose turn it is) gets the buttons for their own.</summary>
@@ -100,13 +109,25 @@ public partial class PartyPanel : Panel
             for (int i = 0; i < Stats.Length; i++)
             {
                 (StatKind stat, string label) = Stats[i];
-                Button spend = UiTheme.CompactButton(new Vector2(86 + i * 32, y), new Vector2(31, 15), $"{label} {PointBuy.CostPerStep(stat)}");
+                Button spend = UiTheme.CompactButton(new Vector2(84 + i * 28, y), new Vector2(27, 15), $"{label} {PointBuy.CostPerStep(stat)}");
                 spend.Name = $"Spend{hero.Id}{stat}";
                 string? blocked = session.CheckSpendPoint(hero.Id, stat);
                 spend.Disabled = blocked is not null;
                 spend.TooltipText = blocked ?? $"+1 {stat} for {PointBuy.CostPerStep(stat)} point{(PointBuy.CostPerStep(stat) == 1 ? "" : "s")}.";
                 int heroId = hero.Id;
-                spend.Pressed += () => SpendRequested?.Invoke(heroId, stat);
+                spend.Pressed += () =>
+                {
+                    if (stat != StatKind.Magic)
+                    {
+                        SpendRequested?.Invoke(heroId, stat, null);
+                        return;
+                    }
+
+                    // A rank of Magic teaches a basic spell: which one?
+                    _learnerId = heroId;
+                    _spellPicker.Open($"{hero.Name.ToUpperInvariant()} LEARNS", Spellbook.Learnable(hero.Spells.Select(known => known.Id), session.Content)
+                        .Select(spell => (spell, spell.Name, (string?)null)));
+                };
                 row.AddChild(spend);
             }
 

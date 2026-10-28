@@ -1,0 +1,15 @@
+[
+  { "id": "shooting_star", "name": "Shooting Star", "dieType": "star", "range": 8, "basic": true, "text": "Range 8. A Star die: its 6 surges with Power." },
+  { "id": "hurl_fire", "name": "Hurl Fire", "dieType": "fire", "range": 6, "basic": true, "text": "Range 6. A Fire die: a 6 sets the target alight." },
+  { "id": "poison_mist", "name": "Poison Mist", "dieType": "poison", "range": 2, "shape": "line", "drawsPoison": true, "basic": true, "text": "Everyone in a straight line, 2 tiles. A Poison die, and one more for each Poison token on you: casting throws them all off." },
+  { "id": "icicle_arrow", "name": "Icicle Arrow", "dieType": "ice", "range": 4, "basic": true, "text": "Range 4. An Ice die: a 6 freezes the target a stack." },
+  { "id": "acid_ball", "name": "Acid Ball", "dieType": "acid", "range": 3, "splash": true, "basic": true, "text": "Range 3. An Acid die; the same roll splashes one random creature beside the target, friend or foe." },
+  { "id": "death_touch", "name": "Death Touch", "dieType": "necro", "dice": 2, "range": 1, "basic": true, "text": "A creature beside you. Two Necro dice: a 6 blackens a lost heart." },
+  { "id": "squall_wave", "name": "Squall Wave", "dieType": "squall", "range": 5, "shove": true, "basic": true, "text": "Range 5. A Squall die, and your Rumble dice try to shove the target too." },
+  { "id": "shining_light", "name": "Shining Light", "dieType": "radiate", "range": 6, "ignoresSight": true, "basic": true, "text": "Range 6, walls or no. A Radiate die: a 6 makes the target shine." },
+  { "id": "lifeforce", "name": "Lifeforce", "dieType": "life", "range": 3, "basic": true, "text": "Range 3. A Life die: a 6 grows plants under the target." },
+  { "id": "quake", "name": "Quake", "dieType": "earth", "shape": "around", "rubbleDie": true, "basic": true, "text": "Every monster beside you. An Earth die, one more against those on rubble." },
+  { "id": "elektrobolt", "name": "Elektrobolt", "dieType": "elektrik", "range": 5, "cleave": true, "basic": true, "text": "Range 5. An Elektrik die: each 6 jumps to another monster beside the target." },
+  { "id": "swirly_eyes", "name": "Swirly Eyes", "dieType": "psycho", "range": 3, "swirl": true, "basic": true, "text": "Range 3. A Psycho die: on a hit, move the target a tile of your choice." },
+  { "id": "shadowbind", "name": "Shadowbind", "dieType": "shadow", "range": 6, "ignoresSight": true, "basic": true, "text": "Range 6, walls or no. A Shadow die: a 6 blinds the target." }
+]
