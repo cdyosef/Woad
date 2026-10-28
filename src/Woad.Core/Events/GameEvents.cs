@@ -29,6 +29,12 @@ public sealed record SpellCast(int HeroId, string SpellId, int Power, IReadOnlyL
 /// <summary>Extra dice a spell rolls against only some of its targets (Quake's against those on rubble), added to their total.</summary>
 public sealed record ExtraDiceRolled(int HeroId, DiceRoll Roll, IReadOnlyList<DieType> DieTypes, IReadOnlyList<int> TargetIds) : GameEvent;
 
+/// <summary>A hero spent a scroll trying to learn its spell (the roll follows).</summary>
+public sealed record SpellStudied(int HeroId, int CardId, string SpellId) : GameEvent;
+
+/// <summary>A scroll went off in a hero's hands as they failed to learn it: it attacks everyone around them.</summary>
+public sealed record Backfired(int HeroId, string SpellId, IReadOnlyList<int> TargetIds) : GameEvent;
+
 /// <summary>A hero learned a spell: a basic one with a rank of Magic, or one from a scroll.</summary>
 public sealed record SpellLearned(int HeroId, string SpellId) : GameEvent;
 

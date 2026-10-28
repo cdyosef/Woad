@@ -64,6 +64,9 @@ public partial class WoarldMapScreen : Control
     /// <summary>A hero's hearts now and at full, for the status bar; null when hearts don't carry over (a Dungeon Run).</summary>
     public Func<Character, (int Now, int Max)>? Hearts { get; init; }
 
+    /// <summary>A hero loses a heart (a scroll went off among the party), where the raid keeps track.</summary>
+    public Action<Character>? Wound { get; init; }
+
     /// <summary>The Raiding Party's Woarld, whose wandering merchants are out on the map; null for none.</summary>
     public RaidWorld? World { get; init; }
 
@@ -194,7 +197,7 @@ public partial class WoarldMapScreen : Control
         };
         AddChild(BeginRaid);
 
-        PartyMenu = new PartyDialog { Party = Party, Content = Content, Hearts = Hearts };
+        PartyMenu = new PartyDialog { Party = Party, Content = Content, Hearts = Hearts, Wound = Wound, Random = _random };
         PartyMenu.Changed += heroes => CharactersChanged?.Invoke(heroes);
         PartyMenu.LevelUpRequested += character => LevelUpRequested?.Invoke(character);
         AddChild(PartyMenu);

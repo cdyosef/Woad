@@ -58,13 +58,17 @@ public enum OdHandCheckKind
 
     /// <summary>Tend blind eyes, your own or an ally's beside you: 10 plus their Blind tokens.</summary>
     Tend,
+
+    /// <summary>Learn the spell on a scroll (Magic adds to the roll): 6 plus the spell's level, or it backfires.</summary>
+    Learn,
 }
 
 /// <summary>
 /// What an Od Hand roll is for. <see cref="Difficulty"/> is the total it must reach (0 for a steal,
-/// which is a contest). <see cref="Target"/> is the tile involved; <see cref="TargetId"/> who is robbed.
+/// which is a contest). <see cref="Target"/> is the tile involved; <see cref="TargetId"/> who is robbed;
+/// <see cref="SpellId"/> the spell being learned.
 /// </summary>
-public sealed record OdHandCheck(OdHandCheckKind Kind, int Difficulty, GridPosition Target = default, int TargetId = 0);
+public sealed record OdHandCheck(OdHandCheckKind Kind, int Difficulty, GridPosition Target = default, int TargetId = 0, string? SpellId = null);
 
 /// <summary>
 /// A hero's roll whose dice are rolled but not yet resolved, waiting for Luck rerolls or Power Dice

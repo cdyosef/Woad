@@ -946,6 +946,9 @@ public partial class GameScreen
                 Log($"Choose a target for the {card.Definition.Name}. Right-click to cancel.", Palette.Target with { A = 1 });
                 RefreshPanels();
                 break;
+            case CardAction.Equip when card.Definition.Teaches is not null:
+                ExecuteOdHand((heroId, dice, _, power) => new LearnSpell(heroId, cardId, dice, power));
+                break;
             case CardAction.Equip when card.Definition.AltSlot is not null && hero.SlotOf(card) is null:
                 AskHand(hero, card);
                 break;

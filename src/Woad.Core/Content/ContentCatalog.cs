@@ -75,6 +75,11 @@ public sealed class ContentCatalog
         {
             Validate(cards, monsters, themes, errors);
             ValidateSpells(spells, errors);
+            HashSet<string> spellIds = [.. spells.Select(spell => spell.Id)];
+            foreach (CardDefinition card in cards.Where(card => card.Teaches is { } spell && !spellIds.Contains(spell)))
+            {
+                errors.Add($"Card '{card.Id}': it teaches '{card.Teaches}', which isn't a spell.");
+            }
         }
 
         if (errors.Count == 0)

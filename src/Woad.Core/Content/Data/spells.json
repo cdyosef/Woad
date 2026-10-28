@@ -11,5 +11,17 @@
   { "id": "quake", "name": "Quake", "dieType": "earth", "shape": "around", "rubbleDie": true, "basic": true, "text": "Every monster beside you. An Earth die, one more against those on rubble." },
   { "id": "elektrobolt", "name": "Elektrobolt", "dieType": "elektrik", "range": 5, "cleave": true, "basic": true, "text": "Range 5. An Elektrik die: each 6 jumps to another monster beside the target." },
   { "id": "swirly_eyes", "name": "Swirly Eyes", "dieType": "psycho", "range": 3, "swirl": true, "basic": true, "text": "Range 3. A Psycho die: on a hit, move the target a tile of your choice." },
-  { "id": "shadowbind", "name": "Shadowbind", "dieType": "shadow", "range": 6, "ignoresSight": true, "basic": true, "text": "Range 6, walls or no. A Shadow die: a 6 blinds the target." }
+  { "id": "shadowbind", "name": "Shadowbind", "dieType": "shadow", "range": 6, "ignoresSight": true, "basic": true, "text": "Range 6, walls or no. A Shadow die: a 6 blinds the target." },
+  { "id": "flame_blast", "name": "Flame Blast", "dieType": "fire", "dice": 3, "cost": 3, "range": 3, "level": 3, "text": "Range 3. Three Fire dice, like the scroll it was learned from." },
+  { "id": "frost_blast", "name": "Frost Blast", "dieType": "ice", "dice": 3, "cost": 3, "range": 3, "level": 3, "text": "Range 3. Three Ice dice, like the scroll it was learned from." },
+  { "id": "venom_blast", "name": "Venom Blast", "dieType": "poison", "dice": 3, "cost": 3, "range": 3, "level": 3, "text": "Range 3. Three Poison dice, like the scroll it was learned from." },
+  { "id": "acid_blast", "name": "Acid Blast", "dieType": "acid", "dice": 3, "cost": 3, "range": 3, "level": 3, "text": "Range 3. Three Acid dice, like the scroll it was learned from." },
+  { "id": "grave_blast", "name": "Grave Blast", "dieType": "necro", "dice": 3, "cost": 3, "range": 3, "level": 3, "text": "Range 3. Three Necro dice, like the scroll it was learned from." },
+  { "id": "gale_blast", "name": "Gale Blast", "dieType": "squall", "dice": 3, "cost": 3, "range": 3, "level": 3, "text": "Range 3. Three Squall dice, like the scroll it was learned from." },
+  { "id": "sun_blast", "name": "Sun Blast", "dieType": "radiate", "dice": 3, "cost": 3, "range": 3, "level": 3, "text": "Range 3. Three Radiate dice, like the scroll it was learned from." },
+  { "id": "bloom_blast", "name": "Bloom Blast", "dieType": "life", "dice": 3, "cost": 3, "range": 3, "level": 3, "text": "Range 3. Three Life dice, like the scroll it was learned from." },
+  { "id": "quake_blast", "name": "Quake Blast", "dieType": "earth", "dice": 3, "cost": 3, "range": 3, "level": 3, "text": "Range 3. Three Earth dice, like the scroll it was learned from." },
+  { "id": "spark_blast", "name": "Spark Blast", "dieType": "elektrik", "dice": 3, "cost": 3, "range": 3, "level": 3, "text": "Range 3. Three Elektrik dice, like the scroll it was learned from." },
+  { "id": "mind_blast", "name": "Mind Blast", "dieType": "psycho", "dice": 3, "cost": 3, "range": 3, "level": 3, "text": "Range 3. Three Psycho dice, like the scroll it was learned from." },
+  { "id": "shadow_blast", "name": "Shadow Blast", "dieType": "shadow", "dice": 3, "cost": 3, "range": 3, "level": 3, "text": "Range 3. Three Shadow dice, like the scroll it was learned from." }
 ]

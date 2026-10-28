@@ -159,6 +159,13 @@ public sealed record Steal(int HeroId, int TargetId, int? Dice = null, bool UseT
 public sealed record Rouse(int HeroId, int TargetId, int? Dice = null, bool UseTools = true, int PowerDice = 0)
     : OdHandCommand(HeroId, Dice, UseTools, PowerDice);
 
+/// <summary>
+/// Od Hand plus Magic: learn the spell on a scroll you carry (6 plus its level). The scroll is used up;
+/// fail and it goes off around you.
+/// </summary>
+public sealed record LearnSpell(int HeroId, int CardId, int? Dice = null, int PowerDice = 0)
+    : OdHandCommand(HeroId, Dice, false, PowerDice);
+
 /// <summary>Od Hand: tend blind eyes, your own or an ally's beside you (10 plus their Blind tokens).</summary>
 public sealed record Tend(int HeroId, int TargetId, int? Dice = null, bool UseTools = true, int PowerDice = 0)
     : OdHandCommand(HeroId, Dice, UseTools, PowerDice);

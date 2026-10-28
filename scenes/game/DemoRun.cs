@@ -134,7 +134,8 @@ public static class DemoRun
         {
             Seed = seed,
             ThemeId = "emerald_keep",
-            Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 40, DefenseDice = 3 } }],
+            // Easy to hit (no extra Defense dice), so an imp's fire catches soon: it takes a hit with a 6.
+            Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 40, DefenseDice = 1 } }],
             Rooms = [new RoomSetup("forge", RoomTemplate.Parse(".........\n.........\n.........\n...i.i...\n....1....\n....i....\n.........\n.........\n,,,,,,,,,", content))],
             StartRoomId = "forge",
         };
@@ -198,8 +199,8 @@ public static class DemoRun
     };
 
     /// <summary>
-    /// For --magictest: Aria with two ranks of Magic, Hurl Fire, Swirly Eyes and Quake, and four banked Power
-    /// Dice, before two slimes and an ogre; armored so heavily that she never spends Power defending.
+    /// For --magictest: Aria with two ranks of Magic, Hurl Fire, Swirly Eyes and Quake, four banked Power
+    /// Dice and a Flame Scroll to study, before two slimes and an ogre; armored so heavily that she never spends Power defending.
     /// </summary>
     public static RunSetup Magic(ulong seed) => new()
     {
@@ -208,7 +209,7 @@ public static class DemoRun
         Heroes = [DebugHeroes[0] with
         {
             BaseStats = DebugHeroes[0].BaseStats with { Hearts = 30, Armor = 20, Magic = 2 },
-            CardIds = ["wooden_sword"],
+            CardIds = ["wooden_sword", "flame_scroll"],
             PowerDice = 4,
             Spells = ["hurl_fire", "swirly_eyes", "quake"],
         }],

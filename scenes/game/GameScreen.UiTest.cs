@@ -573,8 +573,8 @@ public partial class GameScreen
 
     /// <summary>
     /// Debug mode (<c>-- --magictest</c>, with <see cref="DemoRun.Magic"/>): Aria casts Hurl Fire at a slime
-    /// from the Cast window, then next turn puts an extra Power Die into Swirly Eyes on the ogre and picks
-    /// where it goes.
+    /// from the Cast window, then next turn puts an extra Power Die into Swirly Eyes on the ogre, picks
+    /// where it goes, and studies her Flame Scroll.
     /// </summary>
     private async void RunMagicTest()
     {
@@ -614,6 +614,17 @@ public partial class GameScreen
             await ConfirmIfHeld();
             Check(aria.Power.Banked == banked - 2, $"the selected Power Die went in on top of the spell's cost ({banked} banked, {aria.Power.Banked} left)");
             Check(_messages.Any(message => message.Contains("casts Swirly Eyes")), "the log says what she cast");
+
+            // Her Od Hand die is still hers: she studies the Flame Scroll, whatever comes of it.
+            CardInstance scroll = aria.AllCards.Single(card => card.Definition.Id == "flame_scroll");
+            await Click(this, aria.FindCard(scroll.Id)!.Value.Location == CardLocation.Belt ? _inventory.BeltSlot(aria.Belt.ToList().IndexOf(scroll)) : _inventory.BackpackSlot(aria.Backpack.ToList().IndexOf(scroll)));
+            Button learn = _inventory.ActionButton(CardAction.Equip);
+            Check(learn.Text == "Learn" && !learn.Disabled, $"a scroll with a spell on it offers Learn ({learn.TooltipText})");
+            await Click(this, learn);
+            await WaitUntilIdle();
+            await ConfirmIfHeld();
+            Check(aria.FindCard(scroll.Id) is null, "studying it uses the scroll up");
+            Check(aria.Spells.Any(spell => spell.Id == "flame_blast") || _messages.Any(message => message.Contains("goes off")), "she learns Flame Blast, or it goes off in her hands");
 
             GD.Print("Magic test passed.");
             Sfx.QuitGame(this);

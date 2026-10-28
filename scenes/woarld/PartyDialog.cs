@@ -2,6 +2,8 @@ using Godot;
 using Woad.Core.Characters;
 using Woad.Core.Content;
 using Woad.Core.Model;
+using Woad.Core.Randomness;
+using Woad.Core.Rules;
 using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Woarld;
@@ -27,6 +29,15 @@ public partial class PartyDialog : Control
     /// <summary>Hearts now and at most, where the raid keeps track; null shows full hearts.</summary>
     public Func<Character, (int Now, int Max)>? Hearts { get; init; }
 
+    /// <summary>A hero loses a heart (a scroll went off among the party), where the raid keeps track.</summary>
+    public Action<Character>? Wound { get; init; }
+
+    /// <summary>The dice for studying scrolls.</summary>
+    public IRandomSource Random { get; init; } = new Pcg32((ulong)DateTime.UtcNow.Ticks, sequence: 11);
+
+    /// <summary>What came of the last scroll studied, shown until something else is picked.</summary>
+    private string? _news;
+
     /// <summary>Something about the party changed (a card moved, a switch flipped): save them.</summary>
     public event Action<IReadOnlyList<Character>>? Changed;
 
@@ -34,6 +45,9 @@ public partial class PartyDialog : Control
     public event Action<Character>? LevelUpRequested;
 
     internal Button? Find(string name) => FindChild(name, recursive: true, owned: false) as Button;
+
+    /// <summary>The line under the party: what to do with the card picked, or what came of the last scroll studied.</summary>
+    internal string Note => _giving.Text;
 
     public override void _Ready()
     {
@@ -64,6 +78,7 @@ public partial class PartyDialog : Control
     public void Open()
     {
         _selected = null;
+        _news = null;
         Refresh();
         Show();
     }
@@ -89,11 +104,23 @@ public partial class PartyDialog : Control
 
         if (_selected is not { } selected)
         {
-            _giving.Text = "Click a card to give it to someone else.";
+            _giving.Text = _news ?? "Click a card to give it to someone else.";
             return;
         }
 
         _giving.Text = $"Give {selected.From.Name}'s {Content.GetCard(selected.CardId).Name} to:";
+
+        // A scroll with a spell on it can be studied, here and now: Od Hand and Magic, or it goes off.
+        if (Content.GetCard(selected.CardId).Teaches is { } spellId && ScrollStudy.Check(selected.From, selected.CardId, Content) is null)
+        {
+            SpellDefinition spell = Content.GetSpell(spellId);
+            Button learn = UiTheme.Accent(UiTheme.CompactButton(Vector2.Zero, new Vector2(60, 16), "Learn"), Palette.Power);
+            learn.CustomMinimumSize = new Vector2(60, 16);
+            learn.Name = "Learn";
+            learn.TooltipText = $"{selected.From.Name} studies it to learn {spell.Name}: Od Hand plus Magic, {GameSession.LearnDifficulty(spell)} or more. The scroll is used up either way; fail and it goes off among the party!";
+            learn.Pressed += () => Study(selected.From, selected.CardId);
+            _givers.AddChild(learn);
+        }
         foreach (Character other in Party.Where(other => other != selected.From))
         {
             Button give = UiTheme.CompactButton(Vector2.Zero, new Vector2(60, 16), other.Name);
@@ -136,12 +163,14 @@ public partial class PartyDialog : Control
             }
 
             Button card = UiTheme.CompactButton(new Vector2(x, y), new Vector2(width, 15), name);
+            card.Name = $"Card{index}_{CardKey.Id(cardId)}";
             card.TooltipText = $"{name} ({where}). Click to give it to someone else.";
             card.ToggleMode = true;
             card.SetPressedNoSignal(_selected is { } chosen && chosen.From == character && chosen.CardId == cardId);
             card.Pressed += () =>
             {
                 _selected = _selected is { } was && was.From == character && was.CardId == cardId ? null : (character, cardId);
+                _news = null;
                 Refresh();
             };
             row.AddChild(card);
@@ -177,6 +206,20 @@ public partial class PartyDialog : Control
 
         row.CustomMinimumSize = new Vector2(530, Math.Max(RowHeight, y + 20));
         return row;
+    }
+
+    private void Study(Character learner, string cardId)
+    {
+        ScrollStudy.Result result = ScrollStudy.Attempt(learner, cardId, Party, Content, Random);
+        foreach (Character hurt in result.Wounded)
+        {
+            Wound?.Invoke(hurt);
+        }
+
+        _news = result.Message;
+        _selected = null;
+        Changed?.Invoke(Party);
+        Refresh();
     }
 
     private void Give(Character from, string cardId, Character to)

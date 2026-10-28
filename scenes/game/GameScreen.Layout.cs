@@ -472,7 +472,7 @@ public partial class GameScreen
         foreach ((CardAction action, string? reason) in new[]
         {
             (CardAction.Use, card.Definition.Reload is not null ? _session.CheckReload() : _session.CheckUse(cardId)),
-            (CardAction.Equip, _session.CheckEquip(cardId)),
+            (CardAction.Equip, card.Definition.Teaches is not null ? _session.CheckLearnSpell(cardId) : _session.CheckEquip(cardId)),
             (CardAction.Belt, _session.CheckBelt(cardId)),
             (CardAction.Stow, _session.CheckStow(cardId)),
             (CardAction.Drop, Drop()),
@@ -490,7 +490,9 @@ public partial class GameScreen
             [CardAction.Use] = card.Definition.Reload is { } reload
                 ? $"Reload: takes {(reload.OdHand == 1 ? "an Od Hand die" : $"{reload.OdHand} Od Hand dice")}{(reload.Wend > 0 ? " and a Wend die" : "")}."
                 : location == CardLocation.Belt ? "Free: one belt item a turn." : "Takes your action.",
-            [CardAction.Equip] = card.Definition.AltSlot is null ? gearCost
+            [CardAction.Equip] = card.Definition.Teaches is { } spellId
+                ? $"Learn {_session.Content.GetSpell(spellId).Name}: your selected Od Hand dice plus your Magic ({hero.EffectiveStats.Magic}), {GameSession.LearnDifficulty(_session.Content.GetSpell(spellId))} or more. The scroll is used up either way; fail and it goes off around you!"
+                : card.Definition.AltSlot is null ? gearCost
                 : hero.SlotOf(card) is { } held ? $"Moves it to your {(held == EquipSlot.MainHand ? "off" : "main")} hand. {gearCost}"
                 : $"Goes in either hand: you'll choose which. {gearCost}",
             [CardAction.Belt] = gearCost,

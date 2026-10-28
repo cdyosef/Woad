@@ -294,7 +294,7 @@ public sealed partial class GameSession
     {
         Hero hero = ActiveHero;
         int tools = command.UseTools && IsLock(check.Kind) ? ToolsBonusLeft : 0;
-        int bonus = tools - RollPenalty(hero.Conditions);
+        int bonus = tools - RollPenalty(hero.Conditions) + (check.Kind == OdHandCheckKind.Learn ? Math.Max(0, hero.EffectiveStats.Magic) : 0);
         // Lockpicks' own dice on a lock; held torches' on a search.
         int toolDice = (tools > 0 ? Math.Max(0, hero.EffectiveStats.ToolDice) : 0) + (check.Kind == OdHandCheckKind.Search ? hero.TorchesHeld : 0);
         Turn.OdHandDiceUsed += dice;
@@ -453,6 +453,10 @@ public sealed partial class GameSession
 
             case OdHandCheckKind.Tend:
                 ResolveTend(hero, State.GetHero(check.TargetId), success, events);
+                break;
+
+            case OdHandCheckKind.Learn:
+                ResolveLearning(hero, room, check.SpellId!, success, events);
                 break;
 
             case OdHandCheckKind.Steal:

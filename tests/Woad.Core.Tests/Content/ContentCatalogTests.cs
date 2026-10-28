@@ -63,7 +63,7 @@ public class ContentCatalogTests
         string monsters = """[ { "id": "ooze", "name": "Ooze", "glyph": "o", "hearts": 1, "move": 1, "attackDice": 1, "defenseDice": 0, "splitsInto": "nothing", "splitCount": 2 } ]""";
         string theme = """{ "id": "t", "name": "T", "lootDeck": [ { "card": "missing" } ] }""";
 
-        var error = Assert.Throws<InvalidContentException>(() => ContentCatalog.Parse(TestContent.CardsJson, monsters, [theme]));
+        var error = Assert.Throws<InvalidContentException>(() => ContentCatalog.Parse(TestContent.CardsJson, monsters, [theme], ContentCatalog.ReadEmbedded("spells.json")));
 
         Assert.Equal(2, error.Errors.Count);
         Assert.Contains(error.Errors, message => message.Contains("nothing"));

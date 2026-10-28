@@ -267,6 +267,9 @@ public sealed class Character
         _spells.AddRange(learned ?? []);
     }
 
+    /// <summary>Learns a spell from a scroll (see <see cref="ScrollStudy"/>).</summary>
+    internal void LearnFromScroll(string spellId) => _spells.Add(spellId);
+
     private void Spend(StatAllocation allocation)
     {
         if (PointBuy.AllStats.Any(stat => allocation[stat] < Allocation[stat]))
