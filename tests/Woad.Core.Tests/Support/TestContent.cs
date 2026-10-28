@@ -33,6 +33,7 @@ internal static class TestContent
           { "id": "potion", "name": "Potion", "type": "potion", "usage": "singleUse", "effect": { "kind": "heal", "amount": 3 } },
           { "id": "bomb", "name": "Bomb", "type": "bomb", "usage": "singleUse", "effect": { "kind": "attack", "amount": 4, "range": 3, "areaRadius": 1 } },
           { "id": "scroll", "name": "Scroll", "type": "spell", "usage": "singleUse", "effect": { "kind": "attack", "amount": 3, "range": 3 } },
+          { "id": "t_scroll", "name": "T-Scroll", "type": "spell", "usage": "singleUse", "stacks": true, "teaches": "flame_blast", "effect": { "kind": "attack", "amount": 3, "range": 3, "dieType": "fire" } },
           { "id": "firebolt", "name": "Firebolt", "type": "spell", "usage": "singleUse", "effect": { "kind": "attack", "amount": 3, "range": 3, "dieType": "fire" } },
           { "id": "wand", "name": "Wand", "type": "spell", "slot": "offHand", "usage": "charges", "charges": 2, "effect": { "kind": "freeze", "amount": 1, "range": 3 } },
           { "id": "icicle", "name": "Icicle", "type": "tool", "slot": "offHand", "effect": { "kind": "freeze", "amount": 1, "range": 4 } },

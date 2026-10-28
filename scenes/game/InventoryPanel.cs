@@ -183,6 +183,9 @@ public partial class InventoryPanel : Control
             button.Disabled = !actions.Allows(action);
             button.TooltipText = actions.Explain(action);
         }
+
+        // A scroll can't be worn, but its spell can be learned: Equip becomes Learn.
+        _actions[CardAction.Equip].Text = selected?.Definition.Teaches is not null ? "Learn" : "Equip";
     }
 
     private CardSlot AddSlot(Vector2 position)

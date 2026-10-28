@@ -62,6 +62,9 @@ public static class GameRules
     /// <summary>Power Dice a hero or monster can bank (a hero one more per rank of Magic). A 6 rolled with a full bank is added to its roll instead.</summary>
     public const int MaxBankedPowerDice = 3;
 
+    /// <summary>What a roll to learn a spell from a scroll needs, before the spell's level.</summary>
+    public const int LearnBase = 6;
+
     /// <summary>The highest rank of Magic: one for each basic spell.</summary>
     public const int MaxMagic = 13;
 

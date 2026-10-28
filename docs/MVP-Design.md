@@ -383,7 +383,7 @@ Typed dice show in their own colors in the dice bar.
 ## Magic
 
 *Built in three batches: (1) the Magic stat, casting and the spells' attacks (built); (2) learning scrolls
-and backfires; (3) ice, light and darkness, and the buff spells (Icicle Arrow's ice, Lifeforce, Shining
+and backfires (built); (3) ice, light and darkness, and the buff spells (Icicle Arrow's ice, Lifeforce, Shining
 Light and Shadowbind on yourself or an ally, and Shadowbind's darkness die). Until then those four cast as
 plain attacks.*
 
@@ -446,13 +446,18 @@ All cost **1 Power** and can be upcast.
 
 ### Learning scrolls
 
-- Any spell scroll can be learned as a spell (the Flame Scroll teaches **Flame Blast**, which works just
-  like the scroll and costs 3 Power to cast). Learning it uses up the scroll.
-- The attempt is an **Od Hand roll plus your Magic rank** against **6 + the spell's level** (the Flame
-  Scroll is level 3: 9). It can be tried anywhere: in a dungeon or a fight it takes your Od Hand action.
+- Any spell scroll can be learned as a spell: each of the twelve teaches its **Blast** (the Flame Scroll
+  **Flame Blast**, the Frost Scroll **Frost Blast**...), which works just like the scroll (3 dice of its type
+  at range 3) and costs 3 Power to cast. Learning it uses up the scroll.
+- The attempt is an **Od Hand roll plus your Magic rank** against **6 + the spell's level** (the scrolls'
+  spells are level 3: 9). It can be tried anywhere. In a dungeon or a fight it's an Od Hand roll like any
+  other (your selected Od Hand dice, Power Dice and Luck): select the scroll and press **Learn** (where
+  Equip would be). On the Woarld Map, pick the scroll in the **Party** menu and press **Learn**: there it's
+  your Od Hand dice, each 6 rolling another in.
 - **Backfire:** a failed attempt uses up the scroll too, and casts it **centered on you**: it hits you and
   everything on the 8 tiles around you, friend and foe, each defending against the same roll, whether or
-  not friendly fire is on.
+  not friendly fire is on. On the Woarld Map it goes off among the whole party (you travel together): each
+  defends with a die and their armor, and each it beats loses a heart (never their last).
 
 ### Light and darkness
 

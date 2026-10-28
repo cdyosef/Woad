@@ -422,6 +422,14 @@ public partial class Main : Control
     /// <summary>A hero's hearts in the raid, and their full health.</summary>
     private (int Now, int Max) RaidHearts(Character hero) => (_raid!.HeartsOf(hero.Id, hero.MaxHearts(_content)), hero.MaxHearts(_content));
 
+    /// <summary>A hero loses a heart out on the Woarld Map (never the last).</summary>
+    private void WoundOnMap(Character hero)
+    {
+        int max = hero.MaxHearts(_content);
+        _raid!.SetHearts(hero.Id, Math.Max(1, _raid.HeartsOf(hero.Id, max) - 1), max);
+        SaveRaid(RaidLocation.Map);
+    }
+
     private void ShowDungeonSelect() => ShowDungeonSelect(null);
 
     /// <param name="saveProblem">Why the saved run just failed to continue, if it did.</param>
@@ -651,6 +659,7 @@ public partial class Main : Control
             BackTooltip = world is null ? "Back to the Dungeon Run list. Your travels are saved." : "Back to your raids. This raid and the Woarld are saved.",
             RestBoosts = world is null ? null : walkers => world.TakeRestBoosts([.. walkers.Select(hero => hero.Id)], TavernDefinition.LoadDefault()),
             Hearts = _raid is null || world is null ? null : RaidHearts,
+            Wound = _raid is null || world is null ? null : WoundOnMap,
             World = world,
             Content = _content,
         };

@@ -102,6 +102,7 @@ public sealed partial class GameSession
             RerollDie c => Handle(c, events),
             ConfirmAttack c => Handle(c, events),
             CastSpell c => Handle(c, events),
+            LearnSpell c => Handle(c, events),
             AddPowerDie c => Handle(c, events),
             BankPowerDie c => Handle(c, events),
             UnlockDoor c => Handle(c, events),

@@ -78,6 +78,8 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         Cleaved cleaved => $"{nameOf(cleaved.HeroId)}'s swing cleaves on into {nameOf(cleaved.MonsterId)}!",
         SpellCast cast => $"{nameOf(cast.HeroId)} casts {spellNameOf(cast.SpellId)} ({cast.Power} Power).",
         ExtraDiceRolled extra => $"The earth heaves under {Names(extra.TargetIds)}: +{extra.Roll.Total}.",
+        SpellStudied studied => $"{nameOf(studied.HeroId)} unrolls the scroll and tries to learn {spellNameOf(studied.SpellId)}.",
+        Backfired backfired => $"The scroll goes off in {nameOf(backfired.HeroId)}'s hands!",
         SpellLearned learned => $"{nameOf(learned.HeroId)} learns {spellNameOf(learned.SpellId)}.",
         PointSpent spent => $"{nameOf(spent.HeroId)} grows stronger: +1 {spent.Stat} (level {spent.Level}).",
         CompanionPolicySet => null,
@@ -214,6 +216,11 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         OdHandCheckKind.Disarm => "works at the trap",
         OdHandCheckKind.PickGate => "picks the gate's lock",
         OdHandCheckKind.Rouse => "tends a fallen ally",
+        OdHandCheckKind.PickChains or OdHandCheckKind.PickShackles => "picks the lock",
+        OdHandCheckKind.DefuseBomb => "works at the fuse",
+        OdHandCheckKind.Retreat => "looks for a way out",
+        OdHandCheckKind.Tend => "tends blind eyes",
+        OdHandCheckKind.Learn => "studies the scroll",
         _ => "tries to steal",
     };
 

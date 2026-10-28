@@ -60,8 +60,15 @@ public partial class Main
             await Click(this, screen.ScoutButton);
             Check(dangers.ScoutedDay == world.Journey.Day, "Scout scouts");
 
+            wren.GiveCard("flame_scroll", _content);
             await Click(this, screen.PartyButton);
             Check(screen.PartyMenu.Visible, "the Party button opens the Party menu on the map");
+            await Click(this, screen.PartyMenu.Find("Card0_flame_scroll")!);
+            Check(screen.PartyMenu.Find("Learn") is { Disabled: false }, "a scroll with a spell on it can be studied from the Party menu");
+            await Click(this, screen.PartyMenu.Find("Learn")!);
+            Check(!wren.Backpack.Concat(wren.Belt).Contains("flame_scroll"), "studying it uses the scroll up");
+            Check(wren.Spells.Contains("flame_blast") ? screen.PartyMenu.Note.Contains("learns Flame Blast") : screen.PartyMenu.Note.Contains("goes off"),
+                $"and says what came of it ({screen.PartyMenu.Note})");
             await Click(this, screen.PartyMenu.Find("Close")!);
             Check(!screen.PartyMenu.Visible, "and Close puts it away");
 

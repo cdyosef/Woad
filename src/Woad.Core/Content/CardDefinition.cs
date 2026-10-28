@@ -87,6 +87,9 @@ public sealed record CardEffect
 
 public sealed record CardDefinition
 {
+    /// <summary>A scroll's spell: the one it can be learned as (see <see cref="SpellDefinition"/>), or null.</summary>
+    public string? Teaches { get; init; }
+
     public required string Id { get; init; }
 
     public required string Name { get; init; }

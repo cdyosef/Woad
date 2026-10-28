@@ -105,12 +105,12 @@ on the Godot command line:
 | `--tradetest` | Checks clicking a companion beside you opens trading, giving part of a stack asks how many, its owner can have it equip a sword, and the Orders panel's Find me button gives the order. |
 | `--companiontest` | Checks a companion ordered to Fight from the Orders panel walks over to a slime and attacks it. |
 | `--spelltest` | Checks the Frost Wand freezes a slime and the Flame Scroll burns another (and is used up), by selecting each, pressing Use and clicking the slime. |
-| `--magictest` | Aria, with two ranks of Magic, casts Hurl Fire at a slime from the Cast window, then puts an extra Power Die into Swirly Eyes on an ogre and picks where it goes. |
+| `--magictest` | Aria, with two ranks of Magic, casts Hurl Fire at a slime from the Cast window, then puts an extra Power Die into Swirly Eyes on an ogre, picks where it goes, and studies her Flame Scroll. |
 | `--dietypetest` | Reads eight scrolls of typed dice (ice, lightning, poison, wind, earth, life, mind, shadow) at an ogre, a skeleton, a scorpion and a necromancer, digging out or tending her eyes when she must, and checks every figure shows the tokens the rules give it and that typed dice show in their colors. |
 | `--partytest` | Checks the Party button says when there's a point to spend, opens the Party menu, spends Aria's point on a heart and tells Pip to pick up loot. |
 | `--bosstest` | In a generated Emerald Keep's boss room, Aria orders Pip to Fight and ends her turns for four rounds, checking Pip attacks the Iron Warden's company. |
 | `--monstertest` | Checks clicking a chest that's a Mimic wakes it on the board (and its grab shuts off Wend), then plays three rounds against an Ogre, a Necromancer (checking it raises the dead), a Hexer and a Gelatinous Cube. |
-| `--encountertest` | On a fresh Woarld kept in memory: steps onto a toll post (Suss Out, then Turn back, which Cowards note), lets a band catch up and chooses Fight, and Scouts. |
+| `--encountertest` | On a fresh Woarld kept in memory: steps onto a toll post (Suss Out, then Turn back, which Cowards note), lets a band catch up and chooses Fight, Scouts, and studies a Flame Scroll from the Party menu. |
 | `--skirmishtest` | A fight under a bridge where the Bridge Troll strikes first, checking it fills four tiles. |
 | `--wanderertest` | On a fresh Woarld kept in memory, goes to the day's first wandering merchant, opens their wares with the Trade button and buys one. |
 | `--merchanttest` | Frees Silas, a merchant chained beside the hero, with a key; opens his wares and buys one; then checks he follows the hero. |

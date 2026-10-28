@@ -598,6 +598,11 @@ public partial class GameScreen : Control
 
                 break;
 
+            case Backfired backfired:
+                CalloutOver(backfired.HeroId, "BACKFIRE!", Palette.Danger);
+                await Pause(0.4);
+                break;
+
             case SpellLearned learned when Content.FindSpell(learned.SpellId) is { } spell:
                 FloatOver(learned.HeroId, $"learns {spell.Name}", DieTypes.Tint(spell.DieType));
                 break;
@@ -1381,6 +1386,8 @@ public partial class GameScreen : Control
         OdHandCheckKind.Rouse => "rouses an ally",
         OdHandCheckKind.DefuseBomb => "defuses",
         OdHandCheckKind.Retreat => "looks for a way out",
+        OdHandCheckKind.Tend => "tends blind eyes",
+        OdHandCheckKind.Learn => "studies the scroll",
         _ => "steals",
     };
 
