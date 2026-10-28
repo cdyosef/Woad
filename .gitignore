@@ -26,3 +26,6 @@ TestResults/
 
 # Backups Godot writes when it upgrades the project file
 *.csproj.old
+
+# Python bytecode (from loading tools/build-assets.py as a module)
+__pycache__/
