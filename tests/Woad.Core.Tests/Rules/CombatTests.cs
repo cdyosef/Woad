@@ -128,11 +128,11 @@ public class CombatTests
 
         var first = session.Do(new AttackMonster(hero.Id, knight.Id, Dice: 1, UseWeapon: false));
         Assert.Equal(0, first.SingleOf<AttackRolled>().Bonus);
-        Assert.Equal(1, session.WeaponBonusLeft);
+        Assert.Equal(1, session.WeaponBonusLeft());
 
         var second = session.Do(new AttackMonster(hero.Id, knight.Id, Dice: 1));
         Assert.Equal((1, 6), (second.SingleOf<AttackRolled>().Bonus, second.SingleOf<AttackRolled>().Total));
-        Assert.Equal(0, session.WeaponBonusLeft);
+        Assert.Equal(0, session.WeaponBonusLeft());
     }
 
     [Fact]

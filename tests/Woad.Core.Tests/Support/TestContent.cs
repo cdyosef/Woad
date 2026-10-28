@@ -36,6 +36,7 @@ internal static class TestContent
           { "id": "firebolt", "name": "Firebolt", "type": "spell", "usage": "singleUse", "effect": { "kind": "attack", "amount": 3, "range": 3, "dieType": "fire" } },
           { "id": "wand", "name": "Wand", "type": "spell", "slot": "offHand", "usage": "charges", "charges": 2, "effect": { "kind": "freeze", "amount": 1, "range": 3 } },
           { "id": "icicle", "name": "Icicle", "type": "tool", "slot": "offHand", "effect": { "kind": "freeze", "amount": 1, "range": 4 } },
+          { "id": "spear", "name": "Spear", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 2 }, "attackRange": 2, "reach": true },
           { "id": "boomerang", "name": "Boomerang", "type": "weapon", "slot": "offHand", "altSlot": "mainHand", "attackRange": 4, "attackBonus": 1, "stunOnSix": true },
           { "id": "trident", "name": "Trident", "type": "weapon", "slot": "mainHand", "twoHanded": true, "modifiers": { "weapon": 1 }, "attackRange": 2, "swimmerBonus": 1 },
           { "id": "helm", "name": "Helm", "type": "armor", "slot": "head", "swims": true },

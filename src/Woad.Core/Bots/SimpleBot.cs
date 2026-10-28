@@ -194,7 +194,7 @@ public static class SimpleBot
             lootTiles = lootTiles.Append(bossKey);
         }
 
-        GridPosition? goal = fighting ? BesideNearestMonster(state, room, hero)
+        GridPosition? goal = fighting ? ShootingSpot(state, room, hero) ?? BesideNearestMonster(state, room, hero)
             : Nearest(state, room, hero, lootTiles)
               ?? Nearest(state, room, hero, OpenableChests(room, hero).SelectMany(tile => tile.OrthogonalNeighbors()))
               ?? Nearest(state, room, hero, room.TilesOfKind(TileKind.Pot).SelectMany(tile => tile.OrthogonalNeighbors()))
@@ -243,6 +243,33 @@ public static class SimpleBot
     }
 
     /// <summary>The nearest free tile the hero can reach to strike a monster from (one an ally or merchant stands on won't do), or null.</summary>
+    /// <summary>
+    /// Where a hero whose weapon reaches past the tiles beside them (a bow, a thrown Boomerang, a Spear)
+    /// can hit one of <paramref name="targets"/> (any monster in the room by default) from: the nearest such
+    /// tile they can get to, keeping clear of every monster's side if they can. Null for a melee fighter,
+    /// or with nowhere to shoot from.
+    /// </summary>
+    internal static GridPosition? ShootingSpot(GameState state, Room room, Hero hero, IEnumerable<Monster>? targets = null)
+    {
+        if (hero.AttackRange < 2)
+        {
+            return null;
+        }
+
+        List<Monster> aims = [.. targets ?? room.Monsters];
+        PathSearch search = PathSearch.Run(hero.Position, tile => Walkable(room, tile));
+        bool Exposed(GridPosition tile) => room.Monsters.Any(monster => monster.NearestTile(tile).ChebyshevDistanceTo(tile) <= 1);
+        return search.Distances.Keys
+            .Where(tile => tile == hero.Position || FreeFor(state, room, hero, tile))
+            .Where(tile => aims.Any(monster => monster.Tiles.Any(part => GameSession.CanHeroReach(hero, room.Layout, tile, part))))
+            .OrderBy(Exposed)
+            .ThenBy(tile => search.Distances[tile])
+            .ThenBy(tile => tile.Y)
+            .ThenBy(tile => tile.X)
+            .Select(tile => (GridPosition?)tile)
+            .FirstOrDefault();
+    }
+
     internal static GridPosition? BesideNearestMonster(GameState state, Room room, Hero hero)
     {
         PathSearch search = PathSearch.Run(hero.Position, tile => Walkable(room, tile));

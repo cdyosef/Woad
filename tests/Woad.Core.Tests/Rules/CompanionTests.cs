@@ -204,6 +204,30 @@ public class CompanionTests
     }
 
     [Fact]
+    public void AFightingCompanionWithABowHangsBackAndShoots()
+    {
+        GameSession session = TestRun.Start("""
+            12.......
+            .........
+            .........
+            .........
+            .........
+            .........
+            .........
+            .........
+            ........d
+            """, Fives(), heroes: 2, owners: PlayerAndCompanion, cards: ["bow"]);
+        Hero companion = session.HeroInSeat(1);
+        session.Do(new OrderCompanion(session.HeroInSeat(0).Id, companion.Id, CompanionOrder.Fight));
+        session.HeroInSeat(0).Position = new GridPosition(0, 8);
+
+        IReadOnlyList<GameEvent> events = PlayRounds(session, 3);
+
+        Assert.Contains(events, gameEvent => gameEvent is AttackRolled attack && attack.AttackerId == companion.Id);
+        Assert.True(session.OnlyMonster().NearestTile(companion.Position).ChebyshevDistanceTo(companion.Position) > 1, $"{companion.Name} walked up to {companion.Position}.");
+    }
+
+    [Fact]
     public void AStayingBackCompanionBacksAwayFromMonsters()
     {
         GameSession session = TestRun.Start("""
