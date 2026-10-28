@@ -51,6 +51,19 @@ public enum DieType
     Shadow,
 }
 
+/// <summary>What a spell cast as a boon gives a hero, for some rounds.</summary>
+public enum Boon
+{
+    /// <summary>Icicle Arrow's: they walk on ice like floor.</summary>
+    Snowshoes,
+
+    /// <summary>They give off light, defend better and search with an extra die.</summary>
+    ShiningLight,
+
+    /// <summary>Shadowbind's: monsters can't see them.</summary>
+    Shadowbound,
+}
+
 /// <summary>Tokens the typed dice leave on a hero or monster (fire and stun keep their own).</summary>
 public enum Condition
 {

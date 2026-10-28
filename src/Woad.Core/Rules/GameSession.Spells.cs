@@ -13,18 +13,35 @@ namespace Woad.Core.Rules;
 /// (each extra Power, up to the Magic rank, adds a die) and the turn's Rumble dice, and rolls the spell's
 /// typed dice plus the caster's Magic rank as an attack on everyone it reaches: one creature in range, a
 /// straight line of them, or every monster beside the caster. Some do more as they land: Acid Ball
-/// splashes, Elektrobolt jumps, Squall Wave shoves and Swirly Eyes moves its target.
+/// splashes, Elektrobolt jumps, Squall Wave shoves and Swirly Eyes moves its target. Some can be cast
+/// another way: as a boon on the caster or an ally (Lifeforce, Shining Light, Shadowbind), at bare floor
+/// to lay ice (Icicle Arrow), or with fire at an unlit brazier to light it.
 /// </summary>
 public sealed partial class GameSession
 {
+    /// <summary>What a spell does, aimed where it is.</summary>
+    private enum SpellMode
+    {
+        Attack,
+
+        /// <summary>A boon on the caster or an ally.</summary>
+        Boon,
+
+        /// <summary>Ice on bare floor.</summary>
+        Ice,
+
+        /// <summary>Fire at an unlit brazier.</summary>
+        Kindle,
+    }
+
     /// <summary>
     /// Why the active hero can't cast <paramref name="spellId"/> at <paramref name="target"/> now, or null.
     /// With no target, whether they could cast it at all (they know it, have the Power and a Rumble die).
     /// </summary>
     public string? CheckCastSpell(string spellId, GridPosition? target = null, int extraPower = 0, GridPosition? moveTo = null) =>
-        CheckCast(spellId, extraPower) ?? (target is null && Content.FindSpell(spellId)?.Shape != SpellShape.Around ? null : CheckAim(Content.GetSpell(spellId), target, moveTo, out _));
+        CheckCast(spellId, extraPower) ?? (target is null && Content.FindSpell(spellId)?.Shape != SpellShape.Around ? null : CheckAim(Content.GetSpell(spellId), target, moveTo, out _, out _));
 
-    /// <summary>The tiles the active hero could aim <paramref name="spellId"/> at now: where it would reach someone.</summary>
+    /// <summary>The tiles the active hero could aim <paramref name="spellId"/> at now: where it would reach someone, bless someone, lay ice or light a brazier.</summary>
     public IReadOnlyList<GridPosition> GetSpellTargets(string spellId)
     {
         if (CheckCast(spellId, 0) is not null || Content.GetSpell(spellId) is not { Shape: not SpellShape.Around } spell)
@@ -32,7 +49,7 @@ public sealed partial class GameSession
             return [];
         }
 
-        return [.. ActiveRoom.Positions.Where(tile => CheckAim(spell, tile, null, out _) is null)];
+        return [.. ActiveRoom.Positions.Where(tile => CheckAim(spell, tile, null, out _, out _) is null)];
     }
 
     /// <summary>The tiles a spell could reach from where the active hero stands, someone there or not (for the screens' range shading).</summary>
@@ -61,7 +78,7 @@ public sealed partial class GameSession
         }
 
         SpellDefinition spell = Content.GetSpell(command.SpellId);
-        if (CheckAim(spell, command.Target, command.MoveTo, out List<int> targets) is { } aimError)
+        if (CheckAim(spell, command.Target, command.MoveTo, out List<int> targets, out SpellMode mode) is { } aimError)
         {
             return aimError;
         }
@@ -74,7 +91,29 @@ public sealed partial class GameSession
         int rumble = AttackDiceLeft;
         Turn.AttackDiceUsed += rumble;
 
+        // Casting gives a Shadowbound hero away (all but Shadowbind itself, on themselves).
+        if (!(mode == SpellMode.Boon && spell.Ward == SpellWard.Self))
+        {
+            Reveal(hero, events);
+        }
+
         int dice = spell.Dice + command.ExtraPower;
+        switch (mode)
+        {
+            case SpellMode.Boon:
+                events.Add(new SpellCast(hero.Id, spell.Id, power, targets));
+                Bless(hero, room, spell, State.GetHero(targets[0]), dice, events);
+                return null;
+            case SpellMode.Ice:
+                events.Add(new SpellCast(hero.Id, spell.Id, power, []));
+                CastIce(hero, room, spell, command.Target!.Value, dice, events);
+                return null;
+            case SpellMode.Kindle:
+                events.Add(new SpellCast(hero.Id, spell.Id, power, []));
+                Kindle(room, command.Target!.Value, events);
+                return null;
+        }
+
         if (spell.DrawsPoison && hero.Conditions[Condition.Poison] is > 0 and var poison)
         {
             dice += poison;
@@ -94,15 +133,17 @@ public sealed partial class GameSession
 
         events.Add(new SpellCast(hero.Id, spell.Id, power, targets));
 
-        // Quake's extra die, against those on rubble only.
+        // An extra die against some targets only: Quake's against those on rubble, Shadowbind's against those in darkness.
         Dictionary<int, (int Total, int Sixes)> extra = [];
-        List<int> onRubble = spell.RubbleDie ? [.. targets.Where(id => room.FindMonster(id) is { } monster && monster.Tiles.Any(tile => room.Layout[tile] == TileKind.Rubble))] : [];
-        if (onRubble.Count > 0)
+        List<int> harder = [.. targets.Where(id =>
+            (spell.RubbleDie && room.FindMonster(id) is { } monster && monster.Tiles.Any(tile => room.Layout[tile] == TileKind.Rubble))
+            || (spell.DarknessDie && PositionOf(room, id) is { } at && InDarkness(room, at)))];
+        if (harder.Count > 0)
         {
             (int[] faces, DieType[] types) = RollTypedDice([(spell.DieType, 1)]);
             var roll = new DiceRoll(faces);
-            events.Add(new ExtraDiceRolled(hero.Id, roll, types, onRubble));
-            foreach (int id in onRubble)
+            events.Add(new ExtraDiceRolled(hero.Id, roll, types, harder));
+            foreach (int id in harder)
             {
                 extra[id] = (roll.Total, Sixes(faces));
             }
@@ -144,21 +185,38 @@ public sealed partial class GameSession
             : null;
     }
 
-    /// <summary>Who the spell would hit, aimed at <paramref name="target"/>, or why it can't be aimed there.</summary>
-    private string? CheckAim(SpellDefinition spell, GridPosition? target, GridPosition? moveTo, out List<int> targets)
+    /// <summary>Who the spell would hit (or bless), aimed at <paramref name="target"/>, and how; or why it can't be aimed there.</summary>
+    private string? CheckAim(SpellDefinition spell, GridPosition? target, GridPosition? moveTo, out List<int> targets, out SpellMode mode)
     {
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
         targets = [];
+        mode = SpellMode.Attack;
         if (spell.Shape == SpellShape.Around)
         {
             targets = [.. room.Monsters.Where(monster => monster.Tiles.Any(tile => tile.ChebyshevDistanceTo(hero.Position) == 1) && SpellReaches(hero, room, monster)).Select(monster => monster.Id)];
             return targets.Count > 0 ? null : "There are no monsters beside you.";
         }
 
-        if (target is not { } aim || !room.Layout.Contains(aim) || aim == hero.Position)
+        if (target is not { } aim || !room.Layout.Contains(aim))
         {
             return "Choose a target.";
+        }
+
+        // On yourself or an ally: its boon, for a spell that has one.
+        Hero? blessed = State.ActiveHeroesIn(room).FirstOrDefault(other => other.Position == aim);
+        if (blessed is not null && spell.Ward != SpellWard.None && (blessed == hero
+            || (spell.Ward == SpellWard.Beside && aim.ChebyshevDistanceTo(hero.Position) <= 1)
+            || (spell.Ward == SpellWard.Ally && InSpellRange(spell, room, hero, aim))))
+        {
+            targets = [blessed.Id];
+            mode = SpellMode.Boon;
+            return null;
+        }
+
+        if (aim == hero.Position)
+        {
+            return spell.Ward == SpellWard.None ? "Choose a target." : $"{spell.Name} can only be cast on {(spell.Ward == SpellWard.Self ? "yourself" : "yourself or an ally")} like that.";
         }
 
         if (spell.Shape == SpellShape.Line)
@@ -179,6 +237,19 @@ public sealed partial class GameSession
 
         if (WhoIsOn(room, hero, aim).Select(id => (int?)id).FirstOrDefault() is not int struck)
         {
+            // Nobody there: ice on bare floor, or fire at an unlit brazier.
+            if (spell.Floor && CanFreeze(room, aim) && room.MonsterAt(aim) is null)
+            {
+                mode = SpellMode.Ice;
+                return null;
+            }
+
+            if (spell.DieType == DieType.Fire && UnlitBrazierAt(room, aim))
+            {
+                mode = SpellMode.Kindle;
+                return null;
+            }
+
             return "There's no one there.";
         }
 
@@ -189,6 +260,47 @@ public sealed partial class GameSession
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// A boon: the spell's dice roll for how long it lasts (a round per die) and how strong it is (its 6s).
+    /// Lifeforce grows plants under them and heals a heart per 6; Shining Light gives light, +1 Defense
+    /// (+1 per 6) and a Search die; Shadowbind hides the caster from monsters.
+    /// </summary>
+    private void Bless(Hero caster, Room room, SpellDefinition spell, Hero target, int dice, List<GameEvent> events)
+    {
+        (int[] faces, DieType[] types) = RollTypedDice([(spell.DieType, dice)]);
+        events.Add(new SpellRolled(caster.Id, new DiceRoll(faces), types));
+        int sixes = Sixes(faces);
+        switch (spell.DieType)
+        {
+            case DieType.Life:
+                if (!room.Plants.ContainsKey(target.Position))
+                {
+                    room.Grow(target.Position, heroes: true);
+                    events.Add(new PlantsGrew(room.Id, target.Position, true));
+                }
+
+                int healed = Math.Min(sixes, target.HeartsToHeal);
+                if (healed > 0)
+                {
+                    target.Hearts += healed;
+                    events.Add(new HeroHealed(target.Id, healed, target.Hearts));
+                }
+
+                break;
+
+            case DieType.Radiate:
+                target.ShiningRounds = Math.Max(target.ShiningRounds, faces.Length);
+                target.ShiningDefense = Math.Max(target.ShiningDefense, 1 + sixes);
+                events.Add(new BoonGained(target.Id, Boon.ShiningLight, target.ShiningRounds, target.ShiningDefense));
+                break;
+
+            case DieType.Shadow:
+                target.ShadowboundRounds = Math.Max(target.ShadowboundRounds, faces.Length);
+                events.Add(new BoonGained(target.Id, Boon.Shadowbound, target.ShadowboundRounds, 0));
+                break;
+        }
     }
 
     /// <summary>Whether Swirly Eyes can move the monster to <paramref name="to"/>: a free tile beside it, open ground or a pit or deep water to drop it in.</summary>

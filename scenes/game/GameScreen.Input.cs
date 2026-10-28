@@ -184,6 +184,12 @@ public partial class GameScreen
             return;
         }
 
+        if (LayingIce)
+        {
+            LayIceAt(hero, tile);
+            return;
+        }
+
         Room room = ShownRoom;
         if (_leaping)
         {

@@ -62,6 +62,9 @@ public static class GameRules
     /// <summary>Power Dice a hero or monster can bank (a hero one more per rank of Magic). A 6 rolled with a full bank is added to its roll instead.</summary>
     public const int MaxBankedPowerDice = 3;
 
+    /// <summary>How far a light reaches in a dark room (diagonals count as 1).</summary>
+    public const int LightRadius = 2;
+
     /// <summary>What a roll to learn a spell from a scroll needs, before the spell's level.</summary>
     public const int LearnBase = 6;
 

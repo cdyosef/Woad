@@ -8,6 +8,13 @@ public static class DieTypes
 {
     public static string Name(DieType type) => type.ToString();
 
+    public static string Name(Boon boon) => boon switch
+    {
+        Boon.ShiningLight => "Shining Light",
+        Boon.Shadowbound => "Shadowbound",
+        _ => "Snowshoes",
+    };
+
     /// <summary>A typed die's color in the dice bar.</summary>
     public static Color Tint(DieType type) => type switch
     {

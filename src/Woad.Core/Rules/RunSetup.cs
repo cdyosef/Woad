@@ -49,7 +49,8 @@ public sealed record RoomSetup(
     RoomRole Role = RoomRole.Combat,
     bool Trap = false,
     RoomFeatures? Features = null,
-    IReadOnlyDictionary<Direction, GridPosition>? DoorTiles = null);
+    IReadOnlyDictionary<Direction, GridPosition>? DoorTiles = null,
+    bool Dark = false);
 
 public sealed record TrapSetup(TrapKind Kind, int Difficulty);
 

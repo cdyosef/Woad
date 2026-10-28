@@ -96,6 +96,18 @@ public sealed class Hero
 
     public int LuckRemaining { get; internal set; }
 
+    /// <summary>Rounds left of Snowshoes (Icicle Arrow): they walk on ice like floor.</summary>
+    public int SnowshoesRounds { get; internal set; }
+
+    /// <summary>Rounds left of Shining Light: they give off light, and gain <see cref="ShiningDefense"/> and a Search die.</summary>
+    public int ShiningRounds { get; internal set; }
+
+    /// <summary>Shining Light's Defense: added to every defense while it lasts.</summary>
+    public int ShiningDefense { get; internal set; }
+
+    /// <summary>Rounds left of Shadowbind: invisible to monsters, until they attack, cast or use an item.</summary>
+    public int ShadowboundRounds { get; internal set; }
+
     public PowerBank Power => _power ??= new PowerBank(() => GameRules.MaxBankedPowerDice + Math.Max(0, EffectiveStats.Magic));
 
     private PowerBank? _power;

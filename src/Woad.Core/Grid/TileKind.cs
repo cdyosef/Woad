@@ -51,6 +51,12 @@ public enum TileKind
     /// not part of the room. Blocks movement and line of sight.
     /// </summary>
     Rock,
+
+    /// <summary>
+    /// A brazier: a bowl of coals on a stand. Blocks movement (not sight). Unlit at first; lit (by a torch
+    /// or any fire beside it, or fire aimed at it) it lights the dark around it.
+    /// </summary>
+    Brazier,
 }
 
 public static class TileKindExtensions

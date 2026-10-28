@@ -128,13 +128,29 @@ public sealed partial class GameSession
         // walked onto on purpose (paths never go past one). Walking into a pit is a fall.
         IReadOnlyList<GridPosition> path = search.PathTo(command.Destination);
         int sprung = path.ToList().FindIndex(tile => room.TrapAt(tile) is not null);
+
+        // Ice (without Snowshoes) slides them a tile further, and that's the end of the move.
+        GridPosition start = hero.Position;
+        GridPosition? slide = null;
+        if (hero.SnowshoesRounds == 0 && SlipOnIce(room, hero.Position, path, flying: false) is { } slip && (sprung < 0 || slip.Index < sprung))
+        {
+            sprung = -1;
+            path = path.Take(slip.Index + 1).ToList();
+            slide = slip.Slide;
+        }
+
         if (sprung >= 0)
         {
             path = path.Take(sprung + 1).ToList();
         }
 
-        hero.Position = path[^1];
         Turn.MovementPoints -= path.Sum(tile => HeroStepCost(hero, room, tile)) * Crawl;
+        if (slide is { } beyond)
+        {
+            path = [.. path, beyond];
+        }
+
+        hero.Position = path[^1];
         foreach (GridPosition tile in path.Where(tile => room.Layout[tile].IsWalkable()))
         {
             hero.Footing = tile;
@@ -142,6 +158,14 @@ public sealed partial class GameSession
 
         Turn.HasMoved = true;
         events.Add(new HeroMoved(hero.Id, path, Turn.MovementPoints));
+        if (path.Any(room.IsIcy) && hero.SnowshoesRounds == 0)
+        {
+            Turn.EndMove();
+            if (slide is { } slidTo)
+            {
+                events.Add(new Slid(hero.Id, path.Count > 1 ? path[^2] : start, slidTo));
+            }
+        }
         DouseOnPath(room, hero, path, events);
         if (hero.FireDice == 0 && path.Any(tile => room.IsBurning(tile) && !InWater(room, tile)))
         {

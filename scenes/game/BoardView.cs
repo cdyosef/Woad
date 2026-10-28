@@ -101,7 +101,7 @@ public partial class BoardView : Control
     public override void _Process(double delta)
     {
         // Lit fuses spark.
-        if (_room?.Bombs.Any(bomb => bomb.Lit) == true || _room?.Flames.Count > 0)
+        if (_room?.Bombs.Any(bomb => bomb.Lit) == true || _room?.Flames.Count > 0 || _room?.LitBraziers.Count > 0)
         {
             QueueRedraw();
         }
@@ -340,6 +340,11 @@ public partial class BoardView : Control
             DrawTile(tile, _room.Layout[tile]);
         }
 
+        foreach (GridPosition brazier in _room.TilesOfKind(TileKind.Brazier))
+        {
+            DrawBrazier(brazier, _room.LitBraziers.Contains(brazier));
+        }
+
         foreach ((GridPosition tile, Trap trap) in _room.Traps)
         {
             if (trap.Revealed)
@@ -383,6 +388,11 @@ public partial class BoardView : Control
         foreach ((GridPosition tile, bool heroes) in _room.Plants)
         {
             DrawPlants(tile, heroes);
+        }
+
+        foreach ((GridPosition tile, int rounds) in _room.Ice)
+        {
+            DrawIce(tile, rounds);
         }
 
         _loot.QueueRedraw();
@@ -700,6 +710,51 @@ public partial class BoardView : Control
         }
     }
 
+    /// <summary>A brazier: a bowl of coals on three legs; lit, flames leap from it and it glows.</summary>
+    private void DrawBrazier(GridPosition tile, bool lit)
+    {
+        Rect2 rect = TileRect(tile);
+        Vector2 bowl = rect.Position + new Vector2(TileSize / 2f, 15);
+        if (lit)
+        {
+            float glow = 0.12f + 0.04f * Mathf.Sin(Time.GetTicksMsec() / 1000f * 6 + tile.X);
+            DrawCircle(bowl, 15, Palette.FireCore with { A = glow }, antialiased: true);
+        }
+
+        foreach (float x in new[] { -7f, 0f, 7f })
+        {
+            DrawLine(bowl + new Vector2(x * 0.6f, 2), bowl + new Vector2(x, 14), Palette.Ink, 2);
+        }
+
+        DrawColoredPolygon([bowl + new Vector2(-10, -2), bowl + new Vector2(10, -2), bowl + new Vector2(6, 4), bowl + new Vector2(-6, 4)], Palette.TextDim);
+        DrawRect(new Rect2(bowl + new Vector2(-10, -3), new Vector2(20, 2)), Palette.Ink);
+        if (!lit)
+        {
+            return;
+        }
+
+        float time = Time.GetTicksMsec() / 1000f;
+        for (int i = 0; i < 3; i++)
+        {
+            float height = 10 + 3 * Mathf.Sin(time * 9 + i * 2.1f + tile.Y) + (i == 1 ? 3 : 0);
+            Vector2 foot = bowl + new Vector2(-6 + i * 6, -3);
+            DrawColoredPolygon([foot + new Vector2(-3, 0), foot + new Vector2(3, 0), foot + new Vector2(0, -height)], Palette.Fire);
+            DrawColoredPolygon([foot + new Vector2(-1.5f, 0), foot + new Vector2(1.5f, 0), foot + new Vector2(0, -height * 0.55f)], Palette.FireCore);
+        }
+    }
+
+    /// <summary>An ice patch: pale blue with a sheen and a crack or two, and the rounds it has left.</summary>
+    private void DrawIce(GridPosition tile, int rounds)
+    {
+        Rect2 rect = TileRect(tile);
+        Color ice = DieTypes.Tint(DieType.Ice);
+        DrawRect(rect.Grow(-1), ice with { A = 0.45f });
+        DrawLine(rect.Position + new Vector2(5, 8), rect.Position + new Vector2(14, 4), Colors.White with { A = 0.7f }, 1.5f);
+        DrawLine(rect.Position + new Vector2(18, 26), rect.Position + new Vector2(27, 19), Colors.White with { A = 0.5f }, 1);
+        DrawLine(rect.Position + new Vector2(10, 18), rect.Position + new Vector2(16, 22), ice.Darkened(0.3f), 1);
+        DrawString(ThemeDB.FallbackFont, rect.Position + new Vector2(TileSize - 7, 10), rounds.ToString(), fontSize: UiTheme.FontSize, modulate: Palette.Ink);
+    }
+
     /// <summary>Burning floor: a red-orange glow and three flickering tongues of flame, and the rounds it has left.</summary>
     private void DrawBurningFloor(GridPosition tile, int rounds)
     {
@@ -829,6 +884,12 @@ public partial class BoardView : Control
             DrawLoot(canvas, tile, _room.LootAt(tile).Sum(card => card.Count), inChest: _room.Layout[tile] == TileKind.Chest);
         }
 
+        // In a dark room, what no light reaches is hard to make out.
+        foreach (GridPosition tile in _darkTiles)
+        {
+            canvas.DrawRect(TileRect(tile), Palette.Background with { A = 0.6f });
+        }
+
         // A blind hero on their turn sees only the tiles beside them.
         if (BlindAt is { } eyes)
         {
@@ -854,6 +915,22 @@ public partial class BoardView : Control
     }
 
     private GridPosition? _blindAt;
+
+    /// <summary>The shown room's tiles in darkness (a dark room, out of reach of every light).</summary>
+    public IReadOnlyCollection<GridPosition> DarkTiles
+    {
+        get => _darkTiles;
+        set
+        {
+            if (!_darkTiles.SetEquals(value))
+            {
+                _darkTiles = [.. value];
+                _loot.QueueRedraw();
+            }
+        }
+    }
+
+    private HashSet<GridPosition> _darkTiles = [];
 
     /// <summary>The layer above the figures that loot marks are drawn on.</summary>
     private sealed partial class LootLayer : Node2D

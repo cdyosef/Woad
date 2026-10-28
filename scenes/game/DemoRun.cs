@@ -218,6 +218,25 @@ public static class DemoRun
     };
 
     /// <summary>
+    /// For --terraintest: Aria, with Icicle Arrow, Hurl Fire, Shining Light and Shadowbind, alone in a dark
+    /// room with two unlit braziers.
+    /// </summary>
+    public static RunSetup Terrain(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = [DebugHeroes[0] with
+        {
+            BaseStats = DebugHeroes[0].BaseStats with { Hearts = 30, Magic = 4 },
+            CardIds = ["wooden_sword"],
+            PowerDice = 7,
+            Spells = ["icicle_arrow", "hurl_fire", "shining_light", "shadowbind"],
+        }],
+        Rooms = [new RoomSetup("crypt", RoomTemplate.Parse(".........\n.^.......\n.........\n.........\n.1.......\n.........\n.........\n.......^.\n.........", ContentCatalog.LoadDefault()), Dark: true)],
+        StartRoomId = "crypt",
+    };
+
+    /// <summary>
     /// For --dietypetest: a tough Aria with eight scrolls of typed dice (two on her belt, six in her
     /// pack) among an ogre, a skeleton, a scorpion (poison) and a necromancer (necro).
     /// </summary>

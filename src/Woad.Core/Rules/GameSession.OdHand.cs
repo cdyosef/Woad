@@ -296,7 +296,7 @@ public sealed partial class GameSession
         int tools = command.UseTools && IsLock(check.Kind) ? ToolsBonusLeft : 0;
         int bonus = tools - RollPenalty(hero.Conditions) + (check.Kind == OdHandCheckKind.Learn ? Math.Max(0, hero.EffectiveStats.Magic) : 0);
         // Lockpicks' own dice on a lock; held torches' on a search.
-        int toolDice = (tools > 0 ? Math.Max(0, hero.EffectiveStats.ToolDice) : 0) + (check.Kind == OdHandCheckKind.Search ? hero.TorchesHeld : 0);
+        int toolDice = (tools > 0 ? Math.Max(0, hero.EffectiveStats.ToolDice) : 0) + (check.Kind == OdHandCheckKind.Search ? hero.TorchesHeld + (hero.ShiningRounds > 0 ? 1 : 0) : 0);
         Turn.OdHandDiceUsed += dice;
         Turn.ToolsUsed |= tools > 0;
         SpendBankedPowerDice(hero, command.PowerDice, events);

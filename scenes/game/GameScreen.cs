@@ -146,6 +146,10 @@ public partial class GameScreen : Control
         {
             RunMagicTest();
         }
+        else if (args.Contains("--terraintest"))
+        {
+            RunTerrainTest();
+        }
         else if (args.Contains("--companiontest"))
         {
             RunCompanionTest();
@@ -588,6 +592,38 @@ public partial class GameScreen : Control
                 CalloutOver(cast.HeroId, spell.Name.ToUpperInvariant() + "!", DieTypes.Tint(spell.DieType));
                 RefreshPanels();
                 await Pause(0.3);
+                break;
+
+            case SpellRolled rolled:
+                await _dice.ShowRoll(_spellCaption ?? $"{NameOf(rolled.HeroId)} casts", rolled.Roll, 0, newGroup: true, kind: DiceKind.Rumble, types: rolled.DieTypes);
+                _spellCaption = null;
+                break;
+
+            case IceLaid laid:
+                _board.QueueRedraw();
+                if (ActiveHero is { IsCompanion: false } && _session.State.Turn is { IceToLay: > 0 } icing)
+                {
+                    _layingIce = true;
+                    Log($"{icing.IceToLay} more {(icing.IceToLay == 1 ? "patch" : "patches")} of ice to lay: click tiles in range (on an icy one you or an ally stands on: Snowshoes). Right-click to stop.", DieTypes.Tint(DieType.Ice));
+                }
+
+                break;
+
+            case IceMelted or BrazierLit:
+                _board.QueueRedraw();
+                break;
+
+            case Slid slid:
+                CalloutOver(slid.EntityId, "slips!", DieTypes.Tint(DieType.Ice));
+                break;
+
+            case BoonGained gained:
+                FloatOver(gained.HeroId, DieTypes.Name(gained.Boon), gained.Boon switch { Boon.ShiningLight => DieTypes.Tint(DieType.Radiate), Boon.Shadowbound => DieTypes.Tint(DieType.Shadow), _ => DieTypes.Tint(DieType.Ice) });
+                await UpdateFigure(gained.HeroId, figure => SetBoon(figure, gained.Boon, true), 0.2);
+                break;
+
+            case BoonEnded ended:
+                await UpdateFigure(ended.HeroId, figure => SetBoon(figure, ended.Boon, false), 0.1);
                 break;
 
             case ExtraDiceRolled extra:
@@ -1377,6 +1413,22 @@ public partial class GameScreen : Control
         GoldAppeared appeared => appeared.RoomId,
         _ => null,
     };
+
+    private static void SetBoon(Figure figure, Boon boon, bool on)
+    {
+        switch (boon)
+        {
+            case Boon.ShiningLight:
+                figure.Shining = on;
+                break;
+            case Boon.Shadowbound:
+                figure.Shadowbound = on;
+                break;
+            case Boon.Snowshoes:
+                figure.Snowshoes = on;
+                break;
+        }
+    }
 
     private static string OdHandCaption(OdHandCheckKind kind) => kind switch
     {
