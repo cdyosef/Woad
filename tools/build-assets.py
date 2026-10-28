@@ -2073,6 +2073,37 @@ def ogre_theme():
     return song.samples
 
 
+TROLL_BEAT = [  # stomping under the shriek, half time for the creep, a building grind, then the climax
+    "c..k..s.k.k.s...", "k..k..s.k.k.s...", "k..k..s.k.k.s...", "k..k..s.k.k.s.ss",
+    "c...s...k...s...", "k...s...k.k.s...", "k...s...k...s...", "k...s.k.s.s.sss.",
+    "k.h.s.h.k.h.s.h.", "k.h.s.h.k.h.s.h.", "k.h.s.h.k.h.s.h.", "k.k.s.k.k.ksssss",
+    "c..k..s.k.k.s...", "k..k..s.k.k.s...", "k.k.s.k.k.k.s.ss", "k.k.s.k.s.ssssss",
+]
+
+
+def troll_theme():
+    """The Bridge Troll: E minor and Phrygian menace, built from a transcribed fight theme's three ideas:
+    a high shriek running down, a creeping chromatic slide, and a G-G# grind that builds to the climax."""
+    chords = ["Em", "Em", "F", "B", "Em", "Em", "F", "Em", "Cm", "Cm", "G#", "G", "Em", "Am", "F", "B"]
+    song = Song(bpm=144, beats=64)
+    melody = ("E6/0.5 C6/0.5 D6/0.5 C6/0.5 B5/1 A5/1 | B5/0.5 A5/0.5 G5/1 E5/2 |"          # the shriek
+              "F6/0.5 D6/0.5 E6/0.5 D6/0.5 C6/1 B5/1 | A5/1 G#5/1 B5/2 |"
+              "D6/1 C#6/0.5 C6/0.5 C#6/2 | A#5/1 A5/0.5 F#5/0.5 G5/1 E5/1 |"                 # the creep
+              "F#5/1 G5/0.5 A5/0.5 G#5/1 A5/1 | G#5/0.5 G5/0.5 F5/1 E5/2 |"
+              "G5/0.5 G#5/0.5 G5/0.5 G#5/0.5 G5/0.5 G#5/0.5 G5/1 | G5/0.5 G#5/0.5 G5/0.5 G#5/0.5 D6/1 D#6/1 |"  # the grind
+              "G5/0.5 G#5/0.5 G5/0.5 G#5/0.5 G5/0.5 G#5/0.5 C6/1 | G#5/0.5 G5/0.5 G#5/0.5 C6/0.5 G6/2 |"
+              "E6/0.5 E6/0.5 G6/0.5 E6/0.5 F6/1 E6/1 | D6/0.5 C6/0.5 B5/1 A5/1 G5/1 |"        # the climax
+              "A#5/1 A5/1 G#5/1 G5/1 | F#5/1 F5/1 E5/1 D#5/1")
+    song.voice(melody, pulse(0.25), 0.1, transpose=-12)
+    song.voice(melody, pulse(0.125), 0.04)  # the same line an octave up, for the shriek's edge
+    song.arpeggio(chords, [0, 1, 2, 1] * 4, pulse(0.125), 0.025, step=0.25)
+    # The troll's stomp: the root pounding with a semitone above it grinding in.
+    song.bass(chords, [(0, 0.5), (0, 0.5), (1, 0.5), (0, 0.5), (0, 0.5), (0, 0.5), (1, 0.5), (12, 0.5)], 0.22)
+    for bar, pattern in enumerate(TROLL_BEAT):
+        song.drum_bar(bar, pattern, 0.15)
+    return song.samples
+
+
 def victory_tune():
     """The results screen after someone escapes: a rising C major fanfare."""
     song = Song(bpm=132, beats=8, tail_seconds=0.8)
@@ -2100,6 +2131,7 @@ def build_music(directory):
         "temple": temple_theme(),
         "boss": boss_theme(),
         "ogre": ogre_theme(),
+        "troll": troll_theme(),
         "victory": victory_tune(),
         "defeat": defeat_tune(),
     }
