@@ -15,6 +15,22 @@ public enum SpellShape
     Around,
 }
 
+/// <summary>Who a spell can be cast on as a boon instead of an attack (Lifeforce, Shining Light, Shadowbind).</summary>
+public enum SpellWard
+{
+    /// <summary>It's only ever an attack.</summary>
+    None,
+
+    /// <summary>On the caster.</summary>
+    Self,
+
+    /// <summary>On the caster or an ally beside them.</summary>
+    Beside,
+
+    /// <summary>On the caster or an ally in range.</summary>
+    Ally,
+}
+
 /// <summary>
 /// A spell a hero can learn: a basic one from a rank of Magic, or one learned from a scroll. Casting
 /// it spends banked Power Dice and the turn's Rumble dice, and rolls its typed dice plus the caster's
@@ -65,6 +81,15 @@ public sealed record SpellDefinition
 
     /// <summary>A die more against targets standing on rubble (Quake).</summary>
     public bool RubbleDie { get; init; }
+
+    /// <summary>A die more against targets in darkness (Shadowbind).</summary>
+    public bool DarknessDie { get; init; }
+
+    /// <summary>Who it can be cast on as a boon: its dice roll for how long and how strong, and it hurts no one.</summary>
+    public SpellWard Ward { get; init; }
+
+    /// <summary>Aimed at bare floor, it lays ice (Icicle Arrow).</summary>
+    public bool Floor { get; init; }
 
     public string Text { get; init; } = "";
 }

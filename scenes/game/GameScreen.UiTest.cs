@@ -637,6 +637,72 @@ public partial class GameScreen
     }
 
     /// <summary>
+    /// Debug mode (<c>-- --terraintest</c>, with <see cref="DemoRun.Terrain"/>): in a dark room, Aria lays
+    /// Icicle Arrow's ice, lights a brazier with Hurl Fire, then shines with Shining Light and hides with
+    /// Shadowbind, a turn each; the board and her figure must show it all.
+    /// </summary>
+    private async void RunTerrainTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            Room crypt = ShownRoom;
+            Check(_board.DarkTiles.Count == crypt.Positions.Count(), "the dark room starts all dark");
+
+            async Task CastAt(string spellId, GridPosition target)
+            {
+                await Click(this, _cast);
+                await Click(this, _spellPicker.ButtonFor(spellId)!);
+                Check(_session.GetSpellTargets(spellId).Contains(target), $"{spellId} can be aimed at {target}");
+                await ClickTile(target);
+                await WaitUntilIdle();
+                await ConfirmIfHeld();
+            }
+
+            async Task NextTurn()
+            {
+                await Click(this, _endTurn);
+                await WaitFor(this, () => !_busy && ActiveHero == aria && _session.State.Turn is { PendingRoll: null }, "Aria's next turn");
+            }
+
+            await CastAt("icicle_arrow", new GridPosition(4, 4));
+            Check(crypt.IsIcy(new GridPosition(4, 4)), "Icicle Arrow at bare floor lays ice there");
+            if (_session.State.Turn!.IceToLay > 0)
+            {
+                Check(LayingIce, "with more to lay, the clicks lay it");
+                int before = crypt.Ice.Count;
+                await ClickTile(_session.GetIceTargets().First(tile => !crypt.IsIcy(tile)));
+                await WaitUntilIdle();
+                Check(crypt.Ice.Count == before + 1, "a click lays another patch");
+            }
+
+            await NextTurn();
+            var brazier = new GridPosition(1, 1);
+            await CastAt("hurl_fire", brazier);
+            Check(crypt.LitBraziers.Contains(brazier), "Hurl Fire at a brazier lights it");
+            Check(!_board.DarkTiles.Contains(new GridPosition(2, 2)) && _board.DarkTiles.Contains(new GridPosition(6, 6)), "its light reaches two tiles, no further");
+
+            await NextTurn();
+            await CastAt("shining_light", aria.Position);
+            Check(aria.ShiningRounds > 0 && _figures[aria.Id].Shining, "Shining Light on herself: she glows");
+            Check(!_board.DarkTiles.Contains(aria.Position), "and lights the dark around her");
+
+            await NextTurn();
+            await CastAt("shadowbind", aria.Position);
+            Check(aria.ShadowboundRounds > 0 && _figures[aria.Id].Shadowbound, "Shadowbind on herself: she fades into the shadows");
+
+            GD.Print("Terrain test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Terrain test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
+    /// <summary>
     /// Debug mode (<c>-- --dietypetest</c>, with <see cref="DemoRun.Elements"/>): Aria reads her scrolls
     /// of typed dice at the monsters, a belt one and a pack one a turn, digging out or tending her eyes
     /// when she must. After every step each figure's tokens must match the rules', and the typed dice

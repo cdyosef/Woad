@@ -26,6 +26,9 @@ public sealed class Room
     private readonly List<Tombstone> _tombstones = [];
     private readonly List<Bomb> _bombs = [];
     private readonly Dictionary<GridPosition, int> _flames = [];
+    private readonly Dictionary<GridPosition, int> _ice = [];
+    private readonly Dictionary<GridPosition, TileKind> _frozenOver = [];
+    private readonly HashSet<GridPosition> _litBraziers = [];
     private readonly Dictionary<GridPosition, bool> _plants = [];
     private readonly IReadOnlyDictionary<Direction, GridPosition> _doorTiles;
 
@@ -163,6 +166,52 @@ public sealed class Room
     public bool PlantsFor(GridPosition position, bool heroes) => _plants.TryGetValue(position, out bool heroesPlants) && heroesPlants == heroes;
 
     internal void Grow(GridPosition position, bool heroes) => _plants[position] = heroes;
+
+    /// <summary>A dark room: tiles away from any light are in darkness (see <c>GameSession.InDarkness</c>).</summary>
+    public bool Dark { get; internal init; }
+
+    /// <summary>Braziers that have been lit (they stay lit).</summary>
+    public IReadOnlyCollection<GridPosition> LitBraziers => _litBraziers;
+
+    internal bool LightBrazier(GridPosition position) => Layout[position] == TileKind.Brazier && _litBraziers.Add(position);
+
+    /// <summary>Ice patches, and the rounds each has left. Water under one is frozen over: it's floor until it melts.</summary>
+    public IReadOnlyDictionary<GridPosition, int> Ice => _ice;
+
+    public bool IsIcy(GridPosition position) => _ice.ContainsKey(position);
+
+    /// <summary>Lays ice for <paramref name="rounds"/> rounds (or longer, if it's there already), freezing water over.</summary>
+    internal void Freeze(GridPosition position, int rounds)
+    {
+        if (Layout[position] is TileKind.ShallowWater or TileKind.DeepWater && !_frozenOver.ContainsKey(position))
+        {
+            _frozenOver[position] = Layout[position];
+            Layout.Set(position, TileKind.Floor);
+        }
+
+        _ice[position] = Math.Max(rounds, _ice.GetValueOrDefault(position));
+    }
+
+    /// <summary>A round of melting off every patch; returns those that are gone (water under them flows again).</summary>
+    internal List<GridPosition> Melt()
+    {
+        List<GridPosition> melted = [];
+        foreach (GridPosition tile in _ice.Keys.ToList())
+        {
+            if (--_ice[tile] <= 0)
+            {
+                _ice.Remove(tile);
+                if (_frozenOver.Remove(tile, out TileKind water))
+                {
+                    Layout.Set(tile, water);
+                }
+
+                melted.Add(tile);
+            }
+        }
+
+        return melted;
+    }
 
     /// <summary>Burning floor, and the rounds each tile has left to burn.</summary>
     public IReadOnlyDictionary<GridPosition, int> Flames => _flames;

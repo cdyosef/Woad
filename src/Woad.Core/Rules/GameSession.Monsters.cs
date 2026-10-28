@@ -125,8 +125,9 @@ public sealed partial class GameSession
         }
 
         // Monsters go after heroes still standing; those Keeling Over only when nobody standing is in reach.
-        List<Hero> standing = State.ActiveHeroesIn(room).ToList();
-        List<Hero> keeling = State.HeroesIn(room).Where(hero => hero.IsKeelingOver).ToList();
+        // A Shadowbound hero is nowhere to be seen.
+        List<Hero> standing = State.ActiveHeroesIn(room).Where(hero => hero.ShadowboundRounds == 0).ToList();
+        List<Hero> keeling = State.HeroesIn(room).Where(hero => hero.IsKeelingOver && hero.ShadowboundRounds == 0).ToList();
         List<Hero> heroes = standing.Count > 0 ? standing : keeling;
         if (heroes.Count == 0)
         {
@@ -175,7 +176,7 @@ public sealed partial class GameSession
             return;
         }
 
-        standing = [.. State.ActiveHeroesIn(room)];
+        standing = [.. State.ActiveHeroesIn(room).Where(hero => hero.ShadowboundRounds == 0)];
         bool cornered = definition.KeepsDistance && heroes.Any(hero => hero.Position.ManhattanDistanceTo(monster.NearestTile(hero.Position)) == 1);
         if (!cornered && !definition.Erratic)
         {
@@ -183,10 +184,24 @@ public sealed partial class GameSession
         }
 
         IReadOnlyList<GridPosition> path = cornered ? PlanRetreat(room, monster, heroes) : PlanAdvance(room, monster, heroes);
+        GridPosition? slide = null;
+        if (monster.Tiles.Count() == 1 && SlipOnIce(room, monster.Position, path, monster.Flies) is { } slip)
+        {
+            path = path.Take(slip.Index + 1).ToList();
+            slide = slip.Slide;
+        }
+
         if (path.Count > 0)
         {
             monster.Position = path[^1];
             events.Add(new MonsterMoved(monster.Id, path));
+            if (slide is { } beyond)
+            {
+                // Onto ice, and it slides on: into a pit or water, too.
+                events.Add(new Slid(monster.Id, monster.Position, beyond));
+                PushMonster(null, room, monster, beyond, events);
+            }
+
             if (monster.FireDice > 0 && path.Any(tile => InWater(room, tile)))
             {
                 monster.FireDice = 0;

@@ -40,6 +40,9 @@ public sealed record AttackMonster(int HeroId, int MonsterId, int? Dice = null, 
 /// </summary>
 public sealed record CastSpell(int HeroId, string SpellId, GridPosition? Target = null, int ExtraPower = 0, GridPosition? MoveTo = null) : GameCommand(HeroId);
 
+/// <summary>Lay a patch of the ice an Icicle Arrow rolled (or give Snowshoes to someone on an icy tile).</summary>
+public sealed record LayIce(int HeroId, GridPosition Tile) : GameCommand(HeroId);
+
 /// <summary>Roll a Power Die just earned (by a 6) into the pending attack or the move in progress.</summary>
 public sealed record AddPowerDie(int HeroId) : GameCommand(HeroId);
 

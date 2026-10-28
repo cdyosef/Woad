@@ -241,6 +241,7 @@ public partial class GameScreen
 
     private void UpdateHighlights()
     {
+        _board.DarkTiles = ShownRoom.Dark ? [.. ShownRoom.Positions.Where(tile => _session.InDarkness(ShownRoom, tile))] : [];
         _board.BlindAt = !Locked && ActiveHero is { IsCompanion: false } blind && blind.RoomId == _shownRoomId && blind.Conditions.Has(Condition.Blind) ? blind.Position : null;
         if (Locked || ActiveHero is not { } hero || _session.State.Turn is not { } turn || hero.RoomId != _shownRoomId)
         {
@@ -256,6 +257,12 @@ public partial class GameScreen
 
         if (ShowCastingHighlights())
         {
+            return;
+        }
+
+        if (LayingIce)
+        {
+            _board.SetHighlights([], [], _session.GetIceTargets(), []);
             return;
         }
 

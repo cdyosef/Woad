@@ -61,6 +61,7 @@ public sealed partial class GameSession
             return powerError;
         }
 
+        Reveal(hero, events);
         Wielding wielding = Wield(hero, room, monster.Position, monster, only);
         int weaponBonus = wielding.Bonus + (monster.Definition.Swimmer && wielding.HasStrike && !wielding.OffHand ? wielding.Weapon?.SwimmerBonus ?? 0 : 0);
         bool armed = command.UseWeapon && wielding.HasStrike && (weaponBonus > 0 || wielding.Dice > 0);
@@ -122,6 +123,7 @@ public sealed partial class GameSession
             return powerError;
         }
 
+        Reveal(hero, events);
         Wielding wielding = Wield(hero, ActiveRoom, target.Position, only: only);
         bool armed = command.UseWeapon && wielding.HasStrike && (wielding.Bonus > 0 || wielding.Dice > 0);
         int bonus = armed ? wielding.Bonus : 0;
@@ -282,6 +284,12 @@ public sealed partial class GameSession
 
             if (room.FindMonster(targetId) is { } monster)
             {
+                // Shooting into the dark is harder.
+                if (attack.Source != DamageSource.Shove && monster.NearestTile(hero.Position).ChebyshevDistanceTo(hero.Position) > 1 && InDarkness(room, monster.NearestTile(hero.Position)))
+                {
+                    total -= 1;
+                }
+
                 Thaw(monster.Conditions, monster.Id, fireDice, events);
                 if (attack.Chill > 0)
                 {

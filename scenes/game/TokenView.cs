@@ -94,6 +94,35 @@ public partial class TokenView : Node2D
         set { _torch = value; QueueRedraw(); }
     }
 
+    /// <summary>Under Shining Light: a golden glow around them.</summary>
+    public bool Shining
+    {
+        set { _shining = value; QueueRedraw(); }
+    }
+
+    private bool _shining;
+
+    /// <summary>Shadowbound: drawn faint, in a haze of shadow.</summary>
+    public bool Shadowbound
+    {
+        set
+        {
+            _shadowbound = value;
+            Modulate = value ? new Color(1, 1, 1, 0.45f) : Colors.White;
+            QueueRedraw();
+        }
+    }
+
+    private bool _shadowbound;
+
+    /// <summary>Wearing Snowshoes: a little white mark at their feet.</summary>
+    public bool Snowshoes
+    {
+        set { _snowshoes = value; QueueRedraw(); }
+    }
+
+    private bool _snowshoes;
+
     /// <summary>A merchant chained to the wall: a shackle and chain at their feet.</summary>
     public bool Chained
     {
@@ -179,6 +208,20 @@ public partial class TokenView : Node2D
             }
         }
 
+        if (_shining)
+        {
+            var middle = new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f);
+            for (int ring = 3; ring >= 1; ring--)
+            {
+                DrawCircle(middle, 14 + ring * 9, DieTypes.Tint(DieType.Radiate) with { A = 0.09f }, antialiased: true);
+            }
+        }
+
+        if (_shadowbound)
+        {
+            DrawCircle(new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f), 15, DieTypes.Tint(DieType.Shadow) with { A = 0.5f }, antialiased: true);
+        }
+
         if (_torch)
         {
             // The light the torch throws, flickering, under everything else.
@@ -214,6 +257,11 @@ public partial class TokenView : Node2D
         }
 
         DrawConditions();
+
+        if (_snowshoes)
+        {
+            DrawRect(new Rect2(Center.X - 6, BoardView.TileSize - 4, 12, 2), DieTypes.Tint(DieType.Ice));
+        }
 
         if (_fireDice > 0)
         {

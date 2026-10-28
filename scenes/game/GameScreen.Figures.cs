@@ -50,6 +50,9 @@ public partial class GameScreen
                 Torch = hero.TorchesHeld > 0,
                 Monster = hero.Guise is { } guise ? Content.GetMonster(guise) : null,
                 Conditions = new Dictionary<Condition, int>(hero.Conditions.All),
+                Shining = hero.ShiningRounds > 0,
+                Shadowbound = hero.ShadowboundRounds > 0,
+                Snowshoes = hero.SnowshoesRounds > 0,
             };
         }
 
@@ -138,6 +141,9 @@ public partial class GameScreen
         token.Prone = figure.Prone;
         token.Diving = figure.Diving;
         token.Conditions = figure.Conditions;
+        token.Shining = figure.Shining;
+        token.Shadowbound = figure.Shadowbound;
+        token.Snowshoes = figure.Snowshoes;
         token.Active = figure.Id == TurnOnShow?.Id;
         // The active hero (and the arrow over their head) is drawn over their neighbors.
         token.ZIndex = figure.Id == TurnOnShow?.Id ? 1 : 0;
@@ -470,5 +476,11 @@ public partial class GameScreen
 
         /// <summary>Tokens typed dice left on it (poison, freeze...), and how many of each.</summary>
         public Dictionary<Condition, int> Conditions { get; set; } = [];
+
+        public bool Shining { get; set; }
+
+        public bool Shadowbound { get; set; }
+
+        public bool Snowshoes { get; set; }
     }
 }

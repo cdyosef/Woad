@@ -32,6 +32,12 @@ public static partial class DungeonGenerator
 
     private const ulong Stream = 4;
 
+    /// <summary>Darkness and braziers come from their own stream, so the rest of a seed's dungeon stays as it was.</summary>
+    private const ulong DarkStream = 5;
+
+    /// <summary>The chance (percent) a room past the arrival is dark.</summary>
+    private const int DarkChance = 25;
+
     public static RunSetup CreateRun(ContentCatalog content, string themeId, IReadOnlyList<HeroSetup> heroes, ulong seed)
     {
         ThemeDefinition theme = content.GetTheme(themeId);
@@ -82,6 +88,7 @@ public static partial class DungeonGenerator
 
         List<BreachSetup> breaches = PlanBreaches(rooms, random);
         PlaceMerchant(rooms, theme.Floors, random);
+        Darken(rooms, new Pcg32(seed, DarkStream));
         return new RunSetup
         {
             Seed = seed,
@@ -92,6 +99,92 @@ public static partial class DungeonGenerator
             Passages = passages,
             Breaches = breaches,
         };
+    }
+
+    /// <summary>
+    /// Some rooms are dark: never an arrival room or the boss's. Each has a brazier or two, unlit, where it
+    /// blocks no way through and stands on nothing (no start, monster, door or hidden thing).
+    /// </summary>
+    private static void Darken(List<RoomSetup> rooms, IRandomSource random)
+    {
+        for (int i = 0; i < rooms.Count; i++)
+        {
+            RoomSetup room = rooms[i];
+            if (room.Role is RoomRole.Arrival or RoomRole.Boss || random.NextInt(0, 100) >= DarkChance)
+            {
+                continue;
+            }
+
+            RoomTemplate template = room.Template;
+            int braziers = random.NextInt(1, 3);
+            for (int placed = 0; placed < braziers; placed++)
+            {
+                List<GridPosition> spots = [.. BrazierSpots(template, room)];
+                if (spots.Count == 0)
+                {
+                    break;
+                }
+
+                template = template.WithTile(spots[random.NextInt(0, spots.Count)], TileKind.Brazier);
+            }
+
+            rooms[i] = room with { Template = template, Dark = true };
+        }
+    }
+
+    /// <summary>Open floor where a brazier would stand on nothing and cut nothing off.</summary>
+    private static IEnumerable<GridPosition> BrazierSpots(RoomTemplate template, RoomSetup room)
+    {
+        RoomFeatures features = room.Features ?? RoomFeatures.None;
+        HashSet<GridPosition> taken =
+        [
+            .. template.Monsters.SelectMany(spawn => Enumerable.Range(0, spawn.Monster.Size).SelectMany(dx => Enumerable.Range(0, spawn.Monster.Size).Select(dy => new GridPosition(spawn.Position.X + dx, spawn.Position.Y + dy)))),
+            .. template.HeroStarts.Values, .. template.SpawnPoints, .. room.DoorTiles?.Values ?? [],
+            .. features.Traps.Keys, .. features.Caches.Keys, .. features.Keys.Keys, .. features.Gates.Keys, .. features.HiddenGates.Keys,
+        ];
+        if (template.BossSpawn is { } boss)
+        {
+            taken.Add(boss);
+        }
+
+        if (features.BossKeyOnFloor is { } key)
+        {
+            taken.Add(key);
+        }
+
+        if (features.Merchant is { } merchant)
+        {
+            taken.Add(merchant.Position);
+        }
+
+        // What a party crosses on foot: open ground and gates (always picked in the end), not water or traps.
+        bool Open(GridPosition tile) => (template.Layout[tile].IsWalkable() || template.Layout[tile] == TileKind.Gate) && !features.Traps.ContainsKey(tile);
+        int open = template.Layout.Positions.Count(Open);
+        return template.Layout.Positions.Where(tile => template.Layout[tile] == TileKind.Floor && !taken.Contains(tile)
+            && !tile.SurroundingTiles().Any(taken.Contains)
+            && Connected(template.Layout, tile, Open) == open - 1);
+    }
+
+    /// <summary>How many open tiles can still reach each other with <paramref name="blocked"/> filled in.</summary>
+    private static int Connected(RoomLayout layout, GridPosition blocked, Func<GridPosition, bool> open)
+    {
+        GridPosition? start = layout.Positions.Where(tile => tile != blocked && open(tile)).Select(tile => (GridPosition?)tile).FirstOrDefault();
+        if (start is not { } from)
+        {
+            return 0;
+        }
+
+        HashSet<GridPosition> seen = [from];
+        var queue = new Queue<GridPosition>([from]);
+        while (queue.TryDequeue(out GridPosition tile))
+        {
+            foreach (GridPosition next in tile.OrthogonalNeighbors().Where(next => layout.Contains(next) && next != blocked && open(next) && seen.Add(next)))
+            {
+                queue.Enqueue(next);
+            }
+        }
+
+        return seen.Count;
     }
 
     /// <summary>A room's id: its floor and map cell, e.g. "f2-31".</summary>

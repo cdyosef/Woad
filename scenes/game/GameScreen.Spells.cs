@@ -26,6 +26,24 @@ public partial class GameScreen
     /// <summary>The caption for the next attack roll's dice, when it's a spell's.</summary>
     private string? _spellCaption;
 
+    /// <summary>Laying an Icicle Arrow's ice, a click a patch (until it's all laid, or the player stops).</summary>
+    private bool _layingIce;
+
+    private bool LayingIce => _layingIce && !Locked && _session.State.Turn is { IceToLay: > 0 };
+
+    /// <summary>A click while laying ice: on a tile it can go, a patch (or Snowshoes); anywhere else, stop.</summary>
+    private void LayIceAt(Hero hero, GridPosition tile)
+    {
+        if (_session.GetIceTargets().Contains(tile))
+        {
+            Execute(new LayIce(hero.Id, tile));
+        }
+        else
+        {
+            CancelSelection();
+        }
+    }
+
     private void BuildCasting(Control right)
     {
         _cast = UiTheme.Accent(UiTheme.Button(new Vector2(116, 329), new Vector2(52, 22), "Cast"), new Color("b07ce8"));
@@ -161,6 +179,7 @@ public partial class GameScreen
     {
         _casting = null;
         _swirling = null;
+        _layingIce = false;
         _spellPicker.Visible = false;
     }
 }

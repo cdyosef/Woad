@@ -35,6 +35,27 @@ public sealed record SpellStudied(int HeroId, int CardId, string SpellId) : Game
 /// <summary>A scroll went off in a hero's hands as they failed to learn it: it attacks everyone around them.</summary>
 public sealed record Backfired(int HeroId, string SpellId, IReadOnlyList<int> TargetIds) : GameEvent;
 
+/// <summary>A spell's dice rolled for something other than an attack: a boon, or ice.</summary>
+public sealed record SpellRolled(int HeroId, DiceRoll Roll, IReadOnlyList<DieType> DieTypes) : GameEvent;
+
+/// <summary>Ice laid on tiles for some rounds (water under it frozen over).</summary>
+public sealed record IceLaid(string RoomId, IReadOnlyList<GridPosition> Tiles, int Rounds) : GameEvent;
+
+/// <summary>Ice that melted away (water under it flowing again).</summary>
+public sealed record IceMelted(string RoomId, IReadOnlyList<GridPosition> Tiles) : GameEvent;
+
+/// <summary>Someone stepped onto ice and slid on a tile.</summary>
+public sealed record Slid(int EntityId, GridPosition From, GridPosition To) : GameEvent;
+
+/// <summary>A hero gained a boon for <paramref name="Rounds"/> rounds (<paramref name="Amount"/>: Shining Light's Defense).</summary>
+public sealed record BoonGained(int HeroId, Boon Boon, int Rounds, int Amount) : GameEvent;
+
+/// <summary>A hero's boon ran out (or Shadowbind broke).</summary>
+public sealed record BoonEnded(int HeroId, Boon Boon) : GameEvent;
+
+/// <summary>A brazier was lit.</summary>
+public sealed record BrazierLit(string RoomId, GridPosition Position) : GameEvent;
+
 /// <summary>A hero learned a spell: a basic one with a rank of Magic, or one from a scroll.</summary>
 public sealed record SpellLearned(int HeroId, string SpellId) : GameEvent;
 

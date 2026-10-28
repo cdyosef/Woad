@@ -209,6 +209,13 @@ public sealed class TurnState
     /// </summary>
     public int UnsettledPowerDice { get; internal set; }
 
+    /// <summary>Patches of an Icicle Arrow's ice still to lay this turn, how many rounds they last, and the spell (for its range).</summary>
+    public int IceToLay { get; internal set; }
+
+    public int IceRounds { get; internal set; }
+
+    public string? IceSpellId { get; internal set; }
+
     /// <summary>Sets the steps from the move's roll (after a reroll or an added Power Die), plus the carried-over steps.</summary>
     internal void CountSteps() => MovementPoints = CarriedSteps + Math.Max(0, MovementRoll!.Total + MovementBonus);
 

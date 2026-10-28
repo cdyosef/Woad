@@ -241,6 +241,7 @@ public sealed partial class GameSession
 
         // A shove is right beside the target: whatever's in hand puts its weight behind it, but nothing's thrown.
         GridPosition at = ActiveRoom.FindMonster(command.TargetId)?.Position ?? State.Heroes.FirstOrDefault(other => other.Id == command.TargetId)?.Position ?? hero.Position;
+        Reveal(hero, events);
         Wielding wielding = Wield(hero, ActiveRoom, at) is { Thrown: false } held ? held : Wielding.BareHanded;
         int bonus = command.UseWeapon && wielding.HasStrike ? wielding.Bonus : 0;
         Turn.AttackDiceUsed += dice;

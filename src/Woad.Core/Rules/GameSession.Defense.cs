@@ -56,7 +56,7 @@ public sealed partial class GameSession
     /// </summary>
     private int HeroDefense(Hero hero, int attackTotal, List<GameEvent> events, int extraDice = 0)
     {
-        int armor = Math.Max(0, hero.EffectiveStats.Armor);
+        int armor = Math.Max(0, hero.EffectiveStats.Armor) + (hero.ShiningRounds > 0 ? hero.ShiningDefense : 0);
         CardInstance? lucky = hero.EquippedCards.FirstOrDefault(card => card.Definition.LastChanceDie);
 
         // Each ready Guard Die of the allies standing beside them, in seat order.

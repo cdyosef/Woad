@@ -103,6 +103,7 @@ public sealed partial class GameSession
             ConfirmAttack c => Handle(c, events),
             CastSpell c => Handle(c, events),
             LearnSpell c => Handle(c, events),
+            LayIce c => Handle(c, events),
             AddPowerDie c => Handle(c, events),
             BankPowerDie c => Handle(c, events),
             UnlockDoor c => Handle(c, events),
@@ -176,6 +177,7 @@ public sealed partial class GameSession
         {
             DouseEveryoneInWater(events);
             CatchFireFromFloor(events);
+            LightBraziers(events);
         }
 
         foreach (Hero hero in State.Heroes.Where(hero => hero.IsActive && State.RoomOf(hero).Layout[hero.Position].IsWalkable()))
@@ -285,6 +287,7 @@ public sealed partial class GameSession
     private void StartRound(List<GameEvent> events)
     {
         BurnDownFloors(events);
+        WearOffMagic(events);
         State.Round++;
         events.Add(new RoundStarted(State.Round));
         StartTurn(State.Heroes.First(hero => hero.IsInPlay), events);
@@ -373,7 +376,7 @@ public sealed partial class GameSession
                 roomSetup.Role,
                 roomSetup.Trap,
                 roomSetup.Template.HeroStarts.OrderBy(start => start.Key).Select(start => start.Value).ToList(),
-                roomSetup.DoorTiles);
+                roomSetup.DoorTiles) { Dark = roomSetup.Dark };
             foreach (MonsterSpawn spawn in roomSetup.Template.Monsters)
             {
                 room.AddMonster(CreateMonster(state.NextId(), spawn.Monster, spawn.Position, GameRules.PartyStrength(setup.Heroes)));

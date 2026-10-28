@@ -382,10 +382,8 @@ Typed dice show in their own colors in the dice bar.
 
 ## Magic
 
-*Built in three batches: (1) the Magic stat, casting and the spells' attacks (built); (2) learning scrolls
-and backfires (built); (3) ice, light and darkness, and the buff spells (Icicle Arrow's ice, Lifeforce, Shining
-Light and Shadowbind on yourself or an ally, and Shadowbind's darkness die). Until then those four cast as
-plain attacks.*
+*Built in three batches, all done: (1) the Magic stat, casting and the spells' attacks; (2) learning
+scrolls and backfires; (3) ice, light and darkness, and the boons.*
 
 Magic is dangerous in this world, and people don't like it, for good reason.
 
@@ -433,12 +431,17 @@ All cost **1 Power** and can be upcast.
 | Swirly Eyes | 3 | 1 Psycho | On a hit, you move the target 1 tile of your choice at once (into a pit or onto a trap, too) |
 | Shadowbind | 6, ignores line of sight | 1 Shadow, +1 against targets in darkness | Or cast on yourself to become invisible (below) |
 
-- **Icicle Arrow on the floor:** the **total** rolled is how many ice patches you lay, on tiles within
-  range (occupied ones too; over water they freeze it over). Choosing a tile that's already icy with
+- **Icicle Arrow on the floor:** aimed at bare floor, the **total** rolled is how many ice patches you
+  lay: the first where it's aimed, the rest a click each, on tiles within range (occupied ones too; over
+  water they freeze it over, and it's floor until the ice melts). Choosing a tile that's already icy with
   yourself or an ally on it gives them **Snowshoes** instead: they walk on ice like floor. Patches and
   Snowshoes last **1 round per Ice die rolled**. Rolling 2 dice for a 2 and a 3 makes up to 5 patches, or
-  3 patches and 2 Snowshoes, all lasting 2 rounds.
-- **Ice** is slippery: stepping onto a patch without Snowshoes slides you one more tile the same way.
+  3 patches and 2 Snowshoes, all lasting 2 rounds. Patches left unlaid at the end of the turn are lost.
+- **Ice** is slippery: stepping onto a patch without Snowshoes slides you one more tile the same way (into
+  a pit or water, too), and that's the end of your move. Monsters slide too, except flyers and big ones.
+- **Boons** (Lifeforce, Shining Light and Shadowbind cast on yourself or an ally) roll their dice for how
+  long they last and how strong they are, and hurt no one. Rounds count down as each new round starts.
+- **Lifeforce boon:** plants grow under them (cover for the party), and they heal a heart per 6.
 - **Shining Light buff:** for 1 round per Radiate die rolled, the target gives off light, has **+1
   Defense, +1 more per 6**, and rolls an extra die on Search (like a torch).
 - **Shadowbind buff:** invisible for 1 round per Shadow die rolled: monsters can't target you and lose
@@ -464,9 +467,12 @@ All cost **1 Power** and can be upcast.
 - Some rooms are **dark**. In a dark room a tile is **in darkness** unless it's within 2 tiles of a light:
   a held torch, fire burning on a tile, a burning or fiery creature (Cinder Imps, Fire Beetles), a lit
   **brazier**, or a Shining Light.
-- **Braziers** stand in some rooms, unlit; a torch (held beside one, or by attacking it) or any fire
-  lights them.
-- Monsters in darkness are hard to make out: ranged attacks on them take **-1**.
+- About **a quarter** of the rooms past the first are dark (never an arrival or the boss's room), each with
+  a **brazier** or two, unlit, standing where they block no way through. Braziers block movement, not sight.
+- Any fire beside a brazier lights it: a held torch, burning floor, a burning or fiery creature. So does
+  fire aimed at it (Hurl Fire, a Flame Scroll). Lit, it stays lit.
+- Monsters in darkness are hard to make out: ranged attacks on them take **-1**, and Shadowbind rolls a die
+  more against them. On the board, darkness dims the tiles no light reaches.
 
 ### Related changes
 

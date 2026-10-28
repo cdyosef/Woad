@@ -54,6 +54,7 @@ public sealed partial class GameSession
             return targetError;
         }
 
+        Reveal(hero, events);
         if (location == CardLocation.Belt)
         {
             Turn.UsedBeltItem = true;
@@ -122,6 +123,10 @@ public sealed partial class GameSession
                 {
                     RollHeroAttack(hero, effect.DieType is null ? effect.Amount : 0, 0, caught, SourceOf(card.Definition), events,
                         typed: effect.DieType is { } type ? [(type, effect.Amount)] : null, chill: effect.Chill);
+                }
+                else if (effect.Fire && UnlitBrazierAt(room, command.Target!.Value))
+                {
+                    Kindle(room, command.Target!.Value, events);
                 }
                 else if (effect.Fire)
                 {
@@ -859,7 +864,7 @@ public sealed partial class GameSession
                 }
 
                 // Fire can be aimed at bare floor, to set it burning.
-                return targets.Count > 0 || (effect.Fire && CanBurn(room, attackTile)) ? null
+                return targets.Count > 0 || (effect.Fire && (CanBurn(room, attackTile) || UnlitBrazierAt(room, attackTile))) ? null
                     : effect.Fire ? "Nothing there will burn."
                     : "There are no monsters there.";
 
