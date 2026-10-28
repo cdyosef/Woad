@@ -41,6 +41,21 @@ public partial class DicePoolView : Control
     /// <summary>A token was clicked: a die (its index) or the bonus token (index -1).</summary>
     public event Action<DicePool, int>? TokenClicked;
 
+    /// <summary>A row's swap button was clicked (the Rumble row's weapon, for a hero holding two).</summary>
+    public event Action<DicePool>? SwapClicked;
+
+    /// <summary>For the click tests: as if the Rumble row's swap button were clicked.</summary>
+    internal void EmitSwap() => SwapClicked?.Invoke(DicePool.Rumble);
+
+    /// <summary>A small button at the end of a row (the weapon an attack uses), or null for none.</summary>
+    public void ShowSwap(DicePool pool, string? text, string tooltip = "")
+    {
+        Row row = _rows[(int)pool];
+        row.Swap = text;
+        row.SwapHelp = tooltip;
+        QueueRedraw();
+    }
+
     /// <param name="bonus">The weapon, Speed or tools still available this turn (0 when used or none).</param>
     /// <param name="note">Text drawn after the tokens, such as the steps left in a move.</param>
     /// <param name="bonusDice">Dice the weapon or tools add along with their value (the Longsword's or a lockpick's d6).</param>
@@ -81,7 +96,12 @@ public partial class DicePoolView : Control
     public override string _GetTooltip(Vector2 atPosition)
     {
         int row = (int)(atPosition.Y / RowHeight);
-        return row >= 0 && row < _rows.Length ? _rows[row].Help : "";
+        if (row < 0 || row >= _rows.Length)
+        {
+            return "";
+        }
+
+        return _rows[row] is { Swap: not null } swapping && swapping.SwapRect.Grow(1).HasPoint(atPosition) ? swapping.SwapHelp : _rows[row].Help;
     }
 
     public override void _Ready() => TooltipText = " ";
@@ -134,6 +154,17 @@ public partial class DicePoolView : Control
             if (row.Note.Length > 0)
             {
                 DrawString(font, new Vector2(x + 2, top + 10), row.Note, fontSize: UiTheme.FontSize, modulate: Palette.Text);
+                x += 4 + font.GetStringSize(row.Note, fontSize: UiTheme.FontSize).X;
+            }
+
+            if (row.Swap is { } swap)
+            {
+                float width = font.GetStringSize(swap, fontSize: UiTheme.FontSize).X + 6;
+                row.SwapRect = new Rect2(new Vector2(Math.Min(x, Size.X - width), top), new Vector2(width, Token));
+                bool on = _enabled;
+                DrawRect(row.SwapRect, Palette.PanelDark);
+                DrawRect(row.SwapRect, on ? row.Color : Palette.TrimDim, filled: false, width: 1);
+                DrawString(font, row.SwapRect.Position + new Vector2(3, 9), swap, fontSize: UiTheme.FontSize, modulate: on ? Palette.TrimBright : Palette.TextDim);
             }
         }
     }
@@ -165,6 +196,14 @@ public partial class DicePoolView : Control
             if (row.Bonus != 0 && BonusRect(r, row).Grow(1).HasPoint(click.Position))
             {
                 Pick((DicePool)r, -1);
+                return;
+            }
+
+            if (row.Swap is not null && row.SwapRect.Grow(1).HasPoint(click.Position))
+            {
+                Sfx.Play("click");
+                SwapClicked?.Invoke((DicePool)r);
+                AcceptEvent();
                 return;
             }
         }
@@ -281,5 +320,12 @@ public partial class DicePoolView : Control
         public bool BonusSelected { get; set; }
 
         public string Note { get; set; } = "";
+
+        public string? Swap { get; set; }
+
+        public string SwapHelp { get; set; } = "";
+
+        /// <summary>Where the swap button was last drawn, for clicks.</summary>
+        public Rect2 SwapRect { get; set; }
     }
 }

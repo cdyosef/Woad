@@ -181,8 +181,9 @@ public static class CompanionBot
             case CompanionOrder.Hold when hero.HoldAt is { } post && post.RoomId == room.Id:
                 return new Plan { Tile = post.Position };
 
-            case CompanionOrder.Fight when fighting && SimpleBot.BesideNearestMonster(state, room, hero) is { } beside:
-                return new Plan { Tile = beside };
+            // Bows and thrown weapons hang back where they can shoot; the rest close in.
+            case CompanionOrder.Fight when fighting && (SimpleBot.ShootingSpot(state, room, hero) ?? SimpleBot.BesideNearestMonster(state, room, hero)) is { } spot:
+                return new Plan { Tile = spot };
 
             case CompanionOrder.StayBack when fighting:
                 // Further from the nearest monster (up to 4 steps away) is better.
@@ -206,7 +207,7 @@ public static class CompanionBot
             && fighting && leader.RoomId == room.Id
             && room.Monsters.Where(monster => monster.NearestTile(leader.Position).ChebyshevDistanceTo(leader.Position) <= Guarding)
                 .OrderBy(monster => monster.NearestTile(leader.Position).ManhattanDistanceTo(leader.Position))
-                .Select(monster => Beside(state, room, hero, monster))
+                .Select(monster => SimpleBot.ShootingSpot(state, room, hero, [monster]) ?? Beside(state, room, hero, monster))
                 .FirstOrDefault(tile => tile is not null) is { } guard)
         {
             return new Plan { Tile = guard };

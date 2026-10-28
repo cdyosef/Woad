@@ -10,7 +10,8 @@ namespace Woad.Core.Rules;
 public sealed partial class GameSession
 {
     /// <summary>Monsters the active hero could attack with their weapon right now.</summary>
-    public IReadOnlyList<Monster> GetAttackableMonsters()
+    /// <param name="weaponId">The weapon in hand the hero picked to attack with, or null for whichever reaches.</param>
+    public IReadOnlyList<Monster> GetAttackableMonsters(int? weaponId = null)
     {
         if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 } || AttackDiceLeft < 1)
         {
@@ -19,7 +20,8 @@ public sealed partial class GameSession
 
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
-        return room.Monsters.Where(monster => CanHeroAttack(hero, room, monster)).ToList();
+        CardInstance? only = HandWeapon(hero, weaponId);
+        return room.Monsters.Where(monster => CanHeroAttack(hero, room, monster, only)).ToList();
     }
 
     private string? Handle(AttackMonster command, List<GameEvent> events)
@@ -43,9 +45,15 @@ public sealed partial class GameSession
             return "There's no such monster in this room.";
         }
 
-        if (!CanHeroAttack(hero, room, monster))
+        CardInstance? only = HandWeapon(hero, command.WeaponId);
+        if (command.WeaponId is not null && only is null)
         {
-            return "That monster is out of reach.";
+            return "You aren't holding that weapon.";
+        }
+
+        if (!CanHeroAttack(hero, room, monster, only))
+        {
+            return only is null ? "That monster is out of reach." : $"Your {only.Definition.Name} doesn't reach it.";
         }
 
         if (CheckBankedPowerDice(hero, command.PowerDice) is { } powerError)
@@ -53,7 +61,7 @@ public sealed partial class GameSession
             return powerError;
         }
 
-        Wielding wielding = Wield(hero, room, monster.Position, monster);
+        Wielding wielding = Wield(hero, room, monster.Position, monster, only);
         int weaponBonus = wielding.Bonus + (monster.Definition.Swimmer && wielding.HasStrike && !wielding.OffHand ? wielding.Weapon?.SwimmerBonus ?? 0 : 0);
         bool armed = command.UseWeapon && wielding.HasStrike && (weaponBonus > 0 || wielding.Dice > 0);
         int bonus = armed ? weaponBonus : 0;
@@ -67,7 +75,8 @@ public sealed partial class GameSession
     }
 
     /// <summary>With friendly fire on, the other heroes and companions the active hero could attack right now.</summary>
-    public IReadOnlyList<Hero> GetAttackableAllies()
+    /// <param name="weaponId">The weapon in hand the hero picked to attack with, or null for whichever reaches.</param>
+    public IReadOnlyList<Hero> GetAttackableAllies(int? weaponId = null)
     {
         if (!State.FriendlyFire || State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 } || AttackDiceLeft < 1)
         {
@@ -77,7 +86,7 @@ public sealed partial class GameSession
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
         return State.ActiveHeroesIn(room)
-            .Where(ally => ally != hero && CanHeroReach(hero, room.Layout, hero.Position, ally.Position))
+            .Where(ally => ally != hero && CanHeroReach(hero, room.Layout, hero.Position, ally.Position, HandWeapon(hero, weaponId)))
             .Where(ally => !Diving(room, ally) || ally.Position.ChebyshevDistanceTo(hero.Position) <= 1)
             .ToList();
     }
@@ -97,7 +106,13 @@ public sealed partial class GameSession
         }
 
         Hero hero = ActiveHero;
-        if (GetAttackableAllies().FirstOrDefault(ally => ally.Id == command.TargetId) is not { } target)
+        CardInstance? only = HandWeapon(hero, command.WeaponId);
+        if (command.WeaponId is not null && only is null)
+        {
+            return "You aren't holding that weapon.";
+        }
+
+        if (GetAttackableAllies(command.WeaponId).FirstOrDefault(ally => ally.Id == command.TargetId) is not { } target)
         {
             return "They're out of reach.";
         }
@@ -107,7 +122,7 @@ public sealed partial class GameSession
             return powerError;
         }
 
-        Wielding wielding = Wield(hero, ActiveRoom, target.Position);
+        Wielding wielding = Wield(hero, ActiveRoom, target.Position, only: only);
         bool armed = command.UseWeapon && wielding.HasStrike && (wielding.Bonus > 0 || wielding.Dice > 0);
         int bonus = armed ? wielding.Bonus : 0;
         Turn.AttackDiceUsed += dice;
@@ -197,8 +212,8 @@ public sealed partial class GameSession
         return (dice, weaponDice, typed);
     }
 
-    private static bool CanHeroAttack(Hero hero, Room room, Monster monster) =>
-        monster.Tiles.Any(tile => CanHeroReach(hero, room.Layout, hero.Position, tile) && (!IsBlind(hero.Conditions) || tile.ChebyshevDistanceTo(hero.Position) <= 1))
+    private static bool CanHeroAttack(Hero hero, Room room, Monster monster, CardInstance? only = null) =>
+        monster.Tiles.Any(tile => CanHeroReach(hero, room.Layout, hero.Position, tile, only) && (!IsBlind(hero.Conditions) || tile.ChebyshevDistanceTo(hero.Position) <= 1))
         && (!Submerged(room, monster) || monster.NearestTile(hero.Position).ChebyshevDistanceTo(hero.Position) <= 1 || (hero.MainWeapon?.Definition.SwimmerBonus ?? 0) > 0);
 
     /// <summary>

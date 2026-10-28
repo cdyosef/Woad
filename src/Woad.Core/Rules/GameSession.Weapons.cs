@@ -12,7 +12,8 @@ namespace Woad.Core.Rules;
 /// off-hand Dagger. A strike adds that weapon's value (and its dice) to one attack. Any hero can strike
 /// a monster right beside them; a weapon reaches further by its range: in sight (a bow), in a straight
 /// line (a Spear), or thrown (a Dagger, which leaves the hand). A crossbow strikes whenever it's loaded,
-/// and each shot unloads it.
+/// and each shot unloads it. Holding two weapons (a Spear and a Boomerang), the hero can pick which one an
+/// attack is made with; otherwise it's the main hand if it reaches, else the off hand.
 /// </summary>
 public sealed partial class GameSession
 {
@@ -30,6 +31,44 @@ public sealed partial class GameSession
     /// </summary>
     public static bool CanHeroReach(Hero hero, RoomLayout layout, GridPosition from, GridPosition to) =>
         Reaches(hero.MainWeapon, layout, from, to, out _) || Reaches(OffHandWeapon(hero), layout, from, to, out _);
+
+    /// <summary>
+    /// Whether a hero on <paramref name="from"/> could attack <paramref name="to"/> with <paramref name="weapon"/>
+    /// (one of their <see cref="HandWeapons"/>), or with anything they hold when it's null.
+    /// </summary>
+    public static bool CanHeroReach(Hero hero, RoomLayout layout, GridPosition from, GridPosition to, CardInstance? weapon) =>
+        weapon is null ? CanHeroReach(hero, layout, from, to) : Reaches(weapon, layout, from, to, out _);
+
+    /// <summary>The weapons in the hero's hands an attack can be made with: the main hand's, then the off hand's.</summary>
+    public static IReadOnlyList<CardInstance> HandWeapons(Hero hero) =>
+        [.. new[] { hero.MainWeapon, OffHandWeapon(hero) }.OfType<CardInstance>().Distinct()];
+
+    /// <summary>The weapon in hand with this id, null for none (or no such weapon in hand).</summary>
+    private static CardInstance? HandWeapon(Hero hero, int? weaponId) =>
+        weaponId is int id ? HandWeapons(hero).FirstOrDefault(card => card.Id == id) : null;
+
+    /// <summary>
+    /// What the active hero would attack <paramref name="monster"/> with, picking <paramref name="weaponId"/>
+    /// (null to let the rules choose), and the value it would add: null bare-handed, or out of reach.
+    /// </summary>
+    public (CardInstance? Weapon, int Bonus)? WeaponAgainst(Monster monster, int? weaponId = null)
+    {
+        if (State.Turn is null)
+        {
+            return null;
+        }
+
+        Hero hero = ActiveHero;
+        Room room = ActiveRoom;
+        CardInstance? only = HandWeapon(hero, weaponId);
+        if (!CanHeroAttack(hero, room, monster, only))
+        {
+            return null;
+        }
+
+        Wielding wielding = Wield(hero, room, monster.Position, monster, only);
+        return (wielding.Card, wielding.Bonus);
+    }
 
     /// <summary>A weapon in the off hand that isn't the other half of a two-handed main weapon.</summary>
     private static CardInstance? OffHandWeapon(Hero hero) => hero.ThrownOffHand;
@@ -78,15 +117,17 @@ public sealed partial class GameSession
     /// for its bonus, has a strike left), else the off hand. A Dagger's bonus doubles against a stunned or
     /// prone monster.
     /// </summary>
-    private Wielding Wield(Hero hero, Room room, GridPosition target, Monster? monster = null)
+    /// <param name="only">The weapon in hand the hero picked, or null to use whichever reaches (main hand first).</param>
+    private Wielding Wield(Hero hero, Room room, GridPosition target, Monster? monster = null, CardInstance? only = null)
     {
         TurnState turn = Turn;
         CardInstance? main = hero.MainWeapon;
         CardInstance? off = OffHandWeapon(hero);
         Stats stats = hero.EffectiveStats;
         bool mainStrikeLeft = turn.StrikesUsed < MainStrikes(hero);
-        bool mainReaches = Reaches(main, room.Layout, hero.Position, target, out bool mainThrown);
-        bool offReaches = Reaches(off, room.Layout, hero.Position, target, out bool offThrown);
+        bool mainThrown = false, offThrown = false;
+        bool mainReaches = (only is null || only == main) && Reaches(main, room.Layout, hero.Position, target, out mainThrown);
+        bool offReaches = (only is null || only == off) && Reaches(off, room.Layout, hero.Position, target, out offThrown);
 
         int Ambush(CardDefinition weapon) =>
             weapon.Ambush && monster is not null && (monster.Stun.IsStunned || monster.Prone) ? weapon.AttackBonus + weapon.Modifiers.Weapon : 0;
@@ -160,13 +201,16 @@ public sealed partial class GameSession
         }
     }
 
-    /// <summary>The weapon value the active hero's next strike would add (the main hand's, else an off-hand Dagger's); 0 with none left.</summary>
-    public int WeaponBonusLeft => NextStrike()?.Bonus ?? 0;
+    /// <summary>
+    /// The weapon value the active hero's next strike would add (the main hand's, else an off-hand Dagger's,
+    /// or the picked weapon's: <paramref name="weaponId"/>); 0 with none left.
+    /// </summary>
+    public int WeaponBonusLeft(int? weaponId = null) => NextStrike(weaponId)?.Bonus ?? 0;
 
     /// <summary>The weapon's own dice the active hero's next strike would add (the Longsword's d6).</summary>
-    public int WeaponDiceLeft => NextStrike()?.Dice ?? 0;
+    public int WeaponDiceLeft(int? weaponId = null) => NextStrike(weaponId)?.Dice ?? 0;
 
-    private (int Bonus, int Dice)? NextStrike()
+    private (int Bonus, int Dice)? NextStrike(int? weaponId)
     {
         if (State.Turn is not { } turn)
         {
@@ -178,7 +222,16 @@ public sealed partial class GameSession
         CardInstance? main = hero.MainWeapon;
         CardInstance? off = OffHandWeapon(hero);
         bool mainReady = main?.Definition.Reload is not null ? !main.Unloaded : turn.StrikesUsed < MainStrikes(hero);
-        if (mainReady && (main is not null || stats.Weapon > 0))
+
+        // A thrown off-hand weapon (the Boomerang), picked: it stands in for the main hand.
+        if (HandWeapon(hero, weaponId) is { } picked && picked == off && off.Definition is { OffHandStrike: false } thrown)
+        {
+            return turn.StrikesUsed < MainStrikes(hero)
+                ? (Math.Max(0, stats.Weapon - (main?.Definition.Modifiers.Weapon ?? 0)) + thrown.Modifiers.Weapon + thrown.AttackBonus, thrown.Modifiers.WeaponDice)
+                : null;
+        }
+
+        if (mainReady && (main is not null || stats.Weapon > 0) && !(HandWeapon(hero, weaponId) is { } other && other == off))
         {
             CardDefinition? weapon = main?.Definition;
             return (Math.Max(0, stats.Weapon) + (weapon?.AttackBonus ?? 0) + Versatile(hero) + (weapon is { OffHandStrike: true } ? PairBonus(hero) : 0),

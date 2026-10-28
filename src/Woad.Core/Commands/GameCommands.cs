@@ -29,8 +29,9 @@ public sealed record GoThroughDoor(int HeroId, Direction Door) : GameCommand(Her
 /// plus the weapon's value if <paramref name="UseWeapon"/> and it isn't used yet this turn. The
 /// total must beat the monster's armor plus its defense roll. Steps left in the move stay usable afterwards.
 /// <paramref name="PowerDice"/> banked Power Dice are rolled in too (RollMovement takes them the same way).
+/// <paramref name="WeaponId"/> picks which weapon in hand to attack with (null: the main hand if it reaches, else the off hand).
 /// </summary>
-public sealed record AttackMonster(int HeroId, int MonsterId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0) : GameCommand(HeroId);
+public sealed record AttackMonster(int HeroId, int MonsterId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0, int? WeaponId = null) : GameCommand(HeroId);
 
 /// <summary>Roll a Power Die just earned (by a 6) into the pending attack or the move in progress.</summary>
 public sealed record AddPowerDie(int HeroId) : GameCommand(HeroId);
@@ -226,7 +227,7 @@ public sealed record Leap(int HeroId, GridPosition Target) : GameCommand(HeroId)
 /// With friendly fire on: attack another hero or companion in reach, exactly as you would a monster
 /// (Rumble dice and the weapon against their defense).
 /// </summary>
-public sealed record AttackAlly(int HeroId, int TargetId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0) : GameCommand(HeroId);
+public sealed record AttackAlly(int HeroId, int TargetId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0, int? WeaponId = null) : GameCommand(HeroId);
 
 /// <summary>Open the locked gate next to you (up, down, left or right) with a key. Free, like unlocking a door.</summary>
 public sealed record OpenGate(int HeroId, GridPosition Gate) : GameCommand(HeroId);

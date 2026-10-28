@@ -62,6 +62,7 @@ At level 1 a character may buy at most **2** extra Rumble, Defense and Od Hand d
 | Armor | Fixed value added to every defense | 0 | Gear only (shields, armor) |
 | Block | Added, all of it, to the first defense that's losing (before extra dice), then spent until your next turn | 0 | Gear only (shields) |
 | Luck | Rerolls of a single die, per floor | 0 | 1 per reroll |
+| Magic (pentacle) | A Power Dice bank slot and a basic spell per rank (see [Magic](#magic); planned) | 0 | 2 per rank |
 
 - **Creation:** name (1–16 letters, numbers, spaces, apostrophes or hyphens), look, crest, and 6 points to
   spend. Unspent points are kept for later. Each stat is shown with its symbol (a heart, boot, fist, shield, hamsa or clover);
@@ -170,7 +171,11 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
   stunned creature get **+1 per Stun and +3 per Powerful Stun**. Bosses can't be stunned.
 - **Boomerang:** a weapon for either hand. Thrown at a target within 4 (line of sight) with your Rumble
   dice +1 (in place of your main weapon's bonus); on a hit, every 6 rolled adds a Stun. In the off hand
-  it's used for targets your main weapon can't reach.
+  it's used for targets your main weapon can't reach, unless you pick it.
+- **Two weapons in hand** (a Spear and a Boomerang): pick which one you attack with by clicking it in your
+  hands, or with the weapon toggle at the end of the Rumble row (**Auto**, then each weapon). Auto uses the
+  main hand when it reaches, else the off hand. The attack range shows the picked weapon's reach, and
+  hovering a monster says what you'd hit it with.
 - **Prone monsters** (knocked flat by a blast): melee on them rolls an extra die, ranged attacks face an
   extra defense die, and getting up costs them 2 of their moves.
 - **Monster movement** is Wend dice worth a fixed 2 moves each (the last one 1, for an odd move), so a
@@ -374,6 +379,86 @@ of their own on top (a Flame Scroll aimed at bare floor sets it burning).
 Figures show their tokens as colored pips down their left side (with the count), a glow while they shine,
 ice over them while they freeze, a mound of earth while buried, and Black Hearts as purple heart pips.
 Typed dice show in their own colors in the dice bar.
+
+## Magic
+
+*Planned: agreed in discussion, not built yet. Built in three batches: (1) the Magic stat, casting and the
+plain attack spells; (2) learning scrolls and backfires; (3) ice, light and darkness, and the buff spells.*
+
+Magic is dangerous in this world, and people don't like it, for good reason.
+
+### The Magic stat
+
+- **Magic** (a pentacle) costs **2 points** a rank and starts at **0** for everyone, like Luck.
+- Each rank adds a **Power Dice bank slot** (3, then 4, 5...) and teaches **one basic spell**, picked from
+  the list below.
+- Companions can take Magic too, and cast their spells under the **Fight** order.
+
+### Casting
+
+- A spell costs **banked Power Dice**: 1 for a basic spell, 3 for one learned from a scroll. The Power is
+  spent, not rolled in.
+- **Upcasting:** each extra Power spent adds one more die of the spell's type, up to your Magic rank in
+  extra dice. At Magic 2, Hurl Fire is 1 to 3 Fire dice.
+- The attack is the spell's dice **plus your Magic rank**, against the target's defense and armor like
+  any attack. Its dice are typed (see Damage types): a 6 rolls another of its type in and, on a hit, lays
+  its effect.
+- Casting uses the turn's **Rumble action** (instead of attacking), once a turn.
+- Durations "equal to the dice" count every die rolled, including the extra ones from 6s.
+
+### Basic spells
+
+All cost **1 Power** and can be upcast.
+
+| Spell | Range | Dice | What it does |
+| --- | --- | --- | --- |
+| Shooting Star | 8 | 1 Star | A 6 surges with Power |
+| Hurl Fire | 6 | 1 Fire | |
+| Poison Mist | 2, every creature in a straight line | 1 Poison, +1 per Poison token on you | Throws off every Poison token on you |
+| Icicle Arrow | 4 | 1 Ice | Or cast on the floor to lay ice (below) |
+| Acid Ball | 3 | 1 Acid | The same roll splashes one random creature beside the target, friend or foe |
+| Death Touch | 1 | 2 Necro | |
+| Squall Wave | 5 | 1 Squall | Your selected Rumble dice go into a shove roll against the target, on top of the Squall pushes |
+| Shining Light | 6, ignores line of sight | 1 Radiate | Or cast on yourself or an ally for the Shining Light buff (below) |
+| Lifeforce | 3 | 1 Life | Or cast on yourself or an ally beside you: plants grow under them and they heal a heart per 6 |
+| Quake | Every enemy beside you | 1 Earth, +1 against targets on rubble | |
+| Elektrobolt | 5 | 1 Elektrik | Each 6 jumps the same roll to another monster beside the target (like the Great Axe's cleave) |
+| Swirly Eyes | 3 | 1 Psycho | On a hit, you move the target 1 tile of your choice at once (into a pit or onto a trap, too) |
+| Shadowbind | 6, ignores line of sight | 1 Shadow, +1 against targets in darkness | Or cast on yourself to become invisible (below) |
+
+- **Icicle Arrow on the floor:** the **total** rolled is how many ice patches you lay, on tiles within
+  range (occupied ones too; over water they freeze it over). Choosing a tile that's already icy with
+  yourself or an ally on it gives them **Snowshoes** instead: they walk on ice like floor. Patches and
+  Snowshoes last **1 round per Ice die rolled**. Rolling 2 dice for a 2 and a 3 makes up to 5 patches, or
+  3 patches and 2 Snowshoes, all lasting 2 rounds.
+- **Ice** is slippery: stepping onto a patch without Snowshoes slides you one more tile the same way.
+- **Shining Light buff:** for 1 round per Radiate die rolled, the target gives off light, has **+1
+  Defense, +1 more per 6**, and rolls an extra die on Search (like a torch).
+- **Shadowbind buff:** invisible for 1 round per Shadow die rolled: monsters can't target you and lose
+  track of you. Attacking, casting, or using an item other than lockpicks or keys ends it early.
+
+### Learning scrolls
+
+- Any spell scroll can be learned as a spell (the Flame Scroll teaches **Flame Blast**, which works just
+  like the scroll and costs 3 Power to cast). Learning it uses up the scroll.
+- The attempt is an **Od Hand roll plus your Magic rank** against **6 + the spell's level** (the Flame
+  Scroll is level 3: 9). It can be tried anywhere: in a dungeon or a fight it takes your Od Hand action.
+- **Backfire:** a failed attempt uses up the scroll too, and casts it **centered on you**: it hits you and
+  everything on the 8 tiles around you, friend and foe, each defending against the same roll, whether or
+  not friendly fire is on.
+
+### Light and darkness
+
+- Some rooms are **dark**. In a dark room a tile is **in darkness** unless it's within 2 tiles of a light:
+  a held torch, fire burning on a tile, a burning or fiery creature (Cinder Imps, Fire Beetles), a lit
+  **brazier**, or a Shining Light.
+- **Braziers** stand in some rooms, unlit; a torch (held beside one, or by attacking it) or any fire
+  lights them.
+- Monsters in darkness are hard to make out: ranged attacks on them take **-1**.
+
+### Related changes
+
+- **Friendly fire** is on by default for new games (the party screen's switch still turns it off).
 
 ## Od Hand
 
@@ -701,7 +786,8 @@ them up there like any character.
   - **Follow** (the default): stays within 2 steps of you, through doors and down the stairs, attacks
     what comes within reach and goes after monsters closing in on you.
   - **Hold:** stays on the tile it stood on when told, attacking what comes within reach.
-  - **Fight:** goes after the monsters in the room; follows you once it's clear.
+  - **Fight:** goes after the monsters in the room; follows you once it's clear. With a bow or a thrown
+    weapon it hangs back where it can shoot, away from the monsters if it can, rather than closing in.
   - **Stay back:** keeps away from monsters near you, striking only when one is right next to it.
   - **Tend:** goes to allies Keeling Over in the room, even mid-fight, and rouses them; otherwise follows.
   - **Find me:** follows you wherever you are, through locked doors too (a key, or picking the lock;

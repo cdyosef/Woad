@@ -29,11 +29,11 @@ public partial class GameScreen
 
         if (room.MonsterAt(tile) is { } monster)
         {
-            Execute(new AttackMonster(hero.Id, monster.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
+            Execute(new AttackMonster(hero.Id, monster.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice, ReadiedWeaponId));
         }
         else if (_session.GetAttackableAllies().FirstOrDefault(ally => ally.Position == tile) is { } ally)
         {
-            Execute(new AttackAlly(hero.Id, ally.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
+            Execute(new AttackAlly(hero.Id, ally.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice, ReadiedWeaponId));
         }
         else if (room.BombAt(tile) is { } bomb)
         {
@@ -150,7 +150,7 @@ public partial class GameScreen
         Hero hero = ActiveHero!;
         IReadOnlyDictionary<GridPosition, int> reachable = _session.GetReachableTiles();
         return reachable.Keys.Append(hero.Position)
-            .Where(tile => GameSession.CanHeroReach(hero, room.Layout, tile, target))
+            .Where(tile => GameSession.CanHeroReach(hero, room.Layout, tile, target, ReadiedWeapon))
             .OrderBy(tile => tile == hero.Position ? 0 : reachable[tile])
             .ThenBy(tile => tile.ManhattanDistanceTo(target))
             .Select(tile => (GridPosition?)tile)
@@ -552,7 +552,7 @@ public partial class GameScreen
             string burning = monster.FireDice > 0 ? $" ON FIRE ({monster.FireDice} {(monster.FireDice == 1 ? "die" : "dice")})." : "";
             string plants = room.Plants.TryGetValue(tile, out bool heroes) ? heroes ? " In the party's plants (+1 defense to them, rough going for it)." : " In its side's plants (+1 defense)." : "";
             return $"{definition.Name}: {monster.Hearts}/{monster.MaxHearts} hearts{power}, move {definition.Move}, " +
-                   $"attack {UiTheme.Dice(definition.AttackDice, definition.Weapon)}, defense {UiTheme.Dice(definition.DefenseDice, definition.Armor)}{Traits(monster)}{burning}{plants}";
+                   $"attack {UiTheme.Dice(definition.AttackDice, definition.Weapon)}, defense {UiTheme.Dice(definition.DefenseDice, definition.Armor)}{Traits(monster)}{burning}{plants}{HitWith(monster)}";
         }
 
         if (_session.State.ActiveHeroesIn(room).FirstOrDefault(hero => hero.Position == tile) is { } standing)
@@ -825,11 +825,66 @@ public partial class GameScreen
         return traits.Count == 0 ? "" : $" ({string.Join(", ", traits)})";
     }
 
+    /// <summary>
+    /// The weapon each hero holding two (a Spear and a Boomerang) has readied for their attacks, by a click on
+    /// it in hand or on the Rumble row's toggle. Not there: the rules pick (the main hand if it reaches, else the off hand).
+    /// </summary>
+    private readonly Dictionary<int, int> _readied = [];
+
+    private CardInstance? ReadiedWeapon =>
+        ActiveHero is { } hero && _readied.TryGetValue(hero.Id, out int id) && GameSession.HandWeapons(hero) is { Count: > 1 } weapons
+            ? weapons.FirstOrDefault(card => card.Id == id)
+            : null;
+
+    private int? ReadiedWeaponId => ReadiedWeapon?.Id;
+
+    /// <summary>The Rumble row's toggle: Auto, then each weapon in hand in turn.</summary>
+    private void SwapWeapon()
+    {
+        if (Locked || ActiveHero is not { } hero || GameSession.HandWeapons(hero) is not { Count: > 1 } weapons)
+        {
+            return;
+        }
+
+        int next = ReadiedWeapon is { } current ? weapons.ToList().IndexOf(current) + 1 : 0;
+        if (next < weapons.Count)
+        {
+            ReadyWeapon(hero, weapons[next]);
+        }
+        else
+        {
+            _readied.Remove(hero.Id);
+            Log($"{hero.Name} attacks with whichever weapon reaches: the main hand first.", Palette.TrimBright);
+        }
+
+        RefreshPanels();
+    }
+
+    private void ReadyWeapon(Hero hero, CardInstance weapon)
+    {
+        _readied[hero.Id] = weapon.Id;
+        Log($"{hero.Name} readies the {weapon.Definition.Name}: their attacks use it.", Palette.TrimBright);
+    }
+
+    /// <summary>For the hover text: what the active hero would hit the monster with from where they stand.</summary>
+    private string HitWith(Monster monster) =>
+        !Locked && ActiveHero is { IsCompanion: false } hero && hero.RoomId == _shownRoomId
+        && _session.WeaponAgainst(monster, ReadiedWeaponId) is { Weapon: { } weapon, Bonus: var bonus }
+            ? $" You'd hit it with your {weapon.Definition.Name}{(bonus > 0 ? $" (+{bonus})" : "")}."
+            : "";
+
     private void SelectCard(int cardId)
     {
         if (Locked)
         {
             return;
+        }
+
+        // One of two weapons in hand: clicking it readies it for attacks.
+        if (_selectedCardId != cardId && ActiveHero is { } holder && GameSession.HandWeapons(holder) is { Count: > 1 } weapons
+            && weapons.FirstOrDefault(card => card.Id == cardId) is { } weapon)
+        {
+            ReadyWeapon(holder, weapon);
         }
 
         _selectedCardId = _selectedCardId == cardId ? null : cardId;

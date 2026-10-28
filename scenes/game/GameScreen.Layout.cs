@@ -232,9 +232,9 @@ public partial class GameScreen
     /// <summary>What Rumble can strike from where the active hero stands: monsters, bombs and (with friendly fire on) allies.</summary>
     private List<GridPosition> RumbleTargets(Room room) =>
     [
-        .. _session.GetAttackableMonsters().SelectMany(monster => monster.Tiles),
+        .. _session.GetAttackableMonsters(ReadiedWeaponId).SelectMany(monster => monster.Tiles),
         .. _session.GetAttackableMerchants().Select(merchant => merchant.Position),
-        .. _session.GetAttackableAllies().Select(ally => ally.Position),
+        .. _session.GetAttackableAllies(ReadiedWeaponId).Select(ally => ally.Position),
         .. room.Bombs.Where(bomb => _session.CheckAttackBomb(bomb.Id) is null).Select(bomb => bomb.Position),
     ];
 
@@ -269,7 +269,7 @@ public partial class GameScreen
         if (_rumbling)
         {
             List<GridPosition> reach = room.Positions
-                .Where(tile => tile != hero.Position && GameSession.CanHeroReach(hero, room.Layout, hero.Position, tile))
+                .Where(tile => tile != hero.Position && GameSession.CanHeroReach(hero, room.Layout, hero.Position, tile, ReadiedWeapon))
                 .ToList();
             _board.SetHighlights([], RumbleTargets(room), [], [], range: reach);
             return;
@@ -303,7 +303,7 @@ public partial class GameScreen
         IReadOnlyCollection<GridPosition> reachable = _session.GetReachableTiles().Keys.ToList();
         _board.SetHighlights(
             reachable,
-            _session.GetAttackableMonsters().Select(monster => monster.Position).Concat(_session.GetAttackableAllies().Select(ally => ally.Position)),
+            _session.GetAttackableMonsters(ReadiedWeaponId).Select(monster => monster.Position).Concat(_session.GetAttackableAllies(ReadiedWeaponId).Select(ally => ally.Position)),
             [],
             interactive,
             hazards: reachable.Where(tile => room.Layout[tile] == TileKind.Pit || room.TrapAt(tile) is { Revealed: true }));
@@ -342,7 +342,7 @@ public partial class GameScreen
         DicePoolView pool = _heroPanel.Pool;
         pool.Enabled = enabled;
         TurnState? turn = _session.State.Turn;
-        int weapon = _session.WeaponBonusLeft;
+        int weapon = _session.WeaponBonusLeft(ReadiedWeaponId);
         int speed = _session.SpeedBonusLeft;
         string steps = turn?.MovementRoll is null ? "" : UiTheme.Count(turn.MovementPoints, "step", "steps") + " left";
         int tools = _session.ToolsBonusLeft;
@@ -358,7 +358,10 @@ public partial class GameScreen
             return;
         }
 
-        pool.ShowPool(DicePool.Rumble, _session.AttackDiceLeft, SelectedAttackDice, weapon, weapon > 0 && !_weaponHeld, bonusDice: _session.WeaponDiceLeft);
+        pool.ShowPool(DicePool.Rumble, _session.AttackDiceLeft, SelectedAttackDice, weapon, weapon > 0 && !_weaponHeld, bonusDice: _session.WeaponDiceLeft(ReadiedWeaponId));
+        bool twoWeapons = ActiveHero is { } armed && turn is not null && GameSession.HandWeapons(armed).Count > 1;
+        pool.ShowSwap(DicePool.Rumble, twoWeapons ? ReadiedWeapon?.Definition.Name ?? "Auto" : null,
+            "Which weapon you attack with: click to swap (or click it in your hands). Auto uses your main hand when it reaches, else your off hand.");
         pool.ShowPool(DicePool.Wend, _session.MoveDiceLeft, SelectedMoveDice, speed, speed < 0 || (speed > 0 && !_speedHeld), steps);
         pool.ShowPool(DicePool.OdHand, _session.OdHandDiceLeft, SelectedOdHandDice, tools, tools > 0 && !_toolsHeld, bonusDice: _session.ToolDiceLeft);
         pool.ShowPool(DicePool.Power, ActiveHero?.Power.Banked ?? 0, SelectedPowerDice, 0, false);
@@ -568,6 +571,7 @@ public partial class GameScreen
         _heroPanel = new HeroPanel();
         _heroPanel.CardSelected += SelectCard;
         _heroPanel.Pool.TokenClicked += OnPoolTokenClicked;
+        _heroPanel.Pool.SwapClicked += _ => SwapWeapon();
         AddChild(_heroPanel);
         _minimap = new MinimapView { Position = new Vector2(8, 266), Size = new Vector2(160, 90) };
         AddChild(_minimap);

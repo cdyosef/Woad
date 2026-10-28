@@ -81,6 +81,19 @@ public partial class GameScreen
             Check(bran.Equipment.GetValueOrDefault(EquipSlot.OffHand) == boomerang, "Equip puts the card in its slot");
             Check(bran.Backpack.Any(card => card.Definition.Id == "buckler"), "the old card goes to the backpack");
 
+            // Two weapons in hand: the Rumble row's toggle picks which one attacks, and so does a click on it in hand.
+            Check(ReadiedWeapon is null, "with two weapons in hand, the rules pick until the hero does");
+            _heroPanel.Pool.EmitSwap();
+            Check(ReadiedWeapon?.Definition.Id == "wooden_sword", "the Rumble row's toggle readies the main hand first");
+            _heroPanel.Pool.EmitSwap();
+            Check(ReadiedWeapon == boomerang, "then the off hand");
+            _heroPanel.Pool.EmitSwap();
+            Check(ReadiedWeapon is null, "then back to letting the rules pick");
+            CancelSelection();
+            await Click(this, _heroPanel.EquipmentSlot(EquipSlot.OffHand));
+            Check(ReadiedWeapon == boomerang, "clicking the Boomerang in hand readies it");
+            await Click(this, _heroPanel.EquipmentSlot(EquipSlot.OffHand));
+
             CardInstance buckler = bran.Backpack.Single(card => card.Definition.Id == "buckler");
             await Click(this, _inventory.BackpackSlot(bran.Backpack.ToList().IndexOf(buckler)));
             Button equip = _inventory.ActionButton(CardAction.Equip);
