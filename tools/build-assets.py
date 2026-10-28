@@ -2104,6 +2104,37 @@ def troll_theme():
     return song.samples
 
 
+ENCOUNTER_BEAT = [  # a busy fight beat: fills close each phrase, a crash opens the next
+    "c.h.s.h.k.h.s.h.", "k.h.s.h.k.hks.h.", "k.h.s.h.k.h.s.h.", "k.h.s.h.k.hks.ss",
+    "c.h.s.h.k.h.s.h.", "k.h.s.h.k.hks.h.", "k.h.s.h.k.h.s.h.", "k.hks.h.k.s.ssss",
+    "c.hhs.hhk.hhs.hh", "k.hhs.hhk.hhs.hh", "k.hhs.hhk.hks.hh", "k.k.s.k.s.s.ssss",
+    "c.h.s.h.k.h.s.h.", "k.h.s.h.k.hks.h.", "k.h.s.hkk.hks.h.", "k.k.s.k.k.ksssss",
+]
+
+
+def encounter_theme():
+    """A fight with the dungeon's monsters: E Phrygian dominant (E F G# A B C D), built from a
+    transcribed fight tune's hooks: a chromatic squirm, a snake-charmer line, an alarm run into
+    trills, and runs climbing back up."""
+    chords = ["E", "F", "E", "E", "A", "Dm", "F", "E", "B", "Am", "B", "E", "Am", "A", "F", "B"]
+    song = Song(bpm=152, beats=64)
+    melody = ("E5/0.5 D#5/0.5 D5/0.5 C#5/0.5 C#5/0.5 C5/0.5 C#5/0.5 C5/0.5 | C#5/0.5 D5/0.5 D#5/0.5 E5/0.5 C5/1 B4/1 |"  # the squirm
+              "E5/0.5 D#5/0.5 D5/0.5 C#5/0.5 C5/0.5 C#5/0.5 D#5/0.5 E5/0.5 | C#5/1 E5/1 B4/2 |"
+              "G5/0.5 G#5/0.5 C#6/1 E5/0.5 F5/0.5 G#5/0.5 A5/0.5 | F#5/0.5 C#6/0.5 D5/0.5 E5/0.5 A5/1 A#5/0.5 A5/0.5 |"  # the snake charmer
+              "G#5/0.5 F5/0.5 E5/1 F5/0.5 A5/0.5 G5/0.5 F5/0.5 | E5/0.5 D#5/0.5 E5/0.5 G#5/0.5 F5/1 E5/1 |"
+              "D#5/0.5 G#5/0.5 F#5/0.5 A5/0.5 B5/2 | C6/0.25 B5/0.25 C6/0.25 B5/0.25 C6/0.25 B5/0.25 C6/0.25 B5/0.25 C6/2 |"  # the alarm
+              "C#6/0.5 D#6/0.5 E6/1 D#6/0.25 E6/0.25 D#6/0.25 E6/0.25 E6/1 | E6/0.25 D#6/0.25 E6/0.25 D#6/0.25 E6/1 E5/0.5 F5/0.5 D#5/0.5 E5/0.5 |"
+              "C6/0.5 E5/0.5 C#5/0.5 G5/0.5 A5/0.5 B5/0.5 C6/0.5 D#6/0.5 | E6/2 C#6/0.5 B5/0.5 C6/0.5 D#6/0.5 |"  # climbing back
+              "A#5/0.5 F5/0.5 C6/0.5 D6/0.5 D#6/0.5 G5/0.5 G#5/0.5 D#6/0.5 | C6/0.5 D#5/0.5 E5/0.5 G5/0.5 G#5/0.5 E5/0.5 D#5/1")
+    song.voice(melody, pulse(0.5), 0.085, transpose=-12)
+    song.voice(melody, pulse(0.25), 0.04)  # the same line an octave up
+    song.arpeggio(chords, [0, 1, 2, 3] * 4, pulse(0.125), 0.025, step=0.25)
+    song.bass(chords, [(0, 0.5), (12, 0.5), (0, 0.5), (12, 0.5), (0, 0.5), (12, 0.5), (7, 0.5), (12, 0.5)], 0.2)
+    for bar, pattern in enumerate(ENCOUNTER_BEAT):
+        song.drum_bar(bar, pattern, 0.13)
+    return song.samples
+
+
 def victory_tune():
     """The results screen after someone escapes: a rising C major fanfare."""
     song = Song(bpm=132, beats=8, tail_seconds=0.8)
@@ -2132,6 +2163,7 @@ def build_music(directory):
         "boss": boss_theme(),
         "ogre": ogre_theme(),
         "troll": troll_theme(),
+        "encounter": encounter_theme(),
         "victory": victory_tune(),
         "defeat": defeat_tune(),
     }
