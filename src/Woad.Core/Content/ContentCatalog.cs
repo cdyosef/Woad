@@ -5,7 +5,7 @@ using Woad.Core.Grid;
 namespace Woad.Core.Content;
 
 /// <summary>
-/// Every card, monster and dungeon theme in the game. Loaded from JSON files embedded in
+/// Every card, monster, spell and dungeon theme in the game. Loaded from JSON files embedded in
 /// Woad.Core (Content/Data), so the game and a future server share the same definitions.
 /// </summary>
 public sealed class ContentCatalog
@@ -20,13 +20,16 @@ public sealed class ContentCatalog
     private readonly Dictionary<string, ThemeDefinition> _themes;
     private readonly Dictionary<char, MonsterDefinition> _monstersByGlyph;
     private readonly Dictionary<string, IReadOnlyList<ThemeRoom>> _themeRooms;
+    private readonly Dictionary<string, SpellDefinition> _spells;
 
     private ContentCatalog(
         IEnumerable<CardDefinition> cards,
         IEnumerable<MonsterDefinition> monsters,
         IEnumerable<ThemeDefinition> themes,
-        Dictionary<string, IReadOnlyList<ThemeRoom>> themeRooms)
+        Dictionary<string, IReadOnlyList<ThemeRoom>> themeRooms,
+        IEnumerable<SpellDefinition> spells)
     {
+        _spells = spells.ToDictionary(spell => spell.Id, StringComparer.Ordinal);
         _cards = cards.ToDictionary(card => card.Id, StringComparer.Ordinal);
         _monsters = monsters.ToDictionary(monster => monster.Id, StringComparer.Ordinal);
         _themes = themes.ToDictionary(theme => theme.Id, StringComparer.Ordinal);
@@ -40,15 +43,27 @@ public sealed class ContentCatalog
 
     public IReadOnlyDictionary<string, ThemeDefinition> Themes => _themes;
 
+    public IReadOnlyDictionary<string, SpellDefinition> Spells => _spells;
+
+    /// <summary>The spells a rank of Magic teaches one of, in the order they're listed.</summary>
+    public IEnumerable<SpellDefinition> BasicSpells => _spells.Values.Where(spell => spell.Basic);
+
+    public SpellDefinition GetSpell(string id) =>
+        _spells.TryGetValue(id, out SpellDefinition? spell) ? spell : throw new KeyNotFoundException($"Unknown spell '{id}'.");
+
+    public SpellDefinition? FindSpell(string id) => _spells.GetValueOrDefault(id);
+
     /// <summary>The content shipped with the game. Parsed once and cached.</summary>
     public static ContentCatalog LoadDefault() => Default.Value;
 
     /// <summary>Parses and validates content from JSON text.</summary>
     /// <exception cref="InvalidContentException">The JSON is malformed or breaks a content rule.</exception>
-    public static ContentCatalog Parse(string cardsJson, string monstersJson, IEnumerable<string> themesJson)
+    /// <param name="spellsJson">The spells; none when null.</param>
+    public static ContentCatalog Parse(string cardsJson, string monstersJson, IEnumerable<string> themesJson, string? spellsJson = null)
     {
         var errors = new List<string>();
         List<CardDefinition> cards = Deserialize<List<CardDefinition>>(cardsJson, "cards", errors) ?? [];
+        List<SpellDefinition> spells = spellsJson is null ? [] : Deserialize<List<SpellDefinition>>(spellsJson, "spells", errors) ?? [];
         List<MonsterDefinition> monsters = Deserialize<List<MonsterDefinition>>(monstersJson, "monsters", errors) ?? [];
         List<ThemeDefinition> themes = themesJson
             .Select((json, index) => Deserialize<ThemeDefinition>(json, $"theme #{index + 1}", errors))
@@ -59,6 +74,7 @@ public sealed class ContentCatalog
         if (errors.Count == 0)
         {
             Validate(cards, monsters, themes, errors);
+            ValidateSpells(spells, errors);
         }
 
         if (errors.Count == 0)
@@ -75,7 +91,7 @@ public sealed class ContentCatalog
             throw new InvalidContentException(errors);
         }
 
-        return new ContentCatalog(cards, monsters, themes, themeRooms);
+        return new ContentCatalog(cards, monsters, themes, themeRooms, spells);
     }
 
     /// <summary>The theme's room layouts, parsed and checked.</summary>
@@ -98,21 +114,39 @@ public sealed class ContentCatalog
 
     private static ContentCatalog LoadEmbedded()
     {
-        var assembly = typeof(ContentCatalog).Assembly;
-
-        string Read(string resourceName)
-        {
-            using Stream stream = assembly.GetManifestResourceStream(resourceName)
-                ?? throw new InvalidContentException([$"Missing embedded content file '{resourceName}'."]);
-            using var reader = new StreamReader(stream);
-            return reader.ReadToEnd();
-        }
-
-        IEnumerable<string> themeFiles = assembly.GetManifestResourceNames()
+        IEnumerable<string> themeFiles = typeof(ContentCatalog).Assembly.GetManifestResourceNames()
             .Where(name => name.StartsWith(ThemeResourcePrefix, StringComparison.Ordinal))
             .Order(StringComparer.Ordinal);
 
-        return Parse(Read(ResourcePrefix + "cards.json"), Read(ResourcePrefix + "monsters.json"), themeFiles.Select(Read));
+        return Parse(ReadEmbedded("cards.json"), ReadEmbedded("monsters.json"), themeFiles.Select(Read), ReadEmbedded("spells.json"));
+    }
+
+    /// <summary>One of the content files shipped with the game (Content/Data), by its name there.</summary>
+    internal static string ReadEmbedded(string file) => Read(ResourcePrefix + file);
+
+    private static string Read(string resourceName)
+    {
+        using Stream stream = typeof(ContentCatalog).Assembly.GetManifestResourceStream(resourceName)
+            ?? throw new InvalidContentException([$"Missing embedded content file '{resourceName}'."]);
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
+    }
+
+    private static void ValidateSpells(List<SpellDefinition> spells, List<string> errors)
+    {
+        ReportDuplicates(spells.Select(spell => spell.Id), "spell id", errors);
+        foreach (SpellDefinition spell in spells)
+        {
+            if (spell.Dice < 1 || spell.Cost < 1 || spell.Level < 1)
+            {
+                errors.Add($"Spell '{spell.Id}': its dice, cost and level must be at least 1.");
+            }
+
+            if (spell.Shape != SpellShape.Around && spell.Range < 1)
+            {
+                errors.Add($"Spell '{spell.Id}': an aimed spell needs a range of at least 1.");
+            }
+        }
     }
 
     private static T? Deserialize<T>(string json, string source, List<string> errors)

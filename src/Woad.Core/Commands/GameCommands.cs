@@ -33,6 +33,13 @@ public sealed record GoThroughDoor(int HeroId, Direction Door) : GameCommand(Her
 /// </summary>
 public sealed record AttackMonster(int HeroId, int MonsterId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0, int? WeaponId = null) : GameCommand(HeroId);
 
+/// <summary>
+/// Cast a spell the hero knows at <paramref name="Target"/> (nothing to aim for one that hits all around,
+/// like Quake). It costs its Power plus <paramref name="ExtraPower"/> more (a die each, up to the Magic
+/// rank) and the Rumble dice left this turn. Swirly Eyes moves a target it hits to <paramref name="MoveTo"/>.
+/// </summary>
+public sealed record CastSpell(int HeroId, string SpellId, GridPosition? Target = null, int ExtraPower = 0, GridPosition? MoveTo = null) : GameCommand(HeroId);
+
 /// <summary>Roll a Power Die just earned (by a 6) into the pending attack or the move in progress.</summary>
 public sealed record AddPowerDie(int HeroId) : GameCommand(HeroId);
 
@@ -61,8 +68,11 @@ public sealed record EquipCard(int HeroId, int CardId, EquipSlot? Hand = null) :
 /// <summary>Frees a chained merchant beside the hero with a key (their lock can be picked with <see cref="PickLock"/> instead).</summary>
 public sealed record FreeMerchant(int HeroId, int MerchantId) : GameCommand(HeroId);
 
-/// <summary>Spends a level's point on a stat, for yourself or a companion of yours (from the Party menu). Free.</summary>
-public sealed record SpendPoint(int HeroId, int TargetId, StatKind Stat) : GameCommand(HeroId);
+/// <summary>
+/// Spends a level's point on a stat, for yourself or a companion of yours (from the Party menu). Free.
+/// A rank of Magic teaches the basic spell <paramref name="SpellId"/>.
+/// </summary>
+public sealed record SpendPoint(int HeroId, int TargetId, StatKind Stat, string? SpellId = null) : GameCommand(HeroId);
 
 /// <summary>Sets how a companion of yours manages its things on its turns (from the Party menu). Free.</summary>
 public sealed record SetCompanionPolicy(int HeroId, int CompanionId, CompanionPolicy Policy) : GameCommand(HeroId);

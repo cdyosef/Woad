@@ -58,8 +58,7 @@ public partial class GameScreen
         IReadOnlyList<Hero> companions = ActiveHero is { IsCompanion: false } owner ? _session.CompanionsOf(owner) : [];
         _orders.Visible = companions.Count > 0;
         _orders.Disabled = Locked;
-        _endTurn.Position = new Vector2(_orders.Visible ? 64 : 8, 329);
-        _endTurn.Size = new Vector2(_orders.Visible ? 104 : 160, 22);
+        LayoutEndTurnRow();
 
         _showingOrders &= _orders.Visible;
         _ordersPanel.Visible = _showingOrders && !Locked;

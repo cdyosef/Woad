@@ -106,7 +106,8 @@ public partial class HeroPanel : Panel
         _stats.Text = $"{UiTheme.Icon("icon_rumble", "Rumble")} {UiTheme.Dice(stats.AttackDice, stats.Weapon)}{weaponDice}  " +
                       $"{UiTheme.Icon("icon_wend", "Wend")} {UiTheme.Dice(stats.MoveDice, stats.Speed)}  " +
                       $"{UiTheme.Icon("icon_odhand", "Od Hand")} {UiTheme.Dice(stats.OdHandDice, 0)}{toolDice}\n" +
-                      $"{UiTheme.Icon("icon_defense", "Defense")} {DefenseText(hero, stats)}   {UiTheme.Icon("icon_luck", "Luck")} {hero.LuckRemaining}/{stats.Luck}";
+                      $"{UiTheme.Icon("icon_defense", "Defense")} {DefenseText(hero, stats)}   {UiTheme.Icon("icon_luck", "Luck")} {hero.LuckRemaining}/{stats.Luck}" +
+                      (stats.Magic > 0 ? $"   {UiTheme.Icon("icon_magic", "Magic")} {stats.Magic}" : "");
         // Gold, the treasure carried (what escaping now is worth on top), and keys, together on one line.
         string dim = Palette.Hex(Palette.TextDim);
         int treasure = hero.TreasureValue - hero.Gold;

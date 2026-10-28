@@ -228,7 +228,8 @@ public sealed partial class GameSession
     /// <param name="typed">Typed dice rolled in (a spell's, a torch's fire die): see <see cref="RollTypedDice"/>.</param>
     /// <param name="torches">Torches lighting the attack (their fire dice are among <paramref name="typed"/>): a 1 anywhere burns one out.</param>
     /// <param name="chill">Stacks of Freeze laid on every target, hit or miss.</param>
-    private void RollHeroAttack(Hero hero, int dice, int bonus, IReadOnlyList<int> targetIds, DamageSource source, List<GameEvent> events, int powerDice = 0, bool stunOnSix = false, int weaponDice = 0, CardDefinition? weapon = null, IReadOnlyList<(DieType Type, int Dice)>? typed = null, int torches = 0, int chill = 0)
+    /// <param name="casting">The spell this casts, if it's a spell.</param>
+    private void RollHeroAttack(Hero hero, int dice, int bonus, IReadOnlyList<int> targetIds, DamageSource source, List<GameEvent> events, int powerDice = 0, bool stunOnSix = false, int weaponDice = 0, CardDefinition? weapon = null, IReadOnlyList<(DieType Type, int Dice)>? typed = null, int torches = 0, int chill = 0, SpellCasting? casting = null)
     {
         dice = Math.Max(0, dice);
         bonus -= AttackPenalty(hero.Conditions);
@@ -250,6 +251,7 @@ public sealed partial class GameSession
             Torches = torches,
             DieTypes = dieTypes,
             Chill = chill,
+            Casting = casting,
         };
         SurgePowerDice(hero, StarSixes(roll, dieTypes), events);
         EarnPowerDice(hero, Sixes(rolled.Faces), events);
@@ -266,8 +268,18 @@ public sealed partial class GameSession
         Dictionary<DieType, int> sixes = TypedSixes(attack.Roll, attack.DieTypes);
         int stuns = attack.StunOnSix ? Sixes(attack.Roll.Faces) : 0;
         int fireDice = attack.DieTypes.Count(type => type == DieType.Fire);
+        List<int> hit = [];
         foreach (int targetId in attack.TargetIds)
         {
+            // A spell's extra dice against this target (Quake's on rubble) add to its total and sixes.
+            int total = attack.Total;
+            Dictionary<DieType, int> laid = sixes;
+            if (attack.Casting?.Extra.GetValueOrDefault(targetId) is { Total: > 0 } extra)
+            {
+                total += extra.Total;
+                laid = new Dictionary<DieType, int>(sixes) { [attack.Casting.Spell.DieType] = sixes.GetValueOrDefault(attack.Casting.Spell.DieType) + extra.Sixes };
+            }
+
             if (room.FindMonster(targetId) is { } monster)
             {
                 Thaw(monster.Conditions, monster.Id, fireDice, events);
@@ -278,30 +290,33 @@ public sealed partial class GameSession
                 }
 
                 // On a hit, the typed dice take hold, and a stunning weapon's sixes stun.
-                if (DamageMonster(hero, room, monster, attack.Total, attack.Source, events, ranged: monster.NearestTile(hero.Position).ChebyshevDistanceTo(hero.Position) > 1, crush: attack.Weapon?.Crush ?? false) > 0)
+                if (DamageMonster(hero, room, monster, total, attack.Source, events, ranged: monster.NearestTile(hero.Position).ChebyshevDistanceTo(hero.Position) > 1, crush: attack.Weapon?.Crush ?? false) > 0)
                 {
-                    LayTypedDice(room, monster, sixes, hero.Id, hero.Position, hero, events);
+                    hit.Add(targetId);
+                    LayTypedDice(room, monster, laid, hero.Id, hero.Position, hero, events);
                     Stun(room, monster, powerful: false, stuns, hero, events);
-                    NecroKill(room, monster, sixes, hero, events);
+                    NecroKill(room, monster, laid, hero, events);
                 }
             }
             else if (State.ActiveHeroesIn(room).FirstOrDefault(ally => ally.Id == targetId) is { } ally)
             {
                 Thaw(ally.Conditions, ally.Id, fireDice, events);
                 AddCondition(ally.Conditions, ally.Id, Condition.Freeze, attack.Chill, hero.Id, events);
-                if (DamageHero(room, ally, attack.Total, AllyBane(hero, attack.Source), hero.Id, events, ranged: ally.Position.ChebyshevDistanceTo(hero.Position) > 1) > 0)
+                if (DamageHero(room, ally, total, AllyBane(hero, attack.Source), hero.Id, events, ranged: ally.Position.ChebyshevDistanceTo(hero.Position) > 1) > 0)
                 {
-                    LayTypedDice(room, ally, sixes, hero.Id, hero.Position, events);
+                    hit.Add(targetId);
+                    LayTypedDice(room, ally, laid, hero.Id, hero.Position, events);
                     Stun(ally, powerful: false, stuns, events);
                 }
             }
             else if (room.FindMerchant(targetId) is { } merchant)
             {
-                DamageMerchant(hero.Id, hero, room, merchant, attack.Total, events);
+                DamageMerchant(hero.Id, hero, room, merchant, total, events);
             }
         }
 
         WeaponAftermath(hero, room, attack, events);
+        SpellAftermath(hero, room, attack, hit, events);
 
         // Any 1 in a torch-lit attack burns one of the torches out.
         if (attack.Torches > 0 && attack.Roll.Faces.Contains(1) && hero.EquippedCards.LastOrDefault(card => card.Definition.Torch) is { } torch)

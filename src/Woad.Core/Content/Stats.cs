@@ -50,6 +50,9 @@ public sealed record Stats
     /// <summary>Rerolls of a single die, per floor.</summary>
     public int Luck { get; init; }
 
+    /// <summary>Rank in Magic: a Power Dice bank slot and a basic spell for each, and a bonus on spells cast.</summary>
+    public int Magic { get; init; }
+
     /// <summary>
     /// A shield's Block: added, all of it, to the first defense that's losing, then spent until the
     /// start of the hero's next turn. Goes in before extra Defense dice.
@@ -77,6 +80,7 @@ public sealed record Stats
         ToolDice = left.ToolDice + right.ToolDice,
         WeaponDice = left.WeaponDice + right.WeaponDice,
         Luck = left.Luck + right.Luck,
+        Magic = left.Magic + right.Magic,
         Block = left.Block + right.Block,
         GuardDice = left.GuardDice + right.GuardDice,
     };

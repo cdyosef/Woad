@@ -47,11 +47,11 @@ public partial class Main
             await Click(this, editor.StyleButton(1, next: true));
             await Click(this, editor.StyleButton(3, next: false));
             Check(editor.Appearance is { Look: "ranger", Main: "ember", Skin: "deep" }, "the arrows pick the look, main color and skin");
-            string[] headings = ["HEARTS", "WEND", "RUMBLE", "DEFENSE", "OD HAND", "LUCK"];
+            string[] headings = ["HEARTS", "WEND", "RUMBLE", "DEFENSE", "OD HAND", "LUCK", "MAGIC"];
             bool explained = true;
             for (int row = 0; row < headings.Length; row++)
             {
-                Vector2 statName = editor.GetGlobalRect().Position + new Vector2(30, 164 + row * 21 + 8);
+                Vector2 statName = editor.GetGlobalRect().Position + new Vector2(30, 164 + row * 19 + 8);
                 GetViewport().PushInput(new InputEventMouseMotion { Position = statName, GlobalPosition = statName }, inLocalCoords: true);
                 await NextFrame(this);
                 explained &= editor.PreviewText.StartsWith(headings[row]);
@@ -64,6 +64,13 @@ public partial class Main
             GetViewport().PushInput(new InputEventMouseMotion { Position = new Vector2(600, 20), GlobalPosition = new Vector2(600, 20) }, inLocalCoords: true);
             await NextFrame(this);
             Check(!editor.PreviewText.StartsWith("LUCK"),"and moving away brings back the summary");
+            // A rank of Magic asks which basic spell it teaches; taking it back forgets the spell.
+            await Click(this, editor.PlusButton(StatKind.Magic));
+            Check(editor.SpellPicker.Visible && editor.SpellPicker.ButtonFor("hurl_fire") is not null, "raising Magic asks for a basic spell");
+            await Click(this, editor.SpellPicker.ButtonFor("hurl_fire")!);
+            Check(editor.PointsLeft == 4 && editor.PreviewText.Contains("Hurl Fire"), "picking one buys the rank (2 points) and shows the spell");
+            await Click(this, editor.MinusButton(StatKind.Magic));
+            Check(editor.PointsLeft == 6 && !editor.PreviewText.Contains("Hurl Fire"), "taking the rank back forgets the spell");
             await Click(this, editor.PlusButton(StatKind.Hearts));
             await Click(this, editor.PlusButton(StatKind.Hearts));
             await Click(this, editor.PlusButton(StatKind.AttackDice));
@@ -153,8 +160,11 @@ public partial class Main
             await Click(this, setup.RosterRow(2));
             await Click(this, setup.RosterRow(0));
             Check(setup.PartySize == 3, "clicking characters seats them");
+            Check(setup.FriendlyFire && setup.FriendlyFireButton.Text.EndsWith("on"), "friendly fire starts on");
             await Click(this, setup.FriendlyFireButton);
-            Check(setup.FriendlyFire && setup.FriendlyFireButton.Text.EndsWith("on"), "the Friendly fire button turns it on");
+            Check(!setup.FriendlyFire && setup.FriendlyFireButton.Text.EndsWith("off"), "the Friendly fire button turns it off");
+            await Click(this, setup.FriendlyFireButton);
+            Check(setup.FriendlyFire, "and back on");
             Check(setup.ThemeId == "emerald_keep" && setup.DungeonLabel.Text.EndsWith("The Emerald Keep"), "and back to the list for the Emerald Keep");
 
             await Click(this, setup.StartButton);

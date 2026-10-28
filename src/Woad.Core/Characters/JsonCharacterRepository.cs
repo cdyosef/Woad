@@ -97,6 +97,7 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
         HasCowardsCloak = character.HasCowardsCloak,
         PowerDice = character.PowerDice,
         Policy = character.Policy,
+        Spells = [.. character.Spells],
     };
 
     /// <summary>Rebuilds a character, dropping cards that no longer exist in the game's content.</summary>
@@ -128,7 +129,26 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
         return new Character(
             file.Id, file.Name, file.Portrait, file.CreatedUtc, Math.Max(0, file.Xp), file.Allocation,
             Math.Max(0, file.UnspentPoints), Known(file.Equipped), Known(file.Belt), Known(file.Backpack),
-            Math.Max(0, file.Gold), Math.Max(0, file.RunsPlayed), Math.Max(0, file.Wins), file.IsCompanion, file.Appearance, file.GuildStanding, file.LawStanding, file.CowardStanding, file.HasCowardsCloak, file.PowerDice, file.Policy);
+            Math.Max(0, file.Gold), Math.Max(0, file.RunsPlayed), Math.Max(0, file.Wins), file.IsCompanion, file.Appearance, file.GuildStanding, file.LawStanding, file.CowardStanding, file.HasCowardsCloak, file.PowerDice, file.Policy,
+            KnownSpells(file.Spells));
+
+        List<string> KnownSpells(IEnumerable<string> spellIds)
+        {
+            var known = new List<string>();
+            foreach (string spellId in spellIds)
+            {
+                if (content.FindSpell(spellId) is not null)
+                {
+                    known.Add(spellId);
+                }
+                else
+                {
+                    problems.Add($"{fileName}: dropped unknown spell '{spellId}' from {file.Name}.");
+                }
+            }
+
+            return known;
+        }
     }
 
     /// <summary>The on-disk shape of a character, kept separate so the model can change without breaking saves.</summary>
@@ -180,6 +200,9 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
 
         /// <summary>Missing in files saved before companion policies: the default.</summary>
         public CompanionPolicy? Policy { get; init; }
+
+        /// <summary>Missing in files saved before Magic: none.</summary>
+        public List<string> Spells { get; init; } = [];
 
         public bool HasCowardsCloak { get; init; }
     }

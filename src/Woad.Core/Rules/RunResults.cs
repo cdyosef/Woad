@@ -42,6 +42,9 @@ public sealed record HeroRunResult
     /// <summary>The points bought by the end of the run (counting any spent in it); null for a debug hero.</summary>
     public StatAllocation? Allocation { get; init; }
 
+    /// <summary>The spells they know by the end of the run (counting any learned in it); null for a debug hero.</summary>
+    public IReadOnlyList<string>? Spells { get; init; }
+
     /// <summary>The companion policy it ended the run with.</summary>
     public CompanionPolicy? Policy { get; init; }
 
@@ -102,6 +105,7 @@ public static class RunResults
             PowerDice = hero.Power.Banked,
             Retreated = state.RetreatedIds.Contains(hero.Id),
             Allocation = hero.Allocation,
+            Spells = hero.Allocation is null ? null : [.. hero.Spells.Select(spell => spell.Id)],
             Policy = hero.Policy,
             Epitaph = hero.Status == HeroStatus.Dead ? hero.Bane : null,
             GuildStandingChange = hero.GuildStandingChange,
