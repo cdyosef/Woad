@@ -42,6 +42,9 @@ public partial class GameScreen
     private Button _flyOn = null!;
     private Button _retreat = null!;
 
+    /// <summary>The worn Icarus Wings were clicked: Land. or Fly! is up.</summary>
+    private bool _wingsChoice;
+
     /// <summary>Retreat was clicked once: the next click on it runs for it.</summary>
     private bool _confirmingRetreat;
     private Button _rumble = null!;
@@ -173,9 +176,16 @@ public partial class GameScreen
         // and the Power Die buttons go while a roll waits.
         bool waiting = turn?.PendingRoll is not null || choosingPower;
         // Out of flight on the Icarus Wings, the choice is all there is: Land, or Fly! again.
-        bool landing = !waiting && hero?.Aloft == true && _session.CheckLand() is null;
+        // Or clicking the wings asks it: Land. (on the ground, just stay there) or Fly!
+        _wingsChoice &= idle && !waiting && hero is not null && hero.EquippedCards.Any(card => card.Definition.Wings);
+        bool landing = !waiting && (_wingsChoice || (hero?.Aloft == true && _session.CheckLand() is null));
         _land.Visible = _flyOn.Visible = landing;
-        _land.Disabled = _flyOn.Disabled = Locked;
+        string? landError = hero?.Aloft == true ? _session.CheckLand() : null;
+        string? flyError = hero is null || turn is null ? "" : _session.CheckBeatWings();
+        _land.Disabled = Locked || landError is not null;
+        _flyOn.Disabled = Locked || flyError is not null;
+        _land.TooltipText = landError ?? (hero?.Aloft == true ? "Come down where you are. Over a pit, there's nothing to land on." : "Stay on the ground.");
+        _flyOn.TooltipText = flyError ?? "Beat the wings: a d6 of flight (a 6 rolls a Power Die in). A 1 breaks them, and down you come: prone, stunned, your Wend gone.";
         _rumble.Visible = _shove.Visible = _prone.Visible = _dropRoll.Visible = !waiting && !landing;
         _prone.Text = lying ? "Get up" : "Prone";
         string? proneError = hero is null || turn is null ? "" : lying ? _session.CheckGetUp() : _session.CheckGoProne();
@@ -595,7 +605,8 @@ public partial class GameScreen
         AddChild(new ColorRect { Color = Palette.Background, Size = new Vector2(640, 360), MouseFilter = MouseFilterEnum.Ignore });
 
         _heroPanel = new HeroPanel();
-        _heroPanel.CardSelected += SelectCard;
+        _heroPanel.CardSelected += ClickCard;
+        _heroPanel.CardInspected += SelectCard;
         _heroPanel.Pool.TokenClicked += OnPoolTokenClicked;
         _heroPanel.Pool.SwapClicked += _ => SwapWeapon();
         AddChild(_heroPanel);
@@ -725,11 +736,26 @@ public partial class GameScreen
         right.AddChild(_bankPower);
         _land = UiTheme.Accent(UiTheme.Button(new Vector2(8, 336), new Vector2(78, 18), "Land."), Palette.DieWend);
         _land.TooltipText = "Come down where you are. Over a pit, there's nothing to land on.";
-        _land.Pressed += () => ExecuteForActiveHero(heroId => new Land(heroId));
+        _land.Pressed += () =>
+        {
+            _wingsChoice = false;
+            if (ActiveHero?.Aloft == true)
+            {
+                ExecuteForActiveHero(heroId => new Land(heroId));
+            }
+            else
+            {
+                RefreshPanels();
+            }
+        };
         right.AddChild(_land);
         _flyOn = UiTheme.Accent(UiTheme.Button(new Vector2(90, 336), new Vector2(78, 18), "Fly!"), Palette.TrimBright);
         _flyOn.TooltipText = "Beat the wings again: a d6 more of flight (a 6 rolls a Power Die in). A 1 breaks them, and down you come: prone, stunned, your Wend gone.";
-        _flyOn.Pressed += () => ExecuteForActiveHero(heroId => new BeatWings(heroId));
+        _flyOn.Pressed += () =>
+        {
+            _wingsChoice = false;
+            ExecuteForActiveHero(heroId => new BeatWings(heroId));
+        };
         right.AddChild(_flyOn);
 
         _rumble = UiTheme.Accent(UiTheme.CompactButton(new Vector2(8, 279), new Vector2(52, 20), "Rumble"), Palette.DieRumble);
