@@ -53,6 +53,7 @@ public partial class GameScreen
                 Shining = hero.ShiningRounds > 0,
                 Shadowbound = hero.ShadowboundRounds > 0,
                 Snowshoes = hero.SnowshoesRounds > 0,
+                Aloft = hero.Aloft,
             };
         }
 
@@ -144,6 +145,7 @@ public partial class GameScreen
         token.Shining = figure.Shining;
         token.Shadowbound = figure.Shadowbound;
         token.Snowshoes = figure.Snowshoes;
+        token.Aloft = figure.Aloft;
         token.Active = figure.Id == TurnOnShow?.Id;
         // The active hero (and the arrow over their head) is drawn over their neighbors.
         token.ZIndex = figure.Id == TurnOnShow?.Id ? 1 : 0;
@@ -482,5 +484,8 @@ public partial class GameScreen
         public bool Shadowbound { get; set; }
 
         public bool Snowshoes { get; set; }
+
+        /// <summary>Up on the Icarus Wings.</summary>
+        public bool Aloft { get; set; }
     }
 }

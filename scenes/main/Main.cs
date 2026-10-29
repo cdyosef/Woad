@@ -168,6 +168,10 @@ public partial class Main : Control
         {
             Show(new GameScreen { Setup = DemoRun.Terrain(seed), Content = _content });
         }
+        else if (args.Contains("--wingstest"))
+        {
+            Show(new GameScreen { Setup = DemoRun.Wings(seed), Content = _content });
+        }
         else if (args.Contains("--dietypetest"))
         {
             Show(new GameScreen { Setup = DemoRun.Elements(seed), Content = _content });

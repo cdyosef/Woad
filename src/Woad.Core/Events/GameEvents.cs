@@ -97,6 +97,9 @@ public sealed record AttackRolled(int AttackerId, DiceRoll Roll, int Bonus, int 
 
     /// <summary>A flung chain (the Iron Warden's), which drags and shackles whoever it hits.</summary>
     public bool Chain { get; init; }
+
+    /// <summary>A hero's weapon swung or shot (its card id), for how the attack looks; null bare-handed or for a spell.</summary>
+    public string? WeaponId { get; init; }
 }
 
 /// <summary>A tool's or weapon's die came up 6: that many more dice rolled straight into the roll (as Power Dice).</summary>

@@ -76,6 +76,13 @@ public partial class Music : Node
         _instance.FadeTo(null);
     }
 
+    /// <summary>Cuts the music dead, mid-note (the Icarus Wings breaking).</summary>
+    public static void Cut()
+    {
+        Current = null;
+        _instance?.StopNow();
+    }
+
     /// <summary>Cuts the music off at once and lets go of it (see <see cref="Sfx.QuitGame"/>).</summary>
     internal static void Silence()
     {

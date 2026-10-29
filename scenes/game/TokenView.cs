@@ -123,6 +123,39 @@ public partial class TokenView : Node2D
 
     private bool _snowshoes;
 
+    /// <summary>
+    /// In the air on the Icarus Wings: lifted off the board over its shadow, wings flapping. It rises
+    /// and settles on its own; <see cref="Crash"/> drops it hard.
+    /// </summary>
+    public bool Aloft
+    {
+        set
+        {
+            if (value)
+            {
+                _crashing = false;
+            }
+
+            _aloft = value;
+            QueueRedraw();
+        }
+    }
+
+    /// <summary>The wings broke: no more wings, and down it comes, fast.</summary>
+    public void Crash()
+    {
+        _aloft = false;
+        _crashing = true;
+    }
+
+    /// <summary>How high it's lifted, in pixels, while it rises or comes down.</summary>
+    public float Lift => _lift;
+
+    private const float FlyingHeight = 11;
+    private bool _aloft;
+    private bool _crashing;
+    private float _lift;
+
     /// <summary>A merchant chained to the wall: a shackle and chain at their feet.</summary>
     public bool Chained
     {
@@ -175,6 +208,20 @@ public partial class TokenView : Node2D
 
     public override void _Process(double delta)
     {
+        // Rising into the air, gliding down to land, or plummeting with broken wings.
+        float height = _aloft ? FlyingHeight : 0;
+        if (_lift != height || _aloft)
+        {
+            float speed = _aloft ? 36 : _crashing ? 150 : 30;
+            _lift = Mathf.MoveToward(_lift, height, speed * (float)delta);
+            if (!_torch && !_active)
+            {
+                _time += (float)delta;
+            }
+
+            QueueRedraw();
+        }
+
         if (_torch && !_active)
         {
             _time += (float)delta;
@@ -322,9 +369,10 @@ public partial class TokenView : Node2D
             return;
         }
 
-        // A shadow under the feet; the active hero's glows gold.
-        DrawSetTransform(new Vector2(BoardView.TileSize / 2f, 26), 0, new Vector2(1, 0.35f));
-        DrawCircle(Vector2.Zero, 11, _active ? Palette.TrimBright with { A = 0.85f } : new Color(0, 0, 0, 0.35f), antialiased: true);
+        // A shadow under the feet; the active hero's glows gold. Up in the air, it shrinks and pales.
+        float up = _lift / FlyingHeight;
+        DrawSetTransform(new Vector2(BoardView.TileSize / 2f, 26), 0, new Vector2(1 - 0.35f * up, 0.35f - 0.1f * up));
+        DrawCircle(Vector2.Zero, 11, _active ? Palette.TrimBright with { A = 0.85f - 0.4f * up } : new Color(0, 0, 0, 0.35f - 0.1f * up), antialiased: true);
         if (Look is not null)
         {
             DrawArc(Vector2.Zero, 11, 0, Mathf.Tau, 24, Fill, 2.5f, antialiased: true);
@@ -333,7 +381,13 @@ public partial class TokenView : Node2D
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
 
         float size = BoardView.TileSize * SpriteScale;
-        var rect = new Rect2((BoardView.TileSize - size) / 2, 27 - size, size, size);
+        float bob = _aloft ? 1.5f * Mathf.Sin(_time * 4) * up : 0;
+        var rect = new Rect2((BoardView.TileSize - size) / 2, 27 - size - _lift - bob, size, size);
+        if (_aloft)
+        {
+            DrawWings(rect);
+        }
+
         if (_collapsed && CollapsedBody is not null)
         {
             DrawTextureRect(CollapsedBody, rect, tile: false);
@@ -346,6 +400,28 @@ public partial class TokenView : Node2D
             // Under the surface: the water covers all but its top, with a ripple where it breaks.
             DrawRect(new Rect2(1, 13, BoardView.TileSize - 2, 14), Palette.DeepWater with { A = 0.8f });
             DrawLine(new Vector2(4, 13), new Vector2(BoardView.TileSize - 4, 13), Palette.Text with { A = 0.6f }, 1);
+        }
+    }
+
+    /// <summary>The Icarus Wings: a fan of white feathers either side of the back, beating.</summary>
+    private void DrawWings(Rect2 rect)
+    {
+        Color[] feathers = [Colors.White, new("f4eedc"), new("e6dcc2"), new("d6caa8"), new("c6b890")];
+        float flap = 0.5f * Mathf.Sin(_time * 11);
+        var back = new Vector2(rect.Position.X + rect.Size.X / 2, rect.Position.Y + rect.Size.Y * 0.5f);
+        foreach (float side in new[] { -1f, 1f })
+        {
+            // The outline first, so the feathers read against any floor, then the feathers over it.
+            for (int pass = 0; pass < 2; pass++)
+            {
+                for (int k = 0; k < feathers.Length; k++)
+                {
+                    float angle = side < 0 ? Mathf.Pi + 0.55f - k * 0.3f + flap : -0.55f + k * 0.3f - flap;
+                    Vector2 root = back + new Vector2(side * 3, -2);
+                    Vector2 tip = root + Vector2.FromAngle(angle) * (17 - k * 2);
+                    DrawLine(root, tip, pass == 0 ? Palette.Ink : feathers[k], pass == 0 ? 4.5f : 2.5f);
+                }
+            }
         }
     }
 

@@ -150,6 +150,10 @@ public partial class GameScreen : Control
         {
             RunTerrainTest();
         }
+        else if (args.Contains("--wingstest"))
+        {
+            RunWingsTest();
+        }
         else if (args.Contains("--companiontest"))
         {
             RunCompanionTest();
@@ -471,6 +475,7 @@ public partial class GameScreen : Control
                 break;
 
             case WingsBeat beat:
+                await TakeWing(beat.HeroId);
                 _trayShowsMovement = false;
                 CalloutOver(beat.HeroId, $"+{beat.Faces.Sum()} FLIGHT", Palette.TrimBright);
                 await _dice.ShowRoll($"{NameOf(beat.HeroId)} beats the Icarus Wings", new DiceRoll([.. beat.Faces]), 0, newGroup: true, beat.Faces.Count - 1, DiceKind.Wend);
@@ -481,7 +486,12 @@ public partial class GameScreen : Control
                 break;
 
             case WingsBroke broke:
-                CalloutOver(broke.HeroId, "WINGS BROKE!", Palette.Danger);
+                await BreakWings(broke.HeroId);
+                break;
+
+            case Landed landed:
+                await UpdateFigure(landed.HeroId, figure => figure.Aloft = false, 0.2);
+                UpdateMusic();
                 break;
 
             case MonsterSurged surged:
@@ -603,6 +613,7 @@ public partial class GameScreen : Control
 
             case SpellCast cast when Content.FindSpell(cast.SpellId) is { } spell:
                 _spellCaption = $"{NameOf(cast.HeroId)} casts {spell.Name}";
+                _castSpell = spell;
                 CalloutOver(cast.HeroId, spell.Name.ToUpperInvariant() + "!", DieTypes.Tint(spell.DieType));
                 RefreshPanels();
                 await Pause(0.3);
@@ -799,7 +810,7 @@ public partial class GameScreen : Control
             case AttackRolled attack:
                 _trayShowsMovement = false;
                 BeginStrike(attack.AttackerId, attack.Total, attack.Roll.Faces.TakeLast(attack.PowerDice).Sum());
-                await Lunge(attack.AttackerId, attack.TargetIds.FirstOrDefault());
+                await StrikeFx(attack);
                 await _dice.ShowRoll(_spellCaption ?? $"{NameOf(attack.AttackerId)} {(attack.Shove ? "shoves" : attack.Chain ? "flings its chain" : "attacks")}", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice, DiceKind.Rumble, types: attack.DieTypes);
                 _spellCaption = null;
                 // A hero's sixes get their own events; a monster's roll straight in, so call them out here.
@@ -1299,6 +1310,13 @@ public partial class GameScreen : Control
         if (state.Phase == RunPhase.Ended)
         {
             Music.Stop();
+            return;
+        }
+
+        // Up on the Icarus Wings, the music soars.
+        if (ActiveHero is { Aloft: true })
+        {
+            Music.Play("icarus");
             return;
         }
 

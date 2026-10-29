@@ -240,7 +240,7 @@ public sealed partial class GameSession
         (int[] typedFaces, DieType[] types) = RollTypedDice(typed ?? []);
         var roll = new DiceRoll([.. rolled.Faces.Take(dice), .. weaponFaces[..weaponDice], .. typedFaces, .. rolled.Faces.Skip(dice), .. weaponFaces[weaponDice..]]);
         DieType[] dieTypes = [.. Enumerable.Repeat(DieType.Plain, dice + weaponDice), .. types];
-        events.Add(new AttackRolled(hero.Id, roll, bonus, roll.Total + bonus, targetIds, powerDice + crits, source == DamageSource.Shove) { WeaponDice = weaponDice, DieTypes = dieTypes });
+        events.Add(new AttackRolled(hero.Id, roll, bonus, roll.Total + bonus, targetIds, powerDice + crits, source == DamageSource.Shove) { WeaponDice = weaponDice, DieTypes = dieTypes, WeaponId = casting is null ? weapon?.Id : null });
         if (crits > 0)
         {
             events.Add(new CritRolled(hero.Id, crits));
