@@ -2044,6 +2044,11 @@ def laugh():
     return samples
 
 
+def flap():
+    """A wingbeat: two soft whooshes of air, the second lighter."""
+    return noise(0.12, 0.35, decay=18, seed=47, lowpass=0.88) + noise(0.1, 0.22, decay=22, seed=53, lowpass=0.9)
+
+
 def build_sounds(directory):
     clack = lambda seed: noise(0.035, 0.55, decay=90, seed=seed, lowpass=0.2)
     dice = []
@@ -2070,6 +2075,8 @@ def build_sounds(directory):
         "fuse": noise(0.25, 0.18, decay=8, seed=43, lowpass=0.9),
         "victory": notes([(523, 0.1), (659, 0.1), (784, 0.1), (1047, 0.12), (784, 0.08), (1047, 0.35)], volume=0.25),
         "laugh": laugh(),
+        "flap": flap(),
+        "fall": tone(lambda t: 1700 * (1 - 0.82 * t / 0.85), 0.85, sine, 0.2, release=0.05),
     }
     for name, samples in sounds.items():
         write_wav(directory / f"{name}.wav", samples)
@@ -2298,6 +2305,32 @@ def ogre_theme():
     return song.samples
 
 
+ICARUS_BEAT = [  # a galloping metal beat: da-da-DUM on the kick, a crash at the top of each phrase
+    "c.kks.kkk.kks.kk", "k.kks.kkk.kks.kk", "k.kks.kkk.kks.kk", "k.kks.kkk.kks.kk",
+    "c.kks.kkk.kks.kk", "k.kks.kkk.kks.kk", "k.kks.kkk.kks.kk", "k.kks.kks.s.ssss",
+    "c.kks.kkk.kks.kk", "k.kks.kkk.kks.kk", "k.kks.kkk.kks.kk", "k.kks.kkk.kks.kk",
+    "c.kks.kkk.kks.kk", "k.kks.kkk.kks.kk", "k.kks.kkk.kks.kk", "s.s.s.s.sssskkkk",
+]
+
+
+def icarus_theme():
+    """The Icarus Wings: a soaring A minor gallop, two leads climbing together in fifths."""
+    chords = ["Am", "F", "G", "Am", "Am", "F", "G", "E", "F", "G", "Am", "Am", "Dm", "F", "G", "E"]
+    song = Song(bpm=168, beats=64)
+    melody = ("A4/0.5 C5/0.5 E5/1 D5/0.5 C5/0.5 B4/1 | C5/1 D5/1 E5/2 | D5/0.5 E5/0.5 G5/1 F5/0.5 E5/0.5 D5/1 | E5/3 -/1 |"
+              "A5/1 G5/0.5 E5/0.5 C5/1 D5/1 | E5/1.5 F5/0.5 E5/1 C5/1 | B4/1 D5/1 G5/1.5 F5/0.5 | E5/2 G#4/2 |"
+              "F5/1.5 E5/0.5 C5/1 A4/1 | G5/1.5 F5/0.5 D5/1 B4/1 | C5/1 E5/1 A5/1 C6/1 | B5/2 A5/2 |"
+              "D6/1.5 C6/0.5 A5/1 F5/1 | C6/1.5 B5/0.5 A5/1 F5/1 | G5/1 F5/1 E5/1 D5/1 | E5/2 G#5/2")
+    song.voice(melody, pulse(0.25), 0.1, vibrato=True)
+    song.voice(melody, pulse(0.125), 0.05, transpose=-5, vibrato=True)  # the twin lead, a fourth under: power-chord fifths
+    song.voice(melody, pulse(0.5), 0.04, transpose=-12)
+    song.bass(chords, [(0, 0.25), (0, 0.25), (0, 0.5)] * 4, 0.21)  # the gallop: da-da-DUM
+    song.arpeggio(chords, [0, 2, 1, 2] * 4, pulse(0.125), 0.025, step=0.25)
+    for bar, pattern in enumerate(ICARUS_BEAT):
+        song.drum_bar(bar, pattern, 0.13)
+    return song.samples
+
+
 def victory_tune():
     """The results screen after someone escapes: a rising C major fanfare."""
     song = Song(bpm=132, beats=8, tail_seconds=0.8)
@@ -2325,6 +2358,7 @@ def build_music(directory):
         "temple": temple_theme(),
         "boss": boss_theme(),
         "ogre": ogre_theme(),
+        "icarus": icarus_theme(),
         "victory": victory_tune(),
         "defeat": defeat_tune(),
     }

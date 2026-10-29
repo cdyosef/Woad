@@ -637,6 +637,110 @@ public partial class GameScreen
     }
 
     /// <summary>
+    /// Debug mode (<c>-- --wingstest</c>, with <see cref="DemoRun.Wings"/>): Aria beats the Icarus Wings
+    /// from her accessory slot and flies out over the chasm, rising off the board; out of flight she's
+    /// offered Land. or Fly!, and lands. Then she keeps beating them, turn after turn, until a 1 breaks
+    /// them and drops her, prone and stunned. Set WOAD_SHOTS to a folder to save screenshots along the way.
+    /// </summary>
+    private async void RunWingsTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            string? shots = System.Environment.GetEnvironmentVariable("WOAD_SHOTS");
+            int shot = 0;
+            async Task Shoot(string name, double wait = 0.15)
+            {
+                if (shots is not null)
+                {
+                    await Pause(wait);
+                    GetViewport().GetTexture().GetImage().SavePng($"{shots}/wings_{++shot}_{name}.png");
+                }
+            }
+
+            async Task Beat(Button? button = null)
+            {
+                if (button is null)
+                {
+                    await Click(this, _heroPanel.EquipmentSlot(EquipSlot.Accessory));
+                    await Click(this, _inventory.ActionButton(CardAction.Use));
+                }
+                else
+                {
+                    await Click(this, button);
+                }
+
+                await Shoot("beat", 0.05);
+                await WaitUntilIdle();
+            }
+
+            async Task FlyOut()
+            {
+                while (aria.Aloft && _session.State.Turn!.FlightPoints > 0 && _session.GetFlightTiles().Count > 0)
+                {
+                    GridPosition to = _session.GetFlightTiles().OrderByDescending(entry => entry.Value).ThenBy(entry => entry.Key.X).First().Key;
+                    await ClickTile(to);
+                    await WaitUntilIdle();
+                }
+            }
+
+            async Task NextTurn()
+            {
+                await Click(this, _endTurn);
+                await WaitFor(this, () => !_busy && ActiveHero == aria && _session.State.Turn is { PendingRoll: null }, "Aria's next turn");
+            }
+
+            await Beat();
+            if (aria.Aloft)
+            {
+                Check(_figures[aria.Id].Aloft, "beating the wings lifts her figure into the air");
+                await Pause(0.5);
+                await Shoot("aloft");
+                Check(_tokens[aria.Id].Lift > 0, "her token rises off the board");
+                Check(Music.Current == "icarus", "the flight music plays");
+                await FlyOut();
+                await Shoot("flown", 0.3);
+                Check(_land.Visible && _flyOn.Visible, "out of flight: Land. or Fly!");
+                await Click(this, _land);
+                await WaitUntilIdle();
+                Check(!aria.Aloft && !_figures[aria.Id].Aloft && !aria.Prone, "Land. brings her down, on her feet");
+            }
+
+            // Now she dares them again and again until they break.
+            bool broke = !aria.EquippedCards.Any(card => card.Definition.Wings);
+            for (int turn = 0; turn < 30 && !broke; turn++)
+            {
+                await NextTurn();
+                await Beat();
+                while (aria.Aloft)
+                {
+                    await FlyOut();
+                    if (aria.Aloft)
+                    {
+                        await Beat(_flyOn);
+                    }
+                }
+
+                broke = !aria.EquippedCards.Any(card => card.Definition.Wings);
+            }
+
+            Check(broke, "a 1 breaks the wings sooner or later");
+            await Shoot("broken", 0.1);
+            Check(aria.Prone && aria.Stun.IsStunned, "broken wings leave her prone and stunned");
+            Check(_session.MoveDiceLeft == 0, "and her Wend gone for the turn");
+            Check(!_figures[aria.Id].Aloft, "her figure is back on the ground");
+            GD.Print("Wings test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Wings test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
+    /// <summary>
     /// Debug mode (<c>-- --terraintest</c>, with <see cref="DemoRun.Terrain"/>): in a dark room, Aria lays
     /// Icicle Arrow's ice, lights a brazier with Hurl Fire, then shines with Shining Light and hides with
     /// Shadowbind, a turn each; the board and her figure must show it all.

@@ -237,6 +237,23 @@ public static class DemoRun
     };
 
     /// <summary>
+    /// For --wingstest: a tough Aria in the Icarus Wings beside a chasm, an Archer Guard and a Cinder Imp
+    /// across it.
+    /// </summary>
+    public static RunSetup Wings(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = [DebugHeroes[0] with
+        {
+            BaseStats = DebugHeroes[0].BaseStats with { Hearts = 40, DefenseDice = 3 },
+            CardIds = ["icarus_wings", "wooden_sword"],
+        }],
+        Rooms = [new RoomSetup("chasm", RoomTemplate.Parse(".........\n.......a.\n.........\n..~~~....\n.1~~~....\n..~~~....\n.........\n.......i.\n.........", ContentCatalog.LoadDefault()))],
+        StartRoomId = "chasm",
+    };
+
+    /// <summary>
     /// For --dietypetest: a tough Aria with eight scrolls of typed dice (two on her belt, six in her
     /// pack) among an ogre, a skeleton, a scorpion (poison) and a necromancer (necro).
     /// </summary>

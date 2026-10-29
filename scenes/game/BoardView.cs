@@ -138,6 +138,26 @@ public partial class BoardView : Control
         AddChild(new ActionCallout { Position = at, Text = text, Color = color, Size = size });
     }
 
+    /// <summary>A shot flying between two points on the board (in its own coordinates). Returns how long it takes.</summary>
+    public double Shot(Vector2 from, Vector2 to, ShotKind kind, Color color)
+    {
+        var shot = new ShotFx { Position = Vector2.Zero, From = from, To = to, Kind = kind, Color = color };
+        AddChild(shot);
+        return shot.Seconds;
+    }
+
+    /// <summary>A weapon's swing (or a spear's thrust) from <paramref name="at"/> toward <paramref name="toward"/>.</summary>
+    public void Swing(Vector2 at, Vector2 toward, Color color, bool thrust) =>
+        AddChild(new SwingFx { Position = at, Angle = (toward - at).Angle(), Color = color, Thrust = thrust, Backhand = Random.Shared.Next(2) == 0 });
+
+    /// <summary>A shove's rush of chevrons from <paramref name="at"/> into <paramref name="toward"/>.</summary>
+    public void Push(Vector2 at, Vector2 toward, Color color) =>
+        AddChild(new PushFx { Position = at, To = toward - at, Color = color });
+
+    /// <summary>Feathers off a figure's wings: a puff on a wingbeat, a burst when they break.</summary>
+    public void Feathers(Vector2 at, bool burst) =>
+        AddChild(new FeatherFx { Position = at, Burst = burst });
+
     /// <summary>A strike's slash and sparks on a tile; sparks only for a block.</summary>
     public void Spark(GridPosition tile, Color color, bool slash = true) =>
         AddChild(new HitSpark { Position = TileOrigin(tile) + new Vector2(TileSize / 2f, TileSize / 2f - 2), Color = color, Slash = slash, Backhand = Random.Shared.Next(2) == 0 });

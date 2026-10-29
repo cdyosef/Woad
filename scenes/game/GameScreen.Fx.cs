@@ -140,6 +140,117 @@ public partial class GameScreen
         token.Position = home;
     }
 
+    /// <summary>The spell being cast, for the color of its bolt; cleared once it's rolled.</summary>
+    private SpellDefinition? _castSpell;
+
+    /// <summary>
+    /// How an attack looks as it's made: a weapon's swing (a spear's thrust) and a lunge in melee, a
+    /// shove's rush, or a shot flying across: an arrow, a crossbow bolt, a spinning boomerang or dagger,
+    /// a chain, or a spell's glowing bolt in the color of its dice.
+    /// </summary>
+    private async Task StrikeFx(AttackRolled attack)
+    {
+        SpellDefinition? spell = _castSpell;
+        _castSpell = null;
+        int targetId = attack.TargetIds.FirstOrDefault();
+        if (!_tokens.TryGetValue(attack.AttackerId, out TokenView? attacker) || !_tokens.TryGetValue(targetId, out TokenView? target)
+            || !_figures.TryGetValue(attack.AttackerId, out Figure? figure) || figure.RoomId != _shownRoomId)
+        {
+            return;
+        }
+
+        var middle = new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f - 2);
+        Vector2 from = attacker.Position + middle, to = target.Position + middle;
+        bool far = from.DistanceTo(to) > BoardView.TileSize * 1.6f;
+        Color color = AttackerColor();
+        CardDefinition? weapon = attack.WeaponId is { } id ? Content.FindCard(id) : null;
+        DieType typed = attack.DieTypes.FirstOrDefault(type => type != DieType.Plain);
+
+        if (attack.Shove)
+        {
+            _board.Push(from, to, color);
+            await Lunge(attack.AttackerId, targetId);
+            return;
+        }
+
+        ShotKind? shot = attack.Chain ? ShotKind.Chain
+            : spell is not null ? (spell.Shape == SpellShape.Around || !far && spell.Range <= 1 ? null : ShotKind.Orb)
+            : !far ? null
+            : weapon is { Reload: not null } ? ShotKind.Bolt
+            : weapon is { Id: "boomerang" } ? ShotKind.Boomerang
+            : weapon is { ThrownRange: > 0 } ? ShotKind.Dagger
+            : weapon is { AttackRange: > 1, Reach: false } ? ShotKind.Arrow
+            : figure.Monster is { DieType: not DieType.Plain } || typed != DieType.Plain ? ShotKind.Orb
+            : weapon is { Reach: true } ? null
+            : ShotKind.Arrow;
+
+        if (shot is { } kind)
+        {
+            Color tint = spell is not null ? DieTypes.Tint(spell.DieType)
+                : kind == ShotKind.Orb ? DieTypes.Tint(figure.Monster?.DieType is { } own && own != DieType.Plain ? own : typed)
+                : color;
+            Sfx.Play("block", kind == ShotKind.Orb ? 1.8f : 2.2f);
+            await Pause(_board.Shot(from, to, kind, tint));
+            return;
+        }
+
+        if (spell is not null)
+        {
+            // A spell all around the caster (Quake): a ring bursting out from them.
+            _board.Spark(figure.Position, DieTypes.Tint(spell.DieType), slash: false);
+            await Lunge(attack.AttackerId, targetId);
+            return;
+        }
+
+        _board.Swing(from, to, color, thrust: weapon is { Reach: true });
+        await Lunge(attack.AttackerId, targetId);
+    }
+
+    /// <summary>A beat of the Icarus Wings: up they go (the music soaring), feathers puffing off.</summary>
+    private async Task TakeWing(int heroId)
+    {
+        if (_figures.TryGetValue(heroId, out Figure? figure) && !figure.Aloft)
+        {
+            figure.Aloft = true;
+            if (_tokens.TryGetValue(heroId, out TokenView? rising))
+            {
+                ApplyFigure(figure, rising);
+            }
+        }
+
+        Music.Play("icarus");
+        if (_tokens.TryGetValue(heroId, out TokenView? token) && figure?.RoomId == _shownRoomId)
+        {
+            _board.Feathers(token.Position + new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f), burst: false);
+            Sfx.Play("flap");
+            await Pause(0.15);
+        }
+    }
+
+    /// <summary>The wings break: a burst of feathers, the music cut dead, a whistling fall and a thud.</summary>
+    private async Task BreakWings(int heroId)
+    {
+        Music.Cut();
+        if (!_figures.TryGetValue(heroId, out Figure? figure) || !_tokens.TryGetValue(heroId, out TokenView? token))
+        {
+            return;
+        }
+
+        figure.Aloft = false;
+        token.Crash();
+        if (figure.RoomId == _shownRoomId)
+        {
+            _board.Feathers(token.Position + new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f - token.Lift), burst: true);
+            _board.Callout(figure.Position, "WINGS BROKE!", Palette.Danger);
+        }
+
+        Sfx.Play("fall");
+        await Pause(0.45);
+        _board.Shake(4);
+        Sfx.Play("block", 0.5f);
+        await Pause(0.5);
+    }
+
     /// <summary>Whether a block by this figure counts as a shield block: a hero with a shield in hand, or an armored monster.</summary>
     private bool Shielded(Figure figure) =>
         figure.IsHero
