@@ -434,6 +434,7 @@ public partial class GameScreen : Control
         switch (gameEvent)
         {
             case TurnStarted turn:
+                _viewedHeroId = null;
                 _selectedCardId = null;
                 _showingOrders = false;
                 _targeting = false;

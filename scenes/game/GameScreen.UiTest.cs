@@ -23,6 +23,29 @@ public partial class GameScreen
             await WaitUntilIdle();
             Hero aria = ActiveHero!;
 
+            // The turn order: Aria first, then Bran, then the monsters. Bran's card shows his sheet; hers brings hers back.
+            Hero bran0 = _session.State.Heroes.Single(hero => hero.Name == "Bran");
+            Check(SheetHero == aria, "the sheet is the active hero's");
+            await ClickAt(this, _turnOrder.GetGlobalRect().Position + new Vector2(30 + 4 + 11, 18));
+            Check(_viewedHeroId == bran0.Id && SheetHero == bran0, "clicking the next card in the turn order puts up Bran's sheet");
+            await ClickAt(this, _turnOrder.GetGlobalRect().Position + new Vector2(15, 16));
+            Check(_viewedHeroId is null && SheetHero == aria, "clicking the active hero's card comes back to her");
+
+            // Clicking a monster puts up its sheet on the right; the x puts it away.
+            Monster sighted = ShownRoom.Monsters.First();
+            await ClickTile(sighted.Position);
+            await WaitUntilIdle();
+            Check(_targetId == sighted.Id && _targetSheet.Visible, "clicking a monster puts up its sheet");
+            if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } targetShots)
+            {
+                await Pause(0.3);
+                GetViewport().GetTexture().GetImage().SavePng($"{targetShots}/target_sheet.png");
+            }
+
+            CancelSelection();
+            _targetId = null;
+            RefreshPanels();
+
             // Belt bomb: select it, press Use, click the first highlighted target, confirm the Luck-held attack.
             CardInstance bomb = aria.Belt.Single(card => card.Definition.Id == "bomb");
             await Click(this, _heroPanel.BeltSlot(aria.Belt.ToList().IndexOf(bomb)));

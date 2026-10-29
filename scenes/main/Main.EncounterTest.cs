@@ -63,6 +63,17 @@ public partial class Main
             wren.GiveCard("flame_scroll", _content);
             await Click(this, screen.PartyButton);
             Check(screen.PartyMenu.Visible, "the Party button opens the Party menu on the map");
+            await Click(this, screen.PartyMenu.Find("Sheet0")!);
+            Check(screen.PartyMenu.SheetOf == wren, "clicking a party member puts up their character sheet");
+            if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } shots)
+            {
+                await NextFrame(this);
+                await NextFrame(this);
+                GetViewport().GetTexture().GetImage().SavePng($"{shots}/woarld_sheet.png");
+            }
+
+            await ClickAt(this, new Vector2(20, 300));
+            Check(screen.PartyMenu.SheetOf is null, "clicking off the sheet puts it away");
             await Click(this, screen.PartyMenu.Find("Card0_flame_scroll")!);
             Check(screen.PartyMenu.Find("Learn") is { Disabled: false }, "a scroll with a spell on it can be studied from the Party menu");
             await Click(this, screen.PartyMenu.Find("Learn")!);

@@ -22,6 +22,12 @@ public partial class PartyDialog : Control
     private HBoxContainer _givers = null!;
     private (Character From, string CardId)? _selected;
 
+    /// <summary>A character's sheet, open over the menu, and whose it is.</summary>
+    private Control _sheetView = null!;
+    private Game.HeroPanel _sheet = null!;
+    private Character? _sheetOf;
+    private IReadOnlyDictionary<int, string> _sheetKeys = new Dictionary<int, string>();
+
     public IReadOnlyList<Character> Party { get; set; } = [];
 
     public ContentCatalog Content { get; init; } = null!;
@@ -72,6 +78,54 @@ public partial class PartyDialog : Control
         _givers = new HBoxContainer { Position = new Vector2(250, 284) };
         _givers.AddThemeConstantOverride("separation", 4);
         panel.AddChild(_givers);
+
+        // A character's sheet, over the menu: click a card on it to give it on; click outside to close it.
+        _sheetView = new Control { Size = Size, Visible = false, Name = "SheetView" };
+        var dim = new ColorRect { Size = Size, Color = new Color(Palette.Background, 0.8f) };
+        dim.GuiInput += input =>
+        {
+            if (input is InputEventMouseButton { Pressed: true })
+            {
+                CloseSheet();
+            }
+        };
+        _sheetView.AddChild(dim);
+        _sheet = new Game.HeroPanel { Position = new Vector2((Size.X - 176) / 2, 0), Name = "Sheet" };
+        _sheet.CardSelected += cardId =>
+        {
+            if (_sheetOf is { } owner && _sheetKeys.TryGetValue(cardId, out string? key))
+            {
+                CloseSheet();
+                _selected = (owner, key);
+                _news = null;
+                Refresh();
+            }
+        };
+        _sheetView.AddChild(_sheet);
+        _sheetView.AddChild(_sheet.BagView);
+        AddChild(_sheetView);
+    }
+
+    /// <summary>Whose sheet is open, if any (for the click tests).</summary>
+    internal Character? SheetOf => _sheetView.Visible ? _sheetOf : null;
+
+    /// <summary>Opens a character's sheet over the menu.</summary>
+    internal void OpenSheet(Character character)
+    {
+        (int now, _) = Hearts?.Invoke(character) ?? (character.MaxHearts(Content), 0);
+        Hero preview = Hero.Preview(character, Content, now, out _sheetKeys);
+        _sheetOf = character;
+        _sheet.CloseBag();
+        _sheet.ShowHero(preview, null, null);
+        _sheet.ShowMagic(preview.EffectiveStats.Magic > 0 || preview.Spells.Count > 0, false, $"{character.Name} knows: {string.Join(", ", preview.Spells.Select(spell => spell.Name))}");
+        _sheetView.Visible = true;
+    }
+
+    private void CloseSheet()
+    {
+        _sheet.CloseBag();
+        _sheetView.Visible = false;
+        _sheetOf = null;
     }
 
     /// <summary>Opens the menu on the party as it is now.</summary>
@@ -136,7 +190,15 @@ public partial class PartyDialog : Control
         var row = new Control { CustomMinimumSize = new Vector2(530, RowHeight), Name = $"Row{index}" };
         (int now, int max) = Hearts?.Invoke(character) ?? (character.MaxHearts(Content), character.MaxHearts(Content));
         string role = character.IsCompanion ? "  (companion)" : "";
-        row.AddChild(UiTheme.Label(new Vector2(0, 0), new Vector2(400, 14), $"{character.Name}   Level {character.Level}   {now}/{max} hearts   {character.Gold} gold{role}", color: Palette.TrimBright));
+        // Their name and level: click it for their character sheet.
+        Button header = UiTheme.CompactButton(new Vector2(0, 0), new Vector2(400, 15), $"{character.Name}   Level {character.Level}   {now}/{max} hearts   {character.Gold} gold{role}");
+        header.Name = $"Sheet{index}";
+        header.Flat = true;
+        header.Alignment = HorizontalAlignment.Left;
+        header.AddThemeColorOverride("font_color", Palette.TrimBright);
+        header.TooltipText = $"{character.Name}'s character sheet.";
+        header.Pressed += () => OpenSheet(character);
+        row.AddChild(header);
 
         if (character.UnspentPoints > 0)
         {
