@@ -13,19 +13,21 @@ public enum DicePool
 }
 
 /// <summary>
-/// The dice the active hero has left this turn, one row per pool, each led by its symbol: Rumble
-/// (a fist) dice plus the weapon's value, Wend (a boot) dice plus the flat Wend bonus, Od Hand (a hamsa) dice plus
-/// the tools' value, Defense (a shield: the base die, framed, and extra dice ready or spent, plus armor
-/// and Block), and banked Power Dice. Selected tokens (bright, gold-edged) are what the next attack,
-/// move or Od Hand roll will use (selected Power Dice go into whichever comes first); clicking a token
-/// selects or deselects it (Defense can't be clicked: it's used when you're attacked). Hovering a row explains it.
+/// The dice the active hero has left this turn, each pool led by its symbol and laid out under its card
+/// on the character sheet (see <see cref="Place"/>): Rumble (a fist) dice plus the weapon's value, Wend
+/// (a boot) dice plus the flat Wend bonus, Od Hand (a hamsa) dice plus the tools' value, Defense (a
+/// shield: the base die, framed, and extra dice ready or spent, plus armor and Block), and the Power
+/// Dice bank (filled and empty slots). Each pool takes two short lines: its dice, then its bonus, a
+/// note and the weapon swap. Selected tokens (bright, gold-edged) are what the next attack, move or Od
+/// Hand roll will use (selected Power Dice go into whichever comes first); clicking a token selects or
+/// deselects it (Defense can't be clicked: it's used when you're attacked). Hovering a pool explains it.
 /// </summary>
 public partial class DicePoolView : Control
 {
-    private const float LabelWidth = 17;
-    private const float Token = 11;
-    private const float Gap = 3;
-    private const float RowHeight = 13;
+    private const float Icon = 11;
+    private const float Token = 10;
+    private const float Step = 12;
+    private const float Line = 12;
 
     private readonly Row[] _rows =
     [
@@ -33,10 +35,19 @@ public partial class DicePoolView : Control
         new("icon_wend", "Wend: your move dice this turn, plus your flat Wend bonus on one move. Click dice to hold some back.") { Color = Palette.DieWend },
         new("icon_odhand", "Od Hand: dice for picking locks, searching, disarming traps and stealing. Your tools (lockpicks) add their value and dice to one lock-picking roll a turn.") { Color = Palette.DieOdHand },
         new("icon_defense", "Defense: your base die (framed) and armor defend against every attack. When a defense is losing, your Block goes in, then your extra dice one at a time; they're spent until your next turn. Gold dice are Guard Dice, for an ally beside you.") { IsDefense = true, Color = Palette.DieDefense },
-        new("icon_power", "Power Dice, earned by rolling a 6. Click to add banked ones to your next roll.") { IsPower = true, Color = Palette.Power },
+        new("icon_power", "Power Dice, earned by rolling a 6: your bank, filled and empty. Click to add banked ones to your next roll.") { IsPower = true, Color = Palette.Power },
     ];
 
     private bool _enabled;
+
+    public DicePoolView()
+    {
+        for (int r = 0; r < _rows.Length; r++)
+        {
+            _rows[r].Origin = new Vector2(0, r * 2 * Line);
+            _rows[r].Width = 160;
+        }
+    }
 
     /// <summary>A token was clicked: a die (its index) or the bonus token (index -1).</summary>
     public event Action<DicePool, int>? TokenClicked;
@@ -46,6 +57,24 @@ public partial class DicePoolView : Control
 
     /// <summary>For the click tests: as if the Rumble row's swap button were clicked.</summary>
     internal void EmitSwap() => SwapClicked?.Invoke(DicePool.Rumble);
+
+    /// <summary>Puts a pool at <paramref name="origin"/> (in this view), <paramref name="width"/> wide: two lines, its dice wrapping onto the second.</summary>
+    public void Place(DicePool pool, Vector2 origin, float width)
+    {
+        _rows[(int)pool].Origin = origin;
+        _rows[(int)pool].Width = width;
+        QueueRedraw();
+    }
+
+    /// <summary>Leaves a pool's symbol undrawn: its hand of cards goes there instead (see <see cref="HandView"/>).</summary>
+    public void CoverIcon(DicePool pool)
+    {
+        _rows[(int)pool].Covered = true;
+        QueueRedraw();
+    }
+
+    /// <summary>The area a pool takes up, to put something beside it (its hand of cards).</summary>
+    public Rect2 Bounds(DicePool pool) => new(_rows[(int)pool].Origin, new Vector2(_rows[(int)pool].Width, 2 * Line));
 
     /// <summary>A small button at the end of a row (the weapon an attack uses), or null for none.</summary>
     public void ShowSwap(DicePool pool, string? text, string tooltip = "")
@@ -68,6 +97,13 @@ public partial class DicePoolView : Control
         row.Bonus = bonus;
         row.BonusSelected = bonusSelected;
         row.Note = note;
+        QueueRedraw();
+    }
+
+    /// <summary>The Power Dice bank: how many slots it has, shown empty past the dice in it.</summary>
+    public void ShowCapacity(int capacity)
+    {
+        _rows[(int)DicePool.Power].Capacity = capacity;
         QueueRedraw();
     }
 
@@ -95,76 +131,103 @@ public partial class DicePoolView : Control
 
     public override string _GetTooltip(Vector2 atPosition)
     {
-        int row = (int)(atPosition.Y / RowHeight);
-        if (row < 0 || row >= _rows.Length)
+        foreach (Row row in _rows)
         {
-            return "";
+            if (row.Swap is not null && row.SwapRect.Grow(1).HasPoint(atPosition))
+            {
+                return row.SwapHelp;
+            }
+
+            if (new Rect2(row.Origin, new Vector2(row.Width, 2 * Line)).HasPoint(atPosition))
+            {
+                return row.Help;
+            }
         }
 
-        return _rows[row] is { Swap: not null } swapping && swapping.SwapRect.Grow(1).HasPoint(atPosition) ? swapping.SwapHelp : _rows[row].Help;
+        return "";
     }
 
-    public override void _Ready() => TooltipText = " ";
+    public override void _Ready()
+    {
+        TooltipText = " ";
+        MouseFilter = MouseFilterEnum.Pass;
+    }
 
     public override void _Draw()
     {
-        Font font = ThemeDB.FallbackFont;
-        for (int r = 0; r < _rows.Length; r++)
+        Font font = GameArt.BodyFont ?? ThemeDB.FallbackFont;
+        foreach (Row row in _rows)
         {
-            Row row = _rows[r];
-            float top = r * RowHeight;
-            if (GameArt.Ui(row.Icon) is { } icon)
+            row.Tokens.Clear();
+            row.BonusRect = row.SwapRect = default;
+            var cursor = new Cursor(row);
+            if (!row.Covered && GameArt.Ui(row.Icon) is { } icon)
             {
-                DrawTextureRect(icon, new Rect2(0, top, 12, 12), tile: false);
-            }
-            else if (row.IsPower)
-            {
-                DrawString(font, new Vector2(1, top + 10), "6!", fontSize: UiTheme.FontSize, modulate: Palette.Power);
+                DrawTextureRect(icon, new Rect2(row.Origin, new Vector2(Icon, Icon)), tile: false);
             }
 
             if (row.IsDefense)
             {
-                DrawDefense(font, r, row);
+                DrawDefense(font, row, cursor);
                 continue;
             }
 
             for (int i = 0; i < row.Dice; i++)
             {
-                DrawDieToken(TokenRect(r, i), _enabled && i < row.Selected, row.Color);
+                Rect2 rect = cursor.Next(Token);
+                row.Tokens.Add(rect);
+                DrawDieToken(rect, _enabled && i < row.Selected, row.Color);
             }
 
-            float x = LabelWidth + row.Dice * (Token + Gap);
+            if (row.IsPower)
+            {
+                // The empty slots in the bank.
+                for (int i = row.Dice; i < row.Capacity; i++)
+                {
+                    Rect2 rect = cursor.Next(Token);
+                    DrawRect(rect, Palette.Ink);
+                    DrawRect(rect, Palette.TrimDim, filled: false, width: 1);
+                }
+
+                if (row.Capacity == 0 && row.Dice == 0)
+                {
+                    DrawString(font, cursor.Text(), "roll a 6 to earn one", fontSize: UiTheme.FontSize, modulate: Palette.TextDim);
+                }
+
+                continue;
+            }
+
+            cursor.NewLine();
             if (row.Bonus != 0)
             {
-                Rect2 rect = BonusRect(r, row);
+                string text = (row.Bonus > 0 ? $"+{row.Bonus}" : row.Bonus.ToString()) + (row.BonusDice > 0 ? $"+{row.BonusDice}d6" : "");
+                Rect2 rect = cursor.Next(font.GetStringSize(text, fontSize: UiTheme.FontSize).X + 5);
+                row.BonusRect = rect;
                 bool on = _enabled && row.BonusSelected;
                 DrawRect(rect, on ? Palette.PanelPressed : Palette.PanelDark);
                 DrawRect(rect, on ? Palette.TrimBright : Palette.TrimDim, filled: false, width: 1);
-                string text = (row.Bonus > 0 ? $"+{row.Bonus}" : row.Bonus.ToString()) + (row.BonusDice > 0 ? $"+{row.BonusDice}d6" : "");
-                DrawString(font, rect.Position + new Vector2(3, 9), text, fontSize: UiTheme.FontSize, modulate: on ? Palette.TrimBright : Palette.TextDim);
-                x = rect.End.X + Gap;
+                DrawString(font, rect.Position + new Vector2(2, 8), text, fontSize: UiTheme.FontSize, modulate: on ? Palette.TrimBright : Palette.TextDim);
             }
             else if (row.Dice == 0)
             {
-                string empty = row.IsPower ? "roll a 6 to earn one" : "used";
-                DrawString(font, new Vector2(x, top + 10), empty, fontSize: UiTheme.FontSize, modulate: Palette.TextDim);
-                x += 24;
+                DrawString(font, cursor.Text(), "used", fontSize: UiTheme.FontSize, modulate: Palette.TextDim);
+                cursor.Next(20);
             }
 
             if (row.Note.Length > 0)
             {
-                DrawString(font, new Vector2(x + 2, top + 10), row.Note, fontSize: UiTheme.FontSize, modulate: Palette.Text);
-                x += 4 + font.GetStringSize(row.Note, fontSize: UiTheme.FontSize).X;
+                DrawString(font, cursor.Text(), row.Note, fontSize: UiTheme.FontSize, modulate: Palette.Text);
+                cursor.Next(font.GetStringSize(row.Note, fontSize: UiTheme.FontSize).X);
             }
 
             if (row.Swap is { } swap)
             {
-                float width = font.GetStringSize(swap, fontSize: UiTheme.FontSize).X + 6;
-                row.SwapRect = new Rect2(new Vector2(Math.Min(x, Size.X - width), top), new Vector2(width, Token));
-                bool on = _enabled;
-                DrawRect(row.SwapRect, Palette.PanelDark);
-                DrawRect(row.SwapRect, on ? row.Color : Palette.TrimDim, filled: false, width: 1);
-                DrawString(font, row.SwapRect.Position + new Vector2(3, 9), swap, fontSize: UiTheme.FontSize, modulate: on ? Palette.TrimBright : Palette.TextDim);
+                Rect2 rect = cursor.Next(Math.Min(font.GetStringSize(swap, fontSize: UiTheme.FontSize).X + 5, row.Width - Icon - 1));
+                float width = rect.Size.X;
+                row.SwapRect = rect;
+                DrawRect(rect, Palette.PanelDark);
+                DrawRect(rect, _enabled ? row.Color : Palette.TrimDim, filled: false, width: 1);
+                DrawString(font, rect.Position + new Vector2(2, 8), swap, HorizontalAlignment.Left, width - 3, UiTheme.FontSize, _enabled ? Palette.TrimBright : Palette.TextDim);
             }
         }
     }
@@ -184,16 +247,16 @@ public partial class DicePoolView : Control
                 continue;
             }
 
-            for (int i = 0; i < row.Dice; i++)
+            for (int i = 0; i < row.Tokens.Count; i++)
             {
-                if (TokenRect(r, i).Grow(1).HasPoint(click.Position))
+                if (row.Tokens[i].Grow(1).HasPoint(click.Position))
                 {
                     Pick((DicePool)r, i);
                     return;
                 }
             }
 
-            if (row.Bonus != 0 && BonusRect(r, row).Grow(1).HasPoint(click.Position))
+            if (row.Bonus != 0 && row.BonusRect.Grow(1).HasPoint(click.Position))
             {
                 Pick((DicePool)r, -1);
                 return;
@@ -218,51 +281,48 @@ public partial class DicePoolView : Control
 
     /// <summary>
     /// The Defense row: the base die always lit, in a double frame (it can't be held back); extra dice
-    /// lit while ready and dark once spent; then armor, and Block (dim once spent).
+    /// lit while ready and dark once spent; then, on the second line, armor, Block (dim once spent) and
+    /// Guard Dice.
     /// </summary>
-    private void DrawDefense(Font font, int r, Row row)
+    private void DrawDefense(Font font, Row row, Cursor cursor)
     {
-        float top = r * RowHeight;
         for (int i = 0; i < row.Dice; i++)
         {
-            Rect2 rect = TokenRect(r, i);
+            Rect2 rect = cursor.Next(Token);
             DrawDieToken(rect, i < row.Selected, row.Color);
             if (i < row.Base)
             {
-                DrawRect(rect.Grow(1), Palette.Ink, filled: false, width: 1);
-                DrawRect(rect.Grow(2), Palette.TrimBright, filled: false, width: 1);
+                DrawRect(rect.Grow(1), Palette.TrimBright, filled: false, width: 1);
             }
         }
 
-        float x = LabelWidth + row.Dice * (Token + Gap) + (row.Base > 0 ? 1 : 0);
         if (row.Dice == 0)
         {
-            DrawString(font, new Vector2(x, top + 9), "none", fontSize: UiTheme.FontSize, modulate: Palette.TextDim);
-            x += 24;
+            DrawString(font, cursor.Text(), "none", fontSize: UiTheme.FontSize, modulate: Palette.TextDim);
         }
 
+        cursor.NewLine();
         if (row.Bonus != 0)
         {
-            var rect = new Rect2(new Vector2(x, top), new Vector2(18, Token));
+            Rect2 rect = cursor.Next(16);
             DrawRect(rect, Palette.PanelDark);
             DrawRect(rect, Palette.TrimDim, filled: false, width: 1);
-            DrawString(font, rect.Position + new Vector2(3, 9), $"+{row.Bonus}", fontSize: UiTheme.FontSize, modulate: Palette.Text);
-            x = rect.End.X + Gap;
+            DrawString(font, rect.Position + new Vector2(2, 8), $"+{row.Bonus}", fontSize: UiTheme.FontSize, modulate: Palette.Text);
         }
 
         if (row.Block > 0)
         {
-            var rect = new Rect2(new Vector2(x, top), new Vector2(46, Token));
+            string text = $"Block {row.Block}";
+            Rect2 rect = cursor.Next(font.GetStringSize(text, fontSize: UiTheme.FontSize).X + 5);
             DrawRect(rect, row.BlockReady ? Palette.PanelPressed : Palette.PanelDark);
             DrawRect(rect, row.BlockReady ? row.Color : Palette.TrimDim, filled: false, width: 1);
-            DrawString(font, rect.Position + new Vector2(3, 9), $"Block {row.Block}", fontSize: UiTheme.FontSize, modulate: row.BlockReady ? row.Color : Palette.TextDim);
-            x = rect.End.X + Gap;
+            DrawString(font, rect.Position + new Vector2(2, 8), text, fontSize: UiTheme.FontSize, modulate: row.BlockReady ? row.Color : Palette.TextDim);
         }
 
         // Guard Dice, for allies beside you: gold while ready.
         for (int i = 0; i < row.Guard; i++)
         {
-            DrawDieToken(new Rect2(new Vector2(x + i * (Token + Gap), top), new Vector2(Token, Token)), i < row.GuardReady, Palette.TrimBright);
+            DrawDieToken(cursor.Next(Token), i < row.GuardReady, Palette.TrimBright);
         }
     }
 
@@ -274,15 +334,47 @@ public partial class DicePoolView : Control
         Color pip = selected ? Palette.Ink : Palette.TextDim;
         foreach (float t in new[] { 0.27f, 0.5f, 0.73f })
         {
-            DrawCircle(rect.Position + new Vector2(t, t) * rect.Size, 1.1f, pip, antialiased: true);
+            DrawCircle(rect.Position + new Vector2(t, t) * rect.Size, 1f, pip, antialiased: true);
         }
     }
 
-    private static Rect2 TokenRect(int row, int index) =>
-        new(new Vector2(LabelWidth + index * (Token + Gap), row * RowHeight), new Vector2(Token, Token));
+    /// <summary>Where the next thing in a pool goes: along its line after the icon, wrapping onto the second line.</summary>
+    private sealed class Cursor(Row row)
+    {
+        private float _x = row.Origin.X + Icon + 2;
+        private float _y = row.Origin.Y;
 
-    private static Rect2 BonusRect(int row, Row data) =>
-        new(new Vector2(LabelWidth + data.Dice * (Token + Gap), row * RowHeight), new Vector2(data.BonusDice > 0 ? 34 : 18, Token));
+        public Rect2 Next(float width)
+        {
+            if (_x + width > row.Origin.X + row.Width && _x > row.Origin.X + Icon + 2)
+            {
+                NewLine();
+            }
+
+            // On the last line, what doesn't fit is cut short (a long weapon name) rather than run past the edge.
+            if (_y > row.Origin.Y)
+            {
+                width = Math.Max(8, Math.Min(width, row.Origin.X + row.Width - _x));
+            }
+
+            var rect = new Rect2(_x, _y, width, Token);
+            _x += width + 2;
+            return rect;
+        }
+
+        /// <summary>Moves to the second line (once).</summary>
+        public void NewLine()
+        {
+            if (_y == row.Origin.Y)
+            {
+                _x = row.Origin.X + Icon + 2;
+                _y = row.Origin.Y + Line;
+            }
+        }
+
+        /// <summary>The baseline for text at the cursor.</summary>
+        public Vector2 Text() => new(_x, _y + 8);
+    }
 
     private sealed class Row(string icon, string help)
     {
@@ -290,7 +382,17 @@ public partial class DicePoolView : Control
 
         public string Help { get; } = help;
 
+        public Vector2 Origin { get; set; }
+
+        public float Width { get; set; }
+
         public bool IsPower { get; init; }
+
+        /// <summary>Its symbol is covered by its hand of cards.</summary>
+        public bool Covered { get; set; }
+
+        /// <summary>The Power bank's slots.</summary>
+        public int Capacity { get; set; }
 
         /// <summary>The Defense row: not clickable, drawn by <see cref="DrawDefense"/>.</summary>
         public bool IsDefense { get; init; }
@@ -306,7 +408,7 @@ public partial class DicePoolView : Control
 
         public int GuardReady { get; set; }
 
-        /// <summary>The pool's dice color, matching its dice in the dice bar and its buttons.</summary>
+        /// <summary>The pool's dice color, matching its dice in the dice bar and its cards.</summary>
         public Color Color { get; init; } = Palette.Text;
 
         public int Dice { get; set; }
@@ -325,7 +427,11 @@ public partial class DicePoolView : Control
 
         public string SwapHelp { get; set; } = "";
 
-        /// <summary>Where the swap button was last drawn, for clicks.</summary>
+        /// <summary>Where the dice, bonus and swap button were last drawn, for clicks.</summary>
+        public List<Rect2> Tokens { get; } = [];
+
+        public Rect2 BonusRect { get; set; }
+
         public Rect2 SwapRect { get; set; }
     }
 }

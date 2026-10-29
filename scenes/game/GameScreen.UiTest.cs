@@ -25,7 +25,7 @@ public partial class GameScreen
 
             // Belt bomb: select it, press Use, click the first highlighted target, confirm the Luck-held attack.
             CardInstance bomb = aria.Belt.Single(card => card.Definition.Id == "bomb");
-            await Click(this, _inventory.BeltSlot(aria.Belt.ToList().IndexOf(bomb)));
+            await Click(this, _heroPanel.BeltSlot(aria.Belt.ToList().IndexOf(bomb)));
             Check(_selectedCardId == bomb.Id, "clicking a belt card selects it");
             await Click(this, _inventory.ActionButton(CardAction.Use));
             Check(_targeting, "Use enters targeting");
@@ -44,7 +44,7 @@ public partial class GameScreen
             Check(!_session.State.Turn!.HasActed, "a belt item doesn't use the action");
 
             // Roll button, then click the nearest blue tile.
-            await Click(this, _roll);
+            await UseAbility(_roll);
             await WaitUntilIdle();
             Check(_session.State.Turn!.MovementRoll is not null, "the Roll button rolls for movement");
             GridPosition destination = _session.GetReachableTiles().OrderBy(entry => entry.Value).First().Key;
@@ -53,7 +53,7 @@ public partial class GameScreen
             Check(aria.Position == destination, "clicking a highlighted tile moves the hero");
 
             // Search spends the Od Hand die, not the action.
-            await Click(this, _search);
+            await UseAbility(_search);
             await WaitUntilIdle();
             if (_session.State.Turn!.PendingRoll is not null)
             {
@@ -72,7 +72,7 @@ public partial class GameScreen
 
             // Equip the boomerang from the backpack, choosing a hand: the off hand, so the buckler swaps out.
             CardInstance boomerang = bran.Backpack.Single(card => card.Definition.Id == "boomerang");
-            await Click(this, _inventory.BackpackSlot(bran.Backpack.ToList().IndexOf(boomerang)));
+            await Click(this, _heroPanel.BackpackSlot(bran.Backpack.ToList().IndexOf(boomerang)));
             await Click(this, _inventory.ActionButton(CardAction.Equip));
             Check(_inventory.IsChoosingHand && _inventory.HandButton(0).Text == "Main hand (stows Wooden Sword)" && _inventory.HandButton(1).Text == "Off hand (stows Buckler)",
                 "Equip on the boomerang asks which hand, saying what each would stow");
@@ -94,8 +94,20 @@ public partial class GameScreen
             Check(ReadiedWeapon == boomerang, "clicking the Boomerang in hand readies it");
             await Click(this, _heroPanel.EquipmentSlot(EquipSlot.OffHand));
 
+            // The bag opens into its cards, face up, to pick from.
             CardInstance buckler = bran.Backpack.Single(card => card.Definition.Id == "buckler");
-            await Click(this, _inventory.BackpackSlot(bran.Backpack.ToList().IndexOf(buckler)));
+            await Click(this, _heroPanel.BagDeck);
+            Check(_heroPanel.IsBagOpen, "clicking the bag opens it over the board");
+            if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } shots)
+            {
+                await Pause(0.1);
+                GetViewport().GetTexture().GetImage().SavePng($"{shots}/bag_open.png");
+            }
+
+            await Click(this, _heroPanel.BagCard(bran.Backpack.ToList().IndexOf(buckler)));
+            Check(_selectedCardId == buckler.Id, "a card in the open bag can be picked");
+            await Click(this, _heroPanel.BagDeck);
+            Check(!_heroPanel.IsBagOpen, "clicking the bag again closes it");
             Button equip = _inventory.ActionButton(CardAction.Equip);
             Check(equip.Disabled && equip.TooltipText.Contains("in a fight"), "a greyed-out Equip says why (gear in a fight takes the action)");
             await Click(this, equip);
@@ -127,7 +139,7 @@ public partial class GameScreen
             Hero aria = ActiveHero!;
             Check(_shownRoomId == "a", "the run starts in the first room");
 
-            await Click(this, _roll);
+            await UseAbility(_roll);
             await WaitUntilIdle();
             await ClickTile(aria.Position);
             await WaitUntilIdle();
@@ -171,7 +183,7 @@ public partial class GameScreen
             Check(ledge.BelowRoomId == "below", "the pits lead to the room underneath");
 
             // A slimeling has no defense, so any shove pushes it into the pit; its heart goes in the fall.
-            await Click(this, _shove);
+            await UseAbility(_shove);
             Check(_shoving, "Shove waits for a monster to be clicked");
             await ClickTile(new GridPosition(4, 4));
             await ConfirmIfHeld();
@@ -179,7 +191,7 @@ public partial class GameScreen
 
             // Leap from (4,5) over the pit to (4,2): a 6 lands there, 4-5 come down in the pit and drop
             // the hero below, 2-3 land just short at the edge, and a 1 goes nowhere.
-            await Click(this, _leap);
+            await UseAbility(_leap);
             Check(_leaping && _session.GetLeapTargets().Contains(new GridPosition(4, 2)), "Leap offers the tile beyond the pit");
             await ClickTile(new GridPosition(4, 2));
             await WaitUntilIdle();
@@ -214,7 +226,7 @@ public partial class GameScreen
 
             Hero bran = ActiveHero!;
             Check(bran.Name == "Bran", "Bran's turn comes next");
-            await Click(this, _roll);
+            await UseAbility(_roll);
             await WaitUntilIdle();
             await ClickTile(new GridPosition(5, 4));
             await WaitUntilIdle();
@@ -281,17 +293,17 @@ public partial class GameScreen
 
             Check(aria.FireDice > 0 && _figures[aria.Id].FireDice == aria.FireDice, "an imp's fire attack sets Aria alight, and her figure shows it");
             Check(_dropRoll.Visible && !_dropRoll.Disabled, "on fire, Drop & roll is offered");
-            await Click(this, _dropRoll);
+            await UseAbility(_dropRoll);
             await WaitUntilIdle();
             // (The imps may set her alight again in their phase, so the log tells whether it went out.)
             Check(aria.Prone, "Drop & roll leaves Aria prone");
             Check(_figures[aria.Id].Prone, "her figure lies down");
             Check(ActiveHero == aria && _session.State.Round > 1, "it takes her whole turn");
 
-            await Click(this, _roll);
+            await UseAbility(_roll);
             await WaitUntilIdle();
             Check(_prone.Text == "Get up" && !_prone.Disabled, "prone, the button offers to get up");
-            await Click(this, _prone);
+            await UseAbility(_prone);
             await WaitUntilIdle();
             Check(!aria.Prone && !_figures[aria.Id].Prone, "Get up stands Aria back up");
 
@@ -324,7 +336,7 @@ public partial class GameScreen
             Check(_board.Position != before, "dragging with the right button pans the view");
             Check(_board.IsInView(aria.Position), "panning stops where Aria would leave the view");
 
-            await Click(this, _search);
+            await UseAbility(_search);
             await ConfirmIfHeld();
             Check(_board.IsInView(aria.Position), "after she acts, the view is back on Aria");
 
@@ -358,7 +370,7 @@ public partial class GameScreen
             Hero aria = ActiveHero!;
             Room armory = _session.State.Rooms["armory"];
             CardInstance bomb = aria.AllCards.Single(card => card.Definition.Id == "bomb");
-            await Click(this, aria.Belt.Contains(bomb) ? _inventory.BeltSlot(aria.Belt.ToList().IndexOf(bomb)) : _inventory.BackpackSlot(aria.Backpack.ToList().IndexOf(bomb)));
+            await Click(this, aria.Belt.Contains(bomb) ? _heroPanel.BeltSlot(aria.Belt.ToList().IndexOf(bomb)) : _heroPanel.BackpackSlot(aria.Backpack.ToList().IndexOf(bomb)));
             await Click(this, _inventory.ActionButton(CardAction.Use));
             Check(_targeting && _session.GetCardTargets(bomb.Id).Contains(new GridPosition(4, 3)), "the bomb can be thrown 3 tiles");
             await ClickTile(new GridPosition(4, 3));
@@ -418,7 +430,7 @@ public partial class GameScreen
             await ClickTile(new GridPosition(0, 0));
             await WaitUntilIdle();
 
-            await Click(this, _rumble);
+            await UseAbility(_rumble);
             await ClickTile(slime.Position);
             await ConfirmIfHeld();
             Check(_session.State.Turn!.AttackDiceUsed > 0 || _session.State.Turn.HeroId != aria.Id, "Rumble, then a click on the slime, attacks it");
@@ -553,7 +565,7 @@ public partial class GameScreen
             Check(ShownRoom.FindMonster(first.Id) is null || first.Conditions.Has(Condition.Freeze), "clicking the slime freezes it (or its Ice dice finish it)");
 
             CardInstance scroll = aria.Belt.Single(card => card.Definition.Id == "flame_scroll");
-            await Click(this, _inventory.BeltSlot(aria.Belt.ToList().IndexOf(scroll)));
+            await Click(this, _heroPanel.BeltSlot(aria.Belt.ToList().IndexOf(scroll)));
             await Click(this, _inventory.ActionButton(CardAction.Use));
             Check(_targeting, $"Use enters targeting for the scroll ({_inventory.ActionButton(CardAction.Use).TooltipText})");
             await ClickTile(second.Position);
@@ -582,8 +594,8 @@ public partial class GameScreen
         {
             await WaitUntilIdle();
             Hero aria = ActiveHero!;
-            Check(_cast.Visible && !_cast.Disabled && _endTurn.Size.X < 160, "a hero who knows spells has a Cast button beside End turn");
-            await Click(this, _cast);
+            Check(_heroPanel.MagicCard is { Visible: true, Disabled: false }, "a hero who knows spells has a lit Magic card to cast from");
+            await Click(this, _heroPanel.MagicCard);
             Check(_spellPicker.Visible && _spellPicker.ButtonFor("hurl_fire") is { Disabled: false }, "Cast opens the spells she knows");
             Check(_spellPicker.ButtonFor("quake") is { Disabled: true }, "Quake is greyed out with nothing beside her");
             await Click(this, _spellPicker.ButtonFor("hurl_fire")!);
@@ -603,7 +615,7 @@ public partial class GameScreen
             int banked = aria.Power.Banked;
             OnPoolTokenClicked(DicePool.Power, 0);
             Check(SelectedPowerDice == 1, "a banked Power Die selected");
-            await Click(this, _cast);
+            await Click(this, _heroPanel.MagicCard);
             await Click(this, _spellPicker.ButtonFor("swirly_eyes")!);
             Check(_session.GetSpellTargets("swirly_eyes").Contains(ogre.Position), "the ogre is in Swirly Eyes' range");
             await ClickTile(ogre.Position);
@@ -617,7 +629,7 @@ public partial class GameScreen
 
             // Her Od Hand die is still hers: she studies the Flame Scroll, whatever comes of it.
             CardInstance scroll = aria.AllCards.Single(card => card.Definition.Id == "flame_scroll");
-            await Click(this, aria.FindCard(scroll.Id)!.Value.Location == CardLocation.Belt ? _inventory.BeltSlot(aria.Belt.ToList().IndexOf(scroll)) : _inventory.BackpackSlot(aria.Backpack.ToList().IndexOf(scroll)));
+            await Click(this, aria.FindCard(scroll.Id)!.Value.Location == CardLocation.Belt ? _heroPanel.BeltSlot(aria.Belt.ToList().IndexOf(scroll)) : _heroPanel.BackpackSlot(aria.Backpack.ToList().IndexOf(scroll)));
             Button learn = _inventory.ActionButton(CardAction.Equip);
             Check(learn.Text == "Learn" && !learn.Disabled, $"a scroll with a spell on it offers Learn ({learn.TooltipText})");
             await Click(this, learn);
@@ -756,7 +768,7 @@ public partial class GameScreen
 
             async Task CastAt(string spellId, GridPosition target)
             {
-                await Click(this, _cast);
+                await Click(this, _heroPanel.MagicCard);
                 await Click(this, _spellPicker.ButtonFor(spellId)!);
                 Check(_session.GetSpellTargets(spellId).Contains(target), $"{spellId} can be aimed at {target}");
                 await ClickTile(target);
@@ -822,14 +834,14 @@ public partial class GameScreen
             {
                 if (aria.Conditions.Has(Condition.Buried) && _digOut.Visible && !_digOut.Disabled)
                 {
-                    await Click(this, _digOut);
+                    await UseAbility(_digOut);
                     await WaitUntilIdle();
                     CheckTokens();
                 }
 
                 if (aria.Conditions.Has(Condition.Blind) && _tend.Visible && !_tend.Disabled)
                 {
-                    await Click(this, _tend);
+                    await UseAbility(_tend);
                     await ConfirmIfHeld();
                     CheckTokens();
                 }
@@ -849,7 +861,7 @@ public partial class GameScreen
                     }
 
                     int slot = place.ToList().IndexOf(scroll);
-                    await Click(this, fromBelt ? _inventory.BeltSlot(slot) : _inventory.BackpackSlot(slot));
+                    await Click(this, fromBelt ? _heroPanel.BeltSlot(slot) : _heroPanel.BackpackSlot(slot));
                     await Click(this, _inventory.ActionButton(CardAction.Use));
                     Check(_targeting, $"Use enters targeting for the {scroll.Definition.Name}");
                     await ClickTile(target);
@@ -1000,7 +1012,7 @@ public partial class GameScreen
             Check(picks.Count == 1 && ShownRoom.LootAt(aria.Position).Sum(card => card.Count) == 2, "two of the three are dropped");
 
             CardInstance emerald = aria.AllCards.Single(card => card.Definition.Id == "emerald");
-            await Click(this, _inventory.BackpackSlot(aria.Backpack.ToList().IndexOf(emerald)));
+            await Click(this, _heroPanel.BackpackSlot(aria.Backpack.ToList().IndexOf(emerald)));
             await Click(this, _inventory.ActionButton(CardAction.Drop));
             await WaitUntilIdle();
 
@@ -1227,6 +1239,26 @@ public partial class GameScreen
             await Click(this, _addPower);
             await WaitFor(this, () => !_busy, "the Power Die to roll");
         }
+    }
+
+    /// <summary>Plays an ability from its hand: spreads the hand out, then clicks its card.</summary>
+    internal async Task UseAbility(Button action)
+    {
+        HandView hand = Hands.First(candidate => candidate.Cards.Any(card => card.Action == action));
+        if (_spread.Hand != hand)
+        {
+            await Click(this, hand);
+        }
+
+        SheetCard? card = _spread.CardFor(action);
+        Check(card is not null, $"{action.Text} is in the {hand.Title} hand");
+        if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } shots)
+        {
+            await Pause(0.1);
+            GetViewport().GetTexture().GetImage().SavePng($"{shots}/hand_{hand.Title.Replace(" ", "")}_{System.DateTime.Now.Ticks}.png");
+        }
+
+        await Click(this, card!);
     }
 
     private Task ClickTile(GridPosition tile) =>

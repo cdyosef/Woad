@@ -41,6 +41,9 @@ public partial class GameScreen
     private Button _land = null!;
     private Button _flyOn = null!;
     private Button _retreat = null!;
+
+    /// <summary>Retreat was clicked once: the next click on it runs for it.</summary>
+    private bool _confirmingRetreat;
     private Button _rumble = null!;
     private Button _prone = null!;
     private Button _dropRoll = null!;
@@ -130,6 +133,8 @@ public partial class GameScreen
         _retreat.Visible = _session.State.Skirmish;
         string? retreatBlocked = _session.CheckRetreat();
         _retreat.Disabled = !(idle && !pending) || retreatBlocked is not null;
+        _confirmingRetreat &= !_retreat.Disabled;
+        _retreat.Text = _confirmingRetreat ? "Retreat?" : "Retreat";
         _retreat.TooltipText = _session.State.Turn is null ? "" : retreatBlocked
             ?? $"Retreat: your selected Od Hand dice look for a way out, against the monsters' chase (a die more than there are of them, +{GameSession.RetreatChaseBonus}). Get away and you're off the field, the monsters left where they are; fail and you bolt in a panic and fall flat.";
         _header.Size = new Vector2(BoardView.Pixels - (_retreat.Visible ? 156 : 102), 14);
@@ -201,6 +206,7 @@ public partial class GameScreen
         _menu.Disabled = _busy || state.Phase == RunPhase.Ended;
         _menu.Text = _confirmingLeave ? "Leave?" : "Menu";
 
+        RefreshHands(idle && !pending);
         RefreshOrders();
         UpdateHighlights();
         RefreshRummage();
@@ -596,8 +602,7 @@ public partial class GameScreen
         _heroPanel.Pool.TokenClicked += OnPoolTokenClicked;
         _heroPanel.Pool.SwapClicked += _ => SwapWeapon();
         AddChild(_heroPanel);
-        _minimap = new MinimapView { Position = new Vector2(8, 266), Size = new Vector2(160, 90) };
-        AddChild(_minimap);
+        _minimap = new MinimapView { Position = new Vector2(SideWidth + BoardView.Pixels + 8, 4), Size = new Vector2(160, 90) };
 
         AddChild(new Panel { Position = new Vector2(SideWidth, 0), Size = new Vector2(BoardView.Pixels, StripHeight) });
         _header = RichLabel(new Vector2(SideWidth + 6, 4), new Vector2(BoardView.Pixels - 102, 14));
@@ -611,7 +616,20 @@ public partial class GameScreen
         AddChild(_partyButton);
         _retreat = UiTheme.Accent(UiTheme.Button(new Vector2(SideWidth + BoardView.Pixels - 148, 4), new Vector2(50, 15), "Retreat"), Palette.Danger);
         _retreat.Visible = false;
-        _retreat.Pressed += () => ExecuteOdHand((heroId, dice, _, power) => new Retreat(heroId, dice, false, power));
+        // Retreat asks first: a click makes it "Retreat?", and a second click runs for it.
+        _retreat.Pressed += () =>
+        {
+            if (!_confirmingRetreat)
+            {
+                _confirmingRetreat = true;
+                Log("Click Retreat? again to flee the fight with your selected Od Hand dice. Anything else and you stay.", Palette.Danger);
+                RefreshPanels();
+                return;
+            }
+
+            _confirmingRetreat = false;
+            ExecuteOdHand((heroId, dice, _, power) => new Retreat(heroId, dice, false, power));
+        };
         AddChild(_retreat);
         _menu = UiTheme.Button(new Vector2(SideWidth + BoardView.Pixels - 48, 4), new Vector2(42, 15), "Menu");
         _menu.Pressed += () =>
@@ -665,9 +683,9 @@ public partial class GameScreen
 
         var right = new Panel { Position = new Vector2(SideWidth + BoardView.Pixels, 0), Size = new Vector2(SideWidth, 360) };
         AddChild(right);
+        AddChild(_minimap);
 
-        _inventory = new InventoryPanel();
-        _inventory.CardSelected += SelectCard;
+        _inventory = new InventoryPanel { Position = new Vector2(0, 98) };
         _inventory.HandChosen += (cardId, hand) => ExecuteForActiveHero(heroId => new EquipCard(heroId, cardId, hand));
         _inventory.ActionRequested += OnCardAction;
         _inventory.BlockedActionClicked += action =>
@@ -779,15 +797,16 @@ public partial class GameScreen
         };
         right.AddChild(_shove);
 
-        _endTurn = UiTheme.Button(new Vector2(8, 329), new Vector2(160, 22), "End turn");
+        _endTurn = UiTheme.Button(new Vector2(6, 335), new Vector2(164, 20), "End turn");
         _endTurn.Pressed += () =>
         {
             CancelSelection();
             ExecuteForActiveHero(heroId => _session.State.Turn is { KeelingOver: true } ? new RollKeel(heroId, SelectedPowerDice) : new EndTurn(heroId));
         };
-        right.AddChild(_endTurn);
+        _heroPanel.AddChild(_endTurn);
         BuildCasting(right);
-        BuildOrders(right);
+        BuildOrders(_heroPanel);
+        BuildHands(right);
 
         BuildLootWindows();
         BuildMerchantWindow();

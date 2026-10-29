@@ -46,32 +46,33 @@ public partial class GameScreen
 
     private void BuildCasting(Control right)
     {
-        _cast = UiTheme.Accent(UiTheme.Button(new Vector2(116, 329), new Vector2(52, 22), "Cast"), new Color("b07ce8"));
+        // Casting is the Magic card's (top right of the sheet); this button only keeps its state.
+        _cast = UiTheme.Accent(UiTheme.Button(Vector2.Zero, new Vector2(52, 22), "Cast"), new Color("b07ce8"));
         _cast.Name = "Cast";
         _cast.Pressed += OpenSpells;
-        right.AddChild(_cast);
+        _heroPanel.MagicClicked += OpenSpells;
         _spellPicker = new SpellPicker { Position = BoardOrigin + new Vector2((BoardView.Pixels - 248) / 2, 40) };
         _spellPicker.Picked += BeginCasting;
         AddChild(_spellPicker);
     }
 
-    /// <summary>The Cast button, beside End turn: it shows for a hero who knows spells.</summary>
+    /// <summary>The Magic card on the sheet: lit for a hero who can cast a spell now.</summary>
     private void UpdateCastButton(Hero? hero, bool ready)
     {
-        _cast.Visible = hero is { Spells.Count: > 0 } && !(_session.State.Turn?.KeelingOver ?? false);
         LayoutEndTurnRow();
         List<string?> errors = hero is null ? [] : [.. hero.Spells.Select(spell => _session.CheckCastSpell(spell.Id))];
         string? blocked = errors.Count == 0 ? "" : errors.All(error => error is not null) ? errors[0] : null;
-        _cast.Disabled = !ready || blocked is not null;
+        _cast.Disabled = !ready || blocked is not null || hero is null || hero.Spells.Count == 0 || (_session.State.Turn?.KeelingOver ?? false);
         _cast.TooltipText = blocked ?? "Cast a spell you know: it costs banked Power Dice and your Rumble dice. Select more Power Dice to put more into it (a die each, up to your Magic).";
+        _heroPanel.ShowMagic(hero is not null && (hero.EffectiveStats.Magic > 0 || hero.Spells.Count > 0), !_cast.Disabled, _cast.TooltipText);
     }
 
-    /// <summary>The bottom row: Orders on the left and Cast on the right while they show, End turn filling the rest.</summary>
+    /// <summary>The bottom of the sheet: Orders on the left while it shows, End turn filling the rest.</summary>
     private void LayoutEndTurnRow()
     {
-        float left = _orders.Visible ? 64 : 8, right = _cast.Visible ? 112 : 168;
-        _endTurn.Position = new Vector2(left, 329);
-        _endTurn.Size = new Vector2(right - left, 22);
+        float left = _orders.Visible ? 60 : 6;
+        _endTurn.Position = new Vector2(left, 335);
+        _endTurn.Size = new Vector2(170 - left, 20);
     }
 
     private void OpenSpells()

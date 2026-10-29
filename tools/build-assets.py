@@ -11,6 +11,7 @@ Then let Godot import the new files (open the editor, or run Godot with --headle
 Uses only the Python standard library.
 """
 
+import importlib.util
 import math
 import random
 import struct
@@ -2419,6 +2420,12 @@ def main():
     build_font(ASSETS / "fonts", "woad_gothic")
     build_sounds(ASSETS / "audio")
     build_music(ASSETS / "audio" / "music")
+
+    # The card pictures (items, ability cards, card backs) are drawn in card_art.py.
+    spec = importlib.util.spec_from_file_location("card_art", Path(__file__).with_name("card_art.py"))
+    card_art = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(card_art)
+    card_art.build_cards(ASSETS / "cards", write_png)
     print(f"Assets written to {ASSETS}")
 
 

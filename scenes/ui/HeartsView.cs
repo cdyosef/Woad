@@ -22,9 +22,11 @@ public partial class HeartsView : Control
     {
         Texture2D? full = GameArt.Ui("heart_full");
         Texture2D? empty = GameArt.Ui("heart_empty");
+        // Too many to fit, they crowd together (overlapping) rather than run off the edge.
+        float step = _maxHearts > 1 && _maxHearts * (HeartWidth + Gap) - Gap > Size.X ? (Size.X - HeartWidth) / (_maxHearts - 1) : HeartWidth + Gap;
         for (int i = 0; i < _maxHearts; i++)
         {
-            var origin = new Vector2(i * (HeartWidth + Gap), 0);
+            var origin = new Vector2(i * step, 0);
             Texture2D? texture = i < _hearts ? full : empty;
             if (texture is not null)
             {
