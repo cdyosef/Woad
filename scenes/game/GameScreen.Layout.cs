@@ -93,7 +93,9 @@ public partial class GameScreen
             _targeting = false;
         }
 
-        _heroPanel.ShowHero(hero, turn, _selectedCardId);
+        // Looking over another hero, their sheet is up, but nothing on it can be played.
+        Hero? sheet = SheetHero;
+        _heroPanel.ShowHero(sheet, sheet == hero ? turn : null, sheet == hero ? _selectedCardId : null);
         _inventory.ShowHero(hero, _selectedCardId, AvailableCardActions(hero, turn));
         _header.Text = HeaderText();
         if (_party.Visible)
@@ -115,7 +117,7 @@ public partial class GameScreen
         }
         if (_hovered is null)
         {
-            _hoverInfo.Text = Hint();
+            SetHint(Hint());
         }
 
         // Keeling Over, the only thing to do is roll the Keel Die (the End turn button), with any Power Dice selected.
@@ -123,7 +125,10 @@ public partial class GameScreen
         bool idle = !Locked && turn is not null && !keeling;
         bool choosingPower = turn?.UnsettledPowerDice > 0;
         bool pending = turn?.PendingRoll is not null || choosingPower;
-        UpdatePool((idle && !pending) || keeling);
+        if (_viewedHeroId is null)
+        {
+            UpdatePool((idle && !pending) || keeling);
+        }
         bool held = hero is not null && _session.HeldBy(hero) is not null;
         _roll.Disabled = !(idle && !pending && _session.MoveDiceLeft > 0) || held;
         string? searchBlocked = _session.CheckSearch();
@@ -137,7 +142,7 @@ public partial class GameScreen
         _retreat.Text = _confirmingRetreat ? "Retreat?" : "Retreat";
         _retreat.TooltipText = _session.State.Turn is null ? "" : retreatBlocked
             ?? $"Retreat: your selected Od Hand dice look for a way out, against the monsters' chase (a die more than there are of them, +{GameSession.RetreatChaseBonus}). Get away and you're off the field, the monsters left where they are; fail and you bolt in a panic and fall flat.";
-        _header.Size = new Vector2(BoardView.Pixels - (_retreat.Visible ? 156 : 102), 14);
+        _partyButton.Position = new Vector2(SideWidth + BoardView.Pixels + (_retreat.Visible ? 30 : 82), 3);
         _steal.Disabled = !(idle && !pending) || _session.OdHandDiceLeft < 1 || turn!.HasStolen;
         _stealing &= !_steal.Disabled;
         _steal.Text = _stealing ? "Cancel" : "Steal";
@@ -207,6 +212,13 @@ public partial class GameScreen
         _menu.Text = _confirmingLeave ? "Leave?" : "Menu";
 
         RefreshHands(idle && !pending);
+        foreach (HandView hand in Hands)
+        {
+            hand.Visible &= _viewedHeroId is null;
+        }
+
+        RefreshTurnOrder();
+        RefreshTarget();
         RefreshOrders();
         UpdateHighlights();
         RefreshRummage();
@@ -526,27 +538,12 @@ public partial class GameScreen
     private string HeaderText()
     {
         GameState state = _session.State;
-        string dim = Palette.Hex(Palette.TextDim);
-        // A big party doesn't fit by name: everyone but the active hero is shown by initial.
-        bool compact = state.Heroes.Count > GameRules.FullParty;
-        IEnumerable<string> heroes = state.Heroes.Select(hero =>
-        {
-            string name = Escape(compact && hero != ActiveHero ? hero.Name[..1].ToUpperInvariant() : hero.Name);
-            string color = Palette.Hex(Palette.Seat(hero.Seat));
-            return hero.Status switch
-            {
-                HeroStatus.Dead => $"[color={dim}][s]{name}[/s][/color]",
-                HeroStatus.KeelingOver when hero == ActiveHero => $"[color={Palette.Hex(Palette.Danger)}][u]{name}[/u] (down)[/color]",
-                HeroStatus.KeelingOver => $"[color={Palette.Hex(Palette.Danger)}]{name}{(compact ? "" : " (down)")}[/color]",
-                HeroStatus.Escaped => $"[color={dim}]{name} (out)[/color]",
-                _ when hero == ActiveHero => $"[bgcolor={color}][color={Palette.Hex(Palette.Ink)}] {name} [/color][/bgcolor]",
-                _ => $"[color={color}]{name}[/color]",
-            };
-        });
-
         int floor = _shownRoomId.Length > 0 ? ShownRoom.Floor : 1;
         string friendlyFire = state.FriendlyFire ? $"  [color={Palette.Hex(Palette.Danger)}]FF[/color]" : "";
-        return $"[color={Palette.Hex(Palette.Trim)}]ROUND {state.Round}   FLOOR {floor}[/color]{friendlyFire}   {string.Join(compact ? " " : "  ", heroes)}";
+        Hero? turn = TurnOnShow;
+        string whose = _playingTurn is { Set: true, HeroId: null } ? $"[color={Palette.Hex(Palette.Danger)}]The monsters' turn[/color]"
+            : turn is null ? "" : $"[color={Palette.Hex(Palette.Seat(turn.Seat))}]{Escape(turn.Name)}'s turn[/color]";
+        return $"[color={Palette.Hex(Palette.Trim)}]ROUND {state.Round}   FLOOR {floor}[/color]{friendlyFire}\n{whose}";
     }
 
     /// <summary>"ARIA'S TURN", or for a companion "PIP'S TURN (ARIA'S COMPANION)".</summary>
@@ -602,11 +599,15 @@ public partial class GameScreen
         _heroPanel.Pool.TokenClicked += OnPoolTokenClicked;
         _heroPanel.Pool.SwapClicked += _ => SwapWeapon();
         AddChild(_heroPanel);
-        _minimap = new MinimapView { Position = new Vector2(SideWidth + BoardView.Pixels + 8, 4), Size = new Vector2(160, 90) };
+        _minimap = new MinimapView { Position = new Vector2(SideWidth + BoardView.Pixels + 8, 20), Size = new Vector2(160, 76) };
 
         AddChild(new Panel { Position = new Vector2(SideWidth, 0), Size = new Vector2(BoardView.Pixels, StripHeight) });
-        _header = RichLabel(new Vector2(SideWidth + 6, 4), new Vector2(BoardView.Pixels - 102, 14));
-        _partyButton = UiTheme.Button(new Vector2(SideWidth + BoardView.Pixels - 94, 4), new Vector2(42, 15), "Party");
+        _header = RichLabel(new Vector2(SideWidth + 196, 4), new Vector2(BoardView.Pixels - 198, 28));
+        _turnOrder = new TurnOrderView { Position = new Vector2(SideWidth + 3, 1), Size = new Vector2(190, 33) };
+        _turnOrder.HeroClicked += ViewHero;
+        // Party, Retreat and Menu: up in the top right, over the floor map.
+        float buttons = SideWidth + BoardView.Pixels;
+        _partyButton = UiTheme.Button(new Vector2(buttons + 30, 3), new Vector2(42, 15), "Party");
         _partyButton.TooltipText = "The Party: everyone's level, hearts and gear; level up, and set how your companions manage their things.";
         _partyButton.Pressed += () =>
         {
@@ -614,7 +615,7 @@ public partial class GameScreen
             RefreshPanels();
         };
         AddChild(_partyButton);
-        _retreat = UiTheme.Accent(UiTheme.Button(new Vector2(SideWidth + BoardView.Pixels - 148, 4), new Vector2(50, 15), "Retreat"), Palette.Danger);
+        _retreat = UiTheme.Accent(UiTheme.Button(new Vector2(buttons + 74, 3), new Vector2(50, 15), "Retreat"), Palette.Danger);
         _retreat.Visible = false;
         // Retreat asks first: a click makes it "Retreat?", and a second click runs for it.
         _retreat.Pressed += () =>
@@ -631,7 +632,7 @@ public partial class GameScreen
             ExecuteOdHand((heroId, dice, _, power) => new Retreat(heroId, dice, false, power));
         };
         AddChild(_retreat);
-        _menu = UiTheme.Button(new Vector2(SideWidth + BoardView.Pixels - 48, 4), new Vector2(42, 15), "Menu");
+        _menu = UiTheme.Button(new Vector2(buttons + 126, 3), new Vector2(44, 15), "Menu");
         _menu.Pressed += () =>
         {
             if (_confirmingLeave)
@@ -645,7 +646,9 @@ public partial class GameScreen
             RefreshPanels();
         };
         AddChild(_menu);
+        // What the mouse is over, or what to do next: shown in the right panel while no card is picked.
         _hoverInfo = UiTheme.Label(new Vector2(SideWidth + 6, 19), new Vector2(BoardView.Pixels - 12, 14), color: Palette.TextDim);
+        _hoverInfo.Visible = false;
         _hoverInfo.AutowrapMode = TextServer.AutowrapMode.Off;
         _hoverInfo.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
         AddChild(_hoverInfo);
@@ -691,33 +694,40 @@ public partial class GameScreen
         _inventory.BlockedActionClicked += action =>
             Log($"{action}: {AvailableCardActions(ActiveHero, _session.State.Turn).Explain(action)}", Palette.TextDim);
         right.AddChild(_inventory);
+        _targetSheet = new TargetSheet { Position = new Vector2(4, 98), Visible = false };
+        _targetSheet.CloseRequested += () =>
+        {
+            _targetId = null;
+            RefreshPanels();
+        };
+        right.AddChild(_targetSheet);
 
         // The message log, under the cards: the newest line bright, older ones dimmed; scroll back with the wheel.
-        _log = RichLabel(new Vector2(SideWidth + BoardView.Pixels + 8, 189), new Vector2(160, 74));
+        _log = RichLabel(new Vector2(SideWidth + BoardView.Pixels + 8, 252), new Vector2(160, 66));
         _log.AddThemeConstantOverride("line_separation", -2);
         _log.ScrollActive = true;
         _log.ScrollFollowing = true;
         _log.MouseFilter = MouseFilterEnum.Stop;
 
-        _luckHint = UiTheme.Label(new Vector2(8, 263), new Vector2(160, 14), "Luck: click a die to reroll it.", color: Palette.Heal);
+        _luckHint = UiTheme.Label(new Vector2(8, 320), new Vector2(160, 14), "Luck: click a die to reroll it.", color: Palette.Heal);
         right.AddChild(_luckHint);
 
-        _confirm = UiTheme.Button(new Vector2(8, 279), new Vector2(160, 18), "Confirm roll");
+        _confirm = UiTheme.Button(new Vector2(8, 336), new Vector2(160, 18), "Confirm roll");
         _confirm.Pressed += () => ExecuteForActiveHero(heroId => new ConfirmAttack(heroId));
         right.AddChild(_confirm);
 
         // After a 6: roll the Power Die into this roll, or keep it for later.
-        _addPower = UiTheme.Accent(UiTheme.Button(new Vector2(8, 279), new Vector2(78, 18), "Add Power Die"), Palette.Power);
+        _addPower = UiTheme.Accent(UiTheme.Button(new Vector2(8, 336), new Vector2(78, 18), "Add Power Die"), Palette.Power);
         _addPower.Pressed += () => ExecuteForActiveHero(heroId => new AddPowerDie(heroId));
         right.AddChild(_addPower);
-        _bankPower = UiTheme.Accent(UiTheme.Button(new Vector2(90, 279), new Vector2(78, 18), "Bank it"), Palette.Power);
+        _bankPower = UiTheme.Accent(UiTheme.Button(new Vector2(90, 336), new Vector2(78, 18), "Bank it"), Palette.Power);
         _bankPower.Pressed += () => ExecuteForActiveHero(heroId => new BankPowerDie(heroId));
         right.AddChild(_bankPower);
-        _land = UiTheme.Accent(UiTheme.Button(new Vector2(8, 279), new Vector2(78, 18), "Land."), Palette.DieWend);
+        _land = UiTheme.Accent(UiTheme.Button(new Vector2(8, 336), new Vector2(78, 18), "Land."), Palette.DieWend);
         _land.TooltipText = "Come down where you are. Over a pit, there's nothing to land on.";
         _land.Pressed += () => ExecuteForActiveHero(heroId => new Land(heroId));
         right.AddChild(_land);
-        _flyOn = UiTheme.Accent(UiTheme.Button(new Vector2(90, 279), new Vector2(78, 18), "Fly!"), Palette.TrimBright);
+        _flyOn = UiTheme.Accent(UiTheme.Button(new Vector2(90, 336), new Vector2(78, 18), "Fly!"), Palette.TrimBright);
         _flyOn.TooltipText = "Beat the wings again: a d6 more of flight (a 6 rolls a Power Die in). A 1 breaks them, and down you come: prone, stunned, your Wend gone.";
         _flyOn.Pressed += () => ExecuteForActiveHero(heroId => new BeatWings(heroId));
         right.AddChild(_flyOn);
@@ -807,6 +817,7 @@ public partial class GameScreen
         BuildCasting(right);
         BuildOrders(_heroPanel);
         BuildHands(right);
+        BuildTurnOrder();
 
         BuildLootWindows();
         BuildMerchantWindow();

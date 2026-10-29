@@ -403,6 +403,54 @@ public sealed class Hero
     /// <summary>Trims current hearts after gear that granted hearts is removed.</summary>
     internal void ClampHearts() => Hearts = Math.Min(Hearts, MaxHearts);
 
+    /// <summary>
+    /// A hero standing in for a saved character outside a run (the Woarld Map's Party menu), for their
+    /// character sheet: their stats, gear where they keep it, spells, gold and Power Dice.
+    /// <paramref name="cardKeys"/> gives each card's key in the character's lists, by its id here.
+    /// </summary>
+    public static Hero Preview(Character character, ContentCatalog content, int? hearts, out IReadOnlyDictionary<int, string> cardKeys)
+    {
+        var hero = new Hero(0, 0, character.Name, character.BaseStats, "", default, character.Id, character.Portrait, character.Appearance)
+        {
+            StartXp = character.Xp,
+            Gold = character.Gold,
+        };
+        var keys = new Dictionary<int, string>();
+        int nextId = 1;
+        CardInstance Make(string key)
+        {
+            var card = new CardInstance(nextId++, content.GetCard(key), null) { Wear = CardKey.Wear(key) };
+            keys[card.Id] = key;
+            return card;
+        }
+
+        foreach (string key in character.Equipped)
+        {
+            hero.Equip(Make(key));
+        }
+
+        foreach (string key in character.Belt)
+        {
+            hero._belt.Add(Make(key));
+        }
+
+        foreach (string key in character.Backpack)
+        {
+            hero._backpack.Add(Make(key));
+        }
+
+        foreach (string spellId in character.Spells)
+        {
+            hero.Learn(content.GetSpell(spellId));
+        }
+
+        hero.Hearts = Math.Clamp(hearts ?? hero.MaxHearts, 0, hero.MaxHearts);
+        hero.LuckRemaining = hero.EffectiveStats.Luck;
+        hero.Power.Banked = Math.Clamp(character.PowerDice, 0, hero.Power.Capacity);
+        cardKeys = keys;
+        return hero;
+    }
+
     /// <summary>Puts a card the hero starts the run with into the best free place.</summary>
     internal bool TryPlaceStartingCard(CardInstance card)
     {

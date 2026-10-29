@@ -164,6 +164,7 @@ public partial class GameScreen
             return;
         }
 
+        PickTarget(tile);
         if (_targeting && _selectedCardId is int cardId)
         {
             if (_session.GetCardTargets(cardId).Contains(tile))
@@ -487,7 +488,7 @@ public partial class GameScreen
     private void OnTileHovered(GridPosition? tile)
     {
         _hovered = tile;
-        _hoverInfo.Text = tile is { } hovered ? DescribeTile(hovered) : Hint();
+        SetHint(tile is { } hovered ? DescribeTile(hovered) : Hint());
         _board.ShowNameTag(tile, tile is { } over ? NameAt(over) : "");
 
         if (_targeting && tile is { } target && _selectedCardId is int cardId

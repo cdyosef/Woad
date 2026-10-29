@@ -45,6 +45,10 @@ public partial class InventoryPanel : Control
     private Label _handQuestion = null!;
     private readonly List<Button> _hands = [];
 
+    /// <summary>What the mouse is over on the board, or what to do next: shown while no card is picked.</summary>
+    private string _hint = "";
+    private bool _cardShown;
+
     /// <summary>The card the hand choice is for, while it's showing.</summary>
     private int? _choosingFor;
 
@@ -132,6 +136,18 @@ public partial class InventoryPanel : Control
 
     internal Button ActionButton(CardAction action) => _actions[action];
 
+    private string NoCardText => _hint.Length > 0 ? _hint : "Select a card to see what it does.";
+
+    /// <summary>Shows what the mouse is over (or what to do next), unless a card's text is up.</summary>
+    public void ShowHint(string hint)
+    {
+        _hint = hint;
+        if (!_cardShown)
+        {
+            _details.Text = NoCardText;
+        }
+    }
+
     public void ShowHero(Hero? hero, int? selectedCardId, CardActions actions)
     {
         if (_choosingFor != selectedCardId)
@@ -141,8 +157,9 @@ public partial class InventoryPanel : Control
         }
 
         CardInstance? selected = selectedCardId is int id ? hero?.FindCard(id)?.Card : null;
+        _cardShown = selected is not null;
         _details.Text = selected is null
-            ? "Select a card to see what it does."
+            ? NoCardText
             : $"{CardSlot.Title(selected)}: {selected.Definition.Text}" + (hero!.HasSetBonus(selected.Definition) ? " SET BONUS ON!" : "")
               // Why a card you'd use can't be used right now (out of range, say), where it's easy to see.
               + (selected.Definition.Effect is not null && !actions.Allows(CardAction.Use) ? $"\nCan't use: {actions.Explain(CardAction.Use)}" : "");

@@ -97,7 +97,7 @@ public partial class HeroPanel : Panel
         Pool.Place(DicePool.Power, new Vector2(4, 39), 168);
         Pool.Place(DicePool.OdHand, new Vector2(3, Rows[1] + CardHeight + 2), 57);
         Pool.Place(DicePool.Defense, new Vector2(63, Rows[1] + CardHeight + 2), 57);
-        Pool.Place(DicePool.Rumble, new Vector2(122, Rows[1] + CardHeight + 2), 52);
+        Pool.Place(DicePool.Rumble, new Vector2(122, Rows[1] + CardHeight + 2), 50);
         Pool.Place(DicePool.Wend, new Vector2(63, Rows[2] + CardHeight + 2), 57);
 
         // 1. Name and hearts. 2. Level, title, kills and XP. 3. Gold, keys, torches and treasure.
@@ -301,8 +301,20 @@ public partial class HeroPanel : Panel
             _magicRank.Text = "";
         }
 
-        Pool.Visible = turn is not null;
+        Pool.Visible = true;
         Pool.ShowCapacity(hero.Power.Capacity);
+        if (turn is null)
+        {
+            // Not their turn (out on the Woarld Map, or looked over): all their dice, to read, not to pick.
+            Pool.Enabled = false;
+            Pool.ShowSwap(DicePool.Rumble, null);
+            Pool.ShowPool(DicePool.Rumble, stats.AttackDice, 0, stats.Weapon, false, bonusDice: stats.WeaponDice);
+            Pool.ShowPool(DicePool.Wend, stats.MoveDice, 0, stats.Speed, false);
+            Pool.ShowPool(DicePool.OdHand, stats.OdHandDice, 0, stats.Tools, false, bonusDice: stats.ToolDice);
+            Pool.ShowPool(DicePool.Power, hero.Power.Banked, 0, 0, false);
+            int defense = Math.Max(0, stats.DefenseDice);
+            Pool.ShowDefense(Math.Min(1, defense), Math.Max(0, defense - 1), Math.Max(0, defense - 1), stats.Armor, stats.Block, stats.Block > 0, stats.GuardDice, stats.GuardDice);
+        }
         _turn.Text = turn is null
             ? ""
             : (turn.HasActed, turn.UsedBeltItem) switch

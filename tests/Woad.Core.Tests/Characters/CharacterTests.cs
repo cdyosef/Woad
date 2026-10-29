@@ -15,6 +15,21 @@ public class CharacterTests
         Character.Create(name, "ember", allocation ?? StatAllocation.None, Content, Now);
 
     [Fact]
+    public void APreviewHeroWearsWhatTheCharacterWearsWhereTheyKeepIt()
+    {
+        Character character = NewCharacter();
+
+        Hero hero = Hero.Preview(character, Content, hearts: 2, out IReadOnlyDictionary<int, string> keys);
+
+        Assert.Equal("wooden_sword", hero.Equipment[EquipSlot.MainHand].Definition.Id);
+        Assert.Equal("buckler", hero.Equipment[EquipSlot.OffHand].Definition.Id);
+        Assert.Equal("health_potion", hero.Belt.Single().Definition.Id);
+        Assert.Equal("torch", hero.Backpack.Single().Definition.Id);
+        Assert.Equal(2, hero.Hearts);
+        Assert.Equal("torch", keys[hero.Backpack.Single().Id]);
+    }
+
+    [Fact]
     public void NewCharactersStartAtLevelOneWithTheStarterKit()
     {
         Character character = NewCharacter(allocation: new StatAllocation { Hearts = 1, AttackDice = 1 });
