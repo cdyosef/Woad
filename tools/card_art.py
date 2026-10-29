@@ -608,6 +608,168 @@ def clover(c, x, y, r):
     c.dot(x, y, GREEN[2])
 
 
+# ---- Spells: a picture for each, on the Magic hand's cards --------------------------------------
+
+def _shade(color, amount):
+    """A color made lighter (amount > 0) or darker (amount < 0)."""
+    channels = [int(color[k:k + 2], 16) for k in (1, 3, 5)]
+    return "#" + "".join(f"{max(0, min(255, value + amount)):02x}" for value in channels)
+
+
+def _star(c, cx, cy, outer, inner, color, turn=-90):
+    points = []
+    for k in range(10):
+        r = outer if k % 2 == 0 else inner
+        a = math.radians(turn + 36 * k)
+        points.append((cx + r * math.cos(a), cy + r * math.sin(a)))
+    c.poly(points, color)
+
+
+def blast(c, element):
+    """A Blast: its scroll's rune, big, at the heart of a burst of its element's color."""
+    color = ELEMENTS[element]
+    light, dark = _shade(color, 60), _shade(color, -80)
+    for k in range(12):
+        a = math.radians(30 * k + 15)
+        length = 14 if k % 2 == 0 else 11
+        c.line(16 + 7 * math.cos(a), 16 + 7 * math.sin(a), 16 + length * math.cos(a), 16 + length * math.sin(a), color if k % 2 == 0 else dark, 2)
+    c.circle(16, 16, 9, dark)
+    c.circle(16, 16, 8, color)
+    c.circle(15, 15, 5, light)
+    for y, row in enumerate(RUNES[element]):
+        for x, mark in enumerate(row):
+            if mark != ".":
+                c.dot(13 + x, 13 + y, OUTLINE if mark == "#" else dark)
+
+
+def spell(c, name):
+    if name.endswith("_blast"):
+        blast(c, name[:-len("_blast")])
+    elif name == "shooting_star":
+        for k, (x, y) in enumerate(((5, 27), (8, 24), (11, 21), (13, 19))):
+            c.dot(x, y, GOLD[k % 2])
+            c.dot(x + 1, y + 1, GOLD[2])
+        c.line(4, 28, 16, 16, GOLD[2], 1)
+        _star(c, 20, 12, 9, 4, GOLD[1])
+        _star(c, 20, 12, 5, 2.2, GOLD[0])
+    elif name == "hurl_fire":
+        c.poly([(4, 24), (14, 13), (20, 20), (10, 28)], FLAME[2])
+        c.poly([(7, 24), (15, 16), (18, 20), (11, 26)], FLAME[1])
+        c.circle(20, 12, 8, FLAME[2])
+        c.circle(20, 12, 6, FLAME[1])
+        c.circle(19, 11, 3.5, FLAME[0])
+    elif name == "poison_mist":
+        for x, y, r in ((7, 22, 5), (13, 18, 6), (20, 14, 6), (26, 10, 4.5)):
+            c.circle(x, y, r, GREEN[2])
+            c.circle(x - 1, y - 1, r - 1.5, GREEN[1])
+        for x, y in ((9, 20), (16, 16), (22, 12)):
+            c.dot(x, y, GREEN[0])
+        c.circle(15, 26, 1.5, "#7fd04a")
+    elif name == "icicle_arrow":
+        c.poly([(27, 5), (22, 13), (11, 24), (8, 21), (19, 10)], ICE[1])
+        c.line(26, 6, 10, 22, ICE[0], 1)
+        c.poly([(27, 5), (17, 8), (24, 15)], ICE[2])
+        c.poly([(8, 21), (3, 22), (4, 27), (9, 28), (11, 24)], ICE[0])
+        for x, y in ((14, 25), (20, 22), (24, 18)):
+            c.dot(x, y, ICE[0])
+    elif name == "acid_ball":
+        c.circle(16, 14, 9, "#a8c020")
+        c.circle(16, 14, 7.5, "#d4ec3a")
+        c.circle(13, 11, 3, "#f4ffa0")
+        for x, y in ((11, 23), (17, 24), (22, 22)):
+            c.rect(x, y, 2, 4, "#d4ec3a")
+            c.dot(x, y + 4, "#a8c020")
+        c.circle(5, 25, 1.6, "#d4ec3a")
+        c.circle(27, 25, 1.6, "#d4ec3a")
+    elif name == "death_touch":
+        bone, glow = "#e8e0c8", "#8f78b0"
+        c.circle(16, 18, 12, _shade(glow, -60))
+        c.circle(16, 18, 10, glow)
+        c.rect(11, 17, 11, 7, bone)
+        for k in range(4):
+            c.rect(11 + k * 3, 7 + (1 if k in (0, 3) else 0), 2, 10, bone)
+        c.rect(22, 14, 2, 6, bone)
+        c.rect(13, 24, 7, 4, bone)
+        for k in range(4):
+            c.dot(11 + k * 3, 12, BLACK[1])
+    elif name == "squall_wave":
+        c.ring(15, 16, 11, BLUE[1], 3)
+        c.ring(15, 16, 6, BLUE[0], 2)
+        _clear_below(c, 17)
+        c.poly([(2, 18), (30, 18), (30, 23), (2, 23)], BLUE[2])
+        for x in range(3, 30, 6):
+            c.line(x, 20, x + 3, 19, BLUE[0])
+        for x, y in ((26, 9), (28, 13), (24, 6)):
+            c.dot(x, y, WHITE[0])
+    elif name == "shining_light":
+        for k in range(8):
+            a = math.radians(45 * k)
+            c.line(16 + 7 * math.cos(a), 16 + 7 * math.sin(a), 16 + 14 * math.cos(a), 16 + 14 * math.sin(a), "#fff2b0", 2)
+        c.circle(16, 16, 7, "#ffe07a")
+        c.circle(16, 16, 5, "#fff8d8")
+        c.circle(15, 15, 2, "#ffffff")
+    elif name == "lifeforce":
+        c.rect(15, 14, 2, 14, GREEN[2])
+        c.poly([(16, 20), (7, 15), (8, 21)], GREEN[1])
+        c.poly([(16, 17), (25, 12), (24, 18)], GREEN[1])
+        c.rect(6, 27, 20, 3, LEATHER[1])
+        c.circle(13, 8, 3.2, RED[1])
+        c.circle(19, 8, 3.2, RED[1])
+        c.poly([(10, 9), (22, 9), (16, 15)], RED[1])
+        c.dot(12, 7, RED[0])
+    elif name == "quake":
+        c.rect(2, 20, 28, 10, STONE[1])
+        c.rect(2, 20, 28, 2, STONE[0])
+        c.line(16, 20, 13, 24, OUTLINE, 1)
+        c.line(13, 24, 17, 27, OUTLINE, 1)
+        c.line(17, 27, 15, 30, OUTLINE, 1)
+        for x, y, r in ((8, 13, 3), (22, 10, 3.5), (15, 6, 2.2)):
+            c.circle(x, y, r, "#b08850")
+            c.dot(x - 1, y - 1, "#d8b880")
+        for x in (6, 24):
+            c.line(x, 18, x, 16, WHITE[1])
+    elif name == "elektrobolt":
+        c.poly([(19, 2), (8, 17), (15, 17), (11, 30), (24, 12), (17, 12), (22, 2)], "#ffe03a")
+        c.poly([(19, 4), (11, 16), (16, 16)], "#fff8b0")
+        for x, y in ((5, 9), (27, 20), (26, 6)):
+            c.dot(x, y, "#ffe03a")
+    elif name == "swirly_eyes":
+        pink = "#e878e8"
+        c.poly([(2, 16), (9, 9), (16, 7), (23, 9), (30, 16), (23, 23), (16, 25), (9, 23)], WHITE[0])
+        c.circle(16, 16, 7, pink)
+        for k in range(28):
+            t = k / 27
+            a = t * 3 * math.pi
+            c.dot(16 + 6 * t * math.cos(a), 16 + 6 * t * math.sin(a), _shade(pink, -110))
+    elif name == "shadowbind":
+        shade = "#5a5878"
+        c.circle(16, 16, 12, _shade(shade, -30))
+        for y in range(SIZE):
+            for x in range(SIZE):
+                if (x + 0.5 - 21) ** 2 + (y + 0.5 - 12) ** 2 <= 81 and c.px[y][x] is not None:
+                    c.px[y][x] = None
+        for k in range(6):
+            c.circle(6 + k * 4, 26 - (k % 2) * 2, 1.8, "#8a88a8")
+        c.circle(11, 18, 1.5, "#c8c0ff")
+    else:
+        raise ValueError(f"No picture for spell '{name}'")
+
+
+SPELLS = [
+    "shooting_star", "hurl_fire", "poison_mist", "icicle_arrow", "acid_ball", "death_touch", "squall_wave",
+    "shining_light", "lifeforce", "quake", "elektrobolt", "swirly_eyes", "shadowbind",
+    "flame_blast", "frost_blast", "venom_blast", "acid_blast", "grave_blast", "gale_blast", "sun_blast",
+    "bloom_blast", "quake_blast", "spark_blast", "mind_blast", "shadow_blast",
+]
+
+
+def draw_spell(name):
+    c = Canvas()
+    spell(c, name)
+    c.outline()
+    return c.pixels()
+
+
 ITEMS = [
     "wooden_sword", "longsword", "knights_sword", "trident", "short_bow", "great_axe", "maul", "war_hammer",
     "spear", "dagger", "rapier", "crossbow", "heavy_crossbow", "frost_brand", "quake_hammer", "longbow",
@@ -630,10 +792,13 @@ def build_cards(out_dir, write_png):
     for slot in BACKS:
         write_png(Path(out_dir) / f"back_{slot}.png", draw_back(slot))
 
+    for name in SPELLS:
+        write_png(Path(out_dir) / f"spell_{name}.png", draw_spell(name))
+
 
 def contact_sheet(path, write_png, scale=3, columns=11, background="#2a2338"):
     """Every picture on a card-colored panel, enlarged, to look them over."""
-    pictures = [draw(item) for item in ITEMS] + [draw_ability(name) for name in ABILITIES] + [draw_back(slot) for slot in BACKS]
+    pictures = [draw(item) for item in ITEMS] + [draw_ability(name) for name in ABILITIES] + [draw_back(slot) for slot in BACKS] + [draw_spell(name) for name in SPELLS]
     cell = SIZE * scale + 8
     rows = (len(pictures) + columns - 1) // columns
     bg = rgba(background)

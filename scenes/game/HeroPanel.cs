@@ -122,7 +122,7 @@ public partial class HeroPanel : Panel
         MagicCard = Add(new SheetCard { Position = new(Columns[2], Rows[0]), Size = new(CardWidth, CardHeight), Back = "cast" });
         MagicCard.Pressed += () => MagicClicked?.Invoke();
         _luck = Add(UiTheme.RichLabel(new(3, Rows[0] + CardHeight + 2), new(58, 12)));
-        _magicRank = Add(UiTheme.RichLabel(new(122, Rows[0] + CardHeight + 2), new(52, 12)));
+        _magicRank = Add(UiTheme.RichLabel(new(137, Rows[0] + CardHeight + 2), new(38, 12)));
 
         // The bag: a deck, its cards listed under it.
         for (int i = 2; i >= 1; i--)
@@ -307,7 +307,7 @@ public partial class HeroPanel : Panel
         bool knowsMagic = stats.Magic > 0 || hero.Spells.Count > 0;
         if (knowsMagic)
         {
-            _magicRank.Text = $"{UiTheme.Icon("icon_magic", "Magic")} [color=#b07ce8]{stats.Magic}, {UiTheme.Count(hero.Spells.Count, "spell", "spells")}[/color]";
+            _magicRank.Text = $"[color=#b07ce8]Magic {stats.Magic}[/color]";
         }
         else
         {

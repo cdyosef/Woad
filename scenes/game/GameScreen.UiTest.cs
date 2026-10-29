@@ -619,9 +619,16 @@ public partial class GameScreen
             Hero aria = ActiveHero!;
             Check(_heroPanel.MagicCard is { Visible: true, Disabled: false }, "a hero who knows spells has a lit Magic card to cast from");
             await Click(this, _heroPanel.MagicCard);
-            Check(_spellPicker.Visible && _spellPicker.ButtonFor("hurl_fire") is { Disabled: false }, "Cast opens the spells she knows");
-            Check(_spellPicker.ButtonFor("quake") is { Disabled: true }, "Quake is greyed out with nothing beside her");
-            await Click(this, _spellPicker.ButtonFor("hurl_fire")!);
+            Check(_spread.Hand == _magicHand && SpellCard("hurl_fire") is not null && !_spellButtons["hurl_fire"].Disabled, "the Magic card spreads out the spells she knows");
+            Check(_spellButtons["quake"].Disabled, "Quake is dull with nothing beside her");
+            Check(_magicHand.Cards.Count == aria.Spells.Count, "her Magic hand holds only the spells she knows");
+            if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } shots)
+            {
+                await Pause(0.1);
+                GetViewport().GetTexture().GetImage().SavePng($"{shots}/magic_hand.png");
+            }
+
+            await Click(this, SpellCard("hurl_fire")!);
             Check(_casting == "hurl_fire", "picking Hurl Fire aims it");
             Monster slime = ShownRoom.MonsterAt(new GridPosition(3, 3))!;
             Check(_session.GetSpellTargets("hurl_fire").Contains(slime.Position), "the slime is in its range");
@@ -639,7 +646,7 @@ public partial class GameScreen
             OnPoolTokenClicked(DicePool.Power, 0);
             Check(SelectedPowerDice == 1, "a banked Power Die selected");
             await Click(this, _heroPanel.MagicCard);
-            await Click(this, _spellPicker.ButtonFor("swirly_eyes")!);
+            await Click(this, SpellCard("swirly_eyes")!);
             Check(_session.GetSpellTargets("swirly_eyes").Contains(ogre.Position), "the ogre is in Swirly Eyes' range");
             await ClickTile(ogre.Position);
             Check(_swirling == ogre.Position, "Swirly Eyes asks where to move the ogre");
@@ -805,7 +812,7 @@ public partial class GameScreen
             async Task CastAt(string spellId, GridPosition target)
             {
                 await Click(this, _heroPanel.MagicCard);
-                await Click(this, _spellPicker.ButtonFor(spellId)!);
+                await Click(this, SpellCard(spellId)!);
                 Check(_session.GetSpellTargets(spellId).Contains(target), $"{spellId} can be aimed at {target}");
                 await ClickTile(target);
                 await WaitUntilIdle();
@@ -1276,6 +1283,9 @@ public partial class GameScreen
             await WaitFor(this, () => !_busy, "the Power Die to roll");
         }
     }
+
+    /// <summary>A spell's card in the spread Magic hand.</summary>
+    private SheetCard? SpellCard(string spellId) => _spellButtons.TryGetValue(spellId, out Button? button) ? _spread.CardFor(button) : null;
 
     /// <summary>Plays an ability from its hand: spreads the hand out, then clicks its card.</summary>
     internal async Task UseAbility(Button action)

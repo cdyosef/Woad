@@ -82,8 +82,13 @@ public partial class GameScreen
             return;
         }
 
+        // The Magic hand: the spells they know, spread out, the ones they can cast now lit.
+        bool open = _spread.Hand == _magicHand;
         CancelSelection();
-        _spellPicker.Open("CAST", hero.Spells.Select(spell => (spell, $"{spell.Name} ({spell.Cost})", _session.CheckCastSpell(spell.Id))));
+        if (!open && hero.Spells.Count > 0)
+        {
+            _spread.Open(_magicHand);
+        }
     }
 
     private void BeginCasting(string spellId)

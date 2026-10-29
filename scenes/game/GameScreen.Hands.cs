@@ -1,5 +1,6 @@
 using Godot;
 using Woad.Core.Commands;
+using Woad.Core.Content;
 using Woad.Core.Grid;
 using Woad.Core.Model;
 using Woad.Scenes.Ui;
@@ -27,6 +28,11 @@ public partial class GameScreen
     private HandView _rumbleHand = null!;
     private HandView _wendHand = null!;
     private HandView _odHand = null!;
+    private HandView _magicHand = null!;
+    private Control _abilities = null!;
+
+    /// <summary>A hidden button for each spell the active hero knows, for its card in the Magic hand to press.</summary>
+    private readonly Dictionary<string, Button> _spellButtons = [];
     private HandSpread _spread = null!;
     private Button _pickLock = null!;
     private Button _disarm = null!;
@@ -34,13 +40,14 @@ public partial class GameScreen
     private Button _learn = null!;
     private OdAim _odAim;
 
-    private IEnumerable<HandView> Hands => [_rumbleHand, _wendHand, _odHand];
+    private IEnumerable<HandView> Hands => [_rumbleHand, _wendHand, _odHand, _magicHand];
 
     /// <summary>Puts the old action buttons out of sight (the hands take their actions) and builds the hands.</summary>
     private void BuildHands(Control right)
     {
         var hidden = new Control { Visible = false, Name = "Abilities" };
         right.AddChild(hidden);
+        _abilities = hidden;
         foreach (Button button in new[] { _rumble, _shove, _prone, _dropRoll, _digOut, _tend, _roll, _leap, _search, _steal })
         {
             button.Reparent(hidden);
@@ -77,6 +84,11 @@ public partial class GameScreen
             new("learn", "Learn", _learn, () => true),
             new("tend", "Tend eyes", _tend, () => true, () => ActiveHero?.Conditions.Has(Condition.Blind) == true),
         ]);
+
+        // The Magic hand, under the Magic card: the spells they know (filled in as they're learned).
+        _magicHand = new HandView { Position = new Vector2(HeroPanel.Columns[2] - 3, HeroPanel.Rows[0] + HeroPanel.CardHeight), Icon = "icon_magic", Title = "Magic", Color = new Color("b07ce8") };
+        _magicHand.Opened += _ => OpenSpells();
+        _heroPanel.AddChild(_magicHand);
 
         _spread = new HandSpread { Position = BoardOrigin, Size = new Vector2(BoardView.Pixels, BoardView.Pixels), ZIndex = 3 };
         _spread.Picked += PlayAbility;
@@ -153,16 +165,43 @@ public partial class GameScreen
         _learn.Disabled = !ready || scroll is null;
         _learn.TooltipText = scroll is null ? "You've no scroll you could learn a spell from now." : $"Learn {scroll.Definition.Name}'s spell: Od Hand and Magic.";
         _odAim = ready ? _odAim : OdAim.None;
+        _magicHand.Hold(SpellCards(hero, ready));
         foreach (HandView hand in Hands)
         {
             hand.ShowCards(hand.Cards);
             hand.Visible = hero is not null && _session.State.Turn is not null;
         }
 
+        _magicHand.Visible &= hero?.Spells.Count > 0;
+
         if (!ready)
         {
             _spread.Close();
         }
+    }
+
+    /// <summary>A card for each spell the hero knows: castable now, it's lit; if not, it says why.</summary>
+    private List<AbilityCard> SpellCards(Hero? hero, bool ready)
+    {
+        var cards = new List<AbilityCard>();
+        foreach (SpellDefinition spell in hero?.Spells ?? [])
+        {
+            if (!_spellButtons.TryGetValue(spell.Id, out Button? button))
+            {
+                string id = spell.Id;
+                button = new Button { Text = spell.Name };
+                button.Pressed += () => BeginCasting(id);
+                _abilities.AddChild(button);
+                _spellButtons[id] = button;
+            }
+
+            string? error = _session.CheckCastSpell(spell.Id);
+            button.Disabled = !ready || error is not null;
+            button.TooltipText = error ?? $"{spell.Name} ({spell.Cost} Power): {spell.Text}";
+            cards.Add(new AbilityCard($"spell_{spell.Id}", spell.Name, button, () => true));
+        }
+
+        return cards;
     }
 
     /// <summary>The hero's tile and the eight around it, in the room.</summary>
