@@ -115,7 +115,7 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 | Armor | Persistent | Head: Leather Cap (+1 Heart), Lucky Helmet (armor 1; when you'd be hit anyway it rolls one more die in, last of all, then breaks), Diving Helm (Temple). Body: Leather Armor (armor 1), Studded Armor (armor 2, floor 2+), Chain Mail (armor 3, floor 3), Warden's Plate (armor 3 and an extra Defense die: the Iron Warden drops it one time in four) |
 | Boots | Persistent | Dash Boots (+1 Move die) |
 | Accessory | Persistent | Worn in the accessory slot. Lucky Jackalope's Foot (+1 Luck), Shield Cufflinks (armor 1, Block 1; floor 2+), Icarus Wings (floor 2+; see below). The Coward's Cloak goes on the head or as an accessory. **Icarus Wings:** flight of their own, apart from Wend. Beat them for a d6 of flight (a 6 rolls a Power Die straight in; its 1s don't count against the wings) and fly over pits, water, traps and figures, a tile a point, and through doors (a key opens a locked one on the way). Only once the flight is used up comes the choice: **Land.** (a normal landing, but over a pit you fall in) or **Fly!** (beat them again). Any 1 on the wings' die breaks them: down you come where you are, prone and stunned, the rest of the turn's Wend gone. The end of the turn brings a flyer down where they are |
-| Spell | Charges or single-use | Flame Scroll (a 3-dice fire attack at range 3: any 6 sets the target alight; aimed at bare floor it sets it burning for 3 rounds), Frost Wand (2 charges: freeze for a round) |
+| Spell | Charges or single-use | Flame Scroll (a 3-dice fire attack at range 3: any 6 sets the target alight; aimed at bare floor it sets it burning for 3 rounds), Frost Wand (2 charges: a stack of Freeze, then 2 Ice dice) |
 | Tool | Persistent | Torch (stacks in one slot, one to a hand; see below), Grapple Hook (pull yourself up to 4 tiles in a line; not built yet) |
 | Bomb | Single-use | Bomb (thrown up to 3 tiles, lit: a 4-dice blast over a 3×3 area at the end of your next turn; see [Bombs](#bombs)) |
 | Potion | Single-use | Health Potion (restore 3 hearts) |
@@ -162,8 +162,8 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
   another straight in. Versatile: +1 more with nothing in your off hand (held two-handed).
 - **Tool and weapon dice:** a 6 on one rolls another die straight into that roll, with a "6!" callout.
   A typed weapon's dice (the Frost Brand's ice) are dice of its type.
-- **Frost Wand** (off hand, 2 charges a floor): 2 Ice dice at a monster within 3. It always lays a stack of
-  Freeze, hit or miss, and a stack more for each 6 on a hit (see Damage types).
+- **Frost Wand** (off hand, 2 charges a floor): a monster within 3 automatically takes a stack of Freeze, then
+  2 Ice dice attack it: on a hit each 6 freezes it a stack more (see Damage types).
 - **Stun** (the Boomerang's sixes and Elektrik dice, on a hit) and **Powerful Stun** (bomb blasts) stack, and wear off at the end of
   the stunned creature's next turn. The first stack takes its Od Hand action and its free actions (free
   loot, free belt item), or a Wend die if it has no Od Hand, and a flyer drops out of the air (into a pit
@@ -339,7 +339,8 @@ of their own on top (a Flame Scroll aimed at bare floor sets it burning).
   throws one off.
 - **Ice (Freeze):** a stack of Freeze. The first halves their speed (each step costs double; half a
   monster's moves); each one after takes a Wend die (2 of a monster's moves). With no Wend left they're
-  **frozen solid**: their turn passes with nothing done, though they still defend. A stack melts at the
+  **frozen solid**: their turn passes with nothing done, though they still defend (bosses are never frozen
+  solid: Freeze only slows them and takes their moves). A stack melts at the
   end of each of their turns, one more for each fire beside them as their turn starts (burning creatures,
   burning floor, held torches), and one for every fire die that attacks them.
 - **Acid (Dissolve):** on a hero, a point of wear on the equipped piece giving the most armor (a card

@@ -37,8 +37,8 @@ public sealed partial class GameSession
     /// <summary>Whether a hero is frozen solid now.</summary>
     public static bool IsFrozenSolid(Hero hero) => IsFrozenSolid(hero.Conditions, hero.EffectiveStats.MoveDice);
 
-    /// <summary>Whether a monster is frozen solid now.</summary>
-    public static bool IsFrozenSolid(Monster monster) => IsFrozenSolid(monster.Conditions, monster.Definition.WendDice);
+    /// <summary>Whether a monster is frozen solid now. A boss never is: Freeze slows it and takes its moves, no more.</summary>
+    public static bool IsFrozenSolid(Monster monster) => !monster.Definition.Boss && IsFrozenSolid(monster.Conditions, monster.Definition.WendDice);
 
     /// <summary>Each step a hero takes costs this many: double lying down, double again chilled by Freeze.</summary>
     private static int CrawlOf(Hero hero) => (hero.Prone ? GameRules.CrawlFactor : 1) * (hero.Conditions.Has(Condition.Freeze) ? 2 : 1);

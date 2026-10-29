@@ -215,6 +215,22 @@ public class DieTypeTests
     }
 
     [Fact]
+    public void TheFrostWandFreezesAStackThenItsIceSixesFreezeMoreOnAHit()
+    {
+        // The stack it always lays, then two Ice 6s that hit: a stack more for each.
+        GameSession session = TestRun.Start(Across('d'), new ScriptedDice(6, 6, 1, 1, 1, 1), cards: ["t_frost"]);
+        Hero hero = session.HeroInSeat();
+        Monster dummy = session.OnlyMonster();
+        var events = new List<GameEvent>(session.Do(new UseCard(hero.Id, hero.Card("t_frost").Id, dummy.Position)));
+        while (session.State.Turn?.UnsettledPowerDice > 0)
+        {
+            events.AddRange(session.Do(new AddPowerDie(hero.Id)));
+        }
+
+        Assert.Equal([1, 3], events.OfType<ConditionChanged>().Where(change => change.Condition == Condition.Freeze).Select(change => change.Count));
+    }
+
+    [Fact]
     public void EarthKnocksTheTargetProneAndBuriesItAndItDigsOutWithItsTurn()
     {
         GameSession session = TestRun.Start(Across('d'), new ScriptedDice(6, 6, 1, 3), cards: ["bolt_earth"]);
@@ -285,6 +301,27 @@ public class DieTypeTests
         var attack = session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id)).SingleOf<AttackRolled>();
 
         Assert.Equal((-2, 3), (attack.Bonus, attack.Total));
+    }
+
+    [Fact]
+    public void ABossIsNeverFrozenSolid()
+    {
+        GameSession session = TestRun.Start("""
+            ....W....
+            .........
+            .........
+            .........
+            ....1....
+            .........
+            .........
+            .........
+            .........
+            """);
+        Monster boss = session.OnlyMonster();
+        boss.Conditions.Add(Condition.Freeze, 5);
+
+        Assert.False(GameSession.IsFrozenSolid(boss));
+        Assert.DoesNotContain(session.EndRound(), gameEvent => gameEvent is FrozenSolid);
     }
 
     [Fact]
