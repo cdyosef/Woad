@@ -133,6 +133,11 @@ public sealed partial class GameSession
             return "You can't leap lying down: get up first.";
         }
 
+        if (ActiveHero.Aloft)
+        {
+            return "You're in the air: fly, or land first.";
+        }
+
         if (CheckHeld(ActiveHero) is { } held)
         {
             return held;

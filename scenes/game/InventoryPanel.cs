@@ -127,7 +127,7 @@ public partial class InventoryPanel : Control
     public void AskHand(int cardId, string cardName, IReadOnlyList<(EquipSlot Slot, string Text, string? Blocked)> hands)
     {
         _choosingFor = cardId;
-        _handQuestion.Text = $"Which hand for the {cardName}?";
+        _handQuestion.Text = hands.All(hand => hand.Slot is EquipSlot.MainHand or EquipSlot.OffHand) ? $"Which hand for the {cardName}?" : $"Where to wear the {cardName}?";
         for (int i = 0; i < _hands.Count; i++)
         {
             Button button = _hands[i];

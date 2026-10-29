@@ -24,10 +24,10 @@ public sealed partial class GameSession
             .ToDictionary();
     }
 
-    /// <summary>Doors the active hero is standing in and could step through right now.</summary>
+    /// <summary>Doors the active hero is standing in and could step (or fly) through right now.</summary>
     public IReadOnlyList<Direction> GetUsableDoors()
     {
-        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 } || CheckCanMove(Crawl) is not null)
+        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 } || CheckDoorStep() is not null)
         {
             return [];
         }
@@ -216,7 +216,7 @@ public sealed partial class GameSession
             return "The doors are sealed until every monster here is defeated.";
         }
 
-        if (CheckCanMove(Crawl) is { } error)
+        if (CheckDoorStep() is { } error)
         {
             return error;
         }
@@ -229,8 +229,16 @@ public sealed partial class GameSession
 
         hero.RoomId = target.Id;
         hero.Position = arrival;
-        Turn.MovementPoints -= Crawl;
-        Turn.HasMoved = true;
+        if (hero.Aloft)
+        {
+            Turn.FlightPoints--;
+        }
+        else
+        {
+            Turn.MovementPoints -= Crawl;
+            Turn.HasMoved = true;
+        }
+
         bool firstVisit = !target.Explored;
         target.Explored = true;
         events.Add(new HeroEnteredRoom(hero.Id, room.Id, target.Id, arrival, firstVisit));
@@ -244,8 +252,19 @@ public sealed partial class GameSession
         return null;
     }
 
+    /// <summary>Why the active hero can't go through a door now: a step of Wend, or aloft on the Icarus Wings, a tile of flight.</summary>
+    private string? CheckDoorStep() =>
+        !ActiveHero.Aloft ? CheckCanMove(Crawl)
+        : Turn.FlightPoints < 1 ? "You're out of flight: Land, or Fly!"
+        : null;
+
     private string? CheckCanMove(int cost)
     {
+        if (ActiveHero.Aloft)
+        {
+            return "You're in the air: fly, or land first.";
+        }
+
         if (CheckHeld(ActiveHero) is { } held)
         {
             return held;

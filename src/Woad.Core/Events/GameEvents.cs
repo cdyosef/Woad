@@ -405,6 +405,18 @@ public sealed record FireOut(int EntityId, FireOutCause Cause) : GameEvent;
 /// <summary>A hero or monster lay down (or was knocked down): prone, or diving in deep water.</summary>
 public sealed record WentProne(int EntityId, bool Diving) : GameEvent;
 
+/// <summary>A hero beat the Icarus Wings: the die (and any Power Dice it rolled in), and the flight they have now.</summary>
+public sealed record WingsBeat(int HeroId, IReadOnlyList<int> Faces, int FlightLeft) : GameEvent;
+
+/// <summary>A hero flew along <paramref name="Path"/> on the Icarus Wings.</summary>
+public sealed record Flew(int HeroId, IReadOnlyList<GridPosition> Path, int FlightLeft) : GameEvent;
+
+/// <summary>A hero came down from the air.</summary>
+public sealed record Landed(int HeroId, GridPosition Position) : GameEvent;
+
+/// <summary>The Icarus Wings rolled a 1 and broke under a hero.</summary>
+public sealed record WingsBroke(int HeroId, GridPosition Position) : GameEvent;
+
 /// <summary>A prone hero or monster got back on its feet.</summary>
 public sealed record GotUp(int EntityId) : GameEvent;
 

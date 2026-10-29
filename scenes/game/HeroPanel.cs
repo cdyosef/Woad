@@ -15,6 +15,7 @@ public partial class HeroPanel : Panel
         (EquipSlot.MainHand, "Main"),
         (EquipSlot.OffHand, "Off"),
         (EquipSlot.Feet, "Feet"),
+        (EquipSlot.Accessory, "Acc."),
     ];
 
     private readonly Dictionary<EquipSlot, CardSlot> _slots = [];
@@ -34,7 +35,7 @@ public partial class HeroPanel : Panel
     internal CardSlot EquipmentSlot(EquipSlot slot) => _slots[slot];
 
     /// <summary>The dice left this turn, kept up to date by the game screen.</summary>
-    public DicePoolView Pool { get; } = new() { Position = new(8, 200), Size = new(160, 65) };
+    public DicePoolView Pool { get; } = new() { Position = new(8, 202), Size = new(160, 65) };
 
     public override void _Ready()
     {
@@ -54,9 +55,9 @@ public partial class HeroPanel : Panel
         for (int i = 0; i < Slots.Length; i++)
         {
             (EquipSlot slot, string caption) = Slots[i];
-            float y = 103 + i * 16;
+            float y = 103 + i * 14;
             Add(UiTheme.Label(new(8, y + 2), new(32, 12), caption, color: Palette.TextDim));
-            CardSlot cardSlot = Add(new CardSlot { Position = new(40, y), Size = new(128, 15) });
+            CardSlot cardSlot = Add(new CardSlot { Position = new(40, y), Size = new(128, 13) });
             cardSlot.Pressed += () =>
             {
                 if (cardSlot.Card is { } card)
@@ -67,9 +68,9 @@ public partial class HeroPanel : Panel
             _slots[slot] = cardSlot;
         }
 
-        Add(UiTheme.Heading(UiTheme.Label(new(8, 185), new(160, 12), "THIS TURN", color: Palette.Trim), 1));
+        Add(UiTheme.Heading(UiTheme.Label(new(8, 188), new(160, 12), "THIS TURN", color: Palette.Trim), 1));
         Add(Pool);
-        _turn = Add(UiTheme.Label(new(72, 186), new(96, 12), color: Palette.TextDim));
+        _turn = Add(UiTheme.Label(new(72, 189), new(96, 12), color: Palette.TextDim));
         _turn.HorizontalAlignment = HorizontalAlignment.Right;
     }
 

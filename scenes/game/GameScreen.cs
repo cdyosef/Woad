@@ -470,6 +470,20 @@ public partial class GameScreen : Control
                 await Walk(moved.MonsterId, moved.Path);
                 break;
 
+            case WingsBeat beat:
+                _trayShowsMovement = false;
+                CalloutOver(beat.HeroId, $"+{beat.Faces.Sum()} FLIGHT", Palette.TrimBright);
+                await _dice.ShowRoll($"{NameOf(beat.HeroId)} beats the Icarus Wings", new DiceRoll([.. beat.Faces]), 0, newGroup: true, beat.Faces.Count - 1, DiceKind.Wend);
+                break;
+
+            case Flew flew:
+                await Walk(flew.HeroId, flew.Path);
+                break;
+
+            case WingsBroke broke:
+                CalloutOver(broke.HeroId, "WINGS BROKE!", Palette.Danger);
+                break;
+
             case MonsterSurged surged:
                 _trayShowsMovement = false;
                 CalloutOver(surged.MonsterId, $"+{surged.Faces.Sum()} WEND!", Palette.Power);
@@ -1317,6 +1331,7 @@ public partial class GameScreen : Control
     {
         TurnStarted turn => turn.HeroId,
         HeroMoved moved => moved.HeroId,
+        Flew flew => flew.HeroId,
         MonsterMoved moved => moved.MonsterId,
         AttackRolled attack => attack.AttackerId,
         Damaged damaged => damaged.TargetId,
@@ -1338,6 +1353,7 @@ public partial class GameScreen : Control
     {
         TurnStarted turn => FigureRoom(turn.HeroId),
         HeroMoved moved => FigureRoom(moved.HeroId),
+        Flew flew => FigureRoom(flew.HeroId),
         MonsterMoved moved => FigureRoom(moved.MonsterId),
         AttackRolled attack => FigureRoom(attack.AttackerId),
         DefenseRolled defense => FigureRoom(defense.DefenderId),

@@ -150,6 +150,9 @@ public sealed partial class GameSession
             Rouse c => Handle(c, events),
             RollKeel c => Handle(c, events),
             GoProne c => Handle(c, events),
+            BeatWings c => Handle(c, events),
+            Fly c => Handle(c, events),
+            Land c => Handle(c, events),
             GetUp c => Handle(c, events),
             StopDropRoll c => Handle(c, events),
             DigOut c => Handle(c, events),
@@ -236,6 +239,11 @@ public sealed partial class GameSession
     private string? Handle(EndTurn command, List<GameEvent> events)
     {
         Hero hero = ActiveHero;
+        if (hero.Aloft)
+        {
+            Touchdown(hero, events);
+        }
+
         KeepAfloat(hero, events);
         if (State.Phase != RunPhase.InProgress || !hero.IsActive)
         {

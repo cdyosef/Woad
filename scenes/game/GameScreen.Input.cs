@@ -190,6 +190,25 @@ public partial class GameScreen
             return;
         }
 
+        // Aloft on the Icarus Wings: a click flies there, or in a doorway, unlocks the door or flies through.
+        if (hero.Aloft)
+        {
+            if (tile == hero.Position && DoorAt(ShownRoom, tile) is not null)
+            {
+                UseOwnTile(hero, ShownRoom);
+            }
+            else if (_session.GetFlightTiles().ContainsKey(tile))
+            {
+                Execute(new Fly(hero.Id, tile));
+            }
+            else
+            {
+                Log(turn.FlightPoints > 0 ? "Out of flight range: click closer." : "Out of flight: Land, or Fly!", Palette.TextDim);
+            }
+
+            return;
+        }
+
         Room room = ShownRoom;
         if (_leaping)
         {
@@ -658,7 +677,11 @@ public partial class GameScreen
         };
 
         terrain = grave + terrain;
-        if (!_leaping && _session.GetReachableTiles().TryGetValue(tile, out int steps))
+        if (ActiveHero?.Aloft == true && _session.GetFlightTiles().TryGetValue(tile, out int flight))
+        {
+            terrain = $"{UiTheme.Count(flight, "tile", "tiles")} of flight away. {terrain}";
+        }
+        else if (!_leaping && _session.GetReachableTiles().TryGetValue(tile, out int steps))
         {
             terrain = $"{UiTheme.Count(steps, "step", "steps")} away. {terrain}";
         }
@@ -920,7 +943,7 @@ public partial class GameScreen
         RefreshPanels();
     }
 
-    /// <summary>Offers both hands for a card that goes in either (the Boomerang), saying what each would stow.</summary>
+    /// <summary>Offers both slots for a card that goes in either (the Boomerang's hands, the Cloak's head or accessory), saying what each would stow.</summary>
     private void AskHand(Hero hero, CardInstance card)
     {
         (EquipSlot Slot, string Text, string? Blocked) Choice(EquipSlot slot, string name)
@@ -929,7 +952,16 @@ public partial class GameScreen
             return (slot, name + stows, _session.CheckEquip(card.Id, slot));
         }
 
-        _inventory.AskHand(card.Id, card.Definition.Name, [Choice(EquipSlot.MainHand, "Main hand"), Choice(EquipSlot.OffHand, "Off hand")]);
+        static string Name(EquipSlot slot) => slot switch
+        {
+            EquipSlot.MainHand => "Main hand",
+            EquipSlot.OffHand => "Off hand",
+            _ => slot.ToString(),
+        };
+
+        EquipSlot own = card.Definition.Slot!.Value, alt = card.Definition.AltSlot!.Value;
+        (EquipSlot first, EquipSlot second) = own == EquipSlot.OffHand && alt == EquipSlot.MainHand ? (alt, own) : (own, alt);
+        _inventory.AskHand(card.Id, card.Definition.Name, [Choice(first, Name(first)), Choice(second, Name(second))]);
     }
 
     private void OnCardAction(CardAction action)
@@ -941,6 +973,9 @@ public partial class GameScreen
 
         switch (action)
         {
+            case CardAction.Use when card.Definition.Wings:
+                Execute(new BeatWings(hero.Id));
+                break;
             case CardAction.Use when card.Definition.Reload is not null:
                 Execute(new ReloadWeapon(hero.Id));
                 break;

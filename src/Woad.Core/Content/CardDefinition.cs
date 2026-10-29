@@ -11,6 +11,9 @@ public enum CardType
     Bomb,
     Potion,
     Treasure,
+
+    /// <summary>Trinkets worn in the accessory slot (the Lucky Jackalope's Foot, the Icarus Wings).</summary>
+    Accessory,
 }
 
 /// <summary>Body slots a card can be equipped into. The belt is separate: it holds single-use cards.</summary>
@@ -21,6 +24,9 @@ public enum EquipSlot
     MainHand,
     OffHand,
     Feet,
+
+    /// <summary>A trinket: a lucky charm, cufflinks, a pair of wings.</summary>
+    Accessory,
 }
 
 public enum CardUsage
@@ -184,6 +190,12 @@ public sealed record CardDefinition
 
     /// <summary>Weapons: after a shot it's unloaded until reloaded with these dice (a crossbow); null for weapons that need none.</summary>
     public ReloadCost? Reload { get; init; }
+
+    /// <summary>
+    /// Worn, they fly (the Icarus Wings): beat them for a d6 of flight, as often as you dare. A 6 rolls a
+    /// Power Die straight in. A 1 breaks them: you drop where you are, prone and stunned, Wend gone.
+    /// </summary>
+    public bool Wings { get; init; }
 
     /// <summary>Worn gear with a use that destroys it (the Coward's Cloak): equip it, use it once, and it's gone.</summary>
     public bool BreaksOnUse { get; init; }

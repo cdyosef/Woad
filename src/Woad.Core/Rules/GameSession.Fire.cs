@@ -296,7 +296,7 @@ public sealed partial class GameSession
     {
         foreach (Room room in State.Rooms.Values.Where(room => room.Flames.Count > 0))
         {
-            foreach (Hero hero in State.HeroesIn(room).Where(hero => hero.IsInPlay && hero.FireDice == 0 && room.IsBurning(hero.Position)))
+            foreach (Hero hero in State.HeroesIn(room).Where(hero => hero.IsInPlay && !hero.Aloft && hero.FireDice == 0 && room.IsBurning(hero.Position)))
             {
                 Ignite(hero, hero.Id, events);
             }
@@ -323,7 +323,7 @@ public sealed partial class GameSession
     /// <summary>A burning hero in water is put out. True if it was.</summary>
     private static bool DouseInWater(Room room, Hero hero, List<GameEvent> events)
     {
-        if (hero.FireDice == 0 || !InWater(room, hero.Position))
+        if (hero.FireDice == 0 || hero.Aloft || !InWater(room, hero.Position))
         {
             return false;
         }
