@@ -932,6 +932,22 @@ public partial class GameScreen
             ? $" You'd hit it with your {weapon.Definition.Name}{(bonus > 0 ? $" (+{bonus})" : "")}."
             : "";
 
+    /// <summary>A card clicked on the sheet: the worn Icarus Wings ask Land. or Fly!; any other card is picked up.</summary>
+    private void ClickCard(int cardId)
+    {
+        if (!Locked && _session.State.Turn is { PendingRoll: null, UnsettledPowerDice: 0 } && ActiveHero is { } hero
+            && hero.FindCard(cardId) is ({ Definition.Wings: true }, CardLocation.Equipped))
+        {
+            bool open = !_wingsChoice;
+            CancelSelection();
+            _wingsChoice = open;
+            RefreshPanels();
+            return;
+        }
+
+        SelectCard(cardId);
+    }
+
     private void SelectCard(int cardId)
     {
         if (Locked)
@@ -956,6 +972,7 @@ public partial class GameScreen
     {
         _odAim = OdAim.None;
         _confirmingRetreat = false;
+        _wingsChoice = false;
         _heroPanel.CloseBag();
         _spread?.Close();
         CloseRummage();

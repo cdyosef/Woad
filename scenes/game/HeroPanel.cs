@@ -55,6 +55,9 @@ public partial class HeroPanel : Panel
 
     public event Action<int>? CardSelected;
 
+    /// <summary>A worn card was right-clicked: pick it up for its buttons, whatever a click on it would do.</summary>
+    public event Action<int>? CardInspected;
+
     /// <summary>The bag was opened or closed.</summary>
     public event Action? BagToggled;
 
@@ -204,6 +207,14 @@ public partial class HeroPanel : Panel
                 CardSelected?.Invoke(held.Id);
             }
         };
+        card.GuiInput += input =>
+        {
+            if (input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Right } && card.Card is { } held)
+            {
+                CardInspected?.Invoke(held.Id);
+                card.AcceptEvent();
+            }
+        };
         return card;
     }
 
@@ -263,6 +274,10 @@ public partial class HeroPanel : Panel
         {
             CardInstance? held = hero.Equipment.GetValueOrDefault(slot);
             card.Show(held, (string)card.GetMeta("empty"), held is not null && held.Id == selectedCardId);
+            if (held is { Definition.Wings: true })
+            {
+                card.TooltipText += "\nClick for Land. or Fly! Right-click for the card's buttons.";
+            }
         }
 
         for (int i = 0; i < _belt.Length; i++)

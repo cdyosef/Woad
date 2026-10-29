@@ -698,8 +698,10 @@ public partial class GameScreen
             {
                 if (button is null)
                 {
+                    // A click on the worn wings asks Land. or Fly!
                     await Click(this, _heroPanel.EquipmentSlot(EquipSlot.Accessory));
-                    await Click(this, _inventory.ActionButton(CardAction.Use));
+                    Check(_land.Visible && _flyOn.Visible && !_flyOn.Disabled, "clicking the wings offers Land. or Fly!");
+                    await Click(this, _flyOn);
                 }
                 else
                 {
@@ -740,6 +742,17 @@ public partial class GameScreen
                 await Click(this, _land);
                 await WaitUntilIdle();
                 Check(!aria.Aloft && !_figures[aria.Id].Aloft && !aria.Prone, "Land. brings her down, on her feet");
+
+                // A right-click on the wings picks them up instead, for their card buttons.
+                Vector2 wings = _heroPanel.EquipmentSlot(EquipSlot.Accessory).GetGlobalRect().GetCenter();
+                foreach (bool pressed in new[] { true, false })
+                {
+                    GetViewport().PushInput(new InputEventMouseButton { ButtonIndex = MouseButton.Right, Pressed = pressed, Position = wings, GlobalPosition = wings }, inLocalCoords: true);
+                    await NextFrame(this);
+                }
+
+                Check(_selectedCardId == aria.Equipment[EquipSlot.Accessory].Id && !aria.Aloft, "right-clicking the wings picks them up rather than taking off");
+                CancelSelection();
             }
 
             // Now she dares them again and again until they break.
