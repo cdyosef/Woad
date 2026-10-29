@@ -38,6 +38,8 @@ public partial class GameScreen
     private Button _confirm = null!;
     private Button _addPower = null!;
     private Button _bankPower = null!;
+    private Button _land = null!;
+    private Button _flyOn = null!;
     private Button _retreat = null!;
     private Button _rumble = null!;
     private Button _prone = null!;
@@ -160,7 +162,11 @@ public partial class GameScreen
         // The row above the dice buttons: Rumble, Shove and Prone (Drop & roll while burning), where Confirm
         // and the Power Die buttons go while a roll waits.
         bool waiting = turn?.PendingRoll is not null || choosingPower;
-        _rumble.Visible = _shove.Visible = _prone.Visible = _dropRoll.Visible = !waiting;
+        // Out of flight on the Icarus Wings, the choice is all there is: Land, or Fly! again.
+        bool landing = !waiting && hero?.Aloft == true && _session.CheckLand() is null;
+        _land.Visible = _flyOn.Visible = landing;
+        _land.Disabled = _flyOn.Disabled = Locked;
+        _rumble.Visible = _shove.Visible = _prone.Visible = _dropRoll.Visible = !waiting && !landing;
         _prone.Text = lying ? "Get up" : "Prone";
         string? proneError = hero is null || turn is null ? "" : lying ? _session.CheckGetUp() : _session.CheckGoProne();
         _prone.Disabled = proneError is not null;
@@ -313,7 +319,7 @@ public partial class GameScreen
         }
 
         // Pits and found traps can be walked into, at a cost: they show red over the blue.
-        IReadOnlyCollection<GridPosition> reachable = _session.GetReachableTiles().Keys.ToList();
+        IReadOnlyCollection<GridPosition> reachable = hero.Aloft ? _session.GetFlightTiles().Keys.ToList() : _session.GetReachableTiles().Keys.ToList();
         _board.SetHighlights(
             reachable,
             _session.GetAttackableMonsters(ReadiedWeaponId).Select(monster => monster.Position).Concat(_session.GetAttackableAllies(ReadiedWeaponId).Select(ally => ally.Position)),
@@ -478,7 +484,7 @@ public partial class GameScreen
         var blocked = new Dictionary<CardAction, string>();
         foreach ((CardAction action, string? reason) in new[]
         {
-            (CardAction.Use, card.Definition.Reload is not null ? _session.CheckReload() : _session.CheckUse(cardId)),
+            (CardAction.Use, card.Definition.Wings ? (hero.SlotOf(card) is null ? "Wear them first." : _session.CheckBeatWings()) : card.Definition.Reload is not null ? _session.CheckReload() : _session.CheckUse(cardId)),
             (CardAction.Equip, card.Definition.Teaches is not null ? _session.CheckLearnSpell(cardId) : _session.CheckEquip(cardId)),
             (CardAction.Belt, _session.CheckBelt(cardId)),
             (CardAction.Stow, _session.CheckStow(cardId)),
@@ -494,7 +500,9 @@ public partial class GameScreen
         string gearCost = _session.GearIsFree ? "Free while no monsters are in the room." : "In a fight, this takes your action.";
         var hints = new Dictionary<CardAction, string>
         {
-            [CardAction.Use] = card.Definition.Reload is { } reload
+            [CardAction.Use] = card.Definition.Wings
+                ? "Beat them: a d6 more of flight (a 6 rolls a Power Die in). A 1 breaks them, and down you come."
+                : card.Definition.Reload is { } reload
                 ? $"Reload: takes {(reload.OdHand == 1 ? "an Od Hand die" : $"{reload.OdHand} Od Hand dice")}{(reload.Wend > 0 ? " and a Wend die" : "")}."
                 : location == CardLocation.Belt ? "Free: one belt item a turn." : "Takes your action.",
             [CardAction.Equip] = card.Definition.Teaches is { } spellId
@@ -687,6 +695,14 @@ public partial class GameScreen
         _bankPower = UiTheme.Accent(UiTheme.Button(new Vector2(90, 279), new Vector2(78, 18), "Bank it"), Palette.Power);
         _bankPower.Pressed += () => ExecuteForActiveHero(heroId => new BankPowerDie(heroId));
         right.AddChild(_bankPower);
+        _land = UiTheme.Accent(UiTheme.Button(new Vector2(8, 279), new Vector2(78, 18), "Land."), Palette.DieWend);
+        _land.TooltipText = "Come down where you are. Over a pit, there's nothing to land on.";
+        _land.Pressed += () => ExecuteForActiveHero(heroId => new Land(heroId));
+        right.AddChild(_land);
+        _flyOn = UiTheme.Accent(UiTheme.Button(new Vector2(90, 279), new Vector2(78, 18), "Fly!"), Palette.TrimBright);
+        _flyOn.TooltipText = "Beat the wings again: a d6 more of flight (a 6 rolls a Power Die in). A 1 breaks them, and down you come: prone, stunned, your Wend gone.";
+        _flyOn.Pressed += () => ExecuteForActiveHero(heroId => new BeatWings(heroId));
+        right.AddChild(_flyOn);
 
         _rumble = UiTheme.Accent(UiTheme.CompactButton(new Vector2(8, 279), new Vector2(52, 20), "Rumble"), Palette.DieRumble);
         _rumble.TooltipText = "Attack (R or Space): your attack range shows in red; click a target in it. Uses your selected Rumble dice and your weapon.";

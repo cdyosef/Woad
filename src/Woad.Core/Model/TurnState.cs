@@ -217,6 +217,9 @@ public sealed class TurnState
     public string? IceSpellId { get; internal set; }
 
     /// <summary>Sets the steps from the move's roll (after a reroll or an added Power Die), plus the carried-over steps.</summary>
+    /// <summary>Flight left from the Icarus Wings, apart from Wend.</summary>
+    public int FlightPoints { get; internal set; }
+
     internal void CountSteps() => MovementPoints = CarriedSteps + Math.Max(0, MovementRoll!.Total + MovementBonus);
 
     /// <summary>Ends movement for the turn so far (a sprung trap or a fall); every unused step is lost.</summary>

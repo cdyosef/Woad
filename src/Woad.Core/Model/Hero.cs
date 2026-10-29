@@ -96,6 +96,9 @@ public sealed class Hero
 
     public int LuckRemaining { get; internal set; }
 
+    /// <summary>In the air on the Icarus Wings, for the rest of their turn or until they land.</summary>
+    public bool Aloft { get; internal set; }
+
     /// <summary>Rounds left of Snowshoes (Icicle Arrow): they walk on ice like floor.</summary>
     public int SnowshoesRounds { get; internal set; }
 
