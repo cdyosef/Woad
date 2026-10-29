@@ -76,6 +76,31 @@ public partial class Music : Node
         _instance.FadeTo(null);
     }
 
+    /// <summary>
+    /// Plays a song that isn't one of the game's files yet (the Music Tracker's) from
+    /// <paramref name="fromSeconds"/>, at once and at the game's music volume, looping end to end.
+    /// </summary>
+    public static void Preview(AudioStream stream, double fromSeconds = 0)
+    {
+        if (_instance is null)
+        {
+            return;
+        }
+
+        Current = PreviewName;
+        _instance.StopNow();
+        AudioStreamPlayer player = _instance._players[_instance._active];
+        player.Stream = stream;
+        player.VolumeLinear = Mathf.DbToLinear(VolumeDb);
+        player.Play((float)fromSeconds);
+    }
+
+    /// <summary>What <see cref="Current"/> says while a preview plays.</summary>
+    public const string PreviewName = "(preview)";
+
+    /// <summary>How far into the song playing it is, in seconds (for following along with it).</summary>
+    public static double Position => _instance?._players[_instance._active] is { Playing: true } player ? player.GetPlaybackPosition() : 0;
+
     /// <summary>Cuts the music dead, mid-note (the Icarus Wings breaking).</summary>
     public static void Cut()
     {

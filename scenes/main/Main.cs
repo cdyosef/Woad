@@ -11,6 +11,7 @@ using Woad.Scenes.Game;
 using Woad.Scenes.Menu;
 using Woad.Scenes.Ui;
 using Woad.Scenes.Tavern;
+using Woad.Scenes.Tracker;
 using Woad.Scenes.Woarld;
 
 namespace Woad.Scenes;
@@ -20,7 +21,8 @@ namespace Woad.Scenes;
 /// each character's results when a run ends. Debug flags: <c>--uitest</c>, <c>--floortest</c>, <c>--hazardtest</c>, <c>--keeltest</c>, <c>--firetest</c>, <c>--cameratest</c>, <c>--bombtest</c>, <c>--rumbletest</c>, <c>--clicktest</c>, <c>--loottest</c>, <c>--dietypetest</c>, <c>--tradetest</c>, <c>--monstertest</c>, <c>--dentest</c>, <c>--merchanttest</c>, <c>--wanderertest</c>, <c>--encountertest</c>, <c>--skirmishtest</c> and
 /// <c>--autoplay</c> jump straight into a run with the debug party (<c>--party N</c> heroes,
 /// <c>--theme id</c> for another dungeon); <c>--menutest</c> and
-/// <c>--resultstest</c> click through the menus using a throwaway save folder.
+/// <c>--resultstest</c> click through the menus using a throwaway save folder; <c>--tracker</c> opens the
+/// Music Tracker, and <c>--trackertest</c> writes and exports a song with it into a throwaway folder.
 /// </summary>
 public partial class Main : Control
 {
@@ -216,6 +218,10 @@ public partial class Main : Control
             string theme = themeAt >= 0 && themeAt + 1 < args.Length ? args[themeAt + 1] : FirstThemeId;
             ShowGame(DungeonGenerator.CreateRun(_content, theme, DemoRun.DebugParty(size), seed), []);
         }
+        else if (args.Contains("--tracker") || args.Contains("--trackertest"))
+        {
+            ShowTracker(args.Contains("--trackertest"));
+        }
         else if (args.Contains("--resultstest"))
         {
             RunResultsTest(saveFolder);
@@ -256,6 +262,7 @@ public partial class Main : Control
         menu.PlayRequested += ShowModeSelect;
         menu.CharactersRequested += ShowCharacters;
         menu.SettingsRequested += ShowSettings;
+        menu.TrackerRequested += () => ShowTracker();
         ShowMenu(menu);
     }
 

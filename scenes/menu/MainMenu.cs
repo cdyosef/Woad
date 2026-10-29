@@ -11,6 +11,9 @@ public partial class MainMenu : MenuScreen
 
     public event Action? SettingsRequested;
 
+    /// <summary>The Music Tracker, offered only when the game runs from the Godot editor.</summary>
+    public event Action? TrackerRequested;
+
     internal Button PlayButton { get; private set; } = null!;
 
     internal Button CharactersButton { get; private set; } = null!;
@@ -34,6 +37,12 @@ public partial class MainMenu : MenuScreen
         SettingsButton.Pressed += () => SettingsRequested?.Invoke();
         Button quit = Add(UiTheme.Button(new Vector2(240, 266), new Vector2(160, 26), "Quit"));
         quit.Pressed += () => Sfx.QuitGame(this);
+        if (OS.HasFeature("editor"))
+        {
+            Button tracker = Add(UiTheme.CompactButton(new Vector2(260, 300), new Vector2(120, 18), "Music Tracker"));
+            tracker.TooltipText = "Write chiptune songs for the game (only when running from the Godot editor)";
+            tracker.Pressed += () => TrackerRequested?.Invoke();
+        }
 
         string version = ProjectSettings.GetSetting("application/config/version").AsString();
         Label footer = Add(UiTheme.Label(new Vector2(0, 326), new Vector2(Width, 12), $"Woad {version}   Local hot-seat for 1-8 players", color: Palette.TextDim));

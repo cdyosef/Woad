@@ -55,12 +55,14 @@ scenes/main/                 Main.tscn, the entry scene: owns content and saves,
 scenes/menu/                 Main menu, character list, character editor, party setup
 scenes/game/                 The game screen: board, tokens, dice bar, hit effects, panels, event playback
 scenes/ui/                   Shared UI pieces: palette, theme, looks, crests, card slots, hearts
+scenes/tracker/              The Music Tracker, a chiptune editor for the game's songs
 scenes/debug/                Synthetic mouse/keyboard driver used by the debug UI tests
 src/Woad.Core/               Pure C# rules engine: no Godot references allowed
   Rules/GameSession*.cs        Executes commands (Commands/) and returns events (Events/)
   Model/                       Run state the game draws from: heroes, monsters, rooms, cards
   Characters/                  Saved characters, point-buy, levels, JSON character storage
   Content/Data/                Cards, monsters and dungeon themes as JSON (embedded in the DLL)
+  Chiptune/                    Tracker songs: their file format, and the synth that renders them to WAV
 tests/Woad.Core.Tests/       xUnit tests for Woad.Core
 docs/                        Design documents
 tools/                       Dev-machine scripts
@@ -118,6 +120,7 @@ on the Godot command line:
 | `--dentest` | Walks a hero through the door into the Ogre Champ's den, checks its song starts and the Champ waits on its platform, then fights it for a few rounds. |
 | `--clicktest` | Checks that double-clicking a far-off monster rolls the Wend dice, clicking it again walks up to it with Rumble aimed, R puts Rumble away and back, and one more click attacks. |
 | `--resultstest` | Two saved characters click their way out of the exit; checks that their results are saved and shown. Uses a throwaway save folder. |
+| `--trackertest` | Writes a song in the Music Tracker from the keyboard (notes, a note-off, drums and a volume), copies its pattern, exports it into a throwaway folder and checks the song file and the WAV's length, plays it, and opens it again. |
 | `--autoplay` | The debug party plays a generated dungeon with the rules-engine bot until the run ends, narrating to the console. Add `--fast` for 8× speed, `--party N` for a party of N (up to 8), and `--theme sunken_temple` for the second dungeon. |
 
 Each test exits with code 1 on its first failed check.
@@ -156,6 +159,29 @@ script. PNGs are written uncompressed, so every machine and Python version produ
 file under the same path. The game looks files up by name: `assets/themes/<theme>/tiles/`,
 `assets/themes/<theme>/monsters/<monster id>.png`, `assets/heroes/`, `assets/ui/`, `assets/audio/`.
 Anything missing falls back to simple shapes, or silence.
+
+### The Music Tracker
+
+The game has its own chiptune tracker for writing songs. Run the game from the Godot editor and press
+**Music Tracker** on the main menu (it's hidden in exported builds), or run Godot with `-- --tracker`.
+
+- **Channels:** two pulse leads (12.5%, 25% or square), a triangle bass and a drum kit, like the NES.
+  Each has a volume, and the leads can have vibrato.
+- **Writing:** click a cell, then play notes on the keyboard like a piano: `Z` to `M` is an octave
+  (`S`, `D`, `G`, `H`, `J` the sharps), `Q` to `U` the octave above, and `[` `]` change octave. `1` is a
+  note-off, `Delete` clears, the arrows and `Tab` move, and **Step** is how far the cursor moves after
+  each note. On the drum channel, `Z` `X` `C` `V` are kick, snare, hi-hat and crash. In the volume
+  column, `0` to `F` set a note's volume.
+- **Patterns:** 64 rows each, a row a sixteenth note. The order list on the left plays them in turn:
+  **New**, **Copy** (to change), **Again** (the same pattern repeated), **Del**, and `<` `>` to choose
+  which pattern a slot plays.
+- **Space** or **Play** plays the song from the cursor, following along; **Pattern** loops just this
+  pattern.
+- **Save** keeps the song in `songs/<name>.json` to open again. **Export** also renders it to
+  `assets/audio/music/<name>.wav`, the same sound as `build-assets.py`'s songs, and exactly as long as
+  its rows so it loops seamlessly. The editor imports it the next time it has focus, and the game
+  plays it with `Music.Play("<name>")`. Exporting over one of `build-assets.py`'s songs asks twice:
+  take that song out of the script too, or the next asset build puts the old one back.
 
 ## Save data
 
