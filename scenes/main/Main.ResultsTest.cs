@@ -34,7 +34,7 @@ public partial class Main
             for (int seat = 0; seat < party.Length; seat++)
             {
                 Hero hero = game.Session.State.Heroes[seat];
-                await Click(this, game.RollButton);
+                await game.UseAbility(game.RollButton);
                 await game.WaitUntilIdle();
                 await ClickAt(this, game.TileCenter(exit));
                 await game.WaitUntilIdle();

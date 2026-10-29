@@ -33,13 +33,12 @@ public sealed record CardActions(IReadOnlyDictionary<CardAction, string> Blocked
 }
 
 /// <summary>
-/// Top of the right panel: belt, backpack, the selected card's text and what you can do with it.
-/// Greyed-out buttons explain themselves on hover, and clicking one reports why it's unavailable.
+/// In the right panel, under the floor map: the selected card's text and what you can do with it (the
+/// cards themselves are on the character sheet). Greyed-out buttons explain themselves on hover, and
+/// clicking one reports why it's unavailable.
 /// </summary>
 public partial class InventoryPanel : Control
 {
-    private readonly CardSlot[] _belt = new CardSlot[GameRules.BeltCapacity];
-    private readonly CardSlot[] _backpack = new CardSlot[GameRules.BackpackCapacity];
     private readonly Dictionary<CardAction, Button> _actions = [];
     private Label _details = null!;
     private Panel _handChoice = null!;
@@ -48,8 +47,6 @@ public partial class InventoryPanel : Control
 
     /// <summary>The card the hand choice is for, while it's showing.</summary>
     private int? _choosingFor;
-
-    public event Action<int>? CardSelected;
 
     public event Action<CardAction>? ActionRequested;
 
@@ -61,29 +58,17 @@ public partial class InventoryPanel : Control
 
     public override void _Ready()
     {
-        Size = new Vector2(176, 188);
+        Size = new Vector2(176, 88);
         MouseFilter = MouseFilterEnum.Ignore;
 
-        AddChild(UiTheme.Heading(UiTheme.Label(new(8, 4), new(160, 12), "BELT", color: Palette.Trim), 1));
-        for (int i = 0; i < _belt.Length; i++)
-        {
-            _belt[i] = AddSlot(new Vector2(8 + i * 82, 16));
-        }
-
-        AddChild(UiTheme.Heading(UiTheme.Label(new(8, 36), new(160, 12), "BACKPACK", color: Palette.Trim), 1));
-        for (int i = 0; i < _backpack.Length; i++)
-        {
-            _backpack[i] = AddSlot(new Vector2(8 + i % 2 * 82, 49 + i / 2 * 18));
-        }
-
-        _details = UiTheme.Label(new(8, 105), new(160, 62), color: Palette.Text);
+        _details = UiTheme.Label(new(8, 0), new(160, 66), color: Palette.Text);
         AddChild(_details);
 
         CardAction[] actions = Enum.GetValues<CardAction>();
         for (int i = 0; i < actions.Length; i++)
         {
             CardAction action = actions[i];
-            Button button = UiTheme.Button(new(8 + i * 32, 169), new(30, 16), action.ToString());
+            Button button = UiTheme.Button(new(8 + i * 32, 68), new(30, 16), action.ToString());
             button.Pressed += () => ActionRequested?.Invoke(action);
             button.GuiInput += input =>
             {
@@ -97,7 +82,7 @@ public partial class InventoryPanel : Control
         }
 
         // Asks which hand a card that goes in either (the Boomerang) is equipped into, over its text.
-        _handChoice = new Panel { Position = new Vector2(4, 103), Size = new Vector2(168, 64), Visible = false };
+        _handChoice = new Panel { Position = new Vector2(4, 0), Size = new Vector2(168, 64), Visible = false };
         _handQuestion = UiTheme.Label(new Vector2(6, 3), new Vector2(156, 14), color: Palette.TrimBright);
         _handChoice.AddChild(_handQuestion);
         for (int i = 0; i < 2; i++)
@@ -145,26 +130,10 @@ public partial class InventoryPanel : Control
         _handChoice.Visible = true;
     }
 
-    internal CardSlot BeltSlot(int index) => _belt[index];
-
-    internal CardSlot BackpackSlot(int index) => _backpack[index];
-
     internal Button ActionButton(CardAction action) => _actions[action];
 
     public void ShowHero(Hero? hero, int? selectedCardId, CardActions actions)
     {
-        for (int i = 0; i < _belt.Length; i++)
-        {
-            CardInstance? card = hero is not null && i < hero.Belt.Count ? hero.Belt[i] : null;
-            _belt[i].ShowCard(card, "(empty)", card is not null && card.Id == selectedCardId);
-        }
-
-        for (int i = 0; i < _backpack.Length; i++)
-        {
-            CardInstance? card = hero is not null && i < hero.Backpack.Count ? hero.Backpack[i] : null;
-            _backpack[i].ShowCard(card, "", card is not null && card.Id == selectedCardId);
-        }
-
         if (_choosingFor != selectedCardId)
         {
             _handChoice.Visible = false;
@@ -186,19 +155,5 @@ public partial class InventoryPanel : Control
 
         // A scroll can't be worn, but its spell can be learned: Equip becomes Learn.
         _actions[CardAction.Equip].Text = selected?.Definition.Teaches is not null ? "Learn" : "Equip";
-    }
-
-    private CardSlot AddSlot(Vector2 position)
-    {
-        var slot = new CardSlot { Position = position, Size = new Vector2(78, 16) };
-        slot.Pressed += () =>
-        {
-            if (slot.Card is { } card)
-            {
-                CardSelected?.Invoke(card.Id);
-            }
-        };
-        AddChild(slot);
-        return slot;
     }
 }

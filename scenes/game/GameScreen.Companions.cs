@@ -38,7 +38,7 @@ public partial class GameScreen
 
     private void BuildOrders(Control right)
     {
-        _orders = UiTheme.Button(new Vector2(8, 329), new Vector2(52, 22), "Orders");
+        _orders = UiTheme.Button(new Vector2(6, 335), new Vector2(50, 20), "Orders");
         _orders.TooltipText = "Give your companions standing orders.";
         _orders.Pressed += () =>
         {
@@ -75,7 +75,7 @@ public partial class GameScreen
         }
 
         float height = companions.Count * OrderRowHeight + 6;
-        _ordersPanel.Position = new Vector2(4, 325 - height);
+        _ordersPanel.Position = new Vector2(4, 331 - height);
         _ordersPanel.Size = new Vector2(168, height);
         for (int i = 0; i < companions.Count; i++)
         {

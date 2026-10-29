@@ -184,6 +184,11 @@ public partial class GameScreen
             return;
         }
 
+        if (_odAim != OdAim.None && AimOdHand(hero, tile))
+        {
+            return;
+        }
+
         if (LayingIce)
         {
             LayIceAt(hero, tile);
@@ -483,6 +488,7 @@ public partial class GameScreen
     {
         _hovered = tile;
         _hoverInfo.Text = tile is { } hovered ? DescribeTile(hovered) : Hint();
+        _board.ShowNameTag(tile, tile is { } over ? NameAt(over) : "");
 
         if (_targeting && tile is { } target && _selectedCardId is int cardId
             && ActiveHero?.FindCard(cardId)?.Card.Definition.Effect is { AreaRadius: > 0 } effect
@@ -494,6 +500,23 @@ public partial class GameScreen
         {
             _board.SetBlast([]);
         }
+    }
+
+    /// <summary>The name of whoever stands on a tile in the room on show (a monster with its hearts), or "".</summary>
+    private string NameAt(GridPosition tile)
+    {
+        Room room = ShownRoom;
+        if (room.MonsterAt(tile) is { } monster)
+        {
+            return $"{monster.Definition.Name} {monster.Hearts}/{monster.Definition.Hearts}";
+        }
+
+        if (_session.State.HeroesIn(room).FirstOrDefault(hero => hero.Position == tile && hero.IsInPlay) is { } hero)
+        {
+            return $"{hero.Name} {hero.Hearts}/{hero.MaxHearts}";
+        }
+
+        return room.MerchantAt(tile) is { } merchant ? merchant.Name : "";
     }
 
     /// <summary>What to do next, shown in the top strip when the mouse isn't over a tile.</summary>
@@ -930,6 +953,10 @@ public partial class GameScreen
 
     private void CancelSelection()
     {
+        _odAim = OdAim.None;
+        _confirmingRetreat = false;
+        _heroPanel.CloseBag();
+        _spread?.Close();
         CloseRummage();
         CloseTrade();
         _stealing = false;

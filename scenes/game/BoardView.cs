@@ -138,6 +138,26 @@ public partial class BoardView : Control
         AddChild(new ActionCallout { Position = at, Text = text, Color = color, Size = size });
     }
 
+    private NameTag? _nameTag;
+
+    /// <summary>The name of who's under the mouse, on a tag over their tile; null to take it down.</summary>
+    public void ShowNameTag(GridPosition? tile, string text = "")
+    {
+        if (_nameTag is null)
+        {
+            _nameTag = new NameTag();
+            AddChild(_nameTag);
+        }
+
+        _nameTag.Visible = tile is not null && text.Length > 0;
+        if (tile is { } at)
+        {
+            _nameTag.Text = text;
+            _nameTag.Position = TileOrigin(at) + new Vector2(TileSize / 2f, -3);
+            _nameTag.QueueRedraw();
+        }
+    }
+
     /// <summary>A shot flying between two points on the board (in its own coordinates). Returns how long it takes.</summary>
     public double Shot(Vector2 from, Vector2 to, ShotKind kind, Color color)
     {
@@ -161,6 +181,24 @@ public partial class BoardView : Control
     /// <summary>A strike's slash and sparks on a tile; sparks only for a block.</summary>
     public void Spark(GridPosition tile, Color color, bool slash = true) =>
         AddChild(new HitSpark { Position = TileOrigin(tile) + new Vector2(TileSize / 2f, TileSize / 2f - 2), Color = color, Slash = slash, Backhand = Random.Shared.Next(2) == 0 });
+
+    /// <summary>A small dark tag with a name on it, centered over a point.</summary>
+    private sealed partial class NameTag : Node2D
+    {
+        public string Text { get; set; } = "";
+
+        public override void _Ready() => ZIndex = 18;
+
+        public override void _Draw()
+        {
+            Font font = GameArt.BodyFont ?? ThemeDB.FallbackFont;
+            float width = font.GetStringSize(Text, fontSize: UiTheme.FontSize).X + 6;
+            var rect = new Rect2(-width / 2, -11, width, 11);
+            DrawRect(rect, Palette.Ink with { A = 0.9f });
+            DrawRect(rect, Palette.TextDim, filled: false, width: 1);
+            DrawString(font, new Vector2(-width / 2 + 3, -3), Text, fontSize: UiTheme.FontSize, modulate: Palette.Text);
+        }
+    }
 
     /// <summary>Where the camera wants to be: centered on what it follows, within the room.</summary>
     private Vector2 Desired()
