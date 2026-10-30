@@ -277,7 +277,8 @@ public partial class GameScreen
 
         if (_shoving)
         {
-            int? shovedId = room.MonsterAt(tile)?.Id ?? _session.State.ActiveHeroesIn(room).FirstOrDefault(other => other.Position == tile && other != hero)?.Id;
+            int? shovedId = room.MonsterAt(tile)?.Id ?? room.Bombs.FirstOrDefault(bomb => bomb.Position == tile)?.Id
+                ?? _session.State.ActiveHeroesIn(room).FirstOrDefault(other => other.Position == tile && other != hero)?.Id;
             if (shovedId is int targetId)
             {
                 if (_session.AttackDiceLeft > 0 && SelectedAttackDice < 1)

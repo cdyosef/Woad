@@ -155,6 +155,34 @@ public class HazardTests
         Assert.Contains("too mighty", session.Refuse(new Shove(hero.Id, room.Monsters.Single(monster => monster.Definition.Boss).Id)));
     }
 
+    [Theory]
+    [InlineData(1, 1)]
+    [InlineData(1, -1)]
+    [InlineData(-1, 1)]
+    [InlineData(-1, -1)]
+    public void AShovePushesStraightOnFromEveryDiagonal(int dx, int dy)
+    {
+        GameSession session = TestRun.Start("""
+            .........
+            .........
+            .........
+            .....d...
+            ....1....
+            .........
+            .........
+            .........
+            .........
+            """, new ScriptedDice(3));
+        Hero hero = session.HeroInSeat();
+        Monster dummy = session.OnlyMonster();
+        dummy.Position = new GridPosition(4 + dx, 4 + dy);
+
+        Assert.Contains(dummy.Position, session.GetShoveTargets());
+        session.Do(new Shove(hero.Id, dummy.Id));
+
+        Assert.Equal(new GridPosition(4 + 2 * dx, 4 + 2 * dy), dummy.Position);
+    }
+
     [Fact]
     public void AShoveCanPushDiagonallyOntoAHiddenTrap()
     {
