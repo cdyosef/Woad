@@ -20,30 +20,31 @@ internal static class TestRun
     /// The heroes' stats unless a test says otherwise: the game's starting stats, but with 4 hearts, so
     /// rules tests don't shift when the starting hearts are retuned.
     /// </summary>
-    public static Stats HeroStats { get; } = GameRules.HeroBaseStats with { Hearts = 4 };
+    public static Stats HeroStats { get; } = GameRules.HeroBaseStats with { Hearts = 4, OdHandDice = 1 };
 
     /// <summary>A begun run in a single room "A".</summary>
     /// <param name="owners">Per seat: null for a player, or the seat of the player a companion belongs to.</param>
-    public static GameSession Start(string room, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, int?[]? owners = null, bool friendlyFire = false) =>
-        Start([new RoomSetup("A", Room(room))], dice, heroes, stats, cards, loot, owners: owners, friendlyFire: friendlyFire);
+    /// <param name="skills">What every hero knows: everything, unless a test says otherwise.</param>
+    public static GameSession Start(string room, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, int?[]? owners = null, bool friendlyFire = false, Skill skills = Skills.All) =>
+        Start([new RoomSetup("A", Room(room))], dice, heroes, stats, cards, loot, owners: owners, friendlyFire: friendlyFire, skills: skills);
 
     /// <summary>A begun run starting in the first room. Every hero gets the same stats and cards.</summary>
     /// <param name="loot">Scripts the loot stream (pots, drops, deck shuffles); seeded when omitted.</param>
-    public static GameSession Start(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, IReadOnlyList<PassageSetup>? passages = null, int?[]? owners = null, bool friendlyFire = false)
+    public static GameSession Start(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, IReadOnlyList<PassageSetup>? passages = null, int?[]? owners = null, bool friendlyFire = false, Skill skills = Skills.All)
     {
-        GameSession session = Create(rooms, dice, heroes, stats, cards, loot, passages, owners, friendlyFire);
+        GameSession session = Create(rooms, dice, heroes, stats, cards, loot, passages, owners, friendlyFire, skills);
         session.Begin();
         return session;
     }
 
-    public static GameSession Create(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, IReadOnlyList<PassageSetup>? passages = null, int?[]? owners = null, bool friendlyFire = false)
+    public static GameSession Create(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, IReadOnlyList<PassageSetup>? passages = null, int?[]? owners = null, bool friendlyFire = false, Skill skills = Skills.All)
     {
         var setup = new RunSetup
         {
             Seed = Seed,
             ThemeId = TestContent.ThemeId,
             Heroes = Enumerable.Range(1, heroes)
-                .Select(number => new HeroSetup($"Hero {number}", stats ?? HeroStats, cards ?? [], OwnerSeat: owners?[number - 1]))
+                .Select(number => new HeroSetup($"Hero {number}", stats ?? HeroStats, cards ?? [], OwnerSeat: owners?[number - 1], Skills: skills))
                 .ToList(),
             Rooms = rooms,
             StartRoomId = rooms[0].Id,

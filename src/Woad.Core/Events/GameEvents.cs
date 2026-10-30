@@ -1,3 +1,4 @@
+using Woad.Core.Content;
 using Woad.Core.Characters;
 using Woad.Core.Dice;
 using Woad.Core.Grid;
@@ -130,7 +131,24 @@ public sealed record DefenseRolled(int DefenderId, DiceRoll Roll, int Armor, int
 
     /// <summary>A last-chance die (the Lucky Helmet's) was rolled in at the end.</summary>
     public bool LastChance { get; init; }
+
+    /// <summary>Faces held for it (Parry, Guard), added right after the base die.</summary>
+    public int Held { get; init; }
 }
+
+/// <summary>
+/// A hero bull rushed from <paramref name="From"/> to <paramref name="To"/>: <paramref name="Roll"/> and
+/// <paramref name="Bonus"/> (the Wend bonus) made the charge <paramref name="Length"/> tiles. It reached
+/// <paramref name="MonsterId"/> with <paramref name="Leftover"/> tiles to spare (they go on the blow), or
+/// no monster (null). A <see cref="HeroMoved"/> follows when they went anywhere.
+/// </summary>
+public sealed record BullRushed(int HeroId, DiceRoll Roll, int Bonus, int Length, GridPosition From, GridPosition To, int? MonsterId, int Leftover) : GameEvent;
+
+/// <summary>A hero rolled a die and held it for a defense: their own Parry, or Guard for themselves or an ally beside them.</summary>
+public sealed record DefenseHeld(int HeroId, int ForHeroId, Skill Skill, DiceRoll Roll) : GameEvent;
+
+/// <summary>A hero spent a Rumble die on High Alert: it rolls in with their next search this turn.</summary>
+public sealed record WentOnHighAlert(int HeroId) : GameEvent;
 
 /// <summary>An attack's result: 1 heart when its total beat the defense, otherwise 0 (blocked).</summary>
 public sealed record Damaged(int TargetId, int Amount, int HeartsLeft) : GameEvent;
@@ -442,6 +460,9 @@ public sealed record Stunned(int EntityId, int Stacks, int PowerfulStacks, bool 
 public sealed record StunWoreOff(int EntityId) : GameEvent;
 
 /// <summary>Holy Water thrown on the undead: a lesser one destroyed outright, or a greater one about to take its Radiate dice.</summary>
+/// <summary>A hero spent points on a skill.</summary>
+public sealed record SkillLearned(int HeroId, Skill Skill, int PointsLeft) : GameEvent;
+
 public sealed record Sanctified(int MonsterId, int ByHeroId, bool Destroyed) : GameEvent;
 
 /// <summary>A Sineater Doll soaked up stacks of an ailment from someone; it now holds <paramref name="Held"/> in all.</summary>

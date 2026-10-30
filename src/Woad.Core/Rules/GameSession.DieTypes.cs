@@ -252,7 +252,8 @@ public sealed partial class GameSession
     /// A gust shifting a boss or a huge monster, its whole footprint a tile at a time straight away from
     /// <paramref name="from"/>, onto ground it could stand on. Nothing drops it into a pit or out of its water.
     /// </summary>
-    private void HeaveAside(Room room, Monster monster, GridPosition from, int tiles, Hero? by, List<GameEvent> events)
+    /// <param name="slam">Whatever stops it hurts it (a gust); without, it just stops (a bull rush).</param>
+    private void HeaveAside(Room room, Monster monster, GridPosition from, int tiles, Hero? by, List<GameEvent> events, bool slam = true)
     {
         GridPosition near = monster.NearestTile(from);
         int dx = Math.Sign(near.X - from.X), dy = Math.Sign(near.Y - from.Y);
@@ -269,7 +270,11 @@ public sealed partial class GameSession
             GridPosition? blocker = footprint.Where(tile => room.Layout.Contains(tile) && OtherThan(room, monster, tile)).Select(tile => (GridPosition?)tile).FirstOrDefault();
             if (blocker is not null || !footprint.All(tile => room.Layout.Contains(tile) && CanMonsterStand(room.Layout[tile], monster)))
             {
-                Slam(room, monster.Id, blocker ?? to, tiles - pushed, by, events);
+                if (slam)
+                {
+                    Slam(room, monster.Id, blocker ?? to, tiles - pushed, by, events);
+                }
+
                 return;
             }
 
@@ -401,5 +406,5 @@ public sealed partial class GameSession
 
     /// <summary>What a buried hero can't do: anything that needs them up and about.</summary>
     private static bool NeedsToBeUnburied(GameCommand command) =>
-        command is RollMovement or MoveHero or Leap or GoThroughDoor or AttackMonster or AttackAlly or AttackMerchant or AttackBomb or Shove or JumpDown or TakeStairs or Escape or GetUp;
+        command is RollMovement or MoveHero or Leap or GoThroughDoor or AttackMonster or AttackAlly or AttackMerchant or AttackBomb or Shove or BullRush or JumpDown or TakeStairs or Escape or GetUp;
 }

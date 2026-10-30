@@ -1,3 +1,4 @@
+using Woad.Core.Content;
 using Woad.Core.Commands;
 using Woad.Core.Events;
 using Woad.Core.Model;
@@ -38,18 +39,11 @@ public sealed partial class GameSession
     private bool CanTreat(Hero patient) =>
         patient.IsActive && patient.Position.ChebyshevDistanceTo(ActiveHero.Position) <= 1 && Curable(patient, MedicineBagReady).Count > 0;
 
-    /// <summary>An Aid roll needs a turn with nothing pending, and Od Hand dice left or a Medicine Bag ready.</summary>
-    private string? CheckAidStart()
-    {
-        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
-        {
-            return "Finish the roll first.";
-        }
-
-        return OdHandDiceLeft < 1 && !MedicineBagReady
-            ? ActiveHero.MedicineBag is null ? "You've used all your Od Hand dice this turn." : "You've used all your Od Hand dice and your Medicine Bag this turn."
-            : null;
-    }
+    /// <summary>
+    /// An Aid roll needs a turn with nothing pending, and Od Hand dice left to roll on it (with the Aid
+    /// skill), or a Medicine Bag ready, or Bandages to rouse with.
+    /// </summary>
+    private string? CheckAidStart() => CheckOdHandStart(Skill.Aid);
 
     private string? Handle(Aid command, List<GameEvent> events)
     {
@@ -59,20 +53,25 @@ public sealed partial class GameSession
         }
 
         bool bag = command.UseTools && MedicineBagReady;
-        int left = OdHandDiceLeft;
-        int dice = command.Dice ?? left;
-        if (dice < (bag ? 0 : 1) || dice > left)
-        {
-            return left == 0 ? "With no Od Hand dice left, only a Medicine Bag can aid." : $"Choose {(bag ? 0 : 1)} to {left} Od Hand dice.";
-        }
-
         OdHandCheck? check = null;
         if ((CheckBankedPowerDice(ActiveHero, command.PowerDice) ?? FindAid(command.TargetId, command.Cure, bag, out check)) is { } targetError)
         {
             return targetError;
         }
 
-        RollOdHand(command, dice, check!, events);
+        // Rolled with no Od Hand dice, it takes a Medicine Bag, or Bandages on a Rouse.
+        bool bandaged = check!.Kind == OdHandCheckKind.Rouse && command.UseTools && ActiveHero.Bandages is not null;
+        int usable = OdHandDiceFor(Skill.Aid);
+        int least = bag || bandaged ? 0 : 1;
+        int dice = command.Dice ?? usable;
+        if (dice < least || dice > usable)
+        {
+            return usable == 0
+                ? ActiveHero.Knows(Skill.Aid) ? "With no Od Hand dice left, only a Medicine Bag (or Bandages, to rouse) can aid." : Unlearned(Skill.Aid)
+                : $"Choose {least} to {usable} Od Hand dice.";
+        }
+
+        RollOdHand(command, dice, check, events);
         return null;
     }
 

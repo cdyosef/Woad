@@ -215,8 +215,16 @@ public sealed class Hero
     /// <summary>Their Block is spent until the start of their turn.</summary>
     public bool BlockSpent { get; internal set; }
 
+    /// <summary>Dice rolled and held for their next defense (their Parry, or Guard from them or an ally beside them).</summary>
+    public List<HeldDie> HeldDefense { get; } = [];
+
     /// <summary>The monster whose grab last caught them (a Mimic); see <c>GameSession.HeldBy</c> for whether it still holds them.</summary>
     public int? GrabbedBy { get; internal set; }
+
+    /// <summary>What they've learned to do (see <see cref="Skill"/>).</summary>
+    public Skill Skills { get; internal set; } = Content.Skills.All;
+
+    public bool Knows(Skill skill) => (Skills & skill) == skill;
 
     /// <summary>Torches held (and so lit): one in each hand at most.</summary>
     public int TorchesHeld => EquippedCards.Count(card => card.Definition.Torch);
@@ -271,8 +279,11 @@ public sealed class Hero
     public IEnumerable<CardInstance> AllCards => EquippedCards.Concat(_belt).Concat(_backpack);
 
     /// <summary>Base stats plus the bonuses of everything equipped.</summary>
-    public Stats EffectiveStats => EquippedCards.Aggregate(BaseStats, (stats, card) =>
+    public Stats EffectiveStats => EquippedCards.Concat(BeltTools).Aggregate(BaseStats, (stats, card) =>
         stats + card.Modifiers + (HasSetBonus(card.Definition) ? card.Definition.Set!.Modifiers : Stats.None));
+
+    /// <summary>Tools on the belt that work from there (Lockpicks): their bonuses count as if in hand.</summary>
+    public IEnumerable<CardInstance> BeltTools => _belt.Where(card => card.Definition.BeltsFirst);
 
     /// <summary>Whether the card's set bonus is on: it has one, and its partner is equipped too.</summary>
     public bool HasSetBonus(CardDefinition card) =>
@@ -382,7 +393,7 @@ public sealed class Hero
 
     /// <summary>A card picked up or handed over: a Medicine Bag goes on the belt when there's room, the rest in the backpack.</summary>
     internal CardInstance AddLoot(CardInstance card) =>
-        card.Definition.MedicineBag && _belt.Count < GameRules.BeltCapacity ? AddToBelt(card) : AddToBackpack(card);
+        card.Definition.Belts && (_belt.Count < GameRules.BeltCapacity || _belt.Any(held => held.Definition == card.Definition)) ? AddToBelt(card) : AddToBackpack(card);
 
     private static CardInstance Add(List<CardInstance> place, CardInstance card)
     {
@@ -473,7 +484,7 @@ public sealed class Hero
             return true;
         }
 
-        if (definition.MedicineBag && _belt.Count < GameRules.BeltCapacity)
+        if (definition.BeltsFirst && _belt.Count < GameRules.BeltCapacity)
         {
             _belt.Add(card);
         }
@@ -481,7 +492,7 @@ public sealed class Hero
         {
             Equip(card);
         }
-        else if ((definition.Usage == CardUsage.SingleUse || definition.MedicineBag) && _belt.Count < GameRules.BeltCapacity)
+        else if ((definition.Usage == CardUsage.SingleUse || definition.Belts) && _belt.Count < GameRules.BeltCapacity)
         {
             _belt.Add(card);
         }

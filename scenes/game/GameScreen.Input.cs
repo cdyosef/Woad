@@ -57,7 +57,7 @@ public partial class GameScreen
     private async void OnTileDoubleClicked(GridPosition tile)
     {
         if (Locked || ActiveHero is not { } hero || _session.State.Turn is not { } turn || hero.RoomId != _shownRoomId
-            || tile == hero.Position || _targeting || _leaping || _shoving || _stealing)
+            || tile == hero.Position || _targeting || _leaping || _rushing || _shoving || _stealing)
         {
             return;
         }
@@ -108,7 +108,7 @@ public partial class GameScreen
     private void AimAt(Monster monster)
     {
         _rumbling = true;
-        _stealing = _shoving = _leaping = false;
+        _stealing = _shoving = _leaping = _rushing = false;
         _goal = null;
         Log($"Click the {monster.Definition.Name} again to attack it. Right-click to cancel.", Palette.Danger);
         RefreshPanels();
@@ -241,6 +241,25 @@ public partial class GameScreen
         }
 
         Room room = ShownRoom;
+        if (_rushing)
+        {
+            if (!_session.GetBullRushTargets().Contains(tile))
+            {
+                _rushing = false;
+                RefreshPanels();
+            }
+            else if (SelectedAttackDice < 1)
+            {
+                Log("Select at least one Rumble die for the blow.", Palette.TextDim);
+            }
+            else
+            {
+                Execute(new BullRush(hero.Id, tile, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
+            }
+
+            return;
+        }
+
         if (_leaping)
         {
             if (_session.GetLeapTargets().Contains(tile))
@@ -249,7 +268,7 @@ public partial class GameScreen
             }
             else
             {
-                _leaping = false;
+                _leaping = _rushing = false;
                 RefreshPanels();
             }
 
@@ -435,7 +454,7 @@ public partial class GameScreen
             return;
         }
 
-        if (_session.OdHandDiceLeft > 0 && SelectedOdHandDice < 1)
+        if (_session.OdHandDiceLeft > 0 && SelectedOdHandDice < 1 && !_toolsHeld)
         {
             Log("Select at least one Od Hand die.", Palette.TextDim);
             return;
@@ -593,6 +612,11 @@ public partial class GameScreen
         if (_rumbling)
         {
             return "Rumble: click a target in red to attack it with your selected dice. Right-click (or Space) to put it away.";
+        }
+
+        if (_rushing)
+        {
+            return "Bull Rush: click a purple tile to charge that way, as far as a Wend die and your Wend bonus carry you. The first monster in the way takes your selected Rumble dice, your weapon and the tiles to spare. Right-click to cancel.";
         }
 
         if (_leaping)
@@ -1004,7 +1028,7 @@ public partial class GameScreen
         CloseTrade();
         _stealing = false;
         _shoving = false;
-        _leaping = false;
+        _leaping = _rushing = false;
         _rumbling = false;
         _selectedCardId = null;
         _targeting = false;

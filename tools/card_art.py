@@ -340,6 +340,34 @@ def draw(item):
         c.poly([(14, 12), (17, 2), (19, 6), (22, 3), (22, 12)], FLAME[2])
         c.poly([(16, 12), (18, 5), (20, 12)], FLAME[1])
         c.dot(18, 10, FLAME[0])
+    elif i == "burgling_tools":
+        # A leather roll laid open: picks, a little pry bar and a hook.
+        c.rect(4, 9, 24, 16, LEATHER[1])
+        c.rect(4, 9, 24, 2, LEATHER[0])
+        for k, color in enumerate((STEEL[1], IRON[1], STEEL[1], IRON[1])):
+            x = 8 + k * 5
+            c.line(x, 12, x + 1, 26, color, 1)
+            c.rect(x - 1, 12, 3, 3, WOOD[1])
+        c.line(26, 12, 27, 27, IRON[0], 2)
+        c.line(27, 27, 25, 29, IRON[0], 1)
+    elif i == "cutpurse_knife":
+        # A short hooked blade, and the cut purse strings it leaves behind.
+        blade(c, 12, 20, 21, 11, STEEL, 2)
+        c.line(21, 11, 23, 13, STEEL[1], 1)
+        hilt(c, 12, 20, BRASS, BLACK, BRASS, 3)
+        c.circle(23, 24, 4, LEATHER[1])
+        c.dot(22, 23, GOLD[0])
+        c.line(20, 20, 18, 17, CLOTH[1], 1)
+    elif i == "sticky_gloves":
+        # A glove with a coin stuck to its palm, dripping.
+        c.rect(9, 14, 13, 13, LEATHER[1])
+        for k in range(4):
+            c.rect(9 + k * 3 + (1 if k else 0), 6 + (k % 2), 2, 9, LEATHER[1])
+        c.poly([(22, 18), (27, 13), (28, 16), (22, 22)], LEATHER[1])
+        c.rect(9, 25, 13, 3, LEATHER[2])
+        c.circle(15, 19, 3, GOLD[1])
+        c.dot(14, 18, GOLD[0])
+        c.line(11, 28, 11, 30, GREEN[0], 1)
     elif i == "lockpicks":
         # A ring with two picks hanging from it, hooked and raked at the tips.
         c.ring(9, 8, 5, IRON[1], 1.5)
@@ -544,6 +572,37 @@ def ability(c, name):
         c.poly([(16, 16), (24, 14), (26, 24), (18, 26)], IRON[1])
         c.circle(10, 27, 4, STONE[1])
         c.circle(25, 29, 3, STONE[2])
+    elif name == "bull_rush":
+        # A horned helm charging right, speed lines behind it.
+        c.circle(19, 18, 8, IRON[1])
+        c.rect(11, 18, 16, 6, IRON[1])
+        c.rect(16, 18, 9, 2, BLACK[2])
+        c.poly([(24, 12), (30, 6), (29, 12)], PARCHMENT[1])
+        c.poly([(14, 12), (8, 6), (9, 12)], PARCHMENT[1])
+        for y in (14, 19, 24):
+            c.line(1, y, 7, y, MOTION)
+    elif name == "parry":
+        # A blade turning another aside, sparks where they meet.
+        c.line(4, 27, 22, 9, STEEL[1], 3)
+        c.line(5, 26, 21, 10, STEEL[0], 1)
+        c.rect(3, 24, 6, 2, BRASS[1])
+        c.line(28, 26, 12, 6, IRON[1], 2)
+        for dx, dy in ((0, -4), (4, 0), (-3, 3), (3, -3)):
+            c.line(17, 15, 17 + dx * 1.5, 15 + dy * 1.5, FLAME[1], 1)
+    elif name == "guard":
+        # A round shield, raised.
+        c.circle(16, 15, 11, WOOD[1])
+        c.ring(16, 15, 11, IRON[1], 2)
+        c.circle(16, 15, 3, IRON[0])
+        c.line(16, 5, 16, 25, WOOD[2], 1)
+    elif name == "high_alert":
+        # A wide-open eye, and a mark of alarm above it.
+        c.poly([(3, 20), (10, 13), (22, 13), (29, 20), (22, 27), (10, 27)], WHITE[0])
+        c.circle(16, 20, 5, BLUE[1])
+        c.circle(16, 20, 2, BLACK[2])
+        c.dot(14, 18, "#ffffff")
+        c.rect(15, 2, 3, 7, RED[1])
+        c.rect(15, 10, 3, 2, RED[1])
     elif name == "drop_roll":
         c.poly([(9, 24), (12, 10), (16, 16), (19, 6), (24, 24)], FLAME[2])
         c.poly([(12, 24), (16, 15), (21, 24)], FLAME[1])
@@ -617,6 +676,7 @@ def back(c, slot):
 ABILITIES = [
     "fist", "shove", "wend", "leap", "prone", "search", "steal", "pick_lock", "disarm", "rouse",
     "retreat", "learn", "dig_out", "drop_roll", "cast", "jackalope_foot", "shield_cufflinks", "icarus_wings",
+    "parry", "guard", "high_alert", "bull_rush",
 ]
 
 BACKS = ["head", "body", "main_hand", "off_hand", "feet", "accessory", "belt", "bag"]
@@ -817,7 +877,7 @@ ITEMS = [
     "leather_armor", "studded_armor", "chain_mail", "wardens_plate", "storm_mail", "dash_boots",
     "flame_scroll", "frost_scroll", "venom_scroll", "acid_scroll", "grave_scroll", "gale_scroll", "sun_scroll",
     "bloom_scroll", "quake_scroll", "spark_scroll", "mind_scroll", "shadow_scroll", "frost_wand", "boomerang",
-    "torch", "lockpicks", "bomb", "autosmith_hammer", "eye_drops", "holy_water", "health_potion",
+    "torch", "lockpicks", "burgling_tools", "cutpurse_knife", "sticky_gloves", "bomb", "autosmith_hammer", "eye_drops", "holy_water", "health_potion",
     "antidote", "strong_base", "smelling_salts", "bandages", "medicine_bag", "shovel", "sineater_doll",
     "loose_coins", "coin_pouch", "emerald", "pearl", "golden_idol",
 ]

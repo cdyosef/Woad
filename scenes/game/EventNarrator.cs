@@ -1,4 +1,5 @@
 using Woad.Core.Events;
+using Woad.Core.Content;
 using Woad.Core.Model;
 using Woad.Scenes.Ui;
 
@@ -28,6 +29,9 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         ShoveResisted resisted => $"{nameOf(resisted.TargetId)} holds their ground.",
         MonsterTrapped trapped => $"{nameOf(trapped.MonsterId)} is shoved onto a {(trapped.Kind == TrapKind.TrapDoor ? "trap door" : "spike trap")}!",
         MonsterFell fell => $"{nameOf(fell.MonsterId)} drops to the floor below.",
+        BullRushed { MonsterId: int struck } rushed => $"{nameOf(rushed.HeroId)} charges {rushed.Length} and slams into {nameOf(struck)}{(rushed.Leftover > 0 ? $", +{rushed.Leftover} to spare" : "")}!",
+        BullRushed rushed when rushed.To == rushed.From => $"{nameOf(rushed.HeroId)} charges, and gets nowhere.",
+        BullRushed rushed => $"{nameOf(rushed.HeroId)} charges {rushed.Length}.",
         Leaped { Roll: < 2 } leap => $"{nameOf(leap.HeroId)} stumbles on the leap ({leap.Roll}) and goes nowhere.",
         Leaped leap when leap.Landing == leap.Target => $"{nameOf(leap.HeroId)} leaps ({leap.Roll}) and lands on target.",
         Leaped leap => $"{nameOf(leap.HeroId)} leaps ({leap.Roll}) but comes down short!",
@@ -92,12 +96,17 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         Backfired backfired => $"The scroll goes off in {nameOf(backfired.HeroId)}'s hands!",
         SpellLearned learned => $"{nameOf(learned.HeroId)} learns {spellNameOf(learned.SpellId)}.",
         PointSpent spent => $"{nameOf(spent.HeroId)} grows stronger: +1 {spent.Stat} (level {spent.Level}).",
+        SkillLearned learned => $"{nameOf(learned.HeroId)} learns {learned.Skill.Name()}.",
         CompanionPolicySet => null,
         TorchBurnedOut burnedOut => $"{nameOf(burnedOut.HeroId)}'s torch gutters and burns out.",
         HeroShackled shackled => $"{nameOf(shackled.MonsterId)}'s chain shackles {nameOf(shackled.HeroId)}! No moving until a key or a picked lock ({shackled.Lock}+) frees them.",
         HeroUnshackled { Picked: true } freed => $"{nameOf(freed.ById)} picks the lock: {nameOf(freed.HeroId)}'s shackles fall away.",
         HeroUnshackled freed => $"{nameOf(freed.ById)} unlocks {nameOf(freed.HeroId)}'s shackles with a key.",
         Guarded guarded => $"{nameOf(guarded.GuardianId)} throws their shield in front of {nameOf(guarded.HeroId)}!",
+        DefenseHeld { Skill: Skill.Parry } held => $"{nameOf(held.HeroId)} readies a parry: +{held.Roll.Total} on their next defense.",
+        DefenseHeld held when held.ForHeroId == held.HeroId => $"{nameOf(held.HeroId)} stands guard: +{held.Roll.Total} on their next defense.",
+        DefenseHeld held => $"{nameOf(held.HeroId)} guards {nameOf(held.ForHeroId)}: +{held.Roll.Total} on their next defense.",
+        WentOnHighAlert alert => $"{nameOf(alert.HeroId)} is on High Alert: a Rumble die rolls in with their next search.",
         LastChanceUsed lucky => $"{nameOf(lucky.HeroId)}'s {cardNameOf(lucky.CardId)} turns the blow aside... and breaks!",
         MonsterRegenerated regenerated => $"The {nameOf(regenerated.MonsterId)}'s wounds knit back together.",
         CowardsFlight flight => $"{nameOf(flight.HeroId)} pulls the Coward's Cloak tight and makes ready to run ({flight.WendDice} more Wend {(flight.WendDice == 1 ? "die" : "dice")}){(flight.SlowedMonsterIds.Count > 0 ? "; the monsters beside them falter" : "")}!",

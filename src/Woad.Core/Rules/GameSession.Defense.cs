@@ -6,7 +6,8 @@ using Woad.Core.Model;
 namespace Woad.Core.Rules;
 
 /// <summary>
-/// A hero's defense: the base die and armor against every attack. While that's losing, Guard Dice from
+/// A hero's defense: the base die and armor against every attack, and any dice held for it (Parry, Guard
+/// from them or an ally). While that's losing, Guard Dice from
 /// allies beside them roll in (a 6 rolls another), then the hero's Block goes in (all of it, on the first
 /// defense that needs it), then their extra Defense dice roll in one at a time, then banked Power Dice,
 /// and last of all a lucky die (the Lucky Helmet, which breaks). Guard Dice, Block and extra dice are
@@ -24,6 +25,9 @@ public sealed partial class GameSession
         public bool Lucky { get; init; }
 
         public int GuardDice { get; init; }
+
+        /// <summary>Faces held for this defense (Parry, Guard), added before anything else.</summary>
+        public int[] Held { get; init; } = [];
 
         public int GuardUsed { get; set; }
 
@@ -67,7 +71,10 @@ public sealed partial class GameSession
                 .SelectMany(ally => Enumerable.Repeat(ally, GuardDiceReady(ally)))
                 .ToList()
             : [];
-        var guard = new Guard { Block = BlockReady(hero), Dice = ExtraDefenseDiceReady(hero), Lucky = lucky is not null, GuardDice = guardians.Count };
+        // Dice held for this defense (Parry, Guard) go in whatever happens, all of them, and are used up.
+        int[] held = [.. hero.HeldDefense.SelectMany(die => die.Faces)];
+        hero.HeldDefense.Clear();
+        var guard = new Guard { Block = BlockReady(hero), Dice = ExtraDefenseDiceReady(hero), Lucky = lucky is not null, GuardDice = guardians.Count, Held = held };
         DiceRoll roll = RollDefense(hero.Id, hero.Power, BaseDefenseDice(hero) + extraDice, armor, attackTotal, canSpend: true, events, guard);
 
         foreach (Hero guardian in guardians.Take(guard.GuardUsed))

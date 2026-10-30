@@ -1,3 +1,5 @@
+using Woad.Core.Content;
+
 namespace Woad.Core.Characters;
 
 public enum StatKind
@@ -9,6 +11,9 @@ public enum StatKind
     OdHandDice,
     Luck,
     Magic,
+
+    /// <summary>Wend dice (Speed is the Wend bonus).</summary>
+    MoveDice,
 }
 
 /// <summary>Points a character has spent on top of the base hero stats.</summary>
@@ -30,6 +35,13 @@ public sealed record StatAllocation
 
     public int Magic { get; init; }
 
+    public int MoveDice { get; init; }
+
+    /// <summary>The skills bought (see <see cref="PointBuy.SkillCost"/>).</summary>
+    public Skill Skills { get; init; }
+
+    public StatAllocation WithSkill(Skill skill, bool learned) => this with { Skills = learned ? Skills | skill : Skills & ~skill };
+
     public int this[StatKind stat] => stat switch
     {
         StatKind.Hearts => Hearts,
@@ -39,6 +51,7 @@ public sealed record StatAllocation
         StatKind.OdHandDice => OdHandDice,
         StatKind.Luck => Luck,
         StatKind.Magic => Magic,
+        StatKind.MoveDice => MoveDice,
         _ => throw new ArgumentOutOfRangeException(nameof(stat)),
     };
 
@@ -51,6 +64,7 @@ public sealed record StatAllocation
         StatKind.OdHandDice => this with { OdHandDice = value },
         StatKind.Luck => this with { Luck = value },
         StatKind.Magic => this with { Magic = value },
+        StatKind.MoveDice => this with { MoveDice = value },
         _ => throw new ArgumentOutOfRangeException(nameof(stat)),
     };
 }

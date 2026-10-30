@@ -126,6 +126,9 @@ public sealed class PendingRoll
     /// <summary>An Aid roll a Medicine Bag helped: if it fails with a 1 among its dice, a bag is used up.</summary>
     public bool UsedMedicineBag { get; internal init; }
 
+    /// <summary>The blow at the end of a bull rush: a hit pushes the monster two tiles, a miss leaves the hero prone.</summary>
+    public bool BullRush { get; internal init; }
+
     /// <summary>Torches' fire dice went into this attack: a 1 anywhere in it burns one out.</summary>
     public int Torches { get; internal init; }
 
@@ -173,6 +176,9 @@ public sealed class TurnState
 
     /// <summary>The tools' value has been added to an Od Hand roll this turn.</summary>
     public bool ToolsUsed { get; internal set; }
+
+    /// <summary>Rumble dice spent on High Alert, waiting to roll in with the turn's next search.</summary>
+    public int AlertDice { get; internal set; }
 
     /// <summary>A Medicine Bag has helped an Aid roll this turn (once a turn).</summary>
     public bool MedicineBagUsed { get; internal set; }

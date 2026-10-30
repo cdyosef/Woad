@@ -48,7 +48,7 @@ public partial class GameScreen
 
             // Belt bomb: select it, press Use, click the first highlighted target, confirm the Luck-held attack.
             CardInstance bomb = aria.Belt.Single(card => card.Definition.Id == "bomb");
-            await Click(this, _heroPanel.BeltSlot(aria.Belt.ToList().IndexOf(bomb)));
+            await ClickBelt(aria.Belt.ToList().IndexOf(bomb));
             Check(_selectedCardId == bomb.Id, "clicking a belt card selects it");
             await Click(this, _inventory.ActionButton(CardAction.Use));
             Check(_targeting, "Use enters targeting");
@@ -75,6 +75,13 @@ public partial class GameScreen
             await WaitUntilIdle();
             Check(aria.Position == destination, "clicking a highlighted tile moves the hero");
 
+            // High Alert, from the Rumble hand, readies a Rumble die for the search.
+            await UseAbility(_highAlert);
+            await WaitUntilIdle();
+            Check(_session.State.Turn!.AlertDice == 1 && _session.State.Turn.AttackDiceUsed == 1, "High Alert spends a Rumble die on the next search");
+            Check(new[] { _bullRush, _guard }.All(action => _rumbleHand.Cards.Any(card => card.Action == action && card.Held))
+                && _odHand.Cards.Any(card => card.Action == _parry && card.Held), "Bull Rush and Guard are in the Rumble hand, Parry in the Od Hand");
+
             // Search spends the Od Hand die, not the action.
             await UseAbility(_search);
             await WaitUntilIdle();
@@ -86,6 +93,7 @@ public partial class GameScreen
             }
 
             Check(_session.State.Turn!.OdHandDiceUsed == 1 && !_session.State.Turn.HasActed, "Search rolls Od Hand without using the action");
+            Check(_session.State.Turn.AlertDice == 0, "the High Alert die rolled in with the search");
 
             // End turn hands over to the second seat.
             await Click(this, _endTurn);
@@ -393,7 +401,7 @@ public partial class GameScreen
             Hero aria = ActiveHero!;
             Room armory = _session.State.Rooms["armory"];
             CardInstance bomb = aria.AllCards.Single(card => card.Definition.Id == "bomb");
-            await Click(this, aria.Belt.Contains(bomb) ? _heroPanel.BeltSlot(aria.Belt.ToList().IndexOf(bomb)) : _heroPanel.BackpackSlot(aria.Backpack.ToList().IndexOf(bomb)));
+            await (aria.Belt.Contains(bomb) ? ClickBelt(aria.Belt.ToList().IndexOf(bomb)) : Click(this, _heroPanel.BackpackSlot(aria.Backpack.ToList().IndexOf(bomb))));
             await Click(this, _inventory.ActionButton(CardAction.Use));
             Check(_targeting && _session.GetCardTargets(bomb.Id).Contains(new GridPosition(4, 3)), "the bomb can be thrown 3 tiles");
             await ClickTile(new GridPosition(4, 3));
@@ -588,7 +596,7 @@ public partial class GameScreen
             Check(ShownRoom.FindMonster(first.Id) is null || first.Conditions.Has(Condition.Freeze), "clicking the slime freezes it (or its Ice dice finish it)");
 
             CardInstance scroll = aria.Belt.Single(card => card.Definition.Id == "flame_scroll");
-            await Click(this, _heroPanel.BeltSlot(aria.Belt.ToList().IndexOf(scroll)));
+            await ClickBelt(aria.Belt.ToList().IndexOf(scroll));
             await Click(this, _inventory.ActionButton(CardAction.Use));
             Check(_targeting, $"Use enters targeting for the scroll ({_inventory.ActionButton(CardAction.Use).TooltipText})");
             await ClickTile(second.Position);
@@ -659,7 +667,7 @@ public partial class GameScreen
 
             // Her Od Hand die is still hers: she studies the Flame Scroll, whatever comes of it.
             CardInstance scroll = aria.AllCards.Single(card => card.Definition.Id == "flame_scroll");
-            await Click(this, aria.FindCard(scroll.Id)!.Value.Location == CardLocation.Belt ? _heroPanel.BeltSlot(aria.Belt.ToList().IndexOf(scroll)) : _heroPanel.BackpackSlot(aria.Backpack.ToList().IndexOf(scroll)));
+            await (aria.FindCard(scroll.Id)!.Value.Location == CardLocation.Belt ? ClickBelt(aria.Belt.ToList().IndexOf(scroll)) : Click(this, _heroPanel.BackpackSlot(aria.Backpack.ToList().IndexOf(scroll))));
             Button learn = _inventory.ActionButton(CardAction.Equip);
             Check(learn.Text == "Learn" && !learn.Disabled, $"a scroll with a spell on it offers Learn ({learn.TooltipText})");
             await Click(this, learn);
@@ -905,7 +913,7 @@ public partial class GameScreen
                     }
 
                     int slot = place.ToList().IndexOf(scroll);
-                    await Click(this, fromBelt ? _heroPanel.BeltSlot(slot) : _heroPanel.BackpackSlot(slot));
+                    await (fromBelt ? ClickBelt(slot) : Click(this, _heroPanel.BackpackSlot(slot)));
                     await Click(this, _inventory.ActionButton(CardAction.Use));
                     Check(_targeting, $"Use enters targeting for the {scroll.Definition.Name}");
                     await ClickTile(target);
@@ -1035,7 +1043,7 @@ public partial class GameScreen
 
     /// <summary>
     /// Debug mode (<c>-- --loottest</c>, with <see cref="DemoRun.Treasury"/>): Aria drops two of her three
-    /// lockpicks (asked how many) and her emerald, which lie in a bag; she rummages through it, takes the
+    /// lockpicks (asked how many) from her belt and her emerald, which lie in a bag; she rummages through it, takes the
     /// emerald back and then the rest; then she opens the chest beside her and takes what's inside.
     /// </summary>
     private async void RunLootTest()
@@ -1045,9 +1053,9 @@ public partial class GameScreen
             await WaitUntilIdle();
             Hero aria = ActiveHero!;
             CardInstance picks = aria.AllCards.Single(card => card.Definition.Id == "lockpicks");
-            Check(picks.Count == 3 && aria.Equipment[EquipSlot.OffHand] == picks, "three lockpicks make one stack, in the off hand");
+            Check(picks.Count == 3 && aria.Belt.Contains(picks), "three lockpicks make one stack, on the belt");
 
-            await Click(this, _heroPanel.EquipmentSlot(EquipSlot.OffHand));
+            await ClickBelt(aria.Belt.ToList().IndexOf(picks));
             await Click(this, _inventory.ActionButton(CardAction.Drop));
             Check(_countPrompt.Visible, "dropping a stack asks how many");
             await Click(this, _countPrompt.PlusButton);
@@ -1284,6 +1292,9 @@ public partial class GameScreen
             await WaitFor(this, () => !_busy, "the Power Die to roll");
         }
     }
+
+    /// <summary>Clicks a card on the fanned belt, on the part of it that shows.</summary>
+    private Task ClickBelt(int index) => ClickAt(this, _heroPanel.BeltPoint(index));
 
     /// <summary>A spell's card in the spread Magic hand.</summary>
     private SheetCard? SpellCard(string spellId) => _spellButtons.TryGetValue(spellId, out Button? button) ? _spread.CardFor(button) : null;

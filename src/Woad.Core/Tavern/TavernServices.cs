@@ -355,10 +355,10 @@ public static class TavernServices
     /// <summary>Spends a level 1 character's points at random: a few hearts or Luck, or a die.</summary>
     private static StatAllocation RandomAllocation(IRandomSource random) => random.NextInt(0, 4) switch
     {
-        0 => new StatAllocation { AttackDice = 1, Hearts = 3 },
-        1 => new StatAllocation { DefenseDice = 1, Hearts = 2, Luck = 1 },
-        2 => new StatAllocation { OdHandDice = 1, Luck = 3 },
-        _ => new StatAllocation { Hearts = 4, Luck = 2 },
+        0 => new StatAllocation { AttackDice = 1, Hearts = 3, Skills = Skill.Shove },
+        1 => new StatAllocation { DefenseDice = 1, Hearts = 2, Skills = Skill.Guard },
+        2 => new StatAllocation { OdHandDice = 2, Luck = 1, Skills = Skill.Search | Skill.PickLock | Skill.Aid },
+        _ => new StatAllocation { Hearts = 4, Luck = 1, Skills = Skill.Shove },
     };
 
     private static string UiCount(int amount, string singular, string plural) => $"{amount} {(amount == 1 ? singular : plural)}";

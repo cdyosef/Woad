@@ -1,4 +1,5 @@
 using Woad.Core.Characters;
+using Woad.Core.Content;
 using Woad.Core.Rules;
 
 namespace Woad.Core.Tests.Characters;
@@ -11,7 +12,50 @@ public class PointBuyAndProgressionTests
         var allocation = new StatAllocation { Hearts = 2, Speed = 1, AttackDice = 1, DefenseDice = 1, Luck = 1 };
 
         Assert.Equal(2 * 1 + 1 * 2 + 1 * 3 + 1 * 3 + 1 * 1, PointBuy.Cost(allocation));
-        Assert.Equal(2, PointBuy.CostPerStep(StatKind.OdHandDice));
+    }
+
+    [Theory]
+    [InlineData(StatKind.OdHandDice, new[] { 1, 2, 2, 3, 4, 5 })]
+    [InlineData(StatKind.AttackDice, new[] { 3, 3, 3, 4, 5, 6 })]
+    [InlineData(StatKind.DefenseDice, new[] { 3, 3, 3, 4, 5, 6 })]
+    [InlineData(StatKind.MoveDice, new[] { 3, 3, 3, 4, 5, 6 })]
+    [InlineData(StatKind.Hearts, new[] { 1, 1, 1, 1, 1, 1 })]
+    public void DiceGetDearerAfterTheThird(StatKind stat, int[] costs)
+    {
+        Assert.Equal(costs, Enumerable.Range(1, costs.Length).Select(n => PointBuy.StepCost(stat, n)));
+        Assert.Equal(costs.Sum(), PointBuy.Cost(StatAllocation.None.With(stat, costs.Length)));
+    }
+
+    [Fact]
+    public void TheFirstOdHandDieBringsASkillFreeAndTheRestCostAPoint()
+    {
+        var allocation = new StatAllocation { OdHandDice = 1, Skills = Skill.Search };
+
+        Assert.Equal(1, PointBuy.Cost(allocation));
+        Assert.Equal(2, PointBuy.Cost(allocation with { Skills = Skill.Search | Skill.Aid }));
+        Assert.Contains("first Od Hand die", PointBuy.Check(new StatAllocation { Skills = Skill.Search }, 1, PointBuy.CreationPoints));
+    }
+
+    [Fact]
+    public void TheFirstRumbleDieBringsShoveOrBullRushIfYouKnowShoveAlready()
+    {
+        StatAllocation raised = PointBuy.Raise(StatAllocation.None, StatKind.AttackDice);
+        Assert.Equal(Skill.Shove, raised.Skills);
+        Assert.Equal(3, PointBuy.Cost(raised));
+
+        StatAllocation shover = new() { Skills = Skill.Shove };
+        Assert.Equal(1, PointBuy.Cost(shover));
+        StatAllocation rusher = PointBuy.Raise(shover, StatKind.AttackDice);
+        Assert.Equal(Skill.Shove | Skill.BullRush, rusher.Skills);
+        Assert.Equal(4, PointBuy.Cost(rusher));
+    }
+
+    [Fact]
+    public void BullRushIsLearnedAfterShove()
+    {
+        Assert.Contains("after Shove", PointBuy.Check(new StatAllocation { Skills = Skill.BullRush }, 1, PointBuy.CreationPoints));
+        Assert.False(PointBuy.CanLearn(StatAllocation.None, Skill.BullRush, 1, PointBuy.CreationPoints));
+        Assert.True(PointBuy.CanLearn(StatAllocation.None, Skill.Guard, 1, PointBuy.CreationPoints));
     }
 
     [Fact]

@@ -47,11 +47,11 @@ public partial class Main
             await Click(this, editor.StyleButton(1, next: true));
             await Click(this, editor.StyleButton(3, next: false));
             Check(editor.Appearance is { Look: "ranger", Main: "ember", Skin: "deep" }, "the arrows pick the look, main color and skin");
-            string[] headings = ["HEARTS", "WEND", "RUMBLE", "DEFENSE", "OD HAND", "LUCK", "MAGIC"];
+            string[] headings = ["HEARTS", "WEND DICE", "WEND BONUS", "RUMBLE", "DEFENSE", "OD HAND", "LUCK", "MAGIC"];
             bool explained = true;
             for (int row = 0; row < headings.Length; row++)
             {
-                Vector2 statName = editor.GetGlobalRect().Position + new Vector2(30, 164 + row * 19 + 8);
+                Vector2 statName = editor.GetGlobalRect().Position + new Vector2(30, 164 + row * 17 + 8);
                 GetViewport().PushInput(new InputEventMouseMotion { Position = statName, GlobalPosition = statName }, inLocalCoords: true);
                 await NextFrame(this);
                 explained &= editor.PreviewText.StartsWith(headings[row]);
@@ -60,6 +60,14 @@ public partial class Main
             }
 
             Check(explained, "hovering each stat's symbol or name explains it");
+            if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } shots)
+            {
+                Button skills = editor.GetChildren().OfType<Button>().First(button => button.Name == "Skills");
+                await Click(this, skills);
+                await NextFrame(this);
+                GetViewport().GetTexture().GetImage().SavePng($"{shots}/editor_skills.png");
+                await Click(this, editor.SkillsPanel.GetChildren().OfType<Button>().First(button => button.Text == "Done"));
+            }
 
             GetViewport().PushInput(new InputEventMouseMotion { Position = new Vector2(600, 20), GlobalPosition = new Vector2(600, 20) }, inLocalCoords: true);
             await NextFrame(this);

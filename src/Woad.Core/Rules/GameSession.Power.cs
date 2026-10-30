@@ -198,6 +198,10 @@ public sealed partial class GameSession
         DiceRoll roll = _dice.Roll(dice);
         int power = 0, banked = 0, spent = 0;
         int unsettled = Sixes(roll.Faces);
+        foreach (int face in guard?.Held ?? [])
+        {
+            roll = roll.With(face);
+        }
 
         void Settle()
         {
@@ -274,6 +278,7 @@ public sealed partial class GameSession
             ExtraDice = guard?.DiceUsed ?? 0,
             GuardDice = guard?.GuardUsed ?? 0,
             LastChance = guard?.LuckyUsed ?? false,
+            Held = guard?.Held.Length ?? 0,
         });
         if (spent > 0)
         {

@@ -19,24 +19,75 @@ public sealed partial class GameSession
     public int OdHandDiceLeft => State.Turn is { } turn ? Math.Max(0, ActiveHero.EffectiveStats.OdHandDice - turn.OdHandDiceUsed) : 0;
 
     /// <summary>The tools' value the active hero can still add to a lock-picking roll this turn (0 once used).</summary>
-    public int ToolsBonusLeft => State.Turn is { ToolsUsed: false } ? Math.Max(0, ActiveHero.EffectiveStats.Tools) : 0;
+    public int ToolsBonusLeft => State.Turn is { ToolsUsed: false } ? ToolHelp(ActiveHero, Skill.PickLock).Bonus : 0;
+
+    /// <summary>Od Hand dice the active hero can roll on a check of <paramref name="skill"/>: all they have left if they know it (or it needs no skill), none if not.</summary>
+    public int OdHandDiceFor(Skill skill) => skill == Skill.None || ActiveHero.Knows(skill) ? OdHandDiceLeft : 0;
 
     /// <summary>Why the active hero can't pick a lock on the tile (their own doorway, or an adjacent chest), or null.</summary>
-    public string? CheckPickLock(GridPosition target) => CheckOdHandStart() ?? FindLock(target, out _);
+    public string? CheckPickLock(GridPosition target) => CheckOdHandStart(Skill.PickLock) ?? FindLock(target, out _);
+
+    /// <summary>Why the active hero can't try to steal from anyone now (dice or a tool to steal with, and not yet this turn), or null.</summary>
+    public string? CheckStealStart() => CheckOdHandStart(Skill.Steal) ?? (Turn.HasStolen ? "You've already tried to steal this turn." : null);
 
     /// <summary>Why the active hero can't search the room now, or null.</summary>
-    public string? CheckSearch() => CheckOdHandStart();
+    public string? CheckSearch() => CheckOdHandStart(Skill.Search);
 
     /// <summary>Why the active hero can't disarm a trap on the tile (their own doorway, or an adjacent tile or chest), or null.</summary>
-    public string? CheckDisarm(GridPosition target) => CheckOdHandStart() ?? FindTrapToDisarm(target, out _);
+    public string? CheckDisarm(GridPosition target) => CheckOdHandStart(Skill.Disarm) ?? FindTrapToDisarm(target, out _);
 
     /// <summary>Why the active hero can't steal from the monster or hero, or null.</summary>
-    public string? CheckSteal(int targetId) => CheckOdHandStart() ?? FindVictim(targetId, out _);
+    public string? CheckSteal(int targetId) => CheckOdHandStart(Skill.Steal) ?? FindVictim(targetId, out _);
+
+    /// <summary>The skill an Od Hand check needs to roll Od Hand dice on it (none for learning a spell or running from a fight).</summary>
+    internal static Skill SkillFor(OdHandCheckKind kind) => kind switch
+    {
+        OdHandCheckKind.PickDoor or OdHandCheckKind.PickChest or OdHandCheckKind.PickGate or OdHandCheckKind.PickChains or OdHandCheckKind.PickShackles => Skill.PickLock,
+        OdHandCheckKind.Search => Skill.Search,
+        OdHandCheckKind.Disarm or OdHandCheckKind.DefuseBomb => Skill.Disarm,
+        OdHandCheckKind.Steal => Skill.Steal,
+        OdHandCheckKind.Rouse or OdHandCheckKind.Cure => Skill.Aid,
+        _ => Skill.None,
+    };
+
+    /// <summary>Tool cards to hand (held, or working from the belt) that help with <paramref name="skill"/>: their bonus and dice added up.</summary>
+    private static (int Bonus, int Dice) ToolHelp(Hero hero, Skill skill)
+    {
+        IEnumerable<ToolUse> tools = hero.EquippedCards.Concat(hero.BeltTools)
+            .Select(card => card.Definition.Tool).OfType<ToolUse>().Where(tool => skill != Skill.None && tool.For.HasFlag(skill));
+        return (tools.Sum(tool => tool.Bonus), tools.Sum(tool => tool.Dice));
+    }
+
+    /// <summary>
+    /// Whether a tool could make a check of <paramref name="skill"/> on its own this turn, with no Od Hand
+    /// dice: a lit torch searching, Lockpicks on a lock, a Medicine Bag aiding. Once a turn.
+    /// </summary>
+    private bool ToolStandsIn(Skill skill) => State.Turn is { } turn && skill switch
+    {
+        Skill.None or Skill.Parry => false,
+        Skill.Search => !turn.ToolsUsed && (ActiveHero.TorchesHeld > 0 || ActiveHero.ShiningRounds > 0),
+        Skill.Aid => MedicineBagReady || ActiveHero.Bandages is not null,
+        _ => !turn.ToolsUsed && ToolHelp(ActiveHero, skill).Dice > 0,
+    };
+
+    /// <summary>A search with High Alert's Rumble dice waiting to roll in: they can make it alone.</summary>
+    private bool Alerted(Skill skill) => skill == Skill.Search && State.Turn is { AlertDice: > 0 };
+
+    /// <summary>Why the hero can't make a check of <paramref name="skill"/>: they don't know it and have no tool for it.</summary>
+    private static string Unlearned(Skill skill) => skill switch
+    {
+        Skill.Search => "You haven't learned to Search, and hold no lit torch to look around by.",
+        Skill.PickLock => "You haven't learned to Pick Lock, and have no Lockpicks or Burgling Tools to do it for you.",
+        Skill.Disarm => "You haven't learned to Disarm, and have no Burgling Tools to do it for you.",
+        Skill.Steal => "You haven't learned to Steal, and have no Burgling Tools, Cutpurse Knife or Sticky Gloves to do it for you.",
+        Skill.Aid => "You haven't learned Aid, and have no Medicine Bag (or Bandages, to rouse the fallen).",
+        _ => $"You haven't learned {skill.Name()}.",
+    };
 
     private string? Handle(PickLock command, List<GameEvent> events)
     {
         OdHandCheck? check = null;
-        if ((CheckOdHandCommand(command, out int dice) ?? FindLock(command.Target, out check)) is { } error)
+        if ((CheckOdHandCommand(command, Skill.PickLock, out int dice) ?? FindLock(command.Target, out check)) is { } error)
         {
             return error;
         }
@@ -54,7 +105,7 @@ public sealed partial class GameSession
 
     private string? Handle(Search command, List<GameEvent> events)
     {
-        if (CheckOdHandCommand(command, out int dice) is { } error)
+        if (CheckOdHandCommand(command, Skill.Search, out int dice) is { } error)
         {
             return error;
         }
@@ -67,7 +118,7 @@ public sealed partial class GameSession
     private string? Handle(Disarm command, List<GameEvent> events)
     {
         OdHandCheck? check = null;
-        if ((CheckOdHandCommand(command, out int dice) ?? FindTrapToDisarm(command.Target, out check)) is { } error)
+        if ((CheckOdHandCommand(command, Skill.Disarm, out int dice) ?? FindTrapToDisarm(command.Target, out check)) is { } error)
         {
             return error;
         }
@@ -79,7 +130,7 @@ public sealed partial class GameSession
     private string? Handle(Steal command, List<GameEvent> events)
     {
         OdHandCheck? check = null;
-        if ((CheckOdHandCommand(command, out int dice) ?? FindVictim(command.TargetId, out check)) is { } error)
+        if ((CheckOdHandCommand(command, Skill.Steal, out int dice) ?? FindVictim(command.TargetId, out check)) is { } error)
         {
             return error;
         }
@@ -89,30 +140,42 @@ public sealed partial class GameSession
         return null;
     }
 
-    /// <summary>A roll needs a turn with nothing pending and Od Hand dice left.</summary>
-    private string? CheckOdHandStart()
+    /// <summary>
+    /// A roll needs a turn with nothing pending, and Od Hand dice left that the hero can roll on it
+    /// (they know its skill), or a tool that can make it alone. Learning a spell and running from a
+    /// fight need neither: a free die starts them.
+    /// </summary>
+    private string? CheckOdHandStart(Skill skill = Skill.None, bool freeDie = false)
     {
         if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
         {
             return "Finish the roll first.";
         }
 
-        return OdHandDiceLeft < 1 ? "You've used all your Od Hand dice this turn." : null;
-    }
-
-    private string? CheckOdHandCommand(OdHandCommand command, out int dice)
-    {
-        dice = 0;
-        int left = OdHandDiceLeft;
-        if (left < 1)
+        if (freeDie || OdHandDiceFor(skill) >= 1 || ToolStandsIn(skill) || Alerted(skill))
         {
-            return "You've used all your Od Hand dice this turn.";
+            return null;
         }
 
-        dice = command.Dice ?? left;
-        if (dice < 1 || dice > left)
+        return skill != Skill.None && !ActiveHero.Knows(skill) ? Unlearned(skill) : "You've used all your Od Hand dice this turn.";
+    }
+
+    /// <param name="freeDie">Learning a spell or running from a fight: a free die starts the roll, so no Od Hand dice are needed.</param>
+    private string? CheckOdHandCommand(OdHandCommand command, Skill skill, out int dice, bool freeDie = false)
+    {
+        dice = 0;
+        if (CheckOdHandStart(skill, freeDie) is { } error)
         {
-            return $"Choose 1 to {left} Od Hand dice.";
+            return error;
+        }
+
+        int usable = OdHandDiceFor(skill);
+        int least = freeDie || (command.UseTools && ToolStandsIn(skill)) || Alerted(skill) ? 0 : 1;
+        // Without the skill the hero's Od Hand dice can't go in at all: a tool rolls alone.
+        dice = skill != Skill.None && !ActiveHero.Knows(skill) ? 0 : command.Dice ?? usable;
+        if (dice < least || dice > usable)
+        {
+            return usable == 0 ? (ActiveHero.Knows(skill) ? "You've used all your Od Hand dice this turn." : Unlearned(skill)) : $"Choose {least} to {usable} Od Hand dice.";
         }
 
         return CheckBankedPowerDice(ActiveHero, command.PowerDice);
@@ -293,13 +356,22 @@ public sealed partial class GameSession
     private void RollOdHand(OdHandCommand command, int dice, OdHandCheck check, List<GameEvent> events)
     {
         Hero hero = ActiveHero;
-        int tools = command.UseTools && IsLock(check.Kind) ? ToolsBonusLeft : 0;
+        Skill skill = SkillFor(check.Kind);
+        (int toolBonus, int lockDice) = command.UseTools && !Turn.ToolsUsed ? ToolHelp(hero, skill) : (0, 0);
+        bool tools = toolBonus > 0 || lockDice > 0;
         (bool bag, int aidDice) = AidKit(hero, command, check, events);
-        int bonus = tools + (bag ? 1 : 0) - RollPenalty(hero.Conditions) + (check.Kind == OdHandCheckKind.Learn ? Math.Max(0, hero.EffectiveStats.Magic) : 0);
-        // Lockpicks' own dice on a lock; held torches' on a search; a Medicine Bag's, Bandages' and a Shovel's on Aid.
-        int toolDice = (tools > 0 ? Math.Max(0, hero.EffectiveStats.ToolDice) : 0) + (check.Kind == OdHandCheckKind.Search ? hero.TorchesHeld + (hero.ShiningRounds > 0 ? 1 : 0) : 0) + aidDice;
+        bool free = check.Kind is OdHandCheckKind.Learn or OdHandCheckKind.Retreat;
+        int bonus = toolBonus + (bag ? 1 : 0) - RollPenalty(hero.Conditions) + (check.Kind == OdHandCheckKind.Learn ? Math.Max(0, hero.EffectiveStats.Magic) : 0);
+        // Tools' own dice (Lockpicks on a lock); held torches' on a search; a Medicine Bag's, Bandages' and
+        // a Shovel's on Aid; High Alert's Rumble dice on a search; and the free die that starts learning a
+        // spell or running from a fight.
+        int searchDice = check.Kind == OdHandCheckKind.Search ? hero.TorchesHeld + (hero.ShiningRounds > 0 ? 1 : 0) : 0;
+        int alertDice = check.Kind == OdHandCheckKind.Search ? Turn.AlertDice : 0;
+        Turn.AlertDice -= alertDice;
+        int toolDice = lockDice + searchDice + aidDice + alertDice + (free ? 1 : 0);
         Turn.OdHandDiceUsed += dice;
-        Turn.ToolsUsed |= tools > 0;
+        // A roll of tools alone, with no Od Hand dice, is their one use this turn too.
+        Turn.ToolsUsed |= tools || (dice == 0 && alertDice == 0 && searchDice > 0);
         SpendBankedPowerDice(hero, command.PowerDice, events);
 
         DiceRoll rolled = _dice.Roll(dice + command.PowerDice);
@@ -311,7 +383,7 @@ public sealed partial class GameSession
             events.Add(new CritRolled(hero.Id, crits));
         }
 
-        Turn.PendingRoll = new PendingRoll(hero.Id, roll, bonus, [], DamageSource.Weapon, check) { NonPowerDice = dice + toolDice, UsedTools = tools > 0, UsedMedicineBag = bag };
+        Turn.PendingRoll = new PendingRoll(hero.Id, roll, bonus, [], DamageSource.Weapon, check) { NonPowerDice = dice + toolDice, UsedTools = tools, UsedMedicineBag = bag };
         EarnPowerDice(hero, Sixes(rolled.Faces), events);
     }
 
@@ -334,11 +406,12 @@ public sealed partial class GameSession
         return ([.. faces], crits);
     }
 
-    /// <summary>A failed lock-picking roll with a 1 among its non-Power dice snaps one of the lockpicks used.</summary>
-    private void SnapPick(Hero hero, PendingRoll roll, bool success, List<GameEvent> events)
+    /// <summary>A failed roll tools helped, with a 1 among its non-Power dice, snaps one of the tools that snap (a lockpick).</summary>
+    private void SnapPick(Hero hero, PendingRoll roll, OdHandCheck check, bool success, List<GameEvent> events)
     {
+        Skill skill = SkillFor(check.Kind);
         if (success || !roll.UsedTools || !roll.Roll.Faces.Take(roll.NonPowerDice).Contains(1)
-            || hero.EquippedCards.FirstOrDefault(card => card.Definition.Modifiers.Tools > 0) is not { } picks)
+            || hero.EquippedCards.Concat(hero.BeltTools).FirstOrDefault(card => card.Definition.Tool is { Snaps: true } tool && tool.For.HasFlag(skill)) is not { } picks)
         {
             return;
         }
@@ -367,6 +440,10 @@ public sealed partial class GameSession
         {
             ResolveShove(roll, events);
         }
+        else if (roll.BullRush)
+        {
+            BullRushAftermath(roll, ResolveHeroAttack(roll, events), events);
+        }
         else
         {
             ResolveHeroAttack(roll, events);
@@ -379,7 +456,7 @@ public sealed partial class GameSession
         Room room = State.RoomOf(hero);
         int total = roll.Total;
         bool success = total >= check.Difficulty;
-        SnapPick(hero, roll, success, events);
+        SnapPick(hero, roll, check, success, events);
         switch (check.Kind)
         {
             case OdHandCheckKind.PickDoor when success && DoorAt(room, check.Target) is { } passage:

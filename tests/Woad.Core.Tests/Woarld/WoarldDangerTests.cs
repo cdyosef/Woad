@@ -19,7 +19,7 @@ public class WoarldDangerTests
     private static readonly ContentCatalog Content = ContentCatalog.LoadDefault();
     private static readonly WoarldMap Map = WoarldMap.LoadDefault();
 
-    private static readonly HeroSetup Hero = new("Wren", GameRules.HeroBaseStats with { Hearts = 6 }, []);
+    private static readonly HeroSetup Hero = new("Wren", GameRules.HeroBaseStats with { Hearts = 6, OdHandDice = 1 }, []);
 
     private static GameSession Fight(IReadOnlyList<string> monsters, bool monstersFirst = false, ScriptedDice? dice = null, Terrain terrain = Terrain.Grass)
     {
@@ -116,8 +116,8 @@ public class WoarldDangerTests
     [Fact]
     public void RetreatingBeatsTheChaseAndLeavesTheFieldWithoutWinningIt()
     {
-        // The hero's Od Hand 5 against the wolf's chase: two dice (1, 1) and 3.
-        GameSession session = Fight(["dire_wolf"], dice: new ScriptedDice(5, 1, 1));
+        // The hero's Od Hand 5 and the free die's 1 against the wolf's chase: two dice (1, 1) and 3.
+        GameSession session = Fight(["dire_wolf"], dice: new ScriptedDice(5, 1, 1, 1));
         Hero hero = session.State.Heroes[0];
 
         IReadOnlyList<GameEvent> events = session.Execute(new Retreat(hero.Id)).Events;
@@ -132,8 +132,8 @@ public class WoarldDangerTests
     [Fact]
     public void AFailedRetreatBoltsAwayFromTheMonstersAndFallsFlat()
     {
-        // Od Hand 1 against 5 + 5 + 3; then the Wend die (4) carries the hero off.
-        GameSession session = Fight(["dire_wolf"], dice: new ScriptedDice(1, 5, 5, 4));
+        // Od Hand 1 and the free die's 1 against 5 + 5 + 3; then the Wend die (4) carries the hero off.
+        GameSession session = Fight(["dire_wolf"], dice: new ScriptedDice(1, 1, 5, 5, 4));
         Hero hero = session.State.Heroes[0];
         Monster wolf = session.State.Rooms[Skirmish.RoomId].Monsters.Single();
         int before = hero.Position.ManhattanDistanceTo(wolf.Position);

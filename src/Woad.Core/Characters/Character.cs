@@ -391,7 +391,7 @@ public sealed class Character
 
     /// <summary>The hero this character plays as in a run, carrying everything they own.</summary>
     /// <param name="ownerSeat">For a companion, the seat of the player it belongs to.</param>
-    public HeroSetup ToHeroSetup(int? ownerSeat = null) => new(Name, BaseStats, [.. _equipped, .. _belt, .. _backpack], Id, Portrait, ownerSeat, Appearance, GuildStanding: GuildStanding, PowerDice: PowerDice,
+    public HeroSetup ToHeroSetup(int? ownerSeat = null) => new(Name, BaseStats, [.. _equipped, .. _belt, .. _backpack], Id, Portrait, ownerSeat, Appearance, GuildStanding: GuildStanding, PowerDice: PowerDice, Skills: Allocation.Skills,
         Allocation: Allocation, Xp: Xp, UnspentPoints: UnspentPoints, Policy: Policy, Spells: [.. _spells]);
 
     /// <summary>Puts a card where a new hero would: an empty matching slot, then the belt, then the backpack.</summary>
@@ -399,11 +399,15 @@ public sealed class Character
     {
         CardDefinition card = content.GetCard(key);
         IEnumerable<EquipSlot> occupied = _equipped.SelectMany(id => Hero.SlotsFor(content.GetCard(id)));
-        if (card.Slot is not null && !Hero.SlotsFor(card).Intersect(occupied).Any())
+        if (card.BeltsFirst && _belt.Count < GameRules.BeltCapacity)
+        {
+            _belt.Add(key);
+        }
+        else if (card.Slot is not null && !Hero.SlotsFor(card).Intersect(occupied).Any())
         {
             _equipped.Add(key);
         }
-        else if (card.Usage == CardUsage.SingleUse && _belt.Count < GameRules.BeltCapacity)
+        else if ((card.Usage == CardUsage.SingleUse || card.Belts) && _belt.Count < GameRules.BeltCapacity)
         {
             _belt.Add(key);
         }

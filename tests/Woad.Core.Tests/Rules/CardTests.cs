@@ -38,12 +38,12 @@ public class CardTests
     [Fact]
     public void StartingCardsAreEquippedThenBeltedThenPacked()
     {
-        GameSession session = TestRun.Start(Open, cards: ["sword", "shield", "potion", "bomb", "potion", "coin"]);
+        GameSession session = TestRun.Start(Open, cards: ["sword", "shield", "potion", "bomb", "potion", "potion", "potion", "coin"]);
         Hero hero = session.HeroInSeat();
 
         Assert.Equal("sword", hero.Equipment[EquipSlot.MainHand].Definition.Id);
         Assert.Equal("shield", hero.Equipment[EquipSlot.OffHand].Definition.Id);
-        Assert.Equal(["potion", "bomb"], hero.Belt.Select(card => card.Definition.Id));
+        Assert.Equal(["potion", "bomb", "potion", "potion"], hero.Belt.Select(card => card.Definition.Id));
         Assert.Equal(["potion", "coin"], hero.Backpack.Select(card => card.Definition.Id));
         Assert.Equal((1, 1), (hero.EffectiveStats.AttackDice, hero.EffectiveStats.Weapon));
         Assert.Equal((1, 1), (hero.EffectiveStats.DefenseDice, hero.EffectiveStats.Armor));
@@ -149,7 +149,7 @@ public class CardTests
     [Fact]
     public void TheChecksExplainWhyACardCantBeUsedOrMoved()
     {
-        GameSession session = TestRun.Start(CagedSpearman, cards: ["sword", "shield", "potion", "bomb", "icicle", "coin", "potion"]);
+        GameSession session = TestRun.Start(CagedSpearman, cards: ["sword", "shield", "potion", "bomb", "icicle", "coin", "potion", "potion", "potion"]);
         Hero hero = session.HeroInSeat();
         int potion = hero.Belt[0].Id;
 
@@ -182,9 +182,19 @@ public class CardTests
     }
 
     [Fact]
+    public void LockpicksRideOnTheBeltAndWorkFromThere()
+    {
+        GameSession session = TestRun.Start(Open, cards: ["sword", "shield", "picks"]);
+        Hero hero = session.HeroInSeat();
+
+        Assert.Equal(["picks"], hero.Belt.Select(card => card.Definition.Id));
+        Assert.Equal((1, 1), (session.ToolsBonusLeft, session.ToolDiceLeft));
+    }
+
+    [Fact]
     public void SwappingNeedsRoomInTheBackpack()
     {
-        GameSession session = TestRun.Start(Open, cards: ["sword", "shield", "bow", "big_sword", "wand", "icicle", "boomerang", "picks"]);
+        GameSession session = TestRun.Start(Open, cards: ["sword", "shield", "bow", "big_sword", "wand", "icicle", "boomerang", "t_rapier", "t_axe", "t_spear"]);
         Hero hero = session.HeroInSeat();
 
         Assert.Contains("no room", session.Refuse(new EquipCard(hero.Id, hero.Card("bow").Id)));
@@ -193,7 +203,7 @@ public class CardTests
     [Fact]
     public void OnlySingleUseCardsGoOnTheBelt()
     {
-        GameSession session = TestRun.Start(Open, cards: ["potion", "bomb", "potion", "coin"]);
+        GameSession session = TestRun.Start(Open, cards: ["potion", "bomb", "potion", "potion", "potion", "coin"]);
         Hero hero = session.HeroInSeat();
         CardInstance packedPotion = hero.Backpack[0];
 
@@ -203,7 +213,7 @@ public class CardTests
         session.Do(new DropCard(hero.Id, hero.Card("bomb").Id));
         session.Do(new BeltCard(hero.Id, packedPotion.Id));
 
-        Assert.Equal(["potion", "potion"], hero.Belt.Select(card => card.Definition.Id));
+        Assert.Equal(["potion", "potion", "potion", "potion"], hero.Belt.Select(card => card.Definition.Id));
     }
 
     [Fact]
@@ -224,7 +234,7 @@ public class CardTests
     [Fact]
     public void UsingACardFromTheBackpackTakesTheAction()
     {
-        GameSession session = TestRun.Start(Open, cards: ["potion", "potion", "potion"]);
+        GameSession session = TestRun.Start(Open, cards: ["potion", "potion", "potion", "potion", "potion"]);
         Hero hero = session.HeroInSeat();
         hero.Hearts = 1;
 

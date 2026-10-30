@@ -246,7 +246,7 @@ public sealed partial class GameSession
         return null;
     }
 
-    /// <summary>Why the active hero can't reload their crossbow now, or null.</summary>
+    /// <summary>Why the active hero can't reload their crossbow now, or null. Its Od Hand dice can be Rumble dice.</summary>
     public string? CheckReload()
     {
         if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
@@ -264,9 +264,9 @@ public sealed partial class GameSession
             return $"Your {crossbow.Definition.Name} is loaded.";
         }
 
-        if (OdHandDiceLeft < cost.OdHand)
+        if (OdHandDiceLeft + AttackDiceLeft < cost.OdHand)
         {
-            return $"Reloading takes {(cost.OdHand == 1 ? "an Od Hand die" : $"{cost.OdHand} Od Hand dice")}{(cost.Wend > 0 ? " and a Wend die" : "")}.";
+            return $"Reloading takes {(cost.OdHand == 1 ? "an Od Hand or Rumble die" : $"{cost.OdHand} Od Hand or Rumble dice")}{(cost.Wend > 0 ? " and a Wend die" : "")}.";
         }
 
         return MoveDiceLeft < cost.Wend
@@ -284,7 +284,10 @@ public sealed partial class GameSession
         Hero hero = ActiveHero;
         CardInstance crossbow = hero.MainWeapon!;
         ReloadCost cost = crossbow.Definition.Reload!;
-        Turn.OdHandDiceUsed += cost.OdHand;
+        // Od Hand dice first; Rumble dice can stand in for them.
+        int odHand = Math.Min(cost.OdHand, OdHandDiceLeft);
+        Turn.OdHandDiceUsed += odHand;
+        Turn.AttackDiceUsed += cost.OdHand - odHand;
         Turn.MoveDiceUsed += cost.Wend;
         crossbow.Unloaded = false;
         events.Add(new WeaponReloaded(hero.Id, crossbow.Id));

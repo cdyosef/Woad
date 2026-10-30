@@ -27,8 +27,8 @@ public class ScrollLearningTests
     [Fact]
     public void BeatingSixPlusTheSpellsLevelLearnsItAndUsesUpTheScroll()
     {
-        // One Od Hand die (5) and Magic 4: 9, just enough for a level 3 spell.
-        GameSession session = TestRun.Start(Huddle, new ScriptedDice(5), cards: ["t_scroll", "t_scroll"], stats: TestRun.HeroStats with { OdHandDice = 2 });
+        // One Od Hand die (3), the free die that starts every attempt (2) and Magic 4: 9, just enough for a level 3 spell.
+        GameSession session = TestRun.Start(Huddle, new ScriptedDice(3, 2), cards: ["t_scroll", "t_scroll"], stats: TestRun.HeroStats with { OdHandDice = 2 });
         Hero hero = session.HeroInSeat();
         hero.BaseStats = hero.BaseStats with { Magic = 4 };
         CardInstance scroll = hero.Card("t_scroll");
@@ -45,9 +45,9 @@ public class ScrollLearningTests
     [Fact]
     public void AFailedAttemptSetsTheScrollOffOnEveryoneAroundFriendlyFireOrNo()
     {
-        // Od Hand 2 against 9. Then the scroll's three Fire dice (5, 5, 5) at the hero (defending with a 1),
+        // Od Hand 2 and the free die's 1 against 9. Then the scroll's three Fire dice (5, 5, 5) at the hero (defending with a 1),
         // their ally (a 1) and the dummy beside them; the dummy across the room is out of it.
-        GameSession session = TestRun.Start(Huddle, new ScriptedDice(2, 5, 5, 5, 1, 1), heroes: 2, cards: ["t_scroll", "t_scroll"]);
+        GameSession session = TestRun.Start(Huddle, new ScriptedDice(2, 1, 5, 5, 5, 1, 1), heroes: 2, cards: ["t_scroll", "t_scroll"]);
         Hero hero = session.HeroInSeat();
         Hero ally = session.HeroInSeat(1);
         Assert.False(session.State.FriendlyFire);

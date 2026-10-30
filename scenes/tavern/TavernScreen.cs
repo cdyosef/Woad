@@ -540,7 +540,8 @@ public partial class TavernScreen : Control
         foreach (RecruitOffer offer in TavernServices.Recruits(World, Tavern))
         {
             bool hired = Roster.Any(character => string.Equals(character.Name, offer.Name, StringComparison.OrdinalIgnoreCase));
-            string stats = string.Join(", ", PointBuy.AllStats.Where(stat => offer.Allocation[stat] > 0).Select(stat => $"+{offer.Allocation[stat]} {StatName(stat)}"));
+            string stats = string.Join(", ", PointBuy.AllStats.Where(stat => offer.Allocation[stat] > 0).Select(stat => $"+{offer.Allocation[stat]} {StatName(stat)}")
+                .Concat(Skills.In(offer.Allocation.Skills).Select(skill => skill.Name())));
             string gear = offer.Gear.Count > 0 ? $"; brings {string.Join(", ", offer.Gear.Select(id => Content.GetCard(id).Name))}" : "";
             HBoxContainer row = Row($"{offer.Name}, level {offer.Level}: {stats}{gear}", 436);
             Button hire = RowButton(row, hired ? "Hired" : $"Hire, {offer.Price} gold", 96, () => Hire(offer));
@@ -754,6 +755,8 @@ public partial class TavernScreen : Control
         StatKind.AttackDice => "Rumble",
         StatKind.DefenseDice => "Defense",
         StatKind.OdHandDice => "Od Hand",
+        StatKind.MoveDice => "Wend",
+        StatKind.Speed => "Wend bonus",
         _ => stat.ToString(),
     };
 

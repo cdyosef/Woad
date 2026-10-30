@@ -21,10 +21,13 @@ public static class DemoRun
         """;
 
     /// <summary>Aria (with a bomb and Luck) and Bran (with a boomerang).</summary>
+    /// <summary>The debug heroes' stats: a new hero's, with the Od Hand die every hero used to start with.</summary>
+    public static Stats DebugStats { get; } = GameRules.HeroBaseStats with { OdHandDice = 1 };
+
     public static IReadOnlyList<HeroSetup> DebugHeroes { get; } =
     [
-        new HeroSetup("Aria", GameRules.HeroBaseStats with { Luck = 1 }, [.. GameRules.StarterKit, "bomb"], Portrait: "ember", Appearance: new("princess", Hair: "ginger")),
-        new HeroSetup("Bran", GameRules.HeroBaseStats with { Hearts = 5 }, [.. GameRules.StarterKit, "boomerang"], Portrait: "woad", Appearance: new("knight", Trim: "blood")),
+        new HeroSetup("Aria", DebugStats with { Luck = 1 }, [.. GameRules.StarterKit, "bomb"], Portrait: "ember", Appearance: new("princess", Hair: "ginger")),
+        new HeroSetup("Bran", DebugStats with { Hearts = 5 }, [.. GameRules.StarterKit, "boomerang"], Portrait: "woad", Appearance: new("knight", Trim: "blood")),
     ];
 
     /// <summary>The debug heroes, then plain heroes up to <paramref name="size"/> (for --autoplay --party N).</summary>
@@ -33,7 +36,7 @@ public static class DemoRun
         string[] names = ["Cael", "Dara", "Edda", "Finn", "Gwen", "Hugo"];
         string[] portraits = ["moss", "gilt", "violet", "bone", "blood", "frost"];
         string[] looks = ["druid", "dwarf", "mage", "lizard_man", "raider", "cat_lady"];
-        return [.. DebugHeroes.Take(size), .. names.Take(size - DebugHeroes.Count).Select((name, i) => new HeroSetup(name, GameRules.HeroBaseStats, GameRules.StarterKit, Portrait: portraits[i], Appearance: new(looks[i])))];
+        return [.. DebugHeroes.Take(size), .. names.Take(size - DebugHeroes.Count).Select((name, i) => new HeroSetup(name, DebugStats, GameRules.StarterKit, Portrait: portraits[i], Appearance: new(looks[i])))];
     }
 
     /// <summary>
@@ -358,7 +361,7 @@ public static class DemoRun
         Heroes =
         [
             DebugHeroes[0] with { CardIds = ["health_potion", "health_potion", "wooden_sword"] },
-            new HeroSetup("Pip", GameRules.HeroBaseStats, ["wooden_sword", "knights_sword"], OwnerSeat: 0),
+            new HeroSetup("Pip", DebugStats, ["wooden_sword", "knights_sword"], OwnerSeat: 0),
         ],
         Rooms = [new RoomSetup("camp", RoomTemplate.Parse(".........\n.........\n.........\n.........\n....1....\n.....2...\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
         StartRoomId = "camp",
@@ -370,7 +373,7 @@ public static class DemoRun
         Heroes =
         [
             DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20 }, Allocation = Woad.Core.Characters.StatAllocation.None, Xp = 10, UnspentPoints = 1 },
-            new HeroSetup("Pip", GameRules.HeroBaseStats with { Hearts = 20, Luck = 2 }, ["wooden_sword"], OwnerSeat: 0),
+            new HeroSetup("Pip", DebugStats with { Hearts = 20, Luck = 2 }, ["wooden_sword"], OwnerSeat: 0),
         ],
     };
 
@@ -381,7 +384,7 @@ public static class DemoRun
         RunSetup run = Woad.Core.Dungeon.DungeonGenerator.CreateRun(content, "emerald_keep",
         [
             DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 60 } },
-            new HeroSetup("Pip", GameRules.HeroBaseStats with { Hearts = 60, Luck = 2 }, ["wooden_sword"], OwnerSeat: 0),
+            new HeroSetup("Pip", DebugStats with { Hearts = 60, Luck = 2 }, ["wooden_sword"], OwnerSeat: 0),
         ], seed);
         return run with { StartRoomId = run.Rooms.Single(room => room.Role == RoomRole.Boss).Id };
     }
@@ -394,7 +397,7 @@ public static class DemoRun
         Heroes =
         [
             DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20 } },
-            new HeroSetup("Pip", GameRules.HeroBaseStats with { Hearts = 20, Luck = 2 }, ["wooden_sword"], OwnerSeat: 0),
+            new HeroSetup("Pip", DebugStats with { Hearts = 20, Luck = 2 }, ["wooden_sword"], OwnerSeat: 0),
         ],
         Rooms = [new RoomSetup("yard", RoomTemplate.Parse(".........\n.........\n.........\n.........\n.1.....s.\n.2.......\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
         StartRoomId = "yard",

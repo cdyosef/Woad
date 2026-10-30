@@ -11,7 +11,11 @@ namespace Woad.Core.Characters;
 public sealed class JsonCharacterRepository(string folderPath, ContentCatalog content) : ICharacterRepository
 {
     /// <summary>Bump when the file shape changes, and teach the loader to migrate older files.</summary>
-    public const int SchemaVersion = 1;
+    /// <summary>
+    /// 2: skills, and no free Od Hand die. A version 1 file is brought up to date as it loads: it gets
+    /// the Od Hand die every hero used to start with, every Od Hand skill and Shove, so nobody loses anything.
+    /// </summary>
+    public const int SchemaVersion = 2;
 
     private static readonly JsonSerializerOptions Options = new()
     {
@@ -39,7 +43,7 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
                 string json = await File.ReadAllTextAsync(path, cancellationToken);
                 CharacterFile file = JsonSerializer.Deserialize<CharacterFile>(json, Options)
                     ?? throw new JsonException("The file is empty.");
-                if (file.SchemaVersion != SchemaVersion)
+                if (file.SchemaVersion is not (1 or SchemaVersion))
                 {
                     problems.Add($"{fileName}: saved by an unknown version ({file.SchemaVersion}).");
                     continue;
@@ -126,8 +130,11 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
             return known;
         }
 
+        StatAllocation allocation = file.SchemaVersion == 1
+            ? file.Allocation with { OdHandDice = file.Allocation.OdHandDice + 1, Skills = Skills.OdHand | Skill.Shove }
+            : file.Allocation;
         return new Character(
-            file.Id, file.Name, file.Portrait, file.CreatedUtc, Math.Max(0, file.Xp), file.Allocation,
+            file.Id, file.Name, file.Portrait, file.CreatedUtc, Math.Max(0, file.Xp), allocation,
             Math.Max(0, file.UnspentPoints), Known(file.Equipped), Known(file.Belt), Known(file.Backpack),
             Math.Max(0, file.Gold), Math.Max(0, file.RunsPlayed), Math.Max(0, file.Wins), file.IsCompanion, file.Appearance, file.GuildStanding, file.LawStanding, file.CowardStanding, file.HasCowardsCloak, file.PowerDice, file.Policy,
             KnownSpells(file.Spells));

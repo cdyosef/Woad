@@ -80,6 +80,9 @@ public partial class GameScreen
     /// <summary>Leap was pressed: the next click on a purple tile leaps toward it.</summary>
     private bool _leaping;
 
+    /// <summary>Bull Rush was played: the next click on a tile in a straight line charges that way.</summary>
+    private bool _rushing;
+
     /// <summary>Rumble was pressed (or the space bar): the next click on a target in reach attacks it.</summary>
     private bool _rumbling;
 
@@ -145,7 +148,7 @@ public partial class GameScreen
         _retreat.TooltipText = _session.State.Turn is null ? "" : retreatBlocked
             ?? $"Retreat: your selected Od Hand dice look for a way out, against the monsters' chase (a die more than there are of them, +{GameSession.RetreatChaseBonus}). Get away and you're off the field, the monsters left where they are; fail and you bolt in a panic and fall flat.";
         _partyButton.Position = new Vector2(SideWidth + BoardView.Pixels + (_retreat.Visible ? 30 : 82), 3);
-        _steal.Disabled = !(idle && !pending) || _session.OdHandDiceLeft < 1 || turn!.HasStolen;
+        _steal.Disabled = !(idle && !pending) || _session.CheckStealStart() is not null;
         _stealing &= !_steal.Disabled;
         _steal.Text = _stealing ? "Cancel" : "Steal";
         _rumble.Disabled = !(idle && !pending) || _session.AttackDiceLeft < 1;
@@ -249,7 +252,7 @@ public partial class GameScreen
         }
 
         _rumbling = !_rumbling;
-        _stealing = _shoving = _leaping = false;
+        _stealing = _shoving = _leaping = _rushing = false;
         if (_rumbling)
         {
             Log("Click a target in red to attack it. Right-click to cancel.", Palette.Danger);
@@ -304,6 +307,12 @@ public partial class GameScreen
         if (_leaping)
         {
             _board.SetHighlights([], [], [], [], jumps: _session.GetLeapTargets());
+            return;
+        }
+
+        if (_rushing)
+        {
+            _board.SetHighlights([], [], [], [], jumps: _session.GetBullRushTargets());
             return;
         }
 
@@ -486,7 +495,7 @@ public partial class GameScreen
     private void ResetPool()
     {
         _moveDiceHeld = _powerDiceSelected = 0;
-        _weaponHeld = _speedHeld = _toolsHeld = _stealing = _shoving = _leaping = _rumbling = false;
+        _weaponHeld = _speedHeld = _toolsHeld = _stealing = _shoving = _leaping = _rushing = _rumbling = false;
     }
 
     /// <summary>The card buttons' states, with the rules engine's reason for each one that's unavailable.</summary>
@@ -678,6 +687,7 @@ public partial class GameScreen
         // The Party menu, over the board while it's open.
         _party = new PartyPanel { Position = BoardOrigin, Size = new Vector2(BoardView.Pixels, BoardView.Pixels), Visible = false, ZIndex = 2 };
         _party.SpendRequested += (heroId, stat, spell) => ExecuteForActiveHero(ownerId => new SpendPoint(ownerId, heroId, stat, spell));
+        _party.LearnRequested += (heroId, skill) => ExecuteForActiveHero(ownerId => new LearnSkill(ownerId, heroId, skill));
         _party.PolicyRequested += (companionId, policy) => ExecuteForActiveHero(ownerId => new SetCompanionPolicy(ownerId, companionId, policy));
         _party.CloseRequested += () =>
         {
@@ -783,7 +793,7 @@ public partial class GameScreen
         _leap.Pressed += () =>
         {
             _leaping = !_leaping;
-            _stealing = _shoving = _rumbling = false;
+            _stealing = _shoving = _rumbling = _rushing = false;
             if (_leaping)
             {
                 Log("Click a purple tile to leap toward it. Right-click to cancel.", Palette.Power);
@@ -802,7 +812,7 @@ public partial class GameScreen
         _steal.Pressed += () =>
         {
             _stealing = !_stealing;
-            _shoving = _leaping = _rumbling = false;
+            _shoving = _leaping = _rushing = _rumbling = false;
             if (_stealing)
             {
                 Log("Click a monster or hero next to you to steal from them. Right-click to cancel.", Palette.Target with { A = 1 });
@@ -817,7 +827,7 @@ public partial class GameScreen
         _shove.Pressed += () =>
         {
             _shoving = !_shoving;
-            _stealing = _leaping = _rumbling = false;
+            _stealing = _leaping = _rushing = _rumbling = false;
             if (_shoving)
             {
                 Log("Click a monster next to you to shove it. Right-click to cancel.", Palette.Target with { A = 1 });

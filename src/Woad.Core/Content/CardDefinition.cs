@@ -226,11 +226,20 @@ public sealed record CardDefinition
     /// </summary>
     public bool Shovel { get; init; }
 
+    /// <summary>A tool's help on Od Hand checks (Lockpicks on locks; Burgling Tools on locks, traps and pockets).</summary>
+    public ToolUse? Tool { get; init; }
+
     /// <summary>The Sineater Doll: soaks up ailments (see <c>SoakUp</c>), and is thrown to burst them over everyone near.</summary>
     public bool SinEater { get; init; }
 
-    /// <summary>A reusable card that can be carried on the belt (a Medicine Bag; a torch, though it's lit only in a hand).</summary>
+    /// <summary>
+    /// A tool that rides on the belt as a stack when there's room, and works from there (Lockpicks, a
+    /// Medicine Bag). A torch rides there too, but it's lit only in a hand.
+    /// </summary>
     public bool Belts { get; init; }
+
+    /// <summary>Goes on the belt first when found or started with: a belt tool that works from there.</summary>
+    public bool BeltsFirst => Belts && !Torch;
 
     /// <summary>Worn gear with a use that destroys it (the Coward's Cloak): equip it, use it once, and it's gone.</summary>
     public bool BreaksOnUse { get; init; }

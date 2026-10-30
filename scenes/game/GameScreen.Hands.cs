@@ -9,11 +9,12 @@ namespace Woad.Scenes.Game;
 
 /// <summary>
 /// The hands of ability cards on the sheet, one per pool where its symbol goes: Rumble (Attack, Shove,
-/// and Dig out while buried), Wend (Wend, Leap, Prone or Get up, and Drop and roll while burning) and
-/// Od Hand (Search, Steal, Pick lock, Disarm, Aid and Learn). Each card takes the action of a button
+/// Bull Rush, Guard, High Alert, and Dig out while buried), Wend (Wend, Leap, Prone or Get up, and Drop and roll
+/// while burning) and Od Hand (Search, Steal, Pick lock, Disarm, Aid, Parry and Learn). Skill cards are
+/// in the hand only once the hero has learned the skill. Each card takes the action of a button
 /// the screen already keeps (hidden now), and lights up when there's something in reach to use it on:
-/// a monster to hit, a lock beside you to pick. Pick lock, Disarm and Aid wait for a click on what to
-/// use them on; Aid on someone with more than one ailment asks which to cure.
+/// a monster to hit, a lock beside you to pick. Pick lock, Disarm, Aid and Guard (with an ally beside
+/// you) wait for a click on what to use them on; Aid on someone with more than one ailment asks which to cure.
 /// </summary>
 public partial class GameScreen
 {
@@ -23,6 +24,9 @@ public partial class GameScreen
         PickLock,
         Disarm,
         Aid,
+
+        /// <summary>Guard: a Rumble skill, but it waits for a click on whom to guard just the same.</summary>
+        Guard,
     }
 
     private HandView _rumbleHand = null!;
@@ -37,6 +41,10 @@ public partial class GameScreen
     private Button _pickLock = null!;
     private Button _disarm = null!;
     private Button _aid = null!;
+    private Button _parry = null!;
+    private Button _guard = null!;
+    private Button _highAlert = null!;
+    private Button _bullRush = null!;
 
     /// <summary>Aid's choice of what to cure, when the patient has more than one ailment.</summary>
     private Panel _curePicker = null!;
@@ -62,12 +70,38 @@ public partial class GameScreen
         _learn = new Button { Text = "Learn" };
         _learn.Pressed += LearnFromScroll;
         hidden.AddChild(_learn);
+        _parry = new Button { Text = "Parry" };
+        _parry.Pressed += () => Execute(new Parry(ActiveHero!.Id));
+        hidden.AddChild(_parry);
+        _guard = new Button { Text = "Guard" };
+        _guard.Pressed += StartGuard;
+        hidden.AddChild(_guard);
+        _bullRush = new Button { Text = "Bull Rush" };
+        _bullRush.Pressed += () =>
+        {
+            bool rushing = !_rushing;
+            CancelSelection();
+            _rushing = rushing;
+            if (_rushing)
+            {
+                Log("Bull Rush: click a purple tile to charge that way. Right-click to cancel.", Palette.DieRumble);
+            }
+
+            RefreshPanels();
+        };
+        hidden.AddChild(_bullRush);
+        _highAlert = new Button { Text = "High Alert" };
+        _highAlert.Pressed += () => Execute(new HighAlert(ActiveHero!.Id));
+        hidden.AddChild(_highAlert);
 
         DicePoolView pool = _heroPanel.Pool;
         _rumbleHand = AddHand(pool.Bounds(DicePool.Rumble).Position, "icon_rumble", "Rumble", Palette.DieRumble,
         [
             new("fist", "Attack", _rumble, () => _session.GetAttackableMonsters(ReadiedWeaponId).Count > 0),
-            new("shove", "Shove", _shove, () => _session.GetShoveTargets().Count > 0),
+            new("shove", "Shove", _shove, () => _session.GetShoveTargets().Count > 0, () => Knows(Skill.Shove)),
+            new("bull_rush", "Bull Rush", _bullRush, () => _session.GetBullRushTargets().Any(tile => ShownRoom.MonsterAt(tile) is not null), () => Knows(Skill.BullRush)),
+            new("guard", "Guard", _guard, Threatened, () => Knows(Skill.Guard)),
+            new("high_alert", "High Alert", _highAlert, () => true, () => Knows(Skill.HighAlert)),
             new("dig_out", "Dig out", _digOut, () => true, () => ActiveHero?.Conditions.Has(Condition.Buried) == true),
         ]);
         _wendHand = AddHand(pool.Bounds(DicePool.Wend).Position, "icon_wend", "Wend", Palette.DieWend,
@@ -84,6 +118,7 @@ public partial class GameScreen
             new("pick_lock", "Pick lock", _pickLock, () => Beside().Any(tile => _session.CheckPickLock(tile) is null)),
             new("disarm", "Disarm", _disarm, () => Beside().Any(tile => _session.CheckDisarm(tile) is null)),
             new("rouse", "Aid", _aid, () => _session.GetAidTargets().Count > 0),
+            new("parry", "Parry", _parry, Threatened, () => Knows(Skill.Parry)),
             new("learn", "Learn", _learn, () => true),
         ]);
 
@@ -119,6 +154,27 @@ public partial class GameScreen
         _heroPanel.AddChild(hand);
         _heroPanel.Pool.CoverIcon(PoolOf(title));
         return hand;
+    }
+
+    private bool Knows(Skill skill) => ActiveHero?.Knows(skill) == true;
+
+    /// <summary>Monsters share the hero's room: a die held for defense could matter.</summary>
+    private bool Threatened() => ActiveHero is { } hero && _session.State.RoomOf(hero).Monsters.Count > 0;
+
+    /// <summary>Guard: straight onto the hero if there's no one beside them, or wait for a click on whom.</summary>
+    private void StartGuard()
+    {
+        IReadOnlyList<Hero> targets = _session.GetGuardTargets();
+        if (targets.Count == 1)
+        {
+            Execute(new GuardHero(ActiveHero!.Id, targets[0].Id));
+            return;
+        }
+
+        CancelSelection();
+        _odAim = OdAim.Guard;
+        Log("Guard: click yourself, or an ally beside you, to hold a Rumble die for their next defense. Right-click to cancel.", Palette.DieRumble);
+        RefreshPanels();
     }
 
     private static DicePool PoolOf(string title) => title switch
@@ -169,6 +225,12 @@ public partial class GameScreen
         _aid.Disabled = !ready || !aidable;
         _aid.TooltipText = aidable ? "" : "There's no one beside you to rouse or cure (with Od Hand dice, or a Medicine Bag, left).";
         _curePicker.Visible &= ready;
+        bool turn = _session.State.Turn is not null;
+        Hold(_parry, ready, turn ? _session.CheckParry() : "");
+        Hold(_guard, ready, !turn ? "" : _session.GetGuardTargets().Count > 0 ? null : _session.CheckGuard(ActiveHero!.Id) ?? "");
+        Hold(_highAlert, ready, turn ? _session.CheckHighAlert() : "");
+        Hold(_bullRush, ready, turn ? _session.CheckBullRush() : "");
+        _rushing &= !_bullRush.Disabled;
 
         Hero? hero = ActiveHero;
         CardInstance? scroll = hero?.AllCards.FirstOrDefault(card => card.Definition.Teaches is not null && _session.CheckLearnSpell(card.Id) is null);
@@ -188,6 +250,12 @@ public partial class GameScreen
         {
             _spread.Close();
         }
+    }
+
+    private static void Hold(Button button, bool ready, string? blocked)
+    {
+        button.Disabled = !ready || blocked is not null;
+        button.TooltipText = blocked ?? "";
     }
 
     /// <summary>A card for each spell the hero knows: castable now, it's lit; if not, it says why.</summary>
@@ -256,6 +324,20 @@ public partial class GameScreen
                 break;
             case OdAim.Aid:
                 Log("Aid: there's no one there.", Palette.TextDim);
+                break;
+            case OdAim.Guard when _session.State.ActiveHeroesIn(_session.State.RoomOf(hero)).FirstOrDefault(other => other.Position == tile) is { } ally:
+                if (_session.CheckGuard(ally.Id) is { } refused)
+                {
+                    Log($"Guard: {refused}", Palette.TextDim);
+                }
+                else
+                {
+                    Execute(new GuardHero(hero.Id, ally.Id));
+                }
+
+                break;
+            case OdAim.Guard:
+                Log("Guard: there's no one there.", Palette.TextDim);
                 break;
             default:
                 return false;

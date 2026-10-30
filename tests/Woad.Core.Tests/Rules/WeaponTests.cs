@@ -160,6 +160,19 @@ public sealed class WeaponTests
     }
 
     [Fact]
+    public void ARumbleDieCanReloadACrossbowInsteadOfAnOdHandDie()
+    {
+        GameSession session = Duel("1.....d..", ["t_xbow"], new ScriptedDice(1), attackDice: 2, odHandDice: 0);
+        Hero hero = session.HeroInSeat();
+
+        session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id, Dice: 1));
+        session.Do(new ReloadWeapon(hero.Id));
+
+        Assert.Equal((0, 2), (session.State.Turn!.OdHandDiceUsed, session.State.Turn.AttackDiceUsed));
+        Assert.False(hero.MainWeapon!.Unloaded);
+    }
+
+    [Fact]
     public void AHeavyCrossbowTakesAWendDieToReloadToo()
     {
         GameSession session = Duel("1.....d..", ["t_heavy"], new ScriptedDice(1));

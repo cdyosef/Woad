@@ -62,19 +62,25 @@ public sealed partial class GameSession
         }
 
         Reveal(hero, events);
+        StrikeMonster(hero, room, monster, only, dice, command.UseWeapon, command.PowerDice, 0, events);
+        return null;
+    }
+
+    /// <summary>A Rumble attack on a monster, with the weapon in hand (or <paramref name="only"/>) and <paramref name="extra"/> on top (a bull rush's tiles to spare).</summary>
+    private void StrikeMonster(Hero hero, Room room, Monster monster, CardInstance? only, int dice, bool useWeapon, int powerDice, int extra, List<GameEvent> events, bool bullRush = false)
+    {
         Wielding wielding = Wield(hero, room, monster.Position, monster, only);
         // A Shovel strikes earth creatures with a die more and +1.
         int earth = wielding.HasStrike && wielding.Weapon?.Shovel == true && monster.Definition.DieType == DieType.Earth ? 1 : 0;
         int weaponBonus = wielding.Bonus + earth + (monster.Definition.Swimmer && wielding.HasStrike && !wielding.OffHand ? wielding.Weapon?.SwimmerBonus ?? 0 : 0);
-        bool armed = command.UseWeapon && wielding.HasStrike && (weaponBonus > 0 || wielding.Dice > 0);
-        int bonus = armed ? weaponBonus : 0;
+        bool armed = useWeapon && wielding.HasStrike && (weaponBonus > 0 || wielding.Dice > 0);
+        int bonus = (armed ? weaponBonus : 0) + extra;
         Turn.AttackDiceUsed += dice;
         UseWeapon(hero, room, wielding, armed, monster.Position, events);
-        SpendBankedPowerDice(hero, command.PowerDice, events);
+        SpendBankedPowerDice(hero, powerDice, events);
         (int star, int weaponDice, IReadOnlyList<(DieType, int)> typed) = Arm(hero, dice + ProneBonus(monster, hero.Position), wielding.Weapon, armed ? wielding.Dice + earth : 0, hero.TorchesHeld);
-        RollHeroAttack(hero, star, bonus, [monster.Id], DamageSource.Weapon, events, command.PowerDice,
-            stunOnSix: wielding.Weapon?.StunOnSix ?? false, weaponDice: weaponDice, weapon: wielding.Weapon, typed: typed, torches: hero.TorchesHeld);
-        return null;
+        RollHeroAttack(hero, star, bonus, [monster.Id], DamageSource.Weapon, events, powerDice,
+            stunOnSix: wielding.Weapon?.StunOnSix ?? false, weaponDice: weaponDice, weapon: wielding.Weapon, typed: typed, torches: hero.TorchesHeld, bullRush: bullRush);
     }
 
     /// <summary>With friendly fire on, the other heroes and companions the active hero could attack right now.</summary>
@@ -233,7 +239,8 @@ public sealed partial class GameSession
     /// <param name="torches">Torches lighting the attack (their fire dice are among <paramref name="typed"/>): a 1 anywhere burns one out.</param>
     /// <param name="chill">Stacks of Freeze laid on every target, hit or miss.</param>
     /// <param name="casting">The spell this casts, if it's a spell.</param>
-    private void RollHeroAttack(Hero hero, int dice, int bonus, IReadOnlyList<int> targetIds, DamageSource source, List<GameEvent> events, int powerDice = 0, bool stunOnSix = false, int weaponDice = 0, CardDefinition? weapon = null, IReadOnlyList<(DieType Type, int Dice)>? typed = null, int torches = 0, int chill = 0, SpellCasting? casting = null)
+    /// <param name="bullRush">The blow at the end of a bull rush (see <see cref="BullRushAftermath"/>).</param>
+    private void RollHeroAttack(Hero hero, int dice, int bonus, IReadOnlyList<int> targetIds, DamageSource source, List<GameEvent> events, int powerDice = 0, bool stunOnSix = false, int weaponDice = 0, CardDefinition? weapon = null, IReadOnlyList<(DieType Type, int Dice)>? typed = null, int torches = 0, int chill = 0, SpellCasting? casting = null, bool bullRush = false)
     {
         dice = Math.Max(0, dice);
         bonus -= AttackPenalty(hero.Conditions);
@@ -256,6 +263,7 @@ public sealed partial class GameSession
             DieTypes = dieTypes,
             Chill = chill,
             Casting = casting,
+            BullRush = bullRush,
         };
         SurgePowerDice(hero, StarSixes(roll, dieTypes), events);
         EarnPowerDice(hero, Sixes(rolled.Faces), events);
@@ -265,7 +273,8 @@ public sealed partial class GameSession
     /// Each target defends against the attack's total separately. With friendly fire on, targets may
     /// be heroes; one brought down this way is Keeling Over as if by a monster, with no kill for the attacker.
     /// </summary>
-    private void ResolveHeroAttack(PendingRoll attack, List<GameEvent> events)
+    /// <returns>The targets it hit.</returns>
+    private List<int> ResolveHeroAttack(PendingRoll attack, List<GameEvent> events)
     {
         Hero hero = State.GetHero(attack.HeroId);
         Room room = State.RoomOf(hero);
@@ -334,6 +343,8 @@ public sealed partial class GameSession
             hero.Remove(torch);
             events.Add(new TorchBurnedOut(hero.Id, torch.Id));
         }
+
+        return hit;
     }
 
     /// <summary>An attack hits, for 1 heart, when its total beats the defense total; ties go to the defender.</summary>

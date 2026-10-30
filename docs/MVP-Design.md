@@ -50,24 +50,50 @@ Stats are expressed directly as dice and points. Gear cards add to them.
 | Stat | Meaning | Base *(tunable)* | Point cost *(tunable)* |
 | --- | --- | --- | --- |
 | Hearts | Maximum HP | 3 | 1 per heart |
-| Wend (boot) | d6 for moving each turn; each move uses one or more | 1 | Gear only (e.g. boots) |
+| Wend (boot) | d6 for moving each turn; each move uses one or more | 1 | 3, 3, 3, then 4, 5, 6 per die |
 | Wend bonus | Tiles added to one move per turn (shown as the "+2" in "Wend 1d6+2"; the editor calls it Wend) | 2 | 2 per point |
-| Rumble (fist) | d6 for attacking each turn; each attack uses one or more | 1 | 3 per die |
-| Od Hand (hamsa) | d6 each turn for picking locks, searching, disarming traps, stealing and rousing allies Keeling Over | 1 | 2 per die |
-
-At level 1 a character may buy at most **2** extra Rumble, Defense and Od Hand dice each.
-| Tools | Fixed value and dice added to one lock-picking roll per turn | 0 | Gear only (Lockpicks: +1 and 1d6) |
-| Defense | The first d6 (the base die) rolled against every attack; the rest are extra dice, rolled in one at a time only while a defense is losing, then spent until your next turn | 1 | 3 per die |
+| Rumble (fist) | d6 for attacking each turn; each attack uses one or more | 1 | 3, 3, 3, then 4, 5, 6 per die; the first brings Shove free (or Bull Rush, if you know Shove) |
+| Od Hand (hamsa) | d6 each turn for the Od Hand skills you've learned (see [Skills](#skills)) | 0 | 1, 2, 2, 3, 4, 5 per die; the first brings an Od Hand skill of your choice free |
+| Tools | Fixed value and dice added to one roll a turn of the skills they serve | 0 | Gear only (Lockpicks: +1 and 1d6) |
+| Defense | The first d6 (the base die) rolled against every attack; the rest are extra dice, rolled in one at a time only while a defense is losing, then spent until your next turn | 1 | 3, 3, 3, then 4, 5, 6 per die |
 | Weapon | Fixed value added to one attack per turn | 0 | Gear only (weapons) |
 | Armor | Fixed value added to every defense | 0 | Gear only (shields, armor) |
 | Block | Added, all of it, to the first defense that's losing (before extra dice), then spent until your next turn | 0 | Gear only (shields) |
 | Luck | Rerolls of a single die, per floor | 0 | 1 per reroll |
 | Magic (pentacle) | A Power Dice bank slot and a basic spell per rank, and its rank added to spells cast (see [Magic](#magic)) | 0 | 2 per rank |
 
+At level 1 a character may buy at most **2** extra Rumble, Wend, Defense and Od Hand dice each. The
+editor shows what each stat's next step costs.
+
+### Skills
+
+Each skill costs **1 point**. The **Skills...** window in the character editor lists them, and in a run
+the Party menu can spend points on them too.
+
+| Skill | Pool | What it does |
+| --- | --- | --- |
+| Search, Steal, Pick Lock, Disarm, Aid | Od Hand | Lets your Od Hand dice roll on that check (see [Od Hand](#od-hand)) |
+| Parry | Od Hand | Roll an Od Hand die (a 6 rolls another) and hold it: it adds to your next defense before your next turn |
+| Shove | Rumble | Push a monster a tile (see [Combat](#combat)) |
+| Bull Rush | Rumble | Needs Shove. Charge in a straight line, diagonals too, as far as a Wend die (a 6 rolls another) and the Wend bonus carry you, at least a tile and with no stopping early. The first monster in the way takes your Rumble dice and weapon, plus the tiles to spare. A hit pushes it 2 tiles, bosses and huge monsters too; a miss, or running into a wall or anything else, leaves you prone. A hidden trap on the way ends the charge. It costs only the dice, not your action, and the Rumble dice only if you reach a monster |
+| Guard | Rumble | Roll a Rumble die (a 6 rolls another) and hold it for the next defense of you or an ally beside you, until your next turn |
+| High Alert | Rumble | A Rumble die rolls in with your next search this turn, or makes the search on its own |
+
+- An Od Hand die needs an Od Hand skill to be any use: the first one bought brings one free, and
+  buying it opens the Skills window to pick it.
+- **Without the skill, a tool stands in**, once a turn, rolling only its own dice: Lockpicks or
+  Burgling Tools on a lock, a lit torch in hand on a search, a Medicine Bag (or Bandages, to rouse) on
+  Aid, Burgling Tools on a trap, and Burgling Tools, a Cutpurse Knife or Sticky Gloves on a steal. With
+  the skill, the tool adds to your Od Hand dice.
+- Learning a spell and running from a fight need no skill: a free die starts each roll (learning is 1d6
+  plus Magic, with any Od Hand dice on top).
+- Characters made before skills existed keep their dice, with one more Od Hand die, and know every Od
+  Hand skill and Shove.
+
 - **Creation:** name (1–16 letters, numbers, spaces, apostrophes or hyphens), look, crest, and 6 points to
   spend. Unspent points are kept for later. Each stat is shown with its symbol (a heart, boot, fist, shield, hamsa or clover);
-  hovering one explains what it does in the preview panel. While at level 1, a character can buy at most +1 Attack and
-  +1 Defense die *(tunable)*. Points already spent can't be refunded.
+  hovering one explains what it does in the preview panel. While at level 1, a character can buy at most 2 extra dice of
+  each kind *(tunable)*. Points already spent can't be refunded.
 - **Progression:** XP from monster kills and floors reached. Level 2 takes 10 XP, level 3 takes 30, then
   60, 100 and so on (10 × 1, 3, 6, 10…). Each level grants 1 point.
 - **Looks:** purely cosmetic; stats come only from point-buy. A character picks one of 44 figures
@@ -98,10 +124,10 @@ At level 1 a character may buy at most **2** extra Rumble, Defense and Od Hand d
 | Main hand | Weapons, wands, rods |
 | Off hand | Shields, off-hand weapons, tools |
 | Feet | Boots |
-| Belt | Up to 2 consumables (potions, bombs) ready for quick use |
+| Belt | Up to 4 consumables and tools (potions, bombs, Lockpicks, Medicine Bags) ready for quick use; tools go there first, as a stack. A torch can ride on it but only lights in a hand |
 
 - Two-handed items fill both the main hand and the off hand.
-- **Backpack:** 6 cards that are carried but not equipped *(tunable)*.
+- **Backpack:** 8 cards that are carried but not equipped *(tunable)*.
 
 ## Cards
 
@@ -110,7 +136,7 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 
 | Type | Usage | Examples (placeholder names) |
 | --- | --- | --- |
-| Weapon | Persistent | Wooden Sword (weapon 1), Knight's Sword (weapon 2), Longsword (weapon 1 + 1d6, versatile +1), Short Bow (weapon 1, ranged 6), Longbow (weapon 1 + 1d6, ranged 10; floor 3), Spear (weapon 2, reach 2 in a straight line), Dagger (either hand, stacks: +1 on an attack of its own from the off hand, doubled on a stunned or prone monster; thrown at range 3 it lands at the target's feet; one in each hand +1 each; the Waylay Inn sells them), War Hammer (weapon 2; crushes: hits flip shelled monsters, broken bones stay broken; floor 2), Rapier (weapon 2, Block 1; two strikes a turn with an empty or light off hand; floor 2), Maul (two-handed, weapon 3; any 6 shoves the target a tile, hit or miss; floor 2), Crossbow (two-handed, weapon 3 every loaded shot, range 8; reload with an Od Hand die; floor 2), Great Axe (two-handed, weapon 2 + 1d6; each 6 cleaves into another monster beside you; floor 3), Heavy Crossbow (two-handed, weapon 4 every loaded shot, range 9; reload with an Od Hand die and a Wend die; floor 3). A weapon's dice always go with its bonus on one attack. Crossbows are loaded on each new floor; reload one with **Use** |
+| Weapon | Persistent | Wooden Sword (weapon 1), Knight's Sword (weapon 2), Longsword (weapon 1 + 1d6, versatile +1), Short Bow (weapon 1, ranged 6), Longbow (weapon 1 + 1d6, ranged 10; floor 3), Spear (weapon 2, reach 2 in a straight line), Dagger (either hand, stacks: +1 on an attack of its own from the off hand, doubled on a stunned or prone monster; thrown at range 3 it lands at the target's feet; one in each hand +1 each; the Waylay Inn sells them), War Hammer (weapon 2; crushes: hits flip shelled monsters, broken bones stay broken; floor 2), Rapier (weapon 2, Block 1; two strikes a turn with an empty or light off hand; floor 2), Maul (two-handed, weapon 3; any 6 shoves the target a tile, hit or miss; floor 2), Crossbow (two-handed, weapon 3 every loaded shot, range 8; reload with an Od Hand or Rumble die; floor 2), Great Axe (two-handed, weapon 2 + 1d6; each 6 cleaves into another monster beside you; floor 3), Heavy Crossbow (two-handed, weapon 4 every loaded shot, range 9; reload with an Od Hand or Rumble die and a Wend die; floor 3). A weapon's dice always go with its bonus on one attack. Crossbows are loaded on each new floor; reload one with **Use** |
 | Shield | Persistent | Buckler (armor 1, Block 1), Tower Shield (armor 3, Block 3, −1 Wend), Knight's Shield (armor 2, an extra Defense die; floor 2+). **Knight's set:** worn with the Knight's Sword, the sword gains +1 Weapon and Block 1, and the shield a Guard Die |
 | Armor | Persistent | Head: Leather Cap (+1 Heart), Lucky Helmet (armor 1; when you'd be hit anyway it rolls one more die in, last of all, then breaks), Diving Helm (Temple). Body: Leather Armor (armor 1), Studded Armor (armor 2, floor 2+), Chain Mail (armor 3, floor 3), Warden's Plate (armor 3 and an extra Defense die: the Iron Warden drops it one time in four) |
 | Boots | Persistent | Dash Boots (+1 Move die) |
@@ -121,7 +147,7 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 | Potion | Single-use | Health Potion (restore 3 hearts) |
 | Treasure | Kept for score | Emerald (15g), Golden Idol (40g). Coins (Loose Coins 2g, Coin Pouch 5g) aren't cards: they go straight into your purse as gold |
 
-- **Starter kit** (new characters): Wooden Sword, Buckler, Health Potion.
+- **Starter kit** (new characters): Wooden Sword, Buckler, Health Potion, Torch and Lockpicks (on the belt).
 - **Equipping, belting or stowing gear** is free while no monsters are in your room, as often as you like.
   In a fight, each one takes your action.
 - **Greyed-out card buttons explain themselves:** hovering shows why, and clicking one writes the reason
@@ -482,8 +508,9 @@ All cost **1 Power** and can be upcast.
 ## Od Hand
 
 Od Hand dice work like Rumble and Wend dice: choose how many to roll (plus your tools' value once a
-turn), sixes earn Power Dice, and Luck can reroll them. None of it takes your action. A check succeeds
-when the total reaches its number:
+turn), sixes earn Power Dice, and Luck can reroll them. Each check needs its skill (see
+[Skills](#skills)), or a tool to make it alone. None of it takes your action. A check succeeds when the
+total reaches its number:
 
 | Check | How | Number *(tunable)* |
 | --- | --- | --- |
@@ -512,6 +539,10 @@ when the total reaches its number:
   it bursts where it lands, laying every stack it holds on everyone within a tile, friend or foe, no
   save, and is gone. The undead shrug off its Poison.
 
+- **Burgling Tools** (off hand): +1 and 1d6 on one roll a turn to pick a lock, disarm a trap or steal;
+  a failed roll with a 1 showing breaks them. **Cutpurse Knife** (either hand, weapon 1 like a Dagger)
+  and **Sticky Gloves** (accessory): +1 and 1d6 on one steal a turn. The Waylay Inn sells the knife and
+  gloves; Burgling Tools turn up from floor 2.
 - **Stealing from a monster** (once per monster): a key (40% *(tunable)*) or a card from the loot deck.
 - **Stealing from a hero:** one of their keys or backpack cards at random. Not equipped gear, belt items
   or the Boss Key.
@@ -875,8 +906,8 @@ them up there like any character.
 ```
 640 px
 ┌──────────────┬──────────────────────┬──────────────┐
-│ Active hero  │ floor / room / turn  │ Belt (2)     │
-│ portrait     ├──────────────────────┤ Backpack (6) │
+│ Active hero  │ floor / room / turn  │ Belt (4)     │
+│ portrait     ├──────────────────────┤ Backpack (8) │
 │ hearts/stats,│                      │ Card text    │
 │ gold, keys   │  9×9 view of room    │ Message log  │ 360 px
 │ Equipment    │   288 × 288 px       │              │
@@ -986,7 +1017,7 @@ These defaults were not covered in the kickoff questions:
 1. Movement and monster melee are **orthogonal only**. Heroes can also attack diagonally.
 2. Base stats and point costs as in [Stats](#stats). Movement is 1d6 + 2 at the start, and boots add dice. Starting heroes attack with 1d6 + 1 (Wooden Sword)
    and defend with 1d6 + 1 and Block 1 (Buckler).
-3. The **belt** holds 2 consumables, and using one doesn't take your action.
+3. The **belt** holds 4 consumables, and using one doesn't take your action.
 4. **No friendly fire at all**, including bombs.
 5. Players at 0 hearts **Keel Over** and can be roused or stand up again; three marks of death kill them for the run.
 6. Monsters **can't follow** players into other rooms.

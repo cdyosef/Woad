@@ -74,6 +74,12 @@ public partial class HeroPanel : Panel
 
     internal CardSlot BeltSlot(int index) => _belt[index];
 
+    /// <summary>How far apart the belt's cards fan, each showing this much of itself under the next.</summary>
+    private const float BeltStep = 10;
+
+    /// <summary>A point on the part of a belt card that shows, to click it (the one fanned over it covers the rest).</summary>
+    internal Vector2 BeltPoint(int index) => _belt[index].GetGlobalRect().Position + new Vector2(index == _belt.Length - 1 ? 14 : BeltStep / 2, 20);
+
     internal CardSlot BackpackSlot(int index) => _backpack[index];
 
     /// <summary>The bag's deck: click it to spread the bag's cards out over the board.</summary>
@@ -137,14 +143,14 @@ public partial class HeroPanel : Panel
             BagToggled?.Invoke();
         };
 
-        // The bag spread open over the board: its cards face up, two rows of three, to pick from.
-        _bagView = new Panel { Position = new(SideOfBoard + 56, 80), Size = new(176, 136), Visible = false, ZIndex = 3 };
-        _bagTitle = UiTheme.Label(new(0, 3), new(176, 12), color: Palette.TrimBright);
+        // The bag spread open over the board: its cards face up, two rows of four, to pick from.
+        _bagView = new Panel { Position = new(SideOfBoard + 29, 80), Size = new(230, 136), Visible = false, ZIndex = 3 };
+        _bagTitle = UiTheme.Label(new(0, 3), new(230, 12), color: Palette.TrimBright);
         _bagTitle.HorizontalAlignment = HorizontalAlignment.Center;
         _bagView.AddChild(_bagTitle);
         for (int i = 0; i < _bagCards.Length; i++)
         {
-            var card = new SheetCard { Position = new(10 + i % 3 * 54, 18 + i / 3 * 56), Size = new(CardWidth, CardHeight), Back = "back_bag" };
+            var card = new SheetCard { Position = new(10 + i % 4 * 54, 18 + i / 4 * 56), Size = new(CardWidth, CardHeight), Back = "back_bag" };
             card.Pressed += () =>
             {
                 if (card.Card is { } held)
@@ -174,11 +180,11 @@ public partial class HeroPanel : Panel
         {
             SheetCard card = Add(new SheetCard
             {
-                Position = new(Columns[2] - 1 + i * 15, Rows[2] + 2 + (i == 0 ? 2 : 0)),
+                Position = new(Columns[2] - 8 + i * BeltStep, Rows[2] + 2 + Math.Abs(2 * i - 3) / 2),
                 Size = new(28, 38),
                 Small = true,
                 Back = "back_belt",
-                Rotation = i == 0 ? -0.12f : 0.12f,
+                Rotation = (i - 1.5f) * 0.08f,
                 PivotOffset = new(14, 38),
             });
             card.Pressed += () =>

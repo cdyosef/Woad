@@ -45,7 +45,7 @@ public sealed partial class GameSession
     public int MoveDiceLeft => State.Turn is { } turn && ActiveHero.Shackled is null && !ActiveHero.Conditions.Has(Condition.Buried) ? Math.Max(0, ActiveHero.EffectiveStats.MoveDice + turn.ExtraMoveDice - turn.MoveDiceUsed) : 0;
 
     /// <summary>The tools' own dice the active hero can still add to a lock-picking roll this turn (a lockpick's d6).</summary>
-    public int ToolDiceLeft => State.Turn is { ToolsUsed: false } ? Math.Max(0, ActiveHero.EffectiveStats.ToolDice) : 0;
+    public int ToolDiceLeft => State.Turn is { ToolsUsed: false } ? ToolHelp(ActiveHero, Skill.PickLock).Dice : 0;
 
     /// <summary>A versatile main-hand weapon's extra, held in both hands (nothing in the off hand).</summary>
     private static int Versatile(Hero hero) =>
@@ -117,6 +117,10 @@ public sealed partial class GameSession
             UseCard c => Handle(c, events),
             EquipCard c => Handle(c, events),
             ReloadWeapon c => Handle(c, events),
+            BullRush c => Handle(c, events),
+            Parry c => Handle(c, events),
+            GuardHero c => Handle(c, events),
+            HighAlert c => Handle(c, events),
             FreeMerchant c => Handle(c, events),
             Unshackle c => Handle(c, events),
             Retreat c => Handle(c, events),
@@ -149,6 +153,7 @@ public sealed partial class GameSession
             Leap c => Handle(c, events),
             Aid c => Handle(c, events),
             SoakUp c => Handle(c, events),
+            LearnSkill c => Handle(c, events),
             RollKeel c => Handle(c, events),
             GoProne c => Handle(c, events),
             BeatWings c => Handle(c, events),
@@ -306,6 +311,7 @@ public sealed partial class GameSession
         State.Turn = new TurnState(hero.Id) { KeelingOver = hero.IsKeelingOver };
         events.Add(new TurnStarted(hero.Id));
         RechargeDefense(hero);
+        DropHeldDefense(hero);
         ApplyStun(hero);
 
         // A burning hero burns first; if that brings them down, or they're frozen solid, play moves on.
@@ -449,6 +455,7 @@ public sealed partial class GameSession
                 StartXp = heroSetup.Xp,
                 StartUnspentPoints = heroSetup.UnspentPoints,
                 Policy = heroSetup.Policy ?? CompanionPolicy.Default,
+                Skills = heroSetup.Skills,
             };
             state.AddHero(hero);
 

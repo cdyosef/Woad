@@ -17,12 +17,12 @@ public sealed partial class GameSession
     public static int LearnDifficulty(SpellDefinition spell) => GameRules.LearnBase + spell.Level;
 
     /// <summary>Why the active hero can't try to learn the spell on the scroll <paramref name="cardId"/> now, or null.</summary>
-    public string? CheckLearnSpell(int cardId) => CheckOdHandStart() ?? FindScrollSpell(cardId, out _, out _);
+    public string? CheckLearnSpell(int cardId) => CheckOdHandStart(freeDie: true) ?? FindScrollSpell(cardId, out _, out _);
 
     private string? Handle(LearnSpell command, List<GameEvent> events)
     {
         string? findError = FindScrollSpell(command.CardId, out CardInstance? scroll, out SpellDefinition? spell);
-        if ((CheckOdHandCommand(command, out int dice) ?? findError) is { } error)
+        if ((CheckOdHandCommand(command, Skill.None, out int dice, freeDie: true) ?? findError) is { } error)
         {
             return error;
         }

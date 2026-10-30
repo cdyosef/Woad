@@ -1,3 +1,4 @@
+using Woad.Core.Content;
 using Woad.Core.Commands;
 using Woad.Core.Dice;
 using Woad.Core.Events;
@@ -36,17 +37,17 @@ public sealed partial class GameSession
             return "There's nothing left to run from.";
         }
 
-        return CheckOdHandStart();
+        return CheckOdHandStart(freeDie: true);
     }
 
     private string? Handle(Retreat command, List<GameEvent> events)
     {
-        if ((CheckRetreat() ?? CheckOdHandCommand(command, out _)) is { } error)
+        int dice = 0;
+        if ((CheckRetreat() ?? CheckOdHandCommand(command, Skill.None, out dice, freeDie: true)) is { } error)
         {
             return error;
         }
 
-        CheckOdHandCommand(command, out int dice);
         RollOdHand(command, dice, new OdHandCheck(OdHandCheckKind.Retreat, 0, ActiveHero.Position), events);
         return null;
     }

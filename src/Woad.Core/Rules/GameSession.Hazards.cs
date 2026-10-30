@@ -26,6 +26,11 @@ public sealed partial class GameSession
             return "Finish the roll first.";
         }
 
+        if (!ActiveHero.Knows(Skill.Shove))
+        {
+            return "You haven't learned to Shove.";
+        }
+
         if (AttackDiceLeft < 1)
         {
             return "You've used all your Rumble dice this turn.";

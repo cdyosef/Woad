@@ -21,7 +21,7 @@ public class WardenTests
         {
             Seed = 1,
             ThemeId = "emerald_keep",
-            Heroes = [new HeroSetup("Hero", GameRules.HeroBaseStats with { Hearts = 40 }, [])],
+            Heroes = [new HeroSetup("Hero", GameRules.HeroBaseStats with { Hearts = 40, OdHandDice = 1 }, [])],
             Rooms = [new RoomSetup("A", RoomTemplate.Parse(room, Content))],
             StartRoomId = "A",
         };

@@ -122,6 +122,21 @@ public sealed class JsonCharacterRepositoryTests : IDisposable
     }
 
     [Fact]
+    public async Task CharactersSavedBeforeSkillsKeepTheirOdHandDieAndLearnTheOldSkills()
+    {
+        Character character = NewCharacter("Morgan");
+        await Repository().SaveAsync(character);
+        string path = Path.Combine(_folder, $"{character.Id:N}.json");
+        string json = (await File.ReadAllTextAsync(path)).Replace($"\"schemaVersion\": {JsonCharacterRepository.SchemaVersion}", "\"schemaVersion\": 1");
+        await File.WriteAllTextAsync(path, json);
+
+        Character loaded = Assert.Single((await Repository().LoadAllAsync()).Characters);
+
+        Assert.Equal(character.Allocation.OdHandDice + 1, loaded.Allocation.OdHandDice);
+        Assert.Equal(Skills.OdHand | Skill.Shove, loaded.Allocation.Skills);
+    }
+
+    [Fact]
     public async Task CardsThatNoLongerExistAreDroppedWithAWarning()
     {
         Character character = NewCharacter("Morgan");
@@ -131,7 +146,7 @@ public sealed class JsonCharacterRepositoryTests : IDisposable
 
         CharacterLoadResult result = await Repository().LoadAllAsync();
 
-        Assert.Empty(Assert.Single(result.Characters).Belt);
+        Assert.Equal(["torch", "lockpicks"], Assert.Single(result.Characters).Belt);
         Assert.Contains(result.Problems, problem => problem.Contains("retired_card"));
     }
 }

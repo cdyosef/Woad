@@ -24,7 +24,7 @@ public class BotPlaythroughTests(ITestOutputHelper output)
     [InlineData(23UL, 4)]
     public void SturdyBotsClearEveryFloorBeatTheBossAndEscape(ulong seed, int partySize)
     {
-        Stats sturdy = GameRules.HeroBaseStats with { Hearts = 40, AttackDice = 3, DefenseDice = 3 };
+        Stats sturdy = GameRules.HeroBaseStats with { Hearts = 40, AttackDice = 3, DefenseDice = 3, OdHandDice = 1 };
         GameSession session = Play(seed, partySize, sturdy);
 
         Assert.Equal(RunPhase.Ended, session.State.Phase);
@@ -42,7 +42,7 @@ public class BotPlaythroughTests(ITestOutputHelper output)
     [InlineData(16UL, 4)]
     public void BotsPlayGeneratedDungeonsWithoutRefusedCommands(ulong seed, int partySize)
     {
-        GameSession session = Play(seed, partySize, GameRules.HeroBaseStats with { Hearts = 6 });
+        GameSession session = Play(seed, partySize, GameRules.HeroBaseStats with { Hearts = 6, OdHandDice = 1 });
 
         Assert.True(session.State.Heroes.Max(hero => hero.DeepestFloor) >= 2 || session.State.Phase == RunPhase.Ended,
             "the bots should either get past the first floor or have the run end");

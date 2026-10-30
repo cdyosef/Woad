@@ -41,7 +41,7 @@ public sealed partial class GameSession
             return $"{target.Name} isn't a saved character, so they can't level up.";
         }
 
-        int cost = PointBuy.CostPerStep(stat);
+        int cost = PointBuy.Cost(PointBuy.Raise(now, stat)) - PointBuy.Cost(now);
         if (target.PointsToSpend < cost)
         {
             return target.PointsToSpend == 0 ? $"{target.Name} has no points to spend." : $"That costs {cost} points; {target.Name} has {target.PointsToSpend}.";
@@ -56,8 +56,57 @@ public sealed partial class GameSession
             }
         }
 
-        int budget = PointBuy.Cost(start) + target.StartUnspentPoints + (target.Level - Progression.LevelForXp(target.StartXp)) * Progression.PointsPerLevel;
-        return PointBuy.Check(now.With(stat, now[stat] + 1), target.Level, budget);
+        return PointBuy.Check(PointBuy.Raise(now, stat), target.Level, Budget(target, start));
+    }
+
+    /// <summary>All the points a hero has had to spend: what they came in with, and the levels since.</summary>
+    private static int Budget(Hero target, StatAllocation start) =>
+        PointBuy.Cost(start) + target.StartUnspentPoints + (target.Level - Progression.LevelForXp(target.StartXp)) * Progression.PointsPerLevel;
+
+    /// <summary>Why <paramref name="targetId"/> (the active player's hero or companion) can't learn <paramref name="skill"/> now, or null.</summary>
+    public string? CheckLearnSkill(int targetId, Skill skill)
+    {
+        if (State.Turn is null || State.ActiveHero is not { } player || State.Heroes.FirstOrDefault(hero => hero.Id == targetId) is not { } target)
+        {
+            return "It isn't anyone's turn.";
+        }
+
+        if (target != player && target.OwnerId != player.Id)
+        {
+            return "You can only level up yourself and your own companions.";
+        }
+
+        if (target.StartAllocation is not { } start || target.Allocation is not { } now)
+        {
+            return $"{target.Name} isn't a saved character, so they can't level up.";
+        }
+
+        if (now.Skills.HasFlag(skill))
+        {
+            return $"{target.Name} knows {skill.Name()} already.";
+        }
+
+        int cost = PointBuy.Cost(now.WithSkill(skill, true)) - PointBuy.Cost(now);
+        if (target.PointsToSpend < cost)
+        {
+            return target.PointsToSpend == 0 ? $"{target.Name} has no points to spend." : $"That costs {cost} points; {target.Name} has {target.PointsToSpend}.";
+        }
+
+        return PointBuy.Check(now.WithSkill(skill, true), target.Level, Budget(target, start));
+    }
+
+    private string? Handle(LearnSkill command, List<GameEvent> events)
+    {
+        if (CheckLearnSkill(command.TargetId, command.Skill) is { } error)
+        {
+            return error;
+        }
+
+        Hero target = State.GetHero(command.TargetId);
+        target.Allocation = target.Allocation!.WithSkill(command.Skill, true);
+        target.Skills = target.Allocation.Skills;
+        events.Add(new SkillLearned(target.Id, command.Skill, target.PointsToSpend));
+        return null;
     }
 
     private string? Handle(SpendPoint command, List<GameEvent> events)
@@ -74,7 +123,8 @@ public sealed partial class GameSession
 
         Hero target = State.GetHero(command.TargetId);
         StatAllocation now = target.Allocation!;
-        target.Allocation = now.With(command.Stat, now[command.Stat] + 1);
+        target.Allocation = PointBuy.Raise(now, command.Stat);
+        target.Skills = target.Allocation.Skills;
         target.BaseStats = target.BaseStats + PointBuy.StepOf(command.Stat);
         if (command.Stat == StatKind.Hearts)
         {

@@ -106,7 +106,7 @@ public partial class GameScreen
         }
 
         _casting = spellId;
-        _rumbling = _stealing = _shoving = _leaping = false;
+        _rumbling = _stealing = _shoving = _leaping = _rushing = false;
         Log($"{spell.Name}: click a target in red. Select banked Power Dice to put more in (a die each). Right-click to cancel.", DieTypes.Tint(spell.DieType));
         RefreshPanels();
     }

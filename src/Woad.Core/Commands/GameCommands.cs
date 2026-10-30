@@ -98,6 +98,9 @@ public sealed record ReloadWeapon(int HeroId) : GameCommand(HeroId);
 /// <summary>Move a single-use card from the backpack to the belt. Uses the action.</summary>
 public sealed record BeltCard(int HeroId, int CardId) : GameCommand(HeroId);
 
+/// <summary>Spend a point on a skill for yourself or one of your companions (see <c>PointBuy.SkillCost</c>).</summary>
+public sealed record LearnSkill(int HeroId, int TargetId, Skill Skill) : GameCommand(HeroId);
+
 /// <summary>
 /// Soak an ailment off yourself or an ally beside you into a Sineater Doll, no roll: all its stacks, as
 /// many as the doll has room for. Free from the belt once a turn; from the backpack it takes the action.
@@ -239,6 +242,22 @@ public sealed record OutfitCompanion(int HeroId, int CompanionId, int CardId, Ou
 /// or a pit; a monster shoved into deep water loses a heart and scrambles out.
 /// </summary>
 public sealed record Shove(int HeroId, int TargetId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0) : GameCommand(HeroId);
+
+/// <summary>
+/// Bull Rush: charge in a straight line (diagonals too) toward <paramref name="Toward"/>, as far as a
+/// Wend die (a 6 rolls another) and the Wend bonus carry you, and strike the first monster in the way
+/// with <paramref name="Dice"/> Rumble dice, the weapon, and the tiles left over.
+/// </summary>
+public sealed record BullRush(int HeroId, GridPosition Toward, int? Dice = null, bool UseWeapon = true, int PowerDice = 0) : GameCommand(HeroId);
+
+/// <summary>Parry: roll an Od Hand die and hold it for your next defense before your next turn.</summary>
+public sealed record Parry(int HeroId) : GameCommand(HeroId);
+
+/// <summary>Guard: roll a Rumble die and hold it for the next defense of <paramref name="TargetId"/> (you, or an ally beside you) before your next turn.</summary>
+public sealed record GuardHero(int HeroId, int TargetId) : GameCommand(HeroId);
+
+/// <summary>High Alert: a Rumble die rolls in with your next search this turn, or makes it alone.</summary>
+public sealed record HighAlert(int HeroId) : GameCommand(HeroId);
 
 /// <summary>
 /// Leap: spend one unused Wend die to jump in a straight line (diagonals too) toward <paramref name="Target"/>,

@@ -16,11 +16,23 @@ public partial class PartyPanel : Panel
 {
     private const float RowGap = 4;
 
+    /// <summary>Level-up buttons to a line, under their label.</summary>
+    private const int PerLine = 8;
+
+    private static Vector2 Wrapped(int index, float y) => new(4 + index % PerLine * 32, y + 14 + index / PerLine * 17);
+
     /// <summary>The stats a point can go into, with their short labels.</summary>
     private static readonly (StatKind Stat, string Label)[] Stats =
     [
-        (StatKind.Hearts, "Heart"), (StatKind.Speed, "Wend"), (StatKind.AttackDice, "Rmbl"),
-        (StatKind.DefenseDice, "Def"), (StatKind.OdHandDice, "Od"), (StatKind.Luck, "Luck"), (StatKind.Magic, "Mag"),
+        (StatKind.Hearts, "Hrt"), (StatKind.Speed, "Wnd+"), (StatKind.MoveDice, "Wnd"), (StatKind.AttackDice, "Rmb"),
+        (StatKind.DefenseDice, "Def"), (StatKind.OdHandDice, "Od"), (StatKind.Luck, "Lck"), (StatKind.Magic, "Mag"),
+    ];
+
+    /// <summary>The skills a point can buy, with their short labels.</summary>
+    private static readonly (Skill Skill, string Label)[] SkillButtons =
+    [
+        (Skill.Search, "Srch"), (Skill.Steal, "Steal"), (Skill.PickLock, "Lock"), (Skill.Disarm, "Dsrm"), (Skill.Aid, "Aid"),
+        (Skill.Parry, "Parry"), (Skill.Shove, "Shove"), (Skill.BullRush, "Rush"), (Skill.Guard, "Guard"), (Skill.HighAlert, "Alert"),
     ];
 
     private VBoxContainer _rows = null!;
@@ -29,6 +41,9 @@ public partial class PartyPanel : Panel
 
     /// <summary>A point for a hero (themselves or a companion) on a stat, and for Magic the basic spell it teaches.</summary>
     public event Action<int, StatKind, string?>? SpendRequested;
+
+    /// <summary>A point for a hero (themselves or a companion) on a skill.</summary>
+    public event Action<int, Skill>? LearnRequested;
 
     /// <summary>For the click tests: the window that asks which spell a new rank of Magic teaches.</summary>
     internal SpellPicker SpellPicker => _spellPicker;
@@ -109,11 +124,12 @@ public partial class PartyPanel : Panel
             for (int i = 0; i < Stats.Length; i++)
             {
                 (StatKind stat, string label) = Stats[i];
-                Button spend = UiTheme.CompactButton(new Vector2(84 + i * 28, y), new Vector2(27, 15), $"{label} {PointBuy.CostPerStep(stat)}");
+                int cost = hero.Allocation is { } now ? PointBuy.Cost(PointBuy.Raise(now, stat)) - PointBuy.Cost(now) : 0;
+                Button spend = UiTheme.CompactButton(Wrapped(i, y), new Vector2(31, 15), $"{label} {cost}");
                 spend.Name = $"Spend{hero.Id}{stat}";
                 string? blocked = session.CheckSpendPoint(hero.Id, stat);
                 spend.Disabled = blocked is not null;
-                spend.TooltipText = blocked ?? $"+1 {stat} for {PointBuy.CostPerStep(stat)} point{(PointBuy.CostPerStep(stat) == 1 ? "" : "s")}.";
+                spend.TooltipText = blocked ?? $"+1 {stat} for {UiTheme.Count(cost, "point", "points")}.";
                 int heroId = hero.Id;
                 spend.Pressed += () =>
                 {
@@ -131,7 +147,24 @@ public partial class PartyPanel : Panel
                 row.AddChild(spend);
             }
 
-            y += 17;
+            y += 14 + 17 * ((Stats.Length + PerLine - 1) / PerLine);
+            row.AddChild(UiTheme.Label(new Vector2(4, y + 2), new Vector2(160, 12), "Learn a skill (1 point each):", color: Palette.Heal));
+            int shown = 0;
+            foreach ((Skill skill, string label) in SkillButtons.Where(entry => !hero.Knows(entry.Skill)))
+            {
+                int cost = hero.Allocation is { } now ? PointBuy.Cost(now.WithSkill(skill, true)) - PointBuy.Cost(now) : 0;
+                Button learn = UiTheme.CompactButton(Wrapped(shown, y), new Vector2(31, 15), label);
+                learn.Name = $"Learn{hero.Id}{skill}";
+                string? blocked = session.CheckLearnSkill(hero.Id, skill);
+                learn.Disabled = blocked is not null;
+                learn.TooltipText = blocked ?? $"{skill.Name()} for {UiTheme.Count(cost, "point", "points")}.";
+                int heroId = hero.Id;
+                learn.Pressed += () => LearnRequested?.Invoke(heroId, skill);
+                row.AddChild(learn);
+                shown++;
+            }
+
+            y += 14 + 17 * ((shown + PerLine - 1) / PerLine);
         }
 
         if (mine && hero.IsCompanion)

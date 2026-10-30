@@ -16,7 +16,8 @@ public partial class CharacterEditor : MenuScreen
     private static readonly (StatKind Stat, string Name, string Icon)[] StatRows =
     [
         (StatKind.Hearts, "Hearts", "heart_full"),
-        (StatKind.Speed, "Wend", "icon_wend"),
+        (StatKind.MoveDice, "Wend", "icon_wend"),
+        (StatKind.Speed, "Wend +", "icon_wend"),
         (StatKind.AttackDice, "Rumble", "icon_rumble"),
         (StatKind.DefenseDice, "Defense", "icon_defense"),
         (StatKind.OdHandDice, "Od Hand", "icon_odhand"),
@@ -26,6 +27,24 @@ public partial class CharacterEditor : MenuScreen
 
     private readonly List<PortraitView> _portraits = [];
     private readonly Dictionary<StatKind, (Button Minus, Label Value, Button Plus)> _statControls = [];
+    private readonly Dictionary<StatKind, Label> _costLabels = [];
+    private readonly Dictionary<Skill, (Label Note, Button Toggle)> _skillRows = [];
+    private Panel _skillsPanel = null!;
+
+    /// <summary>What each skill does, in the Skills window.</summary>
+    private static readonly Dictionary<Skill, string> SkillHelp = new()
+    {
+        [Skill.Search] = "Od Hand: search the room for secrets",
+        [Skill.Steal] = "Od Hand: steal from someone beside you",
+        [Skill.PickLock] = "Od Hand: pick locks on doors, chests, gates",
+        [Skill.Disarm] = "Od Hand: disarm traps and lit bombs",
+        [Skill.Aid] = "Od Hand: rouse the fallen, cure what ails",
+        [Skill.Parry] = "Od Hand: a held die for your next defense",
+        [Skill.Shove] = "Rumble: shove someone a tile",
+        [Skill.BullRush] = "Rumble: charge in a line, attack, push 2",
+        [Skill.Guard] = "Rumble: a held die for your or an ally's defense",
+        [Skill.HighAlert] = "Rumble: a Rumble die on your next search",
+    };
     private readonly List<(Label Caption, Button Previous, ColorRect Swatch, Label Value, Button Next)> _styleRows = [];
 
     private StatAllocation _allocation = StatAllocation.None;
@@ -38,10 +57,11 @@ public partial class CharacterEditor : MenuScreen
     private static readonly Dictionary<StatKind, string> StatHelp = new()
     {
         [StatKind.Hearts] = "HEARTS\nHow much punishment you can take: each hit that gets through costs one. With none left you Keel Over and roll the Keel Die each turn until you stand back up, or die. Each point buys another heart.",
-        [StatKind.Speed] = "WEND\nHow far you move. Each move rolls one or more Wend dice for that many steps, plus your Wend bonus once a turn. Each point adds +1 to your Wend bonus.",
-        [StatKind.AttackDice] = "RUMBLE\nYour attack dice. Each attack or shove uses one or more, and your weapon adds to one attack a turn. Beat the defender's roll to hit. Each point buys another die.",
-        [StatKind.DefenseDice] = "DEFENSE\nYour base die and armor defend against every attack. Each point buys an extra die: it rolls in only when a defense is losing, then it's spent until your next turn.",
-        [StatKind.OdHandDice] = "OD HAND\nYour dice for picking locks, searching, disarming traps, stealing and rousing allies who've Keeled Over. Lockpicks help with locks. Each point buys another die.",
+        [StatKind.MoveDice] = "WEND DICE\nHow far you move. Each move rolls one or more Wend dice for that many steps. Each one bought costs more after the third: 3, 3, 3, then 4, 5, 6.",
+        [StatKind.Speed] = "WEND BONUS\nAdded to one move a turn, on top of your Wend dice. Each point adds +1.",
+        [StatKind.AttackDice] = "RUMBLE\nYour attack dice. Each attack or shove uses one or more, and your weapon adds to one attack a turn. Beat the defender's roll to hit. Dice cost 3, 3, 3, then 4, 5, 6; the first brings Shove free (or Bull Rush, if you know Shove).",
+        [StatKind.DefenseDice] = "DEFENSE\nYour base die and armor defend against every attack. Each die bought rolls in only when a defense is losing, then it's spent until your next turn. Dice cost 3, 3, 3, then 4, 5, 6.",
+        [StatKind.OdHandDice] = "OD HAND\nDice for the Od Hand skills you know: Search, Steal, Pick Lock, Disarm, Aid, Parry. Without a skill, a tool can stand in, rolling only its own dice. The first die costs 1 and brings a skill free; then 2, 2, 3, 4, 5. More skills: 1 point each.",
         [StatKind.Luck] = "LUCK\nRerolls of a single die, refilled on each new floor: after any roll, click a die to roll it again. Each point buys another reroll.",
         [StatKind.Magic] = "MAGIC\nEach rank teaches a basic spell (you pick it) and holds another banked Power Die. Spells cost Power to cast, take your Rumble dice, and add your rank to their roll. Magic is dangerous, and people don't like it.",
     };
@@ -158,12 +178,19 @@ public partial class CharacterEditor : MenuScreen
             _portraits.Add(portrait);
         }
 
-        Caption(new Vector2(24, 152), "STATS");
-        _points = Add(UiTheme.Label(new Vector2(120, 152), new Vector2(200, 12), color: Palette.TrimBright));
+        Caption(new Vector2(24, 150), "STATS");
+        _points = Add(UiTheme.Label(new Vector2(84, 150), new Vector2(150, 12), color: Palette.TrimBright));
+        Button skills = Add(UiTheme.CompactButton(new Vector2(234, 147), new Vector2(110, 16), "Skills..."));
+        skills.Name = "Skills";
+        skills.Pressed += () =>
+        {
+            _skillsPanel.Visible = !_skillsPanel.Visible;
+            Refresh();
+        };
         for (int i = 0; i < StatRows.Length; i++)
         {
             (StatKind stat, string name, string icon) = StatRows[i];
-            float y = 164 + i * 19;
+            float y = 164 + i * 17;
             // The stat's symbol and name; hovering them explains the stat in the preview panel.
             Control hover = Add(new Control { Position = new Vector2(22, y + 2), Size = new Vector2(60, 16), MouseFilter = MouseFilterEnum.Stop, MouseDefaultCursorShape = CursorShape.Help });
             hover.AddChild(new TextureRect
@@ -180,11 +207,11 @@ public partial class CharacterEditor : MenuScreen
             hover.AddChild(label);
             hover.MouseEntered += () => Explain(stat);
             hover.MouseExited += () => Explain(null);
-            Add(UiTheme.Label(new Vector2(84, y + 4), new Vector2(60, 12), $"{PointBuy.CostPerStep(stat)} pt each", color: Palette.TextDim));
-            Button minus = Add(UiTheme.Button(new Vector2(150, y), new Vector2(20, 19), "-"));
-            Label value = Add(UiTheme.Label(new Vector2(172, y + 4), new Vector2(28, 12)));
+            _costLabels[stat] = Add(UiTheme.Label(new Vector2(84, y + 3), new Vector2(64, 12), "", color: Palette.TextDim));
+            Button minus = Add(UiTheme.Button(new Vector2(150, y), new Vector2(20, 17), "-"));
+            Label value = Add(UiTheme.Label(new Vector2(172, y + 3), new Vector2(28, 12)));
             value.HorizontalAlignment = HorizontalAlignment.Center;
-            Button plus = Add(UiTheme.Button(new Vector2(202, y), new Vector2(20, 19), "+"));
+            Button plus = Add(UiTheme.Button(new Vector2(202, y), new Vector2(20, 17), "+"));
             minus.Pressed += () => Step(stat, -1);
             plus.Pressed += () => Step(stat, +1);
             _statControls[stat] = (minus, value, plus);
@@ -223,7 +250,9 @@ public partial class CharacterEditor : MenuScreen
             Refresh();
         };
 
-        _error = Add(UiTheme.Label(new Vector2(24, 298), new Vector2(320, 14), color: Palette.Danger));
+        BuildSkillsPanel();
+
+        _error = Add(UiTheme.Label(new Vector2(24, 302), new Vector2(320, 14), color: Palette.Danger));
         SaveButton = Add(UiTheme.Button(new Vector2(420, 316), new Vector2(96, 26), Editing is null ? "Create" : "Save"));
         SaveButton.Pressed += Save;
         Button cancel = Add(UiTheme.Button(new Vector2(522, 316), new Vector2(96, 26), "Cancel"));
@@ -251,12 +280,71 @@ public partial class CharacterEditor : MenuScreen
         Refresh();
     }
 
+    /// <summary>The Skills window: each skill, what it does and costs, and a button to learn it (or forget one learned here).</summary>
+    private void BuildSkillsPanel()
+    {
+        _skillsPanel = Add(new Panel { Position = new Vector2(150, 44), Size = new Vector2(340, 254), Visible = false });
+        _skillsPanel.AddChild(UiTheme.Heading(UiTheme.Label(new Vector2(10, 6), new Vector2(200, 16), "SKILLS", 9, Palette.TrimBright), 1));
+        _skillsPanel.AddChild(UiTheme.Label(new Vector2(70, 8), new Vector2(200, 12), "1 point each, some free", color: Palette.TextDim));
+        Button close = UiTheme.CompactButton(new Vector2(284, 6), new Vector2(48, 16), "Done");
+        close.Pressed += () =>
+        {
+            _skillsPanel.Visible = false;
+            Refresh();
+        };
+        _skillsPanel.AddChild(close);
+        for (int i = 0; i < Skills.Each.Count; i++)
+        {
+            Skill skill = Skills.Each[i];
+            float y = 28 + i * 22;
+            _skillsPanel.AddChild(UiTheme.Label(new Vector2(10, y + 3), new Vector2(68, 12), skill.Name(), color: Skills.OdHand.HasFlag(skill) ? Palette.DieOdHand : Palette.DieRumble));
+            Label note = UiTheme.Label(new Vector2(78, y + 3), new Vector2(190, 12), SkillHelp[skill], color: Palette.TextDim);
+            _skillsPanel.AddChild(note);
+            Button toggle = UiTheme.CompactButton(new Vector2(270, y), new Vector2(62, 18), "");
+            toggle.Name = $"Skill{skill}";
+            toggle.Pressed += () => ToggleSkill(skill);
+            _skillsPanel.AddChild(toggle);
+            _skillRows[skill] = (note, toggle);
+        }
+    }
+
+    /// <summary>For the click tests: a skill's Learn button in the Skills window.</summary>
+    internal Button SkillButton(Skill skill) => _skillRows[skill].Toggle;
+
+    internal Panel SkillsPanel => _skillsPanel;
+
+    internal StatAllocation Allocation => _allocation;
+
+    private void ToggleSkill(Skill skill)
+    {
+        if (_allocation.Skills.HasFlag(skill))
+        {
+            StatAllocation forgotten = _allocation.WithSkill(skill, false);
+            if (!_floor.Skills.HasFlag(skill) && PointBuy.Check(forgotten, _level, _budget) is null)
+            {
+                _allocation = forgotten;
+            }
+        }
+        else if (PointBuy.CanLearn(_allocation, skill, _level, _budget))
+        {
+            _allocation = _allocation.WithSkill(skill, true);
+        }
+
+        Refresh();
+    }
+
     private void Step(StatKind stat, int delta)
     {
-        StatAllocation next = _allocation.With(stat, _allocation[stat] + delta);
+        StatAllocation next = delta > 0 ? PointBuy.Raise(_allocation, stat) : Lower(_allocation, stat);
         if (next[stat] < _floor[stat] || PointBuy.Check(next, _level, _budget) is not null)
         {
             return;
+        }
+
+        // The first Od Hand die brings a skill of your choice, free: the Skills window opens to pick it.
+        if (stat == StatKind.OdHandDice && delta > 0 && next.OdHandDice == 1 && (next.Skills & Skills.OdHand) == 0)
+        {
+            _skillsPanel.Visible = true;
         }
 
         if (stat == StatKind.Magic && delta > 0)
@@ -273,6 +361,27 @@ public partial class CharacterEditor : MenuScreen
 
         _allocation = next;
         Refresh();
+    }
+
+    /// <summary>
+    /// One step less of a stat, taking back what came free with it: the last Rumble die bought takes its
+    /// free Shove (or Bull Rush) with it, and the last Od Hand die the Od Hand skills learned here.
+    /// </summary>
+    private StatAllocation Lower(StatAllocation allocation, StatKind stat)
+    {
+        StatAllocation lowered = allocation.With(stat, allocation[stat] - 1);
+        if (stat == StatKind.AttackDice && lowered.AttackDice == 0)
+        {
+            Skill free = lowered.Skills.HasFlag(Skill.BullRush) ? Skill.BullRush : Skill.Shove;
+            lowered = _floor.Skills.HasFlag(free) ? lowered : lowered.WithSkill(free, false);
+        }
+
+        if (stat == StatKind.OdHandDice && lowered.OdHandDice == 0)
+        {
+            lowered = lowered with { Skills = lowered.Skills & ~(Skills.OdHand & ~_floor.Skills) };
+        }
+
+        return lowered;
     }
 
     /// <summary>For the click tests: the window that asks which spell a new rank of Magic teaches.</summary>
@@ -377,6 +486,17 @@ public partial class CharacterEditor : MenuScreen
             value.Text = _allocation[stat] > 0 ? $"+{_allocation[stat]}" : "0";
             minus.Disabled = _allocation[stat] <= _floor[stat];
             plus.Disabled = !PointBuy.CanRaise(_allocation, stat, _level, _budget);
+            int cost = PointBuy.Cost(PointBuy.Raise(_allocation, stat)) - PointBuy.Cost(_allocation);
+            _costLabels[stat].Text = $"next: {cost} pt";
+        }
+
+        foreach ((Skill skill, (Label note, Button toggle)) in _skillRows)
+        {
+            bool known = _allocation.Skills.HasFlag(skill);
+            int cost = PointBuy.Cost(_allocation.WithSkill(skill, true)) - PointBuy.Cost(_allocation);
+            toggle.Text = known ? (_floor.Skills.HasFlag(skill) ? "Known" : "Forget") : cost == 0 ? "Learn free" : $"Learn {cost}";
+            toggle.Disabled = known ? _floor.Skills.HasFlag(skill) : !PointBuy.CanLearn(_allocation, skill, _level, _budget);
+            toggle.TooltipText = known || PointBuy.Check(_allocation.WithSkill(skill, true), _level, _budget) is not { } why ? "" : why;
         }
 
         foreach (PortraitView portrait in _portraits)
@@ -405,11 +525,12 @@ public partial class CharacterEditor : MenuScreen
             $"Wend {stats.MoveDice}d6{speed}   Luck {UiTheme.Count(stats.Luck, "reroll", "rerolls")}\n" +
             $"Rumble {UiTheme.Count(stats.AttackDice, "die", "dice")}   Defense {UiTheme.Count(stats.DefenseDice, "die", "dice")}\n" +
             $"Od Hand {UiTheme.Count(stats.OdHandDice, "die", "dice")}   (before gear bonuses)\n" +
+            $"Skills: {(_allocation.Skills == Skill.None ? "none yet" : string.Join(", ", Skills.In(_allocation.Skills).Select(skill => skill.Name())))}\n" +
             (stats.Magic > 0 ? $"Magic {stats.Magic}: {string.Join(", ", (Editing?.Spells ?? []).Concat(_newSpells).Select(id => Content.GetSpell(id).Name))}\n" : "") +
             (_isCompanion ? "A companion: joins a player's party and follows their orders.\n" : "") +
             gear;
         _points.TooltipText = _level <= 1
-            ? $"At level 1 you can buy at most {PointBuy.LevelOneDiceLimit} extra Rumble, Defense and Od Hand dice each. Unspent points are kept."
+            ? $"At level 1 you can buy at most {PointBuy.LevelOneDiceLimit} extra Rumble, Wend, Defense and Od Hand dice each. Unspent points are kept."
             : "Unspent points are kept.";
         if (_explaining is { } explained)
         {

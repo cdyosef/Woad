@@ -698,6 +698,20 @@ public partial class GameScreen : Control
                 await Pause(0.3);
                 break;
 
+            case DefenseHeld held:
+                _trayShowsMovement = false;
+                string holding = held.Skill == Skill.Parry ? "parries" : held.ForHeroId == held.HeroId ? "stands guard" : $"guards {NameOf(held.ForHeroId)}";
+                await _dice.ShowRoll($"{NameOf(held.HeroId)} {holding}", held.Roll, 0, newGroup: true, kind: held.Skill == Skill.Parry ? DiceKind.OdHand : DiceKind.Rumble);
+                CalloutOver(held.ForHeroId, $"+{held.Roll.Total} HELD", Palette.DieDefense);
+                RefreshPanels();
+                break;
+
+            case WentOnHighAlert alert:
+                CalloutOver(alert.HeroId, "HIGH ALERT!", Palette.DieRumble);
+                RefreshPanels();
+                await Pause(0.3);
+                break;
+
             case LastChanceUsed lucky:
                 CalloutOver(lucky.HeroId, "LUCKY!", Palette.TrimBright);
                 await Pause(0.3);
@@ -733,6 +747,11 @@ public partial class GameScreen : Control
                     _board.FloatText(leap.Landing, "short!", Palette.Danger);
                 }
 
+                break;
+
+            case BullRushed rushed:
+                _trayShowsMovement = false;
+                await _dice.ShowRoll($"{NameOf(rushed.HeroId)} charges", rushed.Roll, rushed.Bonus, newGroup: true, kind: DiceKind.Wend);
                 break;
 
             case StayedAfloat afloat when _figures.TryGetValue(afloat.HeroId, out Figure? swimmer) && swimmer.RoomId == _shownRoomId:

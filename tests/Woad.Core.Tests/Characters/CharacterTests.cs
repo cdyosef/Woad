@@ -23,10 +23,10 @@ public class CharacterTests
 
         Assert.Equal("wooden_sword", hero.Equipment[EquipSlot.MainHand].Definition.Id);
         Assert.Equal("buckler", hero.Equipment[EquipSlot.OffHand].Definition.Id);
-        Assert.Equal("health_potion", hero.Belt.Single().Definition.Id);
-        Assert.Equal("torch", hero.Backpack.Single().Definition.Id);
+        Assert.Equal(["health_potion", "torch", "lockpicks"], hero.Belt.Select(card => card.Definition.Id));
+        Assert.Empty(hero.Backpack);
         Assert.Equal(2, hero.Hearts);
-        Assert.Equal("torch", keys[hero.Backpack.Single().Id]);
+        Assert.Equal("torch", keys[hero.Belt[1].Id]);
     }
 
     [Fact]
@@ -37,8 +37,8 @@ public class CharacterTests
         Assert.Equal(1, character.Level);
         Assert.Equal(2, character.UnspentPoints);
         Assert.Equal(["wooden_sword", "buckler"], character.Equipped);
-        Assert.Equal(["health_potion"], character.Belt);
-        Assert.Equal(["torch"], character.Backpack);
+        Assert.Equal(["health_potion", "torch", "lockpicks"], character.Belt);
+        Assert.Empty(character.Backpack);
         Assert.Equal(GameRules.HeroBaseStats.Hearts + 1, character.BaseStats.Hearts);
         Assert.Equal(2, character.BaseStats.AttackDice);
     }
@@ -113,7 +113,7 @@ public class CharacterTests
         Assert.Equal(GameRules.HeroBaseStats.Hearts + 2, hero.MaxHearts);
         Assert.Equal(1, hero.LuckRemaining);
         Assert.Equal("wooden_sword", hero.Equipment[EquipSlot.MainHand].Definition.Id);
-        Assert.Equal(["health_potion"], hero.Belt.Select(card => card.Definition.Id));
+        Assert.Equal(["health_potion", "torch", "lockpicks"], hero.Belt.Select(card => card.Definition.Id));
         Assert.All(hero.AllCards, card => Assert.Equal(hero.Id, card.BroughtInByHeroId));
     }
 }

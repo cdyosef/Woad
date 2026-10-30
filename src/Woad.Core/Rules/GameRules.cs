@@ -124,12 +124,12 @@ public static class GameRules
 
     public const int XpForEscaping = 10;
 
-    public const int BeltCapacity = 2;
+    public const int BeltCapacity = 4;
 
-    public const int BackpackCapacity = 6;
+    public const int BackpackCapacity = 8;
 
     /// <summary>Cards every new character starts with.</summary>
-    public static IReadOnlyList<string> StarterKit { get; } = ["wooden_sword", "buckler", "health_potion", "torch"];
+    public static IReadOnlyList<string> StarterKit { get; } = ["wooden_sword", "buckler", "health_potion", "torch", "lockpicks"];
 
     /// <summary>Stats every new character starts with, before spending creation points.</summary>
     public static Stats HeroBaseStats { get; } = new()
@@ -139,7 +139,7 @@ public static class GameRules
         Speed = 2,
         AttackDice = 1,
         DefenseDice = 1,
-        OdHandDice = 1,
+        OdHandDice = 0,
         Luck = 0,
     };
 }
