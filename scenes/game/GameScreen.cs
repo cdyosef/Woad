@@ -1446,7 +1446,12 @@ public partial class GameScreen : Control
     }
 
     /// <summary>Each dungeon's own exploring song.</summary>
-    private string DungeonSong => _session.State.ThemeId == "sunken_temple" ? "temple" : "dungeon";
+    private string DungeonSong => _session.State.ThemeId switch
+    {
+        "sunken_temple" => "temple",
+        "unhallowed_graves" => "graves",
+        _ => "dungeon",
+    };
 
     /// <summary>Who an event is about, so the camera can turn to them in a room bigger than the view.</summary>
     private static int? FocusOf(GameEvent gameEvent) => gameEvent switch

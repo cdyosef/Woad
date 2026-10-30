@@ -2491,6 +2491,61 @@ def temple_theme():
     return song.samples
 
 
+def graves_theme():
+    """
+    The Unhallowed Graves: nothing at first but a heartbeat, very slow and very low. A drone creeps in
+    under it, then a ghostly tune high over a clashing pad and a cold wind; the tune climbs, the drone
+    creeps up a semitone at a time and the heartbeat quickens until it races, and then it's just the
+    heartbeat again. E minor, leaning on the F a semitone above.
+    """
+    bars = 24
+    song = Song(bpm=60, beats=bars * 4)
+
+    def swell(samples, start, end):
+        """Fades a stretch of sound from `start` to `end` volume across it."""
+        count = max(1, len(samples) - 1)
+        return [value * (start + (end - start) * i / count) for i, value in enumerate(samples)]
+
+    # The heartbeat: lub-dub, once a bar, then every other beat, then every beat; louder as it quickens.
+    # A triangle's overtones and a soft thump on the front keep it heard on small speakers.
+    lub = mix(tone(lambda t: 62 - 30 * t, 0.28, triangle, 1.0, release=0.22), noise(0.05, 0.5, decay=60, seed=67, lowpass=0.9))
+    dub = mix(tone(lambda t: 55 - 25 * t, 0.22, triangle, 0.7, release=0.18), noise(0.04, 0.35, decay=70, seed=71, lowpass=0.9))
+    for bar in range(bars):
+        every = 4 if bar < 12 else 2 if bar < 20 else 1
+        loudness = 0.16 + 0.2 * bar / (bars - 1)
+        for beat in range(0, 4, every):
+            song.place(bar * 4 + beat, [value * loudness for value in lub])
+            song.place(bar * 4 + beat + 0.35, [value * loudness for value in dub])
+
+    # The drone: from bar 5, low and swelling, creeping up a semitone at a time.
+    for first, last, note in [(4, 12, "E2"), (12, 16, "F2"), (16, 20, "F#2"), (20, 24, "G2")]:
+        seconds = (last - first) * 4 * song.beat
+        frequency = hz(midi(note))
+        drone = tone(lambda t, f=frequency: f * (1 + 0.004 * math.sin(t * 1.3)), seconds, triangle, 1.0, attack=0.6, release=0.4)
+        song.place(first * 4, swell(drone, 0.03 + 0.08 * (first - 4) / 20, 0.03 + 0.08 * (last - 4) / 20))
+
+    # A clashing pad (the chord with the F rubbing against it), two bars a chord, under the tune.
+    for bar, chord in [(8, ["E3", "G3", "B3", "F4"]), (10, ["C3", "E3", "G3", "B3"]), (12, ["F3", "A3", "C4", "E4"]), (14, ["B2", "D#3", "F#3", "C4"]),
+                       (16, ["E3", "G3", "B3", "F4"]), (18, ["C3", "E3", "G#3", "B3"]), (20, ["F3", "Ab3", "C4", "E4"]), (22, ["B2", "D#3", "F#3", "A3"])]:
+        for pitch in chord:
+            pad = tone(lambda t, f=hz(midi(pitch)): f, 8 * song.beat * 0.97, sine, 1.0, attack=1.2, release=1.2)
+            song.place(bar * 4, swell(pad, 0.015 + 0.02 * (bar - 8) / 16, 0.02 + 0.02 * (bar - 8) / 16))
+
+    # A cold wind, from the tune's coming to the end.
+    wind = noise(16 * 4 * song.beat * 0.98, 1.0, decay=0, seed=61, lowpass=0.985)
+    song.place(8 * 4, swell(wind, 0.0, 0.5))
+
+    # The ghost's tune: long, wavering notes, then climbing.
+    song.voice("E5/4 | F5/3 E5/1 | B4/4 | C5/2 B4/2 | E5/3 G5/1 | F5/4 | D#5/2 E5/2 | B4/4",
+               sine, 0.07, transpose=0, vibrato=True, gate=0.95)
+    song.voice("-/32 G5/4 | Ab5/3 G5/1 | D#5/4 | E5/2 F5/2 | G5/2 Ab5/2 | B5/4 | C6/2 B5/2 | E5/4",
+               sine, 0.09, vibrato=True, gate=0.95)
+    # Its shadow an octave down, in a thin pulse, for the climb.
+    song.voice("-/32 G4/4 | Ab4/3 G4/1 | D#4/4 | E4/2 F4/2 | G4/2 Ab4/2 | B4/4 | C5/2 B4/2 | E4/4",
+               pulse(0.125), 0.025, gate=0.95)
+    return song.samples
+
+
 BOSS_BEAT = [  # double kicks under a hard backbeat, a crash every four bars, fills into each new section
     "c.kks.h.k.kks.hh", "k.kks.h.k.kks.hh", "k.kks.h.k.kks.hh", "k.kks.h.k.kks.hh",
     "c.kks.h.k.kks.hh", "k.kks.h.k.kks.hh", "k.kks.h.k.kks.hh", "k.kks.h.s.sssskk",
@@ -2595,6 +2650,7 @@ def build_music(directory):
         "temple": temple_theme(),
         "boss": boss_theme(),
         "ogre": ogre_theme(),
+        "graves": graves_theme(),
         "icarus": icarus_theme(),
         "victory": victory_tune(),
         "defeat": defeat_tune(),
