@@ -34,7 +34,10 @@ public partial class GameScreen
         }
     }
 
-    /// <summary>The order from whoever's turn is on show: the heroes from them round, the monsters after the last seat.</summary>
+    /// <summary>
+    /// The order from whoever's turn is on show: the heroes from them round, the monsters after the last
+    /// seat; or, where turns go by initiative, the round's order.
+    /// </summary>
     private void RefreshTurnOrder()
     {
         GameState state = _session.State;
@@ -50,7 +53,18 @@ public partial class GameScreen
             new(hero.Id, hero.Name, Palette.Seat(hero.Seat), hero.Guise is null ? Looks.Resolve(hero.Appearance, hero.Portrait) : null, hero.IsKeelingOver);
 
         List<TurnOrderView.Entry> order;
-        if (_playingTurn is { Set: true, HeroId: null } || TurnOnShow is null)
+        if (state.Initiative is { } slots)
+        {
+            // By initiative: the round's order, from whoever's turn is on show.
+            List<TurnOrderView.Entry> round = [.. slots
+                .Where(slot => slot.HeroId is null || heroes.Any(hero => hero.Id == slot.HeroId))
+                .Select(slot => slot.HeroId is int id ? Card(state.GetHero(id)) : enemies.First(enemy => enemy.Enemy == slot.Enemy))];
+            int at = _playingTurn is { Set: true, HeroId: null } || TurnOnShow is null
+                ? round.FindIndex(entry => entry.HeroId is null && entry.Enemy == _playingFaction)
+                : round.FindIndex(entry => entry.HeroId == TurnOnShow.Id);
+            order = [.. round.Skip(Math.Max(0, at)), .. round.Take(Math.Max(0, at))];
+        }
+        else if (_playingTurn is { Set: true, HeroId: null } || TurnOnShow is null)
         {
             int at = enemies.FindIndex(enemy => enemy.Enemy == _playingFaction);
             order = [.. enemies.Skip(Math.Max(0, at)), .. heroes.Select(Card), .. enemies.Take(Math.Max(0, at))];

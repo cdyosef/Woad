@@ -345,6 +345,15 @@ public sealed record EnemyPhaseEnded(int Round) : GameEvent
 /// <summary>The more of the dead the heroes come across, the more of them know where they are: the horde's alert rose to <paramref name="Level"/> (1 to 3).</summary>
 public sealed record HordeRoused(string RoomId, int Level) : GameEvent;
 
+/// <summary>A hero's initiative: their Wend dice and the total with their Wend bonus.</summary>
+public sealed record InitiativeRoll(int HeroId, IReadOnlyList<int> Faces, int Total);
+
+/// <summary>The round's initiative was rolled: each hero's roll, and the order it makes (enemy turns at their fixed scores).</summary>
+public sealed record InitiativeRolled(int Round, IReadOnlyList<InitiativeRoll> Rolls, IReadOnlyList<TurnSlot> Order) : GameEvent;
+
+/// <summary>Heroes tied on initiative rolled off, <paramref name="Dice"/> each (a 6 rolls another): their totals, in the same order.</summary>
+public sealed record InitiativeRollOff(IReadOnlyList<int> HeroIds, int Dice, IReadOnlyList<int> Totals) : GameEvent;
+
 /// <summary>A monster beside a hero escaping got a swing at them on their way out.</summary>
 public sealed record ParthianSwing(int MonsterId, int HeroId) : GameEvent;
 

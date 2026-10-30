@@ -781,8 +781,12 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
 - **The dead lie still:** every monster there sleeps until a hero comes within 6 tiles of it (or it's
   hurt), and only then takes turns. Woken, it stays awake. Every other sleeping stray wanders a step or
   two each turn; the rest stand about.
-- **Two enemy turns:** after the heroes, the **monsters** (the strays) take their turn, then the
-  **undead** take one of their own: the horde, the dead and those who keep them (Death Cultists and
+- **Initiative:** turns go by initiative there, not seat. At the start of each round every hero rolls
+  all their Wend dice and adds their Wend bonus; the monsters' turn stands at 5 and the undead's at 1,
+  and everyone goes from highest to lowest. A hero who ties an enemy turn goes right after it. Heroes
+  tied with each other roll off, a die each (a 6 rolls another), highest first; tied again, a die more.
+  The turn order along the top follows the round's initiative.
+- **Two enemy turns:** the **monsters** (the strays) take their turn, and the **undead** one of their own: the horde, the dead and those who keep them (Death Cultists and
   Necromancers too; Grave Robbers are monsters). The undead's card in the turn order is a fanged skull
   with glowing green eyes.
 - **The horde comes for you:** the more of the dead the heroes wake by coming near, the higher the

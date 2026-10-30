@@ -283,6 +283,12 @@ public sealed partial class GameSession
             }
         }
 
+        if (UsesInitiative)
+        {
+            NextInitiative(events);
+            return;
+        }
+
         Hero? next = State.Heroes.FirstOrDefault(hero => hero.IsInPlay && hero.Seat > fromSeat);
         if (next is not null)
         {
@@ -303,6 +309,13 @@ public sealed partial class GameSession
         WearOffMagic(events);
         State.Round++;
         events.Add(new RoundStarted(State.Round));
+        if (UsesInitiative)
+        {
+            RollInitiative(events);
+            NextInitiative(events);
+            return;
+        }
+
         StartTurn(State.Heroes.First(hero => hero.IsInPlay), events);
     }
 

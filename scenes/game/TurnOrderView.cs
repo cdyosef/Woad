@@ -132,8 +132,8 @@ public partial class TurnOrderView : Control
             {
                 Entry entry = _entries[i];
                 return entry.HeroId is not null ? $"{entry.Name}: click to see where they are, and their sheet."
-                    : entry.Enemy == Faction.Undead ? "The undead: the horde goes together, after the monsters."
-                    : "The monsters: they all go together, after every hero has had a turn.";
+                    : entry.Enemy == Faction.Undead ? "The undead: the horde goes together. By initiative they stand at 1."
+                    : "The monsters: they all go together, after every hero has had a turn (by initiative, at 5).";
             }
         }
 

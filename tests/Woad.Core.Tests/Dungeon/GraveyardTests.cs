@@ -109,7 +109,7 @@ public class GraveyardTests
     [Fact]
     public void OpeningAGraveWithTheDeadInItRaisesThemAtYou()
     {
-        // The skeleton climbs out beside the grave and strikes: 1 against the hero's 6.
+        // Initiative 1; the skeleton climbs out beside the grave and strikes: 1 against the hero's 6.
         GameSession session = TestRun.StartGraveyard("""
             .........
             .........
@@ -120,7 +120,7 @@ public class GraveyardTests
             .........
             .........
             .........
-            """, new ScriptedDice(1, 6), risers: new() { [new GridPosition(1, 4)] = "bones" });
+            """, new ScriptedDice(1, 1, 6), risers: new() { [new GridPosition(1, 4)] = "bones" });
         Hero hero = session.HeroInSeat();
 
         IReadOnlyList<GameEvent> events = session.Do(new OpenChest(hero.Id, new GridPosition(1, 4)));
@@ -146,7 +146,7 @@ public class GraveyardTests
             .........
             .........
             .........
-            """, empty: [new GridPosition(1, 4)]);
+            """, new ScriptedDice(1), empty: [new GridPosition(1, 4)]);
 
         ChestOpened opened = session.Do(new OpenChest(session.HeroInSeat().Id, new GridPosition(1, 4))).SingleOf<ChestOpened>();
 
@@ -167,9 +167,10 @@ public class GraveyardTests
             .........
             .........
             .........
-            """);
+            """, new ScriptedDice(6, 6));
         Hero hero = session.HeroInSeat();
 
+        // Initiative 6+2 puts the hero first: then the monsters, then the undead.
         List<EnemyPhaseStarted> phases = [.. session.Do(new EndTurn(hero.Id)).OfType<EnemyPhaseStarted>()];
 
         Assert.Equal([Faction.Monsters, Faction.Undead], phases.Select(phase => phase.Faction));
@@ -192,7 +193,7 @@ public class GraveyardTests
             .........
             .........
             ........j
-            """);
+            """, new ScriptedDice(1, 1, 1, 1));
         Hero hero = session.HeroInSeat();
         Room yard = session.RoomById();
         Monster far = yard.Monsters.Single(monster => monster.Position == new GridPosition(8, 8));
@@ -220,7 +221,7 @@ public class GraveyardTests
             .........
             .........
             .........
-            """, new ScriptedDice(5, 1));
+            """, new ScriptedDice(1, 5, 1));
         Hero hero = session.HeroInSeat();
         Monster bones = session.OnlyMonster();
         bones.Asleep = false;
@@ -232,6 +233,43 @@ public class GraveyardTests
         Assert.Equal(hero.MaxHearts - 1, hero.Hearts);
         Assert.Equal(HeroStatus.Escaped, hero.Status);
     }
+
+    [Fact]
+    public void EachRoundEveryoneGoesByInitiativeAndAHeroWhoTiesAnEnemyTurnGoesAfterIt()
+    {
+        // Hero 1 rolls 3 (+2 = 5, tying the monsters), hero 2 rolls 4 (6): hero 2, the monsters, hero 1, the undead.
+        GameSession session = TestRun.StartGraveyard(Empty, new ScriptedDice(3, 4), heroes: 2);
+        Hero first = session.HeroInSeat(0), second = session.HeroInSeat(1);
+
+        Assert.Equal(
+            [new TurnSlot(second.Id, null, 6), new TurnSlot(null, Faction.Monsters, 5), new TurnSlot(first.Id, null, 5), new TurnSlot(null, Faction.Undead, 1)],
+            session.State.Initiative!);
+        Assert.Equal(second.Id, session.State.ActiveHero!.Id);
+    }
+
+    [Fact]
+    public void HeroesTiedOnInitiativeRollOffADieMoreEachTimeTheyTieAgain()
+    {
+        // Both roll 2 (4 each); a die each: 3 and 3; two dice each: 1+1 and 5+5. Hero 2 goes first.
+        GameSession session = TestRun.StartGraveyard(Empty, new ScriptedDice(2, 2, 3, 3, 1, 1, 5, 5), heroes: 2);
+        Hero first = session.HeroInSeat(0), second = session.HeroInSeat(1);
+
+        List<int?> order = [.. session.State.Initiative!.Select(slot => slot.HeroId)];
+
+        Assert.Equal([null, second.Id, first.Id, null], order);
+    }
+
+    private const string Empty = """
+        .........
+        .........
+        .........
+        .........
+        12.......
+        .........
+        .........
+        .........
+        .........
+        """;
 
     private static List<GridPosition> GraveyardChests(RoomSetup room) => [.. room.Features!.ChestLooks.Keys];
 }

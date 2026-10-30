@@ -14,3 +14,6 @@ public enum Faction
     Monsters,
     Undead,
 }
+
+/// <summary>A place in a round's initiative order: a hero's turn, or an enemy turn, and the score it stands at.</summary>
+public sealed record TurnSlot(int? HeroId, Faction? Enemy, int Score);

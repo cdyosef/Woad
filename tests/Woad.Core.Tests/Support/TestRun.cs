@@ -38,7 +38,7 @@ internal static class TestRun
     }
 
     /// <summary>A begun run in a single dark graveyard room "A" (its monsters asleep), with graves that hold the dead or nothing.</summary>
-    public static GameSession StartGraveyard(string room, ScriptedDice? dice = null, Dictionary<GridPosition, string>? risers = null, GridPosition[]? empty = null)
+    public static GameSession StartGraveyard(string room, ScriptedDice? dice = null, Dictionary<GridPosition, string>? risers = null, GridPosition[]? empty = null, int heroes = 1)
     {
         RoomTemplate template = Room(room);
         var features = new RoomFeatures
@@ -47,7 +47,7 @@ internal static class TestRun
             EmptyChests = empty ?? [],
             ChestLooks = template.Layout.Positions.Where(tile => template.Layout[tile] == TileKind.Chest).ToDictionary(tile => tile, _ => ChestLook.Grave),
         };
-        GameSession session = Create([new RoomSetup("A", template, Features: features, Dark: true)], dice, themeId: TestContent.GraveyardThemeId);
+        GameSession session = Create([new RoomSetup("A", template, Features: features, Dark: true)], dice, heroes, themeId: TestContent.GraveyardThemeId);
         session.Begin();
         return session;
     }

@@ -46,6 +46,12 @@ public sealed class GameState
     /// <summary>The active hero's turn, or null when the run isn't in progress.</summary>
     public TurnState? Turn { get; internal set; }
 
+    /// <summary>The round's turn order by initiative (a graveyard's), or null where turns go by seat.</summary>
+    public IReadOnlyList<TurnSlot>? Initiative { get; internal set; }
+
+    /// <summary>The next place in <see cref="Initiative"/> to play.</summary>
+    public int InitiativeIndex { get; internal set; }
+
     public Hero? ActiveHero => Turn is null ? null : GetHero(Turn.HeroId);
 
     /// <summary>Heroes who retreated from a fight out on the Woarld Map: off the field, but they didn't win it.</summary>
