@@ -107,6 +107,11 @@ public sealed partial class GameSession
                 Cure(hero, effect, events);
                 break;
 
+            case CardEffectKind.ThievesOil:
+                hero.ThievesOilRounds = effect.Amount;
+                events.Add(new BoonGained(hero.Id, Boon.ThievesOil, effect.Amount, GameRules.OilNecroDefense));
+                break;
+
             case CardEffectKind.SinEater:
                 BurstDoll(hero, room, card, effect, command.Target!.Value, events);
                 break;
@@ -844,8 +849,11 @@ public sealed partial class GameSession
 
             case CardEffectKind.Cure:
                 return target is { } cureTile && cureTile != hero.Position ? "That can only be used on yourself."
-                    : effect.Cures is { } cures && hero.Conditions.Has(cures) ? null
+                    : (effect.Cures is { } cures && hero.Conditions.Has(cures)) || (effect.CuresDisease && Conditions.Diseases.Any(hero.Conditions.Has)) ? null
                     : "There's nothing for it to cure.";
+
+            case CardEffectKind.ThievesOil:
+                return target is { } oilTile && oilTile != hero.Position ? "That can only be used on yourself." : null;
 
             case CardEffectKind.Repair:
                 return target is { } mendTile && mendTile != hero.Position ? "That can only be used on yourself."

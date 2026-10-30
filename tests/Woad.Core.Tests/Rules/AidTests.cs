@@ -38,20 +38,20 @@ public class AidTests
     private static readonly Stats Deft = TestRun.HeroStats with { OdHandDice = 3 };
 
     [Fact]
-    public void AidCuresTheAilmentChosenAtTenPlusItsStacks()
+    public void AidTakesOneStackOfTheAilmentChosenAtTen()
     {
-        // 5+5+5, less 2 for the poison: 13 against 10 + 2 stacks of Poison.
+        // 5+5+5, less 2 for the poison: 13 against 10. One of the 2 stacks of Poison comes off.
         GameSession session = TestRun.Start(Pair, new ScriptedDice(5, 5, 5), stats: Deft);
         Hero hero = session.HeroInSeat();
         hero.Conditions.Add(Condition.Poison, 2);
         hero.Conditions.Add(Condition.Blind, 1);
 
         Assert.Contains("Choose what to cure", session.Refuse(new Aid(hero.Id, hero.Id)));
-        Assert.Equal([(Ailment.Poison, 12), (Ailment.Blind, 11)], session.GetAidCures(hero.Id));
+        Assert.Equal([(Ailment.Poison, 10), (Ailment.Blind, 10)], session.GetAidCures(hero.Id));
         IReadOnlyList<GameEvent> events = session.Do(new Aid(hero.Id, hero.Id, Ailment.Poison));
 
-        Assert.Equal(12, events.SingleOf<OdHandRolled>().Difficulty);
-        Assert.False(hero.Conditions.Has(Condition.Poison));
+        Assert.Equal(10, events.SingleOf<OdHandRolled>().Difficulty);
+        Assert.Equal(1, hero.Conditions[Condition.Poison]);
         Assert.True(hero.Conditions.Has(Condition.Blind));
     }
 

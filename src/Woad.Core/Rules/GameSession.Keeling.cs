@@ -208,6 +208,12 @@ public sealed partial class GameSession
         events.Add(new HeroDied(hero.Id, tombstone, dropped.Select(card => card.Id).ToList()));
         DropHeroKeys(room, hero, events);
         EndRunIfOver(events);
+
+        // Nekrot doesn't let the dead lie: they rise on the monsters' side.
+        if (hero.Conditions.Has(Condition.Nekrot) && State.Phase == RunPhase.InProgress)
+        {
+            RiseForMonsters(room, hero, events);
+        }
     }
 
     /// <summary>"Slain by a Goblin", "Slain by the Goblin King".</summary>

@@ -86,7 +86,7 @@ public sealed partial class GameSession
         }
 
         Die(room, hero, events);
-        if (fromMonster && State.Phase == RunPhase.InProgress)
+        if (fromMonster && !hero.Conditions.Has(Condition.Nekrot) && State.Phase == RunPhase.InProgress)
         {
             RiseForMonsters(room, hero, events);
         }

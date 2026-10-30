@@ -139,6 +139,21 @@ public class KeelingOverTests
     }
 
     [Fact]
+    public void AHeroWhoDiesWithNekrotRisesForTheMonsters()
+    {
+        // The keel's 1 and its Doom Die's 1 kill them; the zombie they rise as strikes the hero beside it.
+        (GameSession session, _, Hero fallen) = FallenTurn(new ScriptedDice(1, 1, 3, 1, 1, 1, 1, 1, 1), GameRules.HeroBaseStats);
+        fallen.DeathMarks = 2;
+        fallen.Conditions.Add(Condition.Nekrot, 1);
+
+        IReadOnlyList<GameEvent> events = session.Do(new RollKeel(fallen.Id));
+
+        Assert.Equal(HeroStatus.Dead, fallen.Status);
+        Assert.Equal(SpawnCause.Raised, events.SingleOf<MonsterSpawned>().Cause);
+        Assert.Equal($"Zombie {fallen.Name}", session.OnlyMonster().Definition.Name);
+    }
+
+    [Fact]
     public void ThreeMarksOfDeathLeaveATombstoneHoldingWhatTheyFound()
     {
         (GameSession session, Hero standing, Hero fallen) = FallenTurn(new ScriptedDice(1, 1, 3), GameRules.HeroBaseStats);

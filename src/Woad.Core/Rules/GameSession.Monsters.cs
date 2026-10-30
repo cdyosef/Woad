@@ -252,6 +252,10 @@ public sealed partial class GameSession
         {
             MonsterAttacks(room, monster, target, events);
         }
+        else if (CastAtHero(room, monster, standing, events))
+        {
+            // Nobody in reach of a blow: it cast its spell instead.
+        }
         else if (ChooseTarget(room, monster, monster.Position, keeling) is { } keeler)
         {
             StrikeKeeler(room, monster, keeler, events);

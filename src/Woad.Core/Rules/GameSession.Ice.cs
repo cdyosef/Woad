@@ -134,6 +134,11 @@ public sealed partial class GameSession
                 events.Add(new BoonEnded(hero.Id, Boon.Snowshoes));
             }
 
+            if (hero.ThievesOilRounds > 0 && --hero.ThievesOilRounds == 0)
+            {
+                events.Add(new BoonEnded(hero.Id, Boon.ThievesOil));
+            }
+
             if (hero.ShiningRounds > 0 && --hero.ShiningRounds == 0)
             {
                 hero.ShiningDefense = 0;

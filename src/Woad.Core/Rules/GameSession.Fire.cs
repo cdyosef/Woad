@@ -144,7 +144,8 @@ public sealed partial class GameSession
             return;
         }
 
-        monster.FireDice++;
+        // Dry wrappings go up all at once.
+        monster.FireDice += monster.Definition.Flammable && monster.FireDice == 0 ? 2 : 1;
         monster.IgnitedBy = creditId ?? monster.IgnitedBy;
         events.Add(new Ignited(monster.Id, monster.FireDice, byId));
     }

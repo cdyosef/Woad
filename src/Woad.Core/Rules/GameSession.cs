@@ -476,8 +476,14 @@ public sealed partial class GameSession
                 hero.Learn(content.GetSpell(spellId));
             }
 
+            // Black Hearts and disease come along from the last run, until they're cured.
+            foreach ((Condition condition, int stacks) in heroSetup.Lingering ?? new Dictionary<Condition, int>())
+            {
+                hero.Conditions.Add(condition, stacks);
+            }
+
             hero.Power.Banked = Math.Clamp(heroSetup.PowerDice, 0, hero.Power.Capacity);
-            hero.Hearts = Math.Clamp(heroSetup.Hearts ?? hero.MaxHearts, 1, hero.MaxHearts);
+            hero.Hearts = Math.Clamp(Math.Min(heroSetup.Hearts ?? hero.MaxHearts, hero.HealableTo), 1, hero.MaxHearts);
             hero.LuckRemaining = hero.EffectiveStats.Luck;
         }
 

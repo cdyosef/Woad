@@ -70,6 +70,9 @@ public sealed record HeroRunResult
     /// <summary>What the run did to the character's standing with the Law.</summary>
     public int LawStandingChange { get; init; }
 
+    /// <summary>What the hero carries on to the next run until it's cured: Black Hearts and disease.</summary>
+    public IReadOnlyDictionary<Condition, int> Lingering { get; init; } = new Dictionary<Condition, int>();
+
     /// <summary>Merchants the party rescued this run (by name), and whether this hero freed each.</summary>
     public IReadOnlyList<(string Name, bool FreedByThisHero)> MerchantsRescued { get; init; } = [];
 }
@@ -111,6 +114,7 @@ public static class RunResults
             GuildStandingChange = hero.GuildStandingChange,
             LawStandingChange = hero.LawStandingChange,
             MerchantsRescued = state.RescuedMerchants.Select(rescued => (rescued.Name, rescued.FreedByHeroId == hero.Id)).ToList(),
+            Lingering = Conditions.Lingering.Where(hero.Conditions.Has).ToDictionary(condition => condition, condition => hero.Conditions[condition]),
             Equipped = Gear(hero.EquippedCards),
             Belt = Gear(hero.Belt),
             Backpack = Gear(hero.Backpack),

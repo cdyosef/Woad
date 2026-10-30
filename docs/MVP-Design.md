@@ -518,22 +518,35 @@ total reaches its number:
 | **Search** | **Search** button: reveals everything in the room your total reaches | Secret doors 4 + floor; traps 3 + floor; stashes 5 + floor |
 | **Disarm** | Click a trap you've found: on a tile or chest next to you, or your own doorway | 3 + floor |
 | **Steal** | **Steal** button, then an adjacent monster or hero; once a turn | Beat their roll: a monster's defense dice, a hero's Od Hand dice and tools |
-| **Aid** | The **Aid** card, then yourself or an ally beside you (diagonals too); clicking an ally Keeling Over aids them straight away | On someone Keeling Over (a Rouse): every 6 of the total is a mark of life; every die showing 1 is a Doom Die on their next Keel roll (see [Keeling Over](#loot-keeling-over-and-winning)). Otherwise it cures one ailment, chosen when there are several: 10 plus its stacks clears it all |
+| **Aid** | The **Aid** card, then yourself or an ally beside you (diagonals too); clicking an ally Keeling Over aids them straight away | On someone Keeling Over (a Rouse): every 6 of the total is a mark of life; every die showing 1 is a Doom Die on their next Keel roll (see [Keeling Over](#loot-keeling-over-and-winning)). Otherwise it takes one stack of one ailment off, chosen when there are several: 10 (Nekrot 14). A Shovel in hand digs two stacks of Buried off |
 
-- **What Aid cures:** Poison, Acid, Blind, Shine, Confused and Buried. Freeze, Black Hearts, Burning and
-  Stun only with a **Medicine Bag** to hand.
+- **What Aid cures:** Poison, Acid, Blind, Shine, Confused and Buried. Freeze, Black Hearts, Burning,
+  Stun and Nekrot only with a **Medicine Bag** to hand. One stack a success, bag or not.
 - **Medicine Bag** (tool, stacks, goes on the belt and works from there or a hand): +1 and 1d6 on one
   Aid roll a turn (a 6 rolls another), even with no Od Hand dice left. A failed Aid it helped with a 1
   showing uses one up, as a failed pick snaps a lockpick.
 - **Bandages** (single use, stack): carried, one goes into each Rouse for +1d6 (a 6 rolls another).
 - **Shovel** (two-handed, Weapon 2): a die more and +1 against earth creatures. Held, it digs a stack
   of Buried off you at the start of your turn, and adds a die to digging out and to Aid against Buried.
-- **Holy Water** (single use, stack): drink it to cure Black Hearts (and curses and diseases, once there
-  are any), or throw it at the undead within 3. Lesser undead (Skeletons, the Drowned, zombies risen from
+- **Holy Water** (single use, stack): drink it to cure every Black Heart and every disease (and curses,
+  once there are any), or throw it at the undead within 3. Lesser undead (Skeletons, the Drowned, zombies risen from
   monsters) are destroyed outright, bones and all; greater undead (Ghouls, heroes risen as zombies) take
   5 Radiate dice.
 - **Antidote**, **Strong Base** and **Smelling Salts** (single use, stack) cure Poison, Acid (only the
   tokens: acid-worn gear stays worn) and Confused, like Eye Drops for Blind.
+- **Modern Medicine** (single use, stack; the Waylay Inn sells it) cures every disease.
+- **Thieves' Oil** (single use, stack; grave robbers carry it): for 10 rounds disease is resisted on a 3
+  or more instead of a 6, and Necro blows hit 2 less.
+
+### Disease
+
+- **Catching it:** a monster that carries a disease tries to give it to a hero it hits whenever a 6
+  shows among its dice. The hero rolls a d6 to resist: Nekrot needs a 6 (other diseases may be easier),
+  Thieves' Oil makes it 3 or more, and a Medicine Bag in either hand gives a second roll at the same number.
+- **Nekrot** (the undead skull, green-eyed and fanged, on the figure): every heart lost turns black.
+- **It lingers:** Black Hearts and disease are saved on the character and carried from run to run until
+  cured (the character list shows them). A hero starting a run with Black Hearts starts that many hearts down.
+- **The sting:** a hero who dies with Nekrot rises as a zombie on the monsters' side.
 - **Sineater Doll** (very rare, floor 3 on): soak what ails you or an ally beside you into it, no roll,
   up to 10 stacks of anything (free from the belt once a turn, or your action). Throw it up to 3 tiles:
   it bursts where it lands, laying every stack it holds on everyone within a tile, friend or foe, no
@@ -748,13 +761,23 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
 - **Graves** lie in plots, in rows with room to walk between, and more **sarcophagi** stand alone
   toward the middle. Both open like chests. A grave may hold a card (30%), a hidden needle trap and a
   card (12%), or one of the dead (18%: a Skeleton or Zombie climbs out beside it and strikes at once);
-  the rest are empty. Sarcophagi hold more (45% a card, 15% trapped, 30% a Ghoul, Zombie or Skeleton),
-  and some are locked (30%), with better treasure.
+  the rest are empty. Sarcophagi hold more (45% a card, 15% trapped, 30% the dead: usually a Rotten
+  Mummy, else a Ghoul or Zombie), and some are locked (30%), with better treasure.
 - **Night:** the whole graveyard is dark. About ten of its braziers burn from the start; the rest wait
   for a torch.
-- **The horde** (about 60: Skeletons, Zombies, a few Ghouls and Necromancers) gathers thicker toward
-  the middle and in the crypts; a few **strays** (Mugger Flies, a Gelatinous Cube, Slimes, Petty
-  Thieves) wander among them. Nothing starts within 12 tiles of the gate.
+- **The horde** (about 60: Skeletons, Zombies, Rotten Mummies, Death Cultists, a few Ghouls and
+  Necromancers) gathers thicker toward the middle and in the crypts; a few **strays** (Mugger Flies, a
+  Gelatinous Cube, Slimes, Grave Robbers) wander among them. Nothing starts within 12 tiles of the gate.
+- **Rotten Mummy** (greater undead): slow (move 2) and tough (5 hearts, armor 1). **Rotting Hand:** 2
+  dice and a Necro die, weapon 1; a 6 among them tries to give Nekrot. With no one in reach of a blow it
+  casts **Swirly Eyes** at a hero within 3 (a Psycho die; a hit drags them a tile nearer). Dry as
+  tinder, it catches fire two dice at a time.
+- **Grave dust:** whenever it loses a heart, each hero beside it rolls a d6, and on 3 or under Nekrot
+  tries to take them (then the roll to resist). Destroyed, it bursts: the dust reaches 2 tiles, and a
+  Poison and a Necro die strike every hero and living monster there (not the undead). Fire or Radiate
+  that hurts or destroys it keeps the dust down.
+- **Grave Robber:** a sicklier Petty Thief; may carry a Shovel (25%) and Thieves' Oil (40%).
+- **Death Cultist:** robed, masked and armed with a curved knife (Necro dice).
 - **The dead lie still:** every monster there sleeps until a hero comes within 6 tiles of it (or it's
   hurt), and only then takes turns. Woken, it stays awake.
 - The board draws only what's near the view, and the map panel shows the graveyard small: what the

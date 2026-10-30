@@ -102,6 +102,7 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
         PowerDice = character.PowerDice,
         Policy = character.Policy,
         Spells = [.. character.Spells],
+        Lingering = new Dictionary<Condition, int>(character.Lingering),
     };
 
     /// <summary>Rebuilds a character, dropping cards that no longer exist in the game's content.</summary>
@@ -137,7 +138,7 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
             file.Id, file.Name, file.Portrait, file.CreatedUtc, Math.Max(0, file.Xp), allocation,
             Math.Max(0, file.UnspentPoints), Known(file.Equipped), Known(file.Belt), Known(file.Backpack),
             Math.Max(0, file.Gold), Math.Max(0, file.RunsPlayed), Math.Max(0, file.Wins), file.IsCompanion, file.Appearance, file.GuildStanding, file.LawStanding, file.CowardStanding, file.HasCowardsCloak, file.PowerDice, file.Policy,
-            KnownSpells(file.Spells));
+            KnownSpells(file.Spells), file.Lingering);
 
         List<string> KnownSpells(IEnumerable<string> spellIds)
         {
@@ -210,6 +211,9 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
 
         /// <summary>Missing in files saved before Magic: none.</summary>
         public List<string> Spells { get; init; } = [];
+
+        /// <summary>Black Hearts and disease carried to the next run; missing in older files: none.</summary>
+        public Dictionary<Condition, int> Lingering { get; init; } = [];
 
         public bool HasCowardsCloak { get; init; }
     }

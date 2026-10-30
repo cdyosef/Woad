@@ -16,6 +16,7 @@ public enum Ailment
     BlackHeart,
     Burning,
     Stun,
+    Nekrot,
 }
 
 public static class Ailments
@@ -24,7 +25,7 @@ public static class Ailments
     public static readonly IReadOnlyList<Ailment> AidCures = [Ailment.Poison, Ailment.Acid, Ailment.Blind, Ailment.Shine, Ailment.Confused, Ailment.Buried];
 
     /// <summary>What Aid cures only with a Medicine Bag to hand.</summary>
-    public static readonly IReadOnlyList<Ailment> MedicineBagCures = [Ailment.Freeze, Ailment.BlackHeart, Ailment.Burning, Ailment.Stun];
+    public static readonly IReadOnlyList<Ailment> MedicineBagCures = [Ailment.Freeze, Ailment.BlackHeart, Ailment.Burning, Ailment.Stun, Ailment.Nekrot];
 
     public static readonly IReadOnlyList<Ailment> All = Enum.GetValues<Ailment>();
 
@@ -39,6 +40,7 @@ public static class Ailments
         Ailment.Buried => Condition.Buried,
         Ailment.Freeze => Condition.Freeze,
         Ailment.BlackHeart => Condition.BlackHeart,
+        Ailment.Nekrot => Condition.Nekrot,
         _ => null,
     };
 

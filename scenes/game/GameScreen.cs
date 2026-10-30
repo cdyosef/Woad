@@ -575,6 +575,34 @@ public partial class GameScreen : Control
                 await Pause(0.3);
                 break;
 
+            case InfectionRolled infection:
+                _trayShowsMovement = false;
+                await _dice.ShowRoll($"{NameOf(infection.HeroId)} resists {DieTypes.Label(infection.Disease)} ({infection.Needed}+)", new DiceRoll(infection.Faces), 0, newGroup: true);
+                _dice.ShowOutcome(infection.Resisted, infection.Resisted ? "RESISTED" : "INFECTED");
+                if (infection.Resisted)
+                {
+                    CalloutOver(infection.HeroId, "RESISTED!", Palette.Heal);
+                }
+
+                await Pause(0.3);
+                break;
+
+            case GraveDustBurst { Destroyed: true } burst:
+                CalloutOver(burst.MonsterId, "BURST!", DieTypes.Nekrot);
+                _board.Shake(4);
+                await Pause(0.3);
+                break;
+
+            case GraveDustBurst puff:
+                FloatOver(puff.MonsterId, "grave dust", DieTypes.Nekrot);
+                await Pause(0.2);
+                break;
+
+            case MonsterCast cast:
+                CalloutOver(cast.MonsterId, Content.GetSpell(cast.SpellId).Name.ToUpperInvariant() + "!", DieTypes.Tint(Content.GetSpell(cast.SpellId).DieType));
+                await Pause(0.3);
+                break;
+
             case RoseFromGrave risen:
                 _board.QueueRedraw();
                 CalloutOver(risen.MonsterId, "RISEN!", Palette.Danger);
@@ -659,7 +687,7 @@ public partial class GameScreen : Control
                 break;
 
             case BoonGained gained:
-                FloatOver(gained.HeroId, DieTypes.Name(gained.Boon), gained.Boon switch { Boon.ShiningLight => DieTypes.Tint(DieType.Radiate), Boon.Shadowbound => DieTypes.Tint(DieType.Shadow), _ => DieTypes.Tint(DieType.Ice) });
+                FloatOver(gained.HeroId, DieTypes.Name(gained.Boon), gained.Boon switch { Boon.ShiningLight => DieTypes.Tint(DieType.Radiate), Boon.Shadowbound => DieTypes.Tint(DieType.Shadow), Boon.ThievesOil => Palette.Loot, _ => DieTypes.Tint(DieType.Ice) });
                 await UpdateFigure(gained.HeroId, figure => SetBoon(figure, gained.Boon, true), 0.2);
                 break;
 

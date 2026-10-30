@@ -157,6 +157,20 @@ public sealed partial class GameSession
     /// <param name="plain">Plain dice whatever the monster's type (its banked Power Dice, its chain).</param>
     private (DiceRoll Roll, IReadOnlyList<DieType> Types, int PowerDice) RollMonsterDice(Monster monster, int dice, bool plain = false)
     {
+        (DiceRoll roll, IReadOnlyList<DieType> types, int power) = RollOwnDice(monster, dice, plain);
+        if (plain || monster.Definition.ExtraDice.Count == 0)
+        {
+            return (roll, types, power);
+        }
+
+        // Its extra typed dice go in after its own, before any Power Dice.
+        (int[] faces, DieType[] extra) = RollTypedDice([.. monster.Definition.ExtraDice.Select(die => (die.Type, die.Dice))]);
+        IReadOnlyList<DieType> own = types.Count > 0 ? types : [.. roll.Faces.Select(_ => DieType.Plain)];
+        return (new DiceRoll([.. roll.Faces.Take(dice), .. faces, .. roll.Faces.Skip(dice)]), [.. own.Take(dice), .. extra, .. own.Skip(dice)], power);
+    }
+
+    private (DiceRoll Roll, IReadOnlyList<DieType> Types, int PowerDice) RollOwnDice(Monster monster, int dice, bool plain)
+    {
         DieType type = plain ? DieType.Plain : monster.Definition.DieType ?? DieType.Plain;
         if (type is not (DieType.Plain or DieType.Star))
         {

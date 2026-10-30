@@ -204,6 +204,25 @@ public sealed record MonsterDefinition
     /// <summary>A Ghoul's miasma: every living creature starting its turn beside it is attacked with a Poison die.</summary>
     public bool Miasma { get; init; }
 
+    /// <summary>The disease its hits carry: a 6 among its dice tries to give it to a hero it hits (see <see cref="Infection"/>).</summary>
+    public Infection? Infects { get; init; }
+
+    /// <summary>Dry as tinder: catching fire, it takes a fire die more.</summary>
+    public bool Flammable { get; init; }
+
+    /// <summary>
+    /// Grave dust puffs off it whenever it loses a heart: each hero beside it rolls a d6, and on 3 or under
+    /// its disease tries to take them (and they roll to resist). Destroyed, it bursts over 2 tiles, the
+    /// dust and a Poison and a Necro die at everyone there. Not when fire or Radiate does it.
+    /// </summary>
+    public bool GraveDust { get; init; }
+
+    /// <summary>Typed dice it rolls on top of its own with every attack (a Rotten Mummy's Necro die).</summary>
+    public IReadOnlyList<TypedDie> ExtraDice { get; init; } = [];
+
+    /// <summary>A spell (by id) it casts at a hero in range when it can't strike anyone (a Rotten Mummy's Swirly Eyes).</summary>
+    public string? Spell { get; init; }
+
     public bool Boss { get; init; }
 
     /// <summary>A vault guardian: tougher than most, can't be shoved, but doesn't seal the exit.</summary>
@@ -222,6 +241,9 @@ public sealed record MonsterDefinition
 
     /// <summary>A special card it may drop besides its loot (the Iron Warden's Warden's Plate), or null.</summary>
     public RareDrop? RareDrop { get; init; }
+
+    /// <summary>Things it carries and drops when defeated, each on its own chance (a grave robber's shovel and oil).</summary>
+    public IReadOnlyList<RareDrop> Carries { get; init; } = [];
 }
 
 /// <summary>A special card a monster drops on defeat, with a percent chance, besides its usual loot.</summary>
@@ -230,4 +252,20 @@ public sealed record RareDrop
     public required string Card { get; init; }
 
     public int Chance { get; init; }
+}
+
+/// <summary>A disease a monster carries, and the d6 a hero needs to resist catching it (Thieves' Oil makes it 3).</summary>
+public sealed record Infection
+{
+    public required Model.Condition Disease { get; init; }
+
+    public int Resist { get; init; } = 6;
+}
+
+/// <summary>Dice of one type.</summary>
+public sealed record TypedDie
+{
+    public required Model.DieType Type { get; init; }
+
+    public int Dice { get; init; } = 1;
 }

@@ -181,6 +181,21 @@ public enum SpawnCause
 /// <summary>Opening the grave at <paramref name="Grave"/> woke the dead in it: <paramref name="MonsterId"/> climbed out beside it (its <see cref="MonsterSpawned"/> comes just before).</summary>
 public sealed record RoseFromGrave(int MonsterId, string RoomId, GridPosition Grave, int OpenerId) : GameEvent;
 
+/// <summary>
+/// A disease tried to take hold of a hero: they rolled <paramref name="Faces"/> (a second with a Medicine
+/// Bag in hand) needing <paramref name="Needed"/>; resisted, or caught (its <see cref="ConditionChanged"/> follows).
+/// </summary>
+public sealed record InfectionRolled(int HeroId, Condition Disease, IReadOnlyList<int> Faces, int Needed, bool Resisted) : GameEvent;
+
+/// <summary>
+/// Grave dust puffed off a monster as it lost a heart, or burst from it as it was <paramref name="Destroyed"/>
+/// (its Poison and Necro dice, then any <see cref="InfectionRolled"/> for those near, follow).
+/// </summary>
+public sealed record GraveDustBurst(int MonsterId, string RoomId, GridPosition Position, bool Destroyed) : GameEvent;
+
+/// <summary>A monster cast its spell at a hero (its <see cref="AttackRolled"/> follows).</summary>
+public sealed record MonsterCast(int MonsterId, string SpellId, int TargetId) : GameEvent;
+
 /// <summary>A monster lying still noticed a hero nearby (or was hurt) and stirs: from now on it takes its turns.</summary>
 public sealed record MonsterStirred(int MonsterId) : GameEvent;
 

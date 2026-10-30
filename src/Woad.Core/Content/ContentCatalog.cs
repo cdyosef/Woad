@@ -76,6 +76,11 @@ public sealed class ContentCatalog
             Validate(cards, monsters, themes, errors);
             ValidateSpells(spells, errors);
             HashSet<string> spellIds = [.. spells.Select(spell => spell.Id)];
+            foreach (MonsterDefinition monster in monsters.Where(monster => monster.Spell is { } spell && !spellIds.Contains(spell)))
+            {
+                errors.Add($"Monster '{monster.Id}': it casts '{monster.Spell}', which isn't a spell.");
+            }
+
             foreach (CardDefinition card in cards.Where(card => card.Teaches is { } spell && !spellIds.Contains(spell)))
             {
                 errors.Add($"Card '{card.Id}': it teaches '{card.Teaches}', which isn't a spell.");
@@ -204,6 +209,11 @@ public sealed class ContentCatalog
 
         foreach (MonsterDefinition monster in monsters)
         {
+            if (monster.Carries.Any(carried => !cardIds.Contains(carried.Card) || carried.Chance is < 1 or > 100))
+            {
+                errors.Add($"Monster '{monster.Id}' carries an unknown card, or one with a chance outside 1-100.");
+            }
+
             if (monster.RareDrop is { } rare && (!cardIds.Contains(rare.Card) || rare.Chance is < 1 or > 100))
             {
                 errors.Add($"Monster '{monster.Id}' rare drop needs a known card and a chance from 1 to 100.");
@@ -340,7 +350,7 @@ public sealed class ContentCatalog
                 errors.Add($"{name} effect needs an amount of at least 1.");
             }
 
-            if ((effect.Kind is CardEffectKind.Cure or CardEffectKind.Holy) != (effect.Cures is not null))
+            if ((effect.Kind is CardEffectKind.Cure or CardEffectKind.Holy) != (effect.Cures is not null || effect.CuresDisease))
             {
                 errors.Add($"{name} effect: a cure needs something to cure, and only a cure has one.");
             }

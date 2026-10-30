@@ -304,8 +304,7 @@ public sealed partial class GameSession
         }
         else
         {
-            hero.Hearts = Math.Max(0, hero.Hearts - GameRules.DamagePerHit);
-            events.Add(new Damaged(hero.Id, GameRules.DamagePerHit, hero.Hearts));
+            LoseHearts(hero, GameRules.DamagePerHit, events);
             if (hero.Hearts == 0)
             {
                 KeelOver(room, hero, bane, events);

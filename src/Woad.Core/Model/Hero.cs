@@ -105,6 +105,12 @@ public sealed class Hero
     /// <summary>Rounds left of Shining Light: they give off light, and gain <see cref="ShiningDefense"/> and a Search die.</summary>
     public int ShiningRounds { get; internal set; }
 
+    /// <summary>Rounds of Thieves' Oil left (see <see cref="Boon.ThievesOil"/>).</summary>
+    public int ThievesOilRounds { get; internal set; }
+
+    /// <summary>A Medicine Bag in hand: a second roll to resist catching a disease.</summary>
+    public bool HoldsMedicineBag => EquippedCards.Any(card => card.Definition.MedicineBag);
+
     /// <summary>Shining Light's Defense: added to every defense while it lasts.</summary>
     public int ShiningDefense { get; internal set; }
 

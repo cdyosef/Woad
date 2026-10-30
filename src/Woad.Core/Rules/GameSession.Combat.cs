@@ -309,7 +309,8 @@ public sealed partial class GameSession
                 }
 
                 // On a hit, the typed dice take hold, and a stunning weapon's sixes stun.
-                if (DamageMonster(hero, room, monster, total, attack.Source, events, ranged: monster.NearestTile(hero.Position).ChebyshevDistanceTo(hero.Position) > 1, crush: attack.Weapon?.Crush ?? false) > 0)
+                if (DamageMonster(hero, room, monster, total, attack.Source, events, ranged: monster.NearestTile(hero.Position).ChebyshevDistanceTo(hero.Position) > 1, crush: attack.Weapon?.Crush ?? false,
+                        purifying: attack.DieTypes.Any(type => type is DieType.Fire or DieType.Radiate)) > 0)
                 {
                     hit.Add(targetId);
                     LayTypedDice(room, monster, laid, hero.Id, hero.Position, hero, events);
@@ -354,7 +355,8 @@ public sealed partial class GameSession
     /// <param name="ranged">From a distance: a prone monster rolls an extra defense die.</param>
     /// <param name="crush">A crushing blow (the War Hammer): a hit knocks a shelled monster onto its back, and bones it breaks stay broken.</param>
     /// <returns>The damage it did: 1 for a hit, 0 for a miss.</returns>
-    private int DamageMonster(Hero? attacker, Room room, Monster monster, int attackTotal, DamageSource source, List<GameEvent> events, bool ranged = false, bool crush = false)
+    /// <param name="purifying">Fire or Radiate went into it: no grave dust puffs off.</param>
+    private int DamageMonster(Hero? attacker, Room room, Monster monster, int attackTotal, DamageSource source, List<GameEvent> events, bool ranged = false, bool crush = false, bool purifying = false)
     {
         // A stunned, poisoned or glowing monster is easier to hit; a collapsed heap of bones has no defense at all.
         attackTotal += monster.Stun.AttackBonus + Exposure(monster.Conditions) - (room.PlantsFor(monster.Position, heroes: false) ? 1 : 0);
@@ -371,6 +373,11 @@ public sealed partial class GameSession
         if (damage > 0)
         {
             LetGo(monster);
+        }
+
+        if (damage > 0 && monster.Definition.GraveDust && !purifying && source != DamageSource.Fire)
+        {
+            GraveDust(room, monster, destroyed: monster.Hearts == 0, events);
         }
 
         if (damage > 0 && monster.Hearts == 0)
@@ -434,6 +441,11 @@ public sealed partial class GameSession
                 var card = new CardInstance(State.NextId(), State.LootDeck.Draw(room.Floor), broughtInByHeroId: null);
                 DropLoot(room, SafeTile(room, monster.Position), card, events);
             }
+        }
+
+        foreach (RareDrop carried in definition.Carries.Where(carried => _random.Loot.NextInt(0, 100) < carried.Chance))
+        {
+            DropLoot(room, SafeTile(room, monster.Position), new CardInstance(State.NextId(), Content.GetCard(carried.Card), broughtInByHeroId: null), events);
         }
 
         if (definition.RareDrop is { } rare && _random.Loot.NextInt(0, 100) < rare.Chance)
@@ -582,7 +594,9 @@ public sealed partial class GameSession
         foreach (Hero hero in targets.Where(hero => hero.IsActive))
         {
             Thaw(hero.Conditions, hero.Id, types.Count(type => type == DieType.Fire), events);
-            int dealt = DamageHero(room, hero, total, MonsterBane(monster), monster.Id, events, ranged: hero.Position.ChebyshevDistanceTo(monster.NearestTile(hero.Position)) > 1);
+            // Thieves' Oil turns Necro blows aside.
+            int against = total - (hero.ThievesOilRounds > 0 && types.Contains(DieType.Necro) ? GameRules.OilNecroDefense : 0);
+            int dealt = DamageHero(room, hero, against, MonsterBane(monster), monster.Id, events, ranged: hero.Position.ChebyshevDistanceTo(monster.NearestTile(hero.Position)) > 1);
             if (dealt > 0 && monster.Definition.Mugger)
             {
                 Mug(monster, hero, events);
@@ -603,6 +617,10 @@ public sealed partial class GameSession
             {
                 LayTypedDice(room, hero, sixes, monster.Id, monster.NearestTile(hero.Position), events);
                 Stun(hero, powerful: false, stuns, events);
+                if (monster.Definition.Infects is { } infection && roll.Faces.Contains(GameRules.PowerDieFace))
+                {
+                    Infect(hero, infection, monster.Id, events);
+                }
             }
 
             // A heavy blow knocks the hero back a tile, and with a mighty one every 6 knocks them a tile further, hit or miss.
@@ -689,8 +707,7 @@ public sealed partial class GameSession
             return damage;
         }
 
-        hero.Hearts = Math.Max(0, hero.Hearts - damage);
-        events.Add(new Damaged(hero.Id, damage, hero.Hearts));
+        LoseHearts(hero, damage, events);
 
         if (hero.Hearts == 0)
         {

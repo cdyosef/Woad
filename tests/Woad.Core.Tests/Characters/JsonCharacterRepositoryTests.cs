@@ -24,6 +24,36 @@ public sealed class JsonCharacterRepositoryTests : IDisposable
         Character.Create(name, "moss", new StatAllocation { Hearts = 1, Luck = 1 }, Content, new DateTimeOffset(2026, 10, 10, 12, minutes, 0, TimeSpan.Zero));
 
     [Fact]
+    public async Task BlackHeartsAndDiseaseAreSavedUntilCured()
+    {
+        Character character = NewCharacter("Morgan");
+        character.ApplyRunResult(new Woad.Core.Rules.HeroRunResult
+        {
+            HeroId = 1,
+            CharacterId = character.Id,
+            Name = character.Name,
+            Seat = 0,
+            Portrait = character.Portrait,
+            Status = HeroStatus.Escaped,
+            Won = false,
+            Kills = 0,
+            Xp = 0,
+            Gold = 0,
+            DeepestFloor = 1,
+            Equipped = [.. character.Equipped],
+            Belt = [.. character.Belt],
+            Backpack = [.. character.Backpack],
+            Lingering = new Dictionary<Condition, int> { [Condition.Nekrot] = 1, [Condition.BlackHeart] = 2 },
+        });
+        await Repository().SaveAsync(character);
+
+        Character loaded = Assert.Single((await Repository().LoadAllAsync()).Characters);
+
+        Assert.Equal(new Dictionary<Condition, int> { [Condition.Nekrot] = 1, [Condition.BlackHeart] = 2 }, loaded.Lingering);
+        Assert.Equal(loaded.Lingering, loaded.ToHeroSetup().Lingering);
+    }
+
+    [Fact]
     public async Task CompanionsStayCompanionsAndOlderFilesLoadAsHeroes()
     {
         Character companion = Character.Create("Pip", "bone", StatAllocation.None, Content, DateTimeOffset.UnixEpoch, isCompanion: true);

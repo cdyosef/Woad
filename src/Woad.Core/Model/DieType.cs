@@ -62,6 +62,9 @@ public enum Boon
 
     /// <summary>Shadowbind's: monsters can't see them.</summary>
     Shadowbound,
+
+    /// <summary>Thieves' Oil: disease is resisted on a 3 or more, and Necro attacks hit them 2 less.</summary>
+    ThievesOil,
 }
 
 /// <summary>Tokens the typed dice leave on a hero or monster (fire and stun keep their own).</summary>
@@ -100,6 +103,13 @@ public enum Condition
 
     /// <summary>-1 to their attacks for each, and they can't see past the tiles beside them, until cured.</summary>
     Blind,
+
+    /// <summary>
+    /// A disease (no stacks): every heart they lose becomes a Black Heart. It never wears off, not even
+    /// between runs, until cured (Modern Medicine, Holy Water, Aid with a Medicine Bag). A hero who dies
+    /// with it rises as a zombie on the monsters' side.
+    /// </summary>
+    Nekrot,
 }
 
 /// <summary>The tokens on one hero or monster.</summary>
@@ -131,4 +141,10 @@ public sealed class Conditions
     }
 
     internal void Clear(Condition condition) => _counts.Remove(condition);
+
+    /// <summary>The diseases: caught on a 6 and resisted with a roll, and cured only by medicine.</summary>
+    public static IReadOnlyList<Condition> Diseases { get; } = [Condition.Nekrot];
+
+    /// <summary>What a hero carries from one run to the next until it's cured.</summary>
+    public static IReadOnlyList<Condition> Lingering { get; } = [Condition.BlackHeart, Condition.Nekrot];
 }

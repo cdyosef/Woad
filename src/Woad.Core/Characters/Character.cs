@@ -39,7 +39,8 @@ public sealed class Character
         bool hasCowardsCloak = false,
         int powerDice = 0,
         CompanionPolicy? policy = null,
-        IEnumerable<string>? spells = null)
+        IEnumerable<string>? spells = null,
+        IReadOnlyDictionary<Condition, int>? lingering = null)
     {
         Id = id;
         Name = name;
@@ -63,7 +64,13 @@ public sealed class Character
         PowerDice = Math.Clamp(powerDice, 0, GameRules.MaxBankedPowerDice + allocation.Magic);
         Policy = policy ?? CompanionPolicy.Default;
         _spells = [.. spells ?? []];
+        _lingering = new Dictionary<Condition, int>((lingering ?? new Dictionary<Condition, int>()).Where(entry => entry.Value > 0 && Conditions.Lingering.Contains(entry.Key)));
     }
+
+    private readonly Dictionary<Condition, int> _lingering;
+
+    /// <summary>What the character carries from run to run until it's cured: Black Hearts and disease.</summary>
+    public IReadOnlyDictionary<Condition, int> Lingering => _lingering;
 
     public Guid Id { get; }
 
@@ -357,6 +364,12 @@ public sealed class Character
         }
 
         Policy = result.Policy ?? Policy;
+        _lingering.Clear();
+        foreach ((Condition condition, int stacks) in result.Lingering)
+        {
+            _lingering[condition] = stacks;
+        }
+
         Gold += result.Gold;
         GuildStanding += result.GuildStandingChange;
         LawStanding += result.LawStandingChange;
@@ -392,7 +405,7 @@ public sealed class Character
     /// <summary>The hero this character plays as in a run, carrying everything they own.</summary>
     /// <param name="ownerSeat">For a companion, the seat of the player it belongs to.</param>
     public HeroSetup ToHeroSetup(int? ownerSeat = null) => new(Name, BaseStats, [.. _equipped, .. _belt, .. _backpack], Id, Portrait, ownerSeat, Appearance, GuildStanding: GuildStanding, PowerDice: PowerDice, Skills: Allocation.Skills,
-        Allocation: Allocation, Xp: Xp, UnspentPoints: UnspentPoints, Policy: Policy, Spells: [.. _spells]);
+        Allocation: Allocation, Xp: Xp, UnspentPoints: UnspentPoints, Policy: Policy, Spells: [.. _spells], Lingering: _lingering);
 
     /// <summary>Puts a card where a new hero would: an empty matching slot, then the belt, then the backpack.</summary>
     private void Place(string key, ContentCatalog content)

@@ -76,6 +76,9 @@ public enum CardEffectKind
     /// everything it soaked up on everyone within <see cref="CardEffect.AreaRadius"/>.
     /// </summary>
     SinEater,
+
+    /// <summary>Thieves' Oil, drunk: for <see cref="CardEffect.Amount"/> rounds, disease is resisted on a 3 or more and Necro attacks hit 2 less.</summary>
+    ThievesOil,
 }
 
 /// <summary>What happens when a card is used.</summary>
@@ -94,8 +97,11 @@ public sealed record CardEffect
     /// <summary>Attack only: stacks of Freeze laid on every target, hit or miss (the Frost Wand's).</summary>
     public int Chill { get; init; }
 
-    /// <summary>Cure only: the tokens it clears.</summary>
+    /// <summary>Cure only: the tokens it clears, every stack.</summary>
     public Model.Condition? Cures { get; init; }
+
+    /// <summary>Cure (and Holy Water): it clears every disease too (Modern Medicine).</summary>
+    public bool CuresDisease { get; init; }
 
     /// <summary>Attack only: what the dice are made of (fire, ice...), or null for plain Star dice.</summary>
     public Model.DieType? DieType { get; init; }

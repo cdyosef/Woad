@@ -293,18 +293,18 @@ public sealed partial class GameSession
     /// <summary>A heart lost to poison, with no defense: the last one leaves them Keeling Over.</summary>
     private void LoseHeart(Room room, Hero hero, string bane, List<GameEvent> events)
     {
-        hero.Hearts = Math.Max(0, hero.Hearts - 1);
-        events.Add(new Damaged(hero.Id, 1, hero.Hearts));
+        LoseHearts(hero, 1, events);
         if (hero.Hearts == 0)
         {
             KeelOver(room, hero, bane, events);
         }
     }
 
-    /// <summary>A cure (Eye Drops, Holy Water) clears what it cures from whoever uses it.</summary>
+    /// <summary>A cure (Eye Drops, Holy Water, Modern Medicine) clears every stack of what it cures from whoever uses it.</summary>
     private static void Cure(Hero hero, CardEffect effect, List<GameEvent> events)
     {
-        if (effect.Cures is { } condition && hero.Conditions.Has(condition))
+        IEnumerable<Condition> cured = effect.Cures is { } named ? [named] : [];
+        foreach (Condition condition in cured.Concat(effect.CuresDisease ? Conditions.Diseases : []).Where(hero.Conditions.Has))
         {
             hero.Conditions.Clear(condition);
             events.Add(new ConditionChanged(hero.Id, condition, 0, hero.Id));

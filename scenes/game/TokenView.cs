@@ -582,7 +582,20 @@ public partial class TokenView : Node2D
 
         // A pip for each kind of token down the left side, the count beside it.
         float y = 5;
-        foreach ((Condition condition, int count) in _conditions.Where(entry => entry.Key is not Condition.BlackHeart).OrderBy(entry => entry.Key))
+        // Nekrot: the undead skull, green-eyed and fanged, in the top right corner.
+        if (Count(Condition.Nekrot) > 0)
+        {
+            var skull = new Vector2(BoardView.TileSize - 6, 6);
+            DrawCircle(skull, 4.2f, Palette.Ink, antialiased: true);
+            DrawCircle(skull, 3.4f, new Color("e8e2d0"), antialiased: true);
+            DrawRect(new Rect2(skull + new Vector2(-2, 2), new Vector2(4, 2.5f)), new Color("e8e2d0"));
+            DrawRect(new Rect2(skull + new Vector2(-2, -1), new Vector2(1.5f, 1.5f)), DieTypes.Nekrot);
+            DrawRect(new Rect2(skull + new Vector2(0.5f, -1), new Vector2(1.5f, 1.5f)), DieTypes.Nekrot);
+            DrawLine(skull + new Vector2(-1, 3), skull + new Vector2(-1, 4.5f), Palette.Ink, 0.7f);
+            DrawLine(skull + new Vector2(1, 3), skull + new Vector2(1, 4.5f), Palette.Ink, 0.7f);
+        }
+
+        foreach ((Condition condition, int count) in _conditions.Where(entry => entry.Key is not (Condition.BlackHeart or Condition.Nekrot)).OrderBy(entry => entry.Key))
         {
             var at = new Vector2(4, y);
             DrawCircle(at, 3.2f, Palette.Ink, antialiased: true);

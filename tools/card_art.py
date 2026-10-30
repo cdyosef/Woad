@@ -368,6 +368,25 @@ def draw(item):
         c.circle(15, 19, 3, GOLD[1])
         c.dot(14, 18, GOLD[0])
         c.line(11, 28, 11, 30, GREEN[0], 1)
+    elif i == "modern_medicine":
+        # A stoppered bottle with a red cross on its label, a pill beside it.
+        c.rect(12, 4, 8, 4, WOOD[1])
+        c.rect(13, 8, 6, 3, WHITE[1])
+        c.poly([(9, 12), (23, 12), (24, 27), (8, 27)], BLUE[0])
+        c.rect(10, 15, 12, 9, WHITE[0])
+        c.rect(15, 16, 2, 7, RED[1])
+        c.rect(12, 18, 8, 3, RED[1])
+        c.circle(26, 26, 3, RED[0])
+    elif i == "thieves_oil":
+        # A little dark flask of oil, cloves and a sprig beside it.
+        c.rect(14, 3, 4, 5, LEATHER[1])
+        c.poly([(11, 9), (21, 9), (24, 18), (21, 28), (11, 28), (8, 18)], "#6a4a1a")
+        c.poly([(12, 18), (20, 18), (21, 27), (11, 27)], "#c89a3a")
+        c.dot(12, 12, "#f0d080")
+        c.line(24, 26, 29, 20, GREEN[1], 1)
+        c.dot(29, 19, GREEN[0])
+        c.dot(5, 27, LEATHER[2])
+        c.dot(7, 29, LEATHER[2])
     elif i == "lockpicks":
         # A ring with two picks hanging from it, hooked and raked at the tips.
         c.ring(9, 8, 5, IRON[1], 1.5)
@@ -877,7 +896,7 @@ ITEMS = [
     "leather_armor", "studded_armor", "chain_mail", "wardens_plate", "storm_mail", "dash_boots",
     "flame_scroll", "frost_scroll", "venom_scroll", "acid_scroll", "grave_scroll", "gale_scroll", "sun_scroll",
     "bloom_scroll", "quake_scroll", "spark_scroll", "mind_scroll", "shadow_scroll", "frost_wand", "boomerang",
-    "torch", "lockpicks", "burgling_tools", "cutpurse_knife", "sticky_gloves", "bomb", "autosmith_hammer", "eye_drops", "holy_water", "health_potion",
+    "torch", "lockpicks", "modern_medicine", "thieves_oil", "burgling_tools", "cutpurse_knife", "sticky_gloves", "bomb", "autosmith_hammer", "eye_drops", "holy_water", "health_potion",
     "antidote", "strong_base", "smelling_salts", "bandages", "medicine_bag", "shovel", "sineater_doll",
     "loose_coins", "coin_pouch", "emerald", "pearl", "golden_idol",
 ]

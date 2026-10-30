@@ -13,7 +13,7 @@
     "horde": 60,
     "strays": 6,
     "graves": { "count": 140, "treasure": 30, "trap": 12, "risen": 18, "risers": ["skeleton", "zombie"] },
-    "sarcophagi": { "count": 26, "treasure": 45, "trap": 15, "risen": 30, "locked": 30, "risers": ["ghoul", "zombie", "skeleton"] },
+    "sarcophagi": { "count": 26, "treasure": 45, "trap": 15, "risen": 30, "locked": 30, "risers": ["rotten_mummy", "rotten_mummy", "ghoul", "zombie"] },
     "braziers": 28,
     "litBraziers": 10,
     "wakeRange": 6
@@ -25,15 +25,19 @@
     { "monster": "zombie", "weight": 8, "horde": true },
     { "monster": "ghoul", "weight": 1, "horde": true },
     { "monster": "necromancer", "weight": 1, "horde": true },
+    { "monster": "rotten_mummy", "weight": 2, "horde": true },
+    { "monster": "death_cultist", "weight": 2, "horde": true },
     { "monster": "mugger_fly", "weight": 2 },
     { "monster": "gelatinous_cube", "weight": 1 },
     { "monster": "slime", "weight": 2 },
-    { "monster": "petty_thief", "weight": 2 }
+    { "monster": "grave_robber", "weight": 3 }
   ],
 
   "lootDeck": [
     { "card": "health_potion", "copies": 4 },
     { "card": "holy_water", "copies": 3 },
+    { "card": "modern_medicine", "copies": 2 },
+    { "card": "thieves_oil", "copies": 2 },
     { "card": "bandages", "copies": 2 },
     { "card": "antidote" },
     { "card": "smelling_salts" },

@@ -56,6 +56,15 @@ public static class GameRules
     /// <summary>Aid cures an ailment at this, plus one for each of its stacks.</summary>
     public const int AidDifficulty = 10;
 
+    /// <summary>Curing Nekrot with Aid (and a Medicine Bag) is harder.</summary>
+    public const int NekrotAidDifficulty = 14;
+
+    /// <summary>With Thieves' Oil, a disease is resisted on this or more.</summary>
+    public const int OiledResist = 3;
+
+    /// <summary>With Thieves' Oil, Necro attacks hit this much less.</summary>
+    public const int OilNecroDefense = 2;
+
     /// <summary>The most stacks of ailments a Sineater Doll can hold.</summary>
     public const int DollCapacity = 10;
 

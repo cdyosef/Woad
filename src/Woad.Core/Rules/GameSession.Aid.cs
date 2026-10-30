@@ -121,13 +121,13 @@ public sealed partial class GameSession
         return null;
     }
 
-    /// <summary>The ailments on a hero Aid can cure (with a Medicine Bag or not), and the total each needs: 10 plus its stacks.</summary>
+    /// <summary>The ailments on a hero Aid can treat (with a Medicine Bag or not), and the total each needs: 10 (Nekrot 14).</summary>
     private static IReadOnlyList<(Ailment Ailment, int Difficulty)> Curable(Hero patient, bool bag) =>
         [
             .. Ailments.AidCures.Concat(bag ? Ailments.MedicineBagCures : [])
                 .Select(ailment => (Ailment: ailment, Stacks: ailment.Stacks(patient.Conditions, patient.FireDice, patient.Stun)))
                 .Where(found => found.Stacks > 0)
-                .Select(found => (found.Ailment, GameRules.AidDifficulty + found.Stacks)),
+                .Select(found => (found.Ailment, found.Ailment == Ailment.Nekrot ? GameRules.NekrotAidDifficulty : GameRules.AidDifficulty)),
         ];
 
     /// <summary>
@@ -185,7 +185,9 @@ public sealed partial class GameSession
             return;
         }
 
-        RemoveAilment(patient, check.Cure!.Value, int.MaxValue, hero.Id, events);
+        // One stack a success; a Shovel in hand digs two off.
+        Ailment cure = check.Cure!.Value;
+        RemoveAilment(patient, cure, cure == Ailment.Buried && hero.HoldsShovel ? 2 : 1, hero.Id, events);
     }
 
     /// <summary>Takes up to <paramref name="stacks"/> of an ailment off a hero; returns how many came off.</summary>

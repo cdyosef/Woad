@@ -161,8 +161,13 @@ public partial class CharacterListScreen : MenuScreen
                $"Equipped: {CardNames(character.Equipped)}\n" +
                $"Belt: {CardNames(character.Belt)}\n" +
                $"Backpack: {CardNames(character.Backpack)}\n\n" +
-               $"Gold {character.Gold}   Runs {character.RunsPlayed}   Wins {character.Wins}";
+               $"Gold {character.Gold}   Runs {character.RunsPlayed}   Wins {character.Wins}" + Afflictions(character);
     }
+
+    /// <summary>What they carry from run to run until it's cured: Black Hearts and disease.</summary>
+    private static string Afflictions(Character character) =>
+        character.Lingering.Count == 0 ? ""
+            : "\n\nAfflicted: " + string.Join(", ", character.Lingering.Select(entry => DieTypes.Describe(entry.Key, entry.Value))) + ". Cure them with Holy Water or Modern Medicine.";
 
     private string CardNames(IReadOnlyList<string> cardIds) =>
         cardIds.Count == 0 ? "nothing" : string.Join(", ", cardIds.Select(id => Content.GetCard(id).Name));

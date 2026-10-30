@@ -8,10 +8,14 @@ public static class DieTypes
 {
     public static string Name(DieType type) => type.ToString();
 
+    /// <summary>Nekrot's sickly green: the glow in the undead skull's eyes.</summary>
+    public static readonly Color Nekrot = new("60ff80");
+
     public static string Name(Boon boon) => boon switch
     {
         Boon.ShiningLight => "Shining Light",
         Boon.Shadowbound => "Shadowbound",
+        Boon.ThievesOil => "Thieves' Oil",
         _ => "Snowshoes",
     };
 
@@ -63,6 +67,7 @@ public static class DieTypes
         Condition.Buried => Tint(DieType.Earth),
         Condition.Confused => Tint(DieType.Psycho),
         Condition.Blind => Tint(DieType.Shadow),
+        Condition.Nekrot => Nekrot,
         _ => Palette.Text,
     };
 
@@ -85,6 +90,7 @@ public static class DieTypes
         Condition.Buried => "BURIED!",
         Condition.Confused => "CONFUSED!",
         Condition.Blind => "BLINDED!",
+        Condition.Nekrot => "NEKROT!",
         _ => "!",
     };
 
@@ -100,6 +106,7 @@ public static class DieTypes
         Condition.Buried => $"buried ({count}: 3 Rumble each to dig out)",
         Condition.Confused => $"confused ({count})",
         Condition.Blind => $"blind ({count}: -{count} to attacks)",
+        Condition.Nekrot => "Nekrot: every heart lost turns black, run after run, until cured",
         _ => condition.ToString(),
     };
 }
