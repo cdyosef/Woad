@@ -51,6 +51,26 @@ public sealed class CardInstance
     /// </summary>
     public int? BroughtInByHeroId { get; private set; }
 
+    private readonly Dictionary<Ailment, int> _soaked = [];
+
+    /// <summary>What a Sineater Doll holds: stacks of each ailment it has soaked up.</summary>
+    public IReadOnlyDictionary<Ailment, int> Soaked => _soaked;
+
+    public int SoakedStacks => _soaked.Values.Sum();
+
+    /// <summary>Soaks stacks of an ailment into the doll; null empties it.</summary>
+    internal void Soak(Ailment? ailment, int stacks)
+    {
+        if (ailment is not { } soaked)
+        {
+            _soaked.Clear();
+        }
+        else if (stacks > 0)
+        {
+            _soaked[soaked] = _soaked.GetValueOrDefault(soaked) + stacks;
+        }
+    }
+
     /// <summary>Gathers another stack of the same card into this one.</summary>
     internal void Absorb(CardInstance other)
     {

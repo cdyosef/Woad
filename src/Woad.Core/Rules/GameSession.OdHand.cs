@@ -294,9 +294,10 @@ public sealed partial class GameSession
     {
         Hero hero = ActiveHero;
         int tools = command.UseTools && IsLock(check.Kind) ? ToolsBonusLeft : 0;
-        int bonus = tools - RollPenalty(hero.Conditions) + (check.Kind == OdHandCheckKind.Learn ? Math.Max(0, hero.EffectiveStats.Magic) : 0);
-        // Lockpicks' own dice on a lock; held torches' on a search.
-        int toolDice = (tools > 0 ? Math.Max(0, hero.EffectiveStats.ToolDice) : 0) + (check.Kind == OdHandCheckKind.Search ? hero.TorchesHeld + (hero.ShiningRounds > 0 ? 1 : 0) : 0);
+        (bool bag, int aidDice) = AidKit(hero, command, check, events);
+        int bonus = tools + (bag ? 1 : 0) - RollPenalty(hero.Conditions) + (check.Kind == OdHandCheckKind.Learn ? Math.Max(0, hero.EffectiveStats.Magic) : 0);
+        // Lockpicks' own dice on a lock; held torches' on a search; a Medicine Bag's, Bandages' and a Shovel's on Aid.
+        int toolDice = (tools > 0 ? Math.Max(0, hero.EffectiveStats.ToolDice) : 0) + (check.Kind == OdHandCheckKind.Search ? hero.TorchesHeld + (hero.ShiningRounds > 0 ? 1 : 0) : 0) + aidDice;
         Turn.OdHandDiceUsed += dice;
         Turn.ToolsUsed |= tools > 0;
         SpendBankedPowerDice(hero, command.PowerDice, events);
@@ -310,7 +311,7 @@ public sealed partial class GameSession
             events.Add(new CritRolled(hero.Id, crits));
         }
 
-        Turn.PendingRoll = new PendingRoll(hero.Id, roll, bonus, [], DamageSource.Weapon, check) { NonPowerDice = dice + toolDice, UsedTools = tools > 0 };
+        Turn.PendingRoll = new PendingRoll(hero.Id, roll, bonus, [], DamageSource.Weapon, check) { NonPowerDice = dice + toolDice, UsedTools = tools > 0, UsedMedicineBag = bag };
         EarnPowerDice(hero, Sixes(rolled.Faces), events);
     }
 
@@ -451,8 +452,8 @@ public sealed partial class GameSession
                 ResolveRouse(hero, roll, check, events);
                 break;
 
-            case OdHandCheckKind.Tend:
-                ResolveTend(hero, State.GetHero(check.TargetId), success, events);
+            case OdHandCheckKind.Cure:
+                ResolveCure(hero, roll, check, success, events);
                 break;
 
             case OdHandCheckKind.Learn:

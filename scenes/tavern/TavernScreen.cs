@@ -129,6 +129,14 @@ public partial class TavernScreen : Control
     internal Character Payer => _payer;
 
     /// <summary>A button in the talk panel's list, by its text (the first that starts with it).</summary>
+    /// <summary>The Buy button on the merchant's row for a ware, by its name.</summary>
+    internal Button? BuyButton(string ware) =>
+        _list.GetChildren().OfType<HBoxContainer>()
+            .Where(line => line.GetChildren().OfType<Label>().FirstOrDefault()?.Text.StartsWith($"{ware},", StringComparison.Ordinal) == true
+                || line.GetChildren().OfType<Label>().FirstOrDefault()?.Text.StartsWith($"{ware} x", StringComparison.Ordinal) == true)
+            .SelectMany(line => line.GetChildren().OfType<Button>())
+            .FirstOrDefault(button => button.Text == "Buy");
+
     internal Button? ListButton(string text, int row = -1) =>
         _list.GetChildren().OfType<HBoxContainer>()
             .Where((_, index) => row < 0 || index == row)

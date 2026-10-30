@@ -19,26 +19,11 @@ namespace Woad.Core.Rules;
 /// </summary>
 public sealed partial class GameSession
 {
-    /// <summary>Why the active hero can't rouse the hero Keeling Over, or null.</summary>
-    public string? CheckRouse(int targetId) => CheckOdHandStart() ?? FindKeeler(targetId, out _);
-
-    /// <summary>Heroes Keeling Over the active hero could rouse right now.</summary>
+    /// <summary>Heroes Keeling Over the active hero could rouse with Aid right now.</summary>
     public IReadOnlyList<Hero> GetRousableAllies() =>
         State.Turn is null || State.ActiveHero is not { IsActive: true }
             ? []
-            : State.HeroesIn(ActiveRoom).Where(other => other.IsKeelingOver && CheckRouse(other.Id) is null).ToList();
-
-    private string? Handle(Rouse command, List<GameEvent> events)
-    {
-        OdHandCheck? check = null;
-        if ((CheckOdHandCommand(command, out int dice) ?? FindKeeler(command.TargetId, out check)) is { } error)
-        {
-            return error;
-        }
-
-        RollOdHand(command, dice, check!, events);
-        return null;
-    }
+            : State.HeroesIn(ActiveRoom).Where(other => other.IsKeelingOver && CheckAid(other.Id) is null).ToList();
 
     private string? FindKeeler(int targetId, out OdHandCheck? check)
     {
@@ -69,6 +54,7 @@ public sealed partial class GameSession
 
         int life = Math.Min(roll.Total / GameRules.RousePerMark, GameRules.MarksToRise - keeler.LifeMarks);
         int doom = roll.Roll.Faces.Count(face => face == GameRules.DeathFace);
+        SpillMedicineBag(hero, roll, life > 0, events);
         keeler.LifeMarks += life;
         keeler.DoomDiceOwed += doom;
         events.Add(new HeroRoused(keeler.Id, hero.Id, life, doom, keeler.LifeMarks, keeler.DoomDiceOwed));

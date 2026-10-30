@@ -123,9 +123,21 @@ public sealed partial class GameSession
     private bool ConditionsAtTurnStart(Hero hero, List<GameEvent> events)
     {
         Room room = State.RoomOf(hero);
+        Miasma(room, hero, events);
+        if (!hero.IsActive)
+        {
+            return false;
+        }
+
         if (hero.Conditions.Has(Condition.Freeze) && FiresBeside(room, hero.Id, [hero.Position]) is > 0 and var fires)
         {
             AddCondition(hero.Conditions, hero.Id, Condition.Freeze, -fires, 0, events);
+        }
+
+        // A Shovel in hand digs a stack of earth off by itself.
+        if (hero.HoldsShovel && hero.Conditions.Has(Condition.Buried))
+        {
+            AddCondition(hero.Conditions, hero.Id, Condition.Buried, -1, hero.Id, events);
         }
 
         if (IsFrozenSolid(hero))
@@ -147,6 +159,12 @@ public sealed partial class GameSession
     /// <summary>The start of a monster's turn, after any burning: the same for it. Returns false when it can't act.</summary>
     private bool ConditionsAtTurnStart(Room room, Monster monster, List<GameEvent> events)
     {
+        Miasma(room, monster, events);
+        if (room.FindMonster(monster.Id) is null || monster.Collapsed)
+        {
+            return false;
+        }
+
         if (monster.Conditions.Has(Condition.Freeze) && FiresBeside(room, monster.Id, monster.Tiles) is > 0 and var fires)
         {
             AddCondition(monster.Conditions, monster.Id, Condition.Freeze, -fires, 0, events);
@@ -280,54 +298,6 @@ public sealed partial class GameSession
         if (hero.Hearts == 0)
         {
             KeelOver(room, hero, bane, events);
-        }
-    }
-
-    /// <summary>Why the active hero can't tend <paramref name="targetId"/>'s eyes (themselves, or a blind ally beside them), or null.</summary>
-    public string? CheckTend(int targetId) => CheckOdHandStart() ?? FindBlind(targetId, out _);
-
-    private string? Handle(Tend command, List<GameEvent> events)
-    {
-        OdHandCheck? check = null;
-        if ((CheckOdHandCommand(command, out int dice) ?? FindBlind(command.TargetId, out check)) is { } error)
-        {
-            return error;
-        }
-
-        RollOdHand(command, dice, check!, events);
-        return null;
-    }
-
-    private string? FindBlind(int targetId, out OdHandCheck? check)
-    {
-        check = null;
-        Hero hero = ActiveHero;
-        if (State.HeroesIn(ActiveRoom).FirstOrDefault(other => other.Id == targetId && other.IsActive) is not { } patient)
-        {
-            return "There's nobody there to tend.";
-        }
-
-        if (!IsBlind(patient.Conditions))
-        {
-            return $"{(patient == hero ? "You aren't" : $"{patient.Name} isn't")} blind.";
-        }
-
-        if (patient.Position.ChebyshevDistanceTo(hero.Position) > 1)
-        {
-            return $"Stand next to {patient.Name} to tend their eyes.";
-        }
-
-        check = new OdHandCheck(OdHandCheckKind.Tend, GameRules.TendDifficulty + patient.Conditions[Condition.Blind], patient.Position, patient.Id);
-        return null;
-    }
-
-    /// <summary>A Tend that reaches its difficulty clears the patient's eyes.</summary>
-    private static void ResolveTend(Hero hero, Hero patient, bool success, List<GameEvent> events)
-    {
-        if (success)
-        {
-            patient.Conditions.Clear(Condition.Blind);
-            events.Add(new ConditionChanged(patient.Id, Condition.Blind, 0, hero.Id));
         }
     }
 

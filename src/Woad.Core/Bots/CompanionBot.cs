@@ -60,7 +60,15 @@ public static class CompanionBot
 
         if (session.GetRousableAllies().FirstOrDefault() is { } fallen)
         {
-            return new Rouse(hero.Id, fallen.Id);
+            return new Aid(hero.Id, fallen.Id);
+        }
+
+        // Aiding companions cure their allies (and themselves) of what they can, the easiest first.
+        if (hero.Order == CompanionOrder.Aid && session.GetAidTargets().Where(ally => !ally.IsKeelingOver)
+                .SelectMany(ally => session.GetAidCures(ally.Id).Select(cure => (Ally: ally, cure.Ailment, cure.Difficulty)))
+                .OrderBy(option => option.Difficulty).FirstOrDefault() is { Ally: not null } treat)
+        {
+            return new Aid(hero.Id, treat.Ally.Id, treat.Ailment);
         }
 
         if (SimpleBot.FreeShackles(session, hero, room) is { } unshackle)
@@ -224,7 +232,7 @@ public static class CompanionBot
 
         // Allies Keeling Over: tending companions go to them even mid-fight, the rest once it's quiet
         // (holding ones stay put).
-        if ((hero.Order == CompanionOrder.Tend || (!fighting && hero.Order != CompanionOrder.Hold))
+        if ((hero.Order == CompanionOrder.Aid || (!fighting && hero.Order != CompanionOrder.Hold))
             && SimpleBot.BesideFallen(state, room, hero) is { } kneel)
         {
             return kneel == hero.Position ? Plan.Stay : new Plan { Tile = kneel };

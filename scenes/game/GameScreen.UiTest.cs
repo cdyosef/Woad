@@ -262,7 +262,7 @@ public partial class GameScreen
             await ClickTile(bran.Position);
             await ConfirmIfHeld();
             Check(_session.State.Turn!.OdHandDiceUsed == 1 && !_session.State.Turn.HasActed, "rousing uses Aria's Od Hand die, not her action");
-            Check(_messages.Any(message => message.Contains("tends Bran")), "the log tells how the rousing went");
+            Check(_messages.Any(message => message.Contains("aids Bran")), "the log tells how the rousing went");
 
             await Click(this, _endTurn);
             await WaitUntilIdle();
@@ -882,9 +882,10 @@ public partial class GameScreen
                     CheckTokens();
                 }
 
-                if (aria.Conditions.Has(Condition.Blind) && _tend.Visible && !_tend.Disabled)
+                if (aria.Conditions.Has(Condition.Blind) && _session.CheckAid(aria.Id, Ailment.Blind) is null)
                 {
-                    await UseAbility(_tend);
+                    ExecuteOdHand((heroId, dice, tools, power) => new Aid(heroId, aria.Id, Ailment.Blind, dice, tools, power));
+                    await WaitUntilIdle();
                     await ConfirmIfHeld();
                     CheckTokens();
                 }

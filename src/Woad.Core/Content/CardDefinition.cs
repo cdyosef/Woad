@@ -63,6 +63,19 @@ public enum CardEffectKind
 
     /// <summary>Mends your most worn card whole (the Autosmith Hammer).</summary>
     Repair,
+
+    /// <summary>
+    /// Holy Water: drunk, it clears <see cref="CardEffect.Cures"/>; thrown at the undead within
+    /// <see cref="CardEffect.Range"/>, it destroys lesser undead and hits greater ones with
+    /// <see cref="CardEffect.Amount"/> Radiate dice.
+    /// </summary>
+    Holy,
+
+    /// <summary>
+    /// The Sineater Doll, thrown up to <see cref="CardEffect.Range"/>: it bursts where it lands, laying
+    /// everything it soaked up on everyone within <see cref="CardEffect.AreaRadius"/>.
+    /// </summary>
+    SinEater,
 }
 
 /// <summary>What happens when a card is used.</summary>
@@ -196,6 +209,28 @@ public sealed record CardDefinition
     /// Power Die straight in. A 1 breaks them: you drop where you are, prone and stunned, Wend gone.
     /// </summary>
     public bool Wings { get; init; }
+
+    /// <summary>
+    /// A Medicine Bag: +1 and 1d6 on one Aid roll a turn (a 6 rolls another), from the belt or a hand,
+    /// with Od Hand dice or without; with it, Aid cures Freeze, Black Hearts, Burning and Stun too. A
+    /// failed Aid with a 1 among its dice uses one up, as a failed pick snaps a lockpick.
+    /// </summary>
+    public bool MedicineBag { get; init; }
+
+    /// <summary>Bandages: carried, one is used up on each Rouse for +1d6 (a 6 rolls another).</summary>
+    public bool Bandage { get; init; }
+
+    /// <summary>
+    /// The Shovel: held, it digs a stack of Buried off you at the start of your turn, adds a die to digging
+    /// out and to Aid against Buried, and hits earth creatures with a die more and +1.
+    /// </summary>
+    public bool Shovel { get; init; }
+
+    /// <summary>The Sineater Doll: soaks up ailments (see <c>SoakUp</c>), and is thrown to burst them over everyone near.</summary>
+    public bool SinEater { get; init; }
+
+    /// <summary>A reusable card that can be carried on the belt (a Medicine Bag; a torch, though it's lit only in a hand).</summary>
+    public bool Belts { get; init; }
 
     /// <summary>Worn gear with a use that destroys it (the Coward's Cloak): equip it, use it once, and it's gone.</summary>
     public bool BreaksOnUse { get; init; }

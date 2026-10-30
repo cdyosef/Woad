@@ -59,7 +59,7 @@ public static class SimpleBot
 
         if (session.GetRousableAllies().FirstOrDefault() is { } fallen)
         {
-            return new Rouse(hero.Id, fallen.Id);
+            return new Aid(hero.Id, fallen.Id);
         }
 
         if (FreeShackles(session, hero, room) is { } unshackle)

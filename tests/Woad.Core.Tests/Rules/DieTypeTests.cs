@@ -453,7 +453,7 @@ public class DieTypeTests
         Hero hero = session.HeroInSeat();
         hero.Conditions.Add(Condition.Blind, 1);
 
-        session.Do(new Tend(hero.Id, hero.Id));
+        session.Do(new Aid(hero.Id, hero.Id));
         session.Do(new AddPowerDie(hero.Id));
 
         Assert.False(hero.Conditions.Has(Condition.Blind));

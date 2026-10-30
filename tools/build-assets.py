@@ -431,6 +431,25 @@ MONSTERS = {
         "........",
     ], {"o": "#2a2420", "w": "#e8e2d0", "e": "#c03030", "t": "#2a2420"}, mirror=True)),
 
+    "ghoul": (sprite([  # hunched and grey-green, yellow eyes, long claws
+        "........",
+        "........",
+        "......oo",
+        ".....ogg",
+        "....oggg",
+        "....ogyg",
+        "....oggg",
+        ".....odd",
+        "...ooggo",
+        "..oggggg",
+        ".ogoggga",
+        ".ogo.gga",
+        ".coo.ogg",
+        "c.o..ogo",
+        "....ogo.",
+        "...ooo..",
+    ], {"o": "#141a14", "g": "#7a9a7a", "a": "#5a7a5a", "y": "#ffe03a", "d": "#3a1a1a", "c": "#e8e2d0"}, mirror=True)),
+
     "ogre": (sprite([  # big, green and tusked
         "........",
         "....oooo",

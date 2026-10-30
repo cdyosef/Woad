@@ -19,9 +19,11 @@ public enum CompanionOrder
     StayBack,
 
     /// <summary>
-    /// Go to allies Keeling Over in the room, even mid-fight, and rouse them; otherwise follow the owner.
+    /// Go to allies Keeling Over in the room, even mid-fight, and rouse them, and cure what ails the
+    /// allies beside them; otherwise follow the owner. (Saved as "tend", its old name.)
     /// </summary>
-    Tend,
+    [System.Text.Json.Serialization.JsonStringEnumMemberName("tend")]
+    Aid,
 
     /// <summary>
     /// Find a way to the owner, wherever they are: like following, but through locked doors too (with a

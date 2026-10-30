@@ -67,6 +67,11 @@ internal static class TestContent
           { "id": "mender", "name": "Mender", "type": "tool", "usage": "singleUse", "stacks": true, "effect": { "kind": "repair" } },
           { "id": "drops", "name": "Drops", "type": "potion", "usage": "singleUse", "effect": { "kind": "cure", "cures": "blind" } },
           { "id": "holy", "name": "Holy", "type": "potion", "usage": "singleUse", "effect": { "kind": "cure", "cures": "blackHeart" } },
+          { "id": "t_holy", "name": "T-Holy", "type": "potion", "usage": "singleUse", "stacks": true, "effect": { "kind": "holy", "cures": "blackHeart", "range": 3, "amount": 5 } },
+          { "id": "t_bag", "name": "T-Bag", "type": "tool", "slot": "offHand", "stacks": true, "belts": true, "medicineBag": true },
+          { "id": "t_bandage", "name": "T-Bandage", "type": "tool", "usage": "singleUse", "stacks": true, "bandage": true },
+          { "id": "t_shovel", "name": "T-Shovel", "type": "weapon", "slot": "mainHand", "twoHanded": true, "shovel": true, "modifiers": { "weapon": 2 } },
+          { "id": "t_doll", "name": "T-Doll", "type": "tool", "usage": "singleUse", "sinEater": true, "effect": { "kind": "sinEater", "range": 3, "areaRadius": 1 } },
           { "id": "storm", "name": "Storm", "type": "armor", "slot": "body", "rumbleType": "elektrik" },
           { "id": "brand", "name": "Brand", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 1, "weaponDice": 1 }, "dieType": "ice" }
         ]
@@ -83,7 +88,8 @@ internal static class TestContent
           { "id": "archer", "name": "Archer", "glyph": "a", "hearts": 2, "move": 2, "attackDice": 2, "defenseDice": 1, "attackPattern": "ranged", "attackRange": 5, "keepsDistance": true },
           { "id": "flyer", "name": "Flyer", "glyph": "f", "hearts": 1, "move": 4, "attackDice": 1, "defenseDice": 0, "flying": true },
           { "id": "bat", "name": "Bat", "glyph": "b", "hearts": 1, "move": 4, "attackDice": 1, "defenseDice": 0, "flying": true, "erratic": true },
-          { "id": "bones", "name": "Bones", "glyph": "k", "hearts": 2, "move": 2, "attackDice": 1, "defenseDice": 0, "reassembles": true },
+          { "id": "bones", "name": "Bones", "glyph": "k", "hearts": 2, "move": 2, "attackDice": 1, "defenseDice": 0, "reassembles": true, "undead": "lesser" },
+          { "id": "t_ghoul", "name": "T-Ghoul", "glyph": "c", "hearts": 9, "move": 0, "attackDice": 0, "defenseDice": 0, "undead": "greater", "miasma": true },
           { "id": "boss", "name": "Boss", "glyph": "W", "hearts": 10, "move": 0, "attackDice": 1, "defenseDice": 0, "sweep": { "radius": 2, "every": 2 }, "stunImmune": true, "boss": true, "xp": 25 },
           { "id": "hoarder", "name": "Hoarder", "glyph": "h", "hearts": 1, "move": 0, "attackDice": 0, "defenseDice": 0, "dropChance": 100, "drops": 2, "xp": 7 },
           { "id": "knight", "name": "Knight", "glyph": "K", "hearts": 1, "move": 0, "attackDice": 0, "defenseDice": 1, "armor": 2 },

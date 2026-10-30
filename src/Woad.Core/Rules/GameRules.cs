@@ -53,8 +53,11 @@ public static class GameRules
     /// <summary>Rumble it takes to dig off one token of earth when buried.</summary>
     public const int DigPerToken = 3;
 
-    /// <summary>An Od Hand Tend clears blind eyes at this, plus one for each Blind token.</summary>
-    public const int TendDifficulty = 10;
+    /// <summary>Aid cures an ailment at this, plus one for each of its stacks.</summary>
+    public const int AidDifficulty = 10;
+
+    /// <summary>The most stacks of ailments a Sineater Doll can hold.</summary>
+    public const int DollCapacity = 10;
 
     /// <summary>A die showing this earns a Power Die.</summary>
     public const int PowerDieFace = 6;

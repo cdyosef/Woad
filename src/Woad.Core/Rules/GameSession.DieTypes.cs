@@ -366,7 +366,8 @@ public sealed partial class GameSession
         Hero hero = ActiveHero;
         int dice = AttackDiceLeft;
         Turn.AttackDiceUsed += dice;
-        DiceRoll roll = _dice.Roll(dice);
+        // A Shovel in hand digs with a die more.
+        DiceRoll roll = _dice.Roll(dice + (hero.HoldsShovel ? 1 : 0));
         int dug = DugThrough(hero.Conditions, roll.Total);
         hero.Conditions.Add(Condition.Buried, -dug);
         events.Add(new DugOut(hero.Id, roll, hero.Conditions[Condition.Buried]));

@@ -380,6 +380,52 @@ def draw(item):
         c.rect(12, 2, 8, 3, WOOD[1])
     elif i == "health_potion":
         potion(c, WHITE[0], RED)
+    elif i == "antidote":
+        potion(c, WHITE[0], GREEN)
+        c.rect(14, 18, 4, 1, WHITE[0])
+        c.rect(15, 17, 2, 5, WHITE[0])
+    elif i == "strong_base":
+        c.poly([(12, 5), (20, 5), (20, 12), (26, 26), (24, 29), (8, 29), (6, 26), (12, 12)], WHITE[0])
+        c.poly([(9, 21), (23, 21), (26, 26), (24, 29), (8, 29), (6, 26)], "#8ad8e8")
+        c.rect(11, 3, 10, 3, STONE[1])
+        c.dot(12, 24, "#d8f8ff")
+        c.dot(19, 26, "#d8f8ff")
+    elif i == "smelling_salts":
+        c.rect(10, 13, 12, 15, BRASS[1])
+        c.rect(10, 13, 12, 2, BRASS[0])
+        c.rect(12, 9, 8, 4, BRASS[2])
+        for x, y in ((14, 6), (18, 4), (22, 7), (11, 3)):
+            c.dot(x, y, WHITE[1])
+        c.line(13, 18, 19, 24, BRASS[2], 1)
+    elif i == "bandages":
+        c.circle(13, 18, 8, WHITE[1])
+        c.circle(13, 18, 5, WHITE[0])
+        c.circle(13, 18, 2, WHITE[2])
+        c.poly([(19, 13), (29, 21), (27, 25), (18, 19)], WHITE[1])
+        c.rect(23, 18, 2, 2, RED[1])
+    elif i == "medicine_bag":
+        c.poly([(5, 13), (27, 13), (28, 29), (4, 29)], LEATHER[1])
+        c.rect(5, 13, 23, 3, LEATHER[0])
+        c.poly([(11, 13), (13, 6), (19, 6), (21, 13), (18, 13), (17, 9), (15, 9), (14, 13)], LEATHER[2])
+        c.rect(12, 18, 8, 8, WHITE[0])
+        c.rect(15, 19, 2, 6, RED[1])
+        c.rect(13, 21, 6, 2, RED[1])
+    elif i == "shovel":
+        c.line(24, 3, 13, 20, WOOD[1], 2)
+        c.rect(22, 2, 6, 2, WOOD[2])
+        c.poly([(10, 18), (17, 23), (12, 30), (5, 26)], IRON[1])
+        c.line(10, 19, 7, 25, IRON[0], 1)
+    elif i == "sineater_doll":
+        c.circle(16, 9, 5, CLOTH[1])
+        c.poly([(10, 14), (22, 14), (25, 22), (20, 22), (21, 29), (11, 29), (12, 22), (7, 22)], CLOTH[2])
+        c.line(13, 8, 14, 9, BLACK[2], 1)
+        c.line(14, 8, 13, 9, BLACK[2], 1)
+        c.line(18, 8, 19, 9, BLACK[2], 1)
+        c.line(19, 8, 18, 9, BLACK[2], 1)
+        c.line(14, 12, 18, 12, BLACK[2], 1)
+        for y in (17, 20, 23, 26):
+            c.dot(16, y, RED[2])
+        c.circle(16, 20, 2.2, "#8f78b0")
     elif i == "loose_coins":
         for x, y in ((9, 22), (17, 24), (23, 20), (13, 16), (20, 14)):
             c.circle(x, y, 4, GOLD[1])
@@ -482,12 +528,6 @@ def ability(c, name):
         c.dot(10, 9, RED[0])
         c.rect(22, 18, 8, 2, GREEN[1])
         c.rect(25, 15, 2, 8, GREEN[1])
-    elif name == "tend":
-        c.poly([(3, 16), (16, 8), (29, 16), (16, 24)], WHITE[0])
-        c.circle(16, 16, 5, BLUE[1])
-        c.circle(16, 16, 2, BLACK[2])
-        c.circle(25, 25, 2.5, BLUE[0])
-        c.dot(25, 21, BLUE[0])
     elif name == "retreat":
         c.poly([(3, 16), (12, 7), (12, 12), (26, 12), (26, 20), (12, 20), (12, 25)], WHITE[1])
         for y in (9, 16, 23):
@@ -575,7 +615,7 @@ def back(c, slot):
 
 
 ABILITIES = [
-    "fist", "shove", "wend", "leap", "prone", "search", "steal", "pick_lock", "disarm", "rouse", "tend",
+    "fist", "shove", "wend", "leap", "prone", "search", "steal", "pick_lock", "disarm", "rouse",
     "retreat", "learn", "dig_out", "drop_roll", "cast", "jackalope_foot", "shield_cufflinks", "icarus_wings",
 ]
 
@@ -778,6 +818,7 @@ ITEMS = [
     "flame_scroll", "frost_scroll", "venom_scroll", "acid_scroll", "grave_scroll", "gale_scroll", "sun_scroll",
     "bloom_scroll", "quake_scroll", "spark_scroll", "mind_scroll", "shadow_scroll", "frost_wand", "boomerang",
     "torch", "lockpicks", "bomb", "autosmith_hammer", "eye_drops", "holy_water", "health_potion",
+    "antidote", "strong_base", "smelling_salts", "bandages", "medicine_bag", "shovel", "sineater_doll",
     "loose_coins", "coin_pouch", "emerald", "pearl", "golden_idol",
 ]
 

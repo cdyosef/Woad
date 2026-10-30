@@ -313,7 +313,7 @@ public sealed class ContentCatalog
             errors.Add($"{name} is single-use, so it can't have a slot (it goes on the belt or in the backpack).");
         }
 
-        if (card.Usage is not CardUsage.Persistent && card.Effect is null)
+        if (card.Usage is not CardUsage.Persistent && card.Effect is null && !card.Bandage)
         {
             errors.Add($"{name} is {card.Usage} but has no effect.");
         }
@@ -335,12 +335,12 @@ public sealed class ContentCatalog
 
         if (card.Effect is { } effect)
         {
-            if (effect.Amount < 1 && effect.Kind is not (CardEffectKind.Cure or CardEffectKind.Repair))
+            if (effect.Amount < 1 && effect.Kind is not (CardEffectKind.Cure or CardEffectKind.Repair or CardEffectKind.SinEater))
             {
                 errors.Add($"{name} effect needs an amount of at least 1.");
             }
 
-            if ((effect.Kind == CardEffectKind.Cure) != (effect.Cures is not null))
+            if ((effect.Kind is CardEffectKind.Cure or CardEffectKind.Holy) != (effect.Cures is not null))
             {
                 errors.Add($"{name} effect: a cure needs something to cure, and only a cure has one.");
             }

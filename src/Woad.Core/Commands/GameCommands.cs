@@ -98,6 +98,12 @@ public sealed record ReloadWeapon(int HeroId) : GameCommand(HeroId);
 /// <summary>Move a single-use card from the backpack to the belt. Uses the action.</summary>
 public sealed record BeltCard(int HeroId, int CardId) : GameCommand(HeroId);
 
+/// <summary>
+/// Soak an ailment off yourself or an ally beside you into a Sineater Doll, no roll: all its stacks, as
+/// many as the doll has room for. Free from the belt once a turn; from the backpack it takes the action.
+/// </summary>
+public sealed record SoakUp(int HeroId, int CardId, int TargetId, Ailment Ailment) : GameCommand(HeroId);
+
 /// <summary>Move an equipped or belted card into the backpack. Uses the action.</summary>
 public sealed record StowCard(int HeroId, int CardId) : GameCommand(HeroId);
 
@@ -156,10 +162,13 @@ public sealed record Steal(int HeroId, int TargetId, int? Dice = null, bool UseT
     : OdHandCommand(HeroId, Dice, UseTools, PowerDice);
 
 /// <summary>
-/// Rouse a hero Keeling Over next to you (diagonals too): every 6 of the total earns them a mark of
-/// life, and every die showing 1 adds a Doom Die to their next Keel roll.
+/// Aid yourself or an ally beside you (diagonals too). On a hero Keeling Over it rouses them: every 6
+/// of the total earns them a mark of life, and every die showing 1 adds a Doom Die to their next Keel
+/// roll. Otherwise it cures one ailment, <paramref name="Cure"/> (needed only when they have more than
+/// one): 10 plus its stacks clears it all. A Medicine Bag, with <paramref name="UseTools"/>, adds +1 and
+/// 1d6 once a turn, even with no Od Hand dice (<paramref name="Dice"/> 0).
 /// </summary>
-public sealed record Rouse(int HeroId, int TargetId, int? Dice = null, bool UseTools = true, int PowerDice = 0)
+public sealed record Aid(int HeroId, int TargetId, Ailment? Cure = null, int? Dice = null, bool UseTools = true, int PowerDice = 0)
     : OdHandCommand(HeroId, Dice, UseTools, PowerDice);
 
 /// <summary>
@@ -168,10 +177,6 @@ public sealed record Rouse(int HeroId, int TargetId, int? Dice = null, bool UseT
 /// </summary>
 public sealed record LearnSpell(int HeroId, int CardId, int? Dice = null, int PowerDice = 0)
     : OdHandCommand(HeroId, Dice, false, PowerDice);
-
-/// <summary>Od Hand: tend blind eyes, your own or an ally's beside you (10 plus their Blind tokens).</summary>
-public sealed record Tend(int HeroId, int TargetId, int? Dice = null, bool UseTools = true, int PowerDice = 0)
-    : OdHandCommand(HeroId, Dice, UseTools, PowerDice);
 
 /// <summary>
 /// Keeling Over, a hero's whole turn: roll the Keel Die, plus <paramref name="PowerDice"/> banked Power

@@ -41,7 +41,7 @@ public enum OdHandCheckKind
     /// <summary>Steal from an adjacent monster or hero (a contest against their roll).</summary>
     Steal,
 
-    /// <summary>Rouse an adjacent hero Keeling Over: every 6 of the total is a mark of life for them.</summary>
+    /// <summary>Aid an adjacent hero Keeling Over: every 6 of the total is a mark of life for them.</summary>
     Rouse,
 
     /// <summary>Put out a lit bomb next to you (or under you): 10 or more, or it goes off in your hands.</summary>
@@ -56,8 +56,8 @@ public enum OdHandCheckKind
     /// <summary>Find a way out of a fight on the Woarld Map (a contest against the monsters' chase).</summary>
     Retreat,
 
-    /// <summary>Tend blind eyes, your own or an ally's beside you: 10 plus their Blind tokens.</summary>
-    Tend,
+    /// <summary>Aid that cures an ailment, your own or an ally's beside you: 10 plus its stacks.</summary>
+    Cure,
 
     /// <summary>Learn the spell on a scroll (Magic adds to the roll): 6 plus the spell's level, or it backfires.</summary>
     Learn,
@@ -68,7 +68,7 @@ public enum OdHandCheckKind
 /// which is a contest). <see cref="Target"/> is the tile involved; <see cref="TargetId"/> who is robbed;
 /// <see cref="SpellId"/> the spell being learned.
 /// </summary>
-public sealed record OdHandCheck(OdHandCheckKind Kind, int Difficulty, GridPosition Target = default, int TargetId = 0, string? SpellId = null);
+public sealed record OdHandCheck(OdHandCheckKind Kind, int Difficulty, GridPosition Target = default, int TargetId = 0, string? SpellId = null, Ailment? Cure = null);
 
 /// <summary>
 /// A hero's roll whose dice are rolled but not yet resolved, waiting for Luck rerolls or Power Dice
@@ -123,6 +123,9 @@ public sealed class PendingRoll
     /// <summary>The tools (lockpicks) went into this roll: if it fails with a 1 among its non-Power dice, a pick snaps.</summary>
     public bool UsedTools { get; internal init; }
 
+    /// <summary>An Aid roll a Medicine Bag helped: if it fails with a 1 among its dice, a bag is used up.</summary>
+    public bool UsedMedicineBag { get; internal init; }
+
     /// <summary>Torches' fire dice went into this attack: a 1 anywhere in it burns one out.</summary>
     public int Torches { get; internal init; }
 
@@ -170,6 +173,9 @@ public sealed class TurnState
 
     /// <summary>The tools' value has been added to an Od Hand roll this turn.</summary>
     public bool ToolsUsed { get; internal set; }
+
+    /// <summary>A Medicine Bag has helped an Aid roll this turn (once a turn).</summary>
+    public bool MedicineBagUsed { get; internal set; }
 
     /// <summary>The once-per-turn free loot (picking up or opening a chest) has been used.</summary>
     public bool UsedFreeLoot { get; internal set; }

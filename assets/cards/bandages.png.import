@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://by5ig1f6bsed3"
-path="res://.godot/imported/tend.png-9c14bc9f5b13345591b7dbae2563f034.ctex"
+uid="uid://ceb8271tsd3l"
+path="res://.godot/imported/bandages.png-9e565bff6272515f971b1b8f83c71529.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/tend.png"
-dest_files=["res://.godot/imported/tend.png-9c14bc9f5b13345591b7dbae2563f034.ctex"]
+source_file="res://assets/cards/bandages.png"
+dest_files=["res://.godot/imported/bandages.png-9e565bff6272515f971b1b8f83c71529.ctex"]
 
 [params]
 

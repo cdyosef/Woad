@@ -99,6 +99,18 @@ public sealed partial class GameSession
                 Cure(hero, effect, events);
                 break;
 
+            case CardEffectKind.Holy when targets.Count > 0:
+                Sanctify(hero, room, effect, targets[0], events);
+                break;
+
+            case CardEffectKind.Holy:
+                Cure(hero, effect, events);
+                break;
+
+            case CardEffectKind.SinEater:
+                BurstDoll(hero, room, card, effect, command.Target!.Value, events);
+                break;
+
             case CardEffectKind.Repair when MostWorn(hero) is { } worn:
                 worn.Wear = 0;
                 events.Add(new GearMended(hero.Id, worn.Id));
@@ -223,9 +235,9 @@ public sealed partial class GameSession
             return error;
         }
 
-        if (card!.Definition.Usage != CardUsage.SingleUse)
+        if (card!.Definition.Usage != CardUsage.SingleUse && !card.Definition.Belts)
         {
-            return "Only single-use cards (potions, bombs, scrolls) go on your belt.";
+            return "Only single-use cards (potions, bombs, scrolls), Medicine Bags and torches go on your belt.";
         }
 
         if (location != CardLocation.Backpack)
@@ -603,7 +615,7 @@ public sealed partial class GameSession
             }
             else if (hero.CanCarry(card.Definition))
             {
-                hero.AddToBackpack(card);
+                hero.AddLoot(card);
             }
             else
             {
@@ -698,7 +710,7 @@ public sealed partial class GameSession
         {
             if (hero.CanCarry(card.Definition))
             {
-                hero.AddToBackpack(room.TakeCard(at, card.Id)!);
+                hero.AddLoot(room.TakeCard(at, card.Id)!);
                 taken.Add(card.Id);
             }
         }
@@ -775,6 +787,11 @@ public sealed partial class GameSession
             return $"Equip the {definition.Name} to use it.";
         }
 
+        if (definition.SinEater && card.SoakedStacks == 0)
+        {
+            return "The doll holds nothing yet: soak up what ails someone first.";
+        }
+
         if (definition.Usage == CardUsage.Charges && card.ChargesRemaining < 1)
         {
             return $"The {definition.Name} has no charges left. They refill on a new floor.";
@@ -818,6 +835,12 @@ public sealed partial class GameSession
             case CardEffectKind.Repair:
                 return target is { } mendTile && mendTile != hero.Position ? "That can only be used on yourself."
                     : MostWorn(hero) is null ? "Nothing you carry needs mending." : null;
+
+            case CardEffectKind.Holy:
+                return CheckSanctify(hero, room, effect, target, out targets);
+
+            case CardEffectKind.SinEater:
+                return CheckDollThrow(hero, room, effect, target);
 
             case CardEffectKind.Attack:
                 if (target is not { } attackTile)

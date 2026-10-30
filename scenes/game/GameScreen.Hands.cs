@@ -10,10 +10,10 @@ namespace Woad.Scenes.Game;
 /// <summary>
 /// The hands of ability cards on the sheet, one per pool where its symbol goes: Rumble (Attack, Shove,
 /// and Dig out while buried), Wend (Wend, Leap, Prone or Get up, and Drop and roll while burning) and
-/// Od Hand (Search, Steal, Pick lock, Disarm, Rouse, Learn, and Tend while blind). Each card takes the
-/// action of a button the screen already keeps (hidden now), and lights up when there's something in
-/// reach to use it on: a monster to hit, a lock beside you to pick. Pick lock, Disarm and Rouse wait for
-/// a click on what to use them on.
+/// Od Hand (Search, Steal, Pick lock, Disarm, Aid and Learn). Each card takes the action of a button
+/// the screen already keeps (hidden now), and lights up when there's something in reach to use it on:
+/// a monster to hit, a lock beside you to pick. Pick lock, Disarm and Aid wait for a click on what to
+/// use them on; Aid on someone with more than one ailment asks which to cure.
 /// </summary>
 public partial class GameScreen
 {
@@ -22,7 +22,7 @@ public partial class GameScreen
         None,
         PickLock,
         Disarm,
-        Rouse,
+        Aid,
     }
 
     private HandView _rumbleHand = null!;
@@ -36,7 +36,10 @@ public partial class GameScreen
     private HandSpread _spread = null!;
     private Button _pickLock = null!;
     private Button _disarm = null!;
-    private Button _rouse = null!;
+    private Button _aid = null!;
+
+    /// <summary>Aid's choice of what to cure, when the patient has more than one ailment.</summary>
+    private Panel _curePicker = null!;
     private Button _learn = null!;
     private OdAim _odAim;
 
@@ -48,14 +51,14 @@ public partial class GameScreen
         var hidden = new Control { Visible = false, Name = "Abilities" };
         right.AddChild(hidden);
         _abilities = hidden;
-        foreach (Button button in new[] { _rumble, _shove, _prone, _dropRoll, _digOut, _tend, _roll, _leap, _search, _steal })
+        foreach (Button button in new[] { _rumble, _shove, _prone, _dropRoll, _digOut, _roll, _leap, _search, _steal })
         {
             button.Reparent(hidden);
         }
 
         _pickLock = AimButton(hidden, "Pick lock", OdAim.PickLock, "Pick lock: click the lock (a door you stand in, or a chest or gate beside you). Right-click to cancel.");
         _disarm = AimButton(hidden, "Disarm", OdAim.Disarm, "Disarm: click a trap you've found beside you, or a lit bomb. Right-click to cancel.");
-        _rouse = AimButton(hidden, "Rouse", OdAim.Rouse, "Rouse: click an ally Keeling Over beside you. Right-click to cancel.");
+        _aid = AimButton(hidden, "Aid", OdAim.Aid, "Aid: click yourself, or an ally beside you: rouse the fallen, or cure what ails them. Right-click to cancel.");
         _learn = new Button { Text = "Learn" };
         _learn.Pressed += LearnFromScroll;
         hidden.AddChild(_learn);
@@ -80,9 +83,8 @@ public partial class GameScreen
             new("steal", "Steal", _steal, () => Beside().Any(tile => VictimAt(tile) is int id && _session.CheckSteal(id) is null)),
             new("pick_lock", "Pick lock", _pickLock, () => Beside().Any(tile => _session.CheckPickLock(tile) is null)),
             new("disarm", "Disarm", _disarm, () => Beside().Any(tile => _session.CheckDisarm(tile) is null)),
-            new("rouse", "Rouse", _rouse, () => _session.GetRousableAllies().Count > 0),
+            new("rouse", "Aid", _aid, () => _session.GetAidTargets().Count > 0),
             new("learn", "Learn", _learn, () => true),
-            new("tend", "Tend eyes", _tend, () => true, () => ActiveHero?.Conditions.Has(Condition.Blind) == true),
         ]);
 
         // The Magic hand, under the Magic card: the spells they know (filled in as they're learned).
@@ -94,6 +96,9 @@ public partial class GameScreen
         _spread.Picked += PlayAbility;
         AddChild(_spread);
         AddChild(_heroPanel.BagView);
+
+        _curePicker = new Panel { Position = BoardOrigin + new Vector2(BoardView.Pixels / 2 - 70, 60), Size = new Vector2(140, 40), Visible = false, ZIndex = 4 };
+        AddChild(_curePicker);
     }
 
     private HandView AddHand(Vector2 at, string icon, string title, Color color, AbilityCard[] cards)
@@ -154,11 +159,16 @@ public partial class GameScreen
     private void RefreshHands(bool ready)
     {
         string? odHand = _session.State.Turn is null ? "" : _session.CheckSearch();
-        foreach (Button aim in new[] { _pickLock, _disarm, _rouse })
+        foreach (Button aim in new[] { _pickLock, _disarm })
         {
             aim.Disabled = !ready || odHand is not null;
             aim.TooltipText = odHand ?? "";
         }
+
+        bool aidable = _session.GetAidTargets().Count > 0;
+        _aid.Disabled = !ready || !aidable;
+        _aid.TooltipText = aidable ? "" : "There's no one beside you to rouse or cure (with Od Hand dice, or a Medicine Bag, left).";
+        _curePicker.Visible &= ready;
 
         Hero? hero = ActiveHero;
         CardInstance? scroll = hero?.AllCards.FirstOrDefault(card => card.Definition.Teaches is not null && _session.CheckLearnSpell(card.Id) is null);
@@ -241,11 +251,11 @@ public partial class GameScreen
             case OdAim.Disarm:
                 ExecuteOdHand((heroId, dice, tools, power) => new Disarm(heroId, tile, dice, tools, power));
                 break;
-            case OdAim.Rouse when _session.GetRousableAllies().FirstOrDefault(ally => ally.Position == tile) is { } fallen:
-                ExecuteOdHand((heroId, dice, tools, power) => new Rouse(heroId, fallen.Id, dice, tools, power));
+            case OdAim.Aid when _session.State.HeroesIn(_session.State.RoomOf(hero)).FirstOrDefault(other => other.Position == tile && (other.IsActive || other.IsKeelingOver)) is { } patient:
+                AidHero(patient);
                 break;
-            case OdAim.Rouse:
-                Log("Rouse: there's no one Keeling Over there to rouse.", Palette.TextDim);
+            case OdAim.Aid:
+                Log("Aid: there's no one there.", Palette.TextDim);
                 break;
             default:
                 return false;
@@ -253,6 +263,56 @@ public partial class GameScreen
 
         RefreshPanels();
         return true;
+    }
+
+    /// <summary>Aid on someone: rouse them if they're down, cure their one ailment, or ask which of several.</summary>
+    private void AidHero(Hero patient)
+    {
+        int patientId = patient.Id;
+        IReadOnlyList<(Ailment Ailment, int Difficulty)> cures = patient.IsKeelingOver ? [] : _session.GetAidCures(patientId);
+        if (cures.Count > 1)
+        {
+            AskWhich($"Aid {patient.Name}: cure what?", cures.Select(cure => (cure.Ailment, $"{cure.Ailment.Name()} ({cure.Difficulty}+)")),
+                ailment => ExecuteOdHand((heroId, dice, tools, power) => new Aid(heroId, patientId, ailment, dice, tools, power)));
+        }
+        else if (_session.CheckAid(patientId) is { } error)
+        {
+            Log($"Aid: {error}", Palette.TextDim);
+        }
+        else
+        {
+            ExecuteOdHand((heroId, dice, tools, power) => new Aid(heroId, patientId, null, dice, tools, power));
+        }
+    }
+
+    /// <summary>A small list of ailments over the board to pick one from (or Cancel).</summary>
+    private void AskWhich(string title, IEnumerable<(Ailment Ailment, string Label)> options, Action<Ailment> chosen)
+    {
+        foreach (Node child in _curePicker.GetChildren())
+        {
+            child.QueueFree();
+        }
+
+        _curePicker.AddChild(UiTheme.Label(new Vector2(6, 3), new Vector2(128, 12), title, color: Palette.TrimBright));
+        float y = 18;
+        foreach ((Ailment ailment, string label) in options)
+        {
+            Button button = UiTheme.CompactButton(new Vector2(6, y), new Vector2(128, 16), label);
+            button.Pressed += () =>
+            {
+                _curePicker.Visible = false;
+                chosen(ailment);
+            };
+            _curePicker.AddChild(button);
+            y += 18;
+        }
+
+        Button cancel = UiTheme.CompactButton(new Vector2(6, y), new Vector2(128, 16), "Cancel");
+        cancel.Pressed += () => _curePicker.Visible = false;
+        _curePicker.AddChild(cancel);
+        _curePicker.Size = new Vector2(140, y + 22);
+        _curePicker.Visible = true;
+        MoveChild(_curePicker, -1);
     }
 
     /// <summary>The Learn card: study the first scroll whose spell can be learned now.</summary>

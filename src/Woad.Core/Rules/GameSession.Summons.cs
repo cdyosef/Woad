@@ -59,6 +59,7 @@ public sealed partial class GameSession
         MonsterDefinition zombie = Content.GetMonster(ZombieId) with
         {
             Name = $"Zombie {dead.Name}",
+            Undead = UndeadKind.Greater,
             Hearts = Math.Max(1, dead.MaxHearts),
             AttackDice = Math.Max(1, stats.AttackDice),
             DefenseDice = Math.Max(0, stats.DefenseDice),

@@ -376,7 +376,7 @@ public partial class Main
         await Click(this, inn.ByeButton);
 
         await TalkTo(Npc(NpcRole.Merchant));
-        await Click(this, inn.ListButton("Buy")!);
+        await Click(this, inn.BuyButton("Bomb")!);
         Check(wren.Gold == 44 && wren.Belt.Contains("bomb"), "the merchant sells Wren a bomb, his cheapest ware");
         await Click(this, inn.ByeButton);
 

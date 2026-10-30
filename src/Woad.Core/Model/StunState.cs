@@ -59,6 +59,14 @@ public sealed class StunState
         }
     }
 
+    /// <summary>Takes stacks off, plain ones first.</summary>
+    internal void Remove(int stacks)
+    {
+        int plain = Math.Min(Stacks, stacks);
+        Stacks -= plain;
+        PowerfulStacks = Math.Max(0, PowerfulStacks - (stacks - plain));
+    }
+
     internal void Clear()
     {
         Stacks = 0;

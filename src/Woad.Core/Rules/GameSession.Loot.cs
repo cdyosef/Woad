@@ -88,7 +88,7 @@ public sealed partial class GameSession
 
         SpendLootOn(command.Tile);
         CardInstance taken = count == card.Count ? room.TakeCard(command.Tile, card.Id)! : card.Split(State.NextId(), count);
-        CardInstance holder = hero.AddToBackpack(taken);
+        CardInstance holder = hero.AddLoot(taken);
         events.Add(new LootPickedUp(hero.Id, [taken.Id]) { HolderId = holder.Id });
         return null;
     }

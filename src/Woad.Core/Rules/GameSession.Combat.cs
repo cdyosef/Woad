@@ -63,13 +63,15 @@ public sealed partial class GameSession
 
         Reveal(hero, events);
         Wielding wielding = Wield(hero, room, monster.Position, monster, only);
-        int weaponBonus = wielding.Bonus + (monster.Definition.Swimmer && wielding.HasStrike && !wielding.OffHand ? wielding.Weapon?.SwimmerBonus ?? 0 : 0);
+        // A Shovel strikes earth creatures with a die more and +1.
+        int earth = wielding.HasStrike && wielding.Weapon?.Shovel == true && monster.Definition.DieType == DieType.Earth ? 1 : 0;
+        int weaponBonus = wielding.Bonus + earth + (monster.Definition.Swimmer && wielding.HasStrike && !wielding.OffHand ? wielding.Weapon?.SwimmerBonus ?? 0 : 0);
         bool armed = command.UseWeapon && wielding.HasStrike && (weaponBonus > 0 || wielding.Dice > 0);
         int bonus = armed ? weaponBonus : 0;
         Turn.AttackDiceUsed += dice;
         UseWeapon(hero, room, wielding, armed, monster.Position, events);
         SpendBankedPowerDice(hero, command.PowerDice, events);
-        (int star, int weaponDice, IReadOnlyList<(DieType, int)> typed) = Arm(hero, dice + ProneBonus(monster, hero.Position), wielding.Weapon, armed ? wielding.Dice : 0, hero.TorchesHeld);
+        (int star, int weaponDice, IReadOnlyList<(DieType, int)> typed) = Arm(hero, dice + ProneBonus(monster, hero.Position), wielding.Weapon, armed ? wielding.Dice + earth : 0, hero.TorchesHeld);
         RollHeroAttack(hero, star, bonus, [monster.Id], DamageSource.Weapon, events, command.PowerDice,
             stunOnSix: wielding.Weapon?.StunOnSix ?? false, weaponDice: weaponDice, weapon: wielding.Weapon, typed: typed, torches: hero.TorchesHeld);
         return null;

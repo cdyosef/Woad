@@ -1,5 +1,12 @@
 namespace Woad.Core.Content;
 
+/// <summary>How Holy Water takes the undead: lesser ones are destroyed outright, greater ones take its Radiate dice.</summary>
+public enum UndeadKind
+{
+    Lesser,
+    Greater,
+}
+
 public enum AttackPattern
 {
     /// <summary>An orthogonally adjacent tile.</summary>
@@ -190,6 +197,12 @@ public sealed record MonsterDefinition
 
     /// <summary>Never catches fire.</summary>
     public bool FireImmune { get; init; }
+
+    /// <summary>Undead, lesser or greater (see <see cref="UndeadKind"/>), or null for the living.</summary>
+    public UndeadKind? Undead { get; init; }
+
+    /// <summary>A Ghoul's miasma: every living creature starting its turn beside it is attacked with a Poison die.</summary>
+    public bool Miasma { get; init; }
 
     public bool Boss { get; init; }
 

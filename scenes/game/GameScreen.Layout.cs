@@ -51,7 +51,6 @@ public partial class GameScreen
     private Button _prone = null!;
     private Button _dropRoll = null!;
     private Button _digOut = null!;
-    private Button _tend = null!;
     private Button _roll = null!;
     private Button _search = null!;
     private Button _steal = null!;
@@ -206,12 +205,7 @@ public partial class GameScreen
         _digOut.Disabled = digError is not null || Locked;
         _digOut.TooltipText = digError ?? $"Dig at the earth with every Rumble die left: every {GameRules.DigPerToken} of the roll throws off a token ({hero!.Conditions[Condition.Buried]} to go).";
         _rumble.Visible &= !buried;
-        bool blind = hero?.Conditions.Has(Condition.Blind) == true;
-        _tend.Visible = !waiting && blind && !_dropRoll.Visible && !_digOut.Visible;
-        string? tendError = hero is null || turn is null ? "" : _session.CheckTend(hero.Id);
-        _tend.Disabled = tendError is not null || Locked;
-        _tend.TooltipText = tendError ?? $"Od Hand: tend your eyes, {GameRules.TendDifficulty + hero!.Conditions[Condition.Blind]} or more to see again.";
-        _prone.Visible &= !_digOut.Visible && !_tend.Visible;
+        _prone.Visible &= !_digOut.Visible;
 
         bool canReroll = idle && hero!.LuckRemaining > 0
             && (pending || (_trayShowsMovement && turn!.MovementRoll is not null && !turn.HasMoved));
@@ -512,7 +506,10 @@ public partial class GameScreen
         var blocked = new Dictionary<CardAction, string>();
         foreach ((CardAction action, string? reason) in new[]
         {
-            (CardAction.Use, card.Definition.Wings ? (hero.SlotOf(card) is null ? "Wear them first." : _session.CheckBeatWings()) : card.Definition.Reload is not null ? _session.CheckReload() : _session.CheckUse(cardId)),
+            (CardAction.Use, card.Definition.Wings ? (hero.SlotOf(card) is null ? "Wear them first." : _session.CheckBeatWings())
+                : card.Definition.Reload is not null ? _session.CheckReload()
+                : card.Definition.SinEater && card.SoakedStacks == 0 ? (CanSoak(hero, card) ? null : "The doll holds nothing yet: Use it on someone ailing, you or an ally beside you, to soak it up.")
+                : _session.CheckUse(cardId)),
             (CardAction.Equip, card.Definition.Teaches is not null ? _session.CheckLearnSpell(cardId) : _session.CheckEquip(cardId)),
             (CardAction.Belt, _session.CheckBelt(cardId)),
             (CardAction.Stow, _session.CheckStow(cardId)),
@@ -774,9 +771,6 @@ public partial class GameScreen
         _digOut.Pressed += () => ExecuteForActiveHero(heroId => new DigOut(heroId));
         right.AddChild(_digOut);
 
-        _tend = UiTheme.Accent(UiTheme.CompactButton(new Vector2(116, 279), new Vector2(52, 20), "Tend eyes"), Palette.DieOdHand);
-        _tend.Pressed += () => ExecuteForActiveHero(heroId => new Tend(heroId, heroId));
-        right.AddChild(_tend);
 
         // Five buttons in a row: Wend, Leap, Search, Steal and Shove.
         _roll = UiTheme.Accent(UiTheme.CompactButton(new Vector2(8, 303), new Vector2(38, 20), "Wend"), Palette.DieWend);

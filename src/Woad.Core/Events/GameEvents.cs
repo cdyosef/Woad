@@ -92,6 +92,9 @@ public sealed record AttackRolled(int AttackerId, DiceRoll Roll, int Bonus, int 
     /// <summary>Of the faces, after the Rumble dice: the weapon's own dice (the Longsword's d6). Power Dice come last.</summary>
     public int WeaponDice { get; init; }
 
+    /// <summary>Not a blow but a Ghoul's miasma, breathed on whoever started their turn beside it.</summary>
+    public bool Miasma { get; init; }
+
     /// <summary>What each face is made of (fire, ice...), in order; Plain past its end. A typed die's 6 rolled another in.</summary>
     public IReadOnlyList<DieType> DieTypes { get; init; } = [];
 
@@ -380,6 +383,9 @@ public enum FireOutCause
     /// <summary>It went into water.</summary>
     Water,
 
+    /// <summary>An ally (or they themselves) put it out with Aid and a Medicine Bag.</summary>
+    Aided,
+
     /// <summary>A hero stopped, dropped and rolled.</summary>
     Rolled,
 }
@@ -434,6 +440,15 @@ public sealed record Stunned(int EntityId, int Stacks, int PowerfulStacks, bool 
 
 /// <summary>The end of a stunned hero's or monster's turn: the stun wore off.</summary>
 public sealed record StunWoreOff(int EntityId) : GameEvent;
+
+/// <summary>Holy Water thrown on the undead: a lesser one destroyed outright, or a greater one about to take its Radiate dice.</summary>
+public sealed record Sanctified(int MonsterId, int ByHeroId, bool Destroyed) : GameEvent;
+
+/// <summary>A Sineater Doll soaked up stacks of an ailment from someone; it now holds <paramref name="Held"/> in all.</summary>
+public sealed record SoakedUp(int HeroId, int CardId, int TargetId, Ailment Ailment, int Stacks, int Held) : GameEvent;
+
+/// <summary>A thrown Sineater Doll burst on a tile, laying what it held on everyone caught.</summary>
+public sealed record DollBurst(int HeroId, GridPosition Tile, IReadOnlyList<int> Caught, IReadOnlyDictionary<Ailment, int> Held) : GameEvent;
 
 /// <summary>A bomb landed in a room: thrown (lit), popped out of a bomb trap (lit, or unlit when it was disarmed).</summary>
 public sealed record BombPlaced(string RoomId, int BombId, GridPosition Position, bool Lit, int? OwnerId) : GameEvent;

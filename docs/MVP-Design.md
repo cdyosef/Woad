@@ -375,8 +375,7 @@ of their own on top (a Flame Scroll aimed at bare floor sets it burning).
 - **Shadow (Blind):** a Blind token: -1 to their attacks each, and they can't see past the tiles beside
   them (a blind hero can only attack or aim at what's beside them, and the rest of the room goes dark on
   their turn; a blind monster only finds heroes beside it and otherwise wanders). It lasts until cured:
-  an Od Hand **Tend** (the **Tend eyes** button, or on an ally beside you) of 10 plus their tokens, or
-  **Eye Drops**.
+  **Aid** (see [Od Hand](#od-hand)) of 10 plus their tokens, or **Eye Drops**.
 
 Figures show their tokens as colored pips down their left side (with the count), a glow while they shine,
 ice over them while they freeze, a mound of earth while buried, and Black Hearts as purple heart pips.
@@ -492,7 +491,26 @@ when the total reaches its number:
 | **Search** | **Search** button: reveals everything in the room your total reaches | Secret doors 4 + floor; traps 3 + floor; stashes 5 + floor |
 | **Disarm** | Click a trap you've found: on a tile or chest next to you, or your own doorway | 3 + floor |
 | **Steal** | **Steal** button, then an adjacent monster or hero; once a turn | Beat their roll: a monster's defense dice, a hero's Od Hand dice and tools |
-| **Rouse** | Click an ally Keeling Over next to you (diagonals too) | Every 6 of the total is a mark of life; every die showing 1 is a Doom Die on their next Keel roll (see [Keeling Over](#loot-keeling-over-and-winning)) |
+| **Aid** | The **Aid** card, then yourself or an ally beside you (diagonals too); clicking an ally Keeling Over aids them straight away | On someone Keeling Over (a Rouse): every 6 of the total is a mark of life; every die showing 1 is a Doom Die on their next Keel roll (see [Keeling Over](#loot-keeling-over-and-winning)). Otherwise it cures one ailment, chosen when there are several: 10 plus its stacks clears it all |
+
+- **What Aid cures:** Poison, Acid, Blind, Shine, Confused and Buried. Freeze, Black Hearts, Burning and
+  Stun only with a **Medicine Bag** to hand.
+- **Medicine Bag** (tool, stacks, goes on the belt and works from there or a hand): +1 and 1d6 on one
+  Aid roll a turn (a 6 rolls another), even with no Od Hand dice left. A failed Aid it helped with a 1
+  showing uses one up, as a failed pick snaps a lockpick.
+- **Bandages** (single use, stack): carried, one goes into each Rouse for +1d6 (a 6 rolls another).
+- **Shovel** (two-handed, Weapon 2): a die more and +1 against earth creatures. Held, it digs a stack
+  of Buried off you at the start of your turn, and adds a die to digging out and to Aid against Buried.
+- **Holy Water** (single use, stack): drink it to cure Black Hearts (and curses and diseases, once there
+  are any), or throw it at the undead within 3. Lesser undead (Skeletons, the Drowned, zombies risen from
+  monsters) are destroyed outright, bones and all; greater undead (Ghouls, heroes risen as zombies) take
+  5 Radiate dice.
+- **Antidote**, **Strong Base** and **Smelling Salts** (single use, stack) cure Poison, Acid (only the
+  tokens: acid-worn gear stays worn) and Confused, like Eye Drops for Blind.
+- **Sineater Doll** (very rare, floor 3 on): soak what ails you or an ally beside you into it, no roll,
+  up to 10 stacks of anything (free from the belt once a turn, or your action). Throw it up to 3 tiles:
+  it bursts where it lands, laying every stack it holds on everyone within a tile, friend or foe, no
+  save, and is gone. The undead shrug off its Poison.
 
 - **Stealing from a monster** (once per monster): a key (40% *(tunable)*) or a card from the loot deck.
 - **Stealing from a hero:** one of their keys or backpack cards at random. Not equipped gear, belt items
@@ -622,7 +640,7 @@ when the total reaches its number:
 | Bat | 1 | 4 | 1d6 | none | Flies over pits; moves erratically |
 | Spear Guard | 2 | 3 | 1d6+1 | 1d6+1 | Reach 2 in a straight line |
 | Archer Guard | 2 | 2 | 1d6+1 | 1d6+1 | Ranged 5; keeps its distance |
-| Skeleton | 2 | 3 | 1d6+1 | 1d6+1 | Rises again once unless finished by a bomb or spell |
+| Skeleton | 2 | 3 | 1d6+1 | 1d6+1 | Lesser undead. Rises again once unless finished by a bomb or spell; Holy Water destroys it outright |
 | Cinder Imp | 1 | 4 | 1d6 | 1d6 | From floor 2. Fire attacks (a 6 sets you alight, hit or miss); can't burn |
 | Fire Beetle | 3 | 1 | 2d6 | 1d6+2 | From floor 2. Fire attacks; can't burn; slow and armored |
 | Petty Thief | 2 | 4 | 1d6 | 1d6 | Od Hand 3: steals from a hero beside it (each die over their Od Hand roll and tools takes, in turn, 2 gold, an item, 2 gold...); with loot it runs from everyone |
@@ -631,6 +649,7 @@ when the total reaches its number:
 | Ogre | 5 | 2 | 2d6+2 | 1d6+1 | Rare, from floor 2. Each hit knocks the hero a tile straight back, into a pit or onto a trap if one's there |
 | Ogre Champ | 6 | 1 | 3d6 | 1d6+1 | Only in its den. Reach 2. Drawn bigger: fat, shirtless and horned, with a great club. Each hit knocks the hero a tile back, and every 6 on its roll a tile more, hit or miss |
 | Necromancer | 3 | 2 | 1d6+1 | 1d6 | Rare, from floor 2. Ranged 4; keeps its distance. Every other turn raises a Skeleton beside it (from a grave nearby if there is one): 2 at a time, 4 in all. They crumble when it falls and are worth no XP, loot or kill |
+| Ghoul | 4 | 6 | 3×1d6 | 1d6 | Rare, from floor 2. Greater undead: Holy Water hits it with 5 Radiate dice. Three attacks of a Necro die each, and every hit stuns. Its miasma attacks every living creature starting its turn beside it with a Poison die |
 | Hexer | 2 | 3 | 1d6+1 | 1d6 | Rare, from floor 2. Ranged 4; keeps its distance. Each hit drains a Luck reroll; with none left, it stuns |
 | Gelatinous Cube | 4 | 1 | 2d6 | 0d6+1 | Rare, from floor 2. Swallows the cards and gold on every tile it crawls over, dropping them where it falls; splits into two Slimes |
 | **Miniboss: Key Warden** | 5 | 2 | 2d6+1 | 1d6+1 | Guards the Boss Key in the last floor's vault; can't be shoved |
@@ -809,7 +828,8 @@ them up there like any character.
   - **Fight:** goes after the monsters in the room; follows you once it's clear. With a bow or a thrown
     weapon it hangs back where it can shoot, away from the monsters if it can, rather than closing in.
   - **Stay back:** keeps away from monsters near you, striking only when one is right next to it.
-  - **Tend:** goes to allies Keeling Over in the room, even mid-fight, and rouses them; otherwise follows.
+  - **Aid:** goes to allies Keeling Over in the room, even mid-fight, and rouses them, and cures what ails
+    the allies beside it (the easiest first); otherwise follows.
   - **Find me:** follows you wherever you are, through locked doors too (a key, or picking the lock;
     never the Boss Door) and, when there's no way by the stairs, down a pit to the floor below.
   - **Burgle:** picks the room's locks (doors, chests, gates; keys first) and opens its chests, leaving

@@ -1470,10 +1470,10 @@ public partial class GameScreen : Control
         OdHandCheckKind.PickDoor or OdHandCheckKind.PickChest or OdHandCheckKind.PickGate or OdHandCheckKind.PickChains or OdHandCheckKind.PickShackles => "picks the lock",
         OdHandCheckKind.Search => "searches",
         OdHandCheckKind.Disarm => "disarms",
-        OdHandCheckKind.Rouse => "rouses an ally",
+        OdHandCheckKind.Rouse => "aids a fallen ally",
         OdHandCheckKind.DefuseBomb => "defuses",
         OdHandCheckKind.Retreat => "looks for a way out",
-        OdHandCheckKind.Tend => "tends blind eyes",
+        OdHandCheckKind.Cure => "gives aid",
         OdHandCheckKind.Learn => "studies the scroll",
         _ => "steals",
     };

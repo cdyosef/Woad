@@ -221,6 +221,15 @@ public sealed class Hero
     /// <summary>Torches held (and so lit): one in each hand at most.</summary>
     public int TorchesHeld => EquippedCards.Count(card => card.Definition.Torch);
 
+    /// <summary>Their Medicine Bags, on the belt or in a hand, if they have any to hand.</summary>
+    public CardInstance? MedicineBag => EquippedCards.Concat(_belt).FirstOrDefault(card => card.Definition.MedicineBag);
+
+    /// <summary>Their Bandages, anywhere they carry them.</summary>
+    public CardInstance? Bandages => AllCards.FirstOrDefault(card => card.Definition.Bandage);
+
+    /// <summary>A Shovel in their hands.</summary>
+    public bool HoldsShovel => EquippedCards.Any(card => card.Definition.Shovel);
+
     /// <summary>Shackled by a monster's chain: the lock's difficulty. No moving until it's picked or a key frees them.</summary>
     public int? Shackled { get; internal set; }
 
@@ -371,6 +380,10 @@ public sealed class Hero
     /// <summary>Puts a card in the backpack, or into the stack of it the hero already holds. Returns the card that holds it.</summary>
     internal CardInstance AddToBackpack(CardInstance card) => JoinStack(card) ?? Add(_backpack, card);
 
+    /// <summary>A card picked up or handed over: a Medicine Bag goes on the belt when there's room, the rest in the backpack.</summary>
+    internal CardInstance AddLoot(CardInstance card) =>
+        card.Definition.MedicineBag && _belt.Count < GameRules.BeltCapacity ? AddToBelt(card) : AddToBackpack(card);
+
     private static CardInstance Add(List<CardInstance> place, CardInstance card)
     {
         place.Add(card);
@@ -460,11 +473,15 @@ public sealed class Hero
             return true;
         }
 
-        if (definition.Slot is not null && CardsDisplacedBy(definition).Count == 0)
+        if (definition.MedicineBag && _belt.Count < GameRules.BeltCapacity)
+        {
+            _belt.Add(card);
+        }
+        else if (definition.Slot is not null && CardsDisplacedBy(definition).Count == 0)
         {
             Equip(card);
         }
-        else if (definition.Usage == CardUsage.SingleUse && _belt.Count < GameRules.BeltCapacity)
+        else if ((definition.Usage == CardUsage.SingleUse || definition.MedicineBag) && _belt.Count < GameRules.BeltCapacity)
         {
             _belt.Add(card);
         }

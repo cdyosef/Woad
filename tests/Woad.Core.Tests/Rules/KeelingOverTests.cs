@@ -175,12 +175,12 @@ public class KeelingOverTests
         session.Do(new RollKeel(fallen.Id));
         Assert.Equal([fallen], session.GetRousableAllies());
 
-        var roused = session.Do(new Rouse(standing.Id, fallen.Id)).SingleOf<HeroRoused>();
+        var roused = session.Do(new Aid(standing.Id, fallen.Id)).SingleOf<HeroRoused>();
 
         Assert.Equal(new HeroRoused(fallen.Id, standing.Id, 1, 1, 1, 1), roused);
         Assert.Equal((1, 1), (fallen.LifeMarks, fallen.DoomDiceOwed));
         Assert.False(session.State.Turn!.HasActed);
-        Assert.Contains("all your Od Hand dice", session.Refuse(new Rouse(standing.Id, fallen.Id)));
+        Assert.Contains("all your Od Hand dice", session.Refuse(new Aid(standing.Id, fallen.Id)));
     }
 
     [Fact]
@@ -191,7 +191,7 @@ public class KeelingOverTests
         session.Do(new RollKeel(fallen.Id));
         fallen.LifeMarks = 1;
 
-        session.Do(new Rouse(standing.Id, fallen.Id));
+        session.Do(new Aid(standing.Id, fallen.Id));
 
         Assert.Equal((HeroStatus.Active, 1), (fallen.Status, fallen.Hearts));
     }
@@ -213,8 +213,8 @@ public class KeelingOverTests
         Hero fallen = session.HeroInSeat(1);
         fallen.Status = HeroStatus.KeelingOver;
 
-        Assert.Contains("Kneel beside them", session.Refuse(new Rouse(session.HeroInSeat(0).Id, fallen.Id)));
-        Assert.Contains("nobody Keeling Over", session.Refuse(new Rouse(session.HeroInSeat(0).Id, session.HeroInSeat(0).Id)));
+        Assert.Contains("Kneel beside them", session.Refuse(new Aid(session.HeroInSeat(0).Id, fallen.Id)));
+        Assert.Contains("aren't ailing", session.Refuse(new Aid(session.HeroInSeat(0).Id, session.HeroInSeat(0).Id)));
         Assert.Empty(session.GetRousableAllies());
     }
 

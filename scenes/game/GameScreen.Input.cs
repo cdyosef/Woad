@@ -157,6 +157,10 @@ public partial class GameScreen
             .FirstOrDefault();
     }
 
+    /// <summary>Whether a Sineater Doll could soak up anything right now: off the hero, or an ally beside them.</summary>
+    private bool CanSoak(Hero hero, CardInstance doll) =>
+        _session.State.ActiveHeroesIn(_session.State.RoomOf(hero)).Any(patient => Ailments.All.Any(ailment => _session.CheckSoakUp(doll.Id, patient.Id, ailment) is null));
+
     private void OnTileClicked(GridPosition tile)
     {
         if (Locked || ActiveHero is not { } hero || _session.State.Turn is not { } turn || hero.RoomId != _shownRoomId)
@@ -167,6 +171,27 @@ public partial class GameScreen
         PickTarget(tile);
         if (_targeting && _selectedCardId is int cardId)
         {
+            // A Sineater Doll aimed at someone with an ailment soaks it up; anywhere else it's thrown.
+            if (hero.FindCard(cardId) is ({ Definition.SinEater: true } doll, _)
+                && _session.State.ActiveHeroesIn(_session.State.RoomOf(hero)).FirstOrDefault(other => other.Position == tile) is { } patient
+                && Ailments.All.Where(ailment => _session.CheckSoakUp(cardId, patient.Id, ailment) is null).ToList() is { Count: > 0 } soakable)
+            {
+                int patientId = patient.Id;
+                _targeting = false;
+                void Soak(Ailment ailment) => Execute(new SoakUp(hero.Id, cardId, patientId, ailment));
+                if (soakable.Count == 1)
+                {
+                    Soak(soakable[0]);
+                }
+                else
+                {
+                    AskWhich($"Soak into the doll ({doll.SoakedStacks}/{GameRules.DollCapacity}):",
+                        soakable.Select(ailment => (ailment, $"{ailment.Name()} ({ailment.Stacks(patient.Conditions, patient.FireDice, patient.Stun)})")), Soak);
+                }
+
+                return;
+            }
+
             if (_session.GetCardTargets(cardId).Contains(tile))
             {
                 Execute(new UseCard(hero.Id, cardId, tile));
@@ -278,7 +303,7 @@ public partial class GameScreen
 
         if (_session.GetRousableAllies().FirstOrDefault(fallen => fallen.Position == tile) is { } fallen)
         {
-            ExecuteOdHand((heroId, dice, tools, power) => new Rouse(heroId, fallen.Id, dice, tools, power));
+            ExecuteOdHand((heroId, dice, tools, power) => new Aid(heroId, fallen.Id, null, dice, tools, power));
             return;
         }
 

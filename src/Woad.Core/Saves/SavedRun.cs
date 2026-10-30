@@ -118,10 +118,13 @@ public sealed class SavedRun
             .Where(type => type.IsSubclassOf(typeof(GameCommand)) && !type.IsAbstract)
             .ToDictionary(type => type.Name);
 
+        /// <summary>Moves that were renamed, read as what they are now: Rouse and Tend both became Aid.</summary>
+        private static readonly Dictionary<string, Type> Renamed = new() { ["Rouse"] = typeof(Aid), ["Tend"] = typeof(Aid) };
+
         public override GameCommand Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             using JsonDocument document = JsonDocument.ParseValue(ref reader);
-            if (!document.RootElement.TryGetProperty("type", out JsonElement name) || !Types.TryGetValue(name.GetString() ?? "", out Type? type))
+            if (!document.RootElement.TryGetProperty("type", out JsonElement name) || !(Types.TryGetValue(name.GetString() ?? "", out Type? type) || Renamed.TryGetValue(name.GetString() ?? "", out type)))
             {
                 throw new JsonException("A saved move has an unknown type.");
             }
