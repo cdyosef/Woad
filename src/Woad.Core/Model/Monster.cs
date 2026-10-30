@@ -28,6 +28,9 @@ public sealed class Monster
     /// <summary>Power Dice banked from sixes on defense rolls, spent to save itself from hits.</summary>
     public PowerBank Power { get; } = new();
 
+    /// <summary>Lying still (in a graveyard) until a hero comes near or something hurts it; it takes no turns till then.</summary>
+    public bool Asleep { get; internal set; }
+
     /// <summary>Someone has already stolen from it; it guards what's left.</summary>
     public bool Robbed { get; internal set; }
 

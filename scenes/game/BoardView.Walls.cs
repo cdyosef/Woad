@@ -22,6 +22,7 @@ public partial class BoardView
     private (Color Stone, Color Light, Color Dark) RimColors => ThemeId switch
     {
         "sunken_temple" => (new Color("6a3a30"), new Color("e0b49a"), new Color("1e1210")),
+        "unhallowed_graves" => (new Color("3a3a4a"), new Color("9a9aae"), new Color("101016")),
         _ => (new Color("27392f"), new Color("a8c4b4"), new Color("0e1410")),
     };
 
@@ -32,7 +33,7 @@ public partial class BoardView
     {
         (Color stone, Color light, Color dark) = RimColors;
         HashSet<(GridPosition, Direction)> gaps = RimGaps();
-        foreach (GridPosition tile in _room!.Positions)
+        foreach (GridPosition tile in ShownTiles())
         {
             if (_room.Layout[tile] is TileKind.Rock or TileKind.Wall or TileKind.CrackedWall)
             {

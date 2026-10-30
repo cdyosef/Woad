@@ -365,6 +365,7 @@ public sealed partial class GameSession
         DiceRoll defense = RollDefense(monster.Id, monster.Power, dice, armor, attackTotal, canSpend: !collapsed, events, extra);
 
         int damage = DamageFor(attackTotal, defense.Total + armor);
+        Wake(monster, events);
         monster.Hearts = Math.Max(0, monster.Hearts - damage);
         events.Add(new Damaged(monster.Id, damage, monster.Hearts));
         if (damage > 0)

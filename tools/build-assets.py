@@ -431,6 +431,25 @@ MONSTERS = {
         "........",
     ], {"o": "#2a2420", "w": "#e8e2d0", "e": "#c03030", "t": "#2a2420"}, mirror=True)),
 
+    "zombie": (sprite([  # a shambling corpse in rags, arms out, one eye gone
+        "........",
+        "......oo",
+        ".....ogg",
+        "....oggg",
+        "....ogeg",
+        "....ogdg",
+        ".....ogg",
+        "...ooorr",
+        ".ggorrrr",
+        ".ooorrrr",
+        "....orrb",
+        "....orrb",
+        "....obbo",
+        "....og.o",
+        "...ogg..",
+        "........",
+    ], {"o": "#141a12", "g": "#8aa070", "e": "#d8e040", "d": "#2a1a14", "r": "#6a5a48", "b": "#4a3e32"}, mirror=True)),
+
     "ghoul": (sprite([  # hunched and grey-green, yellow eyes, long claws
         "........",
         "........",
@@ -1345,6 +1364,101 @@ def floor_tile(seed, light, mid, dark, speck):
     return tile
 
 
+# The Unhallowed Graves' graves and sarcophagi: they open like chests.
+GRAVE_STONE = {"o": "#14121c", "w": "#c8c8d4", "g": "#8a8a9c", "d": "#55556a", "m": "#3a3226", "n": "#5a4a36", "k": "#0c0a10"}
+GRAVE_OBJECTS = {
+    "grave": sprite([
+        "................",
+        ".....oooooo.....",
+        "....owwwwwwo....",
+        "....owgggggo....",
+        "....owgddggo....",
+        "....owgddggo....",
+        "....owgggggo....",
+        "....owgggggo....",
+        "...ooooooooooo..",
+        "..onnnnnnnnnnno.",
+        ".onmmmnmmmnmmmno",
+        ".onmmmmmnmmmmmno",
+        ".onmmnmmmmmnmmno",
+        "..onnnnnnnnnnno.",
+        "...ooooooooooo..",
+        "................",
+    ], GRAVE_STONE),
+    "grave_open": sprite([
+        "................",
+        ".....oooooo.....",
+        "....owwwwwwo....",
+        "....owgggggo....",
+        "....owgddggo....",
+        "....owgddggo....",
+        "....owgggggo....",
+        "....owgggggo....",
+        "...ooooooooooo..",
+        "..onnnnnnnnnnno.",
+        ".onkkkkkkkkkkkno",
+        ".onkkkkkkkkkkkno",
+        ".onkkkkkkkkkkkno",
+        "..onnnnnnnnnnno.",
+        "...ooooooooooo..",
+        "................",
+    ], GRAVE_STONE),
+    "sarcophagus": sprite([
+        "................",
+        "...oooooooooo...",
+        "..owwwwwwwwwwo..",
+        "..owgggddgggwo..",
+        "..owgggddgggwo..",
+        "..owgddddddgwo..",
+        "..owgddddddgwo..",
+        "..owgggddgggwo..",
+        "..owgggddgggwo..",
+        "..owgggddgggwo..",
+        "..owgggggggggo..",
+        "..odddddddddddo.",
+        "..odddddddddddo.",
+        "..oooooooooooo..",
+        "................",
+        "................",
+    ], GRAVE_STONE),
+    "sarcophagus_locked": sprite([
+        "................",
+        "...oooooooooo...",
+        "..owwwwwwwwwwo..",
+        "..owgggddgggwo..",
+        "..oiiiiiiiiiio..",
+        "..owgddddddgwo..",
+        "..owgddyydggwo..",
+        "..owgggyyggggo..",
+        "..oiiiiiiiiiio..",
+        "..owgggddgggwo..",
+        "..owgggggggggo..",
+        "..odddddddddddo.",
+        "..odddddddddddo.",
+        "..oooooooooooo..",
+        "................",
+        "................",
+    ], {**GRAVE_STONE, "i": "#6a6058", "y": "#d8b040"}),
+    "sarcophagus_open": sprite([
+        "......oooooooooo",
+        ".....owwwwwwwwwo",
+        "..oooowgggddggwo",
+        "..owwoooooooooo.",
+        "..owkkkkkkkkkwo.",
+        "..owkkkkkkkkkwo.",
+        "..owkkkkkkkkkwo.",
+        "..owkkkkkkkkkwo.",
+        "..owkkkkkkkkkwo.",
+        "..owkkkkkkkkkwo.",
+        "..owgggggggggwo.",
+        "..odddddddddddo.",
+        "..odddddddddddo.",
+        "..oooooooooooo..",
+        "................",
+        "................",
+    ], GRAVE_STONE),
+}
+
 # Each theme's colors for the tiles that differ between themes.
 KEEP_TILES = {
     "wall": ("#7a9a8a", "#a8c4b4", "#3d5a4c", "#24382f", "#141c18"),
@@ -1354,6 +1468,15 @@ KEEP_TILES = {
     "deep": ("#1d3a66", "#5f8fd0"),
     "shallow": ("#4a8ab8aa", "#c8e6f8d2"),
     "rubble": ("#8a8f86", "#b8bcb0", "#3a4038"),
+}
+GRAVES_TILES = {
+    "wall": ("#6a6a7a", "#9a9aae", "#3a3a4a", "#24242e", "#101016"),
+    "pit": ("#2a2622", "#1a1814", "#0c0a08"),
+    "stairs": ("#101016", "#8a8a9c", "#4a4a5a"),
+    "stairs_up": ("#2a2a34", "#c0c0d0", "#6a6a7c"),
+    "deep": ("#1a2a3a", "#4a6a8a"),
+    "shallow": ("#3a5a6aaa", "#a0c0d0d2"),
+    "rubble": ("#5a5a5e", "#8a8a90", "#2a2a30"),
 }
 TEMPLE_TILES = {
     "wall": ("#b8866e", "#e0b49a", "#7a4a3e", "#4a2a24", "#1e1210"),
@@ -1697,6 +1820,24 @@ PLACES = {
         "........",
         "........",
     ], {"o": "#181420", "L": "#a8c4b4", "M": "#5f8a74", "g": "#2a1a10"}, mirror=True),
+    "place_graves": sprite([
+        "........",
+        "........",
+        "...o....",
+        "..oWo...",
+        ".oWWWo..",
+        "..oWo..o",
+        "..oWo.oW",
+        "..oWo.oW",
+        "..oWo.oW",
+        ".oooooog",
+        "gggggggg",
+        "gGggGggg",
+        "........",
+        "........",
+        "........",
+        "........",
+    ], {"o": "#14121c", "W": "#b8b8c8", "g": "#2a3424", "G": "#8a5ad0"}, mirror=True),
     "place_temple": sprite([
         "........",
         ".......o",
@@ -2388,12 +2529,12 @@ def build_music(directory):
 
 # ---- Build --------------------------------------------------------------------------------
 
-def build_theme(name, monsters, colors, floors):
-    """A theme's folder: its monsters' sprites, objects and tiles in its colors."""
+def build_theme(name, monsters, colors, floors, objects=None):
+    """A theme's folder: its monsters' sprites, objects (and any of its own) and tiles in its colors."""
     theme = ASSETS / "themes" / name
     for monster, pixels in monsters.items():
         write_png(theme / "monsters" / f"{monster}.png", pixels)
-    for item, pixels in OBJECTS.items():
+    for item, pixels in {**OBJECTS, **(objects or {})}.items():
         write_png(theme / "tiles" / f"{item}.png", pixels)
 
     write_png(theme / "tiles" / "floor_a.png", floor_tile(1, *floors[0]))
@@ -2418,6 +2559,9 @@ def main():
                 [("#6fa48a", "#5a8f78", "#3d6555", "#4f7f6a"), ("#68a084", "#548a72", "#3a6152", "#4a7863")])
     build_theme("sunken_temple", {**{name: art for name, art in MONSTERS.items() if name not in KEEP_ONLY}, **TEMPLE_MONSTERS}, TEMPLE_TILES,
                 [("#c9b48e", "#b39d78", "#7d6a4e", "#9c8664"), ("#c4ae88", "#ad9772", "#78664a", "#968060")])
+    # Dead grass and grave dirt, under a starless night.
+    build_theme("unhallowed_graves", MONSTERS, GRAVES_TILES,
+                [("#3e4a38", "#323d2e", "#222a20", "#4a4436"), ("#3a4434", "#2e382a", "#1e261c", "#463f32")], GRAVE_OBJECTS)
 
     heroes = ASSETS / "heroes"
     for look in LOOKS:

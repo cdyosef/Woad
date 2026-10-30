@@ -272,7 +272,9 @@ public partial class GameScreen
 
     private void UpdateHighlights()
     {
-        _board.DarkTiles = ShownRoom.Dark ? [.. ShownRoom.Positions.Where(tile => _session.InDarkness(ShownRoom, tile))] : [];
+        // Every light gathered once: a graveyard has ten thousand tiles to check against them.
+        List<GridPosition> lights = ShownRoom.Dark ? [.. _session.LightsIn(ShownRoom)] : [];
+        _board.DarkTiles = ShownRoom.Dark ? [.. ShownRoom.Positions.Where(tile => !lights.Any(light => light.ChebyshevDistanceTo(tile) <= GameRules.LightRadius))] : [];
         _board.BlindAt = !Locked && ActiveHero is { IsCompanion: false } blind && blind.RoomId == _shownRoomId && blind.Conditions.Has(Condition.Blind) ? blind.Position : null;
         if (Locked || ActiveHero is not { } hero || _session.State.Turn is not { } turn || hero.RoomId != _shownRoomId)
         {
@@ -559,7 +561,8 @@ public partial class GameScreen
         Hero? turn = TurnOnShow;
         string whose = _playingTurn is { Set: true, HeroId: null } ? $"[color={Palette.Hex(Palette.Danger)}]The monsters' turn[/color]"
             : turn is null ? "" : $"[color={Palette.Hex(Palette.Seat(turn.Seat))}]{Escape(turn.Name)}'s turn[/color]";
-        return $"[color={Palette.Hex(Palette.Trim)}]ROUND {state.Round}   FLOOR {floor}[/color]{friendlyFire}\n{whose}";
+        string where = _shownRoomId.Length > 0 && ShownRoom.IsHuge ? "" : $"   FLOOR {floor}";
+        return $"[color={Palette.Hex(Palette.Trim)}]ROUND {state.Round}{where}[/color]{friendlyFire}\n{whose}";
     }
 
     /// <summary>"ARIA'S TURN", or for a companion "PIP'S TURN (ARIA'S COMPANION)".</summary>

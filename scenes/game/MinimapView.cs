@@ -9,7 +9,9 @@ namespace Woad.Scenes.Game;
 
 /// <summary>
 /// The current floor's map: explored rooms, doors to rooms not yet seen (as dim outlines), the
-/// room on screen outlined in gold, and a dot for each hero on the floor.
+/// room on screen outlined in gold, and a dot for each hero on the floor. A huge room (a graveyard)
+/// has no floors: instead it's drawn small, what the heroes have come near (stone, graves, the ways
+/// out in green), with their dots.
 /// </summary>
 public partial class MinimapView : Control
 {
@@ -23,27 +25,81 @@ public partial class MinimapView : Control
 
     public override void _Ready() => MouseFilter = MouseFilterEnum.Ignore;
 
+    /// <summary>How near a hero a huge room's tiles are taken in.</summary>
+    private const int SeenRange = 6;
+
+    /// <summary>A huge room's tiles the heroes have come near.</summary>
+    private readonly HashSet<GridPosition> _seen = [];
+
     public void ShowFloor(GameState state, int floor, string shownRoomId)
     {
         _state = state;
         _floor = floor;
         _shownRoomId = shownRoomId;
+        if (state.Rooms.TryGetValue(shownRoomId, out Room? room) && room.IsHuge)
+        {
+            foreach (Hero hero in state.HeroesIn(room).Where(hero => hero.IsInPlay))
+            {
+                for (int dx = -SeenRange; dx <= SeenRange; dx++)
+                {
+                    for (int dy = -SeenRange; dy <= SeenRange; dy++)
+                    {
+                        _seen.Add(new GridPosition(hero.Position.X + dx, hero.Position.Y + dy));
+                    }
+                }
+            }
+        }
+
         QueueRedraw();
+    }
+
+    /// <summary>A huge room, drawn small: what's been seen of it, and the heroes in it.</summary>
+    private void DrawHugeRoom(Room room)
+    {
+        float scale = Math.Min((Size.Y - Top) / room.Layout.Height, Size.X / room.Layout.Width);
+        var origin = new Vector2(0, Top);
+        DrawRect(new Rect2(origin, new Vector2(room.Layout.Width, room.Layout.Height) * scale), Palette.Background);
+        foreach (GridPosition tile in _seen.Where(room.Layout.Contains))
+        {
+            Color color = room.Layout[tile] switch
+            {
+                TileKind.Exit => Palette.Heal,
+                TileKind.CrackedWall => Palette.Loot,
+                TileKind.Wall or TileKind.Rock => Palette.WallTop,
+                TileKind.Chest => Palette.TextDim,
+                _ => Palette.FloorDark,
+            };
+            DrawRect(new Rect2(origin + new Vector2(tile.X, tile.Y) * scale, new Vector2(scale, scale) * 1.01f), color);
+        }
+
+        DrawRect(new Rect2(origin, new Vector2(room.Layout.Width, room.Layout.Height) * scale), Palette.Trim, filled: false, width: 1);
+        foreach (Hero hero in _state!.HeroesIn(room).Where(hero => hero.IsInPlay))
+        {
+            DrawCircle(origin + (new Vector2(hero.Position.X, hero.Position.Y) + new Vector2(0.5f, 0.5f)) * scale, 2.2f, Palette.Seat(hero.Seat), antialiased: true);
+        }
     }
 
     public override void _Draw()
     {
         Font font = ThemeDB.FallbackFont;
+        Room? huge = _state is not null && _state.Rooms.TryGetValue(_shownRoomId, out Room? shown) && shown.IsHuge ? shown : null;
+        string title = huge is not null ? "THE GRAVES" : $"FLOOR {_floor}";
         if (GameArt.HeadingFont is { } heading)
         {
-            DrawString(heading, new Vector2(0, 9), $"FLOOR {_floor}", fontSize: UiTheme.HeadingPixelSize, modulate: Palette.Trim);
+            DrawString(heading, new Vector2(0, 9), title, fontSize: UiTheme.HeadingPixelSize, modulate: Palette.Trim);
         }
         else
         {
-            DrawString(font, new Vector2(0, 9), $"FLOOR {_floor}", fontSize: UiTheme.FontSize, modulate: Palette.Trim);
+            DrawString(font, new Vector2(0, 9), title, fontSize: UiTheme.FontSize, modulate: Palette.Trim);
         }
         if (_state is null)
         {
+            return;
+        }
+
+        if (huge is not null)
+        {
+            DrawHugeRoom(huge);
             return;
         }
 

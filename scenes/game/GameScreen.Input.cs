@@ -782,9 +782,14 @@ public partial class GameScreen
             return $"A grand chest, gilded and jeweled: three treasures from deep below, and gold. Open it with a key, or pick the lock with Od Hand ({grandLock}+).";
         }
 
-        return room.ChestLockAt(chest) is int difficulty
-            ? $"A locked chest with better loot. Open it with a key, or pick the lock with Od Hand ({difficulty}+).{trap}"
-            : $"A closed chest. Stand next to it and click it to open it.{trap}";
+        return (room.ChestLookAt(chest), room.ChestLockAt(chest)) switch
+        {
+            (ChestLook.Grave, _) => $"A grave. Stand next to it and click it to dig it open: there may be something buried with the dead, or the dead may not lie still.{trap}",
+            (ChestLook.Sarcophagus, int difficulty) => $"A sarcophagus, its lid chained shut. Open it with a key, or pick the lock with Od Hand ({difficulty}+).{trap}",
+            (ChestLook.Sarcophagus, null) => $"A sarcophagus. Stand next to it and click it to push the lid aside.{trap}",
+            (_, int difficulty) => $"A locked chest with better loot. Open it with a key, or pick the lock with Od Hand ({difficulty}+).{trap}",
+            _ => $"A closed chest. Stand next to it and click it to open it.{trap}",
+        };
     }
 
     private string DescribeDoor(Room room, Direction side)

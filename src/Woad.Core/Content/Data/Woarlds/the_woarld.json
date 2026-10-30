@@ -71,6 +71,16 @@
       "description": "A mossy keep in the eastern woods."
     },
     {
+      "id": "unhallowed_graves",
+      "name": "The Unhallowed Graves",
+      "kind": "dungeon",
+      "icon": "graves",
+      "x": 36,
+      "y": 19,
+      "themeId": "unhallowed_graves",
+      "description": "A walled graveyard where it is always night. The dead lie thick, and they do not lie still."
+    },
+    {
       "id": "sunken_temple",
       "name": "The Sunken Temple",
       "kind": "dungeon",

@@ -567,6 +567,21 @@ public sealed partial class GameSession
             }
         }
 
+        // The dead in a grave climb out at whoever disturbed them.
+        if (room.RiserAt(command.Chest) is { } riser)
+        {
+            room.OpenChest(command.Chest);
+            RiseFromGrave(room, command.Chest, riser, hero, events);
+            return null;
+        }
+
+        if (room.IsEmptyChest(command.Chest))
+        {
+            room.OpenChest(command.Chest);
+            events.Add(new ChestOpened(hero.Id, command.Chest, [], AddedToBackpack: false));
+            return null;
+        }
+
         // A chest that was locked holds two cards, dealt as if from a floor deeper; a grand chest three,
         // as if from two floors deeper, and gold besides.
         bool superior = room.IsSuperiorChest(command.Chest);

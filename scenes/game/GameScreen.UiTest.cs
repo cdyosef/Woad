@@ -389,6 +389,71 @@ public partial class GameScreen
     }
 
     /// <summary>
+    /// Debug mode (<c>-- --gravestest</c>, with <see cref="DemoRun.Graves"/>): Aria at the gate of a
+    /// generated graveyard: one huge dark room whose dead all lie still. She walks to the nearest grave,
+    /// turn by turn, and opens it.
+    /// </summary>
+    private async void RunGravesTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            Room yard = ShownRoom;
+            Check(yard.Layout.Width == 100 && yard.Layout.Height == 100 && yard.Dark, "the Graves are one huge dark room");
+            await WaitFor(this, () => _board.IsInView(aria.Position), "the view to settle on Aria at the gate");
+            Check(yard.Monsters.Count > 50 && yard.Monsters.All(monster => monster.Asleep), "the dead lie still");
+            await SaveShot("graves_gate");
+
+            GridPosition grave = yard.Positions.Where(tile => yard.ChestLookAt(tile) == ChestLook.Grave)
+                .OrderBy(tile => tile.ManhattanDistanceTo(aria.Position)).First();
+            for (int turn = 0; turn < 10 && aria.Position.ManhattanDistanceTo(grave) != 1 && aria.IsActive; turn++)
+            {
+                await UseAbility(_roll);
+                await WaitUntilIdle();
+                IReadOnlyDictionary<GridPosition, int> reach = _session.GetReachableTiles();
+                GridPosition? step = reach.Keys.Where(_board.IsInView)
+                    .OrderBy(tile => Math.Abs(tile.ManhattanDistanceTo(grave) - 1)).ThenBy(tile => reach[tile]).Select(tile => (GridPosition?)tile).FirstOrDefault();
+                if (step is { } to)
+                {
+                    await ClickTile(to);
+                    await WaitUntilIdle();
+                }
+
+                if (aria.Position.ManhattanDistanceTo(grave) != 1)
+                {
+                    await Click(this, _endTurn);
+                    await WaitUntilIdle();
+                }
+            }
+
+            Check(aria.Position.ManhattanDistanceTo(grave) == 1, "Aria walks up to the nearest grave");
+            await SaveShot("graves_grave");
+            await ClickTile(grave);
+            await WaitUntilIdle();
+            Check(yard.IsChestOpened(grave), "clicking the grave opens it");
+            await SaveShot("graves_opened");
+            GD.Print("Graves test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Graves test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
+    /// <summary>With WOAD_SHOTS set, a picture of the screen as it is.</summary>
+    private async Task SaveShot(string name)
+    {
+        if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } shots)
+        {
+            await Pause(0.2);
+            GetViewport().GetTexture().GetImage().SavePng($"{shots}/{name}.png");
+        }
+    }
+
+    /// <summary>
     /// Debug mode (<c>-- --bombtest</c>, with <see cref="DemoRun.Bombs"/>): Aria throws her bomb into a
     /// huddle of slimes. It lies there lit through her turn and the next, then goes off at the end of
     /// her next turn: the blast rolls, the slimes take it, and the bomb is gone.

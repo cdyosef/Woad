@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "name": "test_2",
+  "bpm": 60,
+  "rowsPerBeat": 4,
+  "channels": [
+    {
+      "name": "Pulse 1",
+      "wave": "pulse50",
+      "volume": 0.1,
+      "gate": 0.9,
+      "decay": 0,
+      "vibrato": false
+    },
+    {
+      "name": "Pulse 2",
+      "wave": "pulse12",
+      "volume": 0.06,
+      "gate": 0.9,
+      "decay": 0,
+      "vibrato": false
+    },
+    {
+      "name": "Triangle",
+      "wave": "triangle",
+      "volume": 0.21,
+      "gate": 0.85,
+      "decay": 0,
+      "vibrato": false
+    },
+    {
+      "name": "Noise",
+      "wave": "noise",
+      "volume": 0.5,
+      "gate": 0.9,
+      "decay": 0,
+      "vibrato": false
+    }
+  ],
+  "patterns": [
+    [
+      "===. C#5. D#5. ===. C#5. D#5. D#5. C#5. ===. .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... ....",
+      "===. .... .... .... .... .... .... .... D-4. E-4. D-4. C-4. F-4. G-4. B-4. B-4. C-5. B-4. E-4. B-4. C-5. E-4. B-4. B-4. C-5. F-4. E-4. .... .... E-4. F-4. F-4. D-4. ===. .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... ....",
+      ".... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... .... B-4. D-4. A-4. C-4. G-4. D-4. F-4. E-4. E-4. F-4. A-4. B-4. E-4. A-4. A-4. B-4. B-4. B-4. B-4. B-4. B-4. B-4. E-4. A-4. D-4. A-4. F-4. D-4.",
+      "KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK. KCK."
+    ]
+  ],
+  "order": [
+    0
+  ]
+}

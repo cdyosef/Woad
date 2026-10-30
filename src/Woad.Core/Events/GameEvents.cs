@@ -173,7 +173,16 @@ public enum SpawnCause
 
     /// <summary>A Sentient Shrub sprang up where plants grew (a monster's Life dice).</summary>
     Grown,
+
+    /// <summary>One of the dead climbed out of an opened grave.</summary>
+    Risen,
 }
+
+/// <summary>Opening the grave at <paramref name="Grave"/> woke the dead in it: <paramref name="MonsterId"/> climbed out beside it (its <see cref="MonsterSpawned"/> comes just before).</summary>
+public sealed record RoseFromGrave(int MonsterId, string RoomId, GridPosition Grave, int OpenerId) : GameEvent;
+
+/// <summary>A monster lying still noticed a hero nearby (or was hurt) and stirs: from now on it takes its turns.</summary>
+public sealed record MonsterStirred(int MonsterId) : GameEvent;
 
 public sealed record MonsterMoved(int MonsterId, IReadOnlyList<GridPosition> Path) : GameEvent;
 

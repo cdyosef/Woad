@@ -166,6 +166,10 @@ public partial class GameScreen : Control
         {
             RunBossTest();
         }
+        else if (args.Contains("--gravestest"))
+        {
+            RunGravesTest();
+        }
         else if (args.Contains("--dentest"))
         {
             RunDenTest();
@@ -569,6 +573,17 @@ public partial class GameScreen : Control
             case Hexed hexed:
                 CalloutOver(hexed.HeroId, "HEXED!", Palette.Power);
                 await Pause(0.3);
+                break;
+
+            case RoseFromGrave risen:
+                _board.QueueRedraw();
+                CalloutOver(risen.MonsterId, "RISEN!", Palette.Danger);
+                await Pause(0.4);
+                break;
+
+            case MonsterStirred stirred when _figures.TryGetValue(stirred.MonsterId, out Figure? stirring) && stirring.RoomId == _shownRoomId:
+                _board.FloatText(stirring.Position, "!", Palette.Danger);
+                await Pause(0.1);
                 break;
 
             case MimicWoke woke:

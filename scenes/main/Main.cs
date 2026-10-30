@@ -150,6 +150,10 @@ public partial class Main : Control
 		{
 			Show(new GameScreen { Setup = DemoRun.BossRoom(seed), Content = _content });
 		}
+		else if (args.Contains("--gravestest"))
+		{
+			Show(new GameScreen { Setup = DemoRun.Graves(seed), Content = _content });
+		}
 		else if (args.Contains("--partytest"))
 		{
 			Show(new GameScreen { Setup = DemoRun.PartyCheck(seed), Content = _content });

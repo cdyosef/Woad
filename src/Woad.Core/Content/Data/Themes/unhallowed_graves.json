@@ -1,0 +1,63 @@
+{
+  "id": "unhallowed_graves",
+  "name": "The Unhallowed Graves",
+  "description": "A cursed graveyard under a starless night, walled in by stone. The dead stir as you pass. Find a way out at the edge.",
+  "floors": 1,
+
+  // One huge room instead of floors: see GraveyardDefinition.
+  "graveyard": {
+    "size": 100,
+    "crypts": 9,
+    "exits": 3,
+    "crackedExits": 3,
+    "horde": 60,
+    "strays": 6,
+    "graves": { "count": 140, "treasure": 30, "trap": 12, "risen": 18, "risers": ["skeleton", "zombie"] },
+    "sarcophagi": { "count": 26, "treasure": 45, "trap": 15, "risen": 30, "locked": 30, "risers": ["ghoul", "zombie", "skeleton"] },
+    "braziers": 28,
+    "litBraziers": 10,
+    "wakeRange": 6
+  },
+
+  // The horde: the dead and those who keep them. The strays: a few monsters wandering among them.
+  "roster": [
+    { "monster": "skeleton", "weight": 8, "horde": true },
+    { "monster": "zombie", "weight": 8, "horde": true },
+    { "monster": "ghoul", "weight": 1, "horde": true },
+    { "monster": "necromancer", "weight": 1, "horde": true },
+    { "monster": "mugger_fly", "weight": 2 },
+    { "monster": "gelatinous_cube", "weight": 1 },
+    { "monster": "slime", "weight": 2 },
+    { "monster": "petty_thief", "weight": 2 }
+  ],
+
+  "lootDeck": [
+    { "card": "health_potion", "copies": 4 },
+    { "card": "holy_water", "copies": 3 },
+    { "card": "bandages", "copies": 2 },
+    { "card": "antidote" },
+    { "card": "smelling_salts" },
+    { "card": "medicine_bag" },
+    { "card": "torch", "copies": 3 },
+    { "card": "bomb", "copies": 2 },
+    { "card": "shovel" },
+    { "card": "sun_scroll", "copies": 2 },
+    { "card": "flame_scroll" },
+    { "card": "grave_scroll" },
+    { "card": "shadow_scroll" },
+    { "card": "sineater_doll" },
+    { "card": "lucky_helmet" },
+    { "card": "knights_sword" },
+    { "card": "war_hammer" },
+    { "card": "rapier" },
+    { "card": "chain_mail" },
+    { "card": "dagger", "copies": 2 },
+    { "card": "loose_coins", "copies": 4 },
+    { "card": "coin_pouch", "copies": 4 },
+    { "card": "emerald" },
+    { "card": "pearl" },
+    { "card": "golden_idol" }
+  ],
+
+  "keys": { "monster": 5, "pot": 0, "roomCleared": 0, "steal": 20 }
+}

@@ -14,6 +14,9 @@ public sealed class Room
     private readonly Dictionary<GridPosition, Trap> _chestTraps = [];
     private readonly Dictionary<GridPosition, int> _chestLocks = [];
     private readonly Dictionary<GridPosition, int> _mimics = [];
+    private readonly Dictionary<GridPosition, ChestLook> _chestLooks = [];
+    private readonly HashSet<GridPosition> _emptyChests = [];
+    private readonly Dictionary<GridPosition, string> _risers = [];
     private readonly HashSet<GridPosition> _grandChests = [];
     private readonly Dictionary<GridPosition, int> _gates = [];
     private readonly Dictionary<GridPosition, int> _hiddenGates = [];
@@ -113,6 +116,23 @@ public sealed class Room
 
     public IReadOnlyDictionary<GridPosition, int> Mimics => _mimics;
 
+    /// <summary>What a chest looks like: a chest, a grave or a sarcophagus.</summary>
+    public ChestLook ChestLookAt(GridPosition position) => _chestLooks.GetValueOrDefault(position);
+
+    /// <summary>The chest (a grave) holds nothing.</summary>
+    public bool IsEmptyChest(GridPosition position) => _emptyChests.Contains(position);
+
+    /// <summary>The monster (id) lying in a grave, who rises when it's opened; null for none.</summary>
+    public string? RiserAt(GridPosition position) => _risers.GetValueOrDefault(position);
+
+    internal void SetChestLook(GridPosition position, ChestLook look) => _chestLooks[position] = look;
+
+    internal void EmptyChest(GridPosition position) => _emptyChests.Add(position);
+
+    internal void LayRiser(GridPosition position, string monsterId) => _risers[position] = monsterId;
+
+    internal void RemoveRiser(GridPosition position) => _risers.Remove(position);
+
     /// <summary>A den's grand chest: three cards dealt as if from two floors deeper, and gold.</summary>
     public bool IsGrandChest(GridPosition position) => _grandChests.Contains(position);
 
@@ -169,6 +189,9 @@ public sealed class Room
 
     /// <summary>A dark room: tiles away from any light are in darkness (see <c>GameSession.InDarkness</c>).</summary>
     public bool Dark { get; internal init; }
+
+    /// <summary>Far bigger than any ordinary room (a graveyard): a world of its own, with no floors around it.</summary>
+    public bool IsHuge => Layout.Width * Layout.Height > 4 * RoomGrid.MaxStandardArea;
 
     /// <summary>Braziers that have been lit (they stay lit).</summary>
     public IReadOnlyCollection<GridPosition> LitBraziers => _litBraziers;

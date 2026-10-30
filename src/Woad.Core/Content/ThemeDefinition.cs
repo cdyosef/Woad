@@ -98,6 +98,68 @@ public sealed record RosterEntry
 
     /// <summary>The first floor this monster can appear on.</summary>
     public int MinFloor { get; init; } = 1;
+
+    /// <summary>In a graveyard: one of the horde (the undead and their keepers), not a stray monster.</summary>
+    public bool Horde { get; init; }
+}
+
+/// <summary>What a graveyard's graves (or sarcophagi) hold. Chances are percentages; the rest are empty.</summary>
+public sealed record GraveContents
+{
+    public int Count { get; init; }
+
+    /// <summary>A card from the loot deck (a sarcophagus's as if from a floor deeper).</summary>
+    public int Treasure { get; init; }
+
+    /// <summary>A needle trap, hidden, then a card besides.</summary>
+    public int Trap { get; init; }
+
+    /// <summary>One of the dead lying in it, who rises when it's opened.</summary>
+    public int Risen { get; init; }
+
+    /// <summary>Who rises (monster ids, picked at random).</summary>
+    public IReadOnlyList<string> Risers { get; init; } = [];
+
+    /// <summary>Percent locked (a sarcophagus's lid), with better treasure.</summary>
+    public int Locked { get; init; }
+}
+
+/// <summary>
+/// A graveyard: one huge room instead of floors of rooms, walled in by a ring of stone pillars with a few
+/// ways out at the edge (and cracked stretches a bomb can open). Crypts dot it, some joined, a ruined
+/// temple stands in the middle, and graves and sarcophagi open like chests. Always night: a few braziers
+/// burn. Its monsters lie still until a hero comes near.
+/// </summary>
+public sealed record GraveyardDefinition
+{
+    /// <summary>Tiles each way.</summary>
+    public int Size { get; init; } = 100;
+
+    public int Crypts { get; init; } = 8;
+
+    /// <summary>Gaps in the pillar ring that lead out.</summary>
+    public int Exits { get; init; } = 3;
+
+    /// <summary>Ways out walled up with cracked stone: a bomb opens them.</summary>
+    public int CrackedExits { get; init; } = 3;
+
+    /// <summary>The horde: monsters from the roster's horde entries.</summary>
+    public int Horde { get; init; } = 60;
+
+    /// <summary>Stray monsters: from the rest of the roster.</summary>
+    public int Strays { get; init; } = 6;
+
+    public GraveContents Graves { get; init; } = new();
+
+    public GraveContents Sarcophagi { get; init; } = new();
+
+    /// <summary>Braziers, a few of them burning.</summary>
+    public int Braziers { get; init; } = 24;
+
+    public int LitBraziers { get; init; } = 8;
+
+    /// <summary>How near a hero comes before a sleeping monster stirs.</summary>
+    public int WakeRange { get; init; } = 6;
 }
 
 /// <summary>A handcrafted room layout and the roles it can be used for.</summary>
@@ -146,4 +208,7 @@ public sealed record ThemeDefinition
     public string? Miniboss { get; init; }
 
     public IReadOnlyList<ThemeRoomDefinition> Rooms { get; init; } = [];
+
+    /// <summary>A graveyard instead of floors of rooms (see <see cref="GraveyardDefinition"/>); null for a dungeon.</summary>
+    public GraveyardDefinition? Graveyard { get; init; }
 }

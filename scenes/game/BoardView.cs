@@ -121,6 +121,38 @@ public partial class BoardView : Control
         _shake = Mathf.MoveToward(_shake, 0, 30 * (float)delta);
         Vector2 jolt = _shake > 0.05f ? new Vector2((float)(Random.Shared.NextDouble() * 2 - 1), (float)(Random.Shared.NextDouble() * 2 - 1)) * _shake : Vector2.Zero;
         Position = -_camera + jolt.Round();
+
+        // A room much bigger than the view draws only what's near it: once the view has moved, again.
+        if (Culls && _drawnAt.DistanceTo(_camera) > TileSize / 2f)
+        {
+            QueueRedraw();
+            _loot.QueueRedraw();
+        }
+    }
+
+    /// <summary>Where the view stood when the board was last drawn.</summary>
+    private Vector2 _drawnAt;
+
+    /// <summary>The room is far bigger than the view (a graveyard): only the tiles near the view are drawn.</summary>
+    private bool Culls => _room is { IsHuge: true };
+
+    /// <summary>The part of the board drawn: the view and two tiles round it, or all of it.</summary>
+    private Rect2 ShownRect() => Culls
+        ? new Rect2(_camera - new Vector2(2 * TileSize, 2 * TileSize), new Vector2(Pixels + 4 * TileSize, Pixels + 4 * TileSize))
+        : new Rect2(Vector2.Zero, RoomPixels);
+
+    /// <summary>The tiles drawn (see <see cref="ShownRect"/>).</summary>
+    private IEnumerable<GridPosition> ShownTiles()
+    {
+        if (!Culls)
+        {
+            return _room!.Positions;
+        }
+
+        Rect2 shown = ShownRect();
+        int left = Math.Max(0, (int)(shown.Position.X / TileSize)), top = Math.Max(0, (int)(shown.Position.Y / TileSize));
+        int right = Math.Min(_room!.Layout.Width - 1, (int)(shown.End.X / TileSize)), bottom = Math.Min(_room.Layout.Height - 1, (int)(shown.End.Y / TileSize));
+        return Enumerable.Range(top, Math.Max(0, bottom - top + 1)).SelectMany(y => Enumerable.Range(left, Math.Max(0, right - left + 1)).Select(x => new GridPosition(x, y)));
     }
 
     /// <summary>Shakes the view, harder for bigger blows.</summary>
@@ -393,7 +425,8 @@ public partial class BoardView : Control
             return;
         }
 
-        foreach (GridPosition tile in _room.Positions)
+        _drawnAt = _camera;
+        foreach (GridPosition tile in ShownTiles())
         {
             DrawTile(tile, _room.Layout[tile]);
         }
@@ -513,6 +546,9 @@ public partial class BoardView : Control
             TileKind.Gate => "gate",
             TileKind.ShallowWater => "water_shallow",
             TileKind.DeepWater => "water_deep",
+            TileKind.Chest when _room!.ChestLookAt(tile) is ChestLook.Grave => _room.IsChestOpened(tile) ? "grave_open" : "grave",
+            TileKind.Chest when _room!.ChestLookAt(tile) is ChestLook.Sarcophagus => _room.IsChestOpened(tile) ? "sarcophagus_open"
+                : _room.ChestLockAt(tile) is not null ? "sarcophagus_locked" : "sarcophagus",
             TileKind.Chest => _room!.IsChestOpened(tile) ? "chest_open"
                 : _room.HoldsBossKey(tile) ? "chest_boss"
                 : _room.IsGrandChest(tile) ? "chest_grand"
@@ -943,7 +979,8 @@ public partial class BoardView : Control
         }
 
         // In a dark room, what no light reaches is hard to make out.
-        foreach (GridPosition tile in _darkTiles)
+        Rect2 shown = ShownRect();
+        foreach (GridPosition tile in _darkTiles.Where(tile => shown.HasPoint(TileOrigin(tile))))
         {
             canvas.DrawRect(TileRect(tile), Palette.Background with { A = 0.6f });
         }

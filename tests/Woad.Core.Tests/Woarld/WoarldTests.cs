@@ -12,13 +12,14 @@ public class WoarldTests
     private static WoarldPlace Place(string id) => Map.Places.Single(place => place.Id == id);
 
     [Fact]
-    public void TheWoarldHasTheInnTheBlacksmithAndBothDungeons()
+    public void TheWoarldHasTheInnTheBlacksmithTheDungeonsAndTheGraves()
     {
-        Assert.Equal(["waylay_inn", "blacksmith", "emerald_keep", "sunken_temple"], Map.Places.Select(place => place.Id));
+        Assert.Equal(["waylay_inn", "blacksmith", "emerald_keep", "unhallowed_graves", "sunken_temple"], Map.Places.Select(place => place.Id));
         Assert.Equal(PlaceKind.Smithy, Place("blacksmith").Kind);
         Assert.Equal(Place("waylay_inn").Position, Map.Start);
         Assert.Equal(PlaceKind.Tavern, Place("waylay_inn").Kind);
         Assert.Equal("emerald_keep", Place("sunken_temple").UnlockedBy);
+        Assert.Equal(("unhallowed_graves", null), (Place("unhallowed_graves").ThemeId, Place("unhallowed_graves").UnlockedBy));
     }
 
     [Fact]

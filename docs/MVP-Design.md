@@ -732,6 +732,34 @@ Its loot deck adds three cards:
 - **Diving Helm:** Armor 1. Water costs 1 step a tile, and staying afloat in deep water takes no Rumble die.
 - **Pearl:** treasure worth 20 gold.
 
+### The Unhallowed Graves (graveyard)
+
+A walled graveyard where it is always night, out on the Woarld Map (east of the river, below the
+Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, not floors of rooms:
+
+- **The ring:** a ragged band of stone pillars, two to five deep, walls it in. The party comes in at
+  the gate at the bottom, which rusts shut behind them. The only ways out are a few gaps through the
+  ring to an **exit** at the very edge (sparse: about three), and about three more walled up in
+  **cracked stone** that a bomb opens. Stand on an exit and Escape.
+- **The ruined temple** stands in the middle: pillared walls with a wide doorway, braziers either side
+  of the pulpit and a chest before it (for the relic quest, still to come).
+- **Crypts** dot the ground: walled rooms with a doorway each, some built onto another with a door
+  through the wall they share. Sarcophagi line their back walls; each has a brazier.
+- **Graves** lie in plots, in rows with room to walk between, and more **sarcophagi** stand alone
+  toward the middle. Both open like chests. A grave may hold a card (30%), a hidden needle trap and a
+  card (12%), or one of the dead (18%: a Skeleton or Zombie climbs out beside it and strikes at once);
+  the rest are empty. Sarcophagi hold more (45% a card, 15% trapped, 30% a Ghoul, Zombie or Skeleton),
+  and some are locked (30%), with better treasure.
+- **Night:** the whole graveyard is dark. About ten of its braziers burn from the start; the rest wait
+  for a torch.
+- **The horde** (about 60: Skeletons, Zombies, a few Ghouls and Necromancers) gathers thicker toward
+  the middle and in the crypts; a few **strays** (Mugger Flies, a Gelatinous Cube, Slimes, Petty
+  Thieves) wander among them. Nothing starts within 12 tiles of the gate.
+- **The dead lie still:** every monster there sleeps until a hero comes within 6 tiles of it (or it's
+  hurt), and only then takes turns. Woken, it stays awake.
+- The board draws only what's near the view, and the map panel shows the graveyard small: what the
+  heroes have come near (stone, graves, exits in green, cracked stone in gold) and their dots.
+
 ## Dungeon
 
 - **3 floors**, each 6–8 rooms, laid out by a random walk on a 5×5 room map that all floors share,

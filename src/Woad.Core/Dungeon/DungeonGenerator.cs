@@ -41,6 +41,11 @@ public static partial class DungeonGenerator
     public static RunSetup CreateRun(ContentCatalog content, string themeId, IReadOnlyList<HeroSetup> heroes, ulong seed)
     {
         ThemeDefinition theme = content.GetTheme(themeId);
+        if (theme.Graveyard is not null)
+        {
+            return CreateGraveyard(content, theme, heroes, seed);
+        }
+
         IReadOnlyList<ThemeRoom> layouts = content.RoomsFor(themeId);
         foreach (RoomRole role in Enum.GetValues<RoomRole>())
         {

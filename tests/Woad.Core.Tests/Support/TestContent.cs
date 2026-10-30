@@ -138,5 +138,19 @@ internal static class TestContent
         }
         """;
 
-    public static ContentCatalog Catalog { get; } = ContentCatalog.Parse(CardsJson, MonstersJson, [ThemeJson], ContentCatalog.ReadEmbedded("spells.json"));
+    /// <summary>A graveyard: its monsters lie still until a hero comes within 6.</summary>
+    public const string GraveyardThemeId = "test_graves";
+
+    public const string GraveyardJson = """
+        {
+          "id": "test_graves",
+          "name": "Test Graves",
+          "floors": 1,
+          "lootDeck": [ { "card": "coin", "copies": 2 } ],
+          "keys": { "monster": 0, "pot": 0, "roomCleared": 0, "steal": 50 },
+          "graveyard": { "wakeRange": 6 }
+        }
+        """;
+
+    public static ContentCatalog Catalog { get; } = ContentCatalog.Parse(CardsJson, MonstersJson, [ThemeJson, GraveyardJson], ContentCatalog.ReadEmbedded("spells.json"));
 }

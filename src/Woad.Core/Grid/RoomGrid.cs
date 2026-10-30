@@ -12,8 +12,11 @@ public static class RoomGrid
     /// <summary>Index of the middle row/column of a standard room.</summary>
     public const int Center = Size / 2;
 
-    /// <summary>No room is wider or taller than this (a boss arena spanning two map cells each way).</summary>
-    public const int MaxSize = 2 * Size;
+    /// <summary>The tiles in a standard room.</summary>
+    public const int MaxStandardArea = 2 * Size * 2 * Size;
+
+    /// <summary>No room is wider or taller than this (a graveyard: most rooms are much smaller).</summary>
+    public const int MaxSize = 100;
 
     /// <summary>Every tile in a standard room, row by row from the top-left.</summary>
     public static IEnumerable<GridPosition> AllPositions() => AllPositions(Size, Size);

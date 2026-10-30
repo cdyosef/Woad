@@ -37,12 +37,27 @@ internal static class TestRun
         return session;
     }
 
-    public static GameSession Create(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, IReadOnlyList<PassageSetup>? passages = null, int?[]? owners = null, bool friendlyFire = false, Skill skills = Skills.All)
+    /// <summary>A begun run in a single dark graveyard room "A" (its monsters asleep), with graves that hold the dead or nothing.</summary>
+    public static GameSession StartGraveyard(string room, ScriptedDice? dice = null, Dictionary<GridPosition, string>? risers = null, GridPosition[]? empty = null)
+    {
+        RoomTemplate template = Room(room);
+        var features = new RoomFeatures
+        {
+            Risers = risers ?? [],
+            EmptyChests = empty ?? [],
+            ChestLooks = template.Layout.Positions.Where(tile => template.Layout[tile] == TileKind.Chest).ToDictionary(tile => tile, _ => ChestLook.Grave),
+        };
+        GameSession session = Create([new RoomSetup("A", template, Features: features, Dark: true)], dice, themeId: TestContent.GraveyardThemeId);
+        session.Begin();
+        return session;
+    }
+
+    public static GameSession Create(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, IReadOnlyList<PassageSetup>? passages = null, int?[]? owners = null, bool friendlyFire = false, Skill skills = Skills.All, string themeId = TestContent.ThemeId)
     {
         var setup = new RunSetup
         {
             Seed = Seed,
-            ThemeId = TestContent.ThemeId,
+            ThemeId = themeId,
             Heroes = Enumerable.Range(1, heroes)
                 .Select(number => new HeroSetup($"Hero {number}", stats ?? HeroStats, cards ?? [], OwnerSeat: owners?[number - 1], Skills: skills))
                 .ToList(),

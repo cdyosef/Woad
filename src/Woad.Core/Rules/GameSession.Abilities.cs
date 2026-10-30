@@ -134,6 +134,32 @@ public sealed partial class GameSession
         }
     }
 
+    /// <summary>One of the dead climbs out of an opened grave, beside it, and strikes at whoever opened it.</summary>
+    private void RiseFromGrave(Room room, GridPosition grave, string monsterId, Hero opener, List<GameEvent> events)
+    {
+        room.RemoveRiser(grave);
+        MonsterDefinition definition = Content.GetMonster(monsterId);
+        Monster risen = CreateMonster(State.NextId(), definition, FreeTileNear(State, room, grave), PartyStrength());
+        room.AddMonster(risen);
+        events.Add(new MonsterSpawned(risen.Id, definition.Id, room.Id, risen.Position, risen.Hearts) { Cause = SpawnCause.Risen });
+        events.Add(new RoseFromGrave(risen.Id, room.Id, grave, opener.Id));
+        if (!opener.IsActive || risen.NearestTile(opener.Position).ChebyshevDistanceTo(opener.Position) > 1)
+        {
+            return;
+        }
+
+        risen.AttackDiceThisTurn = definition.AttackDice;
+        _actingMonsterId = risen.Id;
+        try
+        {
+            MonsterAttacks(room, risen, opener, events);
+        }
+        finally
+        {
+            _actingMonsterId = null;
+        }
+    }
+
     private int PartyStrength() => GameRules.PartyStrength(State.Heroes.Count(hero => !hero.IsCompanion), State.Heroes.Count(hero => hero.IsCompanion));
 
     /// <summary>Every other turn (its first among them), a raiser brings one more of the dead up beside it, up to its limits.</summary>

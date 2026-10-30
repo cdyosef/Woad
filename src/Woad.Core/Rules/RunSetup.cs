@@ -97,6 +97,18 @@ public sealed record RoomFeatures
 
     /// <summary>Secret ways through a wall dividing the room, and the search needed to find each.</summary>
     public IReadOnlyDictionary<GridPosition, int> HiddenGates { get; init; } = new Dictionary<GridPosition, int>();
+
+    /// <summary>Chests that look like something else: graves and sarcophagi.</summary>
+    public IReadOnlyDictionary<GridPosition, ChestLook> ChestLooks { get; init; } = new Dictionary<GridPosition, ChestLook>();
+
+    /// <summary>Chests (graves) that hold nothing.</summary>
+    public IReadOnlyCollection<GridPosition> EmptyChests { get; init; } = [];
+
+    /// <summary>Graves with one of the dead in them (a monster id), who rises when it's opened.</summary>
+    public IReadOnlyDictionary<GridPosition, string> Risers { get; init; } = new Dictionary<GridPosition, string>();
+
+    /// <summary>Braziers burning from the start.</summary>
+    public IReadOnlyCollection<GridPosition> LitBraziers { get; init; } = [];
 }
 
 /// <summary>

@@ -393,7 +393,10 @@ public sealed partial class GameSession
                 roomSetup.DoorTiles) { Dark = roomSetup.Dark };
             foreach (MonsterSpawn spawn in roomSetup.Template.Monsters)
             {
-                room.AddMonster(CreateMonster(state.NextId(), spawn.Monster, spawn.Position, GameRules.PartyStrength(setup.Heroes)));
+                // A graveyard's dead lie still until a hero comes near.
+                Monster monster = CreateMonster(state.NextId(), spawn.Monster, spawn.Position, GameRules.PartyStrength(setup.Heroes));
+                monster.Asleep = theme.Graveyard is not null;
+                room.AddMonster(monster);
             }
 
             AddFeatures(room, roomSetup.Features ?? RoomFeatures.None);
@@ -555,6 +558,26 @@ public sealed partial class GameSession
         foreach ((GridPosition tile, int difficulty) in features.HiddenGates)
         {
             room.HideGate(tile, difficulty);
+        }
+
+        foreach ((GridPosition chest, ChestLook look) in features.ChestLooks)
+        {
+            room.SetChestLook(chest, look);
+        }
+
+        foreach (GridPosition chest in features.EmptyChests)
+        {
+            room.EmptyChest(chest);
+        }
+
+        foreach ((GridPosition grave, string monsterId) in features.Risers)
+        {
+            room.LayRiser(grave, monsterId);
+        }
+
+        foreach (GridPosition brazier in features.LitBraziers)
+        {
+            room.LightBrazier(brazier);
         }
     }
 

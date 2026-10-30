@@ -29,6 +29,12 @@ public sealed partial class GameSession
                     continue;
                 }
 
+                // Lying still: it stirs once a hero comes near, and only then takes turns.
+                if (monster.Asleep && !Stir(room, monster, events))
+                {
+                    continue;
+                }
+
                 TakeMonsterTurn(room, monster, events);
                 if (State.Phase != RunPhase.InProgress)
                 {
@@ -38,6 +44,28 @@ public sealed partial class GameSession
         }
 
         events.Add(new EnemyPhaseEnded(State.Round));
+    }
+
+    /// <summary>A sleeping monster wakes when a hero (Keeling Over or not) comes within the graveyard's wake range of it.</summary>
+    private bool Stir(Room room, Monster monster, List<GameEvent> events)
+    {
+        int range = Content.GetTheme(State.ThemeId).Graveyard?.WakeRange ?? int.MaxValue;
+        if (!State.HeroesIn(room).Any(hero => (hero.IsActive || hero.IsKeelingOver) && monster.NearestTile(hero.Position).ChebyshevDistanceTo(hero.Position) <= range))
+        {
+            return false;
+        }
+
+        Wake(monster, events);
+        return true;
+    }
+
+    private static void Wake(Monster monster, List<GameEvent> events)
+    {
+        if (monster.Asleep)
+        {
+            monster.Asleep = false;
+            events.Add(new MonsterStirred(monster.Id));
+        }
     }
 
     /// <summary>A monster's turn; a stun on it wears off at the end (if it still stands).</summary>
