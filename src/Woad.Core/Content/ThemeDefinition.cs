@@ -160,6 +160,12 @@ public sealed record GraveyardDefinition
 
     /// <summary>How near a hero comes before a sleeping monster stirs.</summary>
     public int WakeRange { get; init; } = 6;
+
+    /// <summary>How many of the horde the heroes must have woken to raise its alert to 1, 2 and 3.</summary>
+    public IReadOnlyList<int> AlertAt { get; init; } = [4, 10, 18];
+
+    /// <summary>At each alert (1, 2, 3), how far from a hero the horde's sleepers stir anyway: at 3, all of them.</summary>
+    public IReadOnlyList<int> AlertReach { get; init; } = [12, 24, 1000];
 }
 
 /// <summary>A handcrafted room layout and the roles it can be used for.</summary>

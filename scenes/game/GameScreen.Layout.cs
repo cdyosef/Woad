@@ -559,7 +559,8 @@ public partial class GameScreen
         int floor = _shownRoomId.Length > 0 ? ShownRoom.Floor : 1;
         string friendlyFire = state.FriendlyFire ? $"  [color={Palette.Hex(Palette.Danger)}]FF[/color]" : "";
         Hero? turn = TurnOnShow;
-        string whose = _playingTurn is { Set: true, HeroId: null } ? $"[color={Palette.Hex(Palette.Danger)}]The monsters' turn[/color]"
+        string whose = _playingTurn is { Set: true, HeroId: null }
+            ? _playingFaction == Faction.Undead ? $"[color={Palette.Hex(DieTypes.Nekrot)}]The undead's turn[/color]" : $"[color={Palette.Hex(Palette.Danger)}]The monsters' turn[/color]"
             : turn is null ? "" : $"[color={Palette.Hex(Palette.Seat(turn.Seat))}]{Escape(turn.Name)}'s turn[/color]";
         string where = _shownRoomId.Length > 0 && ShownRoom.IsHuge ? "" : $"   FLOOR {floor}";
         return $"[color={Palette.Hex(Palette.Trim)}]ROUND {state.Round}{where}[/color]{friendlyFire}\n{whose}";

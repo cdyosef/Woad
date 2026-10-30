@@ -335,6 +335,9 @@ public partial class GameScreen : Control
     /// </summary>
     private (bool Set, int? HeroId) _playingTurn;
 
+    /// <summary>While the enemies play out: whose turn, the monsters' or the undead's.</summary>
+    private Faction _playingFaction;
+
     /// <summary>The hero whose turn is on show, or null while the monsters act.</summary>
     private Hero? TurnOnShow => _playingTurn.Set ? (_playingTurn.HeroId is int id ? _session.State.GetHero(id) : null) : ActiveHero;
 
@@ -455,10 +458,27 @@ public partial class GameScreen : Control
                 await _banner.Flash($"{hero.Name}'s turn", Palette.Seat(hero.Seat));
                 break;
 
-            case EnemyPhaseStarted:
+            case EnemyPhaseStarted phase:
+                _playingFaction = phase.Faction;
                 ShowTurnOf(null);
                 RefreshPanels();
-                await _banner.Flash("The monsters stir...", Palette.Danger, 0.3);
+                await (phase.Faction == Faction.Undead
+                    ? _banner.Flash("The dead shamble closer...", DieTypes.Nekrot, 0.3)
+                    : _banner.Flash("The monsters stir...", Palette.Danger, 0.3));
+                break;
+
+            case HordeRoused roused:
+                await _banner.Flash(roused.Level switch
+                {
+                    1 => "The dead grow restless...",
+                    2 => "The dead know you are here...",
+                    _ => "Every grave empties toward you!",
+                }, DieTypes.Nekrot, 0.6);
+                break;
+
+            case ParthianSwing swing:
+                CalloutOver(swing.MonsterId, "PARTING BLOW!", Palette.Danger);
+                await Pause(0.2);
                 break;
 
             case MovementRolled rolled:

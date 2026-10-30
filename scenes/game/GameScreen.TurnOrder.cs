@@ -39,19 +39,26 @@ public partial class GameScreen
     {
         GameState state = _session.State;
         List<Hero> heroes = [.. state.Heroes.Where(hero => hero.IsInPlay).OrderBy(hero => hero.Seat)];
-        var monsters = new TurnOrderView.Entry(null, "Monsters", Palette.Danger, null, false);
+        // In a graveyard the undead take a turn of their own, after the monsters.
+        List<TurnOrderView.Entry> enemies = [new(null, "Monsters", Palette.Danger, null, false)];
+        if (Content.GetTheme(state.ThemeId).Graveyard is not null)
+        {
+            enemies.Add(new(null, "Undead", DieTypes.Nekrot, null, false, Faction.Undead));
+        }
+
         TurnOrderView.Entry Card(Hero hero) =>
             new(hero.Id, hero.Name, Palette.Seat(hero.Seat), hero.Guise is null ? Looks.Resolve(hero.Appearance, hero.Portrait) : null, hero.IsKeelingOver);
 
         List<TurnOrderView.Entry> order;
         if (_playingTurn is { Set: true, HeroId: null } || TurnOnShow is null)
         {
-            order = [monsters, .. heroes.Select(Card)];
+            int at = enemies.FindIndex(enemy => enemy.Enemy == _playingFaction);
+            order = [.. enemies.Skip(Math.Max(0, at)), .. heroes.Select(Card), .. enemies.Take(Math.Max(0, at))];
         }
         else
         {
             int at = Math.Max(0, heroes.IndexOf(TurnOnShow));
-            order = [.. heroes.Skip(at).Select(Card), monsters, .. heroes.Take(at).Select(Card)];
+            order = [.. heroes.Skip(at).Select(Card), .. enemies, .. heroes.Take(at).Select(Card)];
         }
 
         _turnOrder.ShowOrder(order, _viewedHeroId);

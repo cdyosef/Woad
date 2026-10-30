@@ -8,10 +8,33 @@ namespace Woad.Core.Rules;
 
 public sealed partial class GameSession
 {
-    /// <summary>Monsters act in every room holding at least one hero; other rooms stay paused.</summary>
+    /// <summary>
+    /// Monsters act in every room holding at least one hero; other rooms stay paused. In a graveyard the
+    /// monsters go first, then the undead in a turn of their own.
+    /// </summary>
     private void RunEnemyPhase(List<GameEvent> events)
     {
-        events.Add(new EnemyPhaseStarted(State.Round));
+        RunEnemyPhase(Faction.Monsters, events);
+        if (Graveyard is not null && State.Phase == RunPhase.InProgress)
+        {
+            RunEnemyPhase(Faction.Undead, events);
+        }
+    }
+
+    /// <summary>The theme's graveyard, if this run is one.</summary>
+    private GraveyardDefinition? Graveyard => Content.GetTheme(State.ThemeId).Graveyard;
+
+    /// <summary>Which turn a monster takes: in a graveyard, the horde's (undead, and the roster's horde) is the undead's.</summary>
+    public Faction FactionOf(Monster monster) =>
+        Graveyard is not null && (monster.Definition.Undead is not null || HordeIds.Contains(monster.Definition.Id)) ? Faction.Undead : Faction.Monsters;
+
+    private HashSet<string> HordeIds => _hordeIds ??= [.. Content.GetTheme(State.ThemeId).Roster.Where(entry => entry.Horde).Select(entry => entry.Monster)];
+
+    private HashSet<string>? _hordeIds;
+
+    private void RunEnemyPhase(Faction faction, List<GameEvent> events)
+    {
+        events.Add(new EnemyPhaseStarted(State.Round) { Faction = faction });
 
         foreach (Room room in State.Rooms.Values.OrderBy(room => room.Id, StringComparer.Ordinal).ToList())
         {
@@ -20,8 +43,17 @@ public sealed partial class GameSession
                 continue;
             }
 
-            MoveMerchants(room, events);
-            foreach (Monster monster in room.Monsters.OrderBy(monster => monster.Id).ToList())
+            if (faction == Faction.Monsters)
+            {
+                MoveMerchants(room, events);
+            }
+
+            if (faction == Faction.Undead)
+            {
+                RouseHorde(room, events);
+            }
+
+            foreach (Monster monster in room.Monsters.Where(monster => FactionOf(monster) == faction).OrderBy(monster => monster.Id).ToList())
             {
                 // One struck down earlier in the phase (by another's swing, say) is gone.
                 if (room.FindMonster(monster.Id) is null)
@@ -29,9 +61,10 @@ public sealed partial class GameSession
                     continue;
                 }
 
-                // Lying still: it stirs once a hero comes near, and only then takes turns.
+                // Lying still: it stirs once a hero comes near, and only then takes turns. A stray may wander meanwhile.
                 if (monster.Asleep && !Stir(room, monster, events))
                 {
+                    Wander(room, monster, events);
                     continue;
                 }
 
@@ -43,7 +76,71 @@ public sealed partial class GameSession
             }
         }
 
-        events.Add(new EnemyPhaseEnded(State.Round));
+        events.Add(new EnemyPhaseEnded(State.Round) { Faction = faction });
+    }
+
+    /// <summary>
+    /// The horde's turn begins: the more of the dead the heroes have woken, the higher its alert, and the
+    /// farther off its sleepers stir anyway and come for them. At the top, all of them.
+    /// </summary>
+    private void RouseHorde(Room room, List<GameEvent> events)
+    {
+        if (Graveyard is not { } yard)
+        {
+            return;
+        }
+
+        int level = yard.AlertAt.Count(at => room.HordeWoken >= at);
+        if (level > room.HordeAlert)
+        {
+            room.HordeAlert = level;
+            events.Add(new HordeRoused(room.Id, level));
+        }
+
+        if (room.HordeAlert == 0)
+        {
+            return;
+        }
+
+        int reach = yard.AlertReach[Math.Min(room.HordeAlert, yard.AlertReach.Count) - 1];
+        List<Hero> heroes = [.. State.HeroesIn(room).Where(hero => hero.IsActive || hero.IsKeelingOver)];
+        foreach (Monster sleeper in room.Monsters.Where(monster => monster.Asleep && FactionOf(monster) == Faction.Undead).OrderBy(monster => monster.Id))
+        {
+            if (heroes.Any(hero => sleeper.NearestTile(hero.Position).ChebyshevDistanceTo(hero.Position) <= reach))
+            {
+                Wake(sleeper, events);
+            }
+        }
+    }
+
+    /// <summary>A sleeping stray that wanders (every other one) takes a step or two in a random direction.</summary>
+    private void Wander(Room room, Monster monster, List<GameEvent> events)
+    {
+        if (Graveyard is null || FactionOf(monster) != Faction.Monsters || monster.Id % 2 == 0 || monster.Definition.Move == 0)
+        {
+            return;
+        }
+
+        var path = new List<GridPosition>();
+        GridPosition at = monster.Position;
+        int steps = _random.Behavior.NextInt(1, 3);
+        for (int step = 0; step < steps; step++)
+        {
+            List<GridPosition> open = [.. at.OrthogonalNeighbors().Where(tile => tile != monster.Position && CanMonsterEnter(room, monster, tile) && room.TrapAt(tile) is null)];
+            if (open.Count == 0)
+            {
+                break;
+            }
+
+            at = open[_random.Behavior.NextInt(0, open.Count)];
+            path.Add(at);
+        }
+
+        if (path.Count > 0)
+        {
+            monster.Position = at;
+            events.Add(new MonsterMoved(monster.Id, path));
+        }
     }
 
     /// <summary>A sleeping monster wakes when a hero (Keeling Over or not) comes within the graveyard's wake range of it.</summary>
@@ -56,6 +153,11 @@ public sealed partial class GameSession
         }
 
         Wake(monster, events);
+        if (FactionOf(monster) == Faction.Undead)
+        {
+            room.HordeWoken++;
+        }
+
         return true;
     }
 

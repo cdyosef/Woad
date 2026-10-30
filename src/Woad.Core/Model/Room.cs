@@ -190,6 +190,12 @@ public sealed class Room
     /// <summary>A dark room: tiles away from any light are in darkness (see <c>GameSession.InDarkness</c>).</summary>
     public bool Dark { get; internal init; }
 
+    /// <summary>A graveyard's horde the heroes have woken by coming near (see <see cref="HordeAlert"/>).</summary>
+    public int HordeWoken { get; internal set; }
+
+    /// <summary>How well the graveyard's dead know where the heroes are, 0 to 3: the higher, the farther off they stir and come.</summary>
+    public int HordeAlert { get; internal set; }
+
     /// <summary>Far bigger than any ordinary room (a graveyard): a world of its own, with no floors around it.</summary>
     public bool IsHuge => Layout.Width * Layout.Height > 4 * RoomGrid.MaxStandardArea;
 

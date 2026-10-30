@@ -331,9 +331,22 @@ public sealed record LootPickedUp(int HeroId, IReadOnlyList<int> CardIds) : Game
     public int? HolderId { get; init; }
 }
 
-public sealed record EnemyPhaseStarted(int Round) : GameEvent;
+public sealed record EnemyPhaseStarted(int Round) : GameEvent
+{
+    /// <summary>Whose turn it is: the monsters, or (in a graveyard) the undead.</summary>
+    public Faction Faction { get; init; }
+}
 
-public sealed record EnemyPhaseEnded(int Round) : GameEvent;
+public sealed record EnemyPhaseEnded(int Round) : GameEvent
+{
+    public Faction Faction { get; init; }
+}
+
+/// <summary>The more of the dead the heroes come across, the more of them know where they are: the horde's alert rose to <paramref name="Level"/> (1 to 3).</summary>
+public sealed record HordeRoused(string RoomId, int Level) : GameEvent;
+
+/// <summary>A monster beside a hero escaping got a swing at them on their way out.</summary>
+public sealed record ParthianSwing(int MonsterId, int HeroId) : GameEvent;
 
 public sealed record RunEnded(IReadOnlyList<int> WinnerHeroIds) : GameEvent;
 

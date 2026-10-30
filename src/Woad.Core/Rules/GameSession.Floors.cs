@@ -88,6 +88,30 @@ public sealed partial class GameSession
             return "The exit is sealed until the boss here is defeated.";
         }
 
+        // Out of a graveyard, the dead beside you get a swing at you as you go: drop, and you don't get away.
+        if (Graveyard is not null)
+        {
+            foreach (Monster dead in room.Monsters.Where(monster => !monster.Asleep && FactionOf(monster) == Faction.Undead && monster.NearestTile(hero.Position).ChebyshevDistanceTo(hero.Position) <= 1).OrderBy(monster => monster.Id).ToList())
+            {
+                events.Add(new ParthianSwing(dead.Id, hero.Id));
+                dead.AttackDiceThisTurn = dead.Definition.AttackDice;
+                _actingMonsterId = dead.Id;
+                try
+                {
+                    MonsterAttacks(room, dead, hero, events);
+                }
+                finally
+                {
+                    _actingMonsterId = null;
+                }
+
+                if (!hero.IsActive || State.Phase != RunPhase.InProgress)
+                {
+                    return null;
+                }
+            }
+        }
+
         // The hero's companions in the room leave with them, and the merchants following them.
         List<Hero> party = State.ActiveHeroesIn(room).Where(other => other == hero || other.OwnerId == hero.Id).ToList();
         RescueMerchants(party, room, events);

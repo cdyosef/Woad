@@ -779,7 +779,18 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
 - **Grave Robber:** a sicklier Petty Thief; may carry a Shovel (25%) and Thieves' Oil (40%).
 - **Death Cultist:** robed, masked and armed with a curved knife (Necro dice).
 - **The dead lie still:** every monster there sleeps until a hero comes within 6 tiles of it (or it's
-  hurt), and only then takes turns. Woken, it stays awake.
+  hurt), and only then takes turns. Woken, it stays awake. Every other sleeping stray wanders a step or
+  two each turn; the rest stand about.
+- **Two enemy turns:** after the heroes, the **monsters** (the strays) take their turn, then the
+  **undead** take one of their own: the horde, the dead and those who keep them (Death Cultists and
+  Necromancers too; Grave Robbers are monsters). The undead's card in the turn order is a fanged skull
+  with glowing green eyes.
+- **The horde comes for you:** the more of the dead the heroes wake by coming near, the higher the
+  horde's alert: 4 woken raise it to 1, 10 to 2, 18 to 3. At the start of each undead turn every
+  sleeper within reach of a hero stirs anyway and comes: 12 tiles at alert 1, 24 at alert 2, the whole
+  graveyard at 3. Moves out of sight happen at once.
+- **Getting away:** stepping out at an exit, every undead beside you gets a parting blow first; drop,
+  and you don't get away.
 - The board draws only what's near the view, and the map panel shows the graveyard small: what the
   heroes have come near (stone, graves, exits in green, cracked stone in gold) and their dots.
 

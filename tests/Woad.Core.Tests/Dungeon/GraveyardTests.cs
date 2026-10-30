@@ -154,5 +154,84 @@ public class GraveyardTests
         Assert.False(session.RoomById().HasLootAt(new GridPosition(1, 4)));
     }
 
+    [Fact]
+    public void InAGraveyardTheMonstersGoThenTheUndeadInATurnOfTheirOwn()
+    {
+        GameSession session = TestRun.StartGraveyard("""
+            .........
+            .........
+            .........
+            .........
+            1.d....j.
+            .........
+            .........
+            .........
+            .........
+            """);
+        Hero hero = session.HeroInSeat();
+
+        List<EnemyPhaseStarted> phases = [.. session.Do(new EndTurn(hero.Id)).OfType<EnemyPhaseStarted>()];
+
+        Assert.Equal([Faction.Monsters, Faction.Undead], phases.Select(phase => phase.Faction));
+        Assert.Equal(Faction.Undead, session.FactionOf(session.RoomById().Monsters.Single(monster => monster.Definition.Id == "corpse")));
+        Assert.Equal(Faction.Monsters, session.FactionOf(session.RoomById().Monsters.Single(monster => monster.Definition.Id == "dummy")));
+    }
+
+    [Fact]
+    public void TheMoreOfTheDeadYouWakeTheFartherOffTheyComeForYou()
+    {
+        // One corpse wakes beside the hero; at the undead's next turn the horde is on alert 1, and the
+        // corpse 8 tiles off, out of waking range, stirs anyway.
+        GameSession session = TestRun.StartGraveyard("""
+            1j.......
+            .........
+            .........
+            .........
+            .........
+            .........
+            .........
+            .........
+            ........j
+            """);
+        Hero hero = session.HeroInSeat();
+        Room yard = session.RoomById();
+        Monster far = yard.Monsters.Single(monster => monster.Position == new GridPosition(8, 8));
+
+        session.EndRound();
+        Assert.Equal((1, 0, true), (yard.HordeWoken, yard.HordeAlert, far.Asleep));
+
+        IReadOnlyList<GameEvent> events = session.EndRound();
+
+        Assert.Equal(new HordeRoused(yard.Id, 1), events.SingleOf<HordeRoused>());
+        Assert.False(far.Asleep);
+    }
+
+    [Fact]
+    public void EscapingTheDeadBesideYouGetASwingAtYouOnTheWayOut()
+    {
+        // The Bones' 5 against the hero's 1: a heart lost, but still up, and away.
+        GameSession session = TestRun.StartGraveyard("""
+            .........
+            .........
+            .........
+            .........
+            1*k......
+            .........
+            .........
+            .........
+            .........
+            """, new ScriptedDice(5, 1));
+        Hero hero = session.HeroInSeat();
+        Monster bones = session.OnlyMonster();
+        bones.Asleep = false;
+        hero.Position = new GridPosition(1, 4);
+
+        IReadOnlyList<GameEvent> events = session.Do(new Escape(hero.Id));
+
+        Assert.Equal(new ParthianSwing(bones.Id, hero.Id), events.SingleOf<ParthianSwing>());
+        Assert.Equal(hero.MaxHearts - 1, hero.Hearts);
+        Assert.Equal(HeroStatus.Escaped, hero.Status);
+    }
+
     private static List<GridPosition> GraveyardChests(RoomSetup room) => [.. room.Features!.ChestLooks.Keys];
 }

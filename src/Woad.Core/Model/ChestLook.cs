@@ -7,3 +7,10 @@ public enum ChestLook
     Grave,
     Sarcophagus,
 }
+
+/// <summary>Who an enemy turn belongs to. Only a graveyard splits them: there the horde (the undead and their keepers) takes a turn of its own.</summary>
+public enum Faction
+{
+    Monsters,
+    Undead,
+}

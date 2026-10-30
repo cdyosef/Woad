@@ -18,7 +18,8 @@ public partial class TurnOrderView : Control
     private const float Big = 30;
 
     /// <summary>A place in the order: a hero (their id), or the monsters (null).</summary>
-    public sealed record Entry(int? HeroId, string Name, Color Color, LookColors? Look, bool Down);
+    /// <param name="Enemy">For an enemy turn's card (no hero): whose turn it is.</param>
+    public sealed record Entry(int? HeroId, string Name, Color Color, LookColors? Look, bool Down, Faction Enemy = Faction.Monsters);
 
     private List<Entry> _entries = [];
     private readonly Dictionary<int, float> _shownX = [];
@@ -48,7 +49,7 @@ public partial class TurnOrderView : Control
     /// <summary>The cards on show (the deck's place holds the rest).</summary>
     private int Shown => _entries.Count > _fits ? _fits - 1 : _entries.Count;
 
-    private static int Key(Entry entry) => entry.HeroId ?? -1;
+    private static int Key(Entry entry) => entry.HeroId ?? -1 - (int)entry.Enemy;
 
     private float TargetX(int index) => index == 0 ? 0 : Big + Gap + (index - 1) * (Card + Gap);
 
@@ -130,7 +131,9 @@ public partial class TurnOrderView : Control
             if (RectAt(i, TargetX(i)).HasPoint(atPosition))
             {
                 Entry entry = _entries[i];
-                return entry.HeroId is null ? "The monsters: they all go together, after every hero has had a turn." : $"{entry.Name}: click to see where they are, and their sheet.";
+                return entry.HeroId is not null ? $"{entry.Name}: click to see where they are, and their sheet."
+                    : entry.Enemy == Faction.Undead ? "The undead: the horde goes together, after the monsters."
+                    : "The monsters: they all go together, after every hero has had a turn.";
             }
         }
 
@@ -176,7 +179,15 @@ public partial class TurnOrderView : Control
     {
         if (entry.HeroId is null)
         {
-            DrawMonsterCard(rect, active);
+            if (entry.Enemy == Faction.Undead)
+            {
+                DrawUndeadCard(rect, active);
+            }
+            else
+            {
+                DrawMonsterCard(rect, active);
+            }
+
             return;
         }
 
@@ -191,6 +202,36 @@ public partial class TurnOrderView : Control
         DrawRect(new Rect2(rect.Position.X, rect.End.Y - 9, rect.Size.X, 9), Palette.Ink with { A = 0.85f });
         DrawString(font, new Vector2(rect.Position.X - 2, rect.End.Y - 1), entry.Name, HorizontalAlignment.Center, rect.Size.X + 4, UiTheme.FontSize, active ? Palette.TrimBright : entry.Color);
         DrawRect(rect, active ? Palette.TrimBright : viewed ? Palette.Text : entry.Color.Darkened(0.2f), filled: false, width: active || viewed ? 2 : 1);
+    }
+
+    /// <summary>The undead's card: black, a sickly green trim, and their symbol: a fanged skull with glowing green eyes.</summary>
+    private void DrawUndeadCard(Rect2 rect, bool active)
+    {
+        Color green = new("60ff80"), dark = new("1a4a24"), bone = new("e8e2d0");
+        DrawRect(rect, Colors.Black);
+        DrawRect(rect, active ? Palette.TrimBright : green.Darkened(0.3f), filled: false, width: active ? 2 : 1);
+        DrawRect(rect.Grow(-2), dark, filled: false, width: 1);
+
+        Vector2 c = rect.GetCenter() + new Vector2(0, -1);
+        float s = rect.Size.X / 22f;
+        // The skull: a dome, a jaw and its fangs.
+        DrawCircle(c, 6.5f * s, bone);
+        DrawRect(new Rect2(c.X - 4 * s, c.Y + 3 * s, 8 * s, 4 * s), bone);
+        foreach (float x in new[] { -3f, -1f, 1f, 3f })
+        {
+            bool fang = x is -3f or 3f;
+            DrawColoredPolygon([new Vector2(c.X + (x - 0.8f) * s, c.Y + 7 * s), new Vector2(c.X + (x + 0.8f) * s, c.Y + 7 * s), new Vector2(c.X + x * s, c.Y + (fang ? 10 : 8.5f) * s)], bone);
+        }
+
+        // Dark sockets, green-glowing irises.
+        foreach (float x in new[] { -2.6f, 2.6f })
+        {
+            DrawCircle(c + new Vector2(x, 0) * s, 2 * s, Colors.Black);
+            DrawCircle(c + new Vector2(x, 0) * s, 1.3f * s, green with { A = 0.45f });
+            DrawCircle(c + new Vector2(x, 0) * s, 0.8f * s, green);
+        }
+
+        DrawColoredPolygon([c + new Vector2(0, 2) * s, c + new Vector2(-0.9f, 3.5f) * s, c + new Vector2(0.9f, 3.5f) * s], Colors.Black);
     }
 
     /// <summary>The monsters' card: black, a fancy red trim, and their symbol.</summary>

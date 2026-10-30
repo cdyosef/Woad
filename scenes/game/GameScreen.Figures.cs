@@ -166,6 +166,13 @@ public partial class GameScreen
             return;
         }
 
+        // In a huge room, what goes on out of sight happens at once: the whole horde can move without a wait.
+        if (_shownRoomId.Length > 0 && ShownRoom.IsHuge && !path.Prepend(GridPositionOf(token)).Any(_board.IsInView))
+        {
+            token.Position = BoardView.TileOrigin(path[^1]);
+            return;
+        }
+
         Tween tween = CreateTween();
         foreach (GridPosition step in path)
         {
@@ -175,6 +182,9 @@ public partial class GameScreen
 
         await ToSignal(tween, Tween.SignalName.Finished);
     }
+
+    private static GridPosition GridPositionOf(TokenView token) =>
+        new((int)Math.Round(token.Position.X / BoardView.TileSize), (int)Math.Round(token.Position.Y / BoardView.TileSize));
 
     /// <summary>A hero went through a door or down the stairs: follow them into the new room.</summary>
     private async Task ChangeRoom(int heroId, string roomId, GridPosition position)
