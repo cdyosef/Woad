@@ -594,6 +594,7 @@ public sealed partial class GameSession
             room.LayRiser(grave, monsterId);
         }
 
+        room.RelicChest = features.RelicChest;
         foreach (GridPosition brazier in features.LitBraziers)
         {
             room.LightBrazier(brazier);

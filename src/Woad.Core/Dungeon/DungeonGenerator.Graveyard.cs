@@ -86,6 +86,7 @@ public static partial class DungeonGenerator
             ChestTraps = traps,
             LockedChests = locks,
             LitBraziers = lit,
+            RelicChest = plan.Reliquary,
         });
         return new RunSetup
         {
@@ -115,6 +116,9 @@ public static partial class DungeonGenerator
         public List<GridPosition> GraveTiles { get; } = [];
 
         public List<GridPosition> SarcophagusTiles { get; } = [];
+
+        /// <summary>The temple's reliquary, before the pulpit.</summary>
+        public GridPosition Reliquary { get; private set; }
 
         private GridPosition Center => new(size / 2, size / 2);
 
@@ -243,6 +247,7 @@ public static partial class DungeonGenerator
             _tiles[size / 2 - 2, top + 1] = '^';
             _tiles[size / 2 + 2, top + 1] = '^';
             _tiles[size / 2, top + 2] = 'C';
+            Reliquary = new GridPosition(size / 2, top + 2);
             Keep(left, top, w, h, 3);
         }
 

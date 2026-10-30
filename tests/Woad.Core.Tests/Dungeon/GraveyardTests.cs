@@ -155,6 +155,56 @@ public class GraveyardTests
     }
 
     [Fact]
+    public void TheReliquaryStandsBeforeThePulpitAndOpensOnlyToTheHolyKey()
+    {
+        RunSetup run = Generate(42, heroes: 1);
+        Assert.Equal(new GridPosition(50, 50 - 7 + 2), run.Rooms[0].Features!.RelicChest);
+
+        GameSession session = Reliquary([]);
+        Hero hero = session.HeroInSeat();
+        Assert.Contains("only the Holy Key", session.CheckOpenChest(new GridPosition(1, 4)));
+        Assert.Contains("only the Holy Key", session.Refuse(new PickLock(hero.Id, new GridPosition(1, 4))));
+    }
+
+    [Fact]
+    public void TheHolyKeyOpensTheReliquaryAndIsGoneAndTheRelicLiesWithin()
+    {
+        GameSession session = Reliquary(["holy_key"]);
+        Hero hero = session.HeroInSeat();
+
+        session.Do(new OpenChest(hero.Id, new GridPosition(1, 4)));
+
+        Assert.DoesNotContain(hero.AllCards, card => card.Definition.HolyKey);
+        Assert.Equal("saints_relic", Assert.Single(session.RoomById().LootAt(new GridPosition(1, 4))).Definition.Id);
+    }
+
+    /// <summary>A hero beside the reliquary, carrying <paramref name="cards"/> (real content).</summary>
+    private static GameSession Reliquary(string[] cards)
+    {
+        RoomTemplate template = RoomTemplate.Parse("""
+            .........
+            .........
+            .........
+            .........
+            1C.......
+            .........
+            .........
+            .........
+            .........
+            """, Content);
+        var session = new GameSession(Content, new RunSetup
+        {
+            Seed = 1,
+            ThemeId = Theme,
+            Heroes = [new HeroSetup("Wren", GameRules.HeroBaseStats with { OdHandDice = 1 }, cards)],
+            Rooms = [new RoomSetup("A", template, Features: new RoomFeatures { RelicChest = new GridPosition(1, 4) })],
+            StartRoomId = "A",
+        }, new Woad.Core.Randomness.GameRandom(1) { Dice = new ScriptedDice(6, 6, 6, 6) });
+        session.Begin();
+        return session;
+    }
+
+    [Fact]
     public void InAGraveyardTheMonstersGoThenTheUndeadInATurnOfTheirOwn()
     {
         GameSession session = TestRun.StartGraveyard("""

@@ -494,8 +494,15 @@ public sealed partial class GameSession
             return $"The chest is locked: use a key, or pick the lock with Od Hand ({difficulty}+).";
         }
 
+        if (room.RelicChest == chest && HolyKeyOf(hero) is null)
+        {
+            return "The reliquary is sealed with a holy lock: only the Holy Key opens it.";
+        }
+
         return CheckLoot();
     }
+
+    private static CardInstance? HolyKeyOf(Hero hero) => hero.AllCards.FirstOrDefault(card => card.Definition.HolyKey);
 
     /// <summary>Why the active hero can't take everything from a pile (their own tile by default), or null if they can.</summary>
     public string? CheckPickUp(GridPosition? tile = null)
@@ -570,6 +577,19 @@ public sealed partial class GameSession
             {
                 return null;
             }
+        }
+
+        // The reliquary takes the Holy Key, and gives up the relic.
+        if (room.RelicChest == command.Chest)
+        {
+            CardInstance key = HolyKeyOf(hero)!;
+            TakeFromHero(hero, key, 1);
+            room.OpenChest(command.Chest);
+            var relic = new CardInstance(State.NextId(), Content.GetCard("saints_relic"), broughtInByHeroId: null);
+            room.AddLoot(command.Chest, [relic]);
+            Turn.LootedTile = command.Chest;
+            events.Add(new ChestOpened(hero.Id, command.Chest, [relic.Id], AddedToBackpack: false));
+            return null;
         }
 
         // The dead in a grave climb out at whoever disturbed them.

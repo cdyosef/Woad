@@ -221,6 +221,11 @@ public sealed partial class GameSession
                 return "Stand next to the chest to pick its lock.";
             }
 
+            if (room.RelicChest == target)
+            {
+                return "No pick opens a holy lock: only the Holy Key does.";
+            }
+
             if (room.ChestLockAt(target) is not int difficulty)
             {
                 return "That chest isn't locked.";

@@ -546,6 +546,7 @@ public partial class BoardView : Control
             TileKind.Gate => "gate",
             TileKind.ShallowWater => "water_shallow",
             TileKind.DeepWater => "water_deep",
+            TileKind.Chest when _room!.RelicChest == tile => _room.IsChestOpened(tile) ? "chest_open" : "chest_boss",
             TileKind.Chest when _room!.ChestLookAt(tile) is ChestLook.Grave => _room.IsChestOpened(tile) ? "grave_open" : "grave",
             TileKind.Chest when _room!.ChestLookAt(tile) is ChestLook.Sarcophagus => _room.IsChestOpened(tile) ? "sarcophagus_open"
                 : _room.ChestLockAt(tile) is not null ? "sarcophagus_locked" : "sarcophagus",

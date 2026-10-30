@@ -24,6 +24,7 @@ public sealed class RaidWorld
     private readonly Dictionary<string, int> _bonds = [];
     private readonly Dictionary<string, List<string>> _stock = [];
     private readonly Dictionary<string, int> _rumorsHeard = [];
+    private readonly Dictionary<string, QuestStage> _quests = [];
     private readonly Dictionary<Guid, RestBoost> _fed = [];
     private readonly Dictionary<Guid, List<string>> _provisions = [];
     private readonly List<string> _guildWares = [];
@@ -254,6 +255,11 @@ public sealed class RaidWorld
     /// <summary>How many of an NPC's rumors the party has heard (they repeat once all are told).</summary>
     public int RumorsHeard(string npcId) => _rumorsHeard.GetValueOrDefault(npcId);
 
+    /// <summary>How far along a quest (see <see cref="Quests"/>) the party is.</summary>
+    public QuestStage Quest(string questId) => _quests.GetValueOrDefault(questId);
+
+    public void SetQuest(string questId, QuestStage stage) => _quests[questId] = stage;
+
     public void HearRumor(string npcId) => _rumorsHeard[npcId] = RumorsHeard(npcId) + 1;
 
     /// <summary>What a hero has eaten and drunk since their last Rest, waiting to boost the next one.</summary>
@@ -319,6 +325,7 @@ public sealed class RaidWorld
         Bonds = _bonds,
         Stock = _stock,
         RumorsHeard = _rumorsHeard,
+        Quests = _quests,
         Fed = _fed.ToDictionary(entry => entry.Key, entry => new[] { entry.Value.Dice, entry.Value.Bonus }),
         Provisions = _provisions,
         MerchantsRescued = MerchantsRescued,
@@ -378,6 +385,11 @@ public sealed class RaidWorld
             world._rumorsHeard[key] = value;
         }
 
+        foreach ((string key, QuestStage value) in data.Quests)
+        {
+            world._quests[key] = value;
+        }
+
         foreach ((Guid key, int[] value) in data.Fed.Where(entry => entry.Value.Length == 2))
         {
             world._fed[key] = new RestBoost(value[0], value[1]);
@@ -406,6 +418,9 @@ public sealed class RaidWorld
         public Dictionary<string, List<string>> Stock { get; init; } = [];
 
         public Dictionary<string, int> RumorsHeard { get; init; } = [];
+
+        /// <summary>Missing in Woarlds saved before quests: none taken.</summary>
+        public Dictionary<string, QuestStage> Quests { get; init; } = [];
 
         public Dictionary<Guid, int[]> Fed { get; init; } = [];
 

@@ -184,6 +184,11 @@ public static class TavernServices
     /// <summary>Sells a card the hero owns (from the backpack first); the merchant keeps it for sale.</summary>
     public static ServiceResult Sell(RaidWorld world, TavernDefinition tavern, ContentCatalog content, Character seller, string cardId)
     {
+        if (content.FindCard(cardId) is { Quest: true } quest)
+        {
+            return ServiceResult.Refused($"Nobody here would buy the {quest.Name}. Someone wants it, though.");
+        }
+
         if (content.FindCard(cardId) is not { } card || !seller.TakeCard(cardId))
         {
             return ServiceResult.Refused($"{seller.Name} hasn't got one to sell.");
@@ -192,6 +197,50 @@ public static class TavernServices
         seller.EarnGold(SellPrice(card));
         world.Stock(tavern).Add(cardId);
         return new ServiceResult(true, $"{seller.Name} sells the {card.Name} for {SellPrice(card)} gold.");
+    }
+
+    /// <summary>What Father Ambrose gives for the relic: gold, and Holy Water.</summary>
+    public const int RelicGold = 60;
+
+    public const int RelicHolyWater = 2;
+
+    /// <summary>
+    /// Father Ambrose and his relic: the first time, he gives the Holy Key to the reliquary in the ruined
+    /// temple of the Unhallowed Graves (again, if the party has lost it). Brought the relic, he takes it and
+    /// pays in gold and Holy Water, and the inn thinks better of the party.
+    /// </summary>
+    public static ServiceResult Relic(RaidWorld world, TavernDefinition tavern, ContentCatalog content, Character hero, IReadOnlyList<Character> party)
+    {
+        QuestStage stage = world.Quest(Quests.Relic);
+        if (stage == QuestStage.Done)
+        {
+            return ServiceResult.Refused("\"Saint Wyn rests easy again, thanks to you. But the Graves do not.\"");
+        }
+
+        if (party.FirstOrDefault(member => member.Equipped.Concat(member.Belt).Concat(member.Backpack).Contains("saints_relic")) is { } bearer)
+        {
+            bearer.TakeCard("saints_relic");
+            hero.EarnGold(RelicGold);
+            for (int i = 0; i < RelicHolyWater; i++)
+            {
+                hero.GiveCard("holy_water", content);
+            }
+
+            world.SetQuest(Quests.Relic, QuestStage.Done);
+            world.RaiseReputation(tavern.Id, 2);
+            return new ServiceResult(true, $"Father Ambrose takes the relic from {bearer.Name} with shaking hands. \"Bless you. Take this, and this.\" {hero.Name} gets {RelicGold} gold and {RelicHolyWater} Holy Water.");
+        }
+
+        if (stage == QuestStage.Taken && party.Any(member => member.Equipped.Concat(member.Belt).Concat(member.Backpack).Contains("holy_key")))
+        {
+            return ServiceResult.Refused("\"The key opens the reliquary in the ruined temple, at the very heart of the Graves. Go with God, and a torch.\"");
+        }
+
+        hero.GiveCard("holy_key", content);
+        world.SetQuest(Quests.Relic, QuestStage.Taken);
+        return new ServiceResult(true, stage == QuestStage.Taken
+            ? $"\"Lost it? Here: the last one I have.\" Father Ambrose gives {hero.Name} another Holy Key."
+            : $"\"The Relic of Saint Wyn lies in the ruined temple at the heart of the Unhallowed Graves, locked in its reliquary. Bring it home.\" Father Ambrose gives {hero.Name} the Holy Key.");
     }
 
     /// <summary>How much Cowards' standing earns Craven's respect, and his Cloak.</summary>

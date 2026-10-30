@@ -108,6 +108,9 @@ public sealed record RoomFeatures
     /// <summary>Graves with one of the dead in them (a monster id), who rises when it's opened.</summary>
     public IReadOnlyDictionary<GridPosition, string> Risers { get; init; } = new Dictionary<GridPosition, string>();
 
+    /// <summary>The reliquary: a chest only the Holy Key opens, holding the Relic of Saint Wyn.</summary>
+    public GridPosition? RelicChest { get; init; }
+
     /// <summary>Braziers burning from the start.</summary>
     public IReadOnlyCollection<GridPosition> LitBraziers { get; init; } = [];
 }

@@ -127,6 +127,9 @@ public sealed class Room
 
     internal void SetChestLook(GridPosition position, ChestLook look) => _chestLooks[position] = look;
 
+    /// <summary>The reliquary: only the Holy Key opens it, and the Relic of Saint Wyn lies inside.</summary>
+    public GridPosition? RelicChest { get; internal set; }
+
     internal void EmptyChest(GridPosition position) => _emptyChests.Add(position);
 
     internal void LayRiser(GridPosition position, string monsterId) => _risers[position] = monsterId;

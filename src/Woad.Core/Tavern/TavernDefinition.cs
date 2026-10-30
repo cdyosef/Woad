@@ -29,6 +29,24 @@ public enum NpcRole
 
     /// <summary>Craven the Cowherder: honors the cowardly with the Coward's Cloak.</summary>
     Cowherder,
+
+    /// <summary>Father Ambrose: sends the party after the Relic of Saint Wyn, in the Unhallowed Graves.</summary>
+    Priest,
+}
+
+/// <summary>The quests (by id) the Woarld's folk can set.</summary>
+public static class Quests
+{
+    /// <summary>Father Ambrose's: bring the Relic of Saint Wyn home from the Unhallowed Graves.</summary>
+    public const string Relic = "relic";
+}
+
+/// <summary>How far along a quest is.</summary>
+public enum QuestStage
+{
+    NotTaken,
+    Taken,
+    Done,
 }
 
 /// <summary>Something an NPC has heard. Some are true; a rumor with <see cref="Reveal"/> clears the clouds from a spot on the map.</summary>

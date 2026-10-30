@@ -368,6 +368,24 @@ def draw(item):
         c.circle(15, 19, 3, GOLD[1])
         c.dot(14, 18, GOLD[0])
         c.line(11, 28, 11, 30, GREEN[0], 1)
+    elif i == "holy_key":
+        # A silver key, its bow a cross in a ring.
+        c.ring(10, 10, 6, STEEL[1], 2)
+        c.rect(9, 6, 2, 9, GOLD[1])
+        c.rect(6, 9, 8, 2, GOLD[1])
+        c.line(14, 14, 27, 27, STEEL[1], 2)
+        c.rect(21, 23, 3, 4, STEEL[1])
+        c.rect(25, 19, 3, 4, STEEL[1])
+    elif i == "saints_relic":
+        # A finger bone under glass in a silver case, glowing.
+        c.circle(16, 16, 12, "#fff6c0")
+        c.poly([(9, 6), (23, 6), (25, 26), (7, 26)], STEEL[1])
+        c.poly([(11, 9), (21, 9), (22, 23), (10, 23)], ICE[0])
+        c.rect(15, 11, 3, 10, WHITE[0])
+        c.rect(14, 11, 5, 2, WHITE[1])
+        c.rect(14, 19, 5, 2, WHITE[1])
+        c.rect(14, 2, 4, 4, GOLD[1])
+        c.rect(12, 3, 8, 2, GOLD[1])
     elif i == "modern_medicine":
         # A stoppered bottle with a red cross on its label, a pill beside it.
         c.rect(12, 4, 8, 4, WOOD[1])
@@ -896,7 +914,7 @@ ITEMS = [
     "leather_armor", "studded_armor", "chain_mail", "wardens_plate", "storm_mail", "dash_boots",
     "flame_scroll", "frost_scroll", "venom_scroll", "acid_scroll", "grave_scroll", "gale_scroll", "sun_scroll",
     "bloom_scroll", "quake_scroll", "spark_scroll", "mind_scroll", "shadow_scroll", "frost_wand", "boomerang",
-    "torch", "lockpicks", "modern_medicine", "thieves_oil", "burgling_tools", "cutpurse_knife", "sticky_gloves", "bomb", "autosmith_hammer", "eye_drops", "holy_water", "health_potion",
+    "torch", "lockpicks", "holy_key", "saints_relic", "modern_medicine", "thieves_oil", "burgling_tools", "cutpurse_knife", "sticky_gloves", "bomb", "autosmith_hammer", "eye_drops", "holy_water", "health_potion",
     "antidote", "strong_base", "smelling_salts", "bandages", "medicine_bag", "shovel", "sineater_doll",
     "loose_coins", "coin_pouch", "emerald", "pearl", "golden_idol",
 ]

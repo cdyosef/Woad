@@ -29,8 +29,43 @@ public class TavernTests
     {
         Assert.Equal("The Waylay Inn", Inn.Name);
         Assert.Contains(Map.Places, place => place.Id == Inn.PlaceId);
-        Assert.Equal([NpcRole.Bartender, NpcRole.Merchant, NpcRole.Recruiter, NpcRole.Innkeeper, NpcRole.Gambler, NpcRole.Cowherder, NpcRole.Patron], Inn.Npcs.Select(npc => npc.Role));
+        Assert.Equal([NpcRole.Bartender, NpcRole.Merchant, NpcRole.Recruiter, NpcRole.Innkeeper, NpcRole.Gambler, NpcRole.Cowherder, NpcRole.Priest, NpcRole.Patron], Inn.Npcs.Select(npc => npc.Role));
         Assert.True(Inn.IsDoor(Inn.Start with { Y = Inn.Start.Y + 1 }), "the party starts just inside the door");
+    }
+
+    [Fact]
+    public void FatherAmbroseSendsThePartyForTheRelicAndRewardsItsReturn()
+    {
+        RaidWorld world = RaidWorld.Begin(Map);
+        Character ana = Hero("Ana", 0), bo = Hero("Bo", 0);
+
+        Assert.True(TavernServices.Relic(world, Inn, Content, ana, [ana, bo]).Done);
+        Assert.Equal(QuestStage.Taken, world.Quest(Quests.Relic));
+        Assert.Contains("holy_key", ana.Backpack.Concat(ana.Belt));
+        Assert.False(TavernServices.Relic(world, Inn, Content, ana, [ana, bo]).Done);
+
+        // Bo brings it home; Ana, talking to him, takes the reward.
+        bo.GiveCard("saints_relic", Content);
+        int reputation = world.Reputation(Inn.Id);
+        Assert.True(TavernServices.Relic(world, Inn, Content, ana, [ana, bo]).Done);
+
+        Assert.Equal(QuestStage.Done, world.Quest(Quests.Relic));
+        Assert.DoesNotContain("saints_relic", bo.Backpack.Concat(bo.Belt));
+        Assert.Equal(TavernServices.RelicGold, ana.Gold);
+        Assert.Equal(TavernServices.RelicHolyWater, ana.Backpack.Concat(ana.Belt).Count(id => id == "holy_water"));
+        Assert.Equal(reputation + 2, world.Reputation(Inn.Id));
+        Assert.Equal(QuestStage.Done, RaidWorld.FromJson(world.ToJson(), Map).Quest(Quests.Relic));
+    }
+
+    [Fact]
+    public void QuestThingsCantBeSold()
+    {
+        RaidWorld world = RaidWorld.Begin(Map);
+        Character ana = Hero("Ana", 0);
+        ana.GiveCard("holy_key", Content);
+
+        Assert.False(TavernServices.Sell(world, Inn, Content, ana, "holy_key").Done);
+        Assert.Contains("holy_key", ana.Backpack.Concat(ana.Belt));
     }
 
     [Fact]

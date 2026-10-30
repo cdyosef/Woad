@@ -755,7 +755,12 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   ring to an **exit** at the very edge (sparse: about three), and about three more walled up in
   **cracked stone** that a bomb opens. Stand on an exit and Escape.
 - **The ruined temple** stands in the middle: pillared walls with a wide doorway, braziers either side
-  of the pulpit and a chest before it (for the relic quest, still to come).
+  of the pulpit and the **reliquary** before it.
+- **The relic quest:** Father Ambrose, a priest at the Waylay Inn, gives the party the **Holy Key** (a
+  quest card: it can't be sold) and asks for the **Relic of Saint Wyn**. The reliquary has a holy lock:
+  no key or pick opens it, only the Holy Key, which it keeps. Anyone in the party bringing the relic
+  back earns gold (60) and two Holy Water for whoever speaks to him, and a better name at the inn.
+  Lose the key and he gives another. Without the quest, the relic stays where it is.
 - **Crypts** dot the ground: walled rooms with a doorway each, some built onto another with a door
   through the wall they share. Sarcophagi line their back walls; each has a brazier.
 - **Graves** lie in plots, in rows with room to walk between, and more **sarcophagi** stand alone

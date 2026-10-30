@@ -223,6 +223,12 @@ public sealed record CardDefinition
     /// </summary>
     public bool MedicineBag { get; init; }
 
+    /// <summary>A quest's: it can't be sold, and it's worth nothing but to whoever wants it.</summary>
+    public bool Quest { get; init; }
+
+    /// <summary>The Holy Key: the only key to a holy lock (the relic chest in the Unhallowed Graves), used up opening it.</summary>
+    public bool HolyKey { get; init; }
+
     /// <summary>Bandages: carried, one is used up on each Rouse for +1d6 (a 6 rolls another).</summary>
     public bool Bandage { get; init; }
 

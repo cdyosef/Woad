@@ -76,6 +76,15 @@
       ]
     },
     {
+      "id": "priest", "name": "Father Ambrose", "role": "priest", "x": 22, "y": 10,
+      "appearance": { "look": "monk", "main": "bone", "trim": "gilt", "skin": "tan", "hair": "white" },
+      "greeting": "Peace be with you. There is little enough of it, east of here.",
+      "rumors": [
+        { "text": "East of the river, past the hills, the dead are buried behind a wall of stone. They do not lie quiet. Night never lifts there.", "reveal": { "x": 36, "y": 19, "radius": 2 } },
+        { "text": "Cultists in black go in and out of the Graves. They carry no torches. They don't need them." }
+      ]
+    },
+    {
       "id": "patron", "name": "Old Dunstan", "role": "patron", "x": 2, "y": 5,
       "appearance": { "look": "wizard", "main": "violet", "trim": "gilt", "skin": "pale", "hair": "white" },
       "greeting": "Eh? Oh, adventurers. Mind the bridge, it creaks.",

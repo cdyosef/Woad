@@ -477,6 +477,9 @@ public partial class TavernScreen : Control
             case NpcRole.Cowherder:
                 ShowCraven();
                 break;
+            case NpcRole.Priest:
+                ShowPriest();
+                break;
         }
 
         Refresh();
@@ -532,6 +535,34 @@ public partial class TavernScreen : Control
         Button ask = RowButton(Row("The Coward's Cloak: a hood to hide in. Once, it slows the monsters beside you and turns your Rumble and Od Hand dice to Wend dice.", 436),
             _payer.HasCowardsCloak ? "Given" : "Ask for it", 96, () => Done(TavernServices.CowardsCloak(_payer, Content), _payer));
         ask.Disabled = _payer.HasCowardsCloak || _payer.CowardStanding < TavernServices.CowardsForTheCloak;
+    }
+
+    private void ShowPriest()
+    {
+        QuestStage stage = World.Quest(Quests.Relic);
+        bool carrying = Party.Any(member => member.Equipped.Concat(member.Belt).Concat(member.Backpack).Contains("saints_relic"));
+        (string text, string action) = (stage, carrying) switch
+        {
+            (QuestStage.Done, _) => ("The Relic of Saint Wyn is home. \"The Graves are worse than ever. Pray.\"", ""),
+            (_, true) => ("You carry the Relic of Saint Wyn. Father Ambrose's eyes fill with tears.", "Give it"),
+            (QuestStage.Taken, _) => ("THE RELIC: bring the Relic of Saint Wyn from the reliquary in the ruined temple, at the heart of the Unhallowed Graves. The Holy Key opens it.", "Lost the key?"),
+            _ => ("\"Saint Wyn's relic lies in the temple at the heart of the Unhallowed Graves, and the dead will not let it go. Will you bring it home?\"", "Take the quest"),
+        };
+        HBoxContainer row = Row(text, action.Length > 0 ? 436 : 536);
+        if (action.Length > 0)
+        {
+            RowButton(row, action, 96, () =>
+            {
+                // The relic may come from anyone in the party: they're all saved.
+                ServiceResult result = TavernServices.Relic(World, Tavern, Content, _payer, Party);
+                foreach (Character member in result.Done ? Party.Where(member => member != _payer) : [])
+                {
+                    CharacterChanged?.Invoke(member);
+                }
+
+                Done(result, _payer);
+            });
+        }
     }
 
     private void ShowRecruits()
