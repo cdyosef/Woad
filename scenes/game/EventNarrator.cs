@@ -188,7 +188,7 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         CardDropped { Count: > 1 } dropped => $"{nameOf(dropped.HeroId)} puts down {dropped.Count} {cardNameOf(dropped.CardId)}.",
         CardDropped dropped => $"{nameOf(dropped.HeroId)} puts down the {cardNameOf(dropped.CardId)}.",
         ChestOpened { CardIds.Count: 0 } chest => $"{nameOf(chest.HeroId)} opens it: nothing but dust.",
-        ChestOpened chest => $"{nameOf(chest.HeroId)} opens the chest: {Cards(chest.CardIds)}!",
+        ChestOpened chest => $"{nameOf(chest.HeroId)} opens it: {Cards(chest.CardIds)}!",
         OdHandRolled rolled => $"{nameOf(rolled.HeroId)} {Doing(rolled.Kind)} with {rolled.Total}{(rolled.Difficulty > 0 ? $" (needs {rolled.Difficulty})" : "")}.",
         CheckFailed { Kind: OdHandCheckKind.Steal } failed => $"{nameOf(failed.HeroId)} is caught and comes away with nothing.",
         CheckFailed { Kind: OdHandCheckKind.Retreat } failed => $"{nameOf(failed.HeroId)} is cut off!",

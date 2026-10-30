@@ -69,7 +69,12 @@ public partial class RummagePanel : Panel
         }
 
         _lines.Clear();
-        _title.Text = room.Layout[tile] == TileKind.Chest ? "CHEST" : "LOOT";
+        _title.Text = room.Layout[tile] != TileKind.Chest ? "LOOT" : room.ChestLookAt(tile) switch
+        {
+            ChestLook.Grave => "GRAVE",
+            ChestLook.Sarcophagus => "SARCOPHAGUS",
+            _ => "CHEST",
+        };
         float y = 26;
         foreach (CardInstance card in room.LootAt(tile))
         {

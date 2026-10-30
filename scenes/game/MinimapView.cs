@@ -10,8 +10,9 @@ namespace Woad.Scenes.Game;
 /// <summary>
 /// The current floor's map: explored rooms, doors to rooms not yet seen (as dim outlines), the
 /// room on screen outlined in gold, and a dot for each hero on the floor. A huge room (a graveyard)
-/// has no floors: instead it's drawn small, what the heroes have come near (stone, graves, the ways
-/// out in green), with their dots.
+/// has no floors: instead it's drawn small under a fog of war. What the heroes come near shows through
+/// (stone, graves, the ways out in green), with their dots, and fades back under the fog over the
+/// rounds after they leave it.
 /// </summary>
 public partial class MinimapView : Control
 {
@@ -28,8 +29,11 @@ public partial class MinimapView : Control
     /// <summary>How near a hero a huge room's tiles are taken in.</summary>
     private const int SeenRange = 6;
 
-    /// <summary>A huge room's tiles the heroes have come near.</summary>
-    private readonly HashSet<GridPosition> _seen = [];
+    /// <summary>How many rounds a huge room's tiles stay clear of the fog after the heroes were last near.</summary>
+    private const int FadeRounds = 8;
+
+    /// <summary>A huge room's tiles the heroes have come near, and the round they last were.</summary>
+    private readonly Dictionary<GridPosition, int> _seen = [];
 
     public void ShowFloor(GameState state, int floor, string shownRoomId)
     {
@@ -44,7 +48,7 @@ public partial class MinimapView : Control
                 {
                     for (int dy = -SeenRange; dy <= SeenRange; dy++)
                     {
-                        _seen.Add(new GridPosition(hero.Position.X + dx, hero.Position.Y + dy));
+                        _seen[new GridPosition(hero.Position.X + dx, hero.Position.Y + dy)] = state.Round;
                     }
                 }
             }
@@ -58,9 +62,18 @@ public partial class MinimapView : Control
     {
         float scale = Math.Min((Size.Y - Top) / room.Layout.Height, Size.X / room.Layout.Width);
         var origin = new Vector2(0, Top);
-        DrawRect(new Rect2(origin, new Vector2(room.Layout.Width, room.Layout.Height) * scale), Palette.Background);
-        foreach (GridPosition tile in _seen.Where(room.Layout.Contains))
+        Color fog = new("2a2834");
+        DrawRect(new Rect2(origin, new Vector2(room.Layout.Width, room.Layout.Height) * scale), fog);
+
+        // The fog rolls back in over what was seen, a little more each round.
+        foreach (GridPosition tile in _seen.Where(seen => _state!.Round - seen.Value >= FadeRounds).Select(seen => seen.Key).ToList())
         {
+            _seen.Remove(tile);
+        }
+
+        foreach ((GridPosition tile, int round) in _seen.Where(seen => room.Layout.Contains(seen.Key)))
+        {
+            float clear = 1 - (float)(_state!.Round - round) / FadeRounds;
             Color color = room.Layout[tile] switch
             {
                 TileKind.Exit => Palette.Heal,
@@ -69,7 +82,7 @@ public partial class MinimapView : Control
                 TileKind.Chest => Palette.TextDim,
                 _ => Palette.FloorDark,
             };
-            DrawRect(new Rect2(origin + new Vector2(tile.X, tile.Y) * scale, new Vector2(scale, scale) * 1.01f), color);
+            DrawRect(new Rect2(origin + new Vector2(tile.X, tile.Y) * scale, new Vector2(scale, scale) * 1.01f), fog.Lerp(color, clear));
         }
 
         DrawRect(new Rect2(origin, new Vector2(room.Layout.Width, room.Layout.Height) * scale), Palette.Trim, filled: false, width: 1);
