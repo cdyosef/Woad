@@ -73,7 +73,8 @@ public class CardTests
         GameSession session = TestRun.Start(Open, cards: ["sword", "shield", "boomerang", "boomerang"]);
         Hero hero = session.HeroInSeat();
         CardInstance sword = hero.Card("sword"), shield = hero.Card("shield");
-        CardInstance first = hero.Backpack[0], second = hero.Backpack[1];
+        List<CardInstance> boomerangs = [.. hero.AllCards.Where(card => card.Definition.Id == "boomerang")];
+        CardInstance first = boomerangs[0], second = boomerangs[1];
 
         session.Do(new EquipCard(hero.Id, first.Id));
         Assert.Same(first, hero.Equipment[EquipSlot.OffHand]);
@@ -109,7 +110,7 @@ public class CardTests
         GameSession session = TestRun.Start(Open, cards: ["shield", "sword", "shield"]);
         Hero hero = session.HeroInSeat();
 
-        Assert.Contains("can't go in your main hand", session.Refuse(new EquipCard(hero.Id, hero.Backpack[0].Id, EquipSlot.MainHand)));
+        Assert.Contains("can't go in your main hand", session.Refuse(new EquipCard(hero.Id, hero.Belt.First(card => card.Definition.Id == "shield").Id, EquipSlot.MainHand)));
         Assert.Contains("already equipped", session.Refuse(new EquipCard(hero.Id, hero.Card("sword").Id)));
     }
 
@@ -132,18 +133,45 @@ public class CardTests
     }
 
     [Fact]
-    public void InAFightChangingGearTakesTheAction()
+    public void InCombatGearMovesOnlyBetweenTheHandsAndTheBeltAndTakesTheAction()
     {
-        GameSession session = TestRun.Start(CagedSpearman, cards: ["sword", "big_sword"]);
+        // The big sword starts on the belt, the potions fill it, and the bow goes in the bag.
+        GameSession session = TestRun.Start(CagedSpearman, cards: ["sword", "big_sword", "potion", "potion", "potion", "bow"]);
         Hero hero = session.HeroInSeat();
 
+        Assert.True(session.InCombat);
         Assert.False(session.GearIsFree);
+        Assert.Contains("no rummaging in your bag", session.CheckEquip(hero.Card("bow").Id));
         session.Do(new EquipCard(hero.Id, hero.Card("big_sword").Id));
 
+        Assert.Contains(hero.Card("sword"), hero.Belt);
         Assert.True(session.State.Turn!.HasActed);
         string reason = session.Refuse(new EquipCard(hero.Id, hero.Card("sword").Id));
         Assert.Contains("in a fight takes your action", reason);
         Assert.Equal(reason, session.CheckEquip(hero.Card("sword").Id));
+    }
+
+    [Fact]
+    public void InCombatDrawingAWeaponFromTheBeltPutsWhatItDisplacesOnTheBelt()
+    {
+        GameSession session = TestRun.Start(CagedSpearman, cards: ["sword", "big_sword"]);
+        Hero hero = session.HeroInSeat();
+        hero.Remove(hero.Card("big_sword"));
+        hero.AddToBelt(new CardInstance(session.State.NextId(), TestContent.Catalog.GetCard("big_sword"), hero.Id));
+
+        session.Do(new EquipCard(hero.Id, hero.Card("big_sword").Id));
+
+        Assert.Equal("big_sword", hero.Equipment[EquipSlot.MainHand].Definition.Id);
+        Assert.Contains(hero.Card("sword"), hero.Belt);
+    }
+
+    [Fact]
+    public void WithNoMonsterAboutTheHeroIsOutOfCombat()
+    {
+        GameSession session = TestRun.Start(Open, cards: ["sword"]);
+
+        Assert.False(session.InCombat);
+        Assert.True(session.GearIsFree);
     }
 
     [Fact]
@@ -157,12 +185,13 @@ public class CardTests
         Assert.Contains("full hearts", session.CheckUse(potion));
         Assert.Contains("Equip the Icicle", session.CheckUse(hero.Card("icicle").Id));
         Assert.Contains("isn't worn or held", session.CheckEquip(potion));
-        Assert.Contains("Only single-use", session.CheckBelt(hero.Card("sword").Id));
+        Assert.Contains("Only single-use", session.CheckBelt(hero.Card("coin").Id));
         Assert.Contains("belt is full", session.CheckBelt(hero.Backpack[^1].Id));
         Assert.Contains("already in your backpack", session.CheckStow(hero.Card("coin").Id));
 
+        // In combat the bag waits, but the belt's spares can be drawn.
         Assert.Null(session.CheckEquip(hero.Card("icicle").Id));
-        Assert.Null(session.CheckStow(potion));
+        Assert.Contains("no rummaging", session.CheckStow(potion));
     }
 
     [Fact]
@@ -194,7 +223,8 @@ public class CardTests
     [Fact]
     public void SwappingNeedsRoomInTheBackpack()
     {
-        GameSession session = TestRun.Start(Open, cards: ["sword", "shield", "bow", "big_sword", "wand", "icicle", "boomerang", "t_rapier", "t_axe", "t_spear"]);
+        // Four spares fill the belt and eight more the backpack: the bow (on the belt) would put two in it.
+        GameSession session = TestRun.Start(Open, cards: ["sword", "shield", "bow", "big_sword", "wand", "icicle", "boomerang", "t_rapier", "t_axe", "t_spear", "boomerang", "t_rapier", "t_axe", "t_spear"]);
         Hero hero = session.HeroInSeat();
 
         Assert.Contains("no room", session.Refuse(new EquipCard(hero.Id, hero.Card("bow").Id)));

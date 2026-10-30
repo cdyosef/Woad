@@ -79,6 +79,8 @@ public partial class GameScreen
             await UseAbility(_highAlert);
             await WaitUntilIdle();
             Check(_session.State.Turn!.AlertDice == 1 && _session.State.Turn.AttackDiceUsed == 1, "High Alert spends a Rumble die on the next search");
+            Check(_rumbleHand.Front == HandView.SkillKey && _rumbleHand.Played?.Action == _highAlert && _rumbleHand.Stack.Any(card => card.Key == HandView.DiceKey),
+                "a skill played from the hand goes on top of the Rumble stack, the dice card behind it");
             Check(new[] { _bullRush, _guard }.All(action => _rumbleHand.Cards.Any(card => card.Action == action && card.Held))
                 && _odHand.Cards.Any(card => card.Action == _parry && card.Held), "Bull Rush and Guard are in the Rumble hand, Parry in the Od Hand");
 
@@ -101,16 +103,17 @@ public partial class GameScreen
             Hero bran = ActiveHero!;
             Check(bran.Seat == 1, "End turn passes to the next player");
 
-            // Equip the boomerang from the backpack, choosing a hand: the off hand, so the buckler swaps out.
-            CardInstance boomerang = bran.Backpack.Single(card => card.Definition.Id == "boomerang");
-            await Click(this, _heroPanel.BackpackSlot(bran.Backpack.ToList().IndexOf(boomerang)));
+            // In combat: draw the spare boomerang from the belt, choosing a hand: the off hand, so the buckler goes on the belt.
+            Check(_session.InCombat, "Bran is in combat, monsters in sight");
+            CardInstance boomerang = bran.Belt.Single(card => card.Definition.Id == "boomerang");
+            await ClickBelt(bran.Belt.ToList().IndexOf(boomerang));
             await Click(this, _inventory.ActionButton(CardAction.Equip));
-            Check(_inventory.IsChoosingHand && _inventory.HandButton(0).Text == "Main hand (stows Wooden Sword)" && _inventory.HandButton(1).Text == "Off hand (stows Buckler)",
-                "Equip on the boomerang asks which hand, saying what each would stow");
+            Check(_inventory.IsChoosingHand && _inventory.HandButton(0).Text == "Main hand (belts Wooden Sword)" && _inventory.HandButton(1).Text == "Off hand (belts Buckler)",
+                "Equip on the boomerang asks which hand, saying what each would put on the belt");
             await Click(this, _inventory.HandButton(1));
             await WaitUntilIdle();
             Check(bran.Equipment.GetValueOrDefault(EquipSlot.OffHand) == boomerang, "Equip puts the card in its slot");
-            Check(bran.Backpack.Any(card => card.Definition.Id == "buckler"), "the old card goes to the backpack");
+            Check(bran.Belt.Any(card => card.Definition.Id == "buckler"), "in combat, the old card goes on the belt");
 
             // Two weapons in hand: the Rumble row's toggle picks which one attacks, and so does a click on it in hand.
             Check(ReadiedWeapon is null, "with two weapons in hand, the rules pick until the hero does");
@@ -121,12 +124,12 @@ public partial class GameScreen
             _heroPanel.Pool.EmitSwap();
             Check(ReadiedWeapon is null, "then back to letting the rules pick");
             CancelSelection();
-            await Click(this, _heroPanel.EquipmentSlot(EquipSlot.OffHand));
-            Check(ReadiedWeapon == boomerang, "clicking the Boomerang in hand readies it");
-            await Click(this, _heroPanel.EquipmentSlot(EquipSlot.OffHand));
+            await ClickAt(this, _rumbleHand.GetGlobalRect().Position + _rumbleHand.CardPoint("item:" + boomerang.Id));
+            Check(ReadiedWeapon == boomerang && _rumbleHand.Front == "item:" + boomerang.Id, "clicking the Boomerang's card in the main hand's square readies it, and brings it to the front");
+            CancelSelection();
 
             // The bag opens into its cards, face up, to pick from.
-            CardInstance buckler = bran.Backpack.Single(card => card.Definition.Id == "buckler");
+            CardInstance buckler = bran.Backpack.Single(card => card.Definition.Id == "dagger");
             await Click(this, _heroPanel.BagDeck);
             Check(_heroPanel.IsBagOpen, "clicking the bag opens it over the board");
             if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } shots)
@@ -140,9 +143,9 @@ public partial class GameScreen
             await Click(this, _heroPanel.BagDeck);
             Check(!_heroPanel.IsBagOpen, "clicking the bag again closes it");
             Button equip = _inventory.ActionButton(CardAction.Equip);
-            Check(equip.Disabled && equip.TooltipText.Contains("in a fight"), "a greyed-out Equip says why (gear in a fight takes the action)");
+            Check(equip.Disabled && equip.TooltipText.Contains("no rummaging"), "a greyed-out Equip says why (in combat the bag waits)");
             await Click(this, equip);
-            Check(_messages[^1].Contains("in a fight"), "clicking a greyed-out button logs the reason");
+            Check(_messages[^1].Contains("no rummaging"), "clicking a greyed-out button logs the reason");
 
             await Click(this, _endTurn);
             await WaitUntilIdle();
@@ -543,6 +546,7 @@ public partial class GameScreen
             await WaitUntilIdle();
             await ConfirmIfHeld();
             Check(_session.State.Turn!.MovementPoints > 0, "W rolls the Wend dice");
+            await SaveShot("tray_wend");
 
             await ClickTile(slime.Position);
             await WaitUntilIdle();
@@ -565,6 +569,8 @@ public partial class GameScreen
             await ClickTile(slime.Position);
             await ConfirmIfHeld();
             Check(_session.State.Turn!.AttackDiceUsed > 0 || _session.State.Turn.HeroId != aria.Id, "Rumble, then a click on the slime, attacks it");
+            await WaitUntilIdle();
+            await SaveShot("tray_rumble");
 
             GD.Print("Rumble test passed.");
             Sfx.QuitGame(this);
@@ -687,8 +693,8 @@ public partial class GameScreen
             Monster first = study.MonsterAt(new GridPosition(3, 3))!, second = study.MonsterAt(new GridPosition(3, 5))!;
 
             CardInstance wand = aria.AllCards.Single(card => card.Definition.Id == "frost_wand");
-            await Click(this, _heroPanel.EquipmentSlot(EquipSlot.OffHand));
-            Check(_selectedCardId == wand.Id, "clicking the off-hand slot selects the Frost Wand");
+            await ClickAt(this, _odHand.GetGlobalRect().Position + _odHand.CardPoint("item:" + wand.Id));
+            Check(_selectedCardId == wand.Id, "clicking the Frost Wand's card in the off hand's square selects it");
             await Click(this, _inventory.ActionButton(CardAction.Use));
             Check(_targeting, $"Use enters targeting ({_inventory.ActionButton(CardAction.Use).TooltipText})");
             await ClickTile(first.Position);
@@ -1405,7 +1411,7 @@ public partial class GameScreen
         HandView hand = Hands.First(candidate => candidate.Cards.Any(card => card.Action == action));
         if (_spread.Hand != hand)
         {
-            await Click(this, hand);
+            await ClickAt(this, hand.GetGlobalRect().Position + hand.FanPoint);
         }
 
         SheetCard? card = _spread.CardFor(action);

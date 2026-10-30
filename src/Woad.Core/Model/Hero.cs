@@ -498,8 +498,9 @@ public sealed class Hero
         {
             Equip(card);
         }
-        else if ((definition.Usage == CardUsage.SingleUse || definition.Belts) && _belt.Count < GameRules.BeltCapacity)
+        else if ((definition.Usage == CardUsage.SingleUse || definition.Belts || IsHandGear(definition)) && _belt.Count < GameRules.BeltCapacity)
         {
+            // A spare weapon, shield or tool rides on the belt, where it can be drawn even in combat.
             _belt.Add(card);
         }
         else if (_backpack.Count < GameRules.BackpackCapacity)
@@ -513,4 +514,7 @@ public sealed class Hero
 
         return true;
     }
+
+    /// <summary>Held in a hand: a weapon, shield or tool, which can go on the belt.</summary>
+    public static bool IsHandGear(CardDefinition definition) => definition.Slot is EquipSlot.MainHand or EquipSlot.OffHand;
 }

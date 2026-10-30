@@ -2,7 +2,9 @@ using Godot;
 using Woad.Core.Commands;
 using Woad.Core.Content;
 using Woad.Core.Grid;
+using Woad.Core.Events;
 using Woad.Core.Model;
+using Woad.Core.Rules;
 using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Game;
@@ -53,6 +55,9 @@ public partial class GameScreen
 
     private IEnumerable<HandView> Hands => [_rumbleHand, _wendHand, _odHand, _magicHand];
 
+    /// <summary>The card each hero last played into each hand's spot (by hero and hand), so it's there again on their turn.</summary>
+    private readonly Dictionary<(int HeroId, string Hand), string?> _playedCards = [];
+
     /// <summary>Puts the old action buttons out of sight (the hands take their actions) and builds the hands.</summary>
     private void BuildHands(Control right)
     {
@@ -95,25 +100,28 @@ public partial class GameScreen
         hidden.AddChild(_highAlert);
 
         DicePoolView pool = _heroPanel.Pool;
-        _rumbleHand = AddHand(pool.Bounds(DicePool.Rumble).Position, "icon_rumble", "Rumble", Palette.DieRumble,
+        AbilityCard attack = new("fist", "Attack", _rumble, () => _session.GetAttackableMonsters(ReadiedWeaponId).Count > 0);
+        AbilityCard wend = new("wend", "Wend", _roll, () => true);
+        AbilityCard search = new("search", "Search", _search, () => true);
+        _rumbleHand = AddHand(new Vector2(HeroPanel.Columns[2], HeroPanel.Rows[1]), "icon_rumble", "Rumble", Palette.DieRumble, attack,
         [
-            new("fist", "Attack", _rumble, () => _session.GetAttackableMonsters(ReadiedWeaponId).Count > 0),
+            attack,
             new("shove", "Shove", _shove, () => _session.GetShoveTargets().Count > 0, () => Knows(Skill.Shove)),
             new("bull_rush", "Bull Rush", _bullRush, () => _session.GetBullRushTargets().Any(tile => ShownRoom.MonsterAt(tile) is not null), () => Knows(Skill.BullRush)),
             new("guard", "Guard", _guard, Threatened, () => Knows(Skill.Guard)),
             new("high_alert", "High Alert", _highAlert, () => true, () => Knows(Skill.HighAlert)),
             new("dig_out", "Dig out", _digOut, () => true, () => ActiveHero?.Conditions.Has(Condition.Buried) == true),
         ]);
-        _wendHand = AddHand(pool.Bounds(DicePool.Wend).Position, "icon_wend", "Wend", Palette.DieWend,
+        _wendHand = AddHand(new Vector2(HeroPanel.Columns[1], HeroPanel.Rows[2]), "icon_wend", "Wend", Palette.DieWend, wend,
         [
-            new("wend", "Wend", _roll, () => true),
+            wend,
             new("leap", "Leap", _leap, () => _session.GetLeapTargets().Count > 0),
             new("prone", "Prone", _prone, () => ActiveHero?.Prone == true),
             new("drop_roll", "Drop & roll", _dropRoll, () => true, () => ActiveHero?.FireDice > 0),
         ]);
-        _odHand = AddHand(pool.Bounds(DicePool.OdHand).Position, "icon_odhand", "Od Hand", Palette.DieOdHand,
+        _odHand = AddHand(new Vector2(HeroPanel.Columns[0], HeroPanel.Rows[1]), "icon_odhand", "Od Hand", Palette.DieOdHand, search,
         [
-            new("search", "Search", _search, () => true),
+            search,
             new("steal", "Steal", _steal, () => Beside().Any(tile => VictimAt(tile) is int id && _session.CheckSteal(id) is null)),
             new("pick_lock", "Pick lock", _pickLock, () => Beside().Any(tile => _session.CheckPickLock(tile) is null)),
             new("disarm", "Disarm", _disarm, () => Beside().Any(tile => _session.CheckDisarm(tile) is null)),
@@ -128,7 +136,23 @@ public partial class GameScreen
         _heroPanel.AddChild(_magicHand);
 
         _spread = new HandSpread { Position = BoardOrigin, Size = new Vector2(BoardView.Pixels, BoardView.Pixels), ZIndex = 3 };
-        _spread.Picked += PlayAbility;
+        _spread.Picked += (hand, card) =>
+        {
+            // Played from the hand, a skill takes its place in the stack, on top; the dice action puts the dice card on top.
+            if (hand.Default is not null && ActiveHero is { } hero)
+            {
+                if (card != hand.Default)
+                {
+                    hand.Played = card;
+                    _playedCards[(hero.Id, hand.Title)] = card.Name;
+                }
+
+                _fronts[(hero.Id, hand.Title)] = card == hand.Default ? HandView.DiceKey : HandView.SkillKey;
+                ApplyStackFronts();
+            }
+
+            PlayAbility(card);
+        };
         AddChild(_spread);
         AddChild(_heroPanel.BagView);
 
@@ -136,10 +160,28 @@ public partial class GameScreen
         AddChild(_curePicker);
     }
 
-    private HandView AddHand(Vector2 at, string icon, string title, Color color, AbilityCard[] cards)
+    private HandView AddHand(Vector2 at, string icon, string title, Color color, AbilityCard dice, AbilityCard[] cards)
     {
-        var hand = new HandView { Position = at + new Vector2(-1, -2), Icon = icon, Title = title, Color = color };
+        var hand = new HandView { Position = at, Icon = icon, Title = title, Color = color, Default = dice, DiceColor = color };
         hand.Hold(cards);
+        hand.CardSelected += (_, card) =>
+        {
+            if (!Locked && ActiveHero is { } hero)
+            {
+                _fronts[(hero.Id, hand.Title)] = card.Key;
+
+                // An item's card is picked up for its buttons too (Use, Equip, Belt...), as its slot's card was.
+                if (card.CardId is int cardId)
+                {
+                    ClickCard(cardId);
+                }
+
+                RefreshPanels();
+            }
+        };
+        hand.DieToCard += _ => MoveDie(hand, onto: true);
+        hand.DieToPool += _ => MoveDie(hand, onto: false);
+        hand.CardUsed += (_, card) => UseStackCard(hand, card);
         hand.Opened += opened =>
         {
             if (_spread.Hand == opened)
@@ -152,8 +194,265 @@ public partial class GameScreen
             }
         };
         _heroPanel.AddChild(hand);
-        _heroPanel.Pool.CoverIcon(PoolOf(title));
+        _heroPanel.Pool.Hide(PoolOf(title));
         return hand;
+    }
+
+    /// <summary>A die moved between a pool and its dice card: one more (or fewer) for the next roll.</summary>
+    private void MoveDie(HandView hand, bool onto)
+    {
+        if (Locked || ActiveHero is null)
+        {
+            return;
+        }
+
+        if (hand == _rumbleHand)
+        {
+            Choose(_rumbleChoice, onto ? SelectedAttackDice : 0, SelectedAttackDice);
+        }
+        else if (hand == _wendHand)
+        {
+            _moveDiceHeld = Math.Clamp(_moveDiceHeld + (onto ? -1 : 1), 0, _session.MoveDiceLeft);
+        }
+        else
+        {
+            Choose(_odHandChoice, onto ? SelectedOdHandDice : 0, SelectedOdHandDice);
+        }
+
+        RefreshPanels();
+    }
+
+    /// <summary>The border of a card's own pool: a weapon's red, a shield's blue, a tool's yellow, boots' green.</summary>
+    private static Color PoolColor(CardDefinition card) => card switch
+    {
+        { Type: CardType.Weapon } => Palette.DieRumble,
+        { Type: CardType.Shield } or { Slot: EquipSlot.Body } or { Slot: EquipSlot.Head } => Palette.DieDefense,
+        { Type: CardType.Tool } => Palette.DieOdHand,
+        { Type: CardType.Boots } or { Slot: EquipSlot.Feet } => Palette.DieWend,
+        _ => Palette.Trim,
+    };
+
+    /// <summary>An item's card in a square: its weapon or tool bonus and dice when it adds to the pool's roll.</summary>
+    private StackCard ItemCard(CardInstance item, bool tapped, string bonus = "", int dice = 0) =>
+        new(ItemPrefix + item.Id, item.Definition.Id, item.Definition.Name, tapped, bonus, dice, PoolColor(item.Definition), item.Id);
+
+    private static string Plus(int value) => value > 0 ? $"+{value}" : value < 0 ? value.ToString() : "";
+
+    private static TrayCard Tray(CardDefinition card, int dice = 0, string bonus = "") =>
+        new(GameArt.Texture($"res://assets/cards/{card.Id}.png"), card.Name, dice, bonus, PoolColor(card));
+
+    /// <summary>A pool's own card for the tray, over its dice.</summary>
+    private static TrayCard PoolTray(string icon, string name, int dice, string bonus, Color color) => new(GameArt.Ui(icon), name, dice, bonus, color);
+
+    /// <summary>The skill a hero last played from a hand, when it's still that square's front card.</summary>
+    private TrayCard? PlayedTray(HandView hand, int heroId) =>
+        _fronts.GetValueOrDefault((heroId, hand.Title)) == HandView.SkillKey && hand.Played is { } played
+            ? new(GameArt.Texture($"res://assets/cards/{played.Picture}.png"), played.Name, 0, "", hand.Color)
+            : null;
+
+    /// <summary>The cards a hero's attack was played with: Rumble over its dice, then the skill, then the weapon over its own.</summary>
+    private TrayCard[]? AttackTray(AttackRolled attack)
+    {
+        if (_session.State.Heroes.FirstOrDefault(hero => hero.Id == attack.AttackerId) is null || _spellCaption is not null || attack.Miasma)
+        {
+            return null;
+        }
+
+        CardDefinition? weapon = attack.WeaponId is { } id ? Content.FindCard(id) : null;
+        int rumble = attack.Roll.Faces.Count - attack.PowerDice - attack.WeaponDice;
+        List<TrayCard> cards = [PoolTray("icon_rumble", "Rumble", rumble, weapon is null ? Plus(attack.Bonus) : "", Palette.DieRumble)];
+        if (PlayedTray(_rumbleHand, attack.AttackerId) is { } skill)
+        {
+            cards.Add(skill);
+        }
+
+        if (weapon is not null)
+        {
+            cards.Add(Tray(weapon, attack.WeaponDice, Plus(attack.Bonus)));
+        }
+
+        return [.. cards];
+    }
+
+    /// <summary>The cards a hero's defense was played with: the Defense card over its dice, then the shield and armor.</summary>
+    private TrayCard[]? DefenseTray(DefenseRolled defense)
+    {
+        if (_session.State.Heroes.FirstOrDefault(hero => hero.Id == defense.DefenderId) is not { } hero)
+        {
+            return null;
+        }
+
+        List<TrayCard> cards = [PoolTray("icon_defense", "Defense", defense.Roll.Faces.Count - defense.PowerDice, Plus(defense.Armor), Palette.DieDefense)];
+        foreach (EquipSlot slot in new[] { EquipSlot.OffHand, EquipSlot.Body, EquipSlot.Head })
+        {
+            if (hero.Equipment.GetValueOrDefault(slot) is { Definition: { Modifiers.Armor: > 0 } armor })
+            {
+                cards.Add(Tray(armor));
+            }
+        }
+
+        return [.. cards];
+    }
+
+    /// <summary>The cards a hero's move was rolled with: Wend over its dice, then the boots.</summary>
+    private TrayCard[]? MoveTray(MovementRolled rolled)
+    {
+        if (_session.State.Heroes.FirstOrDefault(hero => hero.Id == rolled.HeroId) is not { } hero)
+        {
+            return null;
+        }
+
+        List<TrayCard> cards = [PoolTray("icon_wend", "Wend", rolled.Roll.Faces.Count - rolled.PowerDice, Plus(rolled.Bonus), Palette.DieWend)];
+        if (hero.Equipment.GetValueOrDefault(EquipSlot.Feet) is { } boots)
+        {
+            cards.Add(Tray(boots.Definition));
+        }
+
+        return [.. cards];
+    }
+
+    /// <summary>The cards an Od Hand check was rolled with: Od Hand over its dice, then each tool over its own.</summary>
+    private TrayCard[]? OdHandTray(OdHandRolled rolled)
+    {
+        if (_session.State.Heroes.FirstOrDefault(hero => hero.Id == rolled.HeroId) is not { } hero)
+        {
+            return null;
+        }
+
+        List<TrayCard> cards = [PoolTray("icon_odhand", "Od Hand", rolled.Roll.Faces.Count - rolled.PowerDice - rolled.ToolDice, rolled.ToolDice == 0 ? Plus(rolled.Bonus) : "", Palette.DieOdHand)];
+        int toolDice = rolled.ToolDice;
+        foreach (CardInstance tool in hero.EquippedCards.Concat(hero.BeltTools).Where(card => card.Definition.Tool is not null).DistinctBy(card => card.Definition.Id))
+        {
+            if (toolDice <= 0)
+            {
+                break;
+            }
+
+            int dice = Math.Min(toolDice, tool.Definition.Tool!.Dice);
+            cards.Add(Tray(tool.Definition, dice, Plus(tool.Definition.Tool.Bonus)));
+            toolDice -= dice;
+        }
+
+        return [.. cards];
+    }
+
+    /// <summary>The card on top of each hero's stack in each pool (by hero and hand), by key; none stored means the default.</summary>
+    private readonly Dictionary<(int HeroId, string Hand), string> _fronts = [];
+
+    /// <summary>The key of the card on top of a hand's stack for the active hero: the one chosen, else a weapon or tool if there is one, else the dice.</summary>
+    private string FrontOf(HandView hand, IReadOnlyList<StackCard> stack) =>
+        ActiveHero is { } hero && _fronts.TryGetValue((hero.Id, hand.Title), out string? chosen) && stack.Any(card => card.Key == chosen)
+            ? chosen
+            : stack.FirstOrDefault(card => card.Key.StartsWith(ItemPrefix, StringComparison.Ordinal) && card.Border == hand.Color)?.Key ?? HandView.DiceKey;
+
+    private const string ItemPrefix = "item:";
+
+    /// <summary>The cards in a hand's stack for the hero: its dice card, the items that add to its dice, and its last skill.</summary>
+    private List<StackCard> StackOf(HandView hand, Hero hero)
+    {
+        TurnState? turn = _session.State.Turn;
+        bool mine = turn?.HeroId == hero.Id;
+        var stack = new List<StackCard>();
+        CardInstance? main = hero.Equipment.GetValueOrDefault(EquipSlot.MainHand);
+        CardInstance? off = hero.Equipment.GetValueOrDefault(EquipSlot.OffHand);
+        if (hand == _rumbleHand)
+        {
+            // The main hand's square: what's in it, any weapon in the off hand, and the Rumble card with its dice.
+            stack.Add(new(HandView.DiceKey, "fist", "Rumble", mine && _session.AttackDiceLeft == 0, Dice: mine ? SelectedAttackDice : 0, Border: Palette.DieRumble));
+            IReadOnlyList<CardInstance> weapons = GameSession.HandWeapons(hero);
+            foreach (CardInstance item in new[] { main }.Concat(weapons).OfType<CardInstance>().Distinct())
+            {
+                bool weapon = weapons.Contains(item);
+                stack.Add(ItemCard(item, weapon && mine && _session.WeaponBonusLeft(item.Id) == 0 && _session.WeaponDiceLeft(item.Id) == 0,
+                    weapon ? Plus(_session.WeaponBonusLeft(item.Id)) : "", weapon && mine ? _session.WeaponDiceLeft(item.Id) : 0));
+            }
+        }
+        else if (hand == _wendHand)
+        {
+            // The feet's square: the boots, and the Wend card with its dice and the Wend bonus.
+            stack.Add(new(HandView.DiceKey, "wend", "Wend", mine && _session.MoveDiceLeft == 0 && turn!.MovementPoints == 0, Plus(_session.SpeedBonusLeft), mine ? SelectedMoveDice : 0, Palette.DieWend));
+            if (hero.Equipment.GetValueOrDefault(EquipSlot.Feet) is { } boots)
+            {
+                stack.Add(ItemCard(boots, tapped: false));
+            }
+        }
+        else if (hand == _odHand)
+        {
+            // The off hand's square: what's in it (unless it's a weapon, which goes with Rumble), the tools, and the Od Hand card with its dice.
+            stack.Add(new(HandView.DiceKey, "search", "Od Hand", mine && _session.OdHandDiceLeft == 0, Dice: mine ? SelectedOdHandDice : 0, Border: Palette.DieOdHand));
+            List<CardInstance> tools = [.. hero.EquippedCards.Concat(hero.BeltTools).Where(card => card.Definition.Tool is not null).DistinctBy(card => card.Definition.Id)];
+            if (off is not null && off != main && !GameSession.HandWeapons(hero).Contains(off) && !tools.Contains(off))
+            {
+                stack.Add(ItemCard(off, tapped: false));
+            }
+
+            stack.AddRange(tools.Select(tool => ItemCard(tool, mine && turn!.ToolsUsed, Plus(tool.Definition.Tool!.Bonus), mine && !turn!.ToolsUsed ? tool.Definition.Tool.Dice : 0)));
+        }
+
+        if (hand.Played is { Held: true } played)
+        {
+            stack.Add(new(HandView.SkillKey, played.Picture, played.Name, played.Action.Disabled && !played.IsLit && mine && !CanStill(played), Border: hand.Color));
+        }
+
+        return stack;
+    }
+
+    /// <summary>A skill that's only disabled for the moment (a roll waiting), not used up.</summary>
+    private bool CanStill(AbilityCard card) => _session.State.Turn is { PendingRoll: not null } or { UnsettledPowerDice: > 0 } || _busy;
+
+    /// <summary>
+    /// What the top of each stack selects for the active hero: on the Rumble stack, a weapon on top swings
+    /// with it (readied, if there are two), and the dice card or a skill on top goes without one; on the
+    /// Od Hand stack, the dice card alone on top keeps the tools out of the roll.
+    /// </summary>
+    private void ApplyStackFronts()
+    {
+        if (ActiveHero is not { } hero || _session.State.Turn is null)
+        {
+            return;
+        }
+
+        string rumble = FrontOf(_rumbleHand, StackOf(_rumbleHand, hero));
+        _weaponHeld = !rumble.StartsWith(ItemPrefix, StringComparison.Ordinal);
+
+        // A weapon put on top by choice is the one readied; left to the default, the rules pick.
+        if (!_weaponHeld && _fronts.ContainsKey((hero.Id, _rumbleHand.Title)) && int.TryParse(rumble[ItemPrefix.Length..], out int weaponId) && GameSession.HandWeapons(hero).Count > 1)
+        {
+            _readied[hero.Id] = weaponId;
+        }
+
+        _toolsHeld = FrontOf(_odHand, StackOf(_odHand, hero)) == HandView.DiceKey;
+    }
+
+    /// <summary>The top card of a stack was double-clicked: its action, with the selected dice.</summary>
+    private void UseStackCard(HandView hand, StackCard card)
+    {
+        if (Locked)
+        {
+            return;
+        }
+
+        if (card.Tapped)
+        {
+            Log($"{card.Name}: used up for this turn.", Palette.TextDim);
+            return;
+        }
+
+        if (card.Key == HandView.SkillKey && hand.Played is { } played)
+        {
+            PlayAbility(played);
+            return;
+        }
+
+        if (hand == _odHand && card.Key.StartsWith(ItemPrefix, StringComparison.Ordinal) && ActiveHero?.FindCard(int.Parse(card.Key[ItemPrefix.Length..])) is { Card.Definition.Tool: { } tool })
+        {
+            // A tool goes to work on what it's for.
+            Button action = tool.For.HasFlag(Skill.PickLock) ? _pickLock : tool.For.HasFlag(Skill.Steal) ? _steal : _search;
+            PlayAbility(new AbilityCard(card.Picture, card.Name, action, () => true));
+            return;
+        }
+
+        PlayAbility(hand.Default!);
     }
 
     private bool Knows(Skill skill) => ActiveHero?.Knows(skill) == true;
@@ -240,6 +539,20 @@ public partial class GameScreen
         _magicHand.Hold(SpellCards(hero, ready));
         foreach (HandView hand in Hands)
         {
+            if (hand.Default is not null)
+            {
+                string? played = _playedCards.GetValueOrDefault((hero?.Id ?? 0, hand.Title));
+                hand.Played = played is null ? null : hand.Cards.FirstOrDefault(card => card.Name == played);
+                List<StackCard> stack = hero is null ? [] : StackOf(hand, hero);
+                bool mine = hero is not null && _session.State.Turn?.HeroId == hero.Id;
+                int pool = !mine ? 0 : hand == _rumbleHand ? _session.AttackDiceLeft - SelectedAttackDice
+                    : hand == _wendHand ? _session.MoveDiceLeft - SelectedMoveDice
+                    : _session.OdHandDiceLeft - SelectedOdHandDice;
+                TurnState? turnNow = _session.State.Turn;
+                string note = hand == _wendHand && turnNow?.MovementRoll is not null ? UiTheme.Count(turnNow.MovementPoints, "step", "steps") + " left" : "";
+                hand.ShowStack(stack, FrontOf(hand, stack), pool, ready && mine, note);
+            }
+
             hand.ShowCards(hand.Cards);
             hand.Visible = hero is not null && _session.State.Turn is not null;
         }

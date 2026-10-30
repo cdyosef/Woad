@@ -504,7 +504,7 @@ public partial class GameScreen : Control
 
             case MovementRolled rolled:
                 _trayShowsMovement = true;
-                await _dice.ShowRoll($"{NameOf(rolled.HeroId)} rolls to move", rolled.Roll, rolled.Bonus, newGroup: true, rolled.PowerDice, DiceKind.Wend);
+                await _dice.ShowRoll($"{NameOf(rolled.HeroId)} rolls to move", rolled.Roll, rolled.Bonus, newGroup: true, rolled.PowerDice, DiceKind.Wend, cards: MoveTray(rolled));
                 break;
 
             case DieRerolled rerolled:
@@ -855,7 +855,7 @@ public partial class GameScreen : Control
             case OdHandRolled rolled:
                 _trayShowsMovement = false;
                 string goal = rolled.Difficulty > 0 ? $" ({rolled.Difficulty}+)" : "";
-                await _dice.ShowRoll($"{NameOf(rolled.HeroId)} {OdHandCaption(rolled.Kind)}{goal}", rolled.Roll, rolled.Bonus, newGroup: true, rolled.PowerDice, DiceKind.OdHand, rolled.ToolDice);
+                await _dice.ShowRoll($"{NameOf(rolled.HeroId)} {OdHandCaption(rolled.Kind)}{goal}", rolled.Roll, rolled.Bonus, newGroup: true, rolled.PowerDice, DiceKind.OdHand, rolled.ToolDice, cards: OdHandTray(rolled));
                 break;
 
             case Stole stole:
@@ -915,7 +915,7 @@ public partial class GameScreen : Control
                 _trayShowsMovement = false;
                 BeginStrike(attack.AttackerId, attack.Total, attack.Roll.Faces.TakeLast(attack.PowerDice).Sum());
                 await StrikeFx(attack);
-                await _dice.ShowRoll(_spellCaption ?? $"{NameOf(attack.AttackerId)} {(attack.Shove ? "shoves" : attack.Chain ? "flings its chain" : "attacks")}", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice, DiceKind.Rumble, types: attack.DieTypes);
+                await _dice.ShowRoll(_spellCaption ?? $"{NameOf(attack.AttackerId)} {(attack.Shove ? "shoves" : attack.Chain ? "flings its chain" : "attacks")}", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice, DiceKind.Rumble, types: attack.DieTypes, cards: AttackTray(attack));
                 _spellCaption = null;
                 // A hero's sixes get their own events; a monster's roll straight in, so call them out here.
                 if (attack.PowerDice > 0 && !IsHero(attack.AttackerId))
@@ -927,7 +927,7 @@ public partial class GameScreen : Control
 
             case DefenseRolled defense:
                 _defense = defense;
-                await _dice.ShowRoll($"{NameOf(defense.DefenderId)} defends", defense.Roll, defense.Armor, newGroup: false, defense.PowerDice, DiceKind.Defense);
+                await _dice.ShowRoll($"{NameOf(defense.DefenderId)} defends", defense.Roll, defense.Armor, newGroup: false, defense.PowerDice, DiceKind.Defense, cards: DefenseTray(defense));
                 if (defense.PowerDice > 0)
                 {
                     CalloutOver(defense.DefenderId, "6!", Palette.Power);

@@ -88,6 +88,7 @@ public partial class GameScreen
 
     private void RefreshPanels()
     {
+        ApplyStackFronts();
         RefreshMerchantPanel();
         GameState state = _session.State;
         Hero? hero = ActiveHero;
@@ -468,8 +469,11 @@ public partial class GameScreen
 
         switch (pool)
         {
-            case DicePool.Rumble when index < 0:
-                _weaponHeld = !_weaponHeld;
+            case DicePool.Rumble when index < 0 && ActiveHero is { } swinger:
+                // The weapon's bonus token: the weapon to the top of the Rumble stack, or the bare dice.
+                _fronts[(swinger.Id, _rumbleHand.Title)] = _weaponHeld && ReadiedWeapon is { } readied ? ItemPrefix + readied.Id
+                    : _weaponHeld && GameSession.HandWeapons(swinger).FirstOrDefault() is { } weapon ? ItemPrefix + weapon.Id
+                    : HandView.DiceKey;
                 break;
             case DicePool.Rumble:
                 Choose(_rumbleChoice, index, SelectedAttackDice);
@@ -480,8 +484,11 @@ public partial class GameScreen
             case DicePool.Wend:
                 _moveDiceHeld += index < SelectedMoveDice ? 1 : -1;
                 break;
-            case DicePool.OdHand when index < 0:
-                _toolsHeld = !_toolsHeld;
+            case DicePool.OdHand when index < 0 && ActiveHero is { } picker:
+                // The tools' token: the tools to the top of the Od Hand stack, or the bare dice.
+                _fronts[(picker.Id, _odHand.Title)] = _toolsHeld && StackOf(_odHand, picker).FirstOrDefault(card => card.Key.StartsWith(ItemPrefix, StringComparison.Ordinal)) is { } tool
+                    ? tool.Key
+                    : HandView.DiceKey;
                 break;
             case DicePool.OdHand:
                 Choose(_odHandChoice, index, SelectedOdHandDice);
@@ -534,7 +541,7 @@ public partial class GameScreen
             }
         }
 
-        string gearCost = _session.GearIsFree ? "Free while no monsters are in the room." : "In a fight, this takes your action.";
+        string gearCost = _session.GearIsFree ? "Free out of combat." : "In combat this takes your action, and only weapons, shields and tools move, between your hands and your belt.";
         var hints = new Dictionary<CardAction, string>
         {
             [CardAction.Use] = card.Definition.Wings
@@ -711,7 +718,7 @@ public partial class GameScreen
 
         // Under the board, the dice bar: who rolls on the left, VS, who answers on the right.
         AddChild(new Panel { Position = new Vector2(SideWidth, StripHeight + BoardView.Pixels), Size = new Vector2(BoardView.Pixels, StripHeight) });
-        _dice = new DiceBar { Position = new Vector2(SideWidth + 6, StripHeight + BoardView.Pixels + 2), Size = new Vector2(BoardView.Pixels - 12, 32) };
+        _dice = new DiceBar { Position = new Vector2(SideWidth + 6, StripHeight + BoardView.Pixels + 1), Size = new Vector2(BoardView.Pixels - 12, 34) };
         _dice.DieClicked += index => ExecuteForActiveHero(heroId => new RerollDie(heroId, index));
         AddChild(_dice);
 

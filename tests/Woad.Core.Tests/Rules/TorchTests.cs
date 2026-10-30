@@ -66,14 +66,14 @@ public class TorchTests
     [Fact]
     public void TorchesGoOneToAHandAndTheRestStack()
     {
-        GameSession session = TestRun.Start(Beside, cards: ["sword", "t_torch", "t_torch", "t_torch"]);
+        GameSession session = TestRun.Start(Beside.Replace('d', '.'), cards: ["sword", "t_torch", "t_torch", "t_torch"]);
         Hero hero = session.HeroInSeat();
-        CardInstance stack = hero.Backpack.Single(card => card.Definition.Torch);
+        CardInstance stack = hero.Belt.Single(card => card.Definition.Torch);
         Assert.Equal((1, 2), (hero.TorchesHeld, stack.Count));
 
         session.Do(new EquipCard(hero.Id, stack.Id, EquipSlot.MainHand));
 
         Assert.Equal(2, hero.TorchesHeld);
-        Assert.Equal(1, hero.Backpack.Single(card => card.Definition.Torch).Count);
+        Assert.Equal(1, hero.Belt.Single(card => card.Definition.Torch).Count);
     }
 }

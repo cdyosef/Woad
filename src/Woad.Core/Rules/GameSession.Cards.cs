@@ -180,10 +180,23 @@ public sealed partial class GameSession
     }
 
     /// <summary>
-    /// Whether equipping, belting and stowing are free right now: they are while no monsters are in
-    /// the hero's room. In a fight each one takes the turn's action.
+    /// Whether equipping, belting and stowing are free right now: they are out of combat (see
+    /// <see cref="InCombat"/>). In combat each one takes the turn's action, and only weapons, shields
+    /// and tools move, and only between the hands and the belt: the bag waits till the fight's done.
     /// </summary>
-    public bool GearIsFree => State.Turn is not null && ActiveRoom.Monsters.Count == 0;
+    public bool GearIsFree => State.Turn is not null && !InCombat;
+
+    /// <summary>How near an awake monster with a clear line to the hero puts them in combat.</summary>
+    public const int CombatRange = 8;
+
+    /// <summary>The active hero is in combat: an awake monster is within <see cref="CombatRange"/> with a clear line to them.</summary>
+    public bool InCombat => State.Turn is not null && ActiveRoom.Monsters.Any(monster => !monster.Asleep
+        && monster.Tiles.Any(tile => Targeting.InRangeAndSight(ActiveRoom.Layout, tile, ActiveHero.Position, CombatRange)));
+
+    /// <summary>Held in a hand: a weapon, shield or tool, what can go on the belt in combat.</summary>
+    private static bool HandHeld(CardDefinition card) => Hero.IsHandGear(card);
+
+    private const string BagInCombat = "In combat there's no rummaging in your bag: only weapons, shields and tools, between your hands and your belt.";
 
     /// <summary>Why the active hero can't equip the card right now, or null if they can.</summary>
     public string? CheckEquip(int cardId, EquipSlot? hand = null)
@@ -205,9 +218,15 @@ public sealed partial class GameSession
         }
 
         Hero hero = ActiveHero;
-        if (location == CardLocation.Belt)
+        bool combat = InCombat;
+        if (combat && location == CardLocation.Backpack)
         {
-            return $"The {definition.Name} is already on your belt.";
+            return BagInCombat;
+        }
+
+        if (location == CardLocation.Belt && !HandHeld(definition))
+        {
+            return $"The {definition.Name} works from your belt; it isn't held.";
         }
 
         if (location == CardLocation.Equipped)
@@ -223,8 +242,15 @@ public sealed partial class GameSession
             }
         }
 
+        // What comes off goes to the backpack; in combat, to the belt, as long as it's held gear and fits.
         IReadOnlyList<CardInstance> displaced = hero.CardsDisplacedBy(definition, HandFor(hero, card, hand));
-        if (hero.Backpack.Count - (location == CardLocation.Backpack ? 1 : 0) + displaced.Count > GameRules.BackpackCapacity)
+        if (combat && (displaced.Any(old => !HandHeld(old.Definition))
+            || hero.Belt.Count - (location == CardLocation.Belt ? 1 : 0) + displaced.Count > GameRules.BeltCapacity))
+        {
+            return "In combat what you'd take off has to go on your belt, and there's no room.";
+        }
+
+        if (!combat && hero.Backpack.Count - (location == CardLocation.Backpack ? 1 : 0) + displaced.Count > GameRules.BackpackCapacity)
         {
             return "There's no room in your backpack for what you'd take off.";
         }
@@ -240,12 +266,12 @@ public sealed partial class GameSession
             return error;
         }
 
-        if (card!.Definition.Usage != CardUsage.SingleUse && !card.Definition.Belts)
+        if (card!.Definition.Usage != CardUsage.SingleUse && !card.Definition.Belts && !HandHeld(card.Definition))
         {
-            return "Only single-use cards (potions, bombs, scrolls), Medicine Bags and torches go on your belt.";
+            return "Only single-use cards (potions, bombs, scrolls), weapons, shields and tools go on your belt.";
         }
 
-        if (location != CardLocation.Backpack)
+        if (location == CardLocation.Belt)
         {
             return $"The {card.Definition.Name} is already on your belt.";
         }
@@ -253,6 +279,11 @@ public sealed partial class GameSession
         if (ActiveHero.Belt.Count >= GameRules.BeltCapacity)
         {
             return $"Your belt is full ({GameRules.BeltCapacity} cards). Stow one to make room.";
+        }
+
+        if (InCombat && (location == CardLocation.Backpack || !HandHeld(card.Definition)))
+        {
+            return BagInCombat;
         }
 
         return CheckGearAction();
@@ -269,6 +300,11 @@ public sealed partial class GameSession
         if (location == CardLocation.Backpack)
         {
             return $"The {card!.Definition.Name} is already in your backpack.";
+        }
+
+        if (InCombat)
+        {
+            return BagInCombat;
         }
 
         if (ActiveHero.Backpack.Count >= GameRules.BackpackCapacity)
@@ -369,17 +405,27 @@ public sealed partial class GameSession
         }
 
         IReadOnlyList<CardInstance> displaced = hero.CardsDisplacedBy(card.Definition, hand);
+        bool combat = InCombat;
         SpendGearAction();
         if (hero.FindCard(card.Id) is not null)
         {
             hero.Remove(card);
         }
 
+        // What comes off goes in the backpack, or, in combat, on the belt.
         foreach (CardInstance old in displaced)
         {
             hero.Remove(old);
-            hero.AddToBackpack(old);
-            events.Add(new CardStowed(hero.Id, old.Id));
+            if (combat)
+            {
+                hero.AddToBelt(old);
+                events.Add(new CardBelted(hero.Id, old.Id));
+            }
+            else
+            {
+                hero.AddToBackpack(old);
+                events.Add(new CardStowed(hero.Id, old.Id));
+            }
         }
 
         hero.Equip(card, hand);
@@ -422,6 +468,7 @@ public sealed partial class GameSession
         SpendGearAction();
         hero.Remove(card);
         hero.AddToBelt(card);
+        hero.ClampHearts();
         events.Add(new CardBelted(hero.Id, card.Id));
         return null;
     }

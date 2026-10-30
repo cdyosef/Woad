@@ -27,7 +27,7 @@ public static class DemoRun
     public static IReadOnlyList<HeroSetup> DebugHeroes { get; } =
     [
         new HeroSetup("Aria", DebugStats with { Luck = 1 }, [.. GameRules.StarterKit, "bomb"], Portrait: "ember", Appearance: new("princess", Hair: "ginger")),
-        new HeroSetup("Bran", DebugStats with { Hearts = 5 }, [.. GameRules.StarterKit, "boomerang"], Portrait: "woad", Appearance: new("knight", Trim: "blood")),
+        new HeroSetup("Bran", DebugStats with { Hearts = 5 }, [.. GameRules.StarterKit, "boomerang", "dagger"], Portrait: "woad", Appearance: new("knight", Trim: "blood")),
     ];
 
     /// <summary>The debug heroes, then plain heroes up to <paramref name="size"/> (for --autoplay --party N).</summary>

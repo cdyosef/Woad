@@ -420,7 +420,7 @@ public sealed class Character
         {
             _equipped.Add(key);
         }
-        else if ((card.Usage == CardUsage.SingleUse || card.Belts) && _belt.Count < GameRules.BeltCapacity)
+        else if ((card.Usage == CardUsage.SingleUse || card.Belts || Hero.IsHandGear(card)) && _belt.Count < GameRules.BeltCapacity)
         {
             _belt.Add(key);
         }

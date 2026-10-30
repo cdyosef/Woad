@@ -15,6 +15,9 @@ public enum DiceKind
     Defense,
 }
 
+/// <summary>A card played into a roll: it sits over its own dice in the tray (the first <paramref name="Dice"/> faces not yet claimed).</summary>
+public sealed record TrayCard(Texture2D? Picture, string Name, int Dice, string Bonus, Color Border);
+
 /// <summary>
 /// The dice of the latest roll, fighting-game style under the board: the roller and their dice on the
 /// left, and when someone answers it, a VS and every defender's dice on the right (smaller when there
@@ -22,7 +25,9 @@ public enum DiceKind
 /// dice tumble before they land with a small pop, and the side that wins glows gold. Dice are colored
 /// by what they are (see <see cref="DiceKind"/>); tools' dice are bronze, Power Dice purple, and typed
 /// dice (fire, ice...) their type's own color. When
-/// Luck allows, the roller's dice can be clicked to reroll them.
+/// Luck allows, the roller's dice can be clicked to reroll them. A hero's roll shows the cards it was
+/// played with over their own dice (the pool's card first, then the weapon, tool or skill), the
+/// caption going underneath; a defender's is mirrored, its pool's card on the far right.
 /// </summary>
 public partial class DiceBar : Control
 {
@@ -30,6 +35,8 @@ public partial class DiceBar : Control
     private const float Gap = 3;
     private const float SideWidth = 118;
     private const int MaxDefenders = 6;
+    private const float ChipHeight = 10;
+    private const float ChipGap = 2;
 
     private static readonly Vector2[][] Pips =
     [
@@ -68,9 +75,10 @@ public partial class DiceBar : Control
     /// <param name="powerDice">How many of the last faces are Power Dice.</param>
     /// <param name="toolDice">How many faces, just before the Power Dice, are the tools' own dice (bronze).</param>
     /// <param name="types">What each face is made of, in order (Plain past its end).</param>
-    public async Task ShowRoll(string caption, DiceRoll roll, int bonus, bool newGroup, int powerDice = 0, DiceKind kind = DiceKind.Plain, int toolDice = 0, IReadOnlyList<DieType>? types = null)
+    /// <param name="cards">The cards played into the roll, each over its own dice, in order.</param>
+    public async Task ShowRoll(string caption, DiceRoll roll, int bonus, bool newGroup, int powerDice = 0, DiceKind kind = DiceKind.Plain, int toolDice = 0, IReadOnlyList<DieType>? types = null, IReadOnlyList<TrayCard>? cards = null)
     {
-        var row = new Row(caption, [.. roll.Faces], bonus, roll.Faces.Count - powerDice) { Kind = kind, ToolFrom = roll.Faces.Count - powerDice - toolDice, Types = [.. types ?? []] };
+        var row = new Row(caption, [.. roll.Faces], bonus, roll.Faces.Count - powerDice) { Kind = kind, ToolFrom = roll.Faces.Count - powerDice - toolDice, Types = [.. types ?? []], Cards = [.. cards ?? []] };
         ShowedTypedDice |= row.Types.Any(type => type != DieType.Plain);
         if (newGroup || _roller is null)
         {
@@ -98,7 +106,7 @@ public partial class DiceBar : Control
             return;
         }
 
-        _roller = new Row(old.Caption, [.. old.Faces, face], old.Bonus, old.PowerFrom) { Won = old.Won, Kind = old.Kind, ToolFrom = old.ToolFrom, Types = old.Types };
+        _roller = new Row(old.Caption, [.. old.Faces, face], old.Bonus, old.PowerFrom) { Won = old.Won, Kind = old.Kind, ToolFrom = old.ToolFrom, Types = old.Types, Cards = old.Cards };
         await Tumble(_roller, [_roller.Faces.Length - 1]);
     }
 
@@ -200,6 +208,12 @@ public partial class DiceBar : Control
     /// <summary>One side's caption, dice and total in its box (the defender's flush right).</summary>
     private void DrawSide(Font font, Row row, Rect2 box, bool clickable, bool alignRight)
     {
+        if (_roller!.Cards.Length > 0 || _defenders.Any(defender => defender.Cards.Length > 0))
+        {
+            DrawCarded(font, row, box, clickable, alignRight);
+            return;
+        }
+
         (float die, float gap) = DieSizeFor(row, box.Size.X);
         string total = TotalText(row, compact: die < BigDie);
         float totalWidth = font.GetStringSize(total, fontSize: UiTheme.FontSize).X;
@@ -214,21 +228,13 @@ public partial class DiceBar : Control
         if (row.Verdict is { } verdict)
         {
             float tagX = alignRight ? box.Position.X : Math.Min(box.Position.X + font.GetStringSize(row.Caption, fontSize: UiTheme.FontSize).X + 3, box.End.X - verdictWidth);
-            Color color = verdict switch { "HIT" or "YOU LOSE" or "CAUGHT" => Palette.Danger, "STOLEN" => Palette.Loot, "BLOCKED" => Palette.Block, "YOU WIN" => Palette.Heal, _ => Palette.TextDim };
-            DrawString(font, new Vector2(tagX, 8), verdict, fontSize: UiTheme.FontSize, modulate: color);
+            DrawString(font, new Vector2(tagX, 8), verdict, fontSize: UiTheme.FontSize, modulate: VerdictColor(verdict));
         }
 
         float dieTop = 12 + (BigDie - die) / 2;
         for (int i = 0; i < row.Faces.Length; i++)
         {
-            Rect2 rect = new(x + i * (die + gap), dieTop, die, die);
-            row.Rects[i] = rect;
-            float scale = 1 + 0.35f * row.Pop[i];
-            DrawSetTransform(rect.GetCenter() + row.Offset[i], row.Angle[i], new Vector2(scale, scale));
-            Color fill = i < row.Types.Length && row.Types[i] != DieType.Plain ? DieTypes.Tint(row.Types[i])
-                : i >= row.PowerFrom ? Palette.Power : i >= row.ToolFrom ? Palette.DieTool : DieColor(row.Kind);
-            DrawDie(row.Shown[i], die, row.Won, clickable, fill);
-            DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+            DrawFace(row, i, new Rect2(x + i * (die + gap), dieTop, die, die), clickable);
         }
 
         if (!row.Rolling.Any(rolling => rolling))
@@ -236,6 +242,147 @@ public partial class DiceBar : Control
             DrawString(font, new Vector2(x + diceWidth + 1, 23), total, fontSize: UiTheme.FontSize, modulate: row.Won ? Palette.TrimBright : Palette.Text);
         }
     }
+
+    /// <summary>A die where it lands (tumbling about it while it rolls), remembered for clicks.</summary>
+    private void DrawFace(Row row, int i, Rect2 rect, bool clickable)
+    {
+        row.Rects[i] = rect;
+        float scale = 1 + 0.35f * row.Pop[i];
+        DrawSetTransform(rect.GetCenter() + row.Offset[i], row.Angle[i], new Vector2(scale, scale));
+        Color fill = i < row.Types.Length && row.Types[i] != DieType.Plain ? DieTypes.Tint(row.Types[i])
+            : i >= row.PowerFrom ? Palette.Power : i >= row.ToolFrom ? Palette.DieTool : DieColor(row.Kind);
+        DrawDie(row.Shown[i], rect.Size.X, row.Won, clickable, fill);
+        DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+    }
+
+    /// <summary>
+    /// A side with its played cards along the top, each over its own dice (any dice left over, the
+    /// Power Dice, after them), the total after that and the caption underneath. The defender's side
+    /// is mirrored: its total first, and its pool's card on the far right.
+    /// </summary>
+    private void DrawCarded(Font font, Row row, Rect2 box, bool clickable, bool alignRight)
+    {
+        // Which faces each card holds; whatever's left over goes last, under no card.
+        var groups = new List<(TrayCard? Card, int From, int Count)>();
+        int next = 0;
+        foreach (TrayCard card in row.Cards)
+        {
+            int count = Math.Clamp(card.Dice, 0, row.Faces.Length - next);
+            groups.Add((card, next, count));
+            next += count;
+        }
+
+        if (next < row.Faces.Length)
+        {
+            groups.Add((null, next, row.Faces.Length - next));
+        }
+
+        string total = TotalText(row, compact: true);
+        float totalWidth = font.GetStringSize(total, fontSize: UiTheme.FontSize).X + 2;
+
+        // The biggest dice, with whole names on the cards, that fit; then first words, icons alone, smaller dice.
+        float die = 5, gap = 1;
+        int named = 0;
+        float[] widths = [];
+        foreach ((float size, int names) in new[] { (BigDie, 2), (BigDie, 1), (BigDie, 0), (10f, 1), (10f, 0), (8f, 0), (6f, 0), (5f, 0) })
+        {
+            float step = size + (size >= BigDie ? Gap : 2);
+            widths = [.. groups.Select(group => Math.Max(group.Card is { } card ? ChipWidth(font, card, names) : 0, group.Count * step))];
+            die = size;
+            gap = step - size;
+            named = names;
+            if (widths.Sum() + ChipGap * (groups.Count - 1) + totalWidth <= box.Size.X)
+            {
+                break;
+            }
+        }
+
+        float used = widths.Sum() + ChipGap * (groups.Count - 1) + totalWidth;
+        float x = alignRight ? box.End.X - used : box.Position.X;
+        bool settled = !row.Rolling.Any(rolling => rolling);
+        float dieTop = ChipHeight + 1 + (BigDie - die) / 2;
+        if (alignRight)
+        {
+            if (settled)
+            {
+                DrawString(font, new Vector2(x, ChipHeight + 11), total, fontSize: UiTheme.FontSize, modulate: row.Won ? Palette.TrimBright : Palette.Text);
+            }
+
+            x += totalWidth;
+        }
+
+        // Mirrored, the cards run right to left: the first (the pool's own) ends up on the far right.
+        IEnumerable<int> order = alignRight ? Enumerable.Range(0, groups.Count).Reverse() : Enumerable.Range(0, groups.Count);
+        foreach (int g in order)
+        {
+            (TrayCard? card, int from, int count) = groups[g];
+            if (card is not null)
+            {
+                DrawChip(font, card, new Rect2(x, 0, widths[g], ChipHeight), named);
+            }
+
+            float diceX = x + (widths[g] - (count * (die + gap) - gap)) / 2;
+            for (int i = 0; i < count; i++)
+            {
+                DrawFace(row, from + i, new Rect2(diceX + i * (die + gap), dieTop, die, die), clickable);
+            }
+
+            x += widths[g] + ChipGap;
+        }
+
+        if (!alignRight && settled)
+        {
+            DrawString(font, new Vector2(x - ChipGap + 1, ChipHeight + 11), total, fontSize: UiTheme.FontSize, modulate: row.Won ? Palette.TrimBright : Palette.Text);
+        }
+
+        // The caption underneath, and the verdict beside it: before it on the right side, after it on the left.
+        HorizontalAlignment align = alignRight ? HorizontalAlignment.Right : HorizontalAlignment.Left;
+        float verdictWidth = row.Verdict is { } tag ? font.GetStringSize(tag, fontSize: UiTheme.FontSize).X + 3 : 0;
+        float captionY = Size.Y - 2;
+        DrawString(font, new Vector2(box.Position.X + (alignRight ? verdictWidth : 0), captionY), row.Caption, align, box.Size.X - verdictWidth, UiTheme.FontSize, Palette.TextDim,
+            TextServer.JustificationFlag.None, TextServer.Direction.Auto, TextServer.Orientation.Horizontal);
+        if (row.Verdict is { } verdict)
+        {
+            float tagX = alignRight ? box.Position.X : Math.Min(box.Position.X + font.GetStringSize(row.Caption, fontSize: UiTheme.FontSize).X + 3, box.End.X - verdictWidth);
+            DrawString(font, new Vector2(tagX, captionY), verdict, fontSize: UiTheme.FontSize, modulate: VerdictColor(verdict));
+        }
+    }
+
+    /// <param name="named">2 for the card's whole name, 1 for its first word, 0 for its picture alone.</param>
+    private static float ChipWidth(Font font, TrayCard card, int named) =>
+        ChipHeight + 2 + (named > 0 ? font.GetStringSize(ChipText(card, named), fontSize: UiTheme.FontSize).X + 2 : 0);
+
+    private static string ChipText(TrayCard card, int named)
+    {
+        string name = named > 1 ? card.Name : card.Name.Split(' ')[0];
+        return card.Bonus.Length > 0 ? $"{name} {card.Bonus}" : name;
+    }
+
+    /// <summary>A played card, small: its picture, and its name and bonus when there's room, in its pool's border.</summary>
+    private void DrawChip(Font font, TrayCard card, Rect2 rect, int named)
+    {
+        DrawRect(rect, Palette.Ink);
+        if (card.Picture is { } picture)
+        {
+            DrawTextureRect(picture, new Rect2(rect.Position + new Vector2(1, 1), new Vector2(ChipHeight - 2, ChipHeight - 2)), tile: false);
+        }
+
+        if (named > 0)
+        {
+            DrawString(font, rect.Position + new Vector2(ChipHeight + 1, ChipHeight - 2), ChipText(card, named), HorizontalAlignment.Left, rect.Size.X - ChipHeight - 1, UiTheme.FontSize, Palette.Text);
+        }
+
+        DrawRect(rect, card.Border, filled: false, width: 1);
+    }
+
+    private static Color VerdictColor(string verdict) => verdict switch
+    {
+        "HIT" or "YOU LOSE" or "CAUGHT" => Palette.Danger,
+        "STOLEN" => Palette.Loot,
+        "BLOCKED" => Palette.Block,
+        "YOU WIN" => Palette.Heal,
+        _ => Palette.TextDim,
+    };
 
     /// <summary>Full-size dice when they fit; smaller ones for a crowded side.</summary>
     private static (float Die, float Gap) DieSizeFor(Row row, float width)
@@ -375,6 +522,9 @@ public partial class DiceBar : Control
 
         /// <summary>What each face is made of (fire, ice...), in order; Plain past its end.</summary>
         public DieType[] Types { get; init; } = [];
+
+        /// <summary>The cards played into the roll, each over its own dice.</summary>
+        public TrayCard[] Cards { get; init; } = [];
 
         /// <summary>This side won; its dice glow.</summary>
         public bool Won { get; set; }

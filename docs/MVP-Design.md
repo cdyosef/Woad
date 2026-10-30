@@ -124,7 +124,7 @@ the Party menu can spend points on them too.
 | Main hand | Weapons, wands, rods |
 | Off hand | Shields, off-hand weapons, tools |
 | Feet | Boots |
-| Belt | Up to 4 consumables and tools (potions, bombs, Lockpicks, Medicine Bags) ready for quick use; tools go there first, as a stack. A torch can ride on it but only lights in a hand |
+| Belt | Up to 4 consumables, tools and spare hand gear (potions, bombs, Lockpicks, a second weapon or shield) ready for quick use; tools go there first, as a stack. A torch can ride on it but only lights in a hand. A weapon or shield on the belt is only carried there: draw it into a hand to use it |
 
 - Two-handed items fill both the main hand and the off hand.
 - **Backpack:** 8 cards that are carried but not equipped *(tunable)*.
@@ -148,13 +148,16 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 | Treasure | Kept for score | Emerald (15g), Golden Idol (40g). Coins (Loose Coins 2g, Coin Pouch 5g) aren't cards: they go straight into your purse as gold |
 
 - **Starter kit** (new characters): Wooden Sword, Buckler, Health Potion, Torch and Lockpicks (on the belt).
-- **Equipping, belting or stowing gear** is free while no monsters are in your room, as often as you like.
-  In a fight, each one takes your action.
+- **Equipping, belting or stowing gear** is free out of combat, as often as you like. **In combat** (an
+  awake monster within 8 tiles that you can see) each change takes your action, and only weapons, shields
+  and tools move, between your hands and your belt: the backpack waits until the fight is over, and
+  whatever a drawn weapon displaces goes onto the belt. A new hero's spare hand gear starts on the belt
+  when there's room.
 - **Greyed-out card buttons explain themselves:** hovering shows why, and clicking one writes the reason
   in the message log.
 - **Using a belt item** doesn't take your action (once per turn). Using an item from the backpack takes your action.
-- **Only single-use cards** (potions, bombs, scrolls) go on the belt. Reusable cards with an effect (boomerang,
-  wand) must be equipped to use.
+- **Only single-use cards** (potions, bombs, scrolls), tools and hand gear (weapons, shields) go on the belt.
+  Reusable cards with an effect (boomerang, wand) must be in a hand to use.
 - **Stacks:** Lockpicks, Bombs, Health Potions, Flame Scrolls and treasure (but not coins) stack: copies
   gather into one card with a count ("Lockpicks x3"), filling one slot, in the belt, the backpack or (for
   lockpicks) the off hand. Picking up more joins the stack, even with the backpack full; using one takes
@@ -243,7 +246,7 @@ every room that holds at least one player. Rooms with no players stay paused.
    - **Od Hand checks:** each uses one or more of your unused Od Hand dice, plus your tools' value once a
      turn. See [Od Hand](#od-hand). They don't use your action.
    - **One other action:** use a card from your backpack or an equipped one, smash a pot, loot (after your
-     free loot), or (in a fight) equip, belt or stow gear. Outside a fight, gear changes are free.
+     free loot), or (in combat) draw or belt hand gear. Out of combat, gear changes are free.
    - **One free loot** and **one free belt item**.
 3. End turn. Your dice come back next turn.
 
@@ -254,6 +257,22 @@ roll **one die at a time** to begin with, and remember how many each hero last c
 one, a dark one adds one; never fewer than one), from roll to roll and turn to turn, using what's left when
 fewer remain. Power Dice start unselected. The Defense row can't be clicked: it shows your base die (framed,
 always rolled), your extra dice (lit while ready, dark once spent), your armor and your Block.
+
+**The pool squares.** Three equipment squares double as the pools' stacks: the main hand is Rumble, the off
+hand Od Hand, the feet Wend. Each holds the cards out of your hand for that pool, staggered so every name
+shows, the selected one in front on the right:
+- **The dice card** (Rumble, Od Hand, Wend) is always there and usable with no other card out. It holds the
+  pool's selected dice; it lights up with whichever card is in front, and the cards not selected sit behind,
+  dim. Each card's border is its own pool's color (a shield in the off hand is blue).
+- **Gear** in the slot (and weapons and tools that add to the pool) sits in the stack with its bonus in its
+  bottom-left corner and its own dice on it. A card that can't be used again this turn lies on its side, dim,
+  along the bottom (**tapped**).
+- **Skills** played from the hand fan go on top of the stack, and the last one played stays there.
+- **Click** a card to bring it to the front (an item's card is picked up for its buttons too); **double-click**
+  the front card to use it.
+- **Under each square**, the pool's spare dice (up to four; with more, the fourth spot shows the pool's icon
+  with how many more wait in reserve) and the hand fan to their right. Click a spare die to put it on the dice
+  card, a die on the card to take it back; the card remembers your choice.
 
 **Doors** sit at the middle tile of each room edge. Stepping through costs 1 step and places you at the
 facing door of the next room.
@@ -1034,6 +1053,10 @@ them up there like any character.
   each get a smaller column). The winning side glows gold, and each defender is tagged HIT, MISS or
   BLOCKED. Dice jitter and spin as they tumble, then land with a small pop. With Luck, the roller's
   dice can be clicked to reroll them. Rolls with no opponent (moving, the Keel Die) show one side.
+  A hero's roll shows the cards it was played with above their own dice: the pool's card (Rumble, Wend,
+  Od Hand) on the left, then the skill and the weapon or tools, then the total, with the caption
+  underneath. A hero defending is mirrored: the total first and the Defense card on the far right, with
+  the shield and armor beside it.
 - **Hits, fighting-game style:** a hit freezes the action for a beat (hit-stop), flashes the target
   white, slashes across it in a spray of the attacker's sparks, shakes the view and makes the target
   reel, under a big slanted callout that slams in and slides away:

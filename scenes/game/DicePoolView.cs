@@ -67,9 +67,20 @@ public partial class DicePoolView : Control
     }
 
     /// <summary>Leaves a pool's symbol undrawn: its hand of cards goes there instead (see <see cref="HandView"/>).</summary>
-    public void CoverIcon(DicePool pool)
+    /// <summary>Leaves a pool out altogether: its dice are drawn with its cards (see <see cref="HandView"/>).</summary>
+    public void Hide(DicePool pool)
+    {
+        _rows[(int)pool].Hidden = true;
+        QueueRedraw();
+    }
+
+    /// <param name="width">How much of the row's start the cards take (its dice start after).</param>
+    /// <param name="below">The cards take the whole first line: the dice go on the second, after <paramref name="width"/>.</param>
+    public void CoverIcon(DicePool pool, float width = Icon, bool below = false)
     {
         _rows[(int)pool].Covered = true;
+        _rows[(int)pool].Reserve = width;
+        _rows[(int)pool].Below = below;
         QueueRedraw();
     }
 
@@ -160,6 +171,11 @@ public partial class DicePoolView : Control
         {
             row.Tokens.Clear();
             row.BonusRect = row.SwapRect = default;
+            if (row.Hidden)
+            {
+                continue;
+            }
+
             var cursor = new Cursor(row);
             if (!row.Covered && GameArt.Ui(row.Icon) is { } icon)
             {
@@ -172,9 +188,17 @@ public partial class DicePoolView : Control
                 continue;
             }
 
+            // Dice on one line under the cards squeeze up when there are many, leaving room for the bonus.
+            float token = Token;
+            if (row.Below && row.Dice > 0)
+            {
+                float room = row.Width - row.Reserve - 2 - (row.Bonus != 0 ? 26 : 0);
+                token = Math.Clamp(room / row.Dice - 2, 5, Token);
+            }
+
             for (int i = 0; i < row.Dice; i++)
             {
-                Rect2 rect = cursor.Next(Token);
+                Rect2 rect = cursor.Next(token);
                 row.Tokens.Add(rect);
                 DrawDieToken(rect, _enabled && i < row.Selected, row.Color);
             }
@@ -222,7 +246,7 @@ public partial class DicePoolView : Control
 
             if (row.Swap is { } swap)
             {
-                Rect2 rect = cursor.Next(Math.Min(font.GetStringSize(swap, fontSize: UiTheme.FontSize).X + 5, row.Width - Icon - 1));
+                Rect2 rect = cursor.Next(Math.Min(font.GetStringSize(swap, fontSize: UiTheme.FontSize).X + 5, row.Width - row.Reserve - 1));
                 float width = rect.Size.X;
                 row.SwapRect = rect;
                 DrawRect(rect, Palette.PanelDark);
@@ -341,12 +365,12 @@ public partial class DicePoolView : Control
     /// <summary>Where the next thing in a pool goes: along its line after the icon, wrapping onto the second line.</summary>
     private sealed class Cursor(Row row)
     {
-        private float _x = row.Origin.X + Icon + 2;
-        private float _y = row.Origin.Y;
+        private float _x = row.Origin.X + row.Reserve + 2;
+        private float _y = row.Origin.Y + (row.Below ? Line : 0);
 
         public Rect2 Next(float width)
         {
-            if (_x + width > row.Origin.X + row.Width && _x > row.Origin.X + Icon + 2)
+            if (_x + width > row.Origin.X + row.Width && _x > row.Origin.X + row.Reserve + 2)
             {
                 NewLine();
             }
@@ -367,7 +391,7 @@ public partial class DicePoolView : Control
         {
             if (_y == row.Origin.Y)
             {
-                _x = row.Origin.X + Icon + 2;
+                _x = row.Origin.X + row.Reserve + 2;
                 _y = row.Origin.Y + Line;
             }
         }
@@ -390,6 +414,15 @@ public partial class DicePoolView : Control
 
         /// <summary>Its symbol is covered by its hand of cards.</summary>
         public bool Covered { get; set; }
+
+        /// <summary>The width at the row's start its symbol (or its cards) take.</summary>
+        public float Reserve { get; set; } = DicePoolView.Icon;
+
+        /// <summary>Its cards take the whole first line, and its dice go on the second.</summary>
+        public bool Below { get; set; }
+
+        /// <summary>Not drawn at all: its square's cards show its dice.</summary>
+        public bool Hidden { get; set; }
 
         /// <summary>The Power bank's slots.</summary>
         public int Capacity { get; set; }

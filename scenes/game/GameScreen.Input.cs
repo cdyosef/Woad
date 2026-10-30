@@ -972,6 +972,7 @@ public partial class GameScreen
         else
         {
             _readied.Remove(hero.Id);
+            _fronts.Remove((hero.Id, _rumbleHand.Title));
             Log($"{hero.Name} attacks with whichever weapon reaches: the main hand first.", Palette.TrimBright);
         }
 
@@ -981,6 +982,7 @@ public partial class GameScreen
     private void ReadyWeapon(Hero hero, CardInstance weapon)
     {
         _readied[hero.Id] = weapon.Id;
+        _fronts[(hero.Id, _rumbleHand.Title)] = ItemPrefix + weapon.Id;
         Log($"{hero.Name} readies the {weapon.Definition.Name}: their attacks use it.", Palette.TrimBright);
     }
 
@@ -1052,7 +1054,7 @@ public partial class GameScreen
     {
         (EquipSlot Slot, string Text, string? Blocked) Choice(EquipSlot slot, string name)
         {
-            string stows = hero.CardsDisplacedBy(card.Definition, slot) is [var held, ..] ? $" (stows {held.Definition.Name})" : "";
+            string stows = hero.CardsDisplacedBy(card.Definition, slot) is [var held, ..] ? $" ({(_session.InCombat ? "belts" : "stows")} {held.Definition.Name})" : "";
             return (slot, name + stows, _session.CheckEquip(card.Id, slot));
         }
 
