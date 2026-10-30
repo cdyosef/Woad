@@ -307,6 +307,12 @@ public sealed partial class GameSession
     {
         BurnDownFloors(events);
         WearOffMagic(events);
+        TickRitual(events);
+        if (State.Phase != RunPhase.InProgress)
+        {
+            return;
+        }
+
         State.Round++;
         events.Add(new RoundStarted(State.Round));
         if (UsesInitiative)
@@ -501,6 +507,24 @@ public sealed partial class GameSession
         }
 
         startRoom.Explored = true;
+
+        // The ritual under way: its celebrants are wide awake. A cursed graveyard: everyone is.
+        state.RitualRoundsLeft = setup.RitualRounds;
+        foreach (Room room in state.Rooms.Values)
+        {
+            foreach (Monster monster in room.Monsters.Where(monster => monster.Definition.Ritualist || setup.Cursed))
+            {
+                monster.Asleep = false;
+            }
+
+            if (setup.Cursed)
+            {
+                room.Cursed = true;
+                room.HordeAlert = 3;
+                state.PortalOpen = true;
+            }
+        }
+
         return state;
     }
 
@@ -595,6 +619,7 @@ public sealed partial class GameSession
         }
 
         room.RelicChest = features.RelicChest;
+        room.RitualCircle = features.RitualCircle;
         foreach (GridPosition brazier in features.LitBraziers)
         {
             room.LightBrazier(brazier);

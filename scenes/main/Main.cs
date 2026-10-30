@@ -154,6 +154,10 @@ public partial class Main : Control
 		{
 			Show(new GameScreen { Setup = DemoRun.Graves(seed), Content = _content });
 		}
+		else if (args.Contains("--ritualtest"))
+		{
+			Show(new GameScreen { Setup = DemoRun.Graves(seed, ritualRounds: 2), Content = _content });
+		}
 		else if (args.Contains("--partytest"))
 		{
 			Show(new GameScreen { Setup = DemoRun.PartyCheck(seed), Content = _content });
@@ -561,7 +565,9 @@ public partial class Main : Control
 			_activeRunFile = _runFile;
 		}
 
-		var save = new SavedRun { ThemeId = themeId, Seed = seed, FriendlyFire = friendlyFire, Heroes = heroes, MerchantGuildLevel = LoadRaidWorld().GuildLevel, Skirmish = skirmish };
+		// The Graves, raided: as Father Ambrose's quests have left them.
+		(int ritualRounds, bool cursed) = _raiding && skirmish is null && _content.GetTheme(themeId).Graveyard is not null ? LoadRaidWorld().GraveyardOmens() : (0, false);
+		var save = new SavedRun { ThemeId = themeId, Seed = seed, FriendlyFire = friendlyFire, Heroes = heroes, MerchantGuildLevel = LoadRaidWorld().GuildLevel, Skirmish = skirmish, RitualRounds = ritualRounds, Cursed = cursed };
 		WriteSave(save);
 		ShowGame(save.CreateSetup(_content), party, save);
 	}
@@ -1042,6 +1048,11 @@ public partial class Main : Control
 		if (_raiding && _raid is not null)
 		{
 			_raid.ApplyRun(results, id => party.FirstOrDefault(member => member.Id == id)?.MaxHearts(_content) ?? 1);
+			if (setup.RitualRounds > 0)
+			{
+				LoadRaidWorld().SettleRitual(results.Any(result => result.RitualStopped), results.Any(result => result.PortalOpened));
+				SaveRaidWorld();
+			}
 		}
 
 		// Merchants brought out alive join the Guild, which rises a level for each, and remember who helped them.

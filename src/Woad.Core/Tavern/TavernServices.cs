@@ -243,6 +243,43 @@ public static class TavernServices
             : $"\"The Relic of Saint Wyn lies in the ruined temple at the heart of the Unhallowed Graves, locked in its reliquary. Bring it home.\" Father Ambrose gives {hero.Name} the Holy Key.");
     }
 
+    /// <summary>What Father Ambrose gives for stopping the ritual.</summary>
+    public const int RitualGold = 150;
+
+    public const int RitualHolyWater = 3;
+
+    /// <summary>
+    /// Father Ambrose's second quest, once the relic is home: back to the Graves to stop the cult's ritual
+    /// before the portal opens. Stopped, he rewards the party; opened, nothing can be done.
+    /// </summary>
+    public static ServiceResult Ritual(RaidWorld world, TavernDefinition tavern, ContentCatalog content, Character hero)
+    {
+        switch (world.Quest(Quests.Ritual))
+        {
+            case QuestStage.NotTaken when world.Quest(Quests.Relic) != QuestStage.Done:
+                return ServiceResult.Refused("\"Bring Saint Wyn home first.\"");
+            case QuestStage.NotTaken:
+                world.SetQuest(Quests.Ritual, QuestStage.Taken);
+                return new ServiceResult(true, $"\"The relic kept them in check. Now the cult gathers in the ruined temple to open a door to the realm of death. Kill the cabal round the circle and the leader at the pulpit, all of them. You'll have {Quests.RitualRounds} rounds once you're through the gate, no more.\"");
+            case QuestStage.Taken:
+                return ServiceResult.Refused($"\"The cult is waiting in the temple. {Quests.RitualRounds} rounds, from the gate. Go.\"");
+            case QuestStage.Achieved:
+                hero.EarnGold(RitualGold);
+                for (int i = 0; i < RitualHolyWater; i++)
+                {
+                    hero.GiveCard("holy_water", content);
+                }
+
+                world.SetQuest(Quests.Ritual, QuestStage.Done);
+                world.RaiseReputation(tavern.Id, 3);
+                return new ServiceResult(true, $"\"The door stays shut. The Saint watches over you.\" {hero.Name} gets {RitualGold} gold and {RitualHolyWater} Holy Water.");
+            case QuestStage.Failed:
+                return ServiceResult.Refused("\"The door is open. God help us all. Keep out of the Graves, if you value your soul.\"");
+            default:
+                return ServiceResult.Refused("\"You've done all that could be asked. More than that.\"");
+        }
+    }
+
     /// <summary>How much Cowards' standing earns Craven's respect, and his Cloak.</summary>
     public const int CowardsForTheCloak = 10;
 

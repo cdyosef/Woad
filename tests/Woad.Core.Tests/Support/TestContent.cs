@@ -108,6 +108,7 @@ internal static class TestContent
           { "id": "frog", "name": "Frog", "glyph": "R", "hearts": 1, "move": 0, "attackDice": 1, "defenseDice": 0, "attackPattern": "reach", "attackRange": 3, "pulls": true },
           { "id": "jelly", "name": "Jelly", "glyph": "J", "hearts": 1, "move": 0, "attackDice": 1, "defenseDice": 0, "flying": true, "swimmer": true, "stunOnSix": true },
           { "id": "lurker", "name": "Lurker", "glyph": "x", "hearts": 3, "move": 0, "attackDice": 1, "defenseDice": 0, "grabs": true, "xp": 4 },
+          { "id": "chanter", "name": "Chanter", "glyph": "i", "hearts": 1, "move": 0, "attackDice": 0, "defenseDice": 0, "ritualist": true },
           { "id": "corpse", "name": "Corpse", "glyph": "j", "hearts": 1, "move": 0, "attackDice": 0, "defenseDice": 0, "undead": "lesser" },
           { "id": "rotter", "name": "Rotter", "glyph": "I", "hearts": 2, "spell": "swirly_eyes", "move": 0, "attackDice": 1, "weapon": 4, "defenseDice": 0, "undead": "greater", "infects": { "disease": "nekrot" }, "graveDust": true, "flammable": true },
           { "id": "slugger", "name": "Slugger", "glyph": "U", "hearts": 3, "move": 0, "attackDice": 1, "weapon": 4, "defenseDice": 0 },

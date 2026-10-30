@@ -70,6 +70,12 @@ public sealed record HeroRunResult
     /// <summary>What the run did to the character's standing with the Law.</summary>
     public int LawStandingChange { get; init; }
 
+    /// <summary>The run broke the cult's ritual (the same for everyone in it).</summary>
+    public bool RitualStopped { get; init; }
+
+    /// <summary>The run let the cult's ritual open the portal (the same for everyone in it).</summary>
+    public bool PortalOpened { get; init; }
+
     /// <summary>What the hero carries on to the next run until it's cured: Black Hearts and disease.</summary>
     public IReadOnlyDictionary<Condition, int> Lingering { get; init; } = new Dictionary<Condition, int>();
 
@@ -114,6 +120,8 @@ public static class RunResults
             GuildStandingChange = hero.GuildStandingChange,
             LawStandingChange = hero.LawStandingChange,
             MerchantsRescued = state.RescuedMerchants.Select(rescued => (rescued.Name, rescued.FreedByHeroId == hero.Id)).ToList(),
+            RitualStopped = state.RitualStopped,
+            PortalOpened = state.PortalOpen,
             Lingering = Conditions.Lingering.Where(hero.Conditions.Has).ToDictionary(condition => condition, condition => hero.Conditions[condition]),
             Equipped = Gear(hero.EquippedCards),
             Belt = Gear(hero.Belt),

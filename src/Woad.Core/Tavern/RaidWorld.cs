@@ -260,6 +260,32 @@ public sealed class RaidWorld
 
     public void SetQuest(string questId, QuestStage stage) => _quests[questId] = stage;
 
+    /// <summary>How a graveyard raid begins, by Father Ambrose's quests: the rounds to stop the ritual (0 for none), and whether it already cursed the place.</summary>
+    public (int RitualRounds, bool Cursed) GraveyardOmens() => Quest(Quests.Ritual) switch
+    {
+        QuestStage.Taken => (Quests.RitualRounds, false),
+        QuestStage.Failed => (0, true),
+        _ => (0, false),
+    };
+
+    /// <summary>What a finished graveyard raid did to the ritual quest.</summary>
+    public void SettleRitual(bool stopped, bool opened)
+    {
+        if (Quest(Quests.Ritual) != QuestStage.Taken)
+        {
+            return;
+        }
+
+        if (stopped)
+        {
+            SetQuest(Quests.Ritual, QuestStage.Achieved);
+        }
+        else if (opened)
+        {
+            SetQuest(Quests.Ritual, QuestStage.Failed);
+        }
+    }
+
     public void HearRumor(string npcId) => _rumorsHeard[npcId] = RumorsHeard(npcId) + 1;
 
     /// <summary>What a hero has eaten and drunk since their last Rest, waiting to boost the next one.</summary>

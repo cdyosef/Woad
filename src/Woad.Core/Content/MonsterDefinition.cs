@@ -220,6 +220,9 @@ public sealed record MonsterDefinition
     /// <summary>Typed dice it rolls on top of its own with every attack (a Rotten Mummy's Necro die).</summary>
     public IReadOnlyList<TypedDie> ExtraDice { get; init; } = [];
 
+    /// <summary>One of those at the cult's ritual (the cabal and its leader): kill them all and it's broken. They go on the undead's turn.</summary>
+    public bool Ritualist { get; init; }
+
     /// <summary>A spell (by id) it casts at a hero in range when it can't strike anyone (a Rotten Mummy's Swirly Eyes).</summary>
     public string? Spell { get; init; }
 

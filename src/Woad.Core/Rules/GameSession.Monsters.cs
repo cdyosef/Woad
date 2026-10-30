@@ -26,7 +26,7 @@ public sealed partial class GameSession
 
     /// <summary>Which turn a monster takes: in a graveyard, the horde's (undead, and the roster's horde) is the undead's.</summary>
     public Faction FactionOf(Monster monster) =>
-        Graveyard is not null && (monster.Definition.Undead is not null || HordeIds.Contains(monster.Definition.Id)) ? Faction.Undead : Faction.Monsters;
+        Graveyard is not null && (monster.Definition.Undead is not null || monster.Definition.Ritualist || HordeIds.Contains(monster.Definition.Id)) ? Faction.Undead : Faction.Monsters;
 
     private HashSet<string> HordeIds => _hordeIds ??= [.. Content.GetTheme(State.ThemeId).Roster.Where(entry => entry.Horde).Select(entry => entry.Monster)];
 
@@ -184,6 +184,12 @@ public sealed partial class GameSession
             monster.Slowed = false;
         }
         monster.AttackDiceThisTurn = Math.Max(0, own.AttackDice - rumbleLost);
+
+        // Through the open portal, death drives its dead on: a d6 more Wend for each, every turn.
+        if (room.Cursed && FactionOf(monster) == Faction.Undead && own.Move > 0)
+        {
+            monster.MovesThisTurn += RollOneDie();
+        }
         _actingMonsterId = monster.Id;
         try
         {

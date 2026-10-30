@@ -14,7 +14,7 @@ public sealed partial class GameSession
 {
     /// <summary>Whether a tile is in darkness: in a dark room, out of reach of every light.</summary>
     public bool InDarkness(Room room, GridPosition tile) =>
-        room.Dark && !LightsIn(room).Any(light => light.ChebyshevDistanceTo(tile) <= GameRules.LightRadius);
+        room.Dark && !room.Cursed && !LightsIn(room).Any(light => light.ChebyshevDistanceTo(tile) <= GameRules.LightRadius);
 
     /// <summary>Where the light in a room comes from: fire, lit braziers and Shining Light.</summary>
     public IEnumerable<GridPosition> LightsIn(Room room) =>

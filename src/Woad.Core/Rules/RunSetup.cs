@@ -108,6 +108,9 @@ public sealed record RoomFeatures
     /// <summary>Graves with one of the dead in them (a monster id), who rises when it's opened.</summary>
     public IReadOnlyDictionary<GridPosition, string> Risers { get; init; } = new Dictionary<GridPosition, string>();
 
+    /// <summary>The middle of the temple's ritual circle, where the portal opens.</summary>
+    public GridPosition? RitualCircle { get; init; }
+
     /// <summary>The reliquary: a chest only the Holy Key opens, holding the Relic of Saint Wyn.</summary>
     public GridPosition? RelicChest { get; init; }
 
@@ -145,6 +148,12 @@ public sealed record RunSetup
 
     /// <summary>A fight out on the Woarld Map (see <c>Skirmish</c>): it ends, and the party walks on, once the room's monsters are beaten.</summary>
     public bool Skirmish { get; init; }
+
+    /// <summary>A graveyard where the cult is at its ritual: the rounds the party has to stop it (0 for none).</summary>
+    public int RitualRounds { get; init; }
+
+    /// <summary>A graveyard the ritual cursed: its portal stands open, its glow lights everything, and its dead know where the heroes are.</summary>
+    public bool Cursed { get; init; }
 
     /// <summary>The monsters act before any hero: an ambush nobody saw coming, or a failed escape.</summary>
     public bool MonstersFirst { get; init; }

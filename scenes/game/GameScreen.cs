@@ -170,6 +170,10 @@ public partial class GameScreen : Control
         {
             RunGravesTest();
         }
+        else if (args.Contains("--ritualtest"))
+        {
+            RunRitualTest();
+        }
         else if (args.Contains("--dentest"))
         {
             RunDenTest();
@@ -465,6 +469,23 @@ public partial class GameScreen : Control
                 await (phase.Faction == Faction.Undead
                     ? _banner.Flash("The dead shamble closer...", DieTypes.Nekrot, 0.3)
                     : _banner.Flash("The monsters stir...", Palette.Danger, 0.3));
+                break;
+
+            case RitualChanted chant when chant.RoundsLeft <= 5 || chant.RoundsLeft % 10 == 0:
+                await _banner.Flash($"The chanting grows louder... {chant.RoundsLeft} rounds left", new Color("a060ff"), 0.5);
+                break;
+
+            case RitualBroken:
+                _board.QueueRedraw();
+                await _banner.Flash("The ritual is broken!", Palette.TrimBright, 0.8);
+                break;
+
+            case PortalOpened portal:
+                _board.LookAt(portal.Position);
+                _board.Shake(8);
+                _board.QueueRedraw();
+                RefreshPanels();
+                await _banner.Flash("The portal to the realm of death opens!", new Color("a060ff"), 1.2);
                 break;
 
             case HordeRoused roused:

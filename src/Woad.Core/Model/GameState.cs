@@ -52,6 +52,15 @@ public sealed class GameState
     /// <summary>The next place in <see cref="Initiative"/> to play.</summary>
     public int InitiativeIndex { get; internal set; }
 
+    /// <summary>Rounds left before the cult's ritual opens the portal (0 when there's no ritual, or it's over).</summary>
+    public int RitualRoundsLeft { get; internal set; }
+
+    /// <summary>The heroes killed the whole cabal and its leader: the ritual is broken.</summary>
+    public bool RitualStopped { get; internal set; }
+
+    /// <summary>The ritual succeeded: the portal to the realm of death stands open.</summary>
+    public bool PortalOpen { get; internal set; }
+
     public Hero? ActiveHero => Turn is null ? null : GetHero(Turn.HeroId);
 
     /// <summary>Heroes who retreated from a fight out on the Woarld Map: off the field, but they didn't win it.</summary>

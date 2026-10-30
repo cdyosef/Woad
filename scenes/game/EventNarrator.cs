@@ -68,6 +68,9 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
             ? $"{nameOf(id)} {slot.Score}"
             : $"{(slot.Enemy == Faction.Undead ? "the undead" : "the monsters")} {slot.Score}")) + ".",
         InitiativeRollOff tie => $"A tie! {string.Join(" and ", tie.HeroIds.Select(nameOf))} roll off: {string.Join(" and ", tie.Totals)}.",
+        RitualChanted chant => $"In the temple the cult chants on: {Count(chant.RoundsLeft, "round")} before the door opens.",
+        RitualBroken => "The last of the cult falls, and the circle goes dark: the ritual is broken!",
+        PortalOpened => "The ritual is done. A portal to the realm of death tears open in the temple, souls pouring out, and every one of the dead turns toward you.",
         HordeRoused { Level: 1 } => "The dead grow restless: more of them stir, farther off.",
         HordeRoused { Level: 2 } => "The dead know you are here: they rise all across the yard and come.",
         HordeRoused => "Every grave empties toward you: all the dead are coming.",

@@ -13,14 +13,14 @@ public static class GameArt
     public static Texture2D? Tile(string themeId, string name) => Texture($"res://assets/themes/{themeId}/tiles/{name}.png");
 
     /// <summary>Monsters drawn with another monster's sprite (at a different size).</summary>
-    private static readonly Dictionary<string, string> SpriteStandIns = new() { ["slimeling"] = "slime" };
+    private static readonly Dictionary<string, string> SpriteStandIns = new() { ["slimeling"] = "slime", ["cabal_necromancer"] = "necromancer" };
 
     public static Texture2D? Monster(string themeId, string monsterId) =>
         Texture($"res://assets/themes/{themeId}/monsters/{SpriteStandIns.GetValueOrDefault(monsterId, monsterId)}.png");
 
     /// <summary>Bosses loom larger; monsters borrowing a relative's sprite are its smaller form.</summary>
     public static float MonsterScale(Woad.Core.Content.MonsterDefinition monster) =>
-        monster.Big ? 1.5f : monster.Boss ? 1.25f : SpriteStandIns.ContainsKey(monster.Id) ? 0.75f : 1f;
+        monster.Big ? 1.5f : monster.Boss ? 1.25f : monster.Id == "slimeling" ? 0.75f : 1f;
 
     public static Texture2D? Ui(string name) => Texture($"res://assets/ui/{name}.png");
 

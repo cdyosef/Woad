@@ -354,6 +354,15 @@ public sealed record InitiativeRolled(int Round, IReadOnlyList<InitiativeRoll> R
 /// <summary>Heroes tied on initiative rolled off, <paramref name="Dice"/> each (a 6 rolls another): their totals, in the same order.</summary>
 public sealed record InitiativeRollOff(IReadOnlyList<int> HeroIds, int Dice, IReadOnlyList<int> Totals) : GameEvent;
 
+/// <summary>A round passed at the cult's ritual: <paramref name="RoundsLeft"/> before the portal opens.</summary>
+public sealed record RitualChanted(int RoundsLeft) : GameEvent;
+
+/// <summary>The last of the cabal and its leader fell: the ritual is broken.</summary>
+public sealed record RitualBroken(string RoomId) : GameEvent;
+
+/// <summary>The ritual is done: the portal to the realm of death opens on the circle, and the graveyard is cursed.</summary>
+public sealed record PortalOpened(string RoomId, GridPosition Position) : GameEvent;
+
 /// <summary>A monster beside a hero escaping got a swing at them on their way out.</summary>
 public sealed record ParthianSwing(int MonsterId, int HeroId) : GameEvent;
 

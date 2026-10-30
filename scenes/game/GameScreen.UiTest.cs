@@ -443,6 +443,41 @@ public partial class GameScreen
         }
     }
 
+    /// <summary>
+    /// Debug mode (<c>-- --ritualtest</c>, with <see cref="DemoRun.Graves"/>): the cult's ritual with two
+    /// rounds to run. Aria waits at the gate; the countdown shows, and when it runs out the portal opens,
+    /// the view turns to it, and the graveyard is cursed.
+    /// </summary>
+    private async void RunRitualTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Room yard = ShownRoom;
+            Check(_session.State.RitualRoundsLeft == 2 && HeaderText().Contains("RITUAL: 2"), "the header counts down the ritual");
+            Check(yard.Monsters.Count(monster => monster.Definition.Ritualist) == 6, "the cabal and its leader are at the ritual");
+            for (int round = 0; round < 3 && !_session.State.PortalOpen; round++)
+            {
+                await Click(this, _endTurn);
+                await WaitUntilIdle();
+            }
+
+            Check(_session.State.PortalOpen && yard.Cursed, "the rounds run out and the portal opens");
+            Check(_board.DarkTiles.Count == 0, "the cursed graveyard's glow lights it all");
+            Check(yard.Monsters.All(monster => !monster.Asleep || _session.FactionOf(monster) == Faction.Monsters), "every one of the dead is up");
+            _board.LookAt(yard.RitualCircle!.Value);
+            await Pause(0.6);
+            await SaveShot("ritual_portal");
+            GD.Print("Ritual test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Ritual test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
     /// <summary>With WOAD_SHOTS set, a picture of the screen as it is.</summary>
     private async Task SaveShot(string name)
     {

@@ -193,6 +193,12 @@ public sealed class Room
     /// <summary>A dark room: tiles away from any light are in darkness (see <c>GameSession.InDarkness</c>).</summary>
     public bool Dark { get; internal init; }
 
+    /// <summary>The middle of the ritual circle (a graveyard's temple), where the portal opens.</summary>
+    public GridPosition? RitualCircle { get; internal set; }
+
+    /// <summary>Cursed by the ritual: an ambient purple glow lights it all, and its undead come faster.</summary>
+    public bool Cursed { get; internal set; }
+
     /// <summary>A graveyard's horde the heroes have woken by coming near (see <see cref="HordeAlert"/>).</summary>
     public int HordeWoken { get; internal set; }
 

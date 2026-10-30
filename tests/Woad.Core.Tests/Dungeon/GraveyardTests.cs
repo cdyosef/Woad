@@ -309,6 +309,108 @@ public class GraveyardTests
         Assert.Equal([null, second.Id, first.Id, null], order);
     }
 
+    [Fact]
+    public void AtTheRitualTheCabalStandsRoundTheCircleAndTheLeaderAtThePulpitAwake()
+    {
+        RunSetup run = DungeonGenerator.CreateRun(Content, Theme, [new HeroSetup("A", GameRules.HeroBaseStats, GameRules.StarterKit)], 42, ritualRounds: 30);
+        Assert.Equal(30, run.RitualRounds);
+        Assert.Equal(DungeonGenerator.Cabal, run.Rooms[0].Template.Monsters.Count(spawn => spawn.Monster.Id == "cabal_necromancer"));
+        Assert.Single(run.Rooms[0].Template.Monsters, spawn => spawn.Monster.Id == "cult_leader");
+        Assert.Equal(2, run.Rooms[0].Features!.LitBraziers.Count);
+
+        var session = new GameSession(Content, run);
+        Assert.All(session.State.Rooms[DungeonGenerator.GraveyardRoomId].Monsters.Where(monster => monster.Definition.Ritualist), monster => Assert.False(monster.Asleep));
+        Assert.Equal(30, session.State.RitualRoundsLeft);
+    }
+
+    [Fact]
+    public void WhenTheRoundsRunOutThePortalOpensAndTheDeadAllRise()
+    {
+        GameSession session = TestRun.StartGraveyard("""
+            .........
+            .........
+            .........
+            .........
+            1...i....
+            .........
+            .........
+            .........
+            ........j
+            """, new ScriptedDice(1, 1, 1), ritualRounds: 2);
+        Room yard = session.RoomById();
+
+        session.EndRound();
+        Assert.Equal((1, false), (session.State.RitualRoundsLeft, session.State.PortalOpen));
+
+        IReadOnlyList<GameEvent> events = session.EndRound();
+
+        Assert.Equal(new PortalOpened(yard.Id, new GridPosition(4, 4)), events.SingleOf<PortalOpened>());
+        Assert.True(session.State.PortalOpen && yard.Cursed);
+        Assert.Equal(3, yard.HordeAlert);
+        Assert.All(yard.Monsters, monster => Assert.False(monster.Asleep));
+        Assert.False(session.InDarkness(yard, new GridPosition(8, 0)));
+    }
+
+    [Fact]
+    public void KillingEveryCelebrantBreaksTheRitual()
+    {
+        // The hero's 4 kills the Chanter beside them.
+        GameSession session = TestRun.StartGraveyard("""
+            .........
+            .........
+            .........
+            .........
+            1i.......
+            .........
+            .........
+            .........
+            .........
+            """, new ScriptedDice(1, 4, 1, 1, 1), ritualRounds: 2);
+        Hero hero = session.HeroInSeat();
+
+        IReadOnlyList<GameEvent> events = session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id));
+
+        Assert.Single(events.OfType<RitualBroken>());
+        Assert.True(session.State.RitualStopped);
+        session.EndRound();
+        session.EndRound();
+        Assert.False(session.State.PortalOpen);
+        Assert.True(RunResultsFor(session).All(result => result.RitualStopped));
+    }
+
+    [Fact]
+    public void ACursedGraveyardGlowsAndItsDeadAreAllAwake()
+    {
+        GameSession session = TestRun.StartGraveyard("""
+            .........
+            .........
+            .........
+            .........
+            1........
+            .........
+            .........
+            .........
+            ........j
+            """, new ScriptedDice(1), cursed: true);
+        Room yard = session.RoomById();
+
+        Assert.True(yard.Cursed && session.State.PortalOpen);
+        Assert.False(session.OnlyMonster().Asleep);
+        Assert.False(session.InDarkness(yard, new GridPosition(8, 8)));
+    }
+
+    /// <summary>The run's results as they'd be at its end (the heroes all escaped).</summary>
+    private static IReadOnlyList<HeroRunResult> RunResultsFor(GameSession session)
+    {
+        foreach (Hero hero in session.State.Heroes)
+        {
+            hero.Status = HeroStatus.Escaped;
+        }
+
+        session.State.Phase = RunPhase.Ended;
+        return RunResults.For(session.State);
+    }
+
     private const string Empty = """
         .........
         .........

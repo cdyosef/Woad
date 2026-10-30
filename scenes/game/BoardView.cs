@@ -100,8 +100,8 @@ public partial class BoardView : Control
 
     public override void _Process(double delta)
     {
-        // Lit fuses spark.
-        if (_room?.Bombs.Any(bomb => bomb.Lit) == true || _room?.Flames.Count > 0 || _room?.LitBraziers.Count > 0)
+        // Lit fuses spark; the ritual circle and the portal swirl.
+        if (_room?.Bombs.Any(bomb => bomb.Lit) == true || _room?.Flames.Count > 0 || _room?.LitBraziers.Count > 0 || (_room?.RitualCircle is not null && (RitualUnderWay || _room.Cursed)))
         {
             QueueRedraw();
         }
@@ -127,6 +127,73 @@ public partial class BoardView : Control
         {
             QueueRedraw();
             _loot.QueueRedraw();
+        }
+    }
+
+    /// <summary>The cult's ritual is under way: its circle glows on the temple floor.</summary>
+    public bool RitualUnderWay { get; set; }
+
+    private static readonly Color RitualPurple = new("a060ff");
+
+    /// <summary>
+    /// The ritual circle: a ring of runes round the circle's middle while the cult chants, and, once the
+    /// ritual's done, the portal to the realm of death on it, souls pouring out. A cursed room glows purple.
+    /// </summary>
+    private void DrawRitual()
+    {
+        if (_room is not { RitualCircle: { } circle })
+        {
+            return;
+        }
+
+        if (_room.Cursed)
+        {
+            DrawRect(ShownRect(), RitualPurple with { A = 0.10f });
+        }
+
+        if (!RitualUnderWay && !_room.Cursed)
+        {
+            return;
+        }
+
+        float time = (float)Time.GetTicksMsec() / 1000f;
+        Vector2 middle = TileOrigin(circle) + new Vector2(TileSize / 2f, TileSize / 2f);
+        float radius = TileSize * 2.6f;
+        DrawArc(middle, radius, 0, Mathf.Tau, 48, RitualPurple with { A = 0.8f }, 2);
+        DrawArc(middle, radius - 6, 0, Mathf.Tau, 48, RitualPurple with { A = 0.4f }, 1);
+        for (int k = 0; k < 10; k++)
+        {
+            float angle = time * 0.4f + Mathf.Tau * k / 10;
+            Vector2 at = middle + Vector2.FromAngle(angle) * (radius - 3);
+            DrawRect(new Rect2(at - new Vector2(1.5f, 1.5f), new Vector2(3, 3)), RitualPurple);
+        }
+
+        if (!_room.Cursed)
+        {
+            return;
+        }
+
+        // The portal: a swirl of purple energy, souls streaming up out of it.
+        for (int ring = 5; ring >= 0; ring--)
+        {
+            float r = TileSize * (0.4f + ring * 0.25f);
+            DrawCircle(middle, r, new Color(0.35f + ring * 0.05f, 0.1f, 0.6f + ring * 0.05f, 0.35f + (5 - ring) * 0.1f));
+        }
+
+        for (int k = 0; k < 6; k++)
+        {
+            float angle = -time * 1.5f + Mathf.Tau * k / 6;
+            DrawArc(middle, TileSize * (0.6f + k * 0.12f), angle, angle + 1.6f, 12, new Color("e0c0ff") with { A = 0.6f }, 1.5f);
+        }
+
+        for (int k = 0; k < 8; k++)
+        {
+            float rise = (time * 0.35f + k / 8f) % 1f;
+            float sway = Mathf.Sin(time * 2 + k) * 6;
+            Vector2 soul = middle + new Vector2(sway + (k - 3.5f) * 4, -rise * TileSize * 3);
+            DrawCircle(soul, 3 - rise * 1.5f, new Color("d8ffe8") with { A = 1 - rise });
+            DrawCircle(soul + new Vector2(-1, -0.5f), 0.6f, Palette.Ink with { A = 1 - rise });
+            DrawCircle(soul + new Vector2(1, -0.5f), 0.6f, Palette.Ink with { A = 1 - rise });
         }
     }
 
@@ -503,6 +570,7 @@ public partial class BoardView : Control
             DrawKey(bossKey, "icon_boss_key", 1);
         }
 
+        DrawRitual();
         DrawOverlay(_reachable, Palette.Reachable);
         DrawOverlay(_hazards, Palette.Hazard);
         DrawOverlay(_jumps, Palette.Jump);

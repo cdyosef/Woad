@@ -389,10 +389,10 @@ public static class DemoRun
         return run with { StartRoomId = run.Rooms.Single(room => room.Role == RoomRole.Boss).Id };
     }
 
-    /// <summary>For --gravestest: Aria alone at the gate of a generated Unhallowed Graves.</summary>
-    public static RunSetup Graves(ulong seed) =>
+    /// <summary>For --gravestest: Aria alone at the gate of a generated Unhallowed Graves (for --ritualtest, with the cult's ritual under way).</summary>
+    public static RunSetup Graves(ulong seed, int ritualRounds = 0) =>
         Woad.Core.Dungeon.DungeonGenerator.CreateRun(ContentCatalog.LoadDefault(), "unhallowed_graves",
-            [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 30 } }], seed);
+            [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 30 } }], seed, ritualRounds);
 
     /// <summary>For --companiontest: Aria and her lucky companion Pip, a slime across the room.</summary>
     public static RunSetup Escort(ulong seed) => new()

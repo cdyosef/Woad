@@ -761,6 +761,15 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   no key or pick opens it, only the Holy Key, which it keeps. Anyone in the party bringing the relic
   back earns gold (60) and two Holy Water for whoever speaks to him, and a better name at the inn.
   Lose the key and he gives another. Without the quest, the relic stays where it is.
+- **The ritual quest:** with the relic home, Father Ambrose sends the party back to stop the cult. Raided
+  with the quest taken, the Graves are darker (only two braziers burn) and the ritual is under way: a
+  circle glows on the temple floor, a **cabal of five Cabal Necromancers** stands round it and the
+  **Cult Leader** chants at the pulpit, all awake and none of them moving (they go on the undead's
+  turn). The header counts down **30 rounds** from the gate. Kill all six and the ritual is broken:
+  the priest pays 150 gold and three Holy Water. Let the rounds run out and the **portal to the realm
+  of death** opens on the circle, purple and pouring souls: the graveyard is **cursed**. An ambient
+  purple glow lights it all, every one of the dead wakes and comes, and each moves a d6 further every
+  turn. It stays cursed, portal open, every time the party comes back.
 - **Crypts** dot the ground: walled rooms with a doorway each, some built onto another with a door
   through the wall they share. Sarcophagi line their back walls; each has a brazier.
 - **Graves** lie in plots, in rows with room to walk between, and more **sarcophagi** stand alone

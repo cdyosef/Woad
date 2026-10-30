@@ -38,6 +38,12 @@ public sealed class SavedRun
     /// <summary>The Merchant Guild's level when the run began (it decides a dungeon merchant's wares).</summary>
     public int MerchantGuildLevel { get; init; } = 1;
 
+    /// <summary>A graveyard's ritual under way (the rounds to stop it), or 0.</summary>
+    public int RitualRounds { get; init; }
+
+    /// <summary>A graveyard the ritual cursed.</summary>
+    public bool Cursed { get; init; }
+
     public required IReadOnlyList<HeroSetup> Heroes { get; init; }
 
     /// <summary>Every accepted command, in the order played.</summary>
@@ -53,7 +59,7 @@ public sealed class SavedRun
 
     /// <summary>The run's starting point, generated the same way a new run is.</summary>
     public RunSetup CreateSetup(ContentCatalog content) =>
-        (Skirmish is { } fight ? Woarld.Skirmish.CreateRun(content, fight, Heroes, Seed) : DungeonGenerator.CreateRun(content, ThemeId, Heroes, Seed))
+        (Skirmish is { } fight ? Woarld.Skirmish.CreateRun(content, fight, Heroes, Seed) : DungeonGenerator.CreateRun(content, ThemeId, Heroes, Seed, RitualRounds, Cursed))
             with { FriendlyFire = FriendlyFire, MerchantGuildLevel = Math.Max(1, MerchantGuildLevel) };
 
     /// <summary>Notes a command the rules accepted, and where the run stands after it.</summary>

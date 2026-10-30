@@ -38,12 +38,14 @@ public static partial class DungeonGenerator
     /// <summary>The chance (percent) a room past the arrival is dark.</summary>
     private const int DarkChance = 25;
 
-    public static RunSetup CreateRun(ContentCatalog content, string themeId, IReadOnlyList<HeroSetup> heroes, ulong seed)
+    /// <param name="ritualRounds">A graveyard only: the cult's ritual is under way, with this many rounds to stop it.</param>
+    /// <param name="cursed">A graveyard only: the ritual succeeded, and the portal stands open.</param>
+    public static RunSetup CreateRun(ContentCatalog content, string themeId, IReadOnlyList<HeroSetup> heroes, ulong seed, int ritualRounds = 0, bool cursed = false)
     {
         ThemeDefinition theme = content.GetTheme(themeId);
         if (theme.Graveyard is not null)
         {
-            return CreateGraveyard(content, theme, heroes, seed);
+            return CreateGraveyard(content, theme, heroes, seed, ritualRounds, cursed);
         }
 
         IReadOnlyList<ThemeRoom> layouts = content.RoomsFor(themeId);

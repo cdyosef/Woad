@@ -38,7 +38,7 @@ internal static class TestRun
     }
 
     /// <summary>A begun run in a single dark graveyard room "A" (its monsters asleep), with graves that hold the dead or nothing.</summary>
-    public static GameSession StartGraveyard(string room, ScriptedDice? dice = null, Dictionary<GridPosition, string>? risers = null, GridPosition[]? empty = null, int heroes = 1)
+    public static GameSession StartGraveyard(string room, ScriptedDice? dice = null, Dictionary<GridPosition, string>? risers = null, GridPosition[]? empty = null, int heroes = 1, int ritualRounds = 0, bool cursed = false)
     {
         RoomTemplate template = Room(room);
         var features = new RoomFeatures
@@ -46,13 +46,14 @@ internal static class TestRun
             Risers = risers ?? [],
             EmptyChests = empty ?? [],
             ChestLooks = template.Layout.Positions.Where(tile => template.Layout[tile] == TileKind.Chest).ToDictionary(tile => tile, _ => ChestLook.Grave),
+            RitualCircle = new GridPosition(4, 4),
         };
-        GameSession session = Create([new RoomSetup("A", template, Features: features, Dark: true)], dice, heroes, themeId: TestContent.GraveyardThemeId);
+        GameSession session = Create([new RoomSetup("A", template, Features: features, Dark: true)], dice, heroes, themeId: TestContent.GraveyardThemeId, ritualRounds: ritualRounds, cursed: cursed);
         session.Begin();
         return session;
     }
 
-    public static GameSession Create(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, IReadOnlyList<PassageSetup>? passages = null, int?[]? owners = null, bool friendlyFire = false, Skill skills = Skills.All, string themeId = TestContent.ThemeId)
+    public static GameSession Create(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, IReadOnlyList<PassageSetup>? passages = null, int?[]? owners = null, bool friendlyFire = false, Skill skills = Skills.All, string themeId = TestContent.ThemeId, int ritualRounds = 0, bool cursed = false)
     {
         var setup = new RunSetup
         {
@@ -65,6 +66,8 @@ internal static class TestRun
             StartRoomId = rooms[0].Id,
             Passages = passages ?? [],
             FriendlyFire = friendlyFire,
+            RitualRounds = ritualRounds,
+            Cursed = cursed,
         };
 
         var random = loot is null

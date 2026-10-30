@@ -22,7 +22,10 @@ public static partial class DungeonGenerator
     private const char Open = '.';
     private const char Stone = '#';
 
-    private static RunSetup CreateGraveyard(ContentCatalog content, ThemeDefinition theme, IReadOnlyList<HeroSetup> heroes, ulong seed)
+    /// <summary>The cabal of necromancers at the ritual, round its circle.</summary>
+    public const int Cabal = 5;
+
+    private static RunSetup CreateGraveyard(ContentCatalog content, ThemeDefinition theme, IReadOnlyList<HeroSetup> heroes, ulong seed, int ritualRounds, bool cursed)
     {
         GraveyardDefinition yard = theme.Graveyard!;
         var random = new Pcg32(seed, Stream);
@@ -30,6 +33,11 @@ public static partial class DungeonGenerator
         plan.Ring(random);
         plan.Gate(heroes.Count);
         plan.Temple();
+        if (ritualRounds > 0)
+        {
+            plan.Ritual(content);
+        }
+
         plan.Crypts(yard.Crypts, random);
         plan.Exits(yard.Exits, cracked: false, random);
         plan.Exits(yard.CrackedExits, cracked: true, random);
@@ -77,7 +85,8 @@ public static partial class DungeonGenerator
         }
 
         RoomTemplate template = RoomTemplate.Parse(plan.Rows(), content.FindMonsterByGlyph);
-        List<GridPosition> lit = [.. braziers.OrderBy(_ => random.NextInt(0, 1 << 30)).Take(yard.LitBraziers)];
+        // At the ritual it's darker: the cult puts out all but two of the fires.
+        List<GridPosition> lit = [.. braziers.OrderBy(_ => random.NextInt(0, 1 << 30)).Take(ritualRounds > 0 ? 2 : yard.LitBraziers)];
         var room = new RoomSetup(GraveyardRoomId, template, Role: RoomRole.Combat, Dark: true, Features: new RoomFeatures
         {
             ChestLooks = looks,
@@ -87,6 +96,7 @@ public static partial class DungeonGenerator
             LockedChests = locks,
             LitBraziers = lit,
             RelicChest = plan.Reliquary,
+            RitualCircle = plan.Circle,
         });
         return new RunSetup
         {
@@ -95,6 +105,8 @@ public static partial class DungeonGenerator
             Heroes = heroes,
             Rooms = [room],
             StartRoomId = GraveyardRoomId,
+            RitualRounds = ritualRounds,
+            Cursed = cursed,
         };
     }
 
@@ -119,6 +131,21 @@ public static partial class DungeonGenerator
 
         /// <summary>The temple's reliquary, before the pulpit.</summary>
         public GridPosition Reliquary { get; private set; }
+
+        /// <summary>The middle of the temple's ritual circle.</summary>
+        public GridPosition Circle => new(size / 2, size / 2 + 1);
+
+        /// <summary>The ritual: the cabal round the circle, the cult leader at the pulpit.</summary>
+        public void Ritual(ContentCatalog content)
+        {
+            char cabal = content.GetMonster("cabal_necromancer").Glyph;
+            foreach ((int dx, int dy) in new[] { (0, -2), (2, -1), (1, 2), (-1, 2), (-2, -1) })
+            {
+                _tiles[Circle.X + dx, Circle.Y + dy] = cabal;
+            }
+
+            _tiles[size / 2, size / 2 - 15 / 2 + 1] = content.GetMonster("cult_leader").Glyph;
+        }
 
         private GridPosition Center => new(size / 2, size / 2);
 

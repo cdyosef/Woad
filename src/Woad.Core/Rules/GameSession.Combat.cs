@@ -415,6 +415,7 @@ public sealed partial class GameSession
         }
 
         events.Add(new MonsterDefeated(monster.Id, killer?.Id ?? 0));
+        BreakRitual(room, events);
         CrumbleRaised(room, monster, events);
 
         // The raised dead are worth nothing: no XP, no loot, no key.

@@ -874,6 +874,25 @@ MONSTERS = {
         "................",
     ], {"o": "#1a1610", "w": "#b8aa88", "l": "#7a6e52", "e": "#60ff80"})),
 
+    "cult_leader": (sprite([  # a tall robed priest of death, horned mitre, a staff topped with a skull
+        "......o.o.......",
+        ".....opopo.o....",
+        ".....oppppowo...",
+        "....orrwwrrowo..",
+        "....orwewewo.o..",
+        "....orrwwrro.k..",
+        "...orrrrrrrro.k.",
+        "..orrrpprrrrrok.",
+        "..orrppppprrrok.",
+        "..orrrpprrrrrok.",
+        "..orrrrprrrrrok.",
+        "..orrrrrrrrrrok.",
+        "..orrrrrrrrrrok.",
+        "..orrrrrrrrrrok.",
+        ".ooooooooooooooo",
+        "................",
+    ], {"o": "#08060a", "r": "#2a1430", "w": "#e8e2d0", "e": "#60ff80", "p": "#8a5ad0", "k": "#8a7a5a"})),
+
     "death_cultist": (sprite([  # a black-robed cultist, a bone mask and a curved knife
         "................",
         "......oooo......",

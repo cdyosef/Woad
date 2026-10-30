@@ -39,6 +39,12 @@ public static class Quests
 {
     /// <summary>Father Ambrose's: bring the Relic of Saint Wyn home from the Unhallowed Graves.</summary>
     public const string Relic = "relic";
+
+    /// <summary>Father Ambrose's second: stop the cult's ritual in the Graves before the portal opens.</summary>
+    public const string Ritual = "ritual";
+
+    /// <summary>The rounds the party has, back in the Graves, to stop the ritual.</summary>
+    public const int RitualRounds = 30;
 }
 
 /// <summary>How far along a quest is.</summary>
@@ -46,7 +52,15 @@ public enum QuestStage
 {
     NotTaken,
     Taken,
+
+    /// <summary>Done out in the Woarld, not yet told to whoever set it.</summary>
+    Achieved,
+
+    /// <summary>Told, and rewarded.</summary>
     Done,
+
+    /// <summary>Lost for good (the ritual's portal opened).</summary>
+    Failed,
 }
 
 /// <summary>Something an NPC has heard. Some are true; a rumor with <see cref="Reveal"/> clears the clouds from a spot on the map.</summary>

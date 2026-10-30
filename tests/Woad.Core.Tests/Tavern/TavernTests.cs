@@ -58,6 +58,36 @@ public class TavernTests
     }
 
     [Fact]
+    public void AfterTheRelicFatherAmbroseSendsThePartyToStopTheRitual()
+    {
+        RaidWorld world = RaidWorld.Begin(Map);
+        Character ana = Hero("Ana", 0);
+        Assert.False(TavernServices.Ritual(world, Inn, Content, ana).Done);
+
+        world.SetQuest(Quests.Relic, QuestStage.Done);
+        Assert.True(TavernServices.Ritual(world, Inn, Content, ana).Done);
+        Assert.Equal((Quests.RitualRounds, false), world.GraveyardOmens());
+
+        world.SettleRitual(stopped: true, opened: false);
+        Assert.Equal(QuestStage.Achieved, world.Quest(Quests.Ritual));
+        Assert.True(TavernServices.Ritual(world, Inn, Content, ana).Done);
+        Assert.Equal((QuestStage.Done, TavernServices.RitualGold), (world.Quest(Quests.Ritual), ana.Gold));
+        Assert.Equal((0, false), world.GraveyardOmens());
+    }
+
+    [Fact]
+    public void LetTheRitualSucceedAndTheGravesStayCursed()
+    {
+        RaidWorld world = RaidWorld.Begin(Map);
+        world.SetQuest(Quests.Ritual, QuestStage.Taken);
+
+        world.SettleRitual(stopped: false, opened: true);
+
+        Assert.Equal(QuestStage.Failed, world.Quest(Quests.Ritual));
+        Assert.Equal((0, true), RaidWorld.FromJson(world.ToJson(), Map).GraveyardOmens());
+    }
+
+    [Fact]
     public void QuestThingsCantBeSold()
     {
         RaidWorld world = RaidWorld.Begin(Map);

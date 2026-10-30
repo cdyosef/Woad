@@ -112,6 +112,7 @@ on the Godot command line:
 | `--dietypetest` | Reads eight scrolls of typed dice (ice, lightning, poison, wind, earth, life, mind, shadow) at an ogre, a skeleton, a scorpion and a necromancer, digging out or tending her eyes when she must, and checks every figure shows the tokens the rules give it and that typed dice show in their colors. |
 | `--partytest` | Checks the Party button says when there's a point to spend, opens the Party menu, spends Aria's point on a heart and tells Pip to pick up loot. |
 | `--gravestest` | At the gate of a generated Unhallowed Graves, checks it's one huge dark room whose dead all lie still, then walks Aria to the nearest grave and opens it. |
+| `--ritualtest` | A generated Unhallowed Graves with the cult's ritual two rounds from done: checks the countdown and the six celebrants, then ends turns until the portal opens and the graveyard is cursed (lit, its dead all up). |
 | `--bosstest` | In a generated Emerald Keep's boss room, Aria orders Pip to Fight and ends her turns for four rounds, checking Pip attacks the Iron Warden's company. |
 | `--monstertest` | Checks clicking a chest that's a Mimic wakes it on the board (and its grab shuts off Wend), then plays three rounds against an Ogre, a Necromancer (checking it raises the dead), a Hexer and a Gelatinous Cube. |
 | `--encountertest` | On a fresh Woarld kept in memory: steps onto a toll post (Suss Out, then Turn back, which Cowards note), lets a band catch up and chooses Fight, Scouts, and studies a Flame Scroll from the Party menu. |

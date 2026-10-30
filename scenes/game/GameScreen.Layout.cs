@@ -274,7 +274,8 @@ public partial class GameScreen
     {
         // Every light gathered once: a graveyard has ten thousand tiles to check against them.
         List<GridPosition> lights = ShownRoom.Dark ? [.. _session.LightsIn(ShownRoom)] : [];
-        _board.DarkTiles = ShownRoom.Dark ? [.. ShownRoom.Positions.Where(tile => !lights.Any(light => light.ChebyshevDistanceTo(tile) <= GameRules.LightRadius))] : [];
+        _board.DarkTiles = ShownRoom.Dark && !ShownRoom.Cursed ? [.. ShownRoom.Positions.Where(tile => !lights.Any(light => light.ChebyshevDistanceTo(tile) <= GameRules.LightRadius))] : [];
+        _board.RitualUnderWay = _session.State.RitualRoundsLeft > 0;
         _board.BlindAt = !Locked && ActiveHero is { IsCompanion: false } blind && blind.RoomId == _shownRoomId && blind.Conditions.Has(Condition.Blind) ? blind.Position : null;
         if (Locked || ActiveHero is not { } hero || _session.State.Turn is not { } turn || hero.RoomId != _shownRoomId)
         {
@@ -563,6 +564,14 @@ public partial class GameScreen
             ? _playingFaction == Faction.Undead ? $"[color={Palette.Hex(DieTypes.Nekrot)}]The undead's turn[/color]" : $"[color={Palette.Hex(Palette.Danger)}]The monsters' turn[/color]"
             : turn is null ? "" : $"[color={Palette.Hex(Palette.Seat(turn.Seat))}]{Escape(turn.Name)}'s turn[/color]";
         string where = _shownRoomId.Length > 0 && ShownRoom.IsHuge ? "" : $"   FLOOR {floor}";
+        if (state.RitualRoundsLeft > 0)
+        {
+            where += $"   [color=#a060ff]RITUAL: {state.RitualRoundsLeft}[/color]";
+        }
+        else if (state.PortalOpen)
+        {
+            where += "   [color=#a060ff]THE PORTAL IS OPEN[/color]";
+        }
         return $"[color={Palette.Hex(Palette.Trim)}]ROUND {state.Round}{where}[/color]{friendlyFire}\n{whose}";
     }
 

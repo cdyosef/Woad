@@ -563,6 +563,25 @@ public partial class TavernScreen : Control
                 Done(result, _payer);
             });
         }
+
+        if (stage != QuestStage.Done)
+        {
+            return;
+        }
+
+        (string ritual, string ask) = World.Quest(Quests.Ritual) switch
+        {
+            QuestStage.NotTaken => ("THE RITUAL: \"The cult means to open a door to the realm of death, in the temple at the heart of the Graves. Will you stop them?\"", "Take the quest"),
+            QuestStage.Taken => ($"THE RITUAL: kill the cabal of five round the circle in the ruined temple, and the cult leader at the pulpit, within {Quests.RitualRounds} rounds of the gate.", ""),
+            QuestStage.Achieved => ("You broke the ritual. Father Ambrose wants to hear all of it.", "Tell him"),
+            QuestStage.Failed => ("The portal stands open in the Graves. Father Ambrose can only pray.", ""),
+            _ => ("The ritual was broken. The Graves are quieter for it. A little.", ""),
+        };
+        HBoxContainer ritualRow = Row(ritual, ask.Length > 0 ? 436 : 536);
+        if (ask.Length > 0)
+        {
+            RowButton(ritualRow, ask, 96, () => Done(TavernServices.Ritual(World, Tavern, Content, _payer), _payer));
+        }
     }
 
     private void ShowRecruits()
