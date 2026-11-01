@@ -288,6 +288,15 @@ shows, the selected one in front on the right:
   with how many more wait in reserve) and the hand fan to their right. Click a spare die to put it on the dice
   card, a die on the card to take it back; the card remembers your choice.
 
+**The belt square** (bottom right) wears the belt: its band wraps around the square, ends darkening round the
+back, with the buckle in the middle. The belt's cards stand tucked behind it like playing cards, in a straight
+line each side of the buckle, filling from the buckle outward; those nearest the buckle lie on top, each showing
+its corner index (picture and count) in the corner that peeks out. The card under the cursor rises in front
+without leaving its slot. Click a card to pick it up; double-click to use it from the belt or draw it into a
+hand (asked which, when it could be either). The belt fan beneath opens every place on the belt in full over
+the board. The buckle is a button. With no belt, the square says Beltless. See the
+[Terminictionary](Terminictionary.md) for these names.
+
 **Doors** sit at the middle tile of each room edge. Stepping through costs 1 step and places you at the
 facing door of the next room.
 

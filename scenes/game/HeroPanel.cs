@@ -36,9 +36,10 @@ public partial class HeroPanel : Panel
     ];
 
     private readonly Dictionary<EquipSlot, SheetCard> _slots = [];
-    private readonly SheetCard[] _belt = new SheetCard[GameRules.MaxBeltSlots];
-    private Label _beltLabel = null!;
-    private int _beltShown;
+    private BeltSquare _beltSquare = null!;
+    private Panel _beltView = null!;
+    private Label _beltTitle = null!;
+    private readonly SheetCard[] _beltCards = new SheetCard[GameRules.MaxBeltSlots];
     private readonly CardSlot[] _backpack = new CardSlot[GameRules.BackpackCapacity];
     private Label _name = null!;
     private HeartsView _hearts = null!;
@@ -63,28 +64,36 @@ public partial class HeroPanel : Panel
     /// <summary>The bag was opened or closed.</summary>
     public event Action? BagToggled;
 
+    /// <summary>A card on the belt was double-clicked: use it, or draw it into a hand.</summary>
+    public event Action<int>? BeltCardUsed;
+
+    /// <summary>The belt's buckle was clicked.</summary>
+    public event Action? BuckleClicked;
+
     /// <summary>Where the board starts, to the right of the sheet: the open bag goes over it.</summary>
     private const float SideOfBoard = 176;
 
-    /// <summary>Puts the open bag away.</summary>
-    public void CloseBag() => _bagView.Visible = false;
+    /// <summary>Puts the open bag (and the belt's full view) away.</summary>
+    public void CloseBag() => _bagView.Visible = _beltView.Visible = false;
+
+    /// <summary>The belt square, which wears the belt.</summary>
+    internal BeltSquare BeltSquare => _beltSquare;
+
+    /// <summary>The belt's cards laid out in full over the board (from the belt fan).</summary>
+    public Control BeltView => _beltView;
+
+    internal bool IsBeltViewOpen => _beltView.Visible;
+
+    /// <summary>A card in the belt's full view.</summary>
+    internal SheetCard BeltViewCard(int index) => _beltCards[index];
 
     /// <summary>The Magic card was clicked: cast a spell.</summary>
     public event Action? MagicClicked;
 
     internal CardSlot EquipmentSlot(EquipSlot slot) => _slots[slot];
 
-    internal CardSlot BeltSlot(int index) => _belt[index];
-
-    /// <summary>How far apart the belt's cards fan, each showing this much of itself under the next.</summary>
-    private const float BeltStep = 10;
-
-    /// <summary>A point on the part of a belt card that shows, to click it (the one fanned over it covers the rest).</summary>
-    internal Vector2 BeltPoint(int index) => _belt[index].GetGlobalRect().Position + new Vector2(index == _beltShown - 1 ? 14 : BeltFan(_beltShown).Step / 2, 20);
-
-    /// <summary>How the belt's cards fan for a belt of <paramref name="slots"/>: each this far on from the last, and tilted this much more.</summary>
-    private static (float Step, float Tilt) BeltFan(int slots) =>
-        slots <= 1 ? (0, 0) : (Math.Min(BeltStep, 30f / (slots - 1)), Math.Min(0.08f, 0.32f / (slots - 1)));
+    /// <summary>A point on the part of a belt card that shows, to click it (the ones nearer the buckle cover the rest).</summary>
+    internal Vector2 BeltPoint(int index) => _beltSquare.GetGlobalRect().Position + _beltSquare.CardPoint(index);
 
     internal CardSlot BackpackSlot(int index) => _backpack[index];
 
@@ -146,6 +155,7 @@ public partial class HeroPanel : Panel
         _bag.Pressed += () =>
         {
             _bagView.Visible = !_bagView.Visible;
+            _beltView.Visible = false;
             BagToggled?.Invoke();
         };
 
@@ -181,17 +191,25 @@ public partial class HeroPanel : Panel
             _backpack[i] = slot;
         }
 
-        // The belt, fanned like a hand (laid out for the belt worn, in ShowHero).
-        for (int i = 0; i < _belt.Length; i++)
+        // The belt square, wearing the belt, with the belt fan beneath it.
+        _beltSquare = Add(new BeltSquare { Position = new(Columns[2], Rows[2]) });
+        _beltSquare.CardSelected += id => CardSelected?.Invoke(id);
+        _beltSquare.CardUsed += id => BeltCardUsed?.Invoke(id);
+        _beltSquare.BuckleClicked += () => BuckleClicked?.Invoke();
+        _beltSquare.FanClicked += () =>
         {
-            SheetCard card = Add(new SheetCard
-            {
-                Size = new(28, 38),
-                Small = true,
-                Back = "back_belt",
-                PivotOffset = new(14, 38),
-                Visible = false,
-            });
+            _beltView.Visible = !_beltView.Visible;
+            _bagView.Visible = false;
+        };
+
+        // The belt's full view over the board: every place on it, face up, five to a row.
+        _beltView = new Panel { Position = new(SideOfBoard + 4, 80), Size = new(280, 136), Visible = false, ZIndex = 3 };
+        _beltTitle = UiTheme.Label(new(0, 3), new(280, 12), color: Palette.TrimBright);
+        _beltTitle.HorizontalAlignment = HorizontalAlignment.Center;
+        _beltView.AddChild(_beltTitle);
+        for (int i = 0; i < _beltCards.Length; i++)
+        {
+            var card = new SheetCard { Position = new(8 + i % 5 * 54, 18 + i / 5 * 56), Size = new(CardWidth, CardHeight), Back = "back_belt" };
             card.Pressed += () =>
             {
                 if (card.Card is { } held)
@@ -199,12 +217,11 @@ public partial class HeroPanel : Panel
                     CardSelected?.Invoke(held.Id);
                 }
             };
-            _belt[i] = card;
+            _beltView.AddChild(card);
+            _beltCards[i] = card;
         }
 
-        _beltLabel = Add(UiTheme.Label(new(Columns[2], Rows[2] + 40), new(CardWidth, 12), "Belt", color: Palette.TextDim));
-        _beltLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        _turn = Add(UiTheme.Label(new(118, Rows[2] + CardHeight + 3), new(56, 24), color: Palette.TextDim));
+        _turn = Add(UiTheme.Label(new(118, Rows[2] + CardHeight + 12), new(56, 24), color: Palette.TextDim));
         _turn.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         _turn.HorizontalAlignment = HorizontalAlignment.Center;
     }
@@ -246,6 +263,7 @@ public partial class HeroPanel : Panel
                 card.Show(null, (string)card.GetMeta("empty"), selected: false);
             }
 
+            _beltSquare.ShowHero(null, null);
             return;
         }
 
@@ -292,20 +310,17 @@ public partial class HeroPanel : Panel
             }
         }
 
-        // As many cards as the belt worn holds, fanned to fit; with no belt, the square says so.
-        _beltShown = hero.BeltCapacity;
-        (float step, float tilt) = BeltFan(_beltShown);
-        float middle = (_beltShown - 1) / 2f;
-        for (int i = 0; i < _belt.Length; i++)
+        // The belt square, and the belt's full view: as many places as the belt worn holds.
+        _beltSquare.ShowHero(hero, selectedCardId);
+        CardInstance? belt = hero.Equipment.GetValueOrDefault(EquipSlot.Belt);
+        _beltTitle.Text = belt is null ? "BELTLESS" : $"THE {belt.Definition.Name.ToUpperInvariant()} {hero.Belt.Count}/{hero.BeltCapacity}";
+        _beltView.Size = new(280, hero.BeltCapacity > 5 ? 136 : 80);
+        for (int i = 0; i < _beltCards.Length; i++)
         {
             CardInstance? card = i < hero.Belt.Count ? hero.Belt[i] : null;
-            _belt[i].Visible = i < _beltShown;
-            _belt[i].Position = new(Columns[2] - 8 + i * step, Rows[2] + 2 + Math.Abs(i - middle) * tilt * 12);
-            _belt[i].Rotation = (i - middle) * tilt;
-            _belt[i].Show(card, "", card is not null && card.Id == selectedCardId);
+            _beltCards[i].Visible = i < hero.BeltCapacity;
+            _beltCards[i].Show(card, "Free", card is not null && card.Id == selectedCardId);
         }
-
-        _beltLabel.Text = _beltShown == 0 ? "Beltless" : hero.Equipment.GetValueOrDefault(EquipSlot.Belt)?.Definition.Name ?? "Belt";
 
         for (int i = 0; i < _backpack.Length; i++)
         {

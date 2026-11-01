@@ -53,6 +53,9 @@ public partial class InventoryPanel : Control
     /// <summary>The card the hand choice is for, while it's showing.</summary>
     private int? _choosingFor;
 
+    /// <summary>What each button of a general choice does (see <see cref="AskChoice"/>), while one is showing.</summary>
+    private IReadOnlyList<Action>? _choices;
+
     public event Action<CardAction>? ActionRequested;
 
     /// <summary>A greyed-out button was clicked; the game says why it's unavailable.</summary>
@@ -93,9 +96,17 @@ public partial class InventoryPanel : Control
         for (int i = 0; i < 2; i++)
         {
             Button hand = UiTheme.Button(new Vector2(4, 20 + i * 20), new Vector2(160, 18), "");
+            int choice = i;
             hand.Pressed += () =>
             {
-                if (_choosingFor is int cardId && hand.GetMeta("slot").AsInt32() is var slot)
+                if (_choices is { } choices)
+                {
+                    _handChoice.Visible = false;
+                    _choosingFor = null;
+                    _choices = null;
+                    choices[choice]();
+                }
+                else if (_choosingFor is int cardId && hand.GetMeta("slot").AsInt32() is var slot)
                 {
                     _handChoice.Visible = false;
                     _choosingFor = null;
@@ -113,10 +124,31 @@ public partial class InventoryPanel : Control
 
     internal bool IsChoosingHand => _handChoice.Visible;
 
+    /// <summary>Asks what to do with a card, two ways (use it, or draw it into a hand): each button does its own.</summary>
+    public void AskChoice(int cardId, string question, IReadOnlyList<(string Text, Action Then)> choices)
+    {
+        _choosingFor = cardId;
+        _choices = [.. choices.Select(choice => choice.Then)];
+        _handQuestion.Text = question;
+        for (int i = 0; i < _hands.Count; i++)
+        {
+            _hands[i].Visible = i < choices.Count;
+            if (i < choices.Count)
+            {
+                _hands[i].Text = choices[i].Text;
+                _hands[i].Disabled = false;
+                _hands[i].TooltipText = "";
+            }
+        }
+
+        _handChoice.Visible = true;
+    }
+
     /// <summary>Asks which hand to equip a card into: each choice says what it would stow, or why it can't be.</summary>
     public void AskHand(int cardId, string cardName, IReadOnlyList<(EquipSlot Slot, string Text, string? Blocked)> hands)
     {
         _choosingFor = cardId;
+        _choices = null;
         _handQuestion.Text = hands.All(hand => hand.Slot is EquipSlot.MainHand or EquipSlot.OffHand) ? $"Which hand for the {cardName}?" : $"Where to wear the {cardName}?";
         for (int i = 0; i < _hands.Count; i++)
         {
@@ -155,6 +187,7 @@ public partial class InventoryPanel : Control
         {
             _handChoice.Visible = false;
             _choosingFor = null;
+            _choices = null;
         }
 
         CardInstance? selected = selectedCardId is int id ? hero?.FindCard(id)?.Card : null;

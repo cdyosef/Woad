@@ -13,7 +13,8 @@ lives in the game or the code.
 
 The card fan icon beneath the belt square: click it for a full view of all the cards on the belt.
 
-*Notes:* planned (belt stage 1).
+*Notes:* drawn by `BeltSquare`; it opens the belt's full view over the board, every place on the belt
+face up (the free ones too).
 
 ### Belt square
 
@@ -21,14 +22,18 @@ The equip square that wears the belt: the belt art wraps around it, with the buc
 the belt's cards in a straight line on each side of it, staggered left to right, the cards closest to
 the buckle on top.
 
-*Notes:* the bottom-right square of the hero panel. Planned (belt stage 1).
+*Notes:* the bottom-right square of the hero panel, `BeltSquare` in `scenes/game/BeltSquare.cs`. Slots
+fill from the buckle outward, alternating left and right. The card under the cursor rises in front without
+leaving its slot; click picks a card up, double-click uses it from the belt or draws it into a hand (asking
+which, when it could be either). With no belt it says Beltless.
 
 ### Buckle
 
 The buckle of the belt art on the belt square, which is a button: click it to bring up the buckle's
 functions (changing the belt and buckle art, equipping belt and buckle cards and their mods).
 
-*Notes:* planned (belt stages 1 and 2).
+*Notes:* for now a click picks up the belt card itself (its text and buttons); the buckle's own menu
+comes next. Belt Studs show along the band, Buckle Horns on the buckle.
 
 ### Carry tab
 
@@ -44,7 +49,8 @@ no Rumble and no Od Hand.
 The small picture of the item and its count (like "x3") in the corner of a card, as on a playing card,
 so that even a card tucked behind others can be told apart.
 
-*Notes:* planned (belt stage 1).
+*Notes:* on the belt square's cards: the left side's in their top-left corner, the right side's in their
+top-right, the corners that peek out.
 
 ### Equip square
 

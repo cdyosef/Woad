@@ -1071,6 +1071,40 @@ public partial class GameScreen
         _inventory.AskHand(card.Id, card.Definition.Name, [Choice(first, Name(first)), Choice(second, Name(second))]);
     }
 
+    /// <summary>
+    /// A belt card double-clicked: used from the belt, or drawn into a hand (asked which hand, for one
+    /// that goes in either); asked which, for one that could be either.
+    /// </summary>
+    private void UseFromBelt(int cardId)
+    {
+        if (Locked || ActiveHero is not { } hero || hero.FindCard(cardId) is not var (card, _))
+        {
+            return;
+        }
+
+        _selectedCardId = cardId;
+        CardActions actions = AvailableCardActions(hero, _session.State.Turn);
+        bool use = actions.Allows(CardAction.Use);
+        bool equip = actions.Allows(CardAction.Equip) && card.Definition.Teaches is null;
+        if (use && equip)
+        {
+            RefreshPanels();
+            _inventory.AskChoice(cardId, $"The {card.Definition.Name}: use it, or draw it?", [("Use it", () => OnCardAction(CardAction.Use)), ("Draw it into a hand", () => OnCardAction(CardAction.Equip))]);
+            return;
+        }
+
+        if (use || equip)
+        {
+            OnCardAction(use ? CardAction.Use : CardAction.Equip);
+        }
+        else
+        {
+            Log($"{card.Definition.Name}: {actions.Explain(CardAction.Use)}", Palette.TextDim);
+        }
+
+        RefreshPanels();
+    }
+
     private void OnCardAction(CardAction action)
     {
         if (Locked || _selectedCardId is not int cardId || ActiveHero is not { } hero || hero.FindCard(cardId) is not var (card, _))

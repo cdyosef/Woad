@@ -637,6 +637,15 @@ public partial class GameScreen
         _heroPanel = new HeroPanel();
         _heroPanel.CardSelected += ClickCard;
         _heroPanel.CardInspected += SelectCard;
+        _heroPanel.BeltCardUsed += UseFromBelt;
+        _heroPanel.BuckleClicked += () =>
+        {
+            // The buckle picks up the belt itself, for its card's text and buttons.
+            if (ActiveHero?.Equipment.GetValueOrDefault(EquipSlot.Belt) is { } belt && _selectedCardId != belt.Id)
+            {
+                ClickCard(belt.Id);
+            }
+        };
         _heroPanel.Pool.TokenClicked += OnPoolTokenClicked;
         _heroPanel.Pool.SwapClicked += _ => SwapWeapon();
         AddChild(_heroPanel);

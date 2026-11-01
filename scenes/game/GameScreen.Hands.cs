@@ -155,6 +155,7 @@ public partial class GameScreen
         };
         AddChild(_spread);
         AddChild(_heroPanel.BagView);
+        AddChild(_heroPanel.BeltView);
 
         _curePicker = new Panel { Position = BoardOrigin + new Vector2(BoardView.Pixels / 2 - 70, 60), Size = new Vector2(140, 40), Visible = false, ZIndex = 4 };
         AddChild(_curePicker);

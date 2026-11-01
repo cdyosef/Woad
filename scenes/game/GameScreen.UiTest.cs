@@ -106,10 +106,9 @@ public partial class GameScreen
             // In combat: draw the spare boomerang from the belt, choosing a hand: the off hand, so the buckler goes on the belt.
             Check(_session.InCombat, "Bran is in combat, monsters in sight");
             CardInstance boomerang = bran.Belt.Single(card => card.Definition.Id == "boomerang");
-            await ClickBelt(bran.Belt.ToList().IndexOf(boomerang));
-            await Click(this, _inventory.ActionButton(CardAction.Equip));
+            await DoubleClickAt(this, _heroPanel.BeltPoint(bran.Belt.ToList().IndexOf(boomerang)));
             Check(_inventory.IsChoosingHand && _inventory.HandButton(0).Text == "Main hand (belts Wooden Sword)" && _inventory.HandButton(1).Text == "Off hand (belts Buckler)",
-                "Equip on the boomerang asks which hand, saying what each would put on the belt");
+                "double-clicking the boomerang on the belt draws it, asking which hand and saying what each would put on the belt");
             await Click(this, _inventory.HandButton(1));
             await WaitUntilIdle();
             Check(bran.Equipment.GetValueOrDefault(EquipSlot.OffHand) == boomerang, "Equip puts the card in its slot");
@@ -150,6 +149,20 @@ public partial class GameScreen
             await Click(this, _endTurn);
             await WaitUntilIdle();
             Check(_session.State.Round == 2 || _session.State.Phase != RunPhase.InProgress, "the round advances after the enemy phase");
+
+            // The belt square: the belt fan lays the belt out in full; the buckle picks up the belt itself.
+            if (_session.State.Phase == RunPhase.InProgress && ActiveHero is { } wearer && wearer.Equipment.GetValueOrDefault(EquipSlot.Belt) is { } worn)
+            {
+                await WaitUntilIdle();
+                Vector2 square = _heroPanel.BeltSquare.GetGlobalRect().Position;
+                await ClickAt(this, square + _heroPanel.BeltSquare.FanPoint);
+                Check(_heroPanel.IsBeltViewOpen && _heroPanel.BeltViewCard(0).Card == wearer.Belt.FirstOrDefault(), "the belt fan lays out every card on the belt");
+                await ClickAt(this, square + _heroPanel.BeltSquare.FanPoint);
+                Check(!_heroPanel.IsBeltViewOpen, "and clicking it again puts them away");
+                await ClickAt(this, square + _heroPanel.BeltSquare.BucklePoint);
+                Check(_selectedCardId == worn.Id, "clicking the buckle picks up the belt");
+                CancelSelection();
+            }
 
             // Carrying: a card taken into the arms slides the carrying window out, and Rumble is gone till it's put down.
             if (_session.State.Phase == RunPhase.InProgress && ActiveHero is { } carrier && carrier.Belt.FirstOrDefault(card => card.Count == 1) is { } carried)
