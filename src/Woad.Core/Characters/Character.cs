@@ -15,6 +15,7 @@ public sealed class Character
     private readonly List<string> _equipped;
     private readonly List<string> _belt;
     private readonly List<string> _backpack;
+    private readonly List<string> _carried;
     private readonly List<string> _spells;
 
     internal Character(
@@ -40,7 +41,8 @@ public sealed class Character
         int powerDice = 0,
         CompanionPolicy? policy = null,
         IEnumerable<string>? spells = null,
-        IReadOnlyDictionary<Condition, int>? lingering = null)
+        IReadOnlyDictionary<Condition, int>? lingering = null,
+        IEnumerable<string>? carried = null)
     {
         Id = id;
         Name = name;
@@ -52,6 +54,7 @@ public sealed class Character
         _equipped = [.. equipped];
         _belt = [.. belt];
         _backpack = [.. backpack];
+        _carried = [.. carried ?? []];
         Gold = gold;
         RunsPlayed = runsPlayed;
         Wins = wins;
@@ -102,6 +105,9 @@ public sealed class Character
 
     public IReadOnlyList<string> Backpack => _backpack;
 
+    /// <summary>What the character carries in their arms (the Relic, or what found no other room).</summary>
+    public IReadOnlyList<string> Carried => _carried;
+
     /// <summary>Ids of the spells they know: a basic one for each rank of Magic, and any learned from scrolls.</summary>
     public IReadOnlyList<string> Spells => _spells;
 
@@ -151,7 +157,7 @@ public sealed class Character
     public Stats Stats(ContentCatalog content) => _equipped.Aggregate(BaseStats, (stats, key) => stats + CardKey.Modifiers(content.GetCard(key), CardKey.Wear(key)));
 
     /// <summary>Their worn gear (keys with wear), equipped first.</summary>
-    public IEnumerable<string> WornGear => _equipped.Concat(_belt).Concat(_backpack).Where(key => CardKey.Wear(key) > 0);
+    public IEnumerable<string> WornGear => _equipped.Concat(_belt).Concat(_backpack).Concat(_carried).Where(key => CardKey.Wear(key) > 0);
 
     /// <summary>Mends one worn card (by its key) where it is. False if they haven't got it.</summary>
     public bool Mend(string key)
@@ -334,7 +340,7 @@ public sealed class Character
     /// Takes one copy of a card away (sold or given up): from the backpack first, then the belt,
     /// then what's equipped. False if the character hasn't got one.
     /// </summary>
-    public bool TakeCard(string cardId) => _backpack.Remove(cardId) || _belt.Remove(cardId) || _equipped.Remove(cardId);
+    public bool TakeCard(string cardId) => _backpack.Remove(cardId) || _carried.Remove(cardId) || _belt.Remove(cardId) || _equipped.Remove(cardId);
 
     /// <summary>
     /// Records a finished run: XP (and any levels it brings), gold, runs played and wins, and the
@@ -347,8 +353,8 @@ public sealed class Character
             throw new ArgumentException($"That result belongs to another character, not {Name}.", nameof(result));
         }
 
-        List<string> before = [.. _equipped, .. _belt, .. _backpack];
-        List<string> after = [.. result.Equipped, .. result.Belt, .. result.Backpack];
+        List<string> before = [.. _equipped, .. _belt, .. _backpack, .. _carried];
+        List<string> after = [.. result.Equipped, .. result.Belt, .. result.Backpack, .. result.Carried];
 
         int levels = GainXp(result.Xp);
         // Points spent during the run (levels gained in the dungeon) are kept, and the spells learned there.
@@ -386,6 +392,8 @@ public sealed class Character
         _belt.AddRange(result.Belt);
         _backpack.Clear();
         _backpack.AddRange(result.Backpack);
+        _carried.Clear();
+        _carried.AddRange(result.Carried);
 
         return new RunReward(levels, Without(after, before), Without(before, after));
     }
@@ -404,15 +412,28 @@ public sealed class Character
 
     /// <summary>The hero this character plays as in a run, carrying everything they own.</summary>
     /// <param name="ownerSeat">For a companion, the seat of the player it belongs to.</param>
-    public HeroSetup ToHeroSetup(int? ownerSeat = null) => new(Name, BaseStats, [.. _equipped, .. _belt, .. _backpack], Id, Portrait, ownerSeat, Appearance, GuildStanding: GuildStanding, PowerDice: PowerDice, Skills: Allocation.Skills,
+    public HeroSetup ToHeroSetup(int? ownerSeat = null) => new(Name, BaseStats, [.. _equipped, .. _belt, .. _backpack, .. _carried], Id, Portrait, ownerSeat, Appearance, GuildStanding: GuildStanding, PowerDice: PowerDice, Skills: Allocation.Skills,
         Allocation: Allocation, Xp: Xp, UnspentPoints: UnspentPoints, Policy: Policy, Spells: [.. _spells], Lingering: _lingering);
 
-    /// <summary>Puts a card where a new hero would: an empty matching slot, then the belt, then the backpack.</summary>
+    /// <summary>
+    /// Puts a card where a new hero would: in their arms if it's carry-only, a mod on the belt or buckle,
+    /// an empty matching slot, then the belt, then the backpack.
+    /// </summary>
     private void Place(string key, ContentCatalog content)
     {
         CardDefinition card = content.GetCard(key);
-        IEnumerable<EquipSlot> occupied = _equipped.SelectMany(id => Hero.SlotsFor(content.GetCard(id)));
-        if (card.BeltsFirst && _belt.Count < GameRules.BeltCapacity)
+        List<CardDefinition> worn = [.. _equipped.Select(id => content.GetCard(id))];
+        IEnumerable<EquipSlot> occupied = worn.SelectMany(Hero.SlotsFor);
+        int beltSlots = worn.FirstOrDefault(other => other.Type == CardType.Belt)?.BeltSlots ?? 0;
+        if (card.CarryOnly)
+        {
+            _carried.Add(key);
+        }
+        else if (card.ModFor is { } on && occupied.Contains(on) && (card.Repeats || !worn.Contains(card)))
+        {
+            _equipped.Add(key);
+        }
+        else if (card.BeltsFirst && _belt.Count < beltSlots)
         {
             _belt.Add(key);
         }
@@ -420,7 +441,7 @@ public sealed class Character
         {
             _equipped.Add(key);
         }
-        else if ((card.Usage == CardUsage.SingleUse || card.Belts || Hero.IsHandGear(card)) && _belt.Count < GameRules.BeltCapacity)
+        else if (Hero.CanBelt(card) && _belt.Count < beltSlots)
         {
             _belt.Add(key);
         }
@@ -428,5 +449,15 @@ public sealed class Character
         {
             _backpack.Add(key);
         }
+    }
+
+    /// <summary>
+    /// A character saved before belts were cards had a belt of 4 all the same: they get the Basic Belt
+    /// and Basic Buckle that stand for it, worn first, so what's on their belt stays there.
+    /// </summary>
+    internal void GiveBasicBelt()
+    {
+        _equipped.Insert(0, "basic_buckle");
+        _equipped.Insert(0, "basic_belt");
     }
 }

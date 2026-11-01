@@ -298,7 +298,7 @@ public sealed partial class GameSession
         int dice = command.Dice ?? left;
         if (left < 1 || dice < 1 || dice > left)
         {
-            return left < 1 ? "You've used all your Rumble dice this turn." : $"Choose 1 to {left} Rumble dice.";
+            return left < 1 ? NoRumbleDice : $"Choose 1 to {left} Rumble dice.";
         }
 
         Hero hero = ActiveHero;

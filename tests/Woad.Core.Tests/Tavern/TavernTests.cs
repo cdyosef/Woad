@@ -50,7 +50,7 @@ public class TavernTests
         Assert.True(TavernServices.Relic(world, Inn, Content, ana, [ana, bo]).Done);
 
         Assert.Equal(QuestStage.Done, world.Quest(Quests.Relic));
-        Assert.DoesNotContain("saints_relic", bo.Backpack.Concat(bo.Belt));
+        Assert.DoesNotContain("saints_relic", bo.Backpack.Concat(bo.Belt).Concat(bo.Carried));
         Assert.Equal(TavernServices.RelicGold, ana.Gold);
         Assert.Equal(TavernServices.RelicHolyWater, ana.Backpack.Concat(ana.Belt).Count(id => id == "holy_water"));
         Assert.Equal(reputation + 2, world.Reputation(Inn.Id));

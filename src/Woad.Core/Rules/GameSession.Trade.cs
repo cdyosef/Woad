@@ -188,7 +188,7 @@ public sealed partial class GameSession
                     return location == CardLocation.Belt ? "It's already on the belt." : "Only single-use cards go on the belt.";
                 }
 
-                if (companion.Belt.Count >= GameRules.BeltCapacity)
+                if (companion.Belt.Count >= companion.BeltCapacity)
                 {
                     return $"{companion.Name}'s belt is full.";
                 }

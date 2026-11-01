@@ -15,7 +15,7 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
     /// 2: skills, and no free Od Hand die. A version 1 file is brought up to date as it loads: it gets
     /// the Od Hand die every hero used to start with, every Od Hand skill and Shove, so nobody loses anything.
     /// </summary>
-    public const int SchemaVersion = 2;
+    public const int SchemaVersion = 3;
 
     private static readonly JsonSerializerOptions Options = new()
     {
@@ -43,7 +43,7 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
                 string json = await File.ReadAllTextAsync(path, cancellationToken);
                 CharacterFile file = JsonSerializer.Deserialize<CharacterFile>(json, Options)
                     ?? throw new JsonException("The file is empty.");
-                if (file.SchemaVersion is not (1 or SchemaVersion))
+                if (file.SchemaVersion is < 1 or > SchemaVersion)
                 {
                     problems.Add($"{fileName}: saved by an unknown version ({file.SchemaVersion}).");
                     continue;
@@ -90,6 +90,7 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
         Equipped = [.. character.Equipped],
         Belt = [.. character.Belt],
         Backpack = [.. character.Backpack],
+        Carried = [.. character.Carried],
         Gold = character.Gold,
         RunsPlayed = character.RunsPlayed,
         Wins = character.Wins,
@@ -134,11 +135,19 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
         StatAllocation allocation = file.SchemaVersion == 1
             ? file.Allocation with { OdHandDice = file.Allocation.OdHandDice + 1, Skills = Skills.OdHand | Skill.Shove }
             : file.Allocation;
-        return new Character(
+        var character = new Character(
             file.Id, file.Name, file.Portrait, file.CreatedUtc, Math.Max(0, file.Xp), allocation,
             Math.Max(0, file.UnspentPoints), Known(file.Equipped), Known(file.Belt), Known(file.Backpack),
             Math.Max(0, file.Gold), Math.Max(0, file.RunsPlayed), Math.Max(0, file.Wins), file.IsCompanion, file.Appearance, file.GuildStanding, file.LawStanding, file.CowardStanding, file.HasCowardsCloak, file.PowerDice, file.Policy,
-            KnownSpells(file.Spells), file.Lingering);
+            KnownSpells(file.Spells), file.Lingering, Known(file.Carried));
+
+        // Saved before belts were cards: the belt of 4 they had becomes a Basic Belt and Basic Buckle.
+        if (file.SchemaVersion < 3)
+        {
+            character.GiveBasicBelt();
+        }
+
+        return character;
 
         List<string> KnownSpells(IEnumerable<string> spellIds)
         {
@@ -183,6 +192,9 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
         public List<string> Belt { get; init; } = [];
 
         public List<string> Backpack { get; init; } = [];
+
+        /// <summary>Missing in files saved before carrying: nothing carried.</summary>
+        public List<string> Carried { get; init; } = [];
 
         public int Gold { get; init; }
 

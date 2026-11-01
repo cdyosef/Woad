@@ -14,9 +14,18 @@ public enum CardType
 
     /// <summary>Trinkets worn in the accessory slot (the Lucky Jackalope's Foot, the Icarus Wings).</summary>
     Accessory,
+
+    /// <summary>A belt, worn in the belt slot: it holds cards (the Basic Belt 4, up to the Best Belt's 10).</summary>
+    Belt,
+
+    /// <summary>A buckle, worn on the belt.</summary>
+    Buckle,
+
+    /// <summary>A mod for the belt or the buckle (Belt Studs, Buckle Horns).</summary>
+    Mod,
 }
 
-/// <summary>Body slots a card can be equipped into. The belt is separate: it holds single-use cards.</summary>
+/// <summary>Body slots a card can be equipped into. The cards a belt holds are kept apart from these.</summary>
 public enum EquipSlot
 {
     Head,
@@ -27,6 +36,12 @@ public enum EquipSlot
 
     /// <summary>A trinket: a lucky charm, cufflinks, a pair of wings.</summary>
     Accessory,
+
+    /// <summary>The belt itself (which holds cards); without one, a hero is beltless.</summary>
+    Belt,
+
+    /// <summary>The belt's buckle.</summary>
+    Buckle,
 }
 
 public enum CardUsage
@@ -252,6 +267,21 @@ public sealed record CardDefinition
 
     /// <summary>Goes on the belt first when found or started with: a belt tool that works from there.</summary>
     public bool BeltsFirst => Belts && !Torch;
+
+    /// <summary>A belt: how many cards it holds.</summary>
+    public int BeltSlots { get; init; }
+
+    /// <summary>A mod: what it goes on, the belt or the buckle, adding its modifiers while it's there.</summary>
+    public EquipSlot? ModFor { get; init; }
+
+    /// <summary>A mod that can go on more than once (no others can).</summary>
+    public bool Repeats { get; init; }
+
+    /// <summary>Can only be carried, never belted or bagged (the Relic of Saint Wyn).</summary>
+    public bool CarryOnly { get; init; }
+
+    /// <summary>How many of the carrying slots it fills.</summary>
+    public int CarrySlots { get; init; } = 1;
 
     /// <summary>Worn gear with a use that destroys it (the Coward's Cloak): equip it, use it once, and it's gone.</summary>
     public bool BreaksOnUse { get; init; }

@@ -151,6 +151,25 @@ public partial class GameScreen
             await WaitUntilIdle();
             Check(_session.State.Round == 2 || _session.State.Phase != RunPhase.InProgress, "the round advances after the enemy phase");
 
+            // Carrying: a card taken into the arms slides the carrying window out, and Rumble is gone till it's put down.
+            if (_session.State.Phase == RunPhase.InProgress && ActiveHero is { } carrier && carrier.Belt.FirstOrDefault(card => card.Count == 1) is { } carried)
+            {
+                await WaitUntilIdle();
+                ClickCard(carried.Id);
+                await Click(this, _inventory.ActionButton(CardAction.Carry));
+                await WaitUntilIdle();
+                Check(carrier.IsCarrying && _carryTab.IsOut && _session.AttackDiceLeft == 0, "Carry takes a belt card into the arms: the carrying window slides out, and there's no Rumble");
+                await SaveShot("carrying");
+                if (_selectedCardId != carried.Id)
+                {
+                    ClickCard(carried.Id);
+                }
+
+                await Click(this, _inventory.ActionButton(CardAction.Drop));
+                await WaitUntilIdle();
+                Check(!carrier.IsCarrying && !_carryTab.IsOut, "dropped, the arms are free and the window slides back in");
+            }
+
             GD.Print("UI test passed.");
             Sfx.QuitGame(this);
         }

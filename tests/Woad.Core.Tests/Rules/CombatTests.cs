@@ -105,7 +105,7 @@ public class CombatTests
         Monster brute = session.OnlyMonster();
         session.Do(new AttackMonster(hero.Id, brute.Id));
 
-        Assert.Contains("used all your Attack dice", session.Refuse(new AttackMonster(hero.Id, brute.Id)));
+        Assert.Contains("used all your Rumble dice", session.Refuse(new AttackMonster(hero.Id, brute.Id)));
         Assert.Empty(session.GetAttackableMonsters());
     }
 

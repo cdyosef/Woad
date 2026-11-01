@@ -124,10 +124,24 @@ the Party menu can spend points on them too.
 | Main hand | Weapons, wands, rods |
 | Off hand | Shields, off-hand weapons, tools |
 | Feet | Boots |
-| Belt | Up to 4 consumables, tools and spare hand gear (potions, bombs, Lockpicks, a second weapon or shield) ready for quick use; tools go there first, as a stack. A torch can ride on it but only lights in a hand. A weapon or shield on the belt is only carried there: draw it into a hand to use it |
+| Belt | A belt card, worn: it holds as many consumables, tools and spare hand gear (potions, bombs, Lockpicks, a second weapon or shield) as it says, ready for quick use; tools go there first, as a stack. A torch can ride on it but only lights in a hand. A weapon or shield on the belt is only carried there: draw it into a hand to use it. Without a belt, a hero is **beltless** and belts nothing |
+| Buckle | A buckle card, worn on the belt |
 
 - Two-handed items fill both the main hand and the off hand.
 - **Backpack:** 8 cards that are carried but not equipped *(tunable)*.
+- **Belts:** Basic Belt (4 cards, everyone starts with one, and a Basic Buckle), Good Belt (5), Better Belt
+  (6), Grand Belt (7), Great Belt (8); legends speak of a Giant's Belt (9) and the Best Belt (10). A belt
+  too small for what's on yours can't go on, and a belt comes off only empty. Characters saved before belts
+  were cards were given a Basic Belt and Basic Buckle, with what was on their belt left there.
+- **Mods** go on the belt or the buckle and add their modifiers: Belt Studs (armor 1, on the belt), Buckle
+  Horns (+1 to Rumble rolls, on the buckle). No two the same, unless a mod's card says otherwise; the belt
+  or buckle comes off only once its mods are off.
+- **Carrying:** two slots in the hero's arms, for two cards or stacks. **While carrying anything, no Rumble
+  and no Od Hand.** Carry-only cards go nowhere else: the Relic of Saint Wyn fills both slots. A card that
+  finds no room anywhere else at the start of a run is carried. **Carry** takes a card into your arms (free
+  out of combat; in combat it takes the action, and not from the bag); Drop it, or put it away, to fight. On
+  screen the carrying slots are a little window that slides out from behind the character sheet's edge
+  while you carry something.
 
 ## Cards
 

@@ -20,6 +20,9 @@ internal static class TestRun
     /// The heroes' stats unless a test says otherwise: the game's starting stats, but with 4 hearts, so
     /// rules tests don't shift when the starting hearts are retuned.
     /// </summary>
+    /// <summary>What every test hero wears to begin with: a belt of 4 and its buckle.</summary>
+    public static string[] Belted { get; } = ["belt", "buckle"];
+
     public static Stats HeroStats { get; } = GameRules.HeroBaseStats with { Hearts = 4, OdHandDice = 1 };
 
     /// <summary>A begun run in a single room "A".</summary>
@@ -60,7 +63,7 @@ internal static class TestRun
             Seed = Seed,
             ThemeId = themeId,
             Heroes = Enumerable.Range(1, heroes)
-                .Select(number => new HeroSetup($"Hero {number}", stats ?? HeroStats, cards ?? [], OwnerSeat: owners?[number - 1], Skills: skills))
+                .Select(number => new HeroSetup($"Hero {number}", stats ?? HeroStats, [.. Belted, .. cards ?? []], OwnerSeat: owners?[number - 1], Skills: skills))
                 .ToList(),
             Rooms = rooms,
             StartRoomId = rooms[0].Id,

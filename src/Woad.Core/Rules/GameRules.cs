@@ -133,12 +133,16 @@ public static class GameRules
 
     public const int XpForEscaping = 10;
 
-    public const int BeltCapacity = 4;
+    /// <summary>The most cards any belt holds (the Best Belt's).</summary>
+    public const int MaxBeltSlots = 10;
+
+    /// <summary>Carrying slots: two cards (or stacks) in your arms, or one that fills both. While carrying, no Rumble and no Od Hand.</summary>
+    public const int CarrySlots = 2;
 
     public const int BackpackCapacity = 8;
 
     /// <summary>Cards every new character starts with.</summary>
-    public static IReadOnlyList<string> StarterKit { get; } = ["wooden_sword", "buckler", "health_potion", "torch", "lockpicks"];
+    public static IReadOnlyList<string> StarterKit { get; } = ["basic_belt", "basic_buckle", "wooden_sword", "buckler", "health_potion", "torch", "lockpicks"];
 
     /// <summary>Stats every new character starts with, before spending creation points.</summary>
     public static Stats HeroBaseStats { get; } = new()

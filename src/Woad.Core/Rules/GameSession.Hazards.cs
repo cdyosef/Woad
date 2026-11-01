@@ -33,7 +33,7 @@ public sealed partial class GameSession
 
         if (AttackDiceLeft < 1)
         {
-            return "You've used all your Rumble dice this turn.";
+            return NoRumbleDice;
         }
 
         Hero hero = ActiveHero;

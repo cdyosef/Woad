@@ -167,6 +167,25 @@ public sealed class JsonCharacterRepositoryTests : IDisposable
     }
 
     [Fact]
+    public async Task CharactersSavedBeforeBeltsWereCardsGetABasicBeltAndKeepWhatsOnIt()
+    {
+        Character character = NewCharacter("Morgan");
+        await Repository().SaveAsync(character);
+        string path = Path.Combine(_folder, $"{character.Id:N}.json");
+        string json = (await File.ReadAllTextAsync(path))
+            .Replace($"\"schemaVersion\": {JsonCharacterRepository.SchemaVersion}", "\"schemaVersion\": 2");
+        json = System.Text.RegularExpressions.Regex.Replace(json, @"\s*""basic_(belt|buckle)"",?", "");
+        await File.WriteAllTextAsync(path, json);
+
+        CharacterLoadResult loadResult = await Repository().LoadAllAsync();
+        Assert.Empty(loadResult.Problems);
+        Character loaded = Assert.Single(loadResult.Characters);
+
+        Assert.Equal(["basic_belt", "basic_buckle", "wooden_sword", "buckler"], loaded.Equipped);
+        Assert.Equal(character.Belt, loaded.Belt);
+    }
+
+    [Fact]
     public async Task CardsThatNoLongerExistAreDroppedWithAWarning()
     {
         Character character = NewCharacter("Morgan");

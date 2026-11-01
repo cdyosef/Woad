@@ -16,7 +16,7 @@ namespace Woad.Core.Rules;
 public sealed partial class GameSession
 {
     /// <summary>Od Hand dice the active hero hasn't used this turn.</summary>
-    public int OdHandDiceLeft => State.Turn is { } turn ? Math.Max(0, ActiveHero.EffectiveStats.OdHandDice - turn.OdHandDiceUsed) : 0;
+    public int OdHandDiceLeft => State.Turn is { } turn && !ActiveHero.IsCarrying ? Math.Max(0, ActiveHero.EffectiveStats.OdHandDice - turn.OdHandDiceUsed) : 0;
 
     /// <summary>The tools' value the active hero can still add to a lock-picking roll this turn (0 once used).</summary>
     public int ToolsBonusLeft => State.Turn is { ToolsUsed: false } ? ToolHelp(ActiveHero, Skill.PickLock).Bonus : 0;
@@ -157,7 +157,7 @@ public sealed partial class GameSession
             return null;
         }
 
-        return skill != Skill.None && !ActiveHero.Knows(skill) ? Unlearned(skill) : "You've used all your Od Hand dice this turn.";
+        return skill != Skill.None && !ActiveHero.Knows(skill) ? Unlearned(skill) : NoOdHandDice;
     }
 
     /// <param name="freeDie">Learning a spell or running from a fight: a free die starts the roll, so no Od Hand dice are needed.</param>
@@ -175,7 +175,7 @@ public sealed partial class GameSession
         dice = skill != Skill.None && !ActiveHero.Knows(skill) ? 0 : command.Dice ?? usable;
         if (dice < least || dice > usable)
         {
-            return usable == 0 ? (ActiveHero.Knows(skill) ? "You've used all your Od Hand dice this turn." : Unlearned(skill)) : $"Choose {least} to {usable} Od Hand dice.";
+            return usable == 0 ? (ActiveHero.Knows(skill) ? NoOdHandDice : Unlearned(skill)) : $"Choose {least} to {usable} Od Hand dice.";
         }
 
         return CheckBankedPowerDice(ActiveHero, command.PowerDice);

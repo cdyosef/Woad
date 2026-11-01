@@ -27,7 +27,7 @@ public sealed partial class GameSession
             return "You haven't learned to Parry.";
         }
 
-        return OdHandDiceLeft < 1 ? "You've used all your Od Hand dice this turn." : null;
+        return OdHandDiceLeft < 1 ? NoOdHandDice : null;
     }
 
     /// <summary>Why the active hero can't Guard the hero (themselves, or an ally beside them) now, or null.</summary>
@@ -72,7 +72,7 @@ public sealed partial class GameSession
             return $"You haven't learned to {doing}.";
         }
 
-        return AttackDiceLeft < 1 ? "You've used all your Rumble dice this turn." : null;
+        return AttackDiceLeft < 1 ? NoRumbleDice : null;
     }
 
     private string? Handle(Parry command, List<GameEvent> events)

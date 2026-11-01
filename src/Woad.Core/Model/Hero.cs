@@ -27,6 +27,9 @@ public enum CardLocation
     Backpack,
     Belt,
     Equipped,
+
+    /// <summary>In the hero's arms, in the carrying slots: no Rumble and no Od Hand while anything is there.</summary>
+    Carried,
 }
 
 /// <summary>A player's character during a run.</summary>
@@ -35,6 +38,8 @@ public sealed class Hero
     private readonly Dictionary<EquipSlot, CardInstance> _equipment = [];
     private readonly List<CardInstance> _belt = [];
     private readonly List<CardInstance> _backpack = [];
+    private readonly List<CardInstance> _mods = [];
+    private readonly List<CardInstance> _carried = [];
     private readonly List<SpellDefinition> _spells = [];
 
     internal Hero(int id, int seat, string name, Stats baseStats, string roomId, GridPosition position, Guid? characterId = null, string portrait = "", Appearance? appearance = null)
@@ -274,6 +279,41 @@ public sealed class Hero
 
     public IReadOnlyList<CardInstance> Backpack => _backpack;
 
+    /// <summary>The mods on the belt and the buckle (Belt Studs, Buckle Horns).</summary>
+    public IReadOnlyList<CardInstance> Mods => _mods;
+
+    /// <summary>What the hero carries in their arms (see <see cref="GameRules.CarrySlots"/>).</summary>
+    public IReadOnlyList<CardInstance> Carried => _carried;
+
+    /// <summary>How many cards the belt worn holds: none for a hero who is beltless.</summary>
+    public int BeltCapacity => _equipment.GetValueOrDefault(EquipSlot.Belt)?.Definition.BeltSlots ?? 0;
+
+    /// <summary>The carrying slots in use.</summary>
+    public int CarrySlotsUsed => _carried.Sum(card => card.Definition.CarrySlots);
+
+    /// <summary>Arms full of something: no Rumble and no Od Hand until it's put down or away.</summary>
+    public bool IsCarrying => _carried.Count > 0;
+
+    /// <summary>Whether there's room in the hero's arms for this card (or a stack of it they carry already).</summary>
+    public bool CanCarryInArms(CardDefinition definition) =>
+        _carried.Any(card => card.Definition == definition && definition.IsStackable) || CarrySlotsUsed + definition.CarrySlots <= GameRules.CarrySlots;
+
+    /// <summary>Why this mod can't go on now (no belt or buckle for it, or one like it there already), or null if it can.</summary>
+    public string? CheckMod(CardDefinition mod)
+    {
+        if (mod.ModFor is not { } on)
+        {
+            return $"The {mod.Name} isn't a mod.";
+        }
+
+        if (!_equipment.ContainsKey(on))
+        {
+            return on == EquipSlot.Belt ? $"The {mod.Name} goes on a belt, and you're beltless." : $"The {mod.Name} goes on a buckle, and you've none.";
+        }
+
+        return !mod.Repeats && _mods.Any(card => card.Definition == mod) ? $"Your {(on == EquipSlot.Belt ? "belt" : "buckle")} has {mod.Name} already." : null;
+    }
+
     /// <summary>The spells they know: a basic one for each rank of Magic, and any learned from scrolls.</summary>
     public IReadOnlyList<SpellDefinition> Spells => _spells;
 
@@ -282,10 +322,10 @@ public sealed class Hero
     public IEnumerable<CardInstance> EquippedCards =>
         _equipment.OrderBy(entry => entry.Key).Select(entry => entry.Value).Distinct();
 
-    public IEnumerable<CardInstance> AllCards => EquippedCards.Concat(_belt).Concat(_backpack);
+    public IEnumerable<CardInstance> AllCards => EquippedCards.Concat(_mods).Concat(_belt).Concat(_backpack).Concat(_carried);
 
-    /// <summary>Base stats plus the bonuses of everything equipped.</summary>
-    public Stats EffectiveStats => EquippedCards.Concat(BeltTools).Aggregate(BaseStats, (stats, card) =>
+    /// <summary>Base stats plus the bonuses of everything equipped (mods on the belt and buckle too).</summary>
+    public Stats EffectiveStats => EquippedCards.Concat(_mods).Concat(BeltTools).Aggregate(BaseStats, (stats, card) =>
         stats + card.Modifiers + (HasSetBonus(card.Definition) ? card.Definition.Set!.Modifiers : Stats.None));
 
     /// <summary>Tools on the belt that work from there (Lockpicks): their bonuses count as if in hand.</summary>
@@ -333,13 +373,19 @@ public sealed class Hero
 
     /// <summary>Whether the hero can take this card: it joins a stack they hold, or there's room in the backpack.</summary>
     public bool CanCarry(CardDefinition definition) =>
-        StackOf(definition) is not null || _backpack.Count < GameRules.BackpackCapacity;
+        definition.CarryOnly ? CanCarryInArms(definition)
+        : StackOf(definition) is not null || _backpack.Count < GameRules.BackpackCapacity;
 
     public (CardInstance Card, CardLocation Location)? FindCard(int cardId)
     {
-        if (EquippedCards.FirstOrDefault(card => card.Id == cardId) is { } equipped)
+        if (EquippedCards.Concat(_mods).FirstOrDefault(card => card.Id == cardId) is { } equipped)
         {
             return (equipped, CardLocation.Equipped);
+        }
+
+        if (_carried.FirstOrDefault(card => card.Id == cardId) is { } carried)
+        {
+            return (carried, CardLocation.Carried);
         }
 
         if (_belt.FirstOrDefault(card => card.Id == cardId) is { } belted)
@@ -391,15 +437,40 @@ public sealed class Hero
         }
     }
 
+    /// <summary>Puts a mod on the belt or the buckle (see <see cref="CheckMod"/>).</summary>
+    internal void AddMod(CardInstance card) => _mods.Add(card);
+
+    /// <summary>Puts a card in the hero's arms, or into the stack of it the hero already holds. Returns the card that holds it.</summary>
+    internal CardInstance AddToCarried(CardInstance card) => JoinStack(card) ?? Add(_carried, card);
+
+    /// <summary>Wears a card: a mod on the belt or buckle, anything else in its slot.</summary>
+    internal void Wear(CardInstance card)
+    {
+        if (card.Definition.ModFor is not null)
+        {
+            _mods.Add(card);
+        }
+        else
+        {
+            Equip(card);
+        }
+    }
+
     /// <summary>Puts a card on the belt, or into the stack of it the hero already holds. Returns the card that holds it.</summary>
     internal CardInstance AddToBelt(CardInstance card) => JoinStack(card) ?? Add(_belt, card);
 
     /// <summary>Puts a card in the backpack, or into the stack of it the hero already holds. Returns the card that holds it.</summary>
     internal CardInstance AddToBackpack(CardInstance card) => JoinStack(card) ?? Add(_backpack, card);
 
-    /// <summary>A card picked up or handed over: a Medicine Bag goes on the belt when there's room, the rest in the backpack.</summary>
+    /// <summary>
+    /// A card picked up or handed over: a Medicine Bag goes on the belt when there's room, a carry-only
+    /// card (the Relic) in the hero's arms, the rest in the backpack. (Nothing else is carried unasked:
+    /// arms full mean no Rumble.)
+    /// </summary>
     internal CardInstance AddLoot(CardInstance card) =>
-        card.Definition.Belts && (_belt.Count < GameRules.BeltCapacity || _belt.Any(held => held.Definition == card.Definition)) ? AddToBelt(card) : AddToBackpack(card);
+        card.Definition.CarryOnly ? AddToCarried(card)
+        : card.Definition.Belts && (_belt.Count < BeltCapacity || _belt.Any(held => held.Definition == card.Definition)) ? AddToBelt(card)
+        : AddToBackpack(card);
 
     private static CardInstance Add(List<CardInstance> place, CardInstance card)
     {
@@ -428,6 +499,8 @@ public sealed class Hero
 
         _belt.Remove(card);
         _backpack.Remove(card);
+        _mods.Remove(card);
+        _carried.Remove(card);
     }
 
     /// <summary>Trims current hearts after gear that granted hearts is removed.</summary>
@@ -456,7 +529,7 @@ public sealed class Hero
 
         foreach (string key in character.Equipped)
         {
-            hero.Equip(Make(key));
+            hero.Wear(Make(key));
         }
 
         foreach (string key in character.Belt)
@@ -467,6 +540,11 @@ public sealed class Hero
         foreach (string key in character.Backpack)
         {
             hero._backpack.Add(Make(key));
+        }
+
+        foreach (string key in character.Carried)
+        {
+            hero._carried.Add(Make(key));
         }
 
         foreach (string spellId in character.Spells)
@@ -490,7 +568,20 @@ public sealed class Hero
             return true;
         }
 
-        if (definition.BeltsFirst && _belt.Count < GameRules.BeltCapacity)
+        if (definition.CarryOnly)
+        {
+            if (!CanCarryInArms(definition))
+            {
+                return false;
+            }
+
+            _carried.Add(card);
+        }
+        else if (definition.ModFor is not null && CheckMod(definition) is null)
+        {
+            _mods.Add(card);
+        }
+        else if (definition.BeltsFirst && _belt.Count < BeltCapacity)
         {
             _belt.Add(card);
         }
@@ -498,7 +589,7 @@ public sealed class Hero
         {
             Equip(card);
         }
-        else if ((definition.Usage == CardUsage.SingleUse || definition.Belts || IsHandGear(definition)) && _belt.Count < GameRules.BeltCapacity)
+        else if (CanBelt(definition) && _belt.Count < BeltCapacity)
         {
             // A spare weapon, shield or tool rides on the belt, where it can be drawn even in combat.
             _belt.Add(card);
@@ -507,6 +598,11 @@ public sealed class Hero
         {
             _backpack.Add(card);
         }
+        else if (CanCarryInArms(definition))
+        {
+            // No room anywhere else: it's carried.
+            _carried.Add(card);
+        }
         else
         {
             return false;
@@ -514,6 +610,10 @@ public sealed class Hero
 
         return true;
     }
+
+    /// <summary>What can ride on a belt: single-use cards, belt tools and hand gear.</summary>
+    public static bool CanBelt(CardDefinition definition) =>
+        !definition.CarryOnly && (definition.Usage == CardUsage.SingleUse || definition.Belts || IsHandGear(definition));
 
     /// <summary>Held in a hand: a weapon, shield or tool, which can go on the belt.</summary>
     public static bool IsHandGear(CardDefinition definition) => definition.Slot is EquipSlot.MainHand or EquipSlot.OffHand;

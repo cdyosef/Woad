@@ -110,6 +110,9 @@ public sealed record SoakUp(int HeroId, int CardId, int TargetId, Ailment Ailmen
 /// <summary>Move an equipped or belted card into the backpack. Uses the action.</summary>
 public sealed record StowCard(int HeroId, int CardId) : GameCommand(HeroId);
 
+/// <summary>Take a card into your arms, in the carrying slots: no Rumble and no Od Hand while you carry. Free out of combat; in combat it takes the action.</summary>
+public sealed record CarryCard(int HeroId, int CardId) : GameCommand(HeroId);
+
 /// <summary>Drop a card onto your tile as loot (of a stack, <paramref name="Count"/> of it; all by default). Free.</summary>
 public sealed record DropCard(int HeroId, int CardId, int? Count = null) : GameCommand(HeroId);
 

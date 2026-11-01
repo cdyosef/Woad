@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Woad.Core.Dungeon;
 using Woad.Core.Grid;
+using Woad.Core.Rules;
 
 namespace Woad.Core.Content;
 
@@ -306,6 +307,26 @@ public sealed class ContentCatalog
         if (isGear && card.Slot is null)
         {
             errors.Add($"{name} is {card.Type} gear but has no slot.");
+        }
+
+        if (card.Type is CardType.Belt && (card.Slot != EquipSlot.Belt || card.BeltSlots < 1))
+        {
+            errors.Add($"{name} is a belt, so its slot must be belt and it needs beltSlots.");
+        }
+
+        if (card.Type is CardType.Buckle && card.Slot != EquipSlot.Buckle)
+        {
+            errors.Add($"{name} is a buckle, so its slot must be buckle.");
+        }
+
+        if (card.Type is CardType.Mod && (card.ModFor is not (EquipSlot.Belt or EquipSlot.Buckle) || card.Slot is not null))
+        {
+            errors.Add($"{name} is a mod, so it needs modFor (belt or buckle) and no slot.");
+        }
+
+        if (card.CarrySlots is < 1 or > GameRules.CarrySlots)
+        {
+            errors.Add($"{name} must fill 1 to {GameRules.CarrySlots} carrying slots.");
         }
 
         if (card.TwoHanded && card.Slot != EquipSlot.MainHand)

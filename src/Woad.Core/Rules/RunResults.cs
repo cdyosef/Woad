@@ -64,6 +64,9 @@ public sealed record HeroRunResult
 
     public required IReadOnlyList<string> Backpack { get; init; }
 
+    /// <summary>What they carry home in their arms.</summary>
+    public IReadOnlyList<string> Carried { get; init; } = [];
+
     /// <summary>What the run did to the character's name with the Merchant Guild.</summary>
     public int GuildStandingChange { get; init; }
 
@@ -123,9 +126,10 @@ public static class RunResults
             RitualStopped = state.RitualStopped,
             PortalOpened = state.PortalOpen,
             Lingering = Conditions.Lingering.Where(hero.Conditions.Has).ToDictionary(condition => condition, condition => hero.Conditions[condition]),
-            Equipped = Gear(hero.EquippedCards),
+            Equipped = Gear(hero.EquippedCards.Concat(hero.Mods)),
             Belt = Gear(hero.Belt),
             Backpack = Gear(hero.Backpack),
+            Carried = Gear(hero.Carried),
         }).ToList();
     }
 }

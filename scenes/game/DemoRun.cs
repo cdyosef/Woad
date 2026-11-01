@@ -24,6 +24,9 @@ public static class DemoRun
     /// <summary>The debug heroes' stats: a new hero's, with the Od Hand die every hero used to start with.</summary>
     public static Stats DebugStats { get; } = GameRules.HeroBaseStats with { OdHandDice = 1 };
 
+    /// <summary>What a demo hero wears before their own cards: the Basic Belt and Basic Buckle.</summary>
+    private static readonly string[] Belted = ["basic_belt", "basic_buckle"];
+
     public static IReadOnlyList<HeroSetup> DebugHeroes { get; } =
     [
         new HeroSetup("Aria", DebugStats with { Luck = 1 }, [.. GameRules.StarterKit, "bomb"], Portrait: "ember", Appearance: new("princess", Hair: "ginger")),
@@ -175,7 +178,7 @@ public static class DemoRun
         {
             Seed = seed,
             ThemeId = "emerald_keep",
-            Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 30 }, CardIds = ["bomb"] }],
+            Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 30 }, CardIds = [.. Belted, "bomb"] }],
             Rooms = [new RoomSetup("armory", RoomTemplate.Parse("....s....\n...s.s...\n.........\n.........\n.........\n.........\n....1....\n.........\n.........", content))],
             StartRoomId = "armory",
         };
@@ -196,7 +199,7 @@ public static class DemoRun
     {
         Seed = seed,
         ThemeId = "emerald_keep",
-        Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20 }, CardIds = ["wooden_sword", "frost_wand", "flame_scroll"] }],
+        Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20 }, CardIds = [.. Belted, "wooden_sword", "frost_wand", "flame_scroll"] }],
         Rooms = [new RoomSetup("study", RoomTemplate.Parse(".........\n.........\n.........\n...s.....\n.1.......\n...s.....\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
         StartRoomId = "study",
     };
@@ -212,7 +215,7 @@ public static class DemoRun
         Heroes = [DebugHeroes[0] with
         {
             BaseStats = DebugHeroes[0].BaseStats with { Hearts = 30, Armor = 20, Magic = 2 },
-            CardIds = ["wooden_sword", "flame_scroll"],
+            CardIds = [.. Belted, "wooden_sword", "flame_scroll"],
             PowerDice = 4,
             Spells = ["hurl_fire", "swirly_eyes", "quake"],
         }],
@@ -231,7 +234,7 @@ public static class DemoRun
         Heroes = [DebugHeroes[0] with
         {
             BaseStats = DebugHeroes[0].BaseStats with { Hearts = 30, Magic = 4 },
-            CardIds = ["wooden_sword"],
+            CardIds = [.. Belted, "wooden_sword"],
             PowerDice = 7,
             Spells = ["icicle_arrow", "hurl_fire", "shining_light", "shadowbind"],
         }],
@@ -250,7 +253,7 @@ public static class DemoRun
         Heroes = [DebugHeroes[0] with
         {
             BaseStats = DebugHeroes[0].BaseStats with { Hearts = 40, DefenseDice = 3 },
-            CardIds = ["icarus_wings", "wooden_sword"],
+            CardIds = [.. Belted, "icarus_wings", "wooden_sword"],
         }],
         Rooms = [new RoomSetup("chasm", RoomTemplate.Parse(".........\n.......a.\n.........\n..~~~....\n.1~~~....\n..~~~....\n.........\n.......i.\n.........", ContentCatalog.LoadDefault()))],
         StartRoomId = "chasm",
@@ -267,7 +270,7 @@ public static class DemoRun
         Heroes = [DebugHeroes[0] with
         {
             BaseStats = DebugHeroes[0].BaseStats with { Hearts = 40, DefenseDice = 3 },
-            CardIds = ["frost_scroll", "spark_scroll", "venom_scroll", "gale_scroll", "quake_scroll", "bloom_scroll", "mind_scroll", "shadow_scroll"],
+            CardIds = [.. Belted, "frost_scroll", "spark_scroll", "venom_scroll", "gale_scroll", "quake_scroll", "bloom_scroll", "mind_scroll", "shadow_scroll"],
         }],
         Rooms = [new RoomSetup("lab", RoomTemplate.Parse(".........\n.........\n...o.z...\n.........\n....1....\n.........\n...k..n..\n.........\n.........", ContentCatalog.LoadDefault()))],
         StartRoomId = "lab",
@@ -278,7 +281,7 @@ public static class DemoRun
     {
         Seed = seed,
         ThemeId = "emerald_keep",
-        Heroes = [DebugHeroes[0] with { CardIds = ["lockpicks", "lockpicks", "lockpicks", "emerald", "bomb"] }],
+        Heroes = [DebugHeroes[0] with { CardIds = [.. Belted, "lockpicks", "lockpicks", "lockpicks", "emerald", "bomb"] }],
         Rooms = [new RoomSetup("vault", RoomTemplate.Parse(".........\n.........\n.........\n....C....\n....1....\n.........\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
         StartRoomId = "vault",
     };
@@ -360,8 +363,8 @@ public static class DemoRun
         ThemeId = "emerald_keep",
         Heroes =
         [
-            DebugHeroes[0] with { CardIds = ["health_potion", "health_potion", "wooden_sword"] },
-            new HeroSetup("Pip", DebugStats, ["wooden_sword", "knights_sword"], OwnerSeat: 0),
+            DebugHeroes[0] with { CardIds = [.. Belted, "health_potion", "health_potion", "wooden_sword"] },
+            new HeroSetup("Pip", DebugStats, [.. Belted, "wooden_sword", "knights_sword"], OwnerSeat: 0),
         ],
         Rooms = [new RoomSetup("camp", RoomTemplate.Parse(".........\n.........\n.........\n.........\n....1....\n.....2...\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
         StartRoomId = "camp",
@@ -373,7 +376,7 @@ public static class DemoRun
         Heroes =
         [
             DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20 }, Allocation = Woad.Core.Characters.StatAllocation.None, Xp = 10, UnspentPoints = 1 },
-            new HeroSetup("Pip", DebugStats with { Hearts = 20, Luck = 2 }, ["wooden_sword"], OwnerSeat: 0),
+            new HeroSetup("Pip", DebugStats with { Hearts = 20, Luck = 2 }, [.. Belted, "wooden_sword"], OwnerSeat: 0),
         ],
     };
 
@@ -384,7 +387,7 @@ public static class DemoRun
         RunSetup run = Woad.Core.Dungeon.DungeonGenerator.CreateRun(content, "emerald_keep",
         [
             DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 60 } },
-            new HeroSetup("Pip", DebugStats with { Hearts = 60, Luck = 2 }, ["wooden_sword"], OwnerSeat: 0),
+            new HeroSetup("Pip", DebugStats with { Hearts = 60, Luck = 2 }, [.. Belted, "wooden_sword"], OwnerSeat: 0),
         ], seed);
         return run with { StartRoomId = run.Rooms.Single(room => room.Role == RoomRole.Boss).Id };
     }
@@ -402,7 +405,7 @@ public static class DemoRun
         Heroes =
         [
             DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20 } },
-            new HeroSetup("Pip", DebugStats with { Hearts = 20, Luck = 2 }, ["wooden_sword"], OwnerSeat: 0),
+            new HeroSetup("Pip", DebugStats with { Hearts = 20, Luck = 2 }, [.. Belted, "wooden_sword"], OwnerSeat: 0),
         ],
         Rooms = [new RoomSetup("yard", RoomTemplate.Parse(".........\n.........\n.........\n.........\n.1.....s.\n.2.......\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
         StartRoomId = "yard",

@@ -37,7 +37,7 @@ public class RunResultsTests
         Assert.True(result.Won);
         Assert.Equal(5, result.Gold);
         Assert.Equal(GameRules.XpForEscaping, result.Xp);
-        Assert.Equal(["sword", "shield"], result.Equipped);
+        Assert.Equal(["sword", "shield", "belt", "buckle"], result.Equipped);
         Assert.Equal(["potion"], result.Belt);
         Assert.Empty(result.Backpack);
     }
@@ -68,7 +68,7 @@ public class RunResultsTests
         Assert.Equal(HeroStatus.Dead, result.Status);
         Assert.False(result.Won);
         Assert.Equal(0, result.Gold);
-        Assert.Equal(["sword"], result.Equipped);
+        Assert.Equal(["sword", "belt", "buckle"], result.Equipped);
         Assert.Empty(result.Backpack);
     }
 
@@ -114,7 +114,7 @@ public class RunResultsTests
         Assert.Equal(["bomb"], character.Belt);
         Assert.Equal(["wooden_sword"], character.Backpack);
         Assert.Equal(["knights_sword", "bomb"], reward.CardsGained);
-        Assert.Equal(["health_potion", "torch", "lockpicks"], reward.CardsLost);
+        Assert.Equal(["basic_belt", "basic_buckle", "health_potion", "torch", "lockpicks"], reward.CardsLost);
     }
 
     [Fact]

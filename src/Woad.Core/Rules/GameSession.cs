@@ -39,7 +39,16 @@ public sealed partial class GameSession
     public GameState State { get; }
 
     /// <summary>Attack dice the active hero hasn't used this turn.</summary>
-    public int AttackDiceLeft => State.Turn is { } turn ? Math.Max(0, ActiveHero.EffectiveStats.AttackDice - turn.AttackDiceUsed) : 0;
+    public int AttackDiceLeft => State.Turn is { } turn && !ActiveHero.IsCarrying ? Math.Max(0, ActiveHero.EffectiveStats.AttackDice - turn.AttackDiceUsed) : 0;
+
+    /// <summary>Why there are no Rumble dice to roll: they're used up, or the hero's arms are full.</summary>
+    private string NoRumbleDice => ActiveHero.IsCarrying ? ArmsFull("Rumble") : "You've used all your Rumble dice this turn.";
+
+    /// <summary>Why there are no Od Hand dice to roll: they're used up, or the hero's arms are full.</summary>
+    private string NoOdHandDice => ActiveHero.IsCarrying ? ArmsFull("Od Hand") : "You've used all your Od Hand dice this turn.";
+
+    private string ArmsFull(string pool) =>
+        $"Your arms are full ({string.Join(" and ", ActiveHero.Carried.Select(card => card.Definition.Name))}): no {pool} while you carry. Drop it, or put it away.";
 
     /// <summary>Move dice the active hero hasn't used this turn.</summary>
     public int MoveDiceLeft => State.Turn is { } turn && ActiveHero.Shackled is null && !ActiveHero.Conditions.Has(Condition.Buried) ? Math.Max(0, ActiveHero.EffectiveStats.MoveDice + turn.ExtraMoveDice - turn.MoveDiceUsed) : 0;
@@ -131,6 +140,7 @@ public sealed partial class GameSession
             AttackMerchant c => Handle(c, events),
             BeltCard c => Handle(c, events),
             StowCard c => Handle(c, events),
+            CarryCard c => Handle(c, events),
             DropCard c => Handle(c, events),
             OpenChest c => Handle(c, events),
             PickUpLoot c => Handle(c, events),

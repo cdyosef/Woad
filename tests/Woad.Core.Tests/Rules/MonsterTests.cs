@@ -263,7 +263,7 @@ public class MonsterTests
         Monster monster = session.OnlyMonster();
         Assert.Equal(new HeroKeeledOver(hero.Id, new GridPosition(4, 4), $"Slain by a {monster.Definition.Name}"), events.SingleOf<HeroKeeledOver>());
         Assert.Equal(HeroStatus.KeelingOver, hero.Status);
-        Assert.Equal(["sword", "gem"], hero.AllCards.Select(card => card.Definition.Id));
+        Assert.Equal(["sword", "belt", "buckle", "gem"], hero.AllCards.Select(card => card.Definition.Id));
         Assert.Empty(session.RoomById().LootPositions);
         Assert.Equal(RunPhase.InProgress, session.State.Phase);
     }

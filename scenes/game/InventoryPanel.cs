@@ -12,6 +12,7 @@ public enum CardAction
     Equip,
     Belt,
     Stow,
+    Carry,
     Drop,
 }
 
@@ -72,7 +73,7 @@ public partial class InventoryPanel : Control
         for (int i = 0; i < actions.Length; i++)
         {
             CardAction action = actions[i];
-            Button button = UiTheme.Button(new(8 + i * 32, 68), new(30, 16), action.ToString());
+            Button button = UiTheme.Button(new(6 + i * 27, 68), new(26, 16), action.ToString());
             button.Pressed += () => ActionRequested?.Invoke(action);
             button.GuiInput += input =>
             {

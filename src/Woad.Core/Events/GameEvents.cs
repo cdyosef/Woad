@@ -257,6 +257,9 @@ public sealed record CardBelted(int HeroId, int CardId) : GameEvent;
 
 public sealed record CardStowed(int HeroId, int CardId) : GameEvent;
 
+/// <summary>A card was taken into the hero's arms (see <see cref="Woad.Core.Commands.CarryCard"/>).</summary>
+public sealed record CardCarried(int HeroId, int CardId) : GameEvent;
+
 public sealed record CardDropped(int HeroId, int CardId, GridPosition Position) : GameEvent
 {
     /// <summary>How many were put down (part of a stack, or all of it).</summary>

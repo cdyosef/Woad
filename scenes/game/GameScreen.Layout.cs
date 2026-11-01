@@ -30,6 +30,7 @@ public partial class GameScreen
     private Button _partyButton = null!;
     private InventoryPanel _inventory = null!;
     private DiceBar _dice = null!;
+    private CarryTab _carryTab = null!;
     private TurnBanner _banner = null!;
     private RichTextLabel _header = null!;
     private Label _hoverInfo = null!;
@@ -103,6 +104,7 @@ public partial class GameScreen
         Hero? sheet = SheetHero;
         _heroPanel.ShowHero(sheet, sheet == hero ? turn : null, sheet == hero ? _selectedCardId : null);
         _inventory.ShowHero(hero, _selectedCardId, AvailableCardActions(hero, turn));
+        _carryTab.ShowHero(sheet, sheet == hero ? _selectedCardId : null);
         _header.Text = HeaderText();
         if (_party.Visible)
         {
@@ -532,6 +534,7 @@ public partial class GameScreen
             (CardAction.Equip, card.Definition.Teaches is not null ? _session.CheckLearnSpell(cardId) : _session.CheckEquip(cardId)),
             (CardAction.Belt, _session.CheckBelt(cardId)),
             (CardAction.Stow, _session.CheckStow(cardId)),
+            (CardAction.Carry, _session.CheckCarry(cardId)),
             (CardAction.Drop, Drop()),
         })
         {
@@ -556,6 +559,7 @@ public partial class GameScreen
                 : $"Goes in either hand: you'll choose which. {gearCost}",
             [CardAction.Belt] = gearCost,
             [CardAction.Stow] = gearCost,
+            [CardAction.Carry] = $"Into your arms: no Rumble and no Od Hand while you carry. {gearCost}",
             [CardAction.Drop] = "Leave it on the floor here. Free.",
         };
         return new CardActions(blocked, hints);
@@ -715,6 +719,11 @@ public partial class GameScreen
             RefreshPanels();
         };
         AddChild(_party);
+
+        // The carrying slots, sliding out from behind the sheet's edge over the board while there's something carried.
+        _carryTab = new CarryTab { Position = new Vector2(SideWidth, StripHeight + 4), ZIndex = 2 };
+        _carryTab.CardSelected += ClickCard;
+        AddChild(_carryTab);
 
         // Under the board, the dice bar: who rolls on the left, VS, who answers on the right.
         AddChild(new Panel { Position = new Vector2(SideWidth, StripHeight + BoardView.Pixels), Size = new Vector2(BoardView.Pixels, StripHeight) });

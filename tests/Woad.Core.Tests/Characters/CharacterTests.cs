@@ -36,7 +36,7 @@ public class CharacterTests
 
         Assert.Equal(1, character.Level);
         Assert.Equal(2, character.UnspentPoints);
-        Assert.Equal(["wooden_sword", "buckler"], character.Equipped);
+        Assert.Equal(["basic_belt", "basic_buckle", "wooden_sword", "buckler"], character.Equipped);
         Assert.Equal(["health_potion", "torch", "lockpicks"], character.Belt);
         Assert.Empty(character.Backpack);
         Assert.Equal(GameRules.HeroBaseStats.Hearts + 1, character.BaseStats.Hearts);

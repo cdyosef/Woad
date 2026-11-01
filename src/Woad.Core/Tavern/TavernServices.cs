@@ -217,7 +217,7 @@ public static class TavernServices
             return ServiceResult.Refused("\"Saint Wyn rests easy again, thanks to you. But the Graves do not.\"");
         }
 
-        if (party.FirstOrDefault(member => member.Equipped.Concat(member.Belt).Concat(member.Backpack).Contains("saints_relic")) is { } bearer)
+        if (party.FirstOrDefault(member => member.Equipped.Concat(member.Belt).Concat(member.Backpack).Concat(member.Carried).Contains("saints_relic")) is { } bearer)
         {
             bearer.TakeCard("saints_relic");
             hero.EarnGold(RelicGold);

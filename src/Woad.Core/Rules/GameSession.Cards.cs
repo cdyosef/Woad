@@ -207,6 +207,12 @@ public sealed partial class GameSession
         }
 
         CardDefinition definition = card!.Definition;
+        if (definition.ModFor is not null)
+        {
+            return location == CardLocation.Equipped ? $"The {definition.Name} is on already."
+                : ActiveHero.CheckMod(definition) ?? (InCombat ? "Mods go on out of combat." : null) ?? CheckGearAction();
+        }
+
         if (definition.Slot is null)
         {
             return $"The {definition.Name} isn't worn or held, so it can't be equipped.";
@@ -229,6 +235,16 @@ public sealed partial class GameSession
             return $"The {definition.Name} works from your belt; it isn't held.";
         }
 
+        if (combat && location == CardLocation.Carried && !HandHeld(definition))
+        {
+            return BagInCombat;
+        }
+
+        if (definition.Type == CardType.Belt && hero.Belt.Count > definition.BeltSlots)
+        {
+            return $"The {definition.Name} holds {definition.BeltSlots} cards, and you've {hero.Belt.Count} on your belt.";
+        }
+
         if (location == CardLocation.Equipped)
         {
             if (definition.AltSlot is null)
@@ -245,7 +261,7 @@ public sealed partial class GameSession
         // What comes off goes to the backpack; in combat, to the belt, as long as it's held gear and fits.
         IReadOnlyList<CardInstance> displaced = hero.CardsDisplacedBy(definition, HandFor(hero, card, hand));
         if (combat && (displaced.Any(old => !HandHeld(old.Definition))
-            || hero.Belt.Count - (location == CardLocation.Belt ? 1 : 0) + displaced.Count > GameRules.BeltCapacity))
+            || hero.Belt.Count - (location == CardLocation.Belt ? 1 : 0) + displaced.Count > hero.BeltCapacity))
         {
             return "In combat what you'd take off has to go on your belt, and there's no room.";
         }
@@ -266,7 +282,12 @@ public sealed partial class GameSession
             return error;
         }
 
-        if (card!.Definition.Usage != CardUsage.SingleUse && !card.Definition.Belts && !HandHeld(card.Definition))
+        if (card!.Definition.CarryOnly)
+        {
+            return $"The {card.Definition.Name} can only be carried.";
+        }
+
+        if (!Hero.CanBelt(card.Definition))
         {
             return "Only single-use cards (potions, bombs, scrolls), weapons, shields and tools go on your belt.";
         }
@@ -276,9 +297,19 @@ public sealed partial class GameSession
             return $"The {card.Definition.Name} is already on your belt.";
         }
 
-        if (ActiveHero.Belt.Count >= GameRules.BeltCapacity)
+        if (ActiveHero.BeltCapacity == 0)
         {
-            return $"Your belt is full ({GameRules.BeltCapacity} cards). Stow one to make room.";
+            return "You're beltless: put on a belt first.";
+        }
+
+        if (ActiveHero.Belt.Count >= ActiveHero.BeltCapacity)
+        {
+            return $"Your belt is full ({ActiveHero.BeltCapacity} cards). Stow one to make room.";
+        }
+
+        if (TakingOff(card) is { } stuck)
+        {
+            return stuck;
         }
 
         if (InCombat && (location == CardLocation.Backpack || !HandHeld(card.Definition)))
@@ -302,9 +333,19 @@ public sealed partial class GameSession
             return $"The {card!.Definition.Name} is already in your backpack.";
         }
 
+        if (card!.Definition.CarryOnly)
+        {
+            return $"The {card.Definition.Name} won't go in a bag: it can only be carried.";
+        }
+
         if (InCombat)
         {
             return BagInCombat;
+        }
+
+        if (TakingOff(card) is { } stuck)
+        {
+            return stuck;
         }
 
         if (ActiveHero.Backpack.Count >= GameRules.BackpackCapacity)
@@ -313,6 +354,66 @@ public sealed partial class GameSession
         }
 
         return CheckGearAction();
+    }
+
+    /// <summary>Why the active hero can't take the card into their arms right now, or null if they can.</summary>
+    public string? CheckCarry(int cardId)
+    {
+        if (CheckCardQuery(cardId, out CardInstance? card, out CardLocation location) is { } error)
+        {
+            return error;
+        }
+
+        if (location == CardLocation.Carried)
+        {
+            return $"You're carrying the {card!.Definition.Name} already.";
+        }
+
+        if (!ActiveHero.CanCarryInArms(card!.Definition))
+        {
+            return $"Your arms are full: there's no room to carry the {card.Definition.Name}.";
+        }
+
+        if (InCombat && location == CardLocation.Backpack)
+        {
+            return BagInCombat;
+        }
+
+        return TakingOff(card) ?? CheckGearAction();
+    }
+
+    /// <summary>What stops a worn belt or buckle coming off: the cards on the belt, or the mods on it.</summary>
+    private string? TakingOff(CardInstance card)
+    {
+        Hero hero = ActiveHero;
+        if (hero.SlotOf(card) is not ({ } slot and (EquipSlot.Belt or EquipSlot.Buckle)))
+        {
+            return null;
+        }
+
+        if (slot == EquipSlot.Belt && hero.Belt.Count > 0)
+        {
+            return "Take the cards off your belt first.";
+        }
+
+        return hero.Mods.Any(mod => mod.Definition.ModFor == slot) ? $"Take the mods off your {(slot == EquipSlot.Belt ? "belt" : "buckle")} first." : null;
+    }
+
+    private string? Handle(CarryCard command, List<GameEvent> events)
+    {
+        if (CheckCarry(command.CardId) is { } error)
+        {
+            return error;
+        }
+
+        Hero hero = ActiveHero;
+        CardInstance card = hero.FindCard(command.CardId)!.Value.Card;
+        SpendGearAction();
+        hero.Remove(card);
+        hero.AddToCarried(card);
+        hero.ClampHearts();
+        events.Add(new CardCarried(hero.Id, card.Id));
+        return null;
     }
 
     /// <summary>Why the active hero can't use the card right now (including having nothing to aim at), or null if they can.</summary>
@@ -390,6 +491,17 @@ public sealed partial class GameSession
 
         Hero hero = ActiveHero;
         CardInstance card = hero.FindCard(command.CardId)!.Value.Card;
+        if (card.Definition.ModFor is not null)
+        {
+            // A mod goes on the belt or the buckle.
+            SpendGearAction();
+            hero.Remove(card);
+            hero.AddMod(card);
+            hero.ClampHearts();
+            events.Add(new CardEquipped(hero.Id, card.Id));
+            return null;
+        }
+
         EquipSlot? hand = HandFor(hero, card, command.Hand);
 
         // A stack of Daggers held in one hand, equipped again: one of them goes to the other hand.

@@ -1109,6 +1109,9 @@ public partial class GameScreen
             case CardAction.Stow:
                 Execute(new StowCard(hero.Id, cardId));
                 break;
+            case CardAction.Carry:
+                Execute(new CarryCard(hero.Id, cardId));
+                break;
             case CardAction.Drop:
                 Drop(card);
                 break;
