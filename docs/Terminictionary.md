@@ -30,6 +30,15 @@ functions (changing the belt and buckle art, equipping belt and buckle cards and
 
 *Notes:* planned (belt stages 1 and 2).
 
+### Carry tab
+
+A tab on the side of the character sheet that slides out from behind it in its own little window while
+you're carrying something, holding the carrying slots, so it doesn't get in the way when you're not.
+
+*Notes:* `CarryTab` in `scenes/game/CarryTab.cs`; it slides out over the board's left edge. The carrying
+slots hold two cards or stacks (the Relic of Saint Wyn fills both), and while anything is carried there's
+no Rumble and no Od Hand.
+
 ### Corner index
 
 The small picture of the item and its count (like "x3") in the corner of a card, as on a playing card,
