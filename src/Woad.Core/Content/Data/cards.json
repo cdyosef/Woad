@@ -46,6 +46,8 @@
   { "id": "giants_belt", "name": "Giant's Belt", "type": "belt", "slot": "belt", "beltSlots": 9, "value": 60, "text": "Legends speak of it. Holds 9 cards." },
   { "id": "best_belt", "name": "Best Belt", "type": "belt", "slot": "belt", "beltSlots": 10, "value": 80, "text": "Legends speak of it. Holds 10 cards." },
   { "id": "basic_buckle", "name": "Basic Buckle", "type": "buckle", "slot": "buckle", "value": 1, "text": "Holds your belt on." },
+  { "id": "iron_buckle", "name": "Iron Buckle", "type": "buckle", "slot": "buckle", "modifiers": { "block": 1 }, "value": 8, "text": "Block 1: +1 to the first defense that's losing, back each turn." },
+  { "id": "silver_buckle", "name": "Silver Buckle", "type": "buckle", "slot": "buckle", "modifiers": { "luck": 1 }, "value": 14, "text": "+1 Luck: reroll one more die a floor." },
   { "id": "belt_studs", "name": "Belt Studs", "type": "mod", "modFor": "belt", "modifiers": { "armor": 1 }, "value": 8, "text": "Goes on your belt. Armor 1." },
   { "id": "buckle_horns", "name": "Buckle Horns", "type": "mod", "modFor": "buckle", "modifiers": { "weapon": 1 }, "value": 10, "text": "Goes on your buckle. +1 to your Rumble rolls." },
   { "id": "icarus_wings", "name": "Icarus Wings", "type": "accessory", "slot": "accessory", "wings": true, "value": 20, "text": "Beat them for a d6 of flight, over pits, water and traps, and again as often as you dare; a 6 rolls a Power Die in. A 1 breaks them: you drop where you are, prone and stunned, your Wend gone for the turn." },

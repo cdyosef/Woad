@@ -133,7 +133,7 @@ public partial class CharacterEditor : MenuScreen
             _budget = PointBuy.Cost(character.Allocation) + character.UnspentPoints;
             _level = character.Level;
             _portrait = character.Portrait;
-            (_look, _main, _trim, _skin, _hair) = character.Appearance;
+            (_look, _main, _trim, _skin, _hair, _, _, _) = character.Appearance;
         }
         else
         {
@@ -559,7 +559,7 @@ public partial class CharacterEditor : MenuScreen
                 character = Editing;
                 character.Rename(NameEdit.Text);
                 character.ChangePortrait(_portrait);
-                character.ChangeAppearance(Appearance);
+                character.ChangeAppearance(Appearance with { BeltLook = character.Appearance.BeltLook, BuckleLook = character.Appearance.BuckleLook, HiddenGear = character.Appearance.HiddenGear });
                 character.Allocate(_allocation, _newSpells, Content);
             }
 

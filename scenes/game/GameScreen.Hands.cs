@@ -119,6 +119,8 @@ public partial class GameScreen
             new("prone", "Prone", _prone, () => ActiveHero?.Prone == true),
             new("drop_roll", "Drop & roll", _dropRoll, () => true, () => ActiveHero?.FireDice > 0),
         ]);
+        _rumbleHand.Slot = EquipSlot.MainHand;
+        _wendHand.Slot = EquipSlot.Feet;
         _odHand = AddHand(new Vector2(HeroPanel.Columns[0], HeroPanel.Rows[1]), "icon_odhand", "Od Hand", Palette.DieOdHand, search,
         [
             search,
@@ -129,6 +131,7 @@ public partial class GameScreen
             new("parry", "Parry", _parry, Threatened, () => Knows(Skill.Parry)),
             new("learn", "Learn", _learn, () => true),
         ]);
+        _odHand.Slot = EquipSlot.OffHand;
 
         // The Magic hand, under the Magic card: the spells they know (filled in as they're learned).
         _magicHand = new HandView { Position = new Vector2(HeroPanel.Columns[2] - 3, HeroPanel.Rows[0] + HeroPanel.CardHeight), Icon = "icon_magic", Title = "Magic", Color = new Color("b07ce8") };

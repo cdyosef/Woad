@@ -39,8 +39,49 @@ public sealed class CardInstance
     /// <summary>What it adds while equipped, less its wear.</summary>
     public Stats Modifiers => CardKey.Modifiers(Definition, Wear);
 
-    /// <summary>How a character keeps it between runs: its id and its wear.</summary>
-    public string Key => CardKey.Of(Definition.Id, Wear);
+    /// <summary>How a character keeps it between runs: its id and its wear (and a packed belt, what it carries).</summary>
+    public string Key => Packed is { } packed
+        ? CardKey.Packed(CardKey.Of(Definition.Id, Wear), packed.Attached.SelectMany(Copies), packed.Held.SelectMany(Copies))
+        : CardKey.Of(Definition.Id, Wear);
+
+    private static IEnumerable<string> Copies(CardInstance card) => Enumerable.Repeat(card.Key, card.Count);
+
+    /// <summary>A belt unbuckled whole: its buckle and mods, and the cards on it, kept on it till it's worn again.</summary>
+    public PackedBelt? Packed { get; internal set; }
+
+    /// <summary>
+    /// A card from a character's key, with its wear, and for a packed belt what it carries; copies of
+    /// a stackable card carried gather into one. <paramref name="nextId"/> hands out the ids.
+    /// </summary>
+    public static CardInstance FromKey(string key, ContentCatalog content, Func<int> nextId, int? broughtInByHeroId)
+    {
+        var card = new CardInstance(nextId(), content.GetCard(key), broughtInByHeroId) { Wear = CardKey.Wear(key) };
+        if (CardKey.Unpack(key) is var (attached, held))
+        {
+            List<CardInstance> Make(IEnumerable<string> keys)
+            {
+                var made = new List<CardInstance>();
+                foreach (string inner in keys)
+                {
+                    CardInstance one = FromKey(inner, content, nextId, broughtInByHeroId);
+                    if (one.Definition.IsStackable && made.FirstOrDefault(other => other.Definition == one.Definition) is { } stack)
+                    {
+                        stack.Absorb(one);
+                    }
+                    else
+                    {
+                        made.Add(one);
+                    }
+                }
+
+                return made;
+            }
+
+            card.Packed = new PackedBelt(Make(attached), Make(held));
+        }
+
+        return card;
+    }
 
     /// <summary>A crossbow that's been shot and not yet reloaded. Every crossbow is loaded again on reaching a new floor.</summary>
     public bool Unloaded { get; internal set; }
@@ -99,3 +140,6 @@ public sealed class CardInstance
 
     public override string ToString() => Count > 1 ? $"{Definition.Name} x{Count} #{Id}" : $"{Definition.Name} #{Id}";
 }
+
+/// <summary>What a belt unbuckled whole carries: its buckle and mods (<see cref="Attached"/>), and its cards (<see cref="Held"/>).</summary>
+public sealed record PackedBelt(IReadOnlyList<CardInstance> Attached, IReadOnlyList<CardInstance> Held);

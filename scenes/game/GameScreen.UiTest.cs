@@ -160,8 +160,24 @@ public partial class GameScreen
                 await ClickAt(this, square + _heroPanel.BeltSquare.FanPoint);
                 Check(!_heroPanel.IsBeltViewOpen, "and clicking it again puts them away");
                 await ClickAt(this, square + _heroPanel.BeltSquare.BucklePoint);
-                Check(_selectedCardId == worn.Id, "clicking the buckle picks up the belt");
-                CancelSelection();
+                Check(_buckleMenu.IsOpen && _buckleMenu.ButtonFor("Unbuckle") is not null, "clicking the buckle opens its menu, with Unbuckle");
+                if (_session.InCombat)
+                {
+                    Check(_buckleMenu.ButtonFor("Unbuckle")!.Disabled && _buckleMenu.ButtonFor("Unbuckle")!.TooltipText.Contains("fight's done"), "in combat, Unbuckle waits, and says so");
+                }
+                else
+                {
+                    int onBelt = wearer.Belt.Count;
+                    await Click(this, _buckleMenu.ButtonFor("Unbuckle")!);
+                    await WaitUntilIdle();
+                    Check(wearer.BeltCapacity == 0 && worn.Packed?.Held.Count == onBelt, "Unbuckle takes the belt off whole, its cards on it");
+                    await Click(this, _buckleMenu.ButtonFor("Buckle on")!);
+                    await WaitUntilIdle();
+                    Check(wearer.Belt.Count == onBelt && worn.Packed is null, "and Buckle on puts it back just as it was");
+                }
+
+                await ClickAt(this, square + _heroPanel.BeltSquare.BucklePoint);
+                Check(!_buckleMenu.IsOpen, "clicking the buckle again closes the menu");
             }
 
             // Carrying: a card taken into the arms slides the carrying window out, and Rumble is gone till it's put down.
@@ -1229,6 +1245,64 @@ public partial class GameScreen
                 await Click(this, _rummage.TakeAllButton);
                 await WaitUntilIdle();
                 Check(ShownRoom.LootAt(chest).Count == 0 || aria.Backpack.Count == 6, "Take all empties the chest (or fills the backpack)");
+            }
+
+            // Out of a fight, the buckle's menu unbuckles the belt whole, and buckles it on again as it was.
+            if (aria.Backpack.Count < Woad.Core.Rules.GameRules.BackpackCapacity && aria.Equipment.GetValueOrDefault(EquipSlot.Belt) is { } belt)
+            {
+                Vector2 buckle = _heroPanel.BeltSquare.GetGlobalRect().Position + _heroPanel.BeltSquare.BucklePoint;
+                await ClickAt(this, buckle);
+                await SaveShot("buckle_menu");
+                List<string> onBelt = [.. aria.Belt.Select(card => card.Key)];
+                await Click(this, _buckleMenu.ButtonFor("Unbuckle")!);
+                await WaitUntilIdle();
+                Check(aria.BeltCapacity == 0 && aria.Backpack.Contains(belt) && belt.Packed?.Held.Select(card => card.Key).SequenceEqual(onBelt) == true,
+                    "Unbuckle takes the belt off whole into the bag, its cards on it");
+                await SaveShot("beltless");
+                await Click(this, _buckleMenu.ButtonFor("Buckle on")!);
+                await WaitUntilIdle();
+                Check(aria.Belt.Select(card => card.Key).SequenceEqual(onBelt) && belt.Packed is null, "and Buckle on puts it back just as it was");
+                await ClickAt(this, buckle);
+            }
+
+            // Drag and drop: a belt card dragged to the bag goes in it, from the bag list back onto the belt,
+            // to the carry tab into her arms, and let go over the map, she's asked before it's dropped.
+            if (aria.Belt.FirstOrDefault() is { } dragged && aria.Backpack.Count < Woad.Core.Rules.GameRules.BackpackCapacity)
+            {
+                await WaitUntilIdle();
+                Vector2 firstOnBelt = _heroPanel.BeltPoint(0);
+                await DragAt(this, firstOnBelt, _heroPanel.BagDeck.GetGlobalRect().GetCenter());
+                await WaitUntilIdle();
+                Check(aria.Backpack.Contains(dragged), "a belt card dragged onto the bag goes in it");
+                await DragAt(this, _heroPanel.BackpackSlot(aria.Backpack.ToList().IndexOf(dragged)).GetGlobalRect().GetCenter(), _heroPanel.BeltSquare.GetGlobalRect().GetCenter());
+                await WaitUntilIdle();
+                Check(aria.Belt.Contains(dragged), "dragged from the bag's list onto the belt square, it goes on the belt");
+                await DragAt(this, _heroPanel.BeltPoint(aria.Belt.ToList().IndexOf(dragged)), _carryTab.GetGlobalRect().GetCenter());
+                await WaitUntilIdle();
+                Check(aria.Carried.Contains(dragged) && _carryTab.IsOut, "dragged to the carry tab (it peeks out while dragging), it's carried");
+                await DragAt(this, _carryTab.Card(0).GetGlobalRect().GetCenter(), _board.GetGlobalRect().GetCenter());
+                Check(_inventory.IsChoosingHand && _inventory.HandButton(1).Text == "Keep it", "let go over the map, she's asked whether to drop it");
+                await Click(this, _inventory.HandButton(1));
+                Check(aria.Carried.Contains(dragged), "Keep it keeps it");
+                await DragAt(this, _carryTab.Card(0).GetGlobalRect().GetCenter(), _heroPanel.BeltSquare.GetGlobalRect().GetCenter());
+                await WaitUntilIdle();
+                Check(aria.Belt.Contains(dragged) && !_carryTab.IsOut, "and dragged back onto the belt, her arms are free");
+            }
+
+            // A weapon dragged from the main hand's square into the bag is put away; dragged back onto the square, it's wielded, and shows on her figure.
+            if (aria.Equipment.GetValueOrDefault(EquipSlot.MainHand) is { } weapon && aria.Backpack.Count < Woad.Core.Rules.GameRules.BackpackCapacity)
+            {
+                await DragAt(this, _rumbleHand.GetGlobalRect().Position + _rumbleHand.CardPoint("item:" + weapon.Id), _heroPanel.BagDeck.GetGlobalRect().GetCenter());
+                await WaitUntilIdle();
+                Check(aria.Backpack.Contains(weapon), $"the {weapon.Definition.Name} dragged from the main hand's square onto the bag is put away");
+                await DragAt(this, _heroPanel.BackpackSlot(aria.Backpack.ToList().IndexOf(weapon)).GetGlobalRect().GetCenter(), _rumbleHand.GetGlobalRect().Position + new Vector2(24, 20));
+                await WaitUntilIdle();
+                Check(aria.Equipment.GetValueOrDefault(EquipSlot.MainHand) == weapon, $"the {weapon.Definition.Name} dragged onto the main hand's square is wielded");
+                Check(GearOf(aria)?.MainHand == weapon.Definition.Id && GearOf(aria)?.Belt is not null, "and her figure shows it, and her belt");
+                await SaveShot("figure_gear");
+                ExecuteForActiveHero(id => new ShowGear(id, EquipSlot.MainHand, false));
+                await WaitUntilIdle();
+                Check(GearOf(aria)?.MainHand is null, "hidden, it's off her figure");
             }
 
             GD.Print("Loot test passed.");

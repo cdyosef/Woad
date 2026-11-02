@@ -76,7 +76,7 @@ public partial class InventoryPanel : Control
         for (int i = 0; i < actions.Length; i++)
         {
             CardAction action = actions[i];
-            Button button = UiTheme.Button(new(6 + i * 27, 68), new(26, 16), action.ToString());
+            Button button = UiTheme.CompactButton(new(4 + i * 28, 68), new(27, 16), action.ToString());
             button.Pressed += () => ActionRequested?.Invoke(action);
             button.GuiInput += input =>
             {

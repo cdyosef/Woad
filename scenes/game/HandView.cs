@@ -1,4 +1,5 @@
 using Godot;
+using Woad.Core.Content;
 using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Game;
@@ -220,6 +221,16 @@ public partial class HandView : Control
             : card.Key == Front ? $"{card.Name}: double-click to use it with the dice on your cards." + (card.Key == DiceKey ? " Click a die on it to take it off." : "")
             : $"{card.Name}: click to select it.";
     }
+
+    /// <summary>The slot this square equips (main hand, off hand, feet), for cards dropped on it; null takes none.</summary>
+    public EquipSlot? Slot { get; set; }
+
+    public override Variant _GetDragData(Vector2 atPosition) =>
+        Default is not null && CardAt(atPosition) is { CardId: int cardId } card ? CardDrag.Begin(this, cardId, card.Picture) : default;
+
+    public override bool _CanDropData(Vector2 atPosition, Variant data) => Slot is not null && CardDrag.Accepts(data);
+
+    public override void _DropData(Vector2 atPosition, Variant data) => CardDrag.Drop(data, new DropTarget(DropKind.Equip, Slot));
 
     private StackCard? CardAt(Vector2 point)
     {

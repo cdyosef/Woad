@@ -257,6 +257,15 @@ public sealed record CardBelted(int HeroId, int CardId) : GameEvent;
 
 public sealed record CardStowed(int HeroId, int CardId) : GameEvent;
 
+/// <summary>A hero took their belt off whole (it's in their bag, <paramref name="BeltId"/>, carrying all it had).</summary>
+public sealed record BeltUnbuckled(int HeroId, int BeltId) : GameEvent;
+
+/// <summary>A hero buckled on a belt unbuckled whole before: its buckle, mods and cards are back.</summary>
+public sealed record BeltBuckled(int HeroId, int BeltId) : GameEvent;
+
+/// <summary>A hero changed how they look (their belt square's art, or the gear shown on their figure).</summary>
+public sealed record LookChanged(int HeroId) : GameEvent;
+
 /// <summary>A card was taken into the hero's arms (see <see cref="Woad.Core.Commands.CarryCard"/>).</summary>
 public sealed record CardCarried(int HeroId, int CardId) : GameEvent;
 

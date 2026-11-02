@@ -137,6 +137,7 @@ public partial class HeroPanel : Panel
             SheetCard card = AddCard(new Vector2(Columns[column], Rows[row]), back);
             card.Name = name.Replace(" ", "");
             _slots[slot] = card;
+            card.DropsAs = new DropTarget(DropKind.Equip, slot);
             card.SetMeta("empty", name);
         }
 
@@ -151,7 +152,7 @@ public partial class HeroPanel : Panel
             Add(new Panel { Position = new(Columns[0] + i * 2, Rows[2] - i * 2), Size = new(CardWidth, CardHeight), MouseFilter = MouseFilterEnum.Ignore });
         }
 
-        _bag = Add(new SheetCard { Position = new(Columns[0], Rows[2]), Size = new(CardWidth, CardHeight), Back = "back_bag", ToggleMode = false });
+        _bag = Add(new SheetCard { Position = new(Columns[0], Rows[2]), Size = new(CardWidth, CardHeight), Back = "back_bag", ToggleMode = false, DropsAs = new DropTarget(DropKind.Bag) });
         _bag.Pressed += () =>
         {
             _bagView.Visible = !_bagView.Visible;
@@ -166,7 +167,7 @@ public partial class HeroPanel : Panel
         _bagView.AddChild(_bagTitle);
         for (int i = 0; i < _bagCards.Length; i++)
         {
-            var card = new SheetCard { Position = new(10 + i % 4 * 54, 18 + i / 4 * 56), Size = new(CardWidth, CardHeight), Back = "back_bag" };
+            var card = new SheetCard { Position = new(10 + i % 4 * 54, 18 + i / 4 * 56), Size = new(CardWidth, CardHeight), Back = "back_bag", Draggable = true, DropsAs = new DropTarget(DropKind.Bag) };
             card.Pressed += () =>
             {
                 if (card.Card is { } held)
@@ -179,7 +180,7 @@ public partial class HeroPanel : Panel
         }
         for (int i = 0; i < _backpack.Length; i++)
         {
-            CardSlot slot = Add(new CardSlot { Position = new(2, Rows[2] + CardHeight + 3 + i * 11), Size = new(60, 11), Flat = true });
+            CardSlot slot = Add(new CardSlot { Position = new(2, Rows[2] + CardHeight + 3 + i * 11), Size = new(60, 11), Flat = true, Draggable = true, DropsAs = new DropTarget(DropKind.Bag) });
             slot.AddThemeFontSizeOverride("font_size", UiTheme.FontSize);
             slot.Pressed += () =>
             {
@@ -209,7 +210,7 @@ public partial class HeroPanel : Panel
         _beltView.AddChild(_beltTitle);
         for (int i = 0; i < _beltCards.Length; i++)
         {
-            var card = new SheetCard { Position = new(8 + i % 5 * 54, 18 + i / 5 * 56), Size = new(CardWidth, CardHeight), Back = "back_belt" };
+            var card = new SheetCard { Position = new(8 + i % 5 * 54, 18 + i / 5 * 56), Size = new(CardWidth, CardHeight), Back = "back_belt", Draggable = true, DropsAs = new DropTarget(DropKind.Belt) };
             card.Pressed += () =>
             {
                 if (card.Card is { } held)
@@ -226,9 +227,13 @@ public partial class HeroPanel : Panel
         _turn.HorizontalAlignment = HorizontalAlignment.Center;
     }
 
+    public override bool _CanDropData(Vector2 atPosition, Variant data) => CardDrag.Accepts(data);
+
+    public override void _DropData(Vector2 atPosition, Variant data) => CardDrag.Drop(data, new DropTarget(DropKind.Sheet));
+
     private SheetCard AddCard(Vector2 position, string back)
     {
-        SheetCard card = Add(new SheetCard { Position = position, Size = new(CardWidth, CardHeight), Back = back });
+        SheetCard card = Add(new SheetCard { Position = position, Size = new(CardWidth, CardHeight), Back = back, Draggable = true });
         card.Pressed += () =>
         {
             if (card.Card is { } held)

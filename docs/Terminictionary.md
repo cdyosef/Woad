@@ -32,8 +32,10 @@ which, when it could be either). With no belt it says Beltless.
 The buckle of the belt art on the belt square, which is a button: click it to bring up the buckle's
 functions (changing the belt and buckle art, equipping belt and buckle cards and their mods).
 
-*Notes:* for now a click picks up the belt card itself (its text and buttons); the buckle's own menu
-comes next. Belt Studs show along the band, Buckle Horns on the buckle.
+*Notes:* opens `BuckleMenu` (`scenes/game/BuckleMenu.cs`) over the board: Unbuckle (the belt off whole,
+packed with its buckle, mods and cards, into the bag) and Buckle on, Take off and Put on for buckles and
+mods, the belt square's look, and which gear shows on the hero's figure. Belt Studs show along the band,
+Buckle Horns on the buckle.
 
 ### Carry tab
 

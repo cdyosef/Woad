@@ -88,6 +88,26 @@ public partial class TokenView : Node2D
         set { _carriesLoot = value; QueueRedraw(); }
     }
 
+    /// <summary>
+    /// A hero's gear shown on their figure: what's in each hand and on their head (by card id, drawn small
+    /// from its card art), and their belt's leather and buckle colors. Null shows none.
+    /// </summary>
+    public sealed record FigureGear(string? MainHand, string? OffHand, string? Head, Color? Belt, Color? Buckle);
+
+    private FigureGear? _gear;
+
+    public FigureGear? Gear
+    {
+        set
+        {
+            if (value != _gear)
+            {
+                _gear = value;
+                QueueRedraw();
+            }
+        }
+    }
+
     /// <summary>Holding a lit torch: a warm glow around them, and a flame at the hand.</summary>
     public bool Torch
     {
@@ -395,12 +415,48 @@ public partial class TokenView : Node2D
         }
 
         DrawFigure(rect, _collapsed ? new Color(0.5f, 0.5f, 0.5f) : Colors.White);
+        if (!_collapsed)
+        {
+            DrawGear(rect);
+        }
+
         if (_submerged)
         {
             // Under the surface: the water covers all but its top, with a ripple where it breaks.
             DrawRect(new Rect2(1, 13, BoardView.TileSize - 2, 14), Palette.DeepWater with { A = 0.8f });
             DrawLine(new Vector2(4, 13), new Vector2(BoardView.TileSize - 4, 13), Palette.Text with { A = 0.6f }, 1);
         }
+    }
+
+    /// <summary>The gear shown on the figure: the belt round its waist, buckle and all, a helmet on its head, and what's in its hands at its sides.</summary>
+    private void DrawGear(Rect2 rect)
+    {
+        if (_gear is not { } gear)
+        {
+            return;
+        }
+
+        float pixel = rect.Size.X / 16;
+        if (gear.Belt is { } leather)
+        {
+            DrawRect(new Rect2(rect.Position.X + 5 * pixel, rect.Position.Y + 10 * pixel, 6 * pixel, pixel), leather);
+            if (gear.Buckle is { } metal)
+            {
+                DrawRect(new Rect2(rect.Position.X + 7.25f * pixel, rect.Position.Y + 9.75f * pixel, 1.5f * pixel, 1.5f * pixel), metal);
+            }
+        }
+
+        void Item(string? cardId, Vector2 at)
+        {
+            if (cardId is not null && GameArt.Texture($"res://assets/cards/{cardId}.png") is { } picture)
+            {
+                DrawTextureRect(picture, new Rect2(rect.Position + at * pixel, new Vector2(7 * pixel, 7 * pixel)), tile: false);
+            }
+        }
+
+        Item(gear.Head, new Vector2(4.5f, -2.5f));
+        Item(gear.OffHand, new Vector2(-1.5f, 6.5f));
+        Item(gear.MainHand, new Vector2(10.5f, 6.5f));
     }
 
     /// <summary>The Icarus Wings: a fan of white feathers either side of the back, beating.</summary>

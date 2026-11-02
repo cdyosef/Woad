@@ -31,6 +31,7 @@ public partial class GameScreen
     private InventoryPanel _inventory = null!;
     private DiceBar _dice = null!;
     private CarryTab _carryTab = null!;
+    private BuckleMenu _buckleMenu = null!;
     private TurnBanner _banner = null!;
     private RichTextLabel _header = null!;
     private Label _hoverInfo = null!;
@@ -90,6 +91,7 @@ public partial class GameScreen
     private void RefreshPanels()
     {
         ApplyStackFronts();
+        DressFigures();
         RefreshMerchantPanel();
         GameState state = _session.State;
         Hero? hero = ActiveHero;
@@ -105,6 +107,8 @@ public partial class GameScreen
         _heroPanel.ShowHero(sheet, sheet == hero ? turn : null, sheet == hero ? _selectedCardId : null);
         _inventory.ShowHero(hero, _selectedCardId, AvailableCardActions(hero, turn));
         _carryTab.ShowHero(sheet, sheet == hero ? _selectedCardId : null);
+        _buckleMenu.Visible &= sheet == hero && hero is not null;
+        _buckleMenu.ShowHero(_session, hero);
         _header.Text = HeaderText();
         if (_party.Visible)
         {
@@ -640,11 +644,11 @@ public partial class GameScreen
         _heroPanel.BeltCardUsed += UseFromBelt;
         _heroPanel.BuckleClicked += () =>
         {
-            // The buckle picks up the belt itself, for its card's text and buttons.
-            if (ActiveHero?.Equipment.GetValueOrDefault(EquipSlot.Belt) is { } belt && _selectedCardId != belt.Id)
-            {
-                ClickCard(belt.Id);
-            }
+            // The buckle opens its menu over the board (the bag and belt views make way).
+            _buckleMenu.Visible = !_buckleMenu.Visible;
+            _heroPanel.CloseBag();
+            CloseRummage();
+            RefreshPanels();
         };
         _heroPanel.Pool.TokenClicked += OnPoolTokenClicked;
         _heroPanel.Pool.SwapClicked += _ => SwapWeapon();
@@ -728,6 +732,11 @@ public partial class GameScreen
             RefreshPanels();
         };
         AddChild(_party);
+
+        // The buckle's menu, over the board.
+        _buckleMenu = new BuckleMenu { Position = BoardOrigin + new Vector2(14, 24), ZIndex = 3 };
+        _buckleMenu.Commanded += command => ExecuteForActiveHero(command);
+        AddChild(_buckleMenu);
 
         // The carrying slots, sliding out from behind the sheet's edge over the board while there's something carried.
         _carryTab = new CarryTab { Position = new Vector2(SideWidth, StripHeight + 4), ZIndex = 2 };

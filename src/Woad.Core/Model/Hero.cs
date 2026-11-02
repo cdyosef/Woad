@@ -67,7 +67,7 @@ public sealed class Hero
     public string Portrait { get; }
 
     /// <summary>The character's look and colors (cosmetic).</summary>
-    public Appearance Appearance { get; }
+    public Appearance Appearance { get; internal set; }
 
     /// <summary>Turn order, starting at 0.</summary>
     public int Seat { get; }
@@ -298,6 +298,10 @@ public sealed class Hero
     public bool CanCarryInArms(CardDefinition definition) =>
         _carried.Any(card => card.Definition == definition && definition.IsStackable) || CarrySlotsUsed + definition.CarrySlots <= GameRules.CarrySlots;
 
+    /// <summary>The ids of the belts (or buckles) the hero owns, worn or not (a belt unbuckled whole counts its buckle): the looks they can choose.</summary>
+    public IReadOnlyList<string> Looks(CardType type) =>
+        [.. AllCards.Concat(AllCards.SelectMany(card => card.Packed?.Attached ?? [])).Where(card => card.Definition.Type == type).Select(card => card.Definition.Id).Distinct()];
+
     /// <summary>Why this mod can't go on now (no belt or buckle for it, or one like it there already), or null if it can.</summary>
     public string? CheckMod(CardDefinition mod)
     {
@@ -443,6 +447,47 @@ public sealed class Hero
     /// <summary>Puts a card in the hero's arms, or into the stack of it the hero already holds. Returns the card that holds it.</summary>
     internal CardInstance AddToCarried(CardInstance card) => JoinStack(card) ?? Add(_carried, card);
 
+    /// <summary>
+    /// Takes the belt off whole: its buckle and mods and the cards on it go with it, packed onto it
+    /// (see <see cref="CardInstance.Packed"/>). Returns the belt, or null if beltless.
+    /// </summary>
+    internal CardInstance? Unbuckle()
+    {
+        if (_equipment.GetValueOrDefault(EquipSlot.Belt) is not { } belt)
+        {
+            return null;
+        }
+
+        List<CardInstance> attached = [.. _equipment.GetValueOrDefault(EquipSlot.Buckle) is { } buckle ? [buckle] : Array.Empty<CardInstance>(), .. _mods];
+        belt.Packed = new PackedBelt(attached, [.. _belt]);
+        _equipment.Remove(EquipSlot.Belt);
+        _equipment.Remove(EquipSlot.Buckle);
+        _mods.Clear();
+        _belt.Clear();
+        return belt;
+    }
+
+    /// <summary>Buckles on a belt unbuckled whole: it's worn again, with its buckle, mods and cards back where they were.</summary>
+    internal void BuckleOn(CardInstance belt)
+    {
+        PackedBelt packed = belt.Packed!;
+        belt.Packed = null;
+        _equipment[EquipSlot.Belt] = belt;
+        foreach (CardInstance card in packed.Attached)
+        {
+            if (card.Definition.ModFor is not null)
+            {
+                _mods.Add(card);
+            }
+            else
+            {
+                _equipment[EquipSlot.Buckle] = card;
+            }
+        }
+
+        _belt.AddRange(packed.Held);
+    }
+
     /// <summary>Wears a card: a mod on the belt or buckle, anything else in its slot.</summary>
     internal void Wear(CardInstance card)
     {
@@ -522,7 +567,7 @@ public sealed class Hero
         int nextId = 1;
         CardInstance Make(string key)
         {
-            var card = new CardInstance(nextId++, content.GetCard(key), null) { Wear = CardKey.Wear(key) };
+            CardInstance card = CardInstance.FromKey(key, content, () => nextId++, null);
             keys[card.Id] = key;
             return card;
         }
@@ -576,6 +621,22 @@ public sealed class Hero
             }
 
             _carried.Add(card);
+        }
+        else if (card.Packed is not null)
+        {
+            // A belt unbuckled whole stays that way, in the bag (or in the arms).
+            if (_backpack.Count < GameRules.BackpackCapacity)
+            {
+                _backpack.Add(card);
+            }
+            else if (CanCarryInArms(definition))
+            {
+                _carried.Add(card);
+            }
+            else
+            {
+                return false;
+            }
         }
         else if (definition.ModFor is not null && CheckMod(definition) is null)
         {

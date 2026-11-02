@@ -294,8 +294,27 @@ line each side of the buckle, filling from the buckle outward; those nearest the
 its corner index (picture and count) in the corner that peeks out. The card under the cursor rises in front
 without leaving its slot. Click a card to pick it up; double-click to use it from the belt or draw it into a
 hand (asked which, when it could be either). The belt fan beneath opens every place on the belt in full over
-the board. The buckle is a button. With no belt, the square says Beltless. See the
-[Terminictionary](Terminictionary.md) for these names.
+the board. With no belt, the square says Beltless. See the [Terminictionary](Terminictionary.md) for these names.
+
+**The buckle** is a button: it opens its menu over the board.
+- **Unbuckle** takes the belt off whole: its buckle and mods and the cards on it stay on it, and it goes in the
+  bag as one card ("packed"). **Buckle on** wears it again just as it was; buckling on a packed belt while
+  wearing another unbuckles the worn one into the bag in its place. Out of combat only, and free.
+- **Take off** a buckle or a mod (into the bag); **Put on** a belt, buckle or mod from the bag. A belt comes off
+  on its own only empty, with its buckle off; a buckle goes on only over a belt.
+- **Look:** the belt square's art, chosen from the belts and buckles owned (Basic, Iron and Silver Buckles
+  are brass, iron and silver).
+- **On your figure:** whether the belt, head, main hand and off hand gear show on the hero's figure on the map.
+
+**Drag and drop:** any card can be picked up from where it's shown (an equip square, the belt, the bag, the carry
+tab) and let go over where it should go: an equip square (into that slot), the belt square (onto the belt; a
+belt, buckle or mod is put on), the bag, the carry tab (which peeks out while a card is dragged), anywhere else
+on the sheet (where it's worn, or onto the belt), or the map (asked, then dropped where the hero stands;
+throwing comes later). The rules check each like the card buttons do.
+
+**Gear on the figure:** a hero's figure on the map shows their belt and buckle round the waist, a helmet on
+their head and what's in each hand at their sides (a torch shows its own flame), each unless hidden in the
+buckle's menu. A character's looks (belt art, what's hidden) are saved with them.
 
 **Doors** sit at the middle tile of each room edge. Stepping through costs 1 step and places you at the
 facing door of the next room.

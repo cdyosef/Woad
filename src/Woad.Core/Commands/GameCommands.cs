@@ -110,6 +110,18 @@ public sealed record SoakUp(int HeroId, int CardId, int TargetId, Ailment Ailmen
 /// <summary>Move an equipped or belted card into the backpack. Uses the action.</summary>
 public sealed record StowCard(int HeroId, int CardId) : GameCommand(HeroId);
 
+/// <summary>
+/// Take your belt off whole: its buckle and mods and the cards on it stay on it, and it goes in your
+/// bag, to buckle on again just as it was. Out of combat only. Free.
+/// </summary>
+public sealed record UnbuckleBelt(int HeroId) : GameCommand(HeroId);
+
+/// <summary>Choose the belt and buckle art your belt square wears, from the belts and buckles you own (empty: the ones worn). Free.</summary>
+public sealed record ChooseBeltLook(int HeroId, string BeltLook, string BuckleLook) : GameCommand(HeroId);
+
+/// <summary>Show the gear in a slot on your figure on the map, or hide it. Free.</summary>
+public sealed record ShowGear(int HeroId, EquipSlot Slot, bool Show) : GameCommand(HeroId);
+
 /// <summary>Take a card into your arms, in the carrying slots: no Rumble and no Od Hand while you carry. Free out of combat; in combat it takes the action.</summary>
 public sealed record CarryCard(int HeroId, int CardId) : GameCommand(HeroId);
 

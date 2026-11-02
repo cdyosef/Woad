@@ -141,6 +141,9 @@ public sealed partial class GameSession
             BeltCard c => Handle(c, events),
             StowCard c => Handle(c, events),
             CarryCard c => Handle(c, events),
+            UnbuckleBelt c => Handle(c, events),
+            ChooseBeltLook c => Handle(c, events),
+            ShowGear c => Handle(c, events),
             DropCard c => Handle(c, events),
             OpenChest c => Handle(c, events),
             PickUpLoot c => Handle(c, events),
@@ -493,7 +496,7 @@ public sealed partial class GameSession
 
             foreach (string cardId in heroSetup.CardIds)
             {
-                var card = new CardInstance(state.NextId(), content.GetCard(cardId), hero.Id) { Wear = CardKey.Wear(cardId) };
+                CardInstance card = CardInstance.FromKey(cardId, content, state.NextId, hero.Id);
                 if (!hero.TryPlaceStartingCard(card))
                 {
                     throw new ArgumentException($"{hero.Name} is carrying more cards than fit.", nameof(setup));

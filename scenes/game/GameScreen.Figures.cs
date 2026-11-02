@@ -128,6 +128,41 @@ public partial class GameScreen
         return token;
     }
 
+    /// <summary>The gear a hero shows on their figure: each slot's, unless they've hidden it (a torch shows its own flame instead).</summary>
+    private static TokenView.FigureGear? GearOf(Hero hero)
+    {
+        if (hero.Guise is not null)
+        {
+            return null;
+        }
+
+        Appearance look = hero.Appearance;
+        string? Shown(EquipSlot slot) =>
+            look.Shows(slot) && hero.Equipment.GetValueOrDefault(slot) is { Definition: { Torch: false } card } ? card.Id : null;
+        CardInstance? belt = hero.Equipment.GetValueOrDefault(EquipSlot.Belt);
+        CardInstance? buckle = hero.Equipment.GetValueOrDefault(EquipSlot.Buckle);
+        bool belted = belt is not null && look.Shows(EquipSlot.Belt);
+        bool twoHanded = hero.Equipment.GetValueOrDefault(EquipSlot.MainHand) is { } main && main == hero.Equipment.GetValueOrDefault(EquipSlot.OffHand);
+        return new TokenView.FigureGear(
+            Shown(EquipSlot.MainHand),
+            twoHanded ? null : Shown(EquipSlot.OffHand),
+            Shown(EquipSlot.Head),
+            belted ? BeltSquare.BeltColors(look.BeltLook.Length > 0 ? look.BeltLook : belt!.Definition.Id).Leather : null,
+            belted && buckle is not null ? BeltSquare.BuckleMetal(look.BuckleLook.Length > 0 ? look.BuckleLook : buckle.Definition.Id) : null);
+    }
+
+    /// <summary>Puts each hero's gear on their figure, as it is now.</summary>
+    private void DressFigures()
+    {
+        foreach (Hero hero in _session.State.Heroes)
+        {
+            if (_tokens.TryGetValue(hero.Id, out TokenView? token))
+            {
+                token.Gear = GearOf(hero);
+            }
+        }
+    }
+
     private void ApplyFigure(Figure figure, TokenView token)
     {
         token.SetHearts(figure.Hearts, figure.MaxHearts);

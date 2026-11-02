@@ -3,20 +3,47 @@ namespace Woad.Core.Content;
 /// <summary>
 /// A card as a character keeps it between runs: its id, and after a "~" the wear it has taken (acid eats
 /// armor, and it stays eaten until a blacksmith or an Autosmith Hammer mends it). "chain_mail~2" is chain
-/// mail worn by 2.
+/// mail worn by 2. A belt unbuckled whole carries its buckle and mods, then its cards, in braces:
+/// "good_belt{basic_buckle,belt_studs;health_potion,torch}".
 /// </summary>
 public static class CardKey
 {
     private const char Mark = '~';
+    private const char Open = '{';
+    private const char Close = '}';
+    private const char Between = ';';
+    private const char Comma = ',';
+
+    /// <summary>The key without what a packed belt carries.</summary>
+    private static string Bare(string key) => key.IndexOf(Open) is var at and >= 0 ? key[..at] : key;
 
     /// <summary>The card's id, without its wear.</summary>
-    public static string Id(string key) => key.IndexOf(Mark) is var at and >= 0 ? key[..at] : key;
+    public static string Id(string key) => Bare(key) is var bare && bare.IndexOf(Mark) is var at and >= 0 ? bare[..at] : Bare(key);
 
     /// <summary>The wear it has taken (0 when whole).</summary>
-    public static int Wear(string key) => key.IndexOf(Mark) is var at and >= 0 && int.TryParse(key[(at + 1)..], out int wear) ? Math.Max(0, wear) : 0;
+    public static int Wear(string key) => Bare(key) is var bare && bare.IndexOf(Mark) is var at and >= 0 && int.TryParse(bare[(at + 1)..], out int wear) ? Math.Max(0, wear) : 0;
 
     /// <summary>The key for a card with this much wear.</summary>
     public static string Of(string id, int wear) => wear > 0 ? $"{id}{Mark}{wear}" : id;
+
+    /// <summary>The key for a belt unbuckled whole: what's attached to it (its buckle and mods), and the cards on it.</summary>
+    public static string Packed(string key, IEnumerable<string> attached, IEnumerable<string> held) =>
+        $"{Bare(key)}{Open}{string.Join(Comma, attached)}{Between}{string.Join(Comma, held)}{Close}";
+
+    /// <summary>What a packed belt's key carries: its buckle and mods, and its cards; null for any other card.</summary>
+    public static (IReadOnlyList<string> Attached, IReadOnlyList<string> Held)? Unpack(string key)
+    {
+        int open = key.IndexOf(Open);
+        if (open < 0)
+        {
+            return null;
+        }
+
+        string inside = key[(open + 1)..].TrimEnd(Close);
+        string[] parts = inside.Split(Between);
+        static string[] Keys(string part) => part.Split(Comma, StringSplitOptions.RemoveEmptyEntries);
+        return (Keys(parts[0]), parts.Length > 1 ? Keys(parts[1]) : []);
+    }
 
     /// <summary>What a card adds worn: its modifiers, less its wear (off its armor, or a weapon's value).</summary>
     public static Stats Modifiers(CardDefinition card, int wear)

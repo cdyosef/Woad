@@ -74,6 +74,8 @@ public class BeltTests
 
         Assert.Contains("cards off your belt first", session.Refuse(new StowCard(hero.Id, hero.Card("belt").Id)));
         session.Do(new StowCard(hero.Id, potion.Id));
+        Assert.Contains("Take the buckle off first", session.Refuse(new StowCard(hero.Id, hero.Card("belt").Id)));
+        session.Do(new StowCard(hero.Id, hero.Card("buckle").Id));
         session.Do(new StowCard(hero.Id, hero.Card("belt").Id));
 
         Assert.Equal(0, hero.BeltCapacity);
@@ -165,5 +167,111 @@ public class BeltTests
         // One sword in hand, the rest in the bag, and the one left over in the hero's arms.
         Assert.Equal(GameRules.BackpackCapacity, hero.Backpack.Count);
         Assert.Equal("sword", Assert.Single(hero.Carried).Definition.Id);
+    }
+
+    [Fact]
+    public void UnbuckledTheBeltComesOffWholeAndBucklesBackOnAsItWas()
+    {
+        GameSession session = TestRun.Start(Open, cards: ["studs", "horns", "potion", "bomb"]);
+        Hero hero = session.HeroInSeat();
+        CardInstance belt = hero.Card("belt");
+
+        IReadOnlyList<GameEvent> events = session.Do(new UnbuckleBelt(hero.Id));
+
+        Assert.Equal(new BeltUnbuckled(hero.Id, belt.Id), events.SingleOf<BeltUnbuckled>());
+        Assert.Equal(0, hero.BeltCapacity);
+        Assert.Empty(hero.Belt);
+        Assert.Empty(hero.Mods);
+        Assert.False(hero.Equipment.ContainsKey(EquipSlot.Buckle));
+        Assert.Equal([belt], hero.Backpack);
+        Assert.Equal(["buckle", "studs", "horns"], belt.Packed!.Attached.Select(card => card.Definition.Id));
+        Assert.Equal(["potion", "bomb"], belt.Packed.Held.Select(card => card.Definition.Id));
+        Assert.Equal("belt{buckle,studs,horns;potion,bomb}", belt.Key);
+        Assert.Equal(TestRun.HeroStats.Armor, hero.EffectiveStats.Armor);
+
+        session.Do(new EquipCard(hero.Id, belt.Id));
+
+        Assert.Null(belt.Packed);
+        Assert.Equal(4, hero.BeltCapacity);
+        Assert.Equal(["potion", "bomb"], hero.Belt.Select(card => card.Definition.Id));
+        Assert.Equal(["studs", "horns"], hero.Mods.Select(card => card.Definition.Id));
+        Assert.Equal("buckle", hero.Equipment[EquipSlot.Buckle].Definition.Id);
+        Assert.Empty(hero.Backpack);
+    }
+
+    [Fact]
+    public void BucklingOnAPackedBeltUnbucklesTheOneWornIntoTheBag()
+    {
+        GameSession session = TestRun.Start(Open, cards: ["potion"]);
+        Hero hero = session.HeroInSeat();
+        CardInstance worn = hero.Card("belt");
+        CardInstance packed = CardInstance.FromKey("big_belt{buckle,studs;bomb,bomb}", TestContent.Catalog, session.State.NextId, null);
+        session.RoomById().AddLoot(hero.Position, [packed]);
+        session.Do(new PickUpLoot(hero.Id));
+
+        session.Do(new EquipCard(hero.Id, packed.Id));
+
+        Assert.Equal(6, hero.BeltCapacity);
+        Assert.Equal(["bomb", "bomb"], hero.Belt.Select(card => card.Definition.Id));
+        Assert.Equal(["studs"], hero.Mods.Select(card => card.Definition.Id));
+        Assert.Equal("belt{buckle;potion}", Assert.Single(hero.Backpack).Key);
+        Assert.Same(worn, hero.Backpack[0]);
+    }
+
+    [Fact]
+    public void UnbucklingWaitsTillTheFightsDone()
+    {
+        GameSession session = TestRun.Start(DummyNear);
+        Hero hero = session.HeroInSeat();
+
+        Assert.Contains("fight's done", session.Refuse(new UnbuckleBelt(hero.Id)));
+    }
+
+    [Fact]
+    public void TheBeltLookIsChosenFromBeltsTheHeroOwns()
+    {
+        GameSession session = TestRun.Start(Open, cards: ["big_belt"]);
+        Hero hero = session.HeroInSeat();
+
+        Assert.Contains("belt you own", session.Refuse(new ChooseBeltLook(hero.Id, "small_belt", "")));
+        session.Do(new ChooseBeltLook(hero.Id, "big_belt", ""));
+
+        Assert.Equal("big_belt", hero.Appearance.BeltLook);
+        Assert.Equal(["belt", "big_belt"], hero.Looks(CardType.Belt));
+    }
+
+    [Fact]
+    public void GearCanBeHiddenFromTheFigureAndShownAgain()
+    {
+        GameSession session = TestRun.Start(Open);
+        Hero hero = session.HeroInSeat();
+
+        session.Do(new ShowGear(hero.Id, EquipSlot.Belt, false));
+        session.Do(new ShowGear(hero.Id, EquipSlot.Head, false));
+        Assert.False(hero.Appearance.Shows(EquipSlot.Belt));
+        Assert.Equal("Belt,Head", hero.Appearance.HiddenGear);
+
+        session.Do(new ShowGear(hero.Id, EquipSlot.Belt, true));
+        Assert.True(hero.Appearance.Shows(EquipSlot.Belt));
+        Assert.False(hero.Appearance.Shows(EquipSlot.Head));
+    }
+
+    [Fact]
+    public void APackedBeltsKeyKeepsItsStacksAndWear()
+    {
+        CardInstance belt = CardInstance.FromKey("big_belt~1{buckle;t_bag,t_bag,potion}", TestContent.Catalog, new Counter().Next, null);
+
+        Assert.Equal(1, belt.Wear);
+        CardInstance bags = belt.Packed!.Held[0];
+        Assert.Equal(("t_bag", 2), (bags.Definition.Id, bags.Count));
+        Assert.Equal("big_belt~1{buckle;t_bag,t_bag,potion}", belt.Key);
+        Assert.Equal("big_belt", CardKey.Id(belt.Key));
+    }
+
+    private sealed class Counter
+    {
+        private int _next;
+
+        public int Next() => ++_next;
     }
 }

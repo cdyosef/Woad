@@ -281,7 +281,7 @@ public static class DemoRun
     {
         Seed = seed,
         ThemeId = "emerald_keep",
-        Heroes = [DebugHeroes[0] with { CardIds = [.. Belted, "lockpicks", "lockpicks", "lockpicks", "emerald", "bomb"] }],
+        Heroes = [DebugHeroes[0] with { CardIds = [.. Belted, "lockpicks", "lockpicks", "lockpicks", "emerald", "bomb", "spear"] }],
         Rooms = [new RoomSetup("vault", RoomTemplate.Parse(".........\n.........\n.........\n....C....\n....1....\n.........\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
         StartRoomId = "vault",
     };

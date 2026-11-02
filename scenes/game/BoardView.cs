@@ -415,6 +415,10 @@ public partial class BoardView : Control
         tween.Chain().TweenCallback(Callable.From(label.QueueFree));
     }
 
+    public override bool _CanDropData(Vector2 atPosition, Variant data) => CardDrag.Accepts(data);
+
+    public override void _DropData(Vector2 atPosition, Variant data) => CardDrag.Drop(data, new DropTarget(DropKind.Board));
+
     public override void _GuiInput(InputEvent @event)
     {
         // The board runs on beyond the view, under the panels around it: only the part in view takes the mouse.

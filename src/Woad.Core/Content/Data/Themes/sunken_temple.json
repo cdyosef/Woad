@@ -78,6 +78,8 @@
     { "card": "better_belt", "minFloor": 2 },
     { "card": "grand_belt", "minFloor": 3 },
     { "card": "belt_studs" },
+    { "card": "iron_buckle" },
+    { "card": "silver_buckle", "minFloor": 2 },
     { "card": "buckle_horns", "minFloor": 2 },
     { "card": "shield_cufflinks", "minFloor": 2 },
     { "card": "icarus_wings", "minFloor": 2 },

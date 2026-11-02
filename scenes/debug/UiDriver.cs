@@ -86,6 +86,31 @@ public static class UiDriver
         await NextFrame(context);
     }
 
+    /// <summary>Picks up whatever's at <paramref name="from"/> with the left button, drags it to <paramref name="to"/> in a few steps and lets go (drag and drop).</summary>
+    /// <param name="settle">Seconds to hold it over <paramref name="to"/> before letting go (for something that slides out to take it).</param>
+    public static async Task DragAt(Node context, Vector2 from, Vector2 to, double settle = 0.3)
+    {
+        Viewport viewport = context.GetViewport();
+        viewport.PushInput(new InputEventMouseMotion { Position = from, GlobalPosition = from }, inLocalCoords: true);
+        viewport.PushInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = from, GlobalPosition = from, ButtonMask = MouseButtonMask.Left }, inLocalCoords: true);
+        await NextFrame(context);
+        Vector2 at = from;
+        for (int step = 1; step <= 10; step++)
+        {
+            Vector2 next = from.Lerp(to, step / 10f);
+            viewport.PushInput(new InputEventMouseMotion { Position = next, GlobalPosition = next, Relative = next - at, ButtonMask = MouseButtonMask.Left }, inLocalCoords: true);
+            at = next;
+            await NextFrame(context);
+        }
+
+        await context.ToSignal(context.GetTree().CreateTimer(settle), SceneTreeTimer.SignalName.Timeout);
+        viewport.PushInput(new InputEventMouseMotion { Position = to, GlobalPosition = to, ButtonMask = MouseButtonMask.Left }, inLocalCoords: true);
+        await NextFrame(context);
+        viewport.PushInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = to, GlobalPosition = to }, inLocalCoords: true);
+        await NextFrame(context);
+        await NextFrame(context);
+    }
+
     /// <summary>Types text into whichever control has keyboard focus.</summary>
     public static async Task Type(Node context, string text)
     {

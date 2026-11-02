@@ -37,14 +37,14 @@ public partial class CarryTab : Control
         Size = new Vector2(Width, Height);
         ClipContents = true;
         MouseFilter = MouseFilterEnum.Ignore;
-        _window = new Panel { Size = Size, Position = new Vector2(-Width, 0) };
+        _window = new CarryWindow { Size = Size, Position = new Vector2(-Width, 0) };
         AddChild(_window);
         _title = UiTheme.Label(new Vector2(4, 1), new Vector2(Width - 8, 12), "Carrying", color: Palette.TrimBright);
         _title.HorizontalAlignment = HorizontalAlignment.Center;
         _window.AddChild(_title);
         for (int i = 0; i < _cards.Length; i++)
         {
-            var card = new SheetCard { Position = new Vector2(5 + i * 32, 15), Size = new Vector2(30, 40), Small = true, Back = "back_bag" };
+            var card = new SheetCard { Position = new Vector2(5 + i * 32, 15), Size = new Vector2(30, 40), Small = true, Back = "back_bag", Draggable = true, DropsAs = new DropTarget(DropKind.Carry) };
             card.Pressed += () =>
             {
                 if (card.Card is { } held)
@@ -59,10 +59,26 @@ public partial class CarryTab : Control
         Visible = false;
     }
 
+    private bool _carrying;
+
+    public override void _Notification(int what)
+    {
+        // A card picked up to drag: the window peeks out to be dropped on; let go, it goes back as it was.
+        if (what == NotificationDragBegin && CardDrag.Dragging(this))
+        {
+            Slide(true);
+        }
+        else if (what == NotificationDragEnd)
+        {
+            Slide(_carrying);
+        }
+    }
+
     /// <summary>Shows what the hero carries, sliding the window out (or back in, with nothing carried).</summary>
     public void ShowHero(Hero? hero, int? selectedCardId)
     {
         IReadOnlyList<CardInstance> carried = hero?.Carried ?? [];
+        _carrying = carried.Count > 0;
         bool both = carried.Count == 1 && carried[0].Definition.CarrySlots == GameRules.CarrySlots;
         for (int i = 0; i < _cards.Length; i++)
         {
@@ -94,4 +110,12 @@ public partial class CarryTab : Control
             _slide.TweenCallback(Callable.From(() => Visible = false));
         }
     }
+}
+
+/// <summary>The carry tab's window: a card let go anywhere over it is carried.</summary>
+public partial class CarryWindow : Panel
+{
+    public override bool _CanDropData(Vector2 atPosition, Variant data) => CardDrag.Accepts(data);
+
+    public override void _DropData(Vector2 atPosition, Variant data) => CardDrag.Drop(data, new DropTarget(DropKind.Carry));
 }

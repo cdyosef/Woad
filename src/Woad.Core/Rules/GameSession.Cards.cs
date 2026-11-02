@@ -240,9 +240,22 @@ public sealed partial class GameSession
             return BagInCombat;
         }
 
+        if (card.Packed is not null)
+        {
+            // A belt unbuckled whole is buckled on as it was; the one worn comes off whole into the bag in its place.
+            return combat ? "Buckling on a belt waits till the fight's done."
+                : location != CardLocation.Backpack && hero.BeltCapacity > 0 && hero.Backpack.Count >= GameRules.BackpackCapacity ? "There's no room in your bag for the belt you're wearing."
+                : CheckGearAction();
+        }
+
         if (definition.Type == CardType.Belt && hero.Belt.Count > definition.BeltSlots)
         {
             return $"The {definition.Name} holds {definition.BeltSlots} cards, and you've {hero.Belt.Count} on your belt.";
+        }
+
+        if (definition.Type == CardType.Buckle && hero.BeltCapacity == 0)
+        {
+            return $"The {definition.Name} goes on a belt, and you're beltless.";
         }
 
         if (location == CardLocation.Equipped)
@@ -393,10 +406,95 @@ public sealed partial class GameSession
 
         if (slot == EquipSlot.Belt && hero.Belt.Count > 0)
         {
-            return "Take the cards off your belt first.";
+            return "Take the cards off your belt first, or unbuckle it whole (the buckle).";
+        }
+
+        if (slot == EquipSlot.Belt && hero.Equipment.ContainsKey(EquipSlot.Buckle))
+        {
+            return "Take the buckle off first, or unbuckle the belt whole (the buckle).";
         }
 
         return hero.Mods.Any(mod => mod.Definition.ModFor == slot) ? $"Take the mods off your {(slot == EquipSlot.Belt ? "belt" : "buckle")} first." : null;
+    }
+
+    /// <summary>Why the active hero can't unbuckle their belt whole right now, or null if they can.</summary>
+    public string? CheckUnbuckle()
+    {
+        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
+        {
+            return State.Turn is null ? "It isn't anyone's turn." : "Finish the roll first.";
+        }
+
+        Hero hero = ActiveHero;
+        if (hero.BeltCapacity == 0)
+        {
+            return "You're beltless.";
+        }
+
+        if (InCombat)
+        {
+            return "Unbuckling your belt waits till the fight's done.";
+        }
+
+        return hero.Backpack.Count >= GameRules.BackpackCapacity ? "There's no room in your bag for the belt." : null;
+    }
+
+    private string? Handle(UnbuckleBelt command, List<GameEvent> events)
+    {
+        if (CheckUnbuckle() is { } error)
+        {
+            return error;
+        }
+
+        Hero hero = ActiveHero;
+        CardInstance belt = hero.Unbuckle()!;
+        hero.AddToBackpack(belt);
+        hero.ClampHearts();
+        events.Add(new BeltUnbuckled(hero.Id, belt.Id));
+        return null;
+    }
+
+    /// <summary>Why the active hero can't wear this belt and buckle art, or null if they can (they must own them; empty is the ones worn).</summary>
+    public string? CheckBeltLook(string beltLook, string buckleLook)
+    {
+        if (State.Turn is null)
+        {
+            return "It isn't anyone's turn.";
+        }
+
+        Hero hero = ActiveHero;
+        if (beltLook.Length > 0 && !hero.Looks(CardType.Belt).Contains(beltLook))
+        {
+            return "You can only wear the look of a belt you own.";
+        }
+
+        return buckleLook.Length > 0 && !hero.Looks(CardType.Buckle).Contains(buckleLook) ? "You can only wear the look of a buckle you own." : null;
+    }
+
+    private string? Handle(ChooseBeltLook command, List<GameEvent> events)
+    {
+        if (CheckBeltLook(command.BeltLook, command.BuckleLook) is { } error)
+        {
+            return error;
+        }
+
+        Hero hero = ActiveHero;
+        hero.Appearance = hero.Appearance with { BeltLook = command.BeltLook, BuckleLook = command.BuckleLook };
+        events.Add(new LookChanged(hero.Id));
+        return null;
+    }
+
+    private string? Handle(ShowGear command, List<GameEvent> events)
+    {
+        if (State.Turn is null)
+        {
+            return "It isn't anyone's turn.";
+        }
+
+        Hero hero = ActiveHero;
+        hero.Appearance = hero.Appearance.Showing(command.Slot, command.Show);
+        events.Add(new LookChanged(hero.Id));
+        return null;
     }
 
     private string? Handle(CarryCard command, List<GameEvent> events)
@@ -491,6 +589,22 @@ public sealed partial class GameSession
 
         Hero hero = ActiveHero;
         CardInstance card = hero.FindCard(command.CardId)!.Value.Card;
+        if (card.Packed is not null)
+        {
+            SpendGearAction();
+            hero.Remove(card);
+            if (hero.Unbuckle() is { } worn)
+            {
+                hero.AddToBackpack(worn);
+                events.Add(new BeltUnbuckled(hero.Id, worn.Id));
+            }
+
+            hero.BuckleOn(card);
+            hero.ClampHearts();
+            events.Add(new BeltBuckled(hero.Id, card.Id));
+            return null;
+        }
+
         if (card.Definition.ModFor is not null)
         {
             // A mod goes on the belt or the buckle.

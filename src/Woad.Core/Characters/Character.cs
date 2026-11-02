@@ -370,6 +370,8 @@ public sealed class Character
         }
 
         Policy = result.Policy ?? Policy;
+        // A look changed in the run (the belt square's art, gear shown on the figure) is kept.
+        Appearance = result.Appearance == Appearance.Default ? Appearance : result.Appearance;
         _lingering.Clear();
         foreach ((Condition condition, int stacks) in result.Lingering)
         {
@@ -428,6 +430,11 @@ public sealed class Character
         if (card.CarryOnly)
         {
             _carried.Add(key);
+        }
+        else if (CardKey.Unpack(key) is not null)
+        {
+            // A belt unbuckled whole stays that way, in the bag.
+            _backpack.Add(key);
         }
         else if (card.ModFor is { } on && occupied.Contains(on) && (card.Repeats || !worn.Contains(card)))
         {

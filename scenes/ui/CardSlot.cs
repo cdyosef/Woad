@@ -19,6 +19,19 @@ public partial class CardSlot : Button
 
     public CardInstance? Card { get; private set; }
 
+    /// <summary>The card can be dragged from here (to an equip square, the belt, the bag...).</summary>
+    public bool Draggable { get; set; }
+
+    /// <summary>What letting a dragged card go over this slot does; null takes no drops.</summary>
+    public Game.DropTarget? DropsAs { get; set; }
+
+    public override Variant _GetDragData(Vector2 atPosition) =>
+        Draggable && Card is { } card ? Game.CardDrag.Begin(this, card.Id, card.Definition.Id) : default;
+
+    public override bool _CanDropData(Vector2 atPosition, Variant data) => DropsAs is not null && Game.CardDrag.Accepts(data);
+
+    public override void _DropData(Vector2 atPosition, Variant data) => Game.CardDrag.Drop(data, DropsAs!.Value);
+
     public void ShowCard(CardInstance? card, string emptyText, bool selected)
     {
         Card = card;

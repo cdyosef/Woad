@@ -4,7 +4,20 @@ namespace Woad.Core.Model;
 /// How a character looks: which figure (<paramref name="Look"/>) and its colors. Purely cosmetic; the
 /// game maps the ids to art and treats unknown or empty ones as that look's defaults.
 /// </summary>
-public sealed record Appearance(string Look = "", string Main = "", string Trim = "", string Skin = "", string Hair = "")
+/// <param name="BeltLook">The belt art worn on the belt square: a belt card's id the hero owns, or empty for the belt worn.</param>
+/// <param name="BuckleLook">Likewise for the buckle.</param>
+/// <param name="HiddenGear">The slots whose gear isn't shown on the hero's figure on the map, by name, comma-separated.</param>
+public sealed record Appearance(string Look = "", string Main = "", string Trim = "", string Skin = "", string Hair = "", string BeltLook = "", string BuckleLook = "", string HiddenGear = "")
 {
     public static Appearance Default { get; } = new();
+
+    /// <summary>Whether the gear in <paramref name="slot"/> shows on the hero's figure.</summary>
+    public bool Shows(Content.EquipSlot slot) => !HiddenGear.Split(',').Contains(slot.ToString());
+
+    /// <summary>This look with the gear in <paramref name="slot"/> shown on the figure, or hidden.</summary>
+    public Appearance Showing(Content.EquipSlot slot, bool show)
+    {
+        IEnumerable<string> hidden = HiddenGear.Split(',', StringSplitOptions.RemoveEmptyEntries).Where(name => name != slot.ToString());
+        return this with { HiddenGear = string.Join(",", show ? hidden : hidden.Append(slot.ToString())) };
+    }
 }

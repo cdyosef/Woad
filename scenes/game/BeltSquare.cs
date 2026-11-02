@@ -195,6 +195,13 @@ public partial class BeltSquare : Control
 
     private CardInstance? CardIn(int index) => _hero is { } hero && index >= 0 && index < hero.Belt.Count ? hero.Belt[index] : null;
 
+    public override Variant _GetDragData(Vector2 atPosition) =>
+        HitTest(atPosition) is >= 0 and var hit && CardIn(hit) is { } card ? CardDrag.Begin(this, card.Id, card.Definition.Id) : default;
+
+    public override bool _CanDropData(Vector2 atPosition, Variant data) => CardDrag.Accepts(data);
+
+    public override void _DropData(Vector2 atPosition, Variant data) => CardDrag.Drop(data, new DropTarget(DropKind.Belt));
+
     public override string _GetTooltip(Vector2 atPosition)
     {
         if (_hero is not { } hero)
@@ -234,7 +241,7 @@ public partial class BeltSquare : Control
             DrawSlot(font, index, raised: false);
         }
 
-        DrawBelt(belt.Definition, hero);
+        DrawBelt(hero.Appearance.BeltLook is { Length: > 0 } look ? look : belt.Definition.Id, hero);
         DrawString(font, new Vector2(0, SquareHeight - 2), belt.Definition.Name, HorizontalAlignment.Center, SquareWidth, UiTheme.FontSize - 2, Palette.TextDim);
         if (_hover >= 0 && _hover < Slots)
         {
@@ -301,10 +308,10 @@ public partial class BeltSquare : Control
     }
 
     /// <summary>The belt band across the square, its ends darker as they wrap round the back, then its mods and the buckle.</summary>
-    private void DrawBelt(CardDefinition belt, Hero hero)
+    private void DrawBelt(string beltLook, Hero hero)
     {
-        (Color leather, Color stitch) = BeltColors(belt.Id);
-        float height = belt.Id == "giants_belt" ? BandHeight + 2 : BandHeight;
+        (Color leather, Color stitch) = BeltColors(beltLook);
+        float height = beltLook == "giants_belt" ? BandHeight + 2 : BandHeight;
         float top = BandTop - (height - BandHeight) / 2;
         DrawRect(new Rect2(-3, top, SquareWidth + 6, height), leather);
         DrawRect(new Rect2(-3, top, 5, height), leather.Darkened(0.45f));
@@ -330,7 +337,8 @@ public partial class BeltSquare : Control
 
         // The buckle: a frame with the band through it, and a prong; it lights up under the cursor.
         CardInstance? buckle = hero.Equipment.GetValueOrDefault(EquipSlot.Buckle);
-        Color metal = buckle is null ? leather.Darkened(0.2f) : new Color(0.78f, 0.62f, 0.26f);
+        string buckleLook = hero.Appearance.BuckleLook is { Length: > 0 } look ? look : buckle?.Definition.Id ?? "";
+        Color metal = buckle is null ? leather.Darkened(0.2f) : BuckleMetal(buckleLook);
         if (_hover == BuckleSlot)
         {
             metal = metal.Lightened(0.3f);
@@ -352,8 +360,16 @@ public partial class BeltSquare : Control
         }
     }
 
+    /// <summary>Each buckle's metal: brass, iron, silver.</summary>
+    internal static Color BuckleMetal(string buckleId) => buckleId switch
+    {
+        "iron_buckle" => new Color(0.48f, 0.50f, 0.54f),
+        "silver_buckle" => new Color(0.86f, 0.88f, 0.92f),
+        _ => new Color(0.78f, 0.62f, 0.26f),
+    };
+
     /// <summary>Each belt's leather and stitching.</summary>
-    private static (Color Leather, Color Stitch) BeltColors(string beltId) => beltId switch
+    internal static (Color Leather, Color Stitch) BeltColors(string beltId) => beltId switch
     {
         "good_belt" => (new Color(0.36f, 0.22f, 0.13f), new Color(0.80f, 0.70f, 0.50f)),
         "better_belt" => (new Color(0.45f, 0.14f, 0.12f), new Color(0.85f, 0.75f, 0.55f)),
