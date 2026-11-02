@@ -209,6 +209,9 @@ public partial class CountPrompt : Panel
         _chosen = chosen;
         SetCount(1);
         Visible = true;
+
+        // Last among its siblings, so it gets the clicks before any panel under it (z-index only orders the drawing).
+        MoveToFront();
     }
 
     private void SetCount(int count)

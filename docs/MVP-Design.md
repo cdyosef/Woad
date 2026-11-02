@@ -655,11 +655,15 @@ total reaches its number:
   finds them; then they're ordinary doors.
 - **Cracked walls** are walls a bomb's blast breaks. Some stand inside rooms with a stash sealed inside;
   some wall up a doorway between rooms.
-- **Traps** start hidden. **Spikes** (1 heart) stop you where you step on them and stay armed. **Trap doors**
-  drop you into the room underneath (1 heart); found ones can be jumped down safely (1 step).
-  **Needles** in chests and **darts** in door frames hit the next hero to open or pass (1 heart). Found
-  traps are shown, and paths go around them; you can still step onto one on purpose (it springs again
-  and stops you). Od Hand disarms them. Traps never cut a room in two, and never sit beside a chest or pot.
+- **Traps** start hidden. A sprung trap **attacks**: 1d6 + the floor + its difficulty (3 + floor), and you
+  defend as from a monster, **+1 if the trap had been found**; a hit is 1 heart. **Spikes** stop you where
+  you step on them and stay armed. **Trap doors** that hit drop you into the room underneath; found ones
+  can be jumped down safely (1 step). **Needles** in chests and **darts** in door frames go for the next
+  hero to open or pass. Found traps are shown, and paths go around them; you can still step onto one on
+  purpose (it springs again and stops you), and a found trap in a doorway or a chest asks: disarm it, or
+  go through (open it) anyway, +1 defense; a locked door still needs opening first. Od Hand disarms them;
+  **a failed Disarm sets the trap off** on whoever tried. Traps never cut a room in two, and never sit
+  beside a chest or pot.
 - **Pits:** where a room lies underneath, its floor shows far down the pit; with nothing below (as on
   the last floor) the pit is black. You can walk into a pit: you lose a heart and drop into the room
   below, on the tile under the pit (or the nearest free one), or climb back out of a bottomless pit.

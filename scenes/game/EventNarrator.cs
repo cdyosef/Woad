@@ -117,6 +117,7 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         SkillLearned learned => $"{nameOf(learned.HeroId)} learns {learned.Skill.Name()}.",
         CompanionPolicySet => null,
         Explored explored => $"{nameOf(explored.HeroId)} is first to search here, and picks up {string.Join(" and ", explored.Found.Select(name => $"a {name}"))} lying about. Explorer bonus!",
+        TrapAttacked attacked => $"The trap strikes at {nameOf(attacked.HeroId)} with {attacked.Total}{(attacked.Found ? " (found, so +1 to defend)" : "")}.",
         WeaponBroke broke => $"{nameOf(broke.HeroId)}'s {cardNameOf(broke.CardId)} breaks.",
         StoneLanded landed => $"The {cardNameOf(landed.CardId)} comes down whole, there to be picked up.",
         TorchBurnedOut burnedOut => $"{nameOf(burnedOut.HeroId)}'s torch gutters and burns out.",

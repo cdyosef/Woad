@@ -125,7 +125,7 @@ public partial class InventoryPanel : Control
     internal bool IsChoosingHand => _handChoice.Visible;
 
     /// <summary>Asks what to do with a card, two ways (use it, or draw it into a hand): each button does its own.</summary>
-    public void AskChoice(int cardId, string question, IReadOnlyList<(string Text, Action Then)> choices)
+    public void AskChoice(int? cardId, string question, IReadOnlyList<(string Text, Action Then)> choices)
     {
         _choosingFor = cardId;
         _choices = [.. choices.Select(choice => choice.Then)];

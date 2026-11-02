@@ -1212,6 +1212,7 @@ public partial class GameScreen
             await ClickBelt(aria.Belt.ToList().IndexOf(picks));
             await Click(this, _inventory.ActionButton(CardAction.Drop));
             Check(_countPrompt.Visible, "dropping a stack asks how many");
+
             await Click(this, _countPrompt.PlusButton);
             await Click(this, _countPrompt.OkButton);
             await WaitUntilIdle();
@@ -1354,7 +1355,12 @@ public partial class GameScreen
             CardInstance potions = aria.AllCards.Single(card => card.Definition.Id == "health_potion");
             await Click(this, _trade.Button($"Give{potions.Id}")!);
             Check(_countPrompt.Visible, "giving part of a stack asks how many");
+
+            // A long trade list reaches down under the count: it mustn't take the count's clicks.
+            Vector2 tradeSize = _trade.Size;
+            _trade.Size = new Vector2(tradeSize.X, BoardView.Pixels);
             await Click(this, _countPrompt.OkButton);
+            _trade.Size = tradeSize;
             await WaitUntilIdle();
             Check(potions.Count == 1 && pip.AllCards.Any(card => card.Definition.Id == "health_potion"), "one potion goes to Pip");
 

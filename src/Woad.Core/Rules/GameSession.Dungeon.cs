@@ -1,5 +1,6 @@
 using Woad.Core.Commands;
 using Woad.Core.Content;
+using Woad.Core.Dice;
 using Woad.Core.Events;
 using Woad.Core.Grid;
 using Woad.Core.Model;
@@ -142,9 +143,15 @@ public sealed partial class GameSession
         return null;
     }
 
-    /// <summary>A trap goes off under a hero: hidden, or found and walked onto anyway (see HeroPathSearch).</summary>
-    private void SpringTrap(Hero hero, Room room, Trap trap, GridPosition position, List<GameEvent> events)
+    /// <summary>
+    /// A trap goes off on a hero: hidden, or found and walked onto anyway (see HeroPathSearch), or botched in
+    /// disarming it. It attacks (see <see cref="GameRules.TrapAttack"/>) and the hero defends as from a monster,
+    /// +1 if it had been found: a hit is a heart, and a trap door's drops them through. A bomb trap pops out a
+    /// lit bomb instead. <paramref name="onIt"/>: they're on the trap's tile (not beside it, disarming).
+    /// </summary>
+    private void SpringTrap(Hero hero, Room room, Trap trap, GridPosition position, List<GameEvent> events, bool onIt = true)
     {
+        bool found = trap.Revealed;
         trap.Revealed = true;
         events.Add(new TrapSprung(hero.Id, trap.Kind, position));
         if (trap.Kind == TrapKind.BombTrap)
@@ -155,8 +162,11 @@ public sealed partial class GameSession
             return;
         }
 
-        HurtHero(room, hero, 1, TrapBane(trap.Kind), events);
-        if (trap.Kind == TrapKind.TrapDoor && hero.IsActive)
+        DiceRoll roll = _dice.Roll(GameRules.TrapAttackDice);
+        int bonus = GameRules.TrapAttack(room.Floor, trap.Difficulty);
+        events.Add(new TrapAttacked(hero.Id, trap.Kind, roll, bonus, roll.Total + bonus, found));
+        int damage = DamageHero(room, hero, roll.Total + bonus - (found ? GameRules.FoundTrapDefense : 0), TrapBane(trap.Kind), 0, events);
+        if (trap.Kind == TrapKind.TrapDoor && onIt && damage > 0 && hero.IsActive)
         {
             Fall(hero, room, position, jumped: false, events);
         }

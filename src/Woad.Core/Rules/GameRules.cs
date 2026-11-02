@@ -44,6 +44,15 @@ public static class GameRules
     /// <summary>Search total to spot a trap, and Od Hand total to disarm it.</summary>
     public static int TrapDifficulty(int floor) => 3 + floor;
 
+    /// <summary>Dice a sprung trap attacks with.</summary>
+    public const int TrapAttackDice = 1;
+
+    /// <summary>What a sprung trap adds to its attack: the floor, and its own difficulty (3 + floor for most).</summary>
+    public static int TrapAttack(int floor, int difficulty) => floor + difficulty;
+
+    /// <summary>Defense against a trap that had been found before it went off.</summary>
+    public const int FoundTrapDefense = 1;
+
     /// <summary>Search total to find a Rock or Stick hidden on a tile.</summary>
     public static int FindDifficulty(int floor) => 2 + floor;
 
