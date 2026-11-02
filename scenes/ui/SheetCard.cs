@@ -4,9 +4,9 @@ using Woad.Core.Model;
 namespace Woad.Scenes.Ui;
 
 /// <summary>
-/// A card on the character sheet: the card's picture (res://assets/cards/{id}.png) over its name, in a
-/// gilt frame that brightens when it's selected. An empty slot shows the back of a card instead, with
-/// the slot's mark and name. Stacks show their count, charged cards their charges.
+/// A card on the character sheet, drawn like a playing card (see <see cref="CardFace"/>): face up with its
+/// picture (res://assets/cards/{id}.png), name and corner index, gilt-edged when it's selected. An empty
+/// slot lies face down, with the slot's mark and name. Stacks show their count, charged cards their charges.
 /// </summary>
 public partial class SheetCard : CardSlot
 {
@@ -14,6 +14,7 @@ public partial class SheetCard : CardSlot
     private string? _picture;
     private string? _caption;
     private Color? _accent;
+    private CardInstance? _ammo;
 
     /// <summary>The card back shown while the slot is empty (back_head, back_bag...).</summary>
     public string Back { get; set; } = "back_bag";
@@ -27,9 +28,11 @@ public partial class SheetCard : CardSlot
         ClipText = false;
     }
 
-    public void Show(CardInstance? card, string emptyName, bool selected)
+    /// <param name="owner">Whose card it is, for the ammo a weapon that shoots has to hand (the Sling's Rocks).</param>
+    public void Show(CardInstance? card, string emptyName, bool selected, Hero? owner = null)
     {
         ShowCard(card, emptyName, selected);
+        _ammo = card is not null ? owner?.AmmoFor(card) : null;
         Text = "";
         _emptyName = emptyName;
         _picture = null;
@@ -54,64 +57,44 @@ public partial class SheetCard : CardSlot
     public override void _Draw()
     {
         var rect = new Rect2(Vector2.Zero, Size);
-        Font font = GameArt.BodyFont ?? ThemeDB.FallbackFont;
-        float art = Small ? Mathf.Min(Size.X - 4, 24) : 32;
-        var picture = new Rect2((Size.X - art) / 2, Small ? 2 : 3, art, art);
-        bool hover = IsHovered() && !Disabled;
         if (Card is null && _picture is null)
         {
-            // The back of a card: the slot it's for.
-            DrawRect(rect, new Color("241d33"));
-            DrawRect(rect, new Color("5a4a6a"), filled: false, width: 1);
-            DrawRect(rect.Grow(-2), new Color("2e2540"), filled: false, width: 1);
-            if (GameArt.Texture($"res://assets/cards/{Back}.png") is { } back)
-            {
-                DrawTextureRect(back, picture, tile: false, modulate: new Color(1, 1, 1, 0.8f));
-            }
-
-            if (!Small)
-            {
-                DrawString(font, new Vector2(0, Size.Y - 5), _emptyName, HorizontalAlignment.Center, Size.X, UiTheme.FontSize, new Color("7a6a90"));
-            }
-
+            // Face down: the slot it's for.
+            CardFace.DrawBack(this, rect, GameArt.Texture($"res://assets/cards/{Back}.png"), _emptyName, Small);
             return;
         }
 
-        bool lit = !Disabled;
-        Color accent = _accent ?? Palette.Trim;
-        DrawRect(rect, hover ? Palette.PanelHover : Palette.PanelDark);
-        DrawRect(new Rect2(2, 2, Size.X - 4, picture.End.Y - 1), new Color("221c30"));
+        // A square on the sheet is a slot: face down, with the card sitting in it.
+        if (Size.X > CardFace.Size.X + 4)
+        {
+            CardFace.DrawBack(this, rect, GameArt.Texture($"res://assets/cards/{Back}.png"), "", Small);
+            rect = new Rect2((Size - CardFace.Size) / 2, CardFace.Size);
+        }
+
+        bool hover = IsHovered() && !Disabled;
         string id = Card?.Definition.Id ?? _picture!;
-        if (GameArt.Texture($"res://assets/cards/{id}.png") is { } texture)
+        Texture2D? picture = GameArt.Texture($"res://assets/cards/{id}.png");
+        if (Card is null)
         {
-            DrawTextureRect(texture, picture, tile: false, modulate: lit ? Colors.White : new Color(0.55f, 0.55f, 0.55f));
+            // An ability, or the Magic card: its pool's color round it while it can be used.
+            CardFace.DrawFront(this, rect, picture, _caption ?? "", selected: ButtonPressed, hover: hover, dim: Disabled, small: Small, border: Disabled ? null : _accent);
+            return;
         }
 
-        bool selected = ButtonPressed;
-        DrawRect(rect, selected ? Palette.TrimBright : lit ? accent : Palette.TrimDim, filled: false, width: selected ? 2 : 1);
-        if (!Small)
-        {
-            string name = _caption ?? Card!.Definition.Name;
-            DrawString(font, new Vector2(1, Size.Y - 5), name, HorizontalAlignment.Center, Size.X - 2, UiTheme.FontSize, lit ? Palette.Text : Palette.TextDim);
-        }
-
-        // A stack's count, charges left, or a crossbow waiting to be reloaded, in the corner.
-        string? badge = Card is null ? null
-            : Card.Definition.Usage == Woad.Core.Content.CardUsage.Charges ? $"{Card.ChargesRemaining}/{Card.Definition.Charges}"
-            : Card.Unloaded ? "!"
-            : Card.Count > 1 ? $"x{Card.Count}"
-            : null;
-        if (badge is not null)
-        {
-            float width = font.GetStringSize(badge, fontSize: UiTheme.FontSize).X + 4;
-            var corner = new Rect2(Size.X - width - 1, 1, width, 10);
-            DrawRect(corner, Palette.Ink);
-            DrawString(font, corner.Position + new Vector2(2, 8), badge, fontSize: UiTheme.FontSize, modulate: Card!.Unloaded ? Palette.Danger : Palette.TrimBright);
-        }
-
-        if (Card is { Wear: > 0 } worn)
-        {
-            DrawString(font, new Vector2(2, 10), $"-{worn.Wear}", fontSize: UiTheme.FontSize, modulate: Palette.Danger);
-        }
+        // A stack's count; charges left, a crossbow waiting to be reloaded or acid's wear instead; ammo to hand.
+        CardInstance card = Card;
+        (IReadOnlyList<(string Text, Color Color)> bonuses, IReadOnlyList<Color> dice) = CardFace.Adds(card.Definition);
+        var marks = new CardFace.Marks(
+            Bonuses: bonuses,
+            Dice: dice,
+            Count: card.Count,
+            Ammo: card.Definition.Ammo is { } ammo ? GameArt.Texture($"res://assets/cards/{ammo}.png") : null,
+            AmmoCount: _ammo?.Count ?? 0,
+            Note: card.Definition.Usage == Woad.Core.Content.CardUsage.Charges ? $"{card.ChargesRemaining}/{card.Definition.Charges}"
+                : card.Unloaded ? "!"
+                : card.Wear > 0 ? $"-{card.Wear}"
+                : "",
+            NoteIsBad: card.Unloaded || card.Wear > 0);
+        CardFace.DrawFront(this, rect, picture, card.Definition.Name, marks, selected: ButtonPressed, hover: hover, small: Small);
     }
 }

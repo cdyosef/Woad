@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bud26b6hwofdm"
-path="res://.godot/imported/fist.png-671f1a5896208e2a6de91685e135e27c.ctex"
+uid="uid://bens4h0q4lddi"
+path="res://.godot/imported/rumble.png-1b23693105dc8468dd1428765c000032.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/fist.png"
-dest_files=["res://.godot/imported/fist.png-671f1a5896208e2a6de91685e135e27c.ctex"]
+source_file="res://assets/cards/rumble.png"
+dest_files=["res://.godot/imported/rumble.png-1b23693105dc8468dd1428765c000032.ctex"]
 
 [params]
 

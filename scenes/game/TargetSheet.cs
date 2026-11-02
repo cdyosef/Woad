@@ -36,7 +36,7 @@ public partial class TargetSheet : Panel
         _kind = Add(UiTheme.Label(new(5, 26), new(158, 12), color: Palette.TextDim));
         _close = Add(UiTheme.CompactButton(new(152, 3), new(12, 12), "x"));
         _close.Pressed += () => CloseRequested?.Invoke();
-        _attack = Add(new SheetCard { Position = new(6, 42), Size = new(44, 50), Back = "fist", ToggleMode = false, MouseFilter = MouseFilterEnum.Pass });
+        _attack = Add(new SheetCard { Position = new(6, 42), Size = new(44, 50), Back = "rumble", ToggleMode = false, MouseFilter = MouseFilterEnum.Pass });
         _portrait = Add(new Portrait { Position = new(60, 40), Size = new(48, 54) });
         _trait = Add(new SheetCard { Position = new(118, 42), Size = new(44, 50), Back = "back_accessory", ToggleMode = false, MouseFilter = MouseFilterEnum.Pass });
         _dice = Add(UiTheme.RichLabel(new(5, 96), new(160, 13)));
@@ -54,7 +54,7 @@ public partial class TargetSheet : Panel
         _portrait.Show(GameArt.Monster(ThemeId, definition.Id), null, monster: true);
 
         string reach = definition.AttackRange > 1 ? $"Range {definition.AttackRange}" : "Melee";
-        _attack.ShowFace(definition.AttackRange > 1 ? "short_bow" : "fist", definition.Weapon > 0 ? $"{reach} +{definition.Weapon}" : reach, Palette.DieRumble, true, $"Attacks: {definition.AttackDice}d6{(definition.Weapon > 0 ? $" +{definition.Weapon}" : "")}, {reach.ToLowerInvariant()}.");
+        _attack.ShowFace(definition.AttackRange > 1 ? "short_bow" : "rumble", definition.Weapon > 0 ? $"{reach} +{definition.Weapon}" : reach, Palette.DieRumble, true, $"Attacks: {definition.AttackDice}d6{(definition.Weapon > 0 ? $" +{definition.Weapon}" : "")}, {reach.ToLowerInvariant()}.");
         List<string> traits = Traits(monster);
         if (traits.Count > 0)
         {
@@ -84,7 +84,7 @@ public partial class TargetSheet : Panel
         }
         else
         {
-            _attack.ShowFace("fist", "Fists", Palette.DieRumble, true, "Bare-handed.");
+            _attack.ShowFace("rumble", "Fists", Palette.DieRumble, true, "Bare-handed.");
         }
 
         if (hero.Equipment.GetValueOrDefault(EquipSlot.OffHand) is { } off && off != hero.MainWeapon)

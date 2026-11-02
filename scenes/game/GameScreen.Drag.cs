@@ -14,11 +14,51 @@ namespace Woad.Scenes.Game;
 /// </summary>
 public partial class GameScreen
 {
-    public override void _EnterTree() => CardDrag.Dropped += OnCardDropped;
+    public override void _EnterTree()
+    {
+        CardDrag.Dropped += OnCardDropped;
+        CardDrag.AbilityDropped += OnAbilityDropped;
+    }
 
-    public override void _ExitTree() => CardDrag.Dropped -= OnCardDropped;
+    public override void _ExitTree()
+    {
+        CardDrag.Dropped -= OnCardDropped;
+        CardDrag.AbilityDropped -= OnAbilityDropped;
+    }
 
-    private void OnCardDropped(int cardId, DropTarget target)
+    /// <summary>
+    /// An ability card let go over its own hand: into the square it's played there, ready to use (the pool's
+    /// own card puts the dice card in front); back over the fan, the skill in the square goes back into the hand.
+    /// </summary>
+    private void OnAbilityDropped(string title, string name, bool intoSquare)
+    {
+        _spread.Close();
+        if (Locked || ActiveHero is not { } hero || Hands.FirstOrDefault(hand => hand.Title == title && hand.Default is not null) is not { } hand
+            || hand.Cards.FirstOrDefault(card => card.Name == name) is not { } card)
+        {
+            return;
+        }
+
+        var key = (hero.Id, hand.Title);
+        if (intoSquare && card == hand.Default)
+        {
+            _fronts[key] = HandView.DiceKey;
+        }
+        else if (intoSquare)
+        {
+            _playedCards[key] = card.Name;
+            _fronts[key] = HandView.SkillKey;
+        }
+        else if (_playedCards.GetValueOrDefault(key) == name)
+        {
+            _playedCards.Remove(key);
+            _fronts[key] = HandView.DiceKey;
+        }
+
+        RefreshPanels();
+    }
+
+    private void OnCardDropped(int cardId, DropTarget target, bool all)
     {
         if (Locked || ActiveHero is not { } hero || hero.FindCard(cardId) is not var (card, location))
         {
@@ -56,7 +96,10 @@ public partial class GameScreen
                 // Let go over the map: asked first, then dropped where the hero stands.
                 _selectedCardId = cardId;
                 RefreshPanels();
-                _inventory.AskChoice(cardId, $"Drop the {definition.Name} here?", [("Drop it", () => Drop(card)), ("Keep it", RefreshPanels)]);
+                // A quick drag off a stack drops one; held first, the whole stack.
+                int count = all ? card.Count : 1;
+                string what = count > 1 ? $"the {count} {definition.Name}s" : card.Count > 1 ? $"a {definition.Name}" : $"the {definition.Name}";
+                _inventory.AskChoice(cardId, $"Drop {what} here?", [("Drop it", () => ExecuteForActiveHero(heroId => new DropCard(heroId, card.Id, count))), ("Keep it", RefreshPanels)]);
                 break;
             case DropKind.Sheet when location != CardLocation.Equipped:
                 if (definition.Slot is null && !worn)

@@ -196,7 +196,7 @@ public partial class BeltSquare : Control
     private CardInstance? CardIn(int index) => _hero is { } hero && index >= 0 && index < hero.Belt.Count ? hero.Belt[index] : null;
 
     public override Variant _GetDragData(Vector2 atPosition) =>
-        HitTest(atPosition) is >= 0 and var hit && CardIn(hit) is { } card ? CardDrag.Begin(this, card.Id, card.Definition.Id) : default;
+        HitTest(atPosition) is >= 0 and var hit && CardIn(hit) is { } card ? CardDrag.Begin(this, card.Id, card.Definition.Id, card.Definition.Name, card.Count) : default;
 
     public override bool _CanDropData(Vector2 atPosition, Variant data) => CardDrag.Accepts(data);
 

@@ -1287,20 +1287,20 @@ OBJECTS["chest_grand"] = sprite([
 # ---- Stat and key icons (12x12) -------------------------------------------------------------
 
 ICONS = {
-    "icon_rumble": sprite([  # a fist
-        "............",
-        ".oo.oo.oo...",
-        "ossossossoo.",
+    "icon_rumble": sprite([  # a red fist raised, thumb across from the left
+        "....o.oo....",
+        "...oloosoo..",
+        "..olsosossoo",
+        "..olsdsdsdso",
+        ".oolsdsdsdso",
+        ".ollllldsdso",
+        ".odddddsdsso",
         "osssssssssso",
-        "oslslslsssso",
-        "osssssssssso",
-        "oooooooossso",
-        ".ossssssssso",
-        ".osssssssso.",
-        "..osssssso..",
+        ".oddddddddo.",
+        "..oddddddo..",
+        "..oddddddo..",
         "..oooooooo..",
-        "............",
-    ], {"o": OUTLINE, "s": "#f0c8a0", "l": "#fff0d8"}),
+    ], {"o": OUTLINE, "s": "#d8434a", "l": "#ff9a90", "d": "#8a1e28"}),
     "icon_wend": sprite([  # a boot
         "............",
         "...oooooo...",

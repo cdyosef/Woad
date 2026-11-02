@@ -44,7 +44,7 @@ public partial class CarryTab : Control
         _window.AddChild(_title);
         for (int i = 0; i < _cards.Length; i++)
         {
-            var card = new SheetCard { Position = new Vector2(5 + i * 32, 15), Size = new Vector2(30, 40), Small = true, Back = "back_bag", Draggable = true, DropsAs = new DropTarget(DropKind.Carry) };
+            var card = new SheetCard { Position = new Vector2(5 + i * 32, 15), Size = CardFace.Size, Back = "back_bag", Draggable = true, DropsAs = new DropTarget(DropKind.Carry) };
             card.Pressed += () =>
             {
                 if (card.Card is { } held)

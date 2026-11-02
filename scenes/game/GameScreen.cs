@@ -187,6 +187,12 @@ public partial class GameScreen : Control
     /// <summary>Hotkeys, before any focused button can take them as a press: R or Space is Rumble, W rolls Wend.</summary>
     public override void _Input(InputEvent @event)
     {
+        if (@event is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
+        {
+            // A drag off a stack takes it all once the button has been held down a moment.
+            CardDrag.PressedAtMsec = Time.GetTicksMsec();
+        }
+
         if (@event is not InputEventKey { Pressed: true, Echo: false } key || _session.State.Turn is null || ActiveHero is not { IsCompanion: false } || _autoplay)
         {
             return;
