@@ -53,6 +53,8 @@
     { "card": "lucky_helmet" },
     { "card": "better_belt" },
     { "card": "belt_studs" },
+    { "card": "sling" },
+    { "card": "rock_bag" },
     { "card": "buckle_horns" },
     { "card": "knights_sword" },
     { "card": "war_hammer" },
@@ -66,5 +68,6 @@
     { "card": "golden_idol" }
   ],
 
-  "keys": { "monster": 5, "pot": 0, "roomCleared": 0, "steal": 20 }
+  "keys": { "monster": 5, "pot": 0, "roomCleared": 0, "steal": 20 },
+  "finds": { "cards": ["rock", "stick"] }
 }

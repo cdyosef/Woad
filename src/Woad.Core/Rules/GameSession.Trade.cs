@@ -72,6 +72,11 @@ public sealed partial class GameSession
             return $"{to.Name}'s backpack is full.";
         }
 
+        if (amount > to.RoomFor(card.Definition))
+        {
+            return $"{to.Name} can hold only {to.RoomFor(card.Definition)} more.";
+        }
+
         CardInstance passed = TakeFromHero(from, card, amount);
         to.AddToBackpack(passed);
         events.Add(new CardTraded(from.Id, to.Id, passed.Id, amount));

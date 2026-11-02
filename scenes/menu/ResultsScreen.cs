@@ -64,6 +64,10 @@ public partial class ResultsScreen : MenuScreen
         Put(new FigureView { Position = new Vector2(8, top + 9), Size = new Vector2(32, 32) }).Colors = Looks.Resolve(result.Appearance, result.Portrait);
 
         Put(UiTheme.Label(new Vector2(50, top + 5), new Vector2(200, 18), result.Name, 14, Palette.Seat(result.Seat)));
+        if (result.ExplorerAward)
+        {
+            Put(UiTheme.Label(new Vector2(170, top + 8), new Vector2(124, 12), $"Explorer Award +{GameRules.ExplorerAwardXp} XP", color: Palette.TrimBright));
+        }
         string outcome = result.Status switch
         {
             HeroStatus.Escaped when result.Retreated => "Got away",

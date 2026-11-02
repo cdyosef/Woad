@@ -55,7 +55,7 @@ public partial class Main
             Check(LoadJourney().Beaten.Contains("emerald_keep") && LoadJourney().IsOpen(LoadJourney().Map.Places.Single(place => place.Id == "sunken_temple")),
                 "beating the Emerald Keep opens the Sunken Temple on the Woarld Map");
             Check(_woarldNews.StartsWith("The Sunken Temple has opened"), "and the map will say so when it next opens");
-            Check(saved.Single(character => character.Name == "Morgan").Equipped.SequenceEqual(["wooden_sword", "buckler", "basic_belt", "basic_buckle"]),
+            Check(saved.Single(character => character.Name == "Morgan").Equipped.SequenceEqual(["club", "basic_belt", "basic_buckle"]),
                 "escaped heroes keep their gear");
 
             await Click(this, results.DoneButton);

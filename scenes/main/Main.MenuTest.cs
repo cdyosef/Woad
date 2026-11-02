@@ -201,7 +201,7 @@ public partial class Main
             await WaitFor(this, () => game.Session.State.ActiveHero == morgan && !game.IsBusy, "the companion's turn to play out");
             Check(pip.Position == post, "a holding companion stays put on its own turn");
             Check(!game.OrdersButton.Visible, "a player without companions has no Orders button");
-            Check(morgan.MaxHearts == Woad.Core.Rules.GameRules.HeroBaseStats.Hearts + 2 && morgan.EffectiveStats.AttackDice == 2 && morgan.EffectiveStats.Weapon == 1, "the hero has the character's stats plus gear");
+            Check(morgan.MaxHearts == Woad.Core.Rules.GameRules.HeroBaseStats.Hearts + 2 && morgan.EffectiveStats.AttackDice == 2 && morgan.EffectiveStats.Weapon == 1 && morgan.TorchesHeld == 0, "the hero has the character's stats and gear: a Club in hand, the torch on the belt");
             Check(morgan.Portrait == "moss", "the hero has the chosen portrait");
             Check(morgan.Appearance is { Look: "mage", Main: "ember", Hair: "black" }, "the hero has the chosen look");
             Check(Music.Current == "dungeon", "a run plays the dungeon music");

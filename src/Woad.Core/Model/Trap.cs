@@ -32,7 +32,7 @@ public sealed class Trap(TrapKind kind, int difficulty)
 }
 
 /// <summary>Something hidden in a room: keys or cards, found by a search (or by breaking the cracked wall it's behind).</summary>
-public sealed class Cache(int difficulty, int keys, int cards, bool behindWall)
+public sealed class Cache(int difficulty, int keys, int cards, bool behindWall, IReadOnlyList<string>? finds = null)
 {
     /// <summary>Search total needed to find it.</summary>
     public int Difficulty { get; } = difficulty;
@@ -44,4 +44,7 @@ public sealed class Cache(int difficulty, int keys, int cards, bool behindWall)
 
     /// <summary>Sealed inside a cracked wall: only breaking the wall reveals it, not searching.</summary>
     public bool BehindWall { get; } = behindWall;
+
+    /// <summary>Cards lying hidden there, by id (a Rock or a Stick on the floor), not drawn from the loot deck.</summary>
+    public IReadOnlyList<string> Finds { get; } = finds ?? [];
 }

@@ -283,8 +283,27 @@ public sealed record CardDefinition
     /// <summary>How many of the carrying slots it fills.</summary>
     public int CarrySlots { get; init; } = 1;
 
-    /// <summary>Worn gear with a use that destroys it (the Coward's Cloak): equip it, use it once, and it's gone.</summary>
+    /// <summary>
+    /// Worn gear with a use that destroys it (the Coward's Cloak): equip it, use it once, and it's gone.
+    /// A weapon that breaks on use (a Stick, a Rock) is gone after one blow; one thrown or slung lands whole
+    /// at the target's feet on a 6.
+    /// </summary>
     public bool BreaksOnUse { get; init; }
+
+    /// <summary>Weapons: any 1 in an attack made with it breaks it, as a torch burns out (the Club).</summary>
+    public bool BreaksOnOne { get; init; }
+
+    /// <summary>Stackables: the most one stack holds (Rocks and Sticks, 10); 0 for no limit. See <see cref="Holds"/>.</summary>
+    public int MaxStack { get; init; }
+
+    /// <summary>Weapons: the card it shoots (the Sling's Rocks), one used up a shot. With none to hand, it can't strike.</summary>
+    public string? Ammo { get; init; }
+
+    /// <summary>A mod that holds a card's stack (the Rock Bag, Rocks): up to <see cref="HoldsUpTo"/> of them, and a weapon loads them from the belt.</summary>
+    public string? Holds { get; init; }
+
+    /// <summary>How many of <see cref="Holds"/> one stack can hold with it on.</summary>
+    public int HoldsUpTo { get; init; }
 
     /// <summary>A set bonus: more modifiers while worn together with its partner card (the Knight's Sword and Shield).</summary>
     public CardSet? Set { get; init; }

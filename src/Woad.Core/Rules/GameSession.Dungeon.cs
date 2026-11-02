@@ -288,6 +288,11 @@ public sealed partial class GameSession
             var card = new CardInstance(State.NextId(), State.LootDeck.Draw(room.Floor), broughtInByHeroId: null);
             DropLoot(room, tile, card, events);
         }
+
+        foreach (string find in cache.Finds)
+        {
+            DropLoot(room, tile, new CardInstance(State.NextId(), Content.GetCard(find), broughtInByHeroId: null), events);
+        }
     }
 
     /// <summary>A defeated monster may leave a key where it fell.</summary>

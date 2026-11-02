@@ -87,6 +87,8 @@
     { "card": "better_belt", "minFloor": 2 },
     { "card": "grand_belt", "minFloor": 3 },
     { "card": "belt_studs" },
+    { "card": "sling" },
+    { "card": "rock_bag" },
     { "card": "iron_buckle" },
     { "card": "silver_buckle", "minFloor": 2 },
     { "card": "buckle_horns", "minFloor": 2 },
@@ -102,6 +104,7 @@
 
   // Smashing a pot: 35% loose coins, 25% a heart, otherwise nothing.
   "pots": { "treasure": "loose_coins", "treasureChance": 35, "heartChance": 25 },
+  "finds": { "cards": ["rock", "stick"] },
 
   // Legend: . floor  # wall  ~ pit  C chest  P pot  > stairs down  * exit  : rubble (2 steps)
   //         , shallow water (2 steps)  = deep water (swim, 2 steps; monsters can't enter)

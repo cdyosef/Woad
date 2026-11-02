@@ -76,11 +76,11 @@ public sealed partial class GameSession
         bool armed = useWeapon && wielding.HasStrike && (weaponBonus > 0 || wielding.Dice > 0);
         int bonus = (armed ? weaponBonus : 0) + extra;
         Turn.AttackDiceUsed += dice;
-        UseWeapon(hero, room, wielding, armed, monster.Position, events);
+        WeaponSpent? spent = UseWeapon(hero, room, wielding, armed, monster.Position, events);
         SpendBankedPowerDice(hero, powerDice, events);
         (int star, int weaponDice, IReadOnlyList<(DieType, int)> typed) = Arm(hero, dice + ProneBonus(monster, hero.Position), wielding.Weapon, armed ? wielding.Dice + earth : 0, hero.TorchesHeld);
         RollHeroAttack(hero, star, bonus, [monster.Id], DamageSource.Weapon, events, powerDice,
-            stunOnSix: wielding.Weapon?.StunOnSix ?? false, weaponDice: weaponDice, weapon: wielding.Weapon, typed: typed, torches: hero.TorchesHeld, bullRush: bullRush);
+            stunOnSix: wielding.Weapon?.StunOnSix ?? false, weaponDice: weaponDice, weapon: wielding.Weapon, typed: typed, torches: hero.TorchesHeld, bullRush: bullRush, spent: spent);
     }
 
     /// <summary>With friendly fire on, the other heroes and companions the active hero could attack right now.</summary>
@@ -136,11 +136,11 @@ public sealed partial class GameSession
         bool armed = command.UseWeapon && wielding.HasStrike && (wielding.Bonus > 0 || wielding.Dice > 0);
         int bonus = armed ? wielding.Bonus : 0;
         Turn.AttackDiceUsed += dice;
-        UseWeapon(hero, ActiveRoom, wielding, armed, target.Position, events);
+        WeaponSpent? spent = UseWeapon(hero, ActiveRoom, wielding, armed, target.Position, events);
         SpendBankedPowerDice(hero, command.PowerDice, events);
         (int star, int weaponDice, IReadOnlyList<(DieType, int)> typed) = Arm(hero, dice + ProneBonus(target, hero.Position), wielding.Weapon, armed ? wielding.Dice : 0, torches: 0);
         RollHeroAttack(hero, star, bonus, [target.Id], DamageSource.Weapon, events, command.PowerDice,
-            stunOnSix: wielding.Weapon?.StunOnSix ?? false, weaponDice: weaponDice, weapon: wielding.Weapon, typed: typed);
+            stunOnSix: wielding.Weapon?.StunOnSix ?? false, weaponDice: weaponDice, weapon: wielding.Weapon, typed: typed, spent: spent);
         return null;
     }
 
@@ -240,7 +240,8 @@ public sealed partial class GameSession
     /// <param name="chill">Stacks of Freeze laid on every target, hit or miss.</param>
     /// <param name="casting">The spell this casts, if it's a spell.</param>
     /// <param name="bullRush">The blow at the end of a bull rush (see <see cref="BullRushAftermath"/>).</param>
-    private void RollHeroAttack(Hero hero, int dice, int bonus, IReadOnlyList<int> targetIds, DamageSource source, List<GameEvent> events, int powerDice = 0, bool stunOnSix = false, int weaponDice = 0, CardDefinition? weapon = null, IReadOnlyList<(DieType Type, int Dice)>? typed = null, int torches = 0, int chill = 0, SpellCasting? casting = null, bool bullRush = false)
+    /// <param name="spent">A weapon that doesn't last, settled as the dice land (see <see cref="SpendWeapon"/>).</param>
+    private void RollHeroAttack(Hero hero, int dice, int bonus, IReadOnlyList<int> targetIds, DamageSource source, List<GameEvent> events, int powerDice = 0, bool stunOnSix = false, int weaponDice = 0, CardDefinition? weapon = null, IReadOnlyList<(DieType Type, int Dice)>? typed = null, int torches = 0, int chill = 0, SpellCasting? casting = null, bool bullRush = false, WeaponSpent? spent = null)
     {
         dice = Math.Max(0, dice);
         bonus -= AttackPenalty(hero.Conditions);
@@ -264,6 +265,7 @@ public sealed partial class GameSession
             Chill = chill,
             Casting = casting,
             BullRush = bullRush,
+            Spent = spent,
         };
         SurgePowerDice(hero, StarSixes(roll, dieTypes), events);
         EarnPowerDice(hero, Sixes(rolled.Faces), events);

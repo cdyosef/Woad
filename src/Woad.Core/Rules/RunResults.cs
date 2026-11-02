@@ -29,7 +29,14 @@ public sealed record HeroRunResult
 
     public required int Kills { get; init; }
 
+    /// <summary>XP earned, the Explorer Award's included.</summary>
     public required int Xp { get; init; }
+
+    /// <summary>Rooms they searched first.</summary>
+    public int ExplorerBonus { get; init; }
+
+    /// <summary>The most Explorer bonuses on a dungeon run that's won (shared on a tie): <see cref="GameRules.ExplorerAwardXp"/> more XP.</summary>
+    public bool ExplorerAward { get; init; }
 
     /// <summary>Treasure turned into gold; 0 for heroes who didn't escape.</summary>
     public required int Gold { get; init; }
@@ -99,7 +106,14 @@ public static class RunResults
         static List<string> Gear(IEnumerable<CardInstance> cards) =>
             cards.Where(card => card.Definition.Type != CardType.Treasure).SelectMany(card => Enumerable.Repeat(card.Key, card.Count)).ToList();
 
-        return state.Heroes.Where(hero => !hero.Summoned).Select(hero => new HeroRunResult
+        // The Explorer Award: a dungeon run someone got out of, to whoever searched the most rooms first.
+        IEnumerable<Hero> party = state.Heroes.Where(hero => !hero.Summoned);
+        int mostExplored = !state.Skirmish && party.Any(hero => hero.Status == HeroStatus.Escaped && !state.RetreatedIds.Contains(hero.Id))
+            ? party.Max(hero => hero.ExplorerBonus)
+            : 0;
+        bool Explorer(Hero hero) => mostExplored > 0 && hero.ExplorerBonus == mostExplored;
+
+        return party.Select(hero => new HeroRunResult
         {
             HeroId = hero.Id,
             CharacterId = hero.CharacterId,
@@ -110,7 +124,9 @@ public static class RunResults
             Status = hero.Status,
             Won = state.WinnerIds.Contains(hero.Id),
             Kills = hero.Kills,
-            Xp = hero.Xp,
+            Xp = hero.Xp + (Explorer(hero) ? GameRules.ExplorerAwardXp : 0),
+            ExplorerBonus = hero.ExplorerBonus,
+            ExplorerAward = Explorer(hero),
             Gold = hero.Status == HeroStatus.Escaped ? hero.TreasureValue : 0,
             DeepestFloor = hero.DeepestFloor,
             Hearts = hero.Hearts,

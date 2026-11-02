@@ -19,6 +19,11 @@ internal static class TestContent
           { "id": "ksword", "name": "K-Sword", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 2 }, "set": { "with": "kshield", "modifiers": { "weapon": 1, "block": 1 } } },
           { "id": "kshield", "name": "K-Shield", "type": "shield", "slot": "offHand", "modifiers": { "armor": 2, "defenseDice": 1 }, "set": { "with": "ksword", "modifiers": { "guardDice": 1 } } },
           { "id": "t_dagger", "name": "T-Dagger", "type": "weapon", "slot": "offHand", "altSlot": "mainHand", "stacks": true, "attackBonus": 1, "offHandStrike": true, "thrownRange": 3, "ambush": true, "light": true },
+          { "id": "t_club", "name": "T-Club", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 1 }, "breaksOnOne": true },
+          { "id": "t_stick", "name": "T-Stick", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 1 }, "stacks": true, "maxStack": 10, "breaksOnUse": true },
+          { "id": "t_rock", "name": "T-Rock", "type": "weapon", "slot": "offHand", "altSlot": "mainHand", "attackBonus": 1, "thrownRange": 2, "stacks": true, "maxStack": 10, "breaksOnUse": true, "light": true },
+          { "id": "t_sling", "name": "T-Sling", "type": "weapon", "slot": "mainHand", "attackBonus": 1, "attackRange": 4, "ammo": "t_rock" },
+          { "id": "t_rockbag", "name": "T-Rock Bag", "type": "mod", "modFor": "belt", "holds": "t_rock", "holdsUpTo": 100 },
           { "id": "t_rapier", "name": "T-Rapier", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 2, "block": 1 }, "twinStrike": true },
           { "id": "t_axe", "name": "T-Axe", "type": "weapon", "slot": "mainHand", "twoHanded": true, "modifiers": { "weapon": 2, "weaponDice": 1 }, "cleave": true },
           { "id": "t_maul", "name": "T-Maul", "type": "weapon", "slot": "mainHand", "twoHanded": true, "modifiers": { "weapon": 3, "weaponDice": 1 }, "shoveOnSix": true },
@@ -165,5 +170,18 @@ internal static class TestContent
         }
         """;
 
-    public static ContentCatalog Catalog { get; } = ContentCatalog.Parse(CardsJson, MonstersJson, [ThemeJson, GraveyardJson], ContentCatalog.ReadEmbedded("spells.json"));
+    /// <summary>Rocks and Sticks lie about: the first Search in a room picks some up, and up to 2 more lie hidden on its tiles.</summary>
+    public const string FindsThemeId = "test_finds";
+
+    public const string FindsJson = """
+        {
+          "id": "test_finds",
+          "name": "Test Finds",
+          "lootDeck": [ { "card": "coin", "copies": 2 } ],
+          "keys": { "monster": 0, "pot": 0, "roomCleared": 0, "steal": 50 },
+          "finds": { "cards": ["t_rock", "t_stick"], "hidden": 2 }
+        }
+        """;
+
+    public static ContentCatalog Catalog { get; } = ContentCatalog.Parse(CardsJson, MonstersJson, [ThemeJson, GraveyardJson, FindsJson], ContentCatalog.ReadEmbedded("spells.json"));
 }

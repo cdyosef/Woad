@@ -44,6 +44,18 @@ public static class GameRules
     /// <summary>Search total to spot a trap, and Od Hand total to disarm it.</summary>
     public static int TrapDifficulty(int floor) => 3 + floor;
 
+    /// <summary>Search total to find a Rock or Stick hidden on a tile.</summary>
+    public static int FindDifficulty(int floor) => 2 + floor;
+
+    /// <summary>A first Search in a room reaching this picks up everything lying about (a Rock and a Stick), not just one.</summary>
+    public const int AllFindsAt = 4;
+
+    /// <summary>XP for the first Search in a room: the Explorer bonus.</summary>
+    public const int ExplorerXp = 1;
+
+    /// <summary>XP for the Explorer Award: the most Explorer bonuses on a dungeon run that's won.</summary>
+    public const int ExplorerAwardXp = 5;
+
     /// <summary>Search total to find a hidden stash of keys or loot.</summary>
     public static int StashDifficulty(int floor) => 5 + floor;
 
@@ -142,7 +154,7 @@ public static class GameRules
     public const int BackpackCapacity = 8;
 
     /// <summary>Cards every new character starts with.</summary>
-    public static IReadOnlyList<string> StarterKit { get; } = ["basic_belt", "basic_buckle", "wooden_sword", "buckler", "health_potion", "torch", "lockpicks"];
+    public static IReadOnlyList<string> StarterKit { get; } = ["basic_belt", "basic_buckle", "club", "torch", "health_potion", "lockpicks"];
 
     /// <summary>Stats every new character starts with, before spending creation points.</summary>
     public static Stats HeroBaseStats { get; } = new()

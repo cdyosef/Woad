@@ -617,6 +617,15 @@ public sealed record PointSpent(int HeroId, StatKind Stat, int Level, int Points
 /// <summary>A player set how their companion manages its things.</summary>
 public sealed record CompanionPolicySet(int OwnerId, int CompanionId, CompanionPolicy Policy) : GameEvent;
 
+/// <summary>A weapon that doesn't last broke (a Club on a 1, a Stick or Rock with its blow): one is gone. <paramref name="CardId"/> is the card (or stack) it was.</summary>
+public sealed record WeaponBroke(int HeroId, int CardId) : GameEvent;
+
+/// <summary>A Rock thrown or slung came down whole on a 6: it lies at <paramref name="LandedAt"/> to be picked up.</summary>
+public sealed record StoneLanded(int HeroId, int CardId, string RoomId, GridPosition LandedAt) : GameEvent;
+
+/// <summary>The first Search in a room: the searcher picked up what lay about (<paramref name="Found"/>, by name) and earned an Explorer bonus.</summary>
+public sealed record Explored(int HeroId, string RoomId, IReadOnlyList<string> Found) : GameEvent;
+
 /// <summary>A 1 in a torch-lit attack burned the torch out: it's gone.</summary>
 public sealed record TorchBurnedOut(int HeroId, int CardId) : GameEvent;
 

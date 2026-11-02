@@ -255,9 +255,9 @@ public sealed partial class GameSession
         Wielding wielding = Wield(hero, ActiveRoom, at) is { Thrown: false } held ? held : Wielding.BareHanded;
         int bonus = command.UseWeapon && wielding.HasStrike ? wielding.Bonus : 0;
         Turn.AttackDiceUsed += dice;
-        UseWeapon(hero, ActiveRoom, wielding, bonus > 0, at, events);
+        WeaponSpent? spent = UseWeapon(hero, ActiveRoom, wielding, bonus > 0, at, events);
         SpendBankedPowerDice(hero, command.PowerDice, events);
-        RollHeroAttack(hero, dice, bonus, [command.TargetId], DamageSource.Shove, events, command.PowerDice);
+        RollHeroAttack(hero, dice, bonus, [command.TargetId], DamageSource.Shove, events, command.PowerDice, spent: spent);
         return null;
     }
 

@@ -316,10 +316,10 @@ public sealed partial class GameSession
         Wielding wielding = Wield(hero, room, target.Position);
         bool armed = command.UseWeapon && wielding.HasStrike && (wielding.Bonus > 0 || wielding.Dice > 0);
         Turn.AttackDiceUsed += dice;
-        UseWeapon(hero, room, wielding, armed, target.Position, events);
+        WeaponSpent? spent = UseWeapon(hero, room, wielding, armed, target.Position, events);
         SpendBankedPowerDice(hero, command.PowerDice, events);
         RollHeroAttack(hero, dice, armed ? wielding.Bonus : 0, [target.Id], DamageSource.Weapon, events, command.PowerDice,
-            weaponDice: armed ? wielding.Dice : 0, weapon: wielding.Weapon);
+            weaponDice: armed ? wielding.Dice : 0, weapon: wielding.Weapon, spent: spent);
         return null;
     }
 

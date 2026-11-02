@@ -334,6 +334,42 @@ def draw(item):
         c.poly([(19, 13), (23, 3), (27, 13), (23, 16)], ICE[1])
         c.line(23, 5, 23, 14, ICE[0])
         c.dot(26, 6, "#ffffff")
+    elif i == "club":
+        # A knobbly cudgel, thick at the head.
+        c.line(8, 27, 15, 16, WOOD[2], 3)
+        c.poly([(13, 17), (17, 5), (24, 3), (26, 9), (19, 19)], WOOD[1])
+        c.line(17, 8, 22, 5, WOOD[0])
+        c.dot(21, 12, WOOD[2])
+        c.dot(18, 15, WOOD[2])
+        c.dot(23, 8, WOOD[2])
+    elif i == "stick":
+        # A bent branch with a twig and a leaf.
+        c.line(6, 27, 16, 15, WOOD[1], 2)
+        c.line(16, 15, 26, 5, WOOD[1], 2)
+        c.line(16, 15, 22, 15, WOOD[2])
+        c.poly([(22, 13), (26, 13), (24, 17)], GREEN[1])
+        c.line(7, 26, 15, 16, WOOD[0])
+    elif i == "rock":
+        c.poly([(7, 20), (11, 11), (19, 9), (25, 14), (26, 22), (17, 25), (9, 24)], STONE[1])
+        c.poly([(11, 13), (18, 11), (16, 16), (10, 18)], STONE[0])
+        c.line(19, 18, 24, 21, STONE[2])
+        c.dot(14, 21, STONE[2])
+    elif i == "sling":
+        # Two cords and the pouch, with a stone in it.
+        c.line(5, 5, 13, 19, LEATHER[0])
+        c.line(27, 5, 19, 19, LEATHER[0])
+        c.circle(5, 5, 1.6, LEATHER[1])
+        c.poly([(11, 18), (21, 18), (19, 25), (13, 25)], LEATHER[1])
+        c.circle(16, 21, 2.5, STONE[1])
+        c.dot(15, 20, STONE[0])
+    elif i == "rock_bag":
+        # A drawstring pouch, stones peeking out.
+        c.poly([(9, 13), (23, 13), (26, 25), (20, 29), (12, 29), (6, 25)], LEATHER[1])
+        c.rect(10, 11, 12, 3, LEATHER[2])
+        c.circle(13, 9, 2.5, STONE[1])
+        c.circle(18, 8, 2.5, STONE[0])
+        c.line(11, 19, 21, 19, LEATHER[0])
+        c.line(26, 14, 24, 12, LEATHER[0])
     elif i == "torch":
         c.line(10, 28, 18, 14, WOOD[1], 3)
         c.rect(15, 12, 6, 4, LEATHER[1])
@@ -914,6 +950,7 @@ ITEMS = [
     "leather_armor", "studded_armor", "chain_mail", "wardens_plate", "storm_mail", "dash_boots",
     "flame_scroll", "frost_scroll", "venom_scroll", "acid_scroll", "grave_scroll", "gale_scroll", "sun_scroll",
     "bloom_scroll", "quake_scroll", "spark_scroll", "mind_scroll", "shadow_scroll", "frost_wand", "boomerang",
+    "club", "stick", "rock", "sling", "rock_bag",
     "torch", "lockpicks", "holy_key", "saints_relic", "modern_medicine", "thieves_oil", "burgling_tools", "cutpurse_knife", "sticky_gloves", "bomb", "autosmith_hammer", "eye_drops", "holy_water", "health_potion",
     "antidote", "strong_base", "smelling_salts", "bandages", "medicine_bag", "shovel", "sineater_doll",
     "loose_coins", "coin_pouch", "emerald", "pearl", "golden_idol",

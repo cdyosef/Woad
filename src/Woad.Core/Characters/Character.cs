@@ -440,8 +440,9 @@ public sealed class Character
         {
             _equipped.Add(key);
         }
-        else if (card.BeltsFirst && _belt.Count < beltSlots)
+        else if (card.Belts && _belt.Count < beltSlots)
         {
+            // Belt tools ride on the belt, a torch too (unlit, till it's taken in hand).
             _belt.Add(key);
         }
         else if (card.Slot is not null && !Hero.SlotsFor(card).Intersect(occupied).Any())

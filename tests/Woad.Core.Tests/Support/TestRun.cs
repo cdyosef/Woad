@@ -56,7 +56,7 @@ internal static class TestRun
         return session;
     }
 
-    public static GameSession Create(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, IReadOnlyList<PassageSetup>? passages = null, int?[]? owners = null, bool friendlyFire = false, Skill skills = Skills.All, string themeId = TestContent.ThemeId, int ritualRounds = 0, bool cursed = false)
+    public static GameSession Create(IReadOnlyList<RoomSetup> rooms, ScriptedDice? dice = null, int heroes = 1, Stats? stats = null, string[]? cards = null, ScriptedDice? loot = null, IReadOnlyList<PassageSetup>? passages = null, int?[]? owners = null, bool friendlyFire = false, Skill skills = Skills.All, string themeId = TestContent.ThemeId, int ritualRounds = 0, bool cursed = false, ScriptedDice? finds = null)
     {
         var setup = new RunSetup
         {
@@ -73,9 +73,8 @@ internal static class TestRun
             Cursed = cursed,
         };
 
-        var random = loot is null
-            ? new GameRandom(Seed) { Dice = dice ?? new ScriptedDice() }
-            : new GameRandom(Seed) { Dice = dice ?? new ScriptedDice(), Loot = loot };
+        var seeded = new GameRandom(Seed);
+        var random = new GameRandom(Seed) { Dice = dice ?? new ScriptedDice(), Loot = loot ?? seeded.Loot, Finds = finds ?? seeded.Finds };
         return new GameSession(TestContent.Catalog, setup, random);
     }
 }

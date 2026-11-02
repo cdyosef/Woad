@@ -27,10 +27,13 @@ public static class DemoRun
     /// <summary>What a demo hero wears before their own cards: the Basic Belt and Basic Buckle.</summary>
     private static readonly string[] Belted = ["basic_belt", "basic_buckle"];
 
+    /// <summary>What the demo heroes start with: the starter kit, and a Wooden Sword and Buckler, as new characters once did.</summary>
+    private static readonly string[] DemoKit = ["basic_belt", "basic_buckle", "wooden_sword", "buckler", "health_potion", "torch", "lockpicks"];
+
     public static IReadOnlyList<HeroSetup> DebugHeroes { get; } =
     [
-        new HeroSetup("Aria", DebugStats with { Luck = 1 }, [.. GameRules.StarterKit, "bomb"], Portrait: "ember", Appearance: new("princess", Hair: "ginger")),
-        new HeroSetup("Bran", DebugStats with { Hearts = 5 }, [.. GameRules.StarterKit, "boomerang", "dagger"], Portrait: "woad", Appearance: new("knight", Trim: "blood")),
+        new HeroSetup("Aria", DebugStats with { Luck = 1 }, [.. DemoKit, "bomb"], Portrait: "ember", Appearance: new("princess", Hair: "ginger")),
+        new HeroSetup("Bran", DebugStats with { Hearts = 5 }, [.. DemoKit, "boomerang", "dagger"], Portrait: "woad", Appearance: new("knight", Trim: "blood")),
     ];
 
     /// <summary>The debug heroes, then plain heroes up to <paramref name="size"/> (for --autoplay --party N).</summary>
@@ -39,7 +42,7 @@ public static class DemoRun
         string[] names = ["Cael", "Dara", "Edda", "Finn", "Gwen", "Hugo"];
         string[] portraits = ["moss", "gilt", "violet", "bone", "blood", "frost"];
         string[] looks = ["druid", "dwarf", "mage", "lizard_man", "raider", "cat_lady"];
-        return [.. DebugHeroes.Take(size), .. names.Take(size - DebugHeroes.Count).Select((name, i) => new HeroSetup(name, DebugStats, GameRules.StarterKit, Portrait: portraits[i], Appearance: new(looks[i])))];
+        return [.. DebugHeroes.Take(size), .. names.Take(size - DebugHeroes.Count).Select((name, i) => new HeroSetup(name, DebugStats, DemoKit, Portrait: portraits[i], Appearance: new(looks[i])))];
     }
 
     /// <summary>
