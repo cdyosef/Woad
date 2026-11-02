@@ -161,7 +161,7 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 | Potion | Single-use | Health Potion (restore 3 hearts) |
 | Treasure | Kept for score | Emerald (15g), Golden Idol (40g). Coins (Loose Coins 2g, Coin Pouch 5g) aren't cards: they go straight into your purse as gold |
 
-- **Starter kit** (new characters): Wooden Sword, Buckler, Health Potion, Torch and Lockpicks (on the belt).
+- **Starter kit** (new characters): a Basic Belt and Basic Buckle, a Health Potion and Lockpicks (on the belt), and a Torch (held). No weapon and no shield: they fight with their fists till they find some.
 - **Equipping, belting or stowing gear** is free out of combat, as often as you like. **In combat** (an
   awake monster within 8 tiles that you can see) each change takes your action, and only weapons, shields
   and tools move, between your hands and your belt: the backpack waits until the fight is over, and

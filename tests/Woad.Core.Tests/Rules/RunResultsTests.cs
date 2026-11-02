@@ -113,8 +113,8 @@ public class RunResultsTests
         Assert.Equal(["knights_sword", "buckler"], character.Equipped);
         Assert.Equal(["bomb"], character.Belt);
         Assert.Equal(["wooden_sword"], character.Backpack);
-        Assert.Equal(["knights_sword", "bomb"], reward.CardsGained);
-        Assert.Equal(["basic_belt", "basic_buckle", "health_potion", "torch", "lockpicks"], reward.CardsLost);
+        Assert.Equal(["knights_sword", "buckler", "bomb", "wooden_sword"], reward.CardsGained);
+        Assert.Equal(["basic_belt", "basic_buckle", "torch", "health_potion", "lockpicks"], reward.CardsLost);
     }
 
     [Fact]

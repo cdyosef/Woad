@@ -142,7 +142,7 @@ public static class GameRules
     public const int BackpackCapacity = 8;
 
     /// <summary>Cards every new character starts with.</summary>
-    public static IReadOnlyList<string> StarterKit { get; } = ["basic_belt", "basic_buckle", "wooden_sword", "buckler", "health_potion", "torch", "lockpicks"];
+    public static IReadOnlyList<string> StarterKit { get; } = ["basic_belt", "basic_buckle", "health_potion", "torch", "lockpicks"];
 
     /// <summary>Stats every new character starts with, before spending creation points.</summary>
     public static Stats HeroBaseStats { get; } = new()

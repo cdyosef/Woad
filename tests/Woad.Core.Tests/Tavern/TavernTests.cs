@@ -224,6 +224,7 @@ public class TavernTests
         Assert.Equal(potions - 1, world.Stock(Inn).Count(card => card == "health_potion"));
         Assert.Equal(2, ash.Belt.Count(card => card == "health_potion"));
 
+        ash.GiveCard("wooden_sword", Content);
         Assert.True(TavernServices.Sell(world, Inn, Content, ash, "wooden_sword").Done);
         Assert.Equal(18, ash.Gold);
         Assert.DoesNotContain("wooden_sword", ash.Equipped);

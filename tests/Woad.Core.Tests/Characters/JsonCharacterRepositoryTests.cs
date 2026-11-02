@@ -181,7 +181,7 @@ public sealed class JsonCharacterRepositoryTests : IDisposable
         Assert.Empty(loadResult.Problems);
         Character loaded = Assert.Single(loadResult.Characters);
 
-        Assert.Equal(["basic_belt", "basic_buckle", "wooden_sword", "buckler"], loaded.Equipped);
+        Assert.Equal(["basic_belt", "basic_buckle", "torch"], loaded.Equipped);
         Assert.Equal(character.Belt, loaded.Belt);
     }
 
@@ -195,7 +195,7 @@ public sealed class JsonCharacterRepositoryTests : IDisposable
 
         CharacterLoadResult result = await Repository().LoadAllAsync();
 
-        Assert.Equal(["torch", "lockpicks"], Assert.Single(result.Characters).Belt);
+        Assert.Equal(["lockpicks"], Assert.Single(result.Characters).Belt);
         Assert.Contains(result.Problems, problem => problem.Contains("retired_card"));
     }
 }
