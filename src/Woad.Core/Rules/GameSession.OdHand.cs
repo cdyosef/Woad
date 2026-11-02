@@ -71,6 +71,19 @@ public sealed partial class GameSession
         _ => !turn.ToolsUsed && ToolHelp(ActiveHero, skill).Dice > 0,
     };
 
+    /// <summary>
+    /// Whether <paramref name="hero"/> has any way to make checks of <paramref name="skill"/>: they know it, or
+    /// something they hold could do it for them (a lit torch or High Alert searching, Lockpicks on a lock, a
+    /// Medicine Bag or Bandages aiding). For which ability cards are in their hand.
+    /// </summary>
+    public static bool HasMeansFor(Hero hero, Skill skill) => hero.Knows(skill) || skill switch
+    {
+        Skill.None or Skill.Parry => false,
+        Skill.Search => hero.TorchesHeld > 0 || hero.ShiningRounds > 0 || hero.Knows(Skill.HighAlert),
+        Skill.Aid => hero.MedicineBag is not null || hero.Bandages is not null,
+        _ => ToolHelp(hero, skill).Dice > 0,
+    };
+
     /// <summary>A search with High Alert's Rumble dice waiting to roll in: they can make it alone.</summary>
     private bool Alerted(Skill skill) => skill == Skill.Search && State.Turn is { AlertDice: > 0 };
 

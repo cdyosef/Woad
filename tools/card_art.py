@@ -574,11 +574,37 @@ def fist(c, x, y, skin=SKIN):
     c.rect(x - 5, y + 2, 6, 6, LEATHER[1])
 
 
+def rumble(c):
+    """A red fist raised: the curled fingers to the front, the thumb folded across them from the left."""
+    for k, top in enumerate((3, 1, 2, 5)):
+        x = 9 + k * 5
+        c.rect(x + 1, 3 + top, 2, 1, RED[1])
+        c.rect(x, 4 + top, 4, 16 - top, RED[1])
+        c.rect(x, 4 + top, 1, 16 - top, RED[0])
+        c.rect(x + 1, 4 + top, 2, 1, RED[0])
+        if k < 3:
+            c.rect(x + 4, 6 + top, 1, 14 - top, RED[2])
+        # Where they fold: the knuckles above, the fingertips tucked in below.
+        c.rect(x, 12, 4, 1, RED[2])
+    # The palm's heel, and the thumb's root on the left.
+    c.rect(9, 20, 19, 4, RED[1])
+    c.rect(9, 23, 19, 1, RED[2])
+    c.rect(6, 13, 4, 9, RED[1])
+    c.rect(6, 13, 1, 9, RED[0])
+    # The thumb, across the first two fingers, its nail at the end.
+    c.rect(6, 15, 11, 3, RED[1])
+    c.rect(6, 15, 11, 1, RED[0])
+    c.rect(6, 17, 11, 1, RED[2])
+    c.rect(14, 15, 2, 2, "#ffd8d0")
+    c.rect(17, 15, 1, 2, RED[2])
+    # The wrist.
+    c.rect(12, 24, 13, 6, RED[2])
+    c.rect(12, 24, 13, 1, RED[1])
+
+
 def ability(c, name):
-    if name == "fist":
-        fist(c, 10, 11)
-        for y in (9, 15, 21):
-            c.line(2, y, 7, y, MOTION)
+    if name == "rumble":
+        rumble(c)
     elif name == "shove":
         fist(c, 4, 6)
         fist(c, 4, 17)
@@ -747,7 +773,7 @@ def back(c, slot):
 
 
 ABILITIES = [
-    "fist", "shove", "wend", "leap", "prone", "search", "steal", "pick_lock", "disarm", "rouse",
+    "rumble", "shove", "wend", "leap", "prone", "search", "steal", "pick_lock", "disarm", "rouse",
     "retreat", "learn", "dig_out", "drop_roll", "cast", "jackalope_foot", "shield_cufflinks", "icarus_wings",
     "parry", "guard", "high_alert", "bull_rush",
 ]

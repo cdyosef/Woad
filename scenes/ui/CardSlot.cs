@@ -25,8 +25,13 @@ public partial class CardSlot : Button
     /// <summary>What letting a dragged card go over this slot does; null takes no drops.</summary>
     public Game.DropTarget? DropsAs { get; set; }
 
+    /// <summary>The drag data for a card that isn't an item (an ability card in a spread hand); null for none.</summary>
+    public Func<Control, Variant>? FaceDrag { get; set; }
+
     public override Variant _GetDragData(Vector2 atPosition) =>
-        Draggable && Card is { } card ? Game.CardDrag.Begin(this, card.Id, card.Definition.Id) : default;
+        Draggable && Card is { } card ? Game.CardDrag.Begin(this, card.Id, card.Definition.Id, card.Definition.Name, card.Count)
+        : Card is null && FaceDrag is { } drag ? drag(this)
+        : default;
 
     public override bool _CanDropData(Vector2 atPosition, Variant data) => DropsAs is not null && Game.CardDrag.Accepts(data);
 

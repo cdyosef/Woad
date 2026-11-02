@@ -22,7 +22,7 @@ public sealed record AbilityCard(string Picture, string Name, Button Action, Fun
 /// static bonus (shown in its bottom-left corner) and the dice on it, and is tapped once it can't be used
 /// again this turn. Its border is its own pool's color (a shield's blue in the off hand's square).
 /// </summary>
-public sealed record StackCard(string Key, string Picture, string Name, bool Tapped, string Bonus = "", int Dice = 0, Color? Border = null, int? CardId = null);
+public sealed record StackCard(string Key, string Picture, string Name, bool Tapped, string Bonus = "", int Dice = 0, Color? Border = null, int? CardId = null, int Count = 1);
 
 /// <summary>
 /// A pool's hand of cards. With a dice action (Rumble, Wend, Od Hand) it fills an equipment square on the
@@ -49,12 +49,6 @@ public partial class HandView : Control
 
     /// <summary>Dice in the row under the square before the last spot counts the rest.</summary>
     private const int PoolSpots = 4;
-
-    /// <summary>How far each card behind sits above the one in front of it: enough to read its name.</summary>
-    private const float TitleBand = 9;
-
-    /// <summary>A card's dice: small, in a column along its left edge, as many as fit, then another column.</summary>
-    private const float CardDie = 6;
 
     /// <summary>The pool's own dice action (Attack, Wend, Search), or null for a hand with no square.</summary>
     public AbilityCard? Default { get; init; }
@@ -127,7 +121,24 @@ public partial class HandView : Control
         if (Default is null)
         {
             Size = new Vector2(13, 14);
+            return;
         }
+
+        AddChild(new FanDrop(this) { Position = new Vector2(FanX - 3, DiceY - 3), Size = new Vector2(Size.X - FanX + 3, Size.Y - DiceY + 3) });
+    }
+
+    /// <summary>The fan, as a place to let go of this hand's ability card: it goes back into the hand. Clicks pass on through to the hand.</summary>
+    private sealed partial class FanDrop(HandView hand) : Control
+    {
+        public FanDrop() : this(null!)
+        {
+        }
+
+        public override void _Ready() => MouseFilter = MouseFilterEnum.Pass;
+
+        public override bool _CanDropData(Vector2 atPosition, Variant data) => CardDrag.AbilityOf(data) is var (title, _) && title == hand.Title;
+
+        public override void _DropData(Vector2 atPosition, Variant data) => CardDrag.DropAbility(data, intoSquare: false);
     }
 
     /// <summary>Where on the hand to click to spread it (the fan), in its own coordinates.</summary>
@@ -135,7 +146,7 @@ public partial class HandView : Control
 
     /// <summary>Where a card of the square shows, in its own coordinates, for a click on it.</summary>
     public Vector2 CardPoint(string key) => Placed().FirstOrDefault(placed => placed.Card.Key == key) is { Card: not null } found
-        ? found.Rect.Position + new Vector2(found.Card.Key == Front ? found.Rect.Size.X / 2 : 2, TitleBand / 2)
+        ? found.Rect.Position + (found.Card.Key == Front ? found.Rect.Size / 2 : new Vector2(3, 3))
         : FanPoint;
 
     /// <summary>Where the pool's first die under the square is, to click it.</summary>
@@ -153,9 +164,10 @@ public partial class HandView : Control
     }
 
     /// <summary>
-    /// Where each card of the square lies, back to front: tapped cards first (on their side), then the cards
-    /// not selected (dim), then the dice card (lit, unless it's the one in front), then the front card. Each
-    /// sits a name's height above and a little left of the one in front of it, more to bare its dice.
+    /// Where each card of the square lies, back to front: tapped cards first (on their side, face down), then the
+    /// cards not selected (dim), then the dice card (lit, unless it's the one in front), then the front card. Each
+    /// is a playing card (see <see cref="CardFace.Size"/>) sitting a little above and left of the one in front of
+    /// it, so its corner index and the dice down its left edge show.
     /// </summary>
     private List<(StackCard Card, Rect2 Rect, bool Lit)> Placed()
     {
@@ -170,31 +182,24 @@ public partial class HandView : Control
             .. dice is null ? [] : new[] { dice },
             .. front is null ? [] : new[] { front },
         ];
+        Vector2 size = CardFace.Size;
         List<StackCard> tapped = [.. Stack.Where(card => card.Tapped)];
-        var lying = new List<(StackCard, Rect2, bool)>();
+        var placed = new List<(StackCard, Rect2, bool)>();
         for (int i = 0; i < tapped.Count; i++)
         {
             // On their side along the bottom of the square, at the very back.
-            lying.Add((tapped[i], new Rect2(i * 6, SquareHeight - 22 - i * 3, 30, 22), false));
+            placed.Add((tapped[i], new Rect2(i * 3, SquareHeight - size.X - i * 2, size.Y, size.X), false));
         }
 
-        if (order.Count == 0)
-        {
-            return lying;
-        }
-        // Each card behind shows a strip at its left: wide enough for its dice (a column of them per three).
-        float Strip(StackCard card) => Math.Max(7, 2 + (float)Math.Ceiling(card.Dice / 3f) * (CardDie + 1));
-        float behind = order.Take(order.Count - 1).Sum(Strip);
-        float width = Math.Max(22, SquareWidth - behind);
-        float height = SquareHeight - TitleBand * (order.Count - 1) - (tapped.Count > 0 ? 6 : 0);
-        var placed = lying;
-        float x = 0;
-        for (int i = 0; i < order.Count; i++)
+        int count = order.Count;
+        float dx = count > 1 ? Math.Min(9, (SquareWidth - size.X) / (count - 1)) : 0;
+        float dy = count > 1 ? Math.Min(5, (SquareHeight - size.Y) / (count - 1)) : 0;
+        var start = new Vector2((SquareWidth - size.X - dx * (count - 1)) / 2, (SquareHeight - size.Y - dy * (count - 1)) / 2);
+        for (int i = 0; i < count; i++)
         {
             StackCard card = order[i];
             bool lit = card == front || (card == dice && front is not null && front.Key != DiceKey);
-            placed.Add((card, new Rect2(x, TitleBand * i, width, Math.Max(16, height)), lit));
-            x += Strip(card);
+            placed.Add((card, new Rect2(start + new Vector2(dx * i, dy * i), size), lit));
         }
 
         return placed;
@@ -225,12 +230,30 @@ public partial class HandView : Control
     /// <summary>The slot this square equips (main hand, off hand, feet), for cards dropped on it; null takes none.</summary>
     public EquipSlot? Slot { get; set; }
 
+    /// <summary>
+    /// An item in the square drags like any card; the skill played into it drags back out to the fan. Ability
+    /// cards only go between this hand's own fan and square.
+    /// </summary>
     public override Variant _GetDragData(Vector2 atPosition) =>
-        Default is not null && CardAt(atPosition) is { CardId: int cardId } card ? CardDrag.Begin(this, cardId, card.Picture) : default;
+        Default is null ? default
+        : CardAt(atPosition) is { CardId: int cardId } card ? CardDrag.Begin(this, cardId, card.Picture, card.Name, card.Count)
+        : CardAt(atPosition) is { Key: SkillKey } && Played is { } played ? CardDrag.BeginAbility(this, Title, played.Name, played.Picture)
+        : default;
 
-    public override bool _CanDropData(Vector2 atPosition, Variant data) => Slot is not null && CardDrag.Accepts(data);
+    public override bool _CanDropData(Vector2 atPosition, Variant data) =>
+        CardDrag.AbilityOf(data) is var (hand, _) ? Default is not null && hand == Title : Slot is not null && CardDrag.Accepts(data);
 
-    public override void _DropData(Vector2 atPosition, Variant data) => CardDrag.Drop(data, new DropTarget(DropKind.Equip, Slot));
+    public override void _DropData(Vector2 atPosition, Variant data)
+    {
+        if (CardDrag.AbilityOf(data) is not null)
+        {
+            // Over the square, it's played into it (the fan takes its own drops: see FanDrop).
+            CardDrag.DropAbility(data, intoSquare: true);
+            return;
+        }
+
+        CardDrag.Drop(data, new DropTarget(DropKind.Equip, Slot));
+    }
 
     private StackCard? CardAt(Vector2 point)
     {
@@ -257,7 +280,7 @@ public partial class HandView : Control
 
         for (int i = 0; i < dice.Card.Dice; i++)
         {
-            rects.Add(new Rect2(dice.Rect.Position + new Vector2(1 + i / 3 * (CardDie + 1), TitleBand + 1 + i % 3 * (CardDie + 1)), new Vector2(CardDie, CardDie)));
+            rects.Add(CardFace.DieRect(dice.Rect, i));
         }
 
         return rects;
@@ -336,24 +359,23 @@ public partial class HandView : Control
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
     }
 
-    /// <summary>The square's cards, back to front, over the square (the slot's own card beneath stays out of sight).</summary>
+    /// <summary>The square, a slot face down with the slot's mark, and its cards on it back to front.</summary>
     private void DrawSquare()
     {
-        Font font = GameArt.BodyFont ?? ThemeDB.FallbackFont;
-        DrawRect(new Rect2(0, 0, SquareWidth, SquareHeight), Palette.Ink);
-        List<(StackCard Card, Rect2 Rect, bool Lit)> placed = Placed();
-        StackCard? front = placed.Count > 0 ? placed[^1].Card : null;
-        foreach ((StackCard card, Rect2 rect, bool lit) in placed)
+        string back = Slot switch
+        {
+            EquipSlot.MainHand => "back_main_hand",
+            EquipSlot.OffHand => "back_off_hand",
+            _ => "back_feet",
+        };
+        CardFace.DrawBack(this, new Rect2(0, 0, SquareWidth, SquareHeight), GameArt.Texture($"res://assets/cards/{back}.png"), "");
+        foreach ((StackCard card, Rect2 rect, bool lit) in Placed())
         {
             Color border = card.Border ?? Color;
             if (card.Tapped)
             {
-                // On its side and dim: its name reads up its left end.
-                DrawRect(rect, Palette.Ink);
-                DrawRect(rect, border.Darkened(0.6f), filled: false, width: 1);
-                DrawSetTransform(rect.Position + new Vector2(2, rect.Size.Y - 2), -Mathf.Pi / 2, Vector2.One);
-                DrawString(font, new Vector2(0, 7), card.Name.Split(' ')[0], HorizontalAlignment.Left, rect.Size.Y - 4, UiTheme.FontSize, Palette.TextDim.Darkened(0.4f));
-                DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+                // Tapped: on its side and face down, its picture faint on the back.
+                CardFace.DrawBack(this, rect, Picture(card), "", small: true);
                 continue;
             }
 
@@ -362,39 +384,16 @@ public partial class HandView : Control
                 DrawRect(rect.Grow(1), border with { A = 0.45f });
             }
 
-            DrawCardFace(font, rect, card, border, lit, lit ? 1f : 0.6f, card == front);
+            // Its bonus in the corner and its dice down its edge: the pool's own on the dice card, the tools' on the rest.
+            var marks = new CardFace.Marks(
+                Count: card.Count,
+                Bonuses: card.Bonus.Length > 0 ? [(card.Bonus, border)] : null,
+                Dice: [.. Enumerable.Repeat(card.Key == DiceKey ? DiceColor : Palette.DieTool, card.Dice)]);
+            CardFace.DrawFront(this, rect, Picture(card), card.Name, marks, dim: !lit, border: lit ? border : border.Darkened(0.4f));
         }
     }
 
-    /// <summary>One card: its name along the top, its picture, its bonus bottom-left and its dice down its left edge.</summary>
-    private void DrawCardFace(Font font, Rect2 rect, StackCard card, Color border, bool lit, float dim, bool full)
-    {
-        var shade = new Color(dim, dim, dim);
-        DrawRect(rect, lit ? Palette.PanelHover : Palette.PanelDark);
-        DrawRect(rect, (lit ? border : border.Darkened(0.4f)) * shade with { A = 1 }, filled: false, width: 1);
-        string name = full ? card.Name : card.Name.Split(' ')[0];
-        DrawString(font, rect.Position + new Vector2(2, 8), name, HorizontalAlignment.Left, rect.Size.X - 3, UiTheme.FontSize, (lit ? Palette.Text : Palette.TextDim) * shade with { A = 1 });
-
-        Texture2D? picture = card.Key == DiceKey ? GameArt.Ui(Icon) : GameArt.Texture($"res://assets/cards/{card.Picture}.png");
-        float side = Math.Min(rect.Size.X - 10, rect.Size.Y - TitleBand - 10);
-        if (picture is not null && side >= 8)
-        {
-            var at = new Vector2(rect.End.X - side - 2, rect.Position.Y + TitleBand + (rect.Size.Y - TitleBand - 8 - side) / 2);
-            DrawTextureRect(picture, new Rect2(at, new Vector2(side, side)), tile: false, new Color(1, 1, 1, dim));
-        }
-
-        if (card.Bonus.Length > 0)
-        {
-            DrawString(font, new Vector2(rect.Position.X + 2, rect.End.Y - 2), card.Bonus, HorizontalAlignment.Left, -1, UiTheme.FontSize, Palette.TrimBright * shade with { A = 1 });
-        }
-
-        for (int i = 0; i < card.Dice; i++)
-        {
-            var die = new Rect2(rect.Position + new Vector2(1 + i / 3 * (CardDie + 1), TitleBand + 1 + i % 3 * (CardDie + 1)), new Vector2(CardDie, CardDie));
-            DrawRect(die, (card.Key == DiceKey ? DiceColor : Palette.DieTool) * shade with { A = 1 });
-            DrawRect(die, Palette.Ink, filled: false, width: 1);
-        }
-    }
+    private Texture2D? Picture(StackCard card) => GameArt.Texture($"res://assets/cards/{card.Picture}.png");
 
     /// <summary>The pool's dice under the square: up to four, the fourth the reserve's count on the pool's symbol when there are more.</summary>
     private void DrawPool()
@@ -434,9 +433,10 @@ public partial class HandView : Control
             for (int k = 0; k < 3; k++)
             {
                 DrawSetTransform(new Vector2(FanX + 1 + k * 2.5f, DiceY + 10), -0.25f + k * 0.25f, Vector2.One);
+                // Card backs, edged in the pool's color while one can be used.
                 var back = new Rect2(-2.5f, -9, 5, 9);
-                DrawRect(back, lit is null ? Palette.Ink : Palette.PanelHover);
-                DrawRect(back, lit is null ? Palette.TrimDim : Color, filled: false, width: 1);
+                DrawRect(back, CardFace.Woad);
+                DrawRect(back, lit is null ? CardFace.Cream.Darkened(0.3f) : Color, filled: false, width: 1);
             }
 
             return;
@@ -446,8 +446,8 @@ public partial class HandView : Control
         for (int k = 2; k >= 1; k--)
         {
             DrawSetTransform(new Vector2(4 + k * 1.5f, 13), -0.2f * k, Vector2.One);
-            DrawRect(new Rect2(-4, -12, 9, 12), Palette.Ink);
-            DrawRect(new Rect2(-4, -12, 9, 12), Palette.TrimDim, filled: false, width: 1);
+            DrawRect(new Rect2(-4, -12, 9, 12), CardFace.Woad);
+            DrawRect(new Rect2(-4, -12, 9, 12), CardFace.Cream.Darkened(0.3f), filled: false, width: 1);
         }
 
         float rise = lit is null ? 0 : 2;
@@ -458,7 +458,7 @@ public partial class HandView : Control
             DrawRect(front.Grow(1), Color with { A = 0.45f });
         }
 
-        DrawRect(front, lit is null ? Palette.PanelDark : Palette.PanelHover);
+        DrawRect(front, lit is null ? CardFace.Cream.Darkened(0.25f) : CardFace.Cream);
         DrawRect(front, lit is null ? Color.Darkened(0.3f) : Color, filled: false, width: 1);
         Texture2D? picture = lit is not null ? GameArt.Texture($"res://assets/cards/{lit.Picture}.png") : GameArt.Ui(Icon);
         if (picture is not null)
@@ -511,7 +511,7 @@ public partial class HandSpread : Control
 
         // Dull cards at the back, lit ones at the front, standing up.
         List<AbilityCard> cards = [.. hand.Cards.Where(card => card.Held).OrderBy(card => card.IsLit)];
-        const float width = 38, height = 52;
+        float width = CardFace.Size.X, height = CardFace.Size.Y;
         float spread = Math.Min(40, (Size.X - 30) / Math.Max(1, cards.Count));
         float start = Size.X / 2 - spread * (cards.Count - 1) / 2;
         for (int i = 0; i < cards.Count; i++)
@@ -535,6 +535,11 @@ public partial class HandSpread : Control
                 Close();
                 Picked?.Invoke(hand, card);
             };
+            if (hand.Default is not null)
+            {
+                // Dragged to its own hand's square, it's played into it without being used.
+                view.FaceDrag = source => CardDrag.BeginAbility(source, hand.Title, card.Name, card.Picture);
+            }
             _shown.Add((view, card));
         }
     }

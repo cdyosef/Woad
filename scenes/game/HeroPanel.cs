@@ -161,13 +161,13 @@ public partial class HeroPanel : Panel
         };
 
         // The bag spread open over the board: its cards face up, two rows of four, to pick from.
-        _bagView = new Panel { Position = new(SideOfBoard + 29, 80), Size = new(230, 136), Visible = false, ZIndex = 3 };
-        _bagTitle = UiTheme.Label(new(0, 3), new(230, 12), color: Palette.TrimBright);
+        _bagView = new Panel { Position = new(SideOfBoard + 79, 100), Size = new(146, 106), Visible = false, ZIndex = 3 };
+        _bagTitle = UiTheme.Label(new(0, 3), new(146, 12), color: Palette.TrimBright);
         _bagTitle.HorizontalAlignment = HorizontalAlignment.Center;
         _bagView.AddChild(_bagTitle);
         for (int i = 0; i < _bagCards.Length; i++)
         {
-            var card = new SheetCard { Position = new(10 + i % 4 * 54, 18 + i / 4 * 56), Size = new(CardWidth, CardHeight), Back = "back_bag", Draggable = true, DropsAs = new DropTarget(DropKind.Bag) };
+            var card = new SheetCard { Position = new(9 + i % 4 * 33, 18 + i / 4 * 43), Size = CardFace.Size, Back = "back_bag", Draggable = true, DropsAs = new DropTarget(DropKind.Bag) };
             card.Pressed += () =>
             {
                 if (card.Card is { } held)
@@ -204,13 +204,13 @@ public partial class HeroPanel : Panel
         };
 
         // The belt's full view over the board: every place on it, face up, five to a row.
-        _beltView = new Panel { Position = new(SideOfBoard + 4, 80), Size = new(280, 136), Visible = false, ZIndex = 3 };
-        _beltTitle = UiTheme.Label(new(0, 3), new(280, 12), color: Palette.TrimBright);
+        _beltView = new Panel { Position = new(SideOfBoard + 62, 100), Size = new(180, 106), Visible = false, ZIndex = 3 };
+        _beltTitle = UiTheme.Label(new(0, 3), new(180, 12), color: Palette.TrimBright);
         _beltTitle.HorizontalAlignment = HorizontalAlignment.Center;
         _beltView.AddChild(_beltTitle);
         for (int i = 0; i < _beltCards.Length; i++)
         {
-            var card = new SheetCard { Position = new(8 + i % 5 * 54, 18 + i / 5 * 56), Size = new(CardWidth, CardHeight), Back = "back_belt", Draggable = true, DropsAs = new DropTarget(DropKind.Belt) };
+            var card = new SheetCard { Position = new(8 + i % 5 * 33, 18 + i / 5 * 43), Size = CardFace.Size, Back = "back_belt", Draggable = true, DropsAs = new DropTarget(DropKind.Belt) };
             card.Pressed += () =>
             {
                 if (card.Card is { } held)
@@ -308,7 +308,7 @@ public partial class HeroPanel : Panel
         foreach ((EquipSlot slot, SheetCard card) in _slots)
         {
             CardInstance? held = hero.Equipment.GetValueOrDefault(slot);
-            card.Show(held, (string)card.GetMeta("empty"), held is not null && held.Id == selectedCardId);
+            card.Show(held, (string)card.GetMeta("empty"), held is not null && held.Id == selectedCardId, hero);
             if (held is { Definition.Wings: true })
             {
                 card.TooltipText += "\nClick for Land. or Fly! Right-click for the card's buttons.";
@@ -324,7 +324,7 @@ public partial class HeroPanel : Panel
         {
             CardInstance? card = i < hero.Belt.Count ? hero.Belt[i] : null;
             _beltCards[i].Visible = i < hero.BeltCapacity;
-            _beltCards[i].Show(card, "Free", card is not null && card.Id == selectedCardId);
+            _beltCards[i].Show(card, "Free", card is not null && card.Id == selectedCardId, hero);
         }
 
         for (int i = 0; i < _backpack.Length; i++)
@@ -341,7 +341,7 @@ public partial class HeroPanel : Panel
         for (int i = 0; i < _bagCards.Length; i++)
         {
             CardInstance? card = i < hero.Backpack.Count ? hero.Backpack[i] : null;
-            _bagCards[i].Show(card, "", card is not null && card.Id == selectedCardId);
+            _bagCards[i].Show(card, "", card is not null && card.Id == selectedCardId, hero);
         }
 
         _luck.Text = $"{UiTheme.Icon("icon_luck", "Luck")} [color={Palette.Hex(Palette.Heal)}]{hero.LuckRemaining}/{stats.Luck} Luck[/color]";

@@ -100,7 +100,7 @@ public partial class GameScreen
         hidden.AddChild(_highAlert);
 
         DicePoolView pool = _heroPanel.Pool;
-        AbilityCard attack = new("fist", "Attack", _rumble, () => _session.GetAttackableMonsters(ReadiedWeaponId).Count > 0);
+        AbilityCard attack = new("rumble", "Rumble", _rumble, () => _session.GetAttackableMonsters(ReadiedWeaponId).Count > 0);
         AbilityCard wend = new("wend", "Wend", _roll, () => true);
         AbilityCard search = new("search", "Search", _search, () => true);
         _rumbleHand = AddHand(new Vector2(HeroPanel.Columns[2], HeroPanel.Rows[1]), "icon_rumble", "Rumble", Palette.DieRumble, attack,
@@ -124,10 +124,10 @@ public partial class GameScreen
         _odHand = AddHand(new Vector2(HeroPanel.Columns[0], HeroPanel.Rows[1]), "icon_odhand", "Od Hand", Palette.DieOdHand, search,
         [
             search,
-            new("steal", "Steal", _steal, () => Beside().Any(tile => VictimAt(tile) is int id && _session.CheckSteal(id) is null)),
-            new("pick_lock", "Pick lock", _pickLock, () => Beside().Any(tile => _session.CheckPickLock(tile) is null)),
-            new("disarm", "Disarm", _disarm, () => Beside().Any(tile => _session.CheckDisarm(tile) is null)),
-            new("rouse", "Aid", _aid, () => _session.GetAidTargets().Count > 0),
+            new("steal", "Steal", _steal, () => Beside().Any(tile => VictimAt(tile) is int id && _session.CheckSteal(id) is null), () => HasMeans(Skill.Steal)),
+            new("pick_lock", "Pick lock", _pickLock, () => Beside().Any(tile => _session.CheckPickLock(tile) is null), () => HasMeans(Skill.PickLock)),
+            new("disarm", "Disarm", _disarm, () => Beside().Any(tile => _session.CheckDisarm(tile) is null), () => HasMeans(Skill.Disarm)),
+            new("rouse", "Aid", _aid, () => _session.GetAidTargets().Count > 0, () => HasMeans(Skill.Aid)),
             new("parry", "Parry", _parry, Threatened, () => Knows(Skill.Parry)),
             new("learn", "Learn", _learn, () => true),
         ]);
@@ -238,7 +238,7 @@ public partial class GameScreen
 
     /// <summary>An item's card in a square: its weapon or tool bonus and dice when it adds to the pool's roll.</summary>
     private StackCard ItemCard(CardInstance item, bool tapped, string bonus = "", int dice = 0) =>
-        new(ItemPrefix + item.Id, item.Definition.Id, item.Definition.Name, tapped, bonus, dice, PoolColor(item.Definition), item.Id);
+        new(ItemPrefix + item.Id, item.Definition.Id, item.Definition.Name, tapped, bonus, dice, PoolColor(item.Definition), item.Id, item.Count);
 
     private static string Plus(int value) => value > 0 ? $"+{value}" : value < 0 ? value.ToString() : "";
 
@@ -362,7 +362,7 @@ public partial class GameScreen
         if (hand == _rumbleHand)
         {
             // The main hand's square: what's in it, any weapon in the off hand, and the Rumble card with its dice.
-            stack.Add(new(HandView.DiceKey, "fist", "Rumble", mine && _session.AttackDiceLeft == 0, Dice: mine ? SelectedAttackDice : 0, Border: Palette.DieRumble));
+            stack.Add(new(HandView.DiceKey, "rumble", "Rumble", mine && _session.AttackDiceLeft == 0, Dice: mine ? SelectedAttackDice : 0, Border: Palette.DieRumble));
             IReadOnlyList<CardInstance> weapons = GameSession.HandWeapons(hero);
             foreach (CardInstance item in new[] { main }.Concat(weapons).OfType<CardInstance>().Distinct())
             {
@@ -460,6 +460,9 @@ public partial class GameScreen
     }
 
     private bool Knows(Skill skill) => ActiveHero?.Knows(skill) == true;
+
+    /// <summary>The hero knows the skill, or holds something that does it for them: its card is in their hand.</summary>
+    private bool HasMeans(Skill skill) => ActiveHero is { } hero && GameSession.HasMeansFor(hero, skill);
 
     /// <summary>Monsters share the hero's room: a die held for defense could matter.</summary>
     private bool Threatened() => ActiveHero is { } hero && _session.State.RoomOf(hero).Monsters.Count > 0;

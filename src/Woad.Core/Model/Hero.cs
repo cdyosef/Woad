@@ -589,6 +589,7 @@ public sealed class Hero
         {
             StartXp = character.Xp,
             Gold = character.Gold,
+            Skills = character.Allocation.Skills,
         };
         var keys = new Dictionary<int, string>();
         int nextId = 1;

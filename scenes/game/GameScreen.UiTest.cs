@@ -1305,6 +1305,26 @@ public partial class GameScreen
                 Check(GearOf(aria)?.MainHand is null, "hidden, it's off her figure");
             }
 
+            // Ability cards drag only between their own hand's fan and square: Shove won't go into the Od Hand's
+            // square; onto the Rumble square it's played there, and dragged back onto the fan it's back in the hand.
+            Vector2 rumbleSquare = _rumbleHand.GetGlobalRect().Position + new Vector2(24, 20);
+            await ClickAt(this, _rumbleHand.GetGlobalRect().Position + _rumbleHand.FanPoint);
+            Check(_spread.CardFor(_shove) is not null, "Shove is in the spread Rumble hand");
+            await DragAt(this, _spread.CardFor(_shove)!.GetGlobalRect().GetCenter(), _odHand.GetGlobalRect().Position + new Vector2(24, 20));
+            Check(_odHand.Played is null && _rumbleHand.Played?.Name != "Shove", "an ability card won't go into another hand's square");
+            if (_spread.Hand != _rumbleHand)
+            {
+                await ClickAt(this, _rumbleHand.GetGlobalRect().Position + _rumbleHand.FanPoint);
+            }
+
+            await DragAt(this, _spread.CardFor(_shove)!.GetGlobalRect().GetCenter(), rumbleSquare);
+            await WaitUntilIdle();
+            Check(_rumbleHand.Played?.Name == "Shove" && !_spread.Visible, "dragged onto the Rumble square, Shove is played there");
+            await SaveShot("shove_played");
+            await DragAt(this, _rumbleHand.GetGlobalRect().Position + _rumbleHand.CardPoint(HandView.SkillKey), _rumbleHand.GetGlobalRect().Position + _rumbleHand.FanPoint);
+            await WaitUntilIdle();
+            Check(_rumbleHand.Played is null, "dragged back onto the fan, Shove is back in the hand");
+
             GD.Print("Loot test passed.");
             Sfx.QuitGame(this);
         }

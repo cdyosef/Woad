@@ -273,16 +273,29 @@ one, a dark one adds one; never fewer than one), from roll to roll and turn to t
 fewer remain. Power Dice start unselected. The Defense row can't be clicked: it shows your base die (framed,
 always rolled), your extra dice (lit while ready, dark once spent), your armor and your Block.
 
+**Cards** all look like playing cards, the same size everywhere (the sheet, the belt and bag views, the
+carry tab, a spread hand). Face up: cream, its **corner index** (a small copy of its picture, with the
+stack's count under it) top left, its picture in the middle, its name along the bottom, its bonuses bottom
+right and its dice down its left edge, each in its pool's color; a weapon that shoots shows its ammo top right
+with how many are to hand (the Sling's Rocks). Hovering shows its name and rules. Face down: woad blue, a
+diamond lattice in a cream frame. Each square on the sheet is a **slot**: face down with the slot's mark and
+name while it's empty (it can't be picked up), the card sitting on it once there is one.
+
 **The pool squares.** Three equipment squares double as the pools' stacks: the main hand is Rumble, the off
-hand Od Hand, the feet Wend. Each holds the cards out of your hand for that pool, staggered so every name
-shows, the selected one in front on the right:
+hand Od Hand, the feet Wend. Each holds the cards out of your hand for that pool, staggered so each corner
+index shows, the selected one in front:
 - **The dice card** (Rumble, Od Hand, Wend) is always there and usable with no other card out. It holds the
   pool's selected dice; it lights up with whichever card is in front, and the cards not selected sit behind,
   dim. Each card's border is its own pool's color (a shield in the off hand is blue).
 - **Gear** in the slot (and weapons and tools that add to the pool) sits in the stack with its bonus in its
-  bottom-left corner and its own dice on it. A card that can't be used again this turn lies on its side, dim,
-  along the bottom (**tapped**).
-- **Skills** played from the hand fan go on top of the stack, and the last one played stays there.
+  corner and its own dice on it. A card that can't be used again this turn lies on its side, face down, along
+  the bottom (**tapped**).
+- **Skills** played from the hand fan go on top of the stack, and the last one played stays there. An
+  ability card can be dragged from the spread hand onto its own square (played there, ready to use) and
+  from the square back onto the fan, but never into another pool's square. Only skills the hero knows, or
+  has a tool for (Lockpicks for Pick lock), are in their hand.
+- **Dragging items:** a quick drag off a stack takes one card (dropped on the board, one is dropped); press
+  and hold a moment first to take the whole stack. Between the hands, belt and bag a stack moves whole.
 - **Click** a card to bring it to the front (an item's card is picked up for its buttons too); **double-click**
   the front card to use it.
 - **Under each square**, the pool's spare dice (up to four; with more, the fourth spot shows the pool's icon
