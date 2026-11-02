@@ -726,6 +726,7 @@ public partial class GameScreen
         _party.SpendRequested += (heroId, stat, spell) => ExecuteForActiveHero(ownerId => new SpendPoint(ownerId, heroId, stat, spell));
         _party.LearnRequested += (heroId, skill) => ExecuteForActiveHero(ownerId => new LearnSkill(ownerId, heroId, skill));
         _party.PolicyRequested += (companionId, policy) => ExecuteForActiveHero(ownerId => new SetCompanionPolicy(ownerId, companionId, policy));
+        _party.SwitchRequested += (heroId, ownerId) => ExecuteForActiveHero(playerId => new SwitchControl(playerId, heroId, ownerId));
         _party.CloseRequested += () =>
         {
             _party.Visible = false;

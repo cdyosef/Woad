@@ -1010,6 +1010,11 @@ them up there like any character.
   a player's seat frees their companions too.
 - **Standing orders:** on your turn, **Orders** (beside End turn) sets each companion's order. It
   costs nothing and lasts until changed.
+- **Handing heroes over** (mid-run, in the dungeon's Party menu, on your turn): **Make hero** takes one of
+  your companions in hand as a player's hero; **Follow (name)** on your own hero makes it another player's
+  companion, with its own companions going along, and the game plays it from then on (the rest of the
+  turn too). Never mid-roll, never the last hero in the run, and the dead raised as companions stay
+  companions. It lasts for the run; the characters are saved as they were.
 - **The Party menu** (**Party**, beside Menu in a dungeon and beside Enter on the Woarld Map) shows
   everyone's level, hearts and gear. On your turn you spend the points a level brings, yours and your
   companions', without waiting for the run to end (they're kept); on the map, **Level up** opens a

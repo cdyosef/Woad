@@ -1447,6 +1447,15 @@ public partial class GameScreen
             await WaitUntilIdle();
             Check(pip.Policy.PicksUpLoot, "the Loot switch tells Pip to pick up loot");
 
+            // Handing heroes over: Pip made a hero; then Aria made Pip's companion, the game playing her from then on.
+            Check(_party.Find($"Follow{aria.Id}_{pip.Id}") is null, "with no other player, there's no one for Aria to follow");
+            await Click(this, _party.Find($"MakeHero{pip.Id}")!);
+            await WaitUntilIdle();
+            Check(!pip.IsCompanion, "Make hero takes Pip in hand as a hero");
+            await Click(this, _party.Find($"Follow{aria.Id}_{pip.Id}")!);
+            await WaitUntilIdle();
+            Check(aria.OwnerId == pip.Id, "Follow Pip makes Aria Pip's companion");
+
             await Click(this, _party.Find("Close")!);
             Check(!_party.Visible, "Close puts the Party menu away");
             GD.Print("Party test passed.");

@@ -412,6 +412,9 @@ public sealed record XpGained(int HeroId, int Amount, int Total) : GameEvent;
 /// <summary>A player gave their companion a standing order.</summary>
 public sealed record CompanionOrdered(int OwnerId, int CompanionId, CompanionOrder Order) : GameEvent;
 
+/// <summary>A hero changed hands: a companion became a player's hero (<paramref name="NewOwnerId"/> null), or a hero became a companion of <paramref name="NewOwnerId"/>.</summary>
+public sealed record ControlSwitched(int ById, int HeroId, int? NewOwnerId) : GameEvent;
+
 /// <summary>A hero walked, fell or was shoved into a pit, or a monster was. A bottomless pit has no room below.</summary>
 public sealed record FellIntoPit(int EntityId, string RoomId, GridPosition Pit, bool Bottomless) : GameEvent;
 
