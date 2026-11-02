@@ -545,6 +545,26 @@ public sealed partial class GameSession
                 events.Add(new TrapDisarmed(hero.Id, check.Target));
                 break;
 
+            case OdHandCheckKind.Disarm:
+                // Botched, the trap goes off on whoever tried: darts in their doorway, spikes or needles beside them.
+                events.Add(new CheckFailed(hero.Id, check.Kind));
+                if (check.Target == hero.Position && DoorAt(room, check.Target) is { Trap: { } darts } door)
+                {
+                    door.Trap = null;
+                    SpringTrap(hero, room, darts, check.Target, events);
+                }
+                else if (room.TrapAt(check.Target) is { } floorTrap)
+                {
+                    SpringTrap(hero, room, floorTrap, check.Target, events, onIt: check.Target == hero.Position);
+                }
+                else if (room.ChestTrapAt(check.Target) is { } needle)
+                {
+                    room.SetChestTrap(check.Target, null);
+                    SpringTrap(hero, room, needle, check.Target, events);
+                }
+
+                break;
+
             case OdHandCheckKind.Search:
                 Explore(hero, room, total, events);
                 Reveal(hero, room, total, events);

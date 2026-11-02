@@ -58,6 +58,46 @@ public class DungeonSecretsTests
     private static GameSession DoorRun(PassageKind kind, int difficulty = 5, ScriptedDice? dice = null, Stats? stats = null, string[]? cards = null) =>
         TestRun.Start(TwoRooms(), dice, stats: stats, cards: cards, passages: [new PassageSetup("A", Direction.East, kind, difficulty)]);
 
+    /// <summary>A hero in the east doorway, darts (difficulty 4) in its frame, already found.</summary>
+    private static GameSession FoundDartsRun(ScriptedDice dice)
+    {
+        GameSession session = TestRun.Start(TwoRooms(), dice, passages: [new PassageSetup("A", Direction.East, PassageKind.Open, 0, new TrapSetup(TrapKind.Darts, 4))]);
+        session.RoomById().PassageOn(Direction.East)!.Trap!.Revealed = true;
+        return session;
+    }
+
+    [Fact]
+    public void AFoundDoorTrapCanStillBeWalkedThroughWithADefenseMoreAgainstIt()
+    {
+        // The darts: 1, +1 for the floor and +4 for their difficulty: 6. The hero's defense 5, +1 as they were found: no harm.
+        GameSession session = FoundDartsRun(new ScriptedDice(3, 1, 5));
+        Hero hero = session.HeroInSeat();
+        session.Do(new RollMovement(hero.Id));
+
+        IReadOnlyList<GameEvent> events = session.Do(new GoThroughDoor(hero.Id, Direction.East));
+
+        Assert.Equal("B", hero.RoomId);
+        TrapAttacked attack = events.SingleOf<TrapAttacked>();
+        Assert.Equal((6, true), (attack.Total, attack.Found));
+        Assert.Equal(TestRun.HeroStats.Hearts, hero.Hearts);
+        Assert.Null(session.RoomById().PassageOn(Direction.East)!.Trap);
+    }
+
+    [Fact]
+    public void ABotchedDisarmSetsTheTrapOffOnWhoeverTriedIt()
+    {
+        // The Od Hand die's 1 misses the darts' 4; they fire: 4 + 5 against a defense of 1.
+        GameSession session = FoundDartsRun(new ScriptedDice(1, 4, 1));
+        Hero hero = session.HeroInSeat();
+
+        IReadOnlyList<GameEvent> events = session.Do(new Disarm(hero.Id, hero.Position));
+
+        Assert.Single(events.OfType<CheckFailed>());
+        Assert.Equal(new TrapSprung(hero.Id, TrapKind.Darts, hero.Position), events.SingleOf<TrapSprung>());
+        Assert.Equal(TestRun.HeroStats.Hearts - 1, hero.Hearts);
+        Assert.Null(session.RoomById().PassageOn(Direction.East)!.Trap);
+    }
+
     [Fact]
     public void ALockedDoorTakesAKey()
     {
@@ -151,7 +191,7 @@ public class DungeonSecretsTests
     public void HiddenSpikesStopTheWalkAndHurt()
     {
         var features = new RoomFeatures { Traps = new Dictionary<GridPosition, TrapSetup> { [new(4, 2)] = new(TrapKind.Spikes, 4) } };
-        GameSession session = TestRun.Start([new RoomSetup("A", TestRun.Room(Open), Features: features)], new ScriptedDice(3));
+        GameSession session = TestRun.Start([new RoomSetup("A", TestRun.Room(Open), Features: features)], new ScriptedDice(3, 4, 1));
         Hero hero = session.HeroInSeat();
         session.Do(new RollMovement(hero.Id));
 
@@ -168,7 +208,7 @@ public class DungeonSecretsTests
     public void AFoundTrapCanBeSteppedOnButNotWalkedPast()
     {
         var features = new RoomFeatures { Traps = new Dictionary<GridPosition, TrapSetup> { [new(4, 3)] = new(TrapKind.Spikes, 4) } };
-        GameSession session = TestRun.Start([new RoomSetup("A", TestRun.Room(Open), Features: features)], new ScriptedDice(4, 3));
+        GameSession session = TestRun.Start([new RoomSetup("A", TestRun.Room(Open), Features: features)], new ScriptedDice(4, 3, 4, 1));
         Hero hero = session.HeroInSeat();
         session.Do(new Search(hero.Id));
         session.Do(new RollMovement(hero.Id));
@@ -181,6 +221,7 @@ public class DungeonSecretsTests
         Assert.Contains(new GridPosition(4, 3), session.GetReachableTiles().Keys);
         IReadOnlyList<GameEvent> events = session.Do(new MoveHero(hero.Id, new GridPosition(4, 3)));
         Assert.Equal(new TrapSprung(hero.Id, TrapKind.Spikes, new GridPosition(4, 3)), events.SingleOf<TrapSprung>());
+        Assert.True(events.SingleOf<TrapAttacked>().Found);
         Assert.Equal(new GridPosition(4, 3), hero.Position);
         Assert.Equal(TestRun.HeroStats.Hearts - 1, hero.Hearts);
         Assert.Equal(0, session.State.Turn!.MovementPoints);
@@ -194,7 +235,7 @@ public class DungeonSecretsTests
         [
             new RoomSetup("A", TestRun.Room(Open), Features: features),
             new RoomSetup("B", TestRun.Room(Empty), Floor: 2, Role: RoomRole.Arrival),
-        ], new ScriptedDice(1));
+        ], new ScriptedDice(1, 4, 1));
         Hero hero = session.HeroInSeat();
         session.Do(new RollMovement(hero.Id));
 
@@ -306,7 +347,7 @@ public class DungeonSecretsTests
     [Fact]
     public void AChestTrapStabsWhoeverOpensIt()
     {
-        GameSession session = ChestRun(new RoomFeatures { ChestTraps = new Dictionary<GridPosition, TrapSetup> { [new(4, 3)] = new(TrapKind.Needle, 4) } });
+        GameSession session = ChestRun(new RoomFeatures { ChestTraps = new Dictionary<GridPosition, TrapSetup> { [new(4, 3)] = new(TrapKind.Needle, 4) } }, new ScriptedDice(4, 1));
         Hero hero = session.HeroInSeat();
 
         IReadOnlyList<GameEvent> events = session.Do(new OpenChest(hero.Id, new GridPosition(4, 3)));
@@ -401,7 +442,7 @@ public class DungeonSecretsTests
     {
         // The second hero starts at (4,3), the free tile nearest the center.
         var features = new RoomFeatures { Traps = new Dictionary<GridPosition, TrapSetup> { [new(3, 4)] = new(TrapKind.Spikes, 4) } };
-        GameSession session = TestRun.Start([new RoomSetup("A", TestRun.Room(Open), Features: features)], new ScriptedDice(1), heroes: 2);
+        GameSession session = TestRun.Start([new RoomSetup("A", TestRun.Room(Open), Features: features)], new ScriptedDice(1, 4, 1), heroes: 2);
         Hero hero = session.HeroInSeat();
         hero.Hearts = 1;
         hero.Keys = 2;

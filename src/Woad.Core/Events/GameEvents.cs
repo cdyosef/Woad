@@ -314,6 +314,9 @@ public sealed record TrapDisarmed(int HeroId, GridPosition Target) : GameEvent;
 /// <summary>A hero set off a trap at <paramref name="Position"/> (its tile, chest or doorway).</summary>
 public sealed record TrapSprung(int HeroId, TrapKind Kind, GridPosition Position) : GameEvent;
 
+/// <summary>A sprung trap attacked <paramref name="HeroId"/>: its dice and bonus; the hero defends next (+1 if it was <paramref name="Found"/>).</summary>
+public sealed record TrapAttacked(int HeroId, TrapKind Kind, DiceRoll Roll, int Bonus, int Total, bool Found) : GameEvent;
+
 /// <summary>A hero dropped through a trap door into another room (<paramref name="Jumped"/> on purpose, unhurt).</summary>
 public sealed record HeroFell(int HeroId, string FromRoomId, string RoomId, int Floor, GridPosition Position, bool FirstTimeOnFloor, bool Jumped) : GameEvent;
 

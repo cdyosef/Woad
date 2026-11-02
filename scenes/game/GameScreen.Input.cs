@@ -425,7 +425,7 @@ public partial class GameScreen
     /// A chest: an opened one is rummaged through; otherwise disarm a trap you found, pick the lock if
     /// you've no key, or open it (using a key if locked) and rummage through what's inside.
     /// </summary>
-    private async void ClickChest(Hero hero, Room room, GridPosition chest)
+    private void ClickChest(Hero hero, Room room, GridPosition chest)
     {
         if (room.IsChestOpened(chest))
         {
@@ -435,16 +435,40 @@ public partial class GameScreen
 
         if (room.ChestTrapAt(chest) is { Revealed: true })
         {
-            ExecuteOdHand((heroId, dice, tools, power) => new Disarm(heroId, chest, dice, tools, power));
+            AskTrap("A needle trap guards this chest.", "Open it anyway", () => OpenChest(hero, room, chest),
+                () => ExecuteOdHand((heroId, dice, tools, power) => new Disarm(heroId, chest, dice, tools, power)));
         }
         else if (room.ChestLockAt(chest) is not null && hero.Keys < 1)
         {
             ExecuteOdHand((heroId, dice, tools, power) => new PickLock(heroId, chest, dice, tools, power));
         }
-        else if (await ExecuteAsync(new OpenChest(hero.Id, chest)) && ActiveHero == hero && room.IsChestOpened(chest) && room.LootAt(chest).Count > 0)
+        else
+        {
+            OpenChest(hero, room, chest);
+        }
+    }
+
+    /// <summary>Opens a chest (using a key if it's locked), and rummages through what's inside.</summary>
+    private async void OpenChest(Hero hero, Room room, GridPosition chest)
+    {
+        if (await ExecuteAsync(new OpenChest(hero.Id, chest)) && ActiveHero == hero && room.IsChestOpened(chest) && room.LootAt(chest).Count > 0)
         {
             Rummage(hero, room, chest);
         }
+    }
+
+    /// <summary>
+    /// A found trap in the way (darts in a doorway, a needle in a chest): disarm it, if the hero knows how or has
+    /// the tools, or set it off and go on anyway, with a defense more against it for having found it.
+    /// </summary>
+    private void AskTrap(string what, string goOn, Action go, Action disarm)
+    {
+        IReadOnlyList<(string, Action)> choices = HasMeans(Skill.Disarm)
+            ? [("Disarm it", disarm), ($"{goOn} (+1 defense)", go)]
+            : [($"{goOn} (+1 defense)", go), ("Leave it", RefreshPanels)];
+        _selectedCardId = null;
+        RefreshPanels();
+        _inventory.AskChoice(null, what, choices);
     }
 
     /// <summary>Runs an Od Hand command with the selected Od Hand dice, tools and Power Dice.</summary>
@@ -506,7 +530,12 @@ public partial class GameScreen
         else if (DoorAt(room, hero.Position) is { } side)
         {
             Passage? passage = room.PassageOn(side);
-            if (passage?.Trap is { Revealed: true })
+            if (passage?.Trap is { Revealed: true } && passage is not { IsLocked: true })
+            {
+                AskTrap("Darts are set in this doorway.", "Go through", () => Execute(new GoThroughDoor(hero.Id, side)),
+                    () => ExecuteOdHand((heroId, dice, tools, power) => new Disarm(heroId, hero.Position, dice, tools, power)));
+            }
+            else if (passage?.Trap is { Revealed: true })
             {
                 ExecuteOdHand((heroId, dice, tools, power) => new Disarm(heroId, hero.Position, dice, tools, power));
             }
