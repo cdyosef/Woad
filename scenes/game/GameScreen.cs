@@ -686,7 +686,7 @@ public partial class GameScreen : Control
                 await PlayMerchantEvent(gameEvent);
                 break;
 
-            case DaggerThrown or FloorBurnedOut:
+            case DaggerThrown or StoneLanded or FloorBurnedOut:
                 _board.QueueRedraw();
                 break;
 
@@ -755,6 +755,10 @@ public partial class GameScreen : Control
 
             case PointSpent spent:
                 CalloutOver(spent.HeroId, "LEVEL UP!", Palette.Heal);
+                break;
+
+            case WeaponBroke broke:
+                CalloutOver(broke.HeroId, "SNAP!", Palette.Danger);
                 break;
 
             case TorchBurnedOut burnedOut:
@@ -1536,6 +1540,7 @@ public partial class GameScreen : Control
         LastChanceUsed lucky => FigureRoom(lucky.HeroId),
         Guarded guarded => FigureRoom(guarded.HeroId),
         DaggerThrown thrown => thrown.RoomId,
+        StoneLanded landed => landed.RoomId,
         MerchantFreed freed => FigureRoom(freed.MerchantId),
         MerchantMoved moved => FigureRoom(moved.MerchantId),
         MerchantSlain slain => FigureRoom(slain.MerchantId),

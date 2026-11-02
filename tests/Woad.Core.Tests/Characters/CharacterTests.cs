@@ -21,12 +21,12 @@ public class CharacterTests
 
         Hero hero = Hero.Preview(character, Content, hearts: 2, out IReadOnlyDictionary<int, string> keys);
 
-        Assert.False(hero.Equipment.ContainsKey(EquipSlot.MainHand));
-        Assert.Equal("torch", hero.Equipment[EquipSlot.OffHand].Definition.Id);
-        Assert.Equal(["health_potion", "lockpicks"], hero.Belt.Select(card => card.Definition.Id));
+        Assert.Equal("club", hero.Equipment[EquipSlot.MainHand].Definition.Id);
+        Assert.False(hero.Equipment.ContainsKey(EquipSlot.OffHand));
+        Assert.Equal(["torch", "health_potion", "lockpicks"], hero.Belt.Select(card => card.Definition.Id));
         Assert.Empty(hero.Backpack);
         Assert.Equal(2, hero.Hearts);
-        Assert.Equal("lockpicks", keys[hero.Belt[1].Id]);
+        Assert.Equal("lockpicks", keys[hero.Belt[2].Id]);
     }
 
     [Fact]
@@ -36,9 +36,9 @@ public class CharacterTests
 
         Assert.Equal(1, character.Level);
         Assert.Equal(2, character.UnspentPoints);
-        // No weapon and no shield to begin with: a torch in hand, the potion and lockpicks on the belt.
-        Assert.Equal(["basic_belt", "basic_buckle", "torch"], character.Equipped);
-        Assert.Equal(["health_potion", "lockpicks"], character.Belt);
+        // A Club and no shield to begin with: the torch (unlit), the potion and lockpicks on the belt.
+        Assert.Equal(["basic_belt", "basic_buckle", "club"], character.Equipped);
+        Assert.Equal(["torch", "health_potion", "lockpicks"], character.Belt);
         Assert.Empty(character.Backpack);
         Assert.Equal(GameRules.HeroBaseStats.Hearts + 1, character.BaseStats.Hearts);
         Assert.Equal(2, character.BaseStats.AttackDice);
@@ -113,8 +113,8 @@ public class CharacterTests
         Assert.Equal(character.Appearance, hero.Appearance);
         Assert.Equal(GameRules.HeroBaseStats.Hearts + 2, hero.MaxHearts);
         Assert.Equal(1, hero.LuckRemaining);
-        Assert.Equal("torch", hero.Equipment[EquipSlot.OffHand].Definition.Id);
-        Assert.Equal(["health_potion", "lockpicks"], hero.Belt.Select(card => card.Definition.Id));
+        Assert.Equal("club", hero.Equipment[EquipSlot.MainHand].Definition.Id);
+        Assert.Equal(["torch", "health_potion", "lockpicks"], hero.Belt.Select(card => card.Definition.Id));
         Assert.All(hero.AllCards, card => Assert.Equal(hero.Id, card.BroughtInByHeroId));
     }
 }

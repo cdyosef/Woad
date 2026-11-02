@@ -360,7 +360,7 @@ public sealed class Hero
     /// for whether a tile can be hit.
     /// </summary>
     public int AttackRange => new[] { MainWeapon, ThrownOffHand }
-        .Select(card => card is null ? 1 : Math.Max(card.Unloaded ? 1 : card.Definition.AttackRange, card.Definition.ThrownRange))
+        .Select(card => card is null ? 1 : Math.Max(card.Unloaded || !Loaded(card) ? 1 : card.Definition.AttackRange, card.Definition.ThrownRange))
         .Max();
 
     /// <summary>Wearing gear that swims (the Diving Helm): water is no harder than floor, and deep water needs no effort to stay afloat.</summary>
@@ -375,10 +375,34 @@ public sealed class Hero
         // A torch in hand is one torch: more join the stack carried, not the hand.
         definition.IsStackable ? AllCards.FirstOrDefault(card => card.Definition == definition && !(definition.Torch && EquippedCards.Contains(card))) : null;
 
-    /// <summary>Whether the hero can take this card: it joins a stack they hold, or there's room in the backpack.</summary>
+    /// <summary>Whether the hero can take this card: it joins a stack they hold (with room in it), or there's room in the backpack.</summary>
     public bool CanCarry(CardDefinition definition) =>
         definition.CarryOnly ? CanCarryInArms(definition)
-        : StackOf(definition) is not null || _backpack.Count < GameRules.BackpackCapacity;
+        : StackOf(definition) is { } stack ? stack.Count < StackLimit(definition)
+        : _backpack.Count < GameRules.BackpackCapacity;
+
+    /// <summary>The most one stack of this card can hold: its own limit (10 Rocks), or a mod's that holds them (100 in a Rock Bag); no limit for most.</summary>
+    public int StackLimit(CardDefinition definition) =>
+        _mods.Where(mod => mod.Definition.Holds == definition.Id).Select(mod => mod.Definition.HoldsUpTo).DefaultIfEmpty(0).Max() is > 0 and var held ? held
+        : definition.MaxStack > 0 ? definition.MaxStack
+        : int.MaxValue;
+
+    /// <summary>How many more of this card the hero could take into the stack they hold of it (or a new one).</summary>
+    public int RoomFor(CardDefinition definition) =>
+        !CanCarry(definition) ? 0 : StackLimit(definition) - (StackOf(definition)?.Count ?? 0);
+
+    /// <summary>
+    /// What a weapon that shoots (the Sling) would load next: its ammo in the off hand, or on the belt when a
+    /// mod there holds it (the Rock Bag). Null with none to hand, or for a weapon that doesn't shoot.
+    /// </summary>
+    public CardInstance? AmmoFor(CardInstance weapon) =>
+        weapon.Definition.Ammo is not { } ammo ? null
+        : _equipment.GetValueOrDefault(EquipSlot.OffHand) is { } off && off.Definition.Id == ammo ? off
+        : _mods.Any(mod => mod.Definition.Holds == ammo) ? _belt.FirstOrDefault(card => card.Definition.Id == ammo)
+        : null;
+
+    /// <summary>A weapon ready to strike: anything but one that shoots with nothing to shoot.</summary>
+    public bool Loaded(CardInstance weapon) => weapon.Definition.Ammo is null || AmmoFor(weapon) is not null;
 
     public (CardInstance Card, CardLocation Location)? FindCard(int cardId)
     {
@@ -642,8 +666,9 @@ public sealed class Hero
         {
             _mods.Add(card);
         }
-        else if (definition.BeltsFirst && _belt.Count < BeltCapacity)
+        else if (definition.Belts && _belt.Count < BeltCapacity)
         {
+            // Belt tools ride on the belt, a torch too (unlit, till it's taken in hand).
             _belt.Add(card);
         }
         else if (definition.Slot is not null && CardsDisplacedBy(definition).Count == 0)

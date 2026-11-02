@@ -83,7 +83,12 @@ public sealed partial class GameSession
 
         if (!hero.CanCarry(card.Definition))
         {
-            return "Your backpack is full.";
+            return hero.StackOf(card.Definition) is not null ? $"You can't hold any more {card.Definition.Name}s." : "Your backpack is full.";
+        }
+
+        if (count > hero.RoomFor(card.Definition))
+        {
+            return $"You can hold only {hero.RoomFor(card.Definition)} more.";
         }
 
         SpendLootOn(command.Tile);

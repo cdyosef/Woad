@@ -12,7 +12,8 @@ namespace Woad.Core.Rules;
 /// off-hand Dagger. A strike adds that weapon's value (and its dice) to one attack. Any hero can strike
 /// a monster right beside them; a weapon reaches further by its range: in sight (a bow), in a straight
 /// line (a Spear), or thrown (a Dagger, which leaves the hand). A crossbow strikes whenever it's loaded,
-/// and each shot unloads it. Holding two weapons (a Spear and a Boomerang), the hero can pick which one an
+/// and each shot unloads it; a Sling only with a Rock to hand, each shot using one up. Some weapons don't
+/// last: a Club breaks on a 1, a Stick or Rock with the blow (one thrown or slung lands whole on a 6). Holding two weapons (a Spear and a Boomerang), the hero can pick which one an
 /// attack is made with; otherwise it's the main hand if it reaches, else the off hand.
 /// </summary>
 public sealed partial class GameSession
@@ -30,14 +31,14 @@ public sealed partial class GameSession
     /// they hold: right beside them, or as far as a weapon reaches. For the screens' targeting too.
     /// </summary>
     public static bool CanHeroReach(Hero hero, RoomLayout layout, GridPosition from, GridPosition to) =>
-        Reaches(hero.MainWeapon, layout, from, to, out _) || Reaches(OffHandWeapon(hero), layout, from, to, out _);
+        Reaches(hero, hero.MainWeapon, layout, from, to, out _) || Reaches(hero, OffHandWeapon(hero), layout, from, to, out _);
 
     /// <summary>
     /// Whether a hero on <paramref name="from"/> could attack <paramref name="to"/> with <paramref name="weapon"/>
     /// (one of their <see cref="HandWeapons"/>), or with anything they hold when it's null.
     /// </summary>
     public static bool CanHeroReach(Hero hero, RoomLayout layout, GridPosition from, GridPosition to, CardInstance? weapon) =>
-        weapon is null ? CanHeroReach(hero, layout, from, to) : Reaches(weapon, layout, from, to, out _);
+        weapon is null ? CanHeroReach(hero, layout, from, to) : Reaches(hero, weapon, layout, from, to, out _);
 
     /// <summary>The weapons in the hero's hands an attack can be made with: the main hand's, then the off hand's.</summary>
     public static IReadOnlyList<CardInstance> HandWeapons(Hero hero) =>
@@ -87,9 +88,9 @@ public sealed partial class GameSession
     /// <summary>
     /// Whether <paramref name="card"/> (null bare-handed) reaches from one tile to another: anything reaches
     /// right beside you; a weapon reaches its range, by its pattern, if it's loaded; a throwable one its
-    /// throwing range (<paramref name="thrown"/>: it would leave the hand).
+    /// throwing range (<paramref name="thrown"/>: it would leave the hand). A Sling with nothing to sling reaches no further than a fist.
     /// </summary>
-    private static bool Reaches(CardInstance? card, RoomLayout layout, GridPosition from, GridPosition to, out bool thrown)
+    private static bool Reaches(Hero hero, CardInstance? card, RoomLayout layout, GridPosition from, GridPosition to, out bool thrown)
     {
         thrown = false;
         if (Targeting.CanHeroAttack(layout, 1, from, to))
@@ -103,7 +104,7 @@ public sealed partial class GameSession
         }
 
         AttackPattern pattern = weapon.Reach ? AttackPattern.Reach : AttackPattern.Ranged;
-        if (!card.Unloaded && weapon.AttackRange > 1 && Targeting.CanAttack(layout, pattern, weapon.AttackRange, from, to))
+        if (!card.Unloaded && hero.Loaded(card) && weapon.AttackRange > 1 && Targeting.CanAttack(layout, pattern, weapon.AttackRange, from, to))
         {
             return true;
         }
@@ -126,8 +127,8 @@ public sealed partial class GameSession
         Stats stats = hero.EffectiveStats;
         bool mainStrikeLeft = turn.StrikesUsed < MainStrikes(hero);
         bool mainThrown = false, offThrown = false;
-        bool mainReaches = (only is null || only == main) && Reaches(main, room.Layout, hero.Position, target, out mainThrown);
-        bool offReaches = (only is null || only == off) && Reaches(off, room.Layout, hero.Position, target, out offThrown);
+        bool mainReaches = (only is null || only == main) && Reaches(hero, main, room.Layout, hero.Position, target, out mainThrown);
+        bool offReaches = (only is null || only == off) && Reaches(hero, off, room.Layout, hero.Position, target, out offThrown);
 
         int Ambush(CardDefinition weapon) =>
             weapon.Ambush && monster is not null && (monster.Stun.IsStunned || monster.Prone) ? weapon.AttackBonus + weapon.Modifiers.Weapon : 0;
@@ -135,7 +136,7 @@ public sealed partial class GameSession
         Wielding Main(bool strike)
         {
             CardDefinition? weapon = main?.Definition;
-            int bonus = Math.Max(0, stats.Weapon) + (weapon?.AttackBonus ?? 0) + Versatile(hero)
+            int bonus = Math.Max(0, stats.Weapon) + (weapon?.AttackBonus ?? 0) + Versatile(hero) + AmmoBonus(hero, main)
                         + (weapon is { OffHandStrike: true } ? PairBonus(hero) : 0) + (weapon is null ? 0 : Ambush(weapon));
             return new Wielding(main, false, strike, strike ? bonus : 0, strike ? weapon?.Modifiers.WeaponDice ?? 0 : 0, mainThrown);
         }
@@ -152,7 +153,7 @@ public sealed partial class GameSession
         }
 
         // A crossbow strikes whenever it's loaded; other weapons while a strike is left this turn.
-        bool mainCanStrike = main?.Definition.Reload is not null ? !main.Unloaded : mainStrikeLeft;
+        bool mainCanStrike = main?.Definition.Reload is not null ? !main.Unloaded : mainStrikeLeft && (main is null || hero.Loaded(main));
         bool offCanStrike = off?.Definition is { } offWeapon && (offWeapon.OffHandStrike ? !turn.OffHandStrikeUsed : mainStrikeLeft);
 
         if (mainReaches && mainCanStrike && (main is not null || stats.Weapon > 0))
@@ -169,11 +170,17 @@ public sealed partial class GameSession
         return mainReaches ? Main(false) : offReaches ? Off(false) : Wielding.BareHanded;
     }
 
+    /// <summary>What a Sling's Rock adds to its shot: the Rock's own value.</summary>
+    private static int AmmoBonus(Hero hero, CardInstance? weapon) =>
+        weapon is not null && hero.AmmoFor(weapon) is { } ammo ? ammo.Definition.AttackBonus + ammo.Definition.Modifiers.Weapon : 0;
+
     /// <summary>
     /// Spends what an attack used: the strike (when its value went in), a crossbow's load, and a thrown
-    /// Dagger, which lands at the target's feet (on the nearest free floor when it can't).
+    /// Dagger, which lands at the target's feet (on the nearest free floor when it can't). A Sling's Rock,
+    /// or a Rock thrown, leaves the hand to land or break as the dice fall; a Stick or a Rock swung breaks
+    /// now; a Club waits on the dice. Returns what's settled when they land (see <see cref="SpendWeapon"/>).
     /// </summary>
-    private void UseWeapon(Hero hero, Room room, Wielding wielding, bool armed, GridPosition target, List<GameEvent> events)
+    private WeaponSpent? UseWeapon(Hero hero, Room room, Wielding wielding, bool armed, GridPosition target, List<GameEvent> events)
     {
         if (armed && wielding.HasStrike && wielding.Weapon?.Reload is null)
         {
@@ -192,12 +199,69 @@ public sealed partial class GameSession
             crossbow.Unloaded = true;
         }
 
-        if (wielding.Thrown && wielding.Card is { } dagger)
+        bool struck = armed && wielding.HasStrike;
+        if (wielding.Card is not { } card)
         {
-            CardInstance thrown = TakeFromHero(hero, dagger, 1);
+            return null;
+        }
+
+        CardDefinition weapon = card.Definition;
+        if (struck && hero.AmmoFor(card) is { } ammo)
+        {
+            return new WeaponSpent(TakeFromHero(hero, ammo, 1), ammo.Id, target, null);
+        }
+
+        if (wielding.Thrown && weapon.BreaksOnUse)
+        {
+            return new WeaponSpent(TakeFromHero(hero, card, 1), card.Id, target, null);
+        }
+
+        if (wielding.Thrown)
+        {
+            CardInstance thrown = TakeFromHero(hero, card, 1);
             GridPosition spot = room.Layout[target].IsWalkable() ? target : SafeTile(room, target);
             room.AddLoot(spot, [thrown]);
             events.Add(new DaggerThrown(hero.Id, thrown.Id, room.Id, spot));
+            return null;
+        }
+
+        if (struck && weapon.BreaksOnUse)
+        {
+            TakeFromHero(hero, card, 1);
+            events.Add(new WeaponBroke(hero.Id, card.Id));
+            return null;
+        }
+
+        return struck && weapon.BreaksOnOne ? new WeaponSpent(null, card.Id, target, card) : null;
+    }
+
+    /// <summary>
+    /// As an attack's dice land: a Rock thrown or slung lands whole at the target's feet on a 6 (on the
+    /// nearest free floor when it can't), and is gone otherwise; a Club breaks on any 1.
+    /// </summary>
+    private void SpendWeapon(Hero hero, PendingRoll attack, List<GameEvent> events)
+    {
+        if (attack.Spent is not { } spent)
+        {
+            return;
+        }
+
+        Room room = State.RoomOf(hero);
+        if (spent.Flung is { } flung && attack.Roll.Faces.Contains(GameRules.PowerDieFace))
+        {
+            GridPosition spot = room.Layout[spent.At].IsWalkable() ? spent.At : SafeTile(room, spent.At);
+            room.AddLoot(spot, [flung]);
+            events.Add(new StoneLanded(hero.Id, flung.Id, room.Id, spot));
+        }
+        else if (spent.Flung is not null)
+        {
+            events.Add(new WeaponBroke(hero.Id, spent.NamedBy));
+        }
+
+        if (spent.Brittle is { } club && attack.Roll.Faces.Contains(1) && hero.FindCard(club.Id) is not null)
+        {
+            TakeFromHero(hero, club, 1);
+            events.Add(new WeaponBroke(hero.Id, club.Id));
         }
     }
 
@@ -221,7 +285,7 @@ public sealed partial class GameSession
         Stats stats = hero.EffectiveStats;
         CardInstance? main = hero.MainWeapon;
         CardInstance? off = OffHandWeapon(hero);
-        bool mainReady = main?.Definition.Reload is not null ? !main.Unloaded : turn.StrikesUsed < MainStrikes(hero);
+        bool mainReady = main?.Definition.Reload is not null ? !main.Unloaded : turn.StrikesUsed < MainStrikes(hero) && (main is null || hero.Loaded(main));
 
         // A thrown off-hand weapon (the Boomerang), picked: it stands in for the main hand.
         if (HandWeapon(hero, weaponId) is { } picked && picked == off && off.Definition is { OffHandStrike: false } thrown)
@@ -234,7 +298,7 @@ public sealed partial class GameSession
         if (mainReady && (main is not null || stats.Weapon > 0) && !(HandWeapon(hero, weaponId) is { } other && other == off))
         {
             CardDefinition? weapon = main?.Definition;
-            return (Math.Max(0, stats.Weapon) + (weapon?.AttackBonus ?? 0) + Versatile(hero) + (weapon is { OffHandStrike: true } ? PairBonus(hero) : 0),
+            return (Math.Max(0, stats.Weapon) + (weapon?.AttackBonus ?? 0) + Versatile(hero) + AmmoBonus(hero, main) + (weapon is { OffHandStrike: true } ? PairBonus(hero) : 0),
                     weapon?.Modifiers.WeaponDice ?? 0);
         }
 

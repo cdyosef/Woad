@@ -140,6 +140,9 @@ public sealed class PendingRoll
 
     /// <summary>The spell this roll casts, and what comes of it besides the roll (null for anything else).</summary>
     public SpellCasting? Casting { get; internal init; }
+
+    /// <summary>A weapon that doesn't last, to be settled as the dice land (a Rock flung, a Club).</summary>
+    internal WeaponSpent? Spent { get; init; }
 }
 
 /// <summary>
@@ -244,3 +247,11 @@ public sealed class TurnState
         HasMoved = false;
     }
 }
+
+/// <summary>
+/// What an attack spends of a weapon that doesn't last, settled as the dice land: a Rock thrown or slung
+/// (<paramref name="Flung"/>, already out of the hero's hands; <paramref name="NamedBy"/> is the card it
+/// came from), which lands whole at <paramref name="At"/> on a 6, and a Club (<paramref name="Brittle"/>),
+/// which breaks on a 1.
+/// </summary>
+internal sealed record WeaponSpent(CardInstance? Flung, int NamedBy, GridPosition At, CardInstance? Brittle);

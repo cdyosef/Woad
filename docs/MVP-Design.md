@@ -134,7 +134,8 @@ the Party menu can spend points on them too.
   too small for what's on yours can't go on, and a belt comes off only empty. Characters saved before belts
   were cards were given a Basic Belt and Basic Buckle, with what was on their belt left there.
 - **Mods** go on the belt or the buckle and add their modifiers: Belt Studs (armor 1, on the belt), Buckle
-  Horns (+1 to Rumble rolls, on the buckle). No two the same, unless a mod's card says otherwise; the belt
+  Horns (+1 to Rumble rolls, on the buckle), the Rock Bag (on the belt: your Rocks stack to 100 in it, and a
+  Sling loads them from the belt). No two the same, unless a mod's card says otherwise; the belt
   or buckle comes off only once its mods are off.
 - **Carrying:** two slots in the hero's arms, for two cards or stacks. **While carrying anything, no Rumble
   and no Od Hand.** Carry-only cards go nowhere else: the Relic of Saint Wyn fills both slots. A card that
@@ -150,7 +151,7 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 
 | Type | Usage | Examples (placeholder names) |
 | --- | --- | --- |
-| Weapon | Persistent | Wooden Sword (weapon 1), Knight's Sword (weapon 2), Longsword (weapon 1 + 1d6, versatile +1), Short Bow (weapon 1, ranged 6), Longbow (weapon 1 + 1d6, ranged 10; floor 3), Spear (weapon 2, reach 2 in a straight line), Dagger (either hand, stacks: +1 on an attack of its own from the off hand, doubled on a stunned or prone monster; thrown at range 3 it lands at the target's feet; one in each hand +1 each; the Waylay Inn sells them), War Hammer (weapon 2; crushes: hits flip shelled monsters, broken bones stay broken; floor 2), Rapier (weapon 2, Block 1; two strikes a turn with an empty or light off hand; floor 2), Maul (two-handed, weapon 3; any 6 shoves the target a tile, hit or miss; floor 2), Crossbow (two-handed, weapon 3 every loaded shot, range 8; reload with an Od Hand or Rumble die; floor 2), Great Axe (two-handed, weapon 2 + 1d6; each 6 cleaves into another monster beside you; floor 3), Heavy Crossbow (two-handed, weapon 4 every loaded shot, range 9; reload with an Od Hand or Rumble die and a Wend die; floor 3). A weapon's dice always go with its bonus on one attack. Crossbows are loaded on each new floor; reload one with **Use** |
+| Weapon | Persistent | Club (weapon 1; any 1 in an attack with it breaks it, as a torch burns out; every new character starts with one), Stick and Rock (found lying about; weapon 1, and they break with the blow; a Rock goes in either hand and can be thrown at range 2, landing whole at the target's feet on a 6; both stack, up to 10), Sling (weapon 1, +1 for the Rock it slings at range 4; the Rock comes from the off hand, or from the belt with a Rock Bag, and lands whole on a 6; no Rock, no shot), Wooden Sword (weapon 1), Knight's Sword (weapon 2), Longsword (weapon 1 + 1d6, versatile +1), Short Bow (weapon 1, ranged 6), Longbow (weapon 1 + 1d6, ranged 10; floor 3), Spear (weapon 2, reach 2 in a straight line), Dagger (either hand, stacks: +1 on an attack of its own from the off hand, doubled on a stunned or prone monster; thrown at range 3 it lands at the target's feet; one in each hand +1 each; the Waylay Inn sells them), War Hammer (weapon 2; crushes: hits flip shelled monsters, broken bones stay broken; floor 2), Rapier (weapon 2, Block 1; two strikes a turn with an empty or light off hand; floor 2), Maul (two-handed, weapon 3; any 6 shoves the target a tile, hit or miss; floor 2), Crossbow (two-handed, weapon 3 every loaded shot, range 8; reload with an Od Hand or Rumble die; floor 2), Great Axe (two-handed, weapon 2 + 1d6; each 6 cleaves into another monster beside you; floor 3), Heavy Crossbow (two-handed, weapon 4 every loaded shot, range 9; reload with an Od Hand or Rumble die and a Wend die; floor 3). A weapon's dice always go with its bonus on one attack. Crossbows are loaded on each new floor; reload one with **Use** |
 | Shield | Persistent | Buckler (armor 1, Block 1), Tower Shield (armor 3, Block 3, −1 Wend), Knight's Shield (armor 2, an extra Defense die; floor 2+). **Knight's set:** worn with the Knight's Sword, the sword gains +1 Weapon and Block 1, and the shield a Guard Die |
 | Armor | Persistent | Head: Leather Cap (+1 Heart), Lucky Helmet (armor 1; when you'd be hit anyway it rolls one more die in, last of all, then breaks), Diving Helm (Temple). Body: Leather Armor (armor 1), Studded Armor (armor 2, floor 2+), Chain Mail (armor 3, floor 3), Warden's Plate (armor 3 and an extra Defense die: the Iron Warden drops it one time in four) |
 | Boots | Persistent | Dash Boots (+1 Move die) |
@@ -161,7 +162,7 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 | Potion | Single-use | Health Potion (restore 3 hearts) |
 | Treasure | Kept for score | Emerald (15g), Golden Idol (40g). Coins (Loose Coins 2g, Coin Pouch 5g) aren't cards: they go straight into your purse as gold |
 
-- **Starter kit** (new characters): a Basic Belt and Basic Buckle, a Health Potion and Lockpicks (on the belt), and a Torch (held). No weapon and no shield: they fight with their fists till they find some.
+- **Starter kit** (new characters): a Basic Belt and Basic Buckle, a Club (in hand), and a Torch (unlit), a Health Potion and Lockpicks on the belt. No shield.
 - **Equipping, belting or stowing gear** is free out of combat, as often as you like. **In combat** (an
   awake monster within 8 tiles that you can see) each change takes your action, and only weapons, shields
   and tools move, between your hands and your belt: the backpack waits until the fight is over, and
@@ -1160,8 +1161,8 @@ integration.
 These defaults were not covered in the kickoff questions:
 
 1. Movement and monster melee are **orthogonal only**. Heroes can also attack diagonally.
-2. Base stats and point costs as in [Stats](#stats). Movement is 1d6 + 2 at the start, and boots add dice. Starting heroes attack with 1d6 + 1 (Wooden Sword)
-   and defend with 1d6 + 1 and Block 1 (Buckler).
+2. Base stats and point costs as in [Stats](#stats). Movement is 1d6 + 2 at the start, and boots add dice. Starting heroes attack with 1d6 + 1 (Club)
+   and defend with 1d6.
 3. The **belt** holds 4 consumables, and using one doesn't take your action.
 4. **No friendly fire at all**, including bombs.
 5. Players at 0 hearts **Keel Over** and can be roused or stand up again; three marks of death kill them for the run.

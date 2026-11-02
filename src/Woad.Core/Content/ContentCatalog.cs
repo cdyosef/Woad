@@ -191,9 +191,19 @@ public sealed class ContentCatalog
         ReportDuplicates(monsters.Select(monster => monster.Glyph.ToString()), "monster glyph", errors);
         ReportDuplicates(themes.Select(theme => theme.Id), "theme id", errors);
 
+        var cardIds = cards.Select(card => card.Id).ToHashSet(StringComparer.Ordinal);
         foreach (CardDefinition card in cards)
         {
             ValidateCard(card, errors);
+            if (card.Ammo is { } ammo && !cardIds.Contains(ammo))
+            {
+                errors.Add($"Card '{card.Id}' shoots unknown card '{ammo}'.");
+            }
+
+            if (card.Holds is { } held && (!cardIds.Contains(held) || card.ModFor is null || card.HoldsUpTo < 1))
+            {
+                errors.Add($"Card '{card.Id}' holds '{held}': it must be a known card, the holder a mod, with holdsUpTo.");
+            }
         }
 
         var monsterIds = monsters.Select(monster => monster.Id).ToHashSet(StringComparer.Ordinal);
@@ -202,7 +212,6 @@ public sealed class ContentCatalog
             ValidateMonster(monster, monsterIds, errors);
         }
 
-        var cardIds = cards.Select(card => card.Id).ToHashSet(StringComparer.Ordinal);
         foreach (CardDefinition card in cards.Where(card => card.Set is { } set && !cardIds.Contains(set.With)))
         {
             errors.Add($"Card '{card.Id}' has a set bonus with unknown card '{card.Set!.With}'.");
@@ -327,6 +336,11 @@ public sealed class ContentCatalog
         if (card.CarrySlots is < 1 or > GameRules.CarrySlots)
         {
             errors.Add($"{name} must fill 1 to {GameRules.CarrySlots} carrying slots.");
+        }
+
+        if (card.MaxStack < 0 || (card.MaxStack > 0 && !card.IsStackable))
+        {
+            errors.Add($"{name} has a maxStack, so it must stack.");
         }
 
         if (card.TwoHanded && card.Slot != EquipSlot.MainHand)

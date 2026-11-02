@@ -796,7 +796,10 @@ public sealed partial class GameSession
         bool onlyCards = room.KeysAt(at) == 0 && room.GoldAt(at) == 0 && room.BossKeyAt != at && room.BombAt(at) is null;
         if (onlyCards && !room.LootAt(at).Any(card => hero.CanCarry(card.Definition)))
         {
-            return "Your backpack is full.";
+            // A full stack (ten Rocks) is said so; otherwise there's no room in the bag.
+            return room.LootAt(at).Select(card => card.Definition).FirstOrDefault(card => hero.StackOf(card) is not null) is { } full
+                ? $"You can't hold any more {full.Name}s."
+                : "Your backpack is full.";
         }
 
         return LootingAgain(at) ? null : CheckLoot();
@@ -1021,10 +1024,13 @@ public sealed partial class GameSession
         var taken = new List<int>();
         foreach (CardInstance card in room.LootAt(at).ToList())
         {
-            if (hero.CanCarry(card.Definition))
+            // A stack with a limit (Rocks) takes only what fits; the rest stay where they lie.
+            int fits = hero.RoomFor(card.Definition);
+            if (fits > 0)
             {
-                hero.AddLoot(room.TakeCard(at, card.Id)!);
-                taken.Add(card.Id);
+                CardInstance picked = card.Count <= fits ? room.TakeCard(at, card.Id)! : card.Split(State.NextId(), fits);
+                hero.AddLoot(picked);
+                taken.Add(picked.Id);
             }
         }
 

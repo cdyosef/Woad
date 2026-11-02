@@ -453,6 +453,11 @@ public sealed partial class GameSession
         {
             ResolveHeroAttack(roll, events);
         }
+
+        if (roll.Check is null)
+        {
+            SpendWeapon(State.GetHero(roll.HeroId), roll, events);
+        }
     }
 
     private void ResolveCheck(PendingRoll roll, OdHandCheck check, List<GameEvent> events)
