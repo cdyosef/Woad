@@ -222,6 +222,13 @@ public sealed record Escape(int HeroId) : GameCommand(HeroId);
 /// </summary>
 public sealed record OrderCompanion(int HeroId, int CompanionId, CompanionOrder Order) : GameCommand(HeroId);
 
+/// <summary>
+/// On their turn, a player hands a hero over: one of their companions becomes a hero, played by a player
+/// (<paramref name="NewOwnerId"/> null), or their own hero becomes a companion of another player
+/// (<paramref name="NewOwnerId"/>), its companions going with it. For the rest of the run.
+/// </summary>
+public sealed record SwitchControl(int HeroId, int TargetId, int? NewOwnerId = null) : GameCommand(HeroId);
+
 /// <summary>Give one of your cards (or <paramref name="Count"/> of a stack) to an ally beside you. Free.</summary>
 public sealed record GiveCard(int HeroId, int ToHeroId, int CardId, int? Count = null) : GameCommand(HeroId);
 

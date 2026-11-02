@@ -73,13 +73,13 @@ public sealed class Hero
     public int Seat { get; }
 
     /// <summary>For a companion, the hero (a player) it belongs to; null for a player's own hero.</summary>
-    public int? OwnerId { get; internal init; }
+    public int? OwnerId { get; internal set; }
 
     /// <summary>The game plays a companion's turns, following its owner's orders.</summary>
     public bool IsCompanion => OwnerId is not null;
 
     /// <summary>"Player 2": counting players only, in seat order; 0 for a companion.</summary>
-    public int PlayerNumber { get; internal init; }
+    public int PlayerNumber { get; internal set; }
 
     /// <summary>A companion's standing order (see <see cref="CompanionOrder"/>).</summary>
     public CompanionOrder Order { get; internal set; }

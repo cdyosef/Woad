@@ -161,6 +161,7 @@ public sealed partial class GameSession
             SmashPot c => Handle(c, events),
             Escape c => Handle(c, events),
             OrderCompanion c => Handle(c, events),
+            SwitchControl c => Handle(c, events),
             Shove c => Handle(c, events),
             AttackAlly c => Handle(c, events),
             Leap c => Handle(c, events),
@@ -226,7 +227,7 @@ public sealed partial class GameSession
             return "It isn't that hero's turn.";
         }
 
-        if (command is OrderCompanion)
+        if (command is OrderCompanion or SwitchControl)
         {
             return null;
         }

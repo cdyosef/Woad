@@ -51,6 +51,9 @@ public partial class PartyPanel : Panel
     /// <summary>A new policy for a companion.</summary>
     public event Action<int, CompanionPolicy>? PolicyRequested;
 
+    /// <summary>A hero handed over: a companion made a hero (null), or the player's hero made a companion of another player.</summary>
+    public event Action<int, int?>? SwitchRequested;
+
     public event Action? CloseRequested;
 
     internal Button? Find(string name) => FindChild(name, recursive: true, owned: false) as Button;
@@ -91,6 +94,58 @@ public partial class PartyPanel : Panel
         {
             _rows.AddChild(Row(session, hero, viewer));
         }
+    }
+
+    /// <summary>
+    /// The buttons that hand a hero over: <b>Make hero</b> on the viewer's companions, and on the viewer's own
+    /// hero a <b>Follow</b> button for each other player still in the run, making it their companion.
+    /// </summary>
+    private float HandOver(GameSession session, Control row, Hero hero, Hero viewer, float y)
+    {
+        int heroId = hero.Id;
+        if (hero.IsCompanion)
+        {
+            Button make = UiTheme.CompactButton(new Vector2(86, y), new Vector2(70, 15), "Make hero");
+            make.Name = $"MakeHero{heroId}";
+            string? blocked = session.CheckSwitchControl(heroId, null);
+            make.Disabled = blocked is not null;
+            make.TooltipText = blocked ?? $"{hero.Name} becomes a hero, played by a player, for the rest of the run.";
+            make.Pressed += () => SwitchRequested?.Invoke(heroId, null);
+            row.AddChild(make);
+            row.AddChild(UiTheme.Label(new Vector2(4, y + 2), new Vector2(80, 12), "Take over:", color: Palette.TextDim));
+            return y + 17;
+        }
+
+        if (hero != viewer)
+        {
+            return y;
+        }
+
+        row.AddChild(UiTheme.Label(new Vector2(4, y + 2), new Vector2(80, 12), "Make companion:", color: Palette.TextDim));
+        List<Hero> players = [.. session.State.Heroes.Where(other => other != hero && other.IsInPlay && !other.IsCompanion)];
+        if (players.Count == 0)
+        {
+            Button none = UiTheme.CompactButton(new Vector2(86, y), new Vector2(70, 15), "Follow...");
+            none.Disabled = true;
+            none.TooltipText = "There's no other player in the run for it to follow.";
+            row.AddChild(none);
+            return y + 17;
+        }
+
+        for (int i = 0; i < players.Count; i++)
+        {
+            Hero owner = players[i];
+            Button follow = UiTheme.CompactButton(new Vector2(86 + i % 3 * 74, y + i / 3 * 17), new Vector2(72, 15), $"Follow {owner.Name}");
+            follow.Name = $"Follow{heroId}_{owner.Id}";
+            string? blocked = session.CheckSwitchControl(heroId, owner.Id);
+            follow.Disabled = blocked is not null;
+            follow.TooltipText = blocked ?? $"{hero.Name} becomes {owner.Name}'s companion for the rest of the run, with any companions of its own. The game plays it from now on.";
+            int ownerId = owner.Id;
+            follow.Pressed += () => SwitchRequested?.Invoke(heroId, ownerId);
+            row.AddChild(follow);
+        }
+
+        return y + 17 * ((players.Count + 2) / 3);
     }
 
     private Control Row(GameSession session, Hero hero, Hero? viewer)
@@ -191,6 +246,11 @@ public partial class PartyPanel : Panel
             }
 
             y += 17;
+        }
+
+        if (mine && viewer is not null)
+        {
+            y = HandOver(session, row, hero, viewer, y);
         }
 
         row.CustomMinimumSize = new Vector2(width, y);
