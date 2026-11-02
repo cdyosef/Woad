@@ -143,6 +143,9 @@ public sealed class Hero
 
     public int Kills { get; internal set; }
 
+    /// <summary>Rooms they searched first (each an Explorer bonus): the most on a run wins the Explorer Award.</summary>
+    public int ExplorerBonus { get; internal set; }
+
     /// <summary>XP earned this run, added to the character when the run ends.</summary>
     public int Xp { get; internal set; }
 

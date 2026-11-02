@@ -170,5 +170,18 @@ internal static class TestContent
         }
         """;
 
-    public static ContentCatalog Catalog { get; } = ContentCatalog.Parse(CardsJson, MonstersJson, [ThemeJson, GraveyardJson], ContentCatalog.ReadEmbedded("spells.json"));
+    /// <summary>Rocks and Sticks lie about: the first Search in a room picks some up, and up to 2 more lie hidden on its tiles.</summary>
+    public const string FindsThemeId = "test_finds";
+
+    public const string FindsJson = """
+        {
+          "id": "test_finds",
+          "name": "Test Finds",
+          "lootDeck": [ { "card": "coin", "copies": 2 } ],
+          "keys": { "monster": 0, "pot": 0, "roomCleared": 0, "steal": 50 },
+          "finds": { "cards": ["t_rock", "t_stick"], "hidden": 2 }
+        }
+        """;
+
+    public static ContentCatalog Catalog { get; } = ContentCatalog.Parse(CardsJson, MonstersJson, [ThemeJson, GraveyardJson, FindsJson], ContentCatalog.ReadEmbedded("spells.json"));
 }

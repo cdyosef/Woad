@@ -757,6 +757,10 @@ public partial class GameScreen : Control
                 CalloutOver(spent.HeroId, "LEVEL UP!", Palette.Heal);
                 break;
 
+            case Explored explored:
+                CalloutOver(explored.HeroId, "EXPLORER!", Palette.TrimBright);
+                break;
+
             case WeaponBroke broke:
                 CalloutOver(broke.HeroId, "SNAP!", Palette.Danger);
                 break;

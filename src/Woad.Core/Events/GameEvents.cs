@@ -623,6 +623,9 @@ public sealed record WeaponBroke(int HeroId, int CardId) : GameEvent;
 /// <summary>A Rock thrown or slung came down whole on a 6: it lies at <paramref name="LandedAt"/> to be picked up.</summary>
 public sealed record StoneLanded(int HeroId, int CardId, string RoomId, GridPosition LandedAt) : GameEvent;
 
+/// <summary>The first Search in a room: the searcher picked up what lay about (<paramref name="Found"/>, by name) and earned an Explorer bonus.</summary>
+public sealed record Explored(int HeroId, string RoomId, IReadOnlyList<string> Found) : GameEvent;
+
 /// <summary>A 1 in a torch-lit attack burned the torch out: it's gone.</summary>
 public sealed record TorchBurnedOut(int HeroId, int CardId) : GameEvent;
 

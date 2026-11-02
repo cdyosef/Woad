@@ -432,6 +432,11 @@ public sealed partial class GameSession
             }
 
             AddFeatures(room, roomSetup.Features ?? RoomFeatures.None);
+            if (!setup.Skirmish && theme.Finds is { } finds)
+            {
+                HideFinds(room, finds, roomSetup.DoorTiles, random.Finds);
+            }
+
             state.AddRoom(room);
         }
 
@@ -559,6 +564,23 @@ public sealed partial class GameSession
                     throw new ArgumentException($"Room '{room.Id}' {side} door must lead to a room with a matching {side.Opposite()} door back.");
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Hides what lies about (a Rock, a Stick) on a few of a room's open tiles, for a Search to find: none
+    /// where heroes arrive, monsters stand, by a door, or where something's hidden already.
+    /// </summary>
+    private static void HideFinds(Room room, FindsDefinition finds, IReadOnlyDictionary<Direction, GridPosition>? doorTiles, IRandomSource random)
+    {
+        HashSet<GridPosition> taken = [.. room.ArrivalTiles, .. room.Monsters.Select(monster => monster.Position), .. room.Traps.Keys, .. room.Caches.Keys,
+            .. (doorTiles?.Values ?? []).SelectMany(door => door.SurroundingTiles().Append(door))];
+        List<GridPosition> open = room.TilesOfKind(TileKind.Floor).Where(tile => !taken.Contains(tile)).ToList();
+        for (int count = random.NextInt(0, finds.Hidden + 1); count > 0 && open.Count > 0; count--)
+        {
+            GridPosition tile = random.Pick(open);
+            open.Remove(tile);
+            room.HideCache(tile, new Cache(GameRules.FindDifficulty(room.Floor), 0, 0, false, [random.Pick(finds.Cards)]));
         }
     }
 

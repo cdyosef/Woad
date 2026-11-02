@@ -582,6 +582,9 @@ total reaches its number:
 | **Steal** | **Steal** button, then an adjacent monster or hero; once a turn | Beat their roll: a monster's defense dice, a hero's Od Hand dice and tools |
 | **Aid** | The **Aid** card, then yourself or an ally beside you (diagonals too); clicking an ally Keeling Over aids them straight away | On someone Keeling Over (a Rouse): every 6 of the total is a mark of life; every die showing 1 is a Doom Die on their next Keel roll (see [Keeling Over](#loot-keeling-over-and-winning)). Otherwise it takes one stack of one ailment off, chosen when there are several: 10 (Nekrot 14). A Shovel in hand digs two stacks of Buried off |
 
+- **Lying about:** the first Search in each room picks up a Rock or a Stick, whatever it rolls (both on
+  a total of 4 or more), and earns the searcher an Explorer bonus (see XP). More Rocks and Sticks lie
+  hidden on a room's tiles, up to 2 of them: a Search reaching 2 + floor finds them, there to be picked up.
 - **What Aid cures:** Poison, Acid, Blind, Shine, Confused and Buried. Freeze, Black Hearts, Burning,
   Stun and Nekrot only with a **Medicine Bag** to hand. One stack a success, bag or not.
 - **Medicine Bag** (tool, stacks, goes on the belt and works from there or a hand): +1 and 1d6 on one
@@ -941,7 +944,9 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   treasure for the winner and becomes the character's gold on escape; someone who dies drops theirs
   on their tombstone, and companions left behind lose it.
 - **XP** *(tunable)*: each monster's XP goes to whoever defeats it (slime 2, guards 4, skeleton 5, Iron
-  Warden 25). Reaching a floor for the first time gives 5, and escaping gives 10.
+  Warden 25). Reaching a floor for the first time gives 5, and escaping gives 10. The first Search in
+  each room is worth 1 (an **Explorer bonus**), and on a dungeon run someone escapes from, whoever has the
+  most Explorer bonuses takes the **Explorer Award**, 5 more, shown on the results screen (shared on a tie).
 - **Keeling Over:** a hero or companion reduced to 0 hearts falls where they stand (X's for eyes) and
   is **Keeling Over**. They keep everything they carry and still take their turns, but all they can do
   is roll the **Keel Die** (the End turn button becomes **Roll Keel Die**):

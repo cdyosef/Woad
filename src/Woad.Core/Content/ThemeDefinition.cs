@@ -34,6 +34,18 @@ public sealed record MimicDefinition
     public int MinFloor { get; init; } = 1;
 }
 
+/// <summary>
+/// What lies about on the floor (Rocks and Sticks): the first Search in each room picks one up (all of
+/// them on a good roll), and up to <see cref="Hidden"/> more lie hidden on a room's tiles for a Search to find.
+/// </summary>
+public sealed record FindsDefinition
+{
+    public required IReadOnlyList<string> Cards { get; init; }
+
+    /// <summary>The most hidden on the tiles of one room (none to this many).</summary>
+    public int Hidden { get; init; } = 2;
+}
+
 /// <summary>Percent chances of finding a small key.</summary>
 public sealed record KeyChances
 {
@@ -207,6 +219,9 @@ public sealed record ThemeDefinition
 
     /// <summary>Chests that may be mimics; null for none.</summary>
     public MimicDefinition? Mimics { get; init; }
+
+    /// <summary>What lies about on the floor for a Search to turn up; null for nothing.</summary>
+    public FindsDefinition? Finds { get; init; }
 
     public string? Boss { get; init; }
 

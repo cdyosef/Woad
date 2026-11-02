@@ -159,6 +159,9 @@ public sealed class Room
 
     public bool HoldsBossKey(GridPosition position) => _bossKeyChests.Contains(position);
 
+    /// <summary>Someone's searched here: the first Search's finds (what lies about) are taken.</summary>
+    public bool Searched { get; internal set; }
+
     /// <summary>Hidden stashes not yet found.</summary>
     public IReadOnlyDictionary<GridPosition, Cache> Caches => _caches;
 

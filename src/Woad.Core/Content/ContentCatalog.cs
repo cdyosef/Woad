@@ -278,6 +278,11 @@ public sealed class ContentCatalog
                 errors.Add($"Theme '{theme.Id}' den needs a known monster and a floor from 1 to {theme.Floors}.");
             }
 
+            if (theme.Finds is { } finds && (finds.Cards.Count == 0 || finds.Hidden < 0 || finds.Cards.Any(card => !cardIds.Contains(card))))
+            {
+                errors.Add($"Theme '{theme.Id}' finds need known cards, and hidden can't be negative.");
+            }
+
             if (theme.Mimics is { } mimics && !monsterIds.Contains(mimics.Monster))
             {
                 errors.Add($"Theme '{theme.Id}' mimics are unknown monster '{mimics.Monster}'.");
