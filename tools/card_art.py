@@ -615,22 +615,26 @@ def rumble(c):
 def boot(c):
     """A green boot, toe to the right: Wend's."""
     # The shaft, a thin cuff at the top, lit on the left.
-    c.rect(10, 5, 11, 16, GREEN[1])
-    c.rect(10, 5, 2, 16, GREEN[0])
+    c.rect(10, 5, 11, 20, GREEN[1])
+    c.rect(10, 5, 2, 20, GREEN[0])
     c.rect(10, 4, 11, 1, GREEN[0])
     c.rect(10, 5, 11, 1, GREEN[2])
-    # The laces criss-crossing up the front.
+    # The laces criss-crossing up the front of the leg.
     for y in (7, 11, 15):
-        c.line(15, y, 17, y + 2, GREEN[2])
-        c.line(17, y, 15, y + 2, GREEN[2])
-    # The foot, out to a round toe.
-    c.rect(10, 19, 16, 6, GREEN[1])
-    c.circle(25, 22, 3.5, GREEN[1])
-    c.rect(11, 19, 1, 6, GREEN[0])
-    c.rect(22, 19, 3, 1, GREEN[0])
-    # The sole, a low heel under the back.
-    c.rect(10, 25, 18, 1, GREEN[2])
-    c.rect(10, 26, 4, 1, GREEN[2])
+        c.line(17, y, 19, y + 2, GREEN[2])
+        c.line(19, y, 17, y + 2, GREEN[2])
+    # The foot, out to a tall round toe.
+    c.rect(12, 18, 14, 7, GREEN[1])
+    c.circle(26, 21, 4, GREEN[1])
+    # Light over the curve of the toes, in front of the laces, tapering off to the left.
+    for x0, x1, y in ((21, 26, 18), (24, 27, 19), (27, 28, 18), (28, 29, 20), (29, 29, 21)):
+        c.rect(x0, y, x1 - x0 + 1, 1, GREEN[0])
+    # Shade under it, deepest round the toe and tapering off to the left.
+    for x0, x1, y in ((17, 29, 24), (24, 29, 23), (28, 29, 22)):
+        c.rect(x0, y, x1 - x0 + 1, 1, GREEN[2])
+    # The sole, heel and toe even, a notch where they meet.
+    c.rect(10, 25, 19, 2, GREEN[2])
+    c.dot(14, 26, OUTLINE)
 
 
 def ability(c, name):
