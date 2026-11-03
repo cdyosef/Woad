@@ -387,6 +387,12 @@ facing door of the next room.
     short of its number, a rouse with no mark of life, an attack, shove or steal the other side holds
     off), with **5 seconds**; Search and Wend, which can't fail, ask every roll, with **3 seconds**. Off, it
     isn't asked and the roll stands at once. After each try that still falls short, it asks again.
+  - **Lucky Clovers:** about one room in eight has one lying in plain sight, and a 6 on a room's first
+    Search (the Explorer roll) turns one up. Picked up, a clover is a **Clover Luck** point straight away
+    (never a card carried), up to **7**; one more stays where it lies. Clover Luck is used once your Luck runs
+    out, by anyone, Luck stat or not, and kept until used, run to run (a lucky 6 doesn't use it up either).
+    A hero who doesn't get out of the dungeon keeps no more of it than they brought in. It shows after the
+    Luck line on the sheet (+3).
   - **Tap the clover** and it glows: your next roll asks, whatever its odds (3 seconds), even one switched
     off. Asking uses the glow up; tap it again to put it out.
   - While it asks, everything plays at **half speed** (the countdown runs in real seconds), and on an attack

@@ -322,6 +322,20 @@ public class CombatTests
     }
 
     [Fact]
+    public void CloverLuckIsUsedOnceTheLuckRunsOut()
+    {
+        GameSession session = TestRun.Start(Duel('m'), new ScriptedDice(1, 3, 2, 1));
+        Hero hero = session.HeroInSeat();
+        hero.CloverLuck = 2;
+        session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id));
+        Assert.NotNull(session.State.Turn!.PendingRoll);
+
+        session.Do(new RerollDie(hero.Id, 0));
+
+        Assert.Equal((0, 1), (hero.LuckRemaining, hero.CloverLuck));
+    }
+
+    [Fact]
     public void AShoveDefendsFirstWhileLuckIsOffered()
     {
         GameSession session = TestRun.Start(Duel('m'), new ScriptedDice(1, 3), stats: GameRules.HeroBaseStats with { Luck = 1 });

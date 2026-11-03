@@ -101,6 +101,31 @@ public sealed class Hero
 
     public int LuckRemaining { get; internal set; }
 
+    /// <summary>
+    /// Clover Luck: points from Lucky Clovers picked up, kept until used (between runs too), used once
+    /// <see cref="LuckRemaining"/> runs out, by anyone, Luck stat or not. At most <see cref="GameRules.MaxCloverLuck"/>.
+    /// </summary>
+    public int CloverLuck { get; internal set; }
+
+    /// <summary>The Clover Luck they started the run with: a hero who doesn't get out keeps no more than this.</summary>
+    public int StartCloverLuck { get; internal init; }
+
+    /// <summary>All the Luck they have to try: their Luck left this floor, then their Clover Luck.</summary>
+    public int LuckLeft => LuckRemaining + CloverLuck;
+
+    /// <summary>Spends a Luck point: from their Luck this floor first, then their Clover Luck.</summary>
+    internal void SpendLuck()
+    {
+        if (LuckRemaining > 0)
+        {
+            LuckRemaining--;
+        }
+        else if (CloverLuck > 0)
+        {
+            CloverLuck--;
+        }
+    }
+
     /// <summary>In the air on the Icarus Wings, for the rest of their turn or until they land.</summary>
     public bool Aloft { get; internal set; }
 
@@ -381,9 +406,10 @@ public sealed class Hero
         // A torch in hand is one torch: more join the stack carried, not the hand.
         definition.IsStackable ? AllCards.FirstOrDefault(card => card.Definition == definition && !(definition.Torch && EquippedCards.Contains(card))) : null;
 
-    /// <summary>Whether the hero can take this card: it joins a stack they hold (with room in it), or there's room in the backpack.</summary>
+    /// <summary>Whether the hero can take this card: it joins a stack they hold (with room in it), or there's room in the backpack. A Lucky Clover while there's room for its point.</summary>
     public bool CanCarry(CardDefinition definition) =>
-        definition.CarryOnly ? CanCarryInArms(definition)
+        definition.Clover ? CloverLuck < GameRules.MaxCloverLuck
+        : definition.CarryOnly ? CanCarryInArms(definition)
         : StackOf(definition) is { } stack ? stack.Count < StackLimit(definition)
         : _backpack.Count < GameRules.BackpackCapacity;
 
@@ -395,7 +421,8 @@ public sealed class Hero
 
     /// <summary>How many more of this card the hero could take into the stack they hold of it (or a new one).</summary>
     public int RoomFor(CardDefinition definition) =>
-        !CanCarry(definition) ? 0 : StackLimit(definition) - (StackOf(definition)?.Count ?? 0);
+        definition.Clover ? GameRules.MaxCloverLuck - CloverLuck
+        : !CanCarry(definition) ? 0 : StackLimit(definition) - (StackOf(definition)?.Count ?? 0);
 
     /// <summary>
     /// What a weapon that shoots (the Sling) would load next: its ammo in the off hand, or on the belt when a
@@ -543,9 +570,17 @@ public sealed class Hero
     /// arms full mean no Rumble.)
     /// </summary>
     internal CardInstance AddLoot(CardInstance card) =>
-        card.Definition.CarryOnly ? AddToCarried(card)
+        card.Definition.Clover ? TakeClover(card)
+        : card.Definition.CarryOnly ? AddToCarried(card)
         : card.Definition.Belts && (_belt.Count < BeltCapacity || _belt.Any(held => held.Definition == card.Definition)) ? AddToBelt(card)
         : AddToBackpack(card);
+
+    /// <summary>A Lucky Clover picked up: its points, up to the most a hero can hold. The card itself goes nowhere.</summary>
+    private CardInstance TakeClover(CardInstance card)
+    {
+        CloverLuck = Math.Min(GameRules.MaxCloverLuck, CloverLuck + card.Count);
+        return card;
+    }
 
     private static CardInstance Add(List<CardInstance> place, CardInstance card)
     {

@@ -103,6 +103,7 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
         PowerDice = character.PowerDice,
         Policy = character.Policy,
         LuckAsks = character.LuckAsks,
+        CloverLuck = character.CloverLuck,
         Spells = [.. character.Spells],
         Lingering = new Dictionary<Condition, int>(character.Lingering),
     };
@@ -142,6 +143,7 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
             Math.Max(0, file.Gold), Math.Max(0, file.RunsPlayed), Math.Max(0, file.Wins), file.IsCompanion, file.Appearance, file.GuildStanding, file.LawStanding, file.CowardStanding, file.HasCowardsCloak, file.PowerDice, file.Policy,
             KnownSpells(file.Spells), file.Lingering, Known(file.Carried));
         character.SetLuckAsks(file.LuckAsks ?? LuckRoll.All);
+        character.SetCloverLuck(file.CloverLuck);
 
         // Saved before belts were cards: the belt of 4 they had becomes a Basic Belt and Basic Buckle.
         if (file.SchemaVersion < 3)
@@ -225,6 +227,9 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
 
         /// <summary>Missing in files saved before the Luck menu: every roll asks.</summary>
         public LuckRoll? LuckAsks { get; init; }
+
+        /// <summary>Missing in files saved before Lucky Clovers: none.</summary>
+        public int CloverLuck { get; init; }
 
         /// <summary>Missing in files saved before Magic: none.</summary>
         public List<string> Spells { get; init; } = [];

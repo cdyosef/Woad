@@ -147,9 +147,9 @@ public sealed partial class GameSession
     private string? Handle(RerollDie command, List<GameEvent> events)
     {
         Hero hero = ActiveHero;
-        if (hero.LuckRemaining < 1)
+        if (hero.LuckLeft < 1)
         {
-            return "You have no Luck left this floor.";
+            return "You have no Luck left.";
         }
 
         PendingRoll? attack = Turn.PendingRoll;
@@ -179,7 +179,7 @@ public sealed partial class GameSession
         // A Luck die that comes up 6 isn't used up: the Luck is saved for another time.
         if (luck != GameRules.PowerDieFace)
         {
-            hero.LuckRemaining--;
+            hero.SpendLuck();
         }
 
         if (attack is not null)

@@ -95,7 +95,7 @@
 
   // Smashing a pot: 35% loose coins, 25% a heart, otherwise nothing.
   "pots": { "treasure": "loose_coins", "treasureChance": 35, "heartChance": 25 },
-  "finds": { "cards": ["rock", "stick"] },
+  "finds": { "cards": ["rock", "stick"], "clover": "lucky_clover", "cloverChance": 12 },
 
   // Legend: . floor  # wall  ~ pit  C chest  P pot  > stairs down  * exit  : rubble (2 steps)
   //         , shallow water (2 steps)  = deep water (swim, 2 steps; only swimmers and flyers)

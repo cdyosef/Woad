@@ -44,6 +44,9 @@ public static class GameRules
     /// <summary>Search total to spot a trap, and Od Hand total to disarm it.</summary>
     public static int TrapDifficulty(int floor) => 3 + floor;
 
+    /// <summary>The most Clover Luck points a hero can hold (see <c>Hero.CloverLuck</c>).</summary>
+    public const int MaxCloverLuck = 7;
+
     /// <summary>Seconds to decide whether to try your Luck on a roll about to fail.</summary>
     public const double LuckSeconds = 5;
 

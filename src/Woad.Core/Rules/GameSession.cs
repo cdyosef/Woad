@@ -436,7 +436,7 @@ public sealed partial class GameSession
             AddFeatures(room, roomSetup.Features ?? RoomFeatures.None);
             if (!setup.Skirmish && theme.Finds is { } finds)
             {
-                HideFinds(room, finds, roomSetup.DoorTiles, random.Finds);
+                HideFinds(room, finds, roomSetup.DoorTiles, random.Finds, content, state);
             }
 
             state.AddRoom(room);
@@ -498,6 +498,8 @@ public sealed partial class GameSession
                 StartUnspentPoints = heroSetup.UnspentPoints,
                 Policy = heroSetup.Policy ?? CompanionPolicy.Default,
                 LuckAsks = heroSetup.LuckAsks,
+                CloverLuck = Math.Clamp(heroSetup.CloverLuck, 0, GameRules.MaxCloverLuck),
+                StartCloverLuck = Math.Clamp(heroSetup.CloverLuck, 0, GameRules.MaxCloverLuck),
                 Skills = heroSetup.Skills,
             };
             state.AddHero(hero);
@@ -574,7 +576,7 @@ public sealed partial class GameSession
     /// Hides what lies about (a Rock, a Stick) on a few of a room's open tiles, for a Search to find: none
     /// where heroes arrive, monsters stand, by a door, or where something's hidden already.
     /// </summary>
-    private static void HideFinds(Room room, FindsDefinition finds, IReadOnlyDictionary<Direction, GridPosition>? doorTiles, IRandomSource random)
+    private static void HideFinds(Room room, FindsDefinition finds, IReadOnlyDictionary<Direction, GridPosition>? doorTiles, IRandomSource random, ContentCatalog content, GameState state)
     {
         HashSet<GridPosition> taken = [.. room.ArrivalTiles, .. room.Monsters.Select(monster => monster.Position), .. room.Traps.Keys, .. room.Caches.Keys,
             .. (doorTiles?.Values ?? []).SelectMany(door => door.SurroundingTiles().Append(door))];
@@ -584,6 +586,12 @@ public sealed partial class GameSession
             GridPosition tile = random.Pick(open);
             open.Remove(tile);
             room.HideCache(tile, new Cache(GameRules.FindDifficulty(room.Floor), 0, 0, false, [random.Pick(finds.Cards)]));
+        }
+
+        // Now and then a Lucky Clover, lying in plain sight.
+        if (finds.Clover is { } clover && finds.CloverChance > 0 && random.NextInt(0, 100) < finds.CloverChance && open.Count > 0)
+        {
+            room.AddLoot(random.Pick(open), [new CardInstance(state.NextId(), content.GetCard(clover), broughtInByHeroId: null)]);
         }
     }
 

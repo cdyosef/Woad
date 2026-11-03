@@ -19,6 +19,7 @@ internal static class TestContent
           { "id": "ksword", "name": "K-Sword", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 2 }, "set": { "with": "kshield", "modifiers": { "weapon": 1, "block": 1 } } },
           { "id": "kshield", "name": "K-Shield", "type": "shield", "slot": "offHand", "modifiers": { "armor": 2, "defenseDice": 1 }, "set": { "with": "ksword", "modifiers": { "guardDice": 1 } } },
           { "id": "t_dagger", "name": "T-Dagger", "type": "weapon", "slot": "offHand", "altSlot": "mainHand", "stacks": true, "attackBonus": 1, "offHandStrike": true, "thrownRange": 3, "ambush": true, "light": true },
+          { "id": "t_clover", "name": "T-Clover", "type": "treasure", "clover": true, "value": 1 },
           { "id": "t_club", "name": "T-Club", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 1 }, "breaksOnOne": true },
           { "id": "t_stick", "name": "T-Stick", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 1 }, "stacks": true, "maxStack": 10, "breaksOnUse": true },
           { "id": "t_rock", "name": "T-Rock", "type": "weapon", "slot": "offHand", "altSlot": "mainHand", "attackBonus": 1, "thrownRange": 2, "stacks": true, "maxStack": 10, "breaksOnUse": true, "light": true },
@@ -179,7 +180,7 @@ internal static class TestContent
           "name": "Test Finds",
           "lootDeck": [ { "card": "coin", "copies": 2 } ],
           "keys": { "monster": 0, "pot": 0, "roomCleared": 0, "steal": 50 },
-          "finds": { "cards": ["t_rock", "t_stick"], "hidden": 2 }
+          "finds": { "cards": ["t_rock", "t_stick"], "hidden": 2, "clover": "t_clover" }
         }
         """;
 

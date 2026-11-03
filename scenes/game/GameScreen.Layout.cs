@@ -240,7 +240,7 @@ public partial class GameScreen
         _dice.Rerollable = canReroll;
         _luckHint.Visible = false;
         _heroPanel.LuckClover.Glowing = hero is not null && _luckPrimed.Contains(hero.Id);
-        OfferLuck(offered, hero?.LuckRemaining ?? 0, pending, failing);
+        OfferLuck(offered, hero?.LuckLeft ?? 0, pending, failing);
 
         _menu.Disabled = _busy || state.Phase == RunPhase.Ended;
         _menu.Text = _confirmingLeave ? "Leave?" : "Menu";
@@ -777,9 +777,9 @@ public partial class GameScreen
         {
             if (ActiveHero is { IsCompanion: false } hero && !_luckPrimed.Remove(hero.Id))
             {
-                if (hero.LuckRemaining < 1)
+                if (hero.LuckLeft < 1)
                 {
-                    Log("You've no Luck left this floor.", Palette.TextDim);
+                    Log("You've no Luck left.", Palette.TextDim);
                     return;
                 }
 

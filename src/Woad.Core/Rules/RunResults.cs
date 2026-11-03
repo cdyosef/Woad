@@ -55,6 +55,9 @@ public sealed record HeroRunResult
     /// <summary>The companion policy it ended the run with.</summary>
     public CompanionPolicy? Policy { get; init; }
 
+    /// <summary>Clover Luck taken home: all of it out of the dungeon, otherwise no more than they brought in.</summary>
+    public int CloverLuck { get; init; }
+
     /// <summary>The rolls the Luck menu asks on, as it was left.</summary>
     public LuckRoll? LuckAsks { get; init; }
 
@@ -139,6 +142,7 @@ public static class RunResults
             Spells = hero.Allocation is null ? null : [.. hero.Spells.Select(spell => spell.Id)],
             Policy = hero.Policy,
             LuckAsks = hero.LuckAsks,
+            CloverLuck = hero.Status == HeroStatus.Escaped ? hero.CloverLuck : Math.Min(hero.CloverLuck, hero.StartCloverLuck),
             Epitaph = hero.Status == HeroStatus.Dead ? hero.Bane : null,
             GuildStandingChange = hero.GuildStandingChange,
             LawStandingChange = hero.LawStandingChange,

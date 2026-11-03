@@ -57,7 +57,7 @@ public partial class GameScreen
     /// </summary>
     private (object? Roll, bool Failing) LuckToAsk(Hero? hero, TurnState? turn, bool idle, bool pending)
     {
-        if (!idle || hero is null || turn is null || hero.LuckRemaining < 1)
+        if (!idle || hero is null || turn is null || hero.LuckLeft < 1)
         {
             return (null, false);
         }

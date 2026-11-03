@@ -566,7 +566,7 @@ public sealed partial class GameSession
                 break;
 
             case OdHandCheckKind.Search:
-                Explore(hero, room, total, events);
+                Explore(hero, room, roll.Roll, total, events);
                 Reveal(hero, room, total, events);
                 break;
 
@@ -598,10 +598,10 @@ public sealed partial class GameSession
 
     /// <summary>
     /// The first Search in a room picks up something lying about, a Rock or a Stick (both, on a total of
-    /// <see cref="GameRules.AllFindsAt"/>), whatever it rolls, and the searcher gets an Explorer bonus: XP,
-    /// and a mark toward the Explorer Award.
+    /// <see cref="GameRules.AllFindsAt"/>), whatever it rolls, and a Lucky Clover with a 6 among its dice;
+    /// the searcher gets an Explorer bonus: XP, and a mark toward the Explorer Award.
     /// </summary>
-    private void Explore(Hero hero, Room room, int total, List<GameEvent> events)
+    private void Explore(Hero hero, Room room, DiceRoll roll, int total, List<GameEvent> events)
     {
         if (room.Searched)
         {
@@ -615,6 +615,12 @@ public sealed partial class GameSession
         }
 
         IReadOnlyList<string> found = total >= GameRules.AllFindsAt ? finds.Cards : [_random.Finds.Pick(finds.Cards)];
+
+        // A 6 on it turns up a Lucky Clover too.
+        if (finds.Clover is { } clover && roll.Faces.Contains(GameRules.PowerDieFace))
+        {
+            found = [.. found, clover];
+        }
         List<CardInstance> cards = [.. found.Select(id => new CardInstance(State.NextId(), Content.GetCard(id), broughtInByHeroId: null))];
         events.Add(new Explored(hero.Id, room.Id, [.. cards.Select(card => card.Definition.Name)]));
         GiveCards(hero, room, cards, events);

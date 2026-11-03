@@ -91,7 +91,7 @@ public sealed partial class GameSession
         {
             events.Add(new PowerDiceEarned(hero.Id, Turn.UnsettledPowerDice));
         }
-        else if (Turn.PendingRoll is { } pending && !(hero.LuckRemaining > 0 && LuckKind(pending) is not null && FacedUp(pending, events)))
+        else if (Turn.PendingRoll is { } pending && !(hero.LuckLeft > 0 && LuckKind(pending) is not null && FacedUp(pending, events)))
         {
             Turn.PendingRoll = null;
             ResolvePendingRoll(pending, events);

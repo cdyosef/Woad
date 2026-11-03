@@ -370,6 +370,16 @@ def draw(item):
         c.circle(18, 8, 2.5, STONE[0])
         c.line(11, 19, 21, 19, LEATHER[0])
         c.line(26, 14, 24, 12, LEATHER[0])
+    elif i == "lucky_clover":
+        # Four heart-shaped leaves round a stem.
+        c.line(17, 16, 22, 29, GREEN[2], 2)
+        for dx, dy in ((-6, -6), (6, -6), (-6, 6), (6, 6)):
+            c.circle(16 + dx, 14 + dy, 5, GREEN[1])
+            c.circle(16 + dx + (-1 if dx < 0 else 1), 14 + dy + (-1 if dy < 0 else 1), 2, GREEN[0])
+        # The veins between the leaves, and the heart's notch in each.
+        c.line(16, 3, 16, 25, GREEN[2])
+        c.line(5, 14, 27, 14, GREEN[2])
+        c.circle(16, 14, 1.6, GREEN[2])
     elif i == "torch":
         c.line(10, 28, 18, 14, WOOD[1], 3)
         c.rect(15, 12, 6, 4, LEATHER[1])
@@ -976,7 +986,7 @@ ITEMS = [
     "leather_armor", "studded_armor", "chain_mail", "wardens_plate", "storm_mail", "dash_boots",
     "flame_scroll", "frost_scroll", "venom_scroll", "acid_scroll", "grave_scroll", "gale_scroll", "sun_scroll",
     "bloom_scroll", "quake_scroll", "spark_scroll", "mind_scroll", "shadow_scroll", "frost_wand", "boomerang",
-    "club", "stick", "rock", "sling", "rock_bag",
+    "club", "stick", "rock", "sling", "rock_bag", "lucky_clover",
     "torch", "lockpicks", "holy_key", "saints_relic", "modern_medicine", "thieves_oil", "burgling_tools", "cutpurse_knife", "sticky_gloves", "bomb", "autosmith_hammer", "eye_drops", "holy_water", "health_potion",
     "antidote", "strong_base", "smelling_salts", "bandages", "medicine_bag", "shovel", "sineater_doll",
     "loose_coins", "coin_pouch", "emerald", "pearl", "golden_idol",
