@@ -184,13 +184,18 @@ public sealed partial class GameSession
 
     /// <summary>
     /// Drops a hero through the hole (a pit or trap door) at <paramref name="hole"/> into the room
-    /// underneath, landing on the tile below it or the nearest free one. Ends their movement. A trap
-    /// door with no room under it (only in hand-built runs) drops them into a random room on the next
-    /// floor instead, or another room on this floor when it's the last.
+    /// underneath, landing on the tile below it or the nearest free one. Ends their movement. A deep hole
+    /// drops them two floors (see <see cref="Room.DeepHoles"/>), and landing on another pit, they fall on
+    /// through it: every floor past the first is another heart. A trap door with no room under it (only
+    /// in hand-built runs) drops them into a random room on the next floor instead, or another room on
+    /// this floor when it's the last.
     /// </summary>
-    private void Fall(Hero hero, Room from, GridPosition hole, bool jumped, List<GameEvent> events)
+    /// <param name="fallen">Floors already fallen on the way (falling on through a pit).</param>
+    private void Fall(Hero hero, Room from, GridPosition hole, bool jumped, List<GameEvent> events, int fallen = 0)
     {
-        Room? target = from.BelowRoomId is { } belowId ? State.Rooms[belowId] : null;
+        Room? target = from.DeepHoles.TryGetValue(hole, out string? deepId) ? State.Rooms[deepId]
+            : from.BelowRoomId is { } belowId ? State.Rooms[belowId]
+            : null;
         if (target is null)
         {
             List<Room> below = State.Rooms.Values.Where(room => room.Floor == from.Floor + 1 && room.Role != RoomRole.Boss).ToList();
@@ -206,7 +211,26 @@ public sealed partial class GameSession
             target = _random.Behavior.Pick(candidates);
         }
 
-        if (LandingNear(target, Beneath(from, hole, target)) is not { } landing)
+        int floors = fallen + Math.Max(0, target.Floor - from.Floor);
+        GridPosition under = Beneath(from, hole, target);
+
+        // Landing on another pit, they fall on through it.
+        if (target.Layout[under] == TileKind.Pit && (target.BelowRoomId is not null || target.DeepHoles.ContainsKey(under)) && target.Floor > from.Floor)
+        {
+            hero.RoomId = target.Id;
+            hero.Position = under;
+            target.Explored = true;
+            events.Add(new HeroFell(hero.Id, from.Id, target.Id, target.Floor, under, target.Floor > hero.DeepestFloor, jumped));
+            if (target.Floor > hero.DeepestFloor)
+            {
+                ReachNewFloor(hero, target.Floor, events);
+            }
+
+            Fall(hero, target, under, jumped, events, floors);
+            return;
+        }
+
+        if (LandingNear(target, under) is not { } landing)
         {
             return;
         }
@@ -217,12 +241,23 @@ public sealed partial class GameSession
         }
         hero.RoomId = target.Id;
         hero.Position = landing;
+        // Falling to the floor below, their lights and spells need a save (the stairs don't).
+        if (target.Floor > from.Floor)
+        {
+            StartFallSave(hero, floors, events);
+        }
         target.Explored = true;
         bool firstTime = target.Floor > hero.DeepestFloor;
-        events.Add(new HeroFell(hero.Id, from.Id, target.Id, target.Floor, landing, firstTime, jumped));
+        events.Add(new HeroFell(hero.Id, from.Id, target.Id, target.Floor, landing, firstTime, jumped) { Floors = floors });
         if (firstTime)
         {
             ReachNewFloor(hero, target.Floor, events);
+        }
+
+        // Every floor fallen past the first is another heart.
+        if (floors > 1)
+        {
+            HurtHero(target, hero, floors - 1, "Fell a long way", events);
         }
     }
 

@@ -366,6 +366,124 @@ public class DungeonSecretsTests
         Assert.Equal(2, events.SingleOf<ChestOpened>().CardIds.Count);
     }
 
+    /// <summary>Three rooms stacked a floor apart, a pit at (4,3) in the top two.</summary>
+    private static GameSession Stacked(ScriptedDice dice)
+    {
+        const string Pitted = """
+            .........
+            .........
+            .........
+            ....~....
+            ....1....
+            .........
+            .........
+            .........
+            .........
+            """;
+        return TestRun.Start(
+        [
+            new RoomSetup("A", TestRun.Room(Pitted)),
+            new RoomSetup("B", TestRun.Room(Pitted.Replace('1', '.')), Floor: 2, Role: RoomRole.Arrival),
+            new RoomSetup("C", TestRun.Room(Empty), Floor: 3, Role: RoomRole.Arrival),
+        ], dice, stats: TestRun.HeroStats with { Hearts = 6 });
+    }
+
+    [Fact]
+    public void LandingOnAnotherPitFallsOnThroughItAHeartMoreAFloor()
+    {
+        GameSession session = Stacked(new ScriptedDice(1));
+        Hero hero = session.HeroInSeat();
+        session.Do(new RollMovement(hero.Id));
+
+        IReadOnlyList<GameEvent> events = session.Do(new MoveHero(hero.Id, new GridPosition(4, 3)));
+
+        Assert.Equal(["B", "C"], events.OfType<HeroFell>().Select(fell => fell.RoomId));
+        Assert.Equal(2, events.OfType<HeroFell>().Last().Floors);
+        Assert.Equal("C", hero.RoomId);
+        Assert.Equal(6 - GameRules.FallDamage - 1, hero.Hearts);
+    }
+
+    /// <summary>A hero with a torch in hand about to drop through a trap door to the floor below (7 to keep it lit).</summary>
+    private static GameSession TrapDoorWithTorch(ScriptedDice dice) => TestRun.Start(
+    [
+        new RoomSetup("A", TestRun.Room(Open), Features: new RoomFeatures { Traps = new Dictionary<GridPosition, TrapSetup> { [new(4, 3)] = new(TrapKind.TrapDoor, 4) } }),
+        new RoomSetup("B", TestRun.Room(Empty), Floor: 2, Role: RoomRole.Arrival),
+    ], dice, cards: ["t_torch"], stats: TestRun.HeroStats with { Hearts = 6 });
+
+    [Fact]
+    public void AFallsSaveWaitsToBeBoostedOrLetStandAndMissedPutsTheTorchOut()
+    {
+        // The move's 1, the trap door's 6 against a 1; the save's 5, short of 7, with an Od Hand die to add.
+        GameSession session = TrapDoorWithTorch(new ScriptedDice(1, 6, 1, 5));
+        Hero hero = session.HeroInSeat();
+        session.Do(new RollMovement(hero.Id));
+
+        IReadOnlyList<GameEvent> events = session.Do(new MoveHero(hero.Id, new GridPosition(4, 2)));
+        Assert.Equal([5], events.SingleOf<FallSaveRolled>().Faces);
+        Assert.Equal(7, events.SingleOf<FallSaveRolled>().Difficulty);
+        Assert.NotNull(hero.PendingSave);
+        Assert.Contains("Settle the fall", session.Refuse(new EndTurn(hero.Id)));
+
+        events = session.Do(new LetSaveStand(hero.Id));
+        Assert.False(events.SingleOf<FallSaveSettled>().Made);
+        Assert.Single(events.OfType<TorchBurnedOut>());
+        Assert.Equal(0, hero.TorchesHeld);
+    }
+
+    [Fact]
+    public void AFallsSaveExplodesOnASixAndTakesOdHandDice()
+    {
+        // A 6 and the 1 it rolls on: 7, made at once.
+        GameSession lucky = TrapDoorWithTorch(new ScriptedDice(1, 6, 1, 6, 1));
+        Hero first = lucky.HeroInSeat();
+        lucky.Do(new RollMovement(first.Id));
+        Assert.True(lucky.Do(new MoveHero(first.Id, new GridPosition(4, 2))).SingleOf<FallSaveSettled>().Made);
+        Assert.Equal(1, first.TorchesHeld);
+
+        // A 3, short; an Od Hand die's 4 makes it.
+        GameSession boosted = TrapDoorWithTorch(new ScriptedDice(1, 6, 1, 3, 4));
+        Hero hero = boosted.HeroInSeat();
+        boosted.Do(new RollMovement(hero.Id));
+        boosted.Do(new MoveHero(hero.Id, new GridPosition(4, 2)));
+
+        IReadOnlyList<GameEvent> events = boosted.Do(new BoostFallSave(hero.Id));
+
+        Assert.True(events.SingleOf<FallSaveSettled>().Made);
+        Assert.Equal(1, hero.TorchesHeld);
+        Assert.Equal(0, boosted.OdHandUnspent(hero));
+    }
+
+    [Fact]
+    public void AFallsSaveTakesABankedPowerDie()
+    {
+        // A 3, short; a Power Die's 5 makes it.
+        GameSession session = TrapDoorWithTorch(new ScriptedDice(1, 6, 1, 3, 5));
+        Hero hero = session.HeroInSeat();
+        hero.Power.Banked = 1;
+        session.Do(new RollMovement(hero.Id));
+        session.Do(new MoveHero(hero.Id, new GridPosition(4, 2)));
+
+        IReadOnlyList<GameEvent> events = session.Do(new BoostFallSave(hero.Id, Power: true));
+
+        Assert.True(events.SingleOf<FallSaveSettled>().Made);
+        Assert.Equal(0, hero.Power.Banked);
+        Assert.Equal(1, session.OdHandUnspent(hero));
+    }
+
+    [Fact]
+    public void ADeepHoleDropsTwoFloorsAHeartMoreForTheSecond()
+    {
+        GameSession session = Stacked(new ScriptedDice(1));
+        Hero hero = session.HeroInSeat();
+        session.RoomById().MakeDeep(new GridPosition(4, 3), "C");
+        session.Do(new RollMovement(hero.Id));
+
+        IReadOnlyList<GameEvent> events = session.Do(new MoveHero(hero.Id, new GridPosition(4, 3)));
+
+        Assert.Equal("C", events.SingleOf<HeroFell>().RoomId);
+        Assert.Equal(6 - GameRules.FallDamage - 1, hero.Hearts);
+    }
+
     [Fact]
     public void AChestTrapStabsWhoeverOpensIt()
     {

@@ -53,14 +53,15 @@ public class TorchTests
     }
 
     [Fact]
-    public void AHeldTorchAddsADieToSearches()
+    public void AHeldTorchAddsADieToSearchesAndItsLightAOne()
     {
+        // The Od Hand die's 2, the torch's die's 3, and +1 for standing in its light.
         GameSession session = TestRun.Start(Beside, new ScriptedDice(2, 3), cards: ["t_torch"]);
         Hero hero = session.HeroInSeat();
 
         IReadOnlyList<GameEvent> events = session.Do(new Search(hero.Id));
 
-        Assert.Equal(5, events.SingleOf<OdHandRolled>().Total);
+        Assert.Equal(6, events.SingleOf<OdHandRolled>().Total);
     }
 
     [Fact]

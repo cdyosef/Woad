@@ -85,6 +85,95 @@ public class MagicTests
     }
 
     [Fact]
+    public void HurlFireOnYourselfIsAFlameThatBurnsLikeATorchTillAOne()
+    {
+        // The flame's own die; then an attack whose 1 (the Rumble die) puts it out, its fire die a 3.
+        GameSession session = TestRun.Start("""
+            .........
+            .........
+            .........
+            .........
+            .1d......
+            .........
+            .........
+            .........
+            .........
+            """, new ScriptedDice(4, 1, 3), stats: TestRun.HeroStats with { AttackDice = 2 });
+        Hero hero = Mage(session, magic: 0, power: 1, "hurl_fire");
+
+        session.Do(new CastSpell(hero.Id, "hurl_fire", hero.Position));
+        Assert.True(hero.Flame);
+        Assert.Equal(1, hero.TorchesHeld);
+
+        session.State.Turn!.AttackDiceUsed = 0;
+        IReadOnlyList<GameEvent> events = session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id, Dice: 1, UseWeapon: false));
+
+        Assert.Contains(DieType.Fire, events.SingleOf<AttackRolled>().DieTypes);
+        Assert.Single(events.OfType<FlameWentOut>());
+        Assert.False(hero.Flame);
+    }
+
+    [Fact]
+    public void HoldFireIsHurledWithOdHandDiceForNoPowerAndTheFlameIsGone()
+    {
+        // The Od Hand die's 3 and the Fire die's 2, plus Magic 1: 6.
+        GameSession session = TestRun.Start(Range, new ScriptedDice(3, 2), stats: TestRun.HeroStats with { OdHandDice = 1 });
+        Hero hero = Mage(session, magic: 1, power: 0, "hurl_fire");
+        hero.Flame = true;
+        Monster dummy = session.OnlyMonster();
+        Assert.Contains(dummy.Position, session.GetHeldFireTargets());
+
+        IReadOnlyList<GameEvent> events = session.Do(new HurlHeldFire(hero.Id, dummy.Position, Dice: 1));
+
+        Assert.Single(events.OfType<FlameHurled>());
+        Assert.Equal(6, events.SingleOf<AttackRolled>().Total);
+        Assert.False(hero.Flame);
+        Assert.Equal((0, 0), (session.OdHandDiceLeft, hero.Power.Banked));
+        Assert.Contains("no fire", session.Refuse(new HurlHeldFire(hero.Id, dummy.Position)));
+    }
+
+    [Fact]
+    public void MagicAttacksAddAnOdHandDieAtMostAndTheFocusBonus()
+    {
+        // Focus: a rank of Od Hand and two of Magic bought, 3. The Od Hand die's 4 and the Fire die's 2: 9.
+        GameSession session = TestRun.Start(Range, new ScriptedDice(4, 2), stats: TestRun.HeroStats with { OdHandDice = 2 });
+        Hero hero = Mage(session, magic: 2, power: 2, "hurl_fire");
+        hero.Allocation = new Woad.Core.Characters.StatAllocation { OdHandDice = 1, Magic = 2 };
+        Monster dummy = session.OnlyMonster();
+        Assert.Equal(3, hero.Focus);
+
+        Assert.Contains("at most 1 Od Hand die", session.Refuse(new CastSpell(hero.Id, "hurl_fire", dummy.Position, OdHandDice: 2)));
+        IReadOnlyList<GameEvent> events = session.Do(new CastSpell(hero.Id, "hurl_fire", dummy.Position, OdHandDice: 1));
+
+        Assert.Equal(9, events.SingleOf<AttackRolled>().Total);
+        Assert.Equal(1, session.OdHandDiceLeft);
+    }
+
+    [Fact]
+    public void ABlastHitsEveryoneOnTheTileAndAroundIt()
+    {
+        // Flame Blast aimed at the first dummy: it and the one beside it, not the one further off.
+        GameSession session = TestRun.Start("""
+            .........
+            .........
+            .........
+            .........
+            ..1..d..d
+            ......d..
+            .........
+            .........
+            .........
+            """, new ScriptedDice(1, 1, 1));
+        Hero hero = Mage(session, magic: 0, power: 3, "flame_blast");
+        Room room = session.RoomById();
+        Monster aimed = room.MonsterAt(new GridPosition(5, 4))!, beside = room.MonsterAt(new GridPosition(6, 5))!;
+
+        IReadOnlyList<GameEvent> events = session.Do(new CastSpell(hero.Id, "flame_blast", aimed.Position));
+
+        Assert.Equal([aimed.Id, beside.Id], events.SingleOf<SpellCast>().TargetIds.Order());
+    }
+
+    [Fact]
     public void EachExtraPowerAddsADieUpToTheMagicRank()
     {
         GameSession session = TestRun.Start(Range, new ScriptedDice(2, 3));

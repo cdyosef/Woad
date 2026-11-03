@@ -108,7 +108,7 @@ public partial class GameScreen
     private void AimAt(Monster monster)
     {
         _rumbling = true;
-        _stealing = _shoving = _leaping = _rushing = false;
+        _stealing = _shoving = _leaping = _rushing = _hurling = false;
         _goal = null;
         Log($"Click the {monster.Definition.Name} again to attack it. Right-click to cancel.", Palette.Danger);
         RefreshPanels();
@@ -269,6 +269,22 @@ public partial class GameScreen
             else
             {
                 _leaping = _rushing = false;
+                RefreshPanels();
+            }
+
+            return;
+        }
+
+        if (_hurling)
+        {
+            if (_session.CheckHurlHeldFire(tile) is null)
+            {
+                _hurling = false;
+                Execute(new HurlHeldFire(hero.Id, tile, MagicOdHandDice, SelectedPowerDice));
+            }
+            else
+            {
+                _hurling = false;
                 RefreshPanels();
             }
 
@@ -571,6 +587,12 @@ public partial class GameScreen
         {
             _board.SetBlast(ShownRoom.Positions.Where(position => position.ChebyshevDistanceTo(target) <= effect.AreaRadius));
         }
+        else if (_casting is { } spellId && tile is { } aim && Content.FindSpell(spellId) is { Shape: SpellShape.Burst }
+            && _session.GetSpellTargets(spellId).Contains(aim))
+        {
+            // A Blast shows the area it would cover.
+            _board.SetBlast(GameSession.BurstTiles(ShownRoom, aim));
+        }
         else
         {
             _board.SetBlast([]);
@@ -637,6 +659,11 @@ public partial class GameScreen
         if (_shoving)
         {
             return "Shove: click a monster next to you (orange) to push it a tile. Right-click to cancel.";
+        }
+
+        if (_hurling)
+        {
+            return "Hold Fire: click a monster in reach (orange) to hurl the flame at it, with your selected Od Hand dice. Right-click to cancel.";
         }
 
         if (_rumbling)
@@ -763,6 +790,8 @@ public partial class GameScreen
             TileKind.CrackedWall => "A cracked wall. A bomb's blast would break it, and something may be sealed inside.",
             TileKind.Pot => "A clay pot. Stand next to it and click to smash it: coins, a heart, or nothing.",
             TileKind.Wall => "A stone pillar.",
+            TileKind.Pit when room.DeepHoles.ContainsKey(tile) =>
+                "A deep pit: it drops two floors, straight through the room below. Fall in and you lose a heart for each floor. Leap over it with a Wend die.",
             TileKind.Pit when room.BelowRoomId is not null =>
                 "A pit: the room below shows far down. Fall in (or be shoved) and you drop to it, losing a heart. Leap over it with a Wend die.",
             TileKind.Pit => "A bottomless pit. Fall in and you lose a heart climbing out; a monster shoved in is gone. Leap over it with a Wend die.",

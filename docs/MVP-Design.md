@@ -536,8 +536,10 @@ Magic is dangerous in this world, and people don't like it, for good reason.
   spent, not rolled in.
 - **Upcasting:** each extra Power spent adds one more die of the spell's type, up to your Magic rank in
   extra dice. At Magic 2, Hurl Fire is 1 to 3 Fire dice.
-- The attack is the spell's dice **plus your Magic rank**, against the target's defense and armor like
-  any attack. Its dice are typed (see Damage types): a 6 rolls another of its type in and, on a hit, lays
+- The attack is the spell's dice **plus your Focus Bonus**, and **one Od Hand die** if you've one selected
+  (at most one, whatever's selected), against the target's defense and armor like any attack. The **Focus
+  Bonus** is +1 for each rank bought in Od Hand and in Magic; it goes on Focus checks too (learning a
+  spell). Its dice are typed (see Damage types): a 6 rolls another of its type in and, on a hit, lays
   its effect.
 - Casting takes all your **Rumble dice** left this turn (you need at least one), so it's instead of
   attacking, and once a turn.
@@ -553,7 +555,7 @@ All cost **1 Power** and can be upcast.
 | Spell | Range | Dice | What it does |
 | --- | --- | --- | --- |
 | Shooting Star | 8 | 1 Star | A 6 surges with Power |
-| Hurl Fire | 6 | 1 Fire | |
+| Hurl Fire | 6 | 1 Fire | On yourself: **Hold Fire**, a flame that's a lit torch needing no hand (light, a Search die, a fire die on your attacks), until a 1 in an attack puts it out (before any torch) or you fall to the floor below; the stairs don't. While it burns, a **Hold Fire** card is in your Od Hand: play it and click a monster within 6 to hurl the flame, its Fire die and your Magic with the Od Hand dice you add, for no Power; the flame is gone |
 | Poison Mist | 2, every creature in a straight line | 1 Poison, +1 per Poison token on you | Throws off every Poison token on you |
 | Icicle Arrow | 4 | 1 Ice | Or cast on the floor to lay ice (below) |
 | Acid Ball | 3 | 1 Acid | The same roll splashes one random creature beside the target, friend or foe |
@@ -585,9 +587,13 @@ All cost **1 Power** and can be upcast.
 ### Learning scrolls
 
 - Any spell scroll can be learned as a spell: each of the twelve teaches its **Blast** (the Flame Scroll
-  **Flame Blast**, the Frost Scroll **Frost Blast**...), which works just like the scroll (3 dice of its type
-  at range 3) and costs 3 Power to cast. Learning it uses up the scroll.
-- The attempt is an **Od Hand roll plus your Magic rank** against **6 + the spell's level** (the scrolls'
+  **Flame Blast**, the Frost Scroll **Frost Blast**...): 3 dice of its type at range 3, but a **blast**, hitting
+  everyone on the tile aimed at and the 8 around it (monsters; allies only with friendly fire on), the area
+  showing as you aim. It costs 3 Power to cast. Learning it uses up the scroll.
+- The attempt is a Focus check: an **Od Hand roll plus your Focus Bonus** (and after the roll, "Focus:
+  more?" for 3 seconds, zoomed in, while you have Luck, Od Hand dice or banked Power Dice left: **+Od Hand** adds a die,
+  **+Power** spends a banked Power Die for one, each exploding rather than earning a Power Die; or try
+  your Luck) against **6 + the spell's level** (the scrolls'
   spells are level 3: 9). It can be tried anywhere. In a dungeon or a fight it's an Od Hand roll like any
   other (your selected Od Hand dice, Power Dice and Luck): select the scroll and press **Learn** (where
   Equip would be). On the Woarld Map, pick the scroll in the **Party** menu and press **Learn**: there it's
@@ -605,7 +611,7 @@ All cost **1 Power** and can be upcast.
 - About **a quarter** of the rooms past the first are dark (never an arrival or the boss's room), each with
   a **brazier** or two, unlit, standing where they block no way through. Braziers block movement, not sight.
 - Any fire beside a brazier lights it: a held torch, burning floor, a burning or fiery creature. So does
-  fire aimed at it (Hurl Fire, a Flame Scroll). Lit, it stays lit.
+  fire aimed at it (Hurl Fire, a Flame Scroll, Flame Blast, or the flame of Hold Fire hurled). Lit, it stays lit.
 - Monsters in darkness are hard to make out: ranged attacks on them take **-1**, and Shadowbind rolls a die
   more against them. On the board, darkness dims the tiles no light reaches.
 
@@ -623,7 +629,7 @@ total reaches its number:
 | Check | How | Number *(tunable)* |
 | --- | --- | --- |
 | **Pick a lock** | Stand in a locked doorway (or next to a locked chest) without a key and click it | Doors 4 + floor (at most 6); chests 5 + floor |
-| **Search** | **Search** button: reveals everything in the room your total reaches | Secret doors 4 + floor; traps 3 + floor; stashes 5 + floor |
+| **Search** | **Search** button: reveals everything in the room your total reaches; **+1 for each light** whose glow you stand in (each torch held, a flame, a lit brazier, burning floor, Shining Light...), stacking | Secret doors 4 + floor; traps 3 + floor; stashes 5 + floor |
 | **Disarm** | Click a trap you've found: on a tile or chest next to you, or your own doorway | 3 + floor |
 | **Steal** | **Steal** button, then an adjacent monster or hero; once a turn | Beat their roll: a monster's defense dice, a hero's Od Hand dice and tools |
 | **Aid** | The **Aid** card, then yourself or an ally beside you (diagonals too); clicking an ally Keeling Over aids them straight away | On someone Keeling Over (a Rouse): every 6 of the total is a mark of life; every die showing 1 is a Doom Die on their next Keel roll (see [Keeling Over](#loot-keeling-over-and-winning)). Otherwise it takes one stack of one ailment off, chosen when there are several: 10 (Nekrot 14). A Shovel in hand digs two stacks of Buried off |
@@ -697,6 +703,17 @@ total reaches its number:
   go through (open it) anyway, +1 defense; a locked door still needs opening first. Od Hand disarms them;
   **a failed Disarm sets the trap off** on whoever tried. Traps never cut a room in two, and never sit
   beside a chest or pot.
+- **Long falls:** where a room lies two floors straight down, about one hole in four (pits and trap doors)
+  is **deep** and drops you there, through the room between; and landing on another pit, you fall on
+  through it. Every floor fallen past the first is **another heart**. Falling to a lower floor, a
+  **save** keeps your lights and spells (torches in hand, Hold Fire, Shining Light, Shadowbind, Snowshoes):
+  one **exploding** die (a 6 rolls another and adds it) and the Focus Bonus, against **7** for each floor
+  fallen. Missed, the torches in hand burn out and the rest ends. Short of it, "Keep the light?" asks for 3
+  seconds, zoomed in and slowed down, your turn or not: add your unspent Od Hand dice one at a time
+  (**+Od Hand**, each exploding too), spend banked Power Dice the same way (**+Power**), try your Luck on a
+  die, or let it stand.
+- **Spent dice come back only at the start of your turn:** Od Hand dice spent on your turn stay spent
+  through everyone else's (the one die you always defend with is the exception).
 - **Pits:** where a room lies underneath, its floor shows far down the pit; with nothing below (as on
   the last floor) the pit is black. You can walk into a pit: you lose a heart and drop into the room
   below, on the tile under the pit (or the nearest free one), or climb back out of a bottomless pit.
@@ -1122,8 +1139,13 @@ them up there like any character.
 
 - **Camera:** the board is a 9×9 view onto the room. A bigger room scrolls to follow whoever is acting
   and comes back to the active hero after each of their actions; a smaller one sits centered in solid
-  rock. Right-drag (or the arrow keys) pans to look around, but only as far as keeps the active hero in
-  view. A plain right-click still cancels.
+  rock. Right-drag, the arrow keys, a finger dragged on a touch screen or a two-finger swipe on a
+  touchpad pans to look around, but only as far as keeps the active hero in view. A plain right-click
+  still cancels; a tap on a touch screen clicks the tile it lifts from, if the finger didn't move.
+- **Zoom:** the mouse wheel zooms the board in and out about the pointer, as do a pinch on a touchpad or
+  a touch screen and the + and - keys; Home puts it back. It goes in to 2.5×, and out (to as little as
+  half) only as far as the whole room fits. The zoom carries from room to room, and the zoom on the
+  action (attacks, Luck questions) goes on top of it, to 3× at most.
 - **Scaling:** a 640×360 layout, integer scaled to 1280×720, 1920×1080, 2560×1440 and 4K, with
   nearest-neighbor filtering. The window stretches in `canvas_items` mode, so text renders at full
   resolution and stays sharp while the layout keeps its 640×360 coordinates.

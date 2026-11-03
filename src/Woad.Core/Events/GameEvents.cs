@@ -331,7 +331,11 @@ public sealed record TrapSprung(int HeroId, TrapKind Kind, GridPosition Position
 public sealed record TrapAttacked(int HeroId, TrapKind Kind, DiceRoll Roll, int Bonus, int Total, bool Found) : GameEvent;
 
 /// <summary>A hero dropped through a trap door into another room (<paramref name="Jumped"/> on purpose, unhurt).</summary>
-public sealed record HeroFell(int HeroId, string FromRoomId, string RoomId, int Floor, GridPosition Position, bool FirstTimeOnFloor, bool Jumped) : GameEvent;
+public sealed record HeroFell(int HeroId, string FromRoomId, string RoomId, int Floor, GridPosition Position, bool FirstTimeOnFloor, bool Jumped) : GameEvent
+{
+    /// <summary>How many floors they've fallen in all, landing here (more than 1 through a deep hole, or falling on through a pit).</summary>
+    public int Floors { get; init; } = 1;
+}
 
 /// <summary>Keys appeared on the floor: dropped by a monster, from a cleared room or a found stash.</summary>
 public sealed record KeysAppeared(string RoomId, GridPosition Position, int Count) : GameEvent;
@@ -644,6 +648,24 @@ public sealed record StoneLanded(int HeroId, int CardId, string RoomId, GridPosi
 
 /// <summary>The first Search in a room: the searcher picked up what lay about (<paramref name="Found"/>, by name) and earned an Explorer bonus.</summary>
 public sealed record Explored(int HeroId, string RoomId, IReadOnlyList<string> Found) : GameEvent;
+
+/// <summary>A hero hurled the flame of Hold Fire at a monster (its roll follows), or at a brazier (<paramref name="MonsterId"/> 0) to light it; the flame is gone.</summary>
+public sealed record FlameHurled(int HeroId, int MonsterId) : GameEvent;
+
+/// <summary>A 1 in an attack put out the flame of Hurl Fire a hero carried.</summary>
+public sealed record FlameWentOut(int HeroId) : GameEvent;
+
+/// <summary>A hero's save after a fall: its exploding die (<paramref name="Faces"/>), their Focus Bonus, and what it needs.</summary>
+public sealed record FallSaveRolled(int HeroId, IReadOnlyList<int> Faces, int Focus, int Difficulty) : GameEvent;
+
+/// <summary>An Od Hand die (exploding) added to a hero's save after a fall: its <paramref name="Faces"/> and the new total.</summary>
+public sealed record FallSaveBoosted(int HeroId, IReadOnlyList<int> Faces, int Total) : GameEvent;
+
+/// <summary>A hero's save after a fall settled: <paramref name="Made"/>, their lights and spells stay; otherwise they're out.</summary>
+public sealed record FallSaveSettled(int HeroId, int Total, int Difficulty, bool Made) : GameEvent;
+
+/// <summary>An Od Hand or Power Die added to a Focus check, exploding: its <paramref name="Faces"/> and the new total.</summary>
+public sealed record OdHandDieAdded(int HeroId, IReadOnlyList<int> Faces, int Total) : GameEvent;
 
 /// <summary>A 1 in a torch-lit attack burned the torch out: it's gone.</summary>
 public sealed record TorchBurnedOut(int HeroId, int CardId) : GameEvent;

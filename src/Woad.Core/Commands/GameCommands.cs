@@ -38,7 +38,7 @@ public sealed record AttackMonster(int HeroId, int MonsterId, int? Dice = null, 
 /// like Quake). It costs its Power plus <paramref name="ExtraPower"/> more (a die each, up to the Magic
 /// rank) and the Rumble dice left this turn. Swirly Eyes moves a target it hits to <paramref name="MoveTo"/>.
 /// </summary>
-public sealed record CastSpell(int HeroId, string SpellId, GridPosition? Target = null, int ExtraPower = 0, GridPosition? MoveTo = null) : GameCommand(HeroId);
+public sealed record CastSpell(int HeroId, string SpellId, GridPosition? Target = null, int ExtraPower = 0, GridPosition? MoveTo = null, int OdHandDice = 0) : GameCommand(HeroId);
 
 /// <summary>Lay a patch of the ice an Icicle Arrow rolled (or give Snowshoes to someone on an icy tile).</summary>
 public sealed record LayIce(int HeroId, GridPosition Tile) : GameCommand(HeroId);
@@ -221,6 +221,25 @@ public sealed record Escape(int HeroId) : GameCommand(HeroId);
 /// keeps the companion on the tile it stands on now.
 /// </summary>
 public sealed record OrderCompanion(int HeroId, int CompanionId, CompanionOrder Order) : GameCommand(HeroId);
+
+/// <summary>
+/// Hurls the flame of Hold Fire (Hurl Fire cast on yourself) at a monster in Hurl Fire's range: its Fire die and
+/// the hero's Focus, with an Od Hand die if they add one (<paramref name="Dice"/>); no Power, and the flame is gone.
+/// At an unlit brazier, it lights it.
+/// </summary>
+public sealed record HurlHeldFire(int HeroId, GridPosition Target, int Dice = 0, int PowerDice = 0) : GameCommand(HeroId);
+
+/// <summary>Adds one of the hero's unspent Od Hand dice (exploding) to their save after a fall, or with <paramref name="Power"/> one of their banked Power Dice. Their turn or not.</summary>
+public sealed record BoostFallSave(int HeroId, bool Power = false) : GameCommand(HeroId);
+
+/// <summary>Tries the hero's Luck on a die of their save after a fall: the higher stays. Their turn or not.</summary>
+public sealed record LuckOnFallSave(int HeroId, int DieIndex) : GameCommand(HeroId);
+
+/// <summary>Lets the hero's save after a fall stand as it is.</summary>
+public sealed record LetSaveStand(int HeroId) : GameCommand(HeroId);
+
+/// <summary>Adds an Od Hand die to the Focus check (learning a spell) waiting on the hero's choice, or with <paramref name="Power"/> one of their banked Power Dice.</summary>
+public sealed record AddOdHandDie(int HeroId, bool Power = false) : GameCommand(HeroId);
 
 /// <summary>Sets which rolls Luck is asked on when they're about to fail (the Luck menu). Free, any time on the hero's turn.</summary>
 public sealed record SetLuckAsks(int HeroId, LuckRoll Asks) : GameCommand(HeroId);

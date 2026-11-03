@@ -86,6 +86,19 @@ public static class UiDriver
         await NextFrame(context);
     }
 
+    /// <summary>Turns the mouse wheel <paramref name="notches"/> times over <paramref name="at"/>.</summary>
+    public static async Task Wheel(Node context, Vector2 at, MouseButton wheel, int notches)
+    {
+        Viewport viewport = context.GetViewport();
+        viewport.PushInput(new InputEventMouseMotion { Position = at, GlobalPosition = at }, inLocalCoords: true);
+        for (int notch = 0; notch < notches; notch++)
+        {
+            viewport.PushInput(new InputEventMouseButton { ButtonIndex = wheel, Pressed = true, Factor = 1, Position = at, GlobalPosition = at }, inLocalCoords: true);
+            viewport.PushInput(new InputEventMouseButton { ButtonIndex = wheel, Pressed = false, Factor = 1, Position = at, GlobalPosition = at }, inLocalCoords: true);
+            await NextFrame(context);
+        }
+    }
+
     /// <summary>Picks up whatever's at <paramref name="from"/> with the left button, drags it to <paramref name="to"/> in a few steps and lets go (drag and drop).</summary>
     /// <param name="settle">Seconds to hold it over <paramref name="to"/> before letting go (for something that slides out to take it).</param>
     public static async Task DragAt(Node context, Vector2 from, Vector2 to, double settle = 0.3)

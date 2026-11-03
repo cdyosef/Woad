@@ -110,6 +110,12 @@ public sealed class Hero
     /// <summary>The Clover Luck they started the run with: a hero who doesn't get out keeps no more than this.</summary>
     public int StartCloverLuck { get; internal init; }
 
+    /// <summary>A save after a fall waiting on them (see <c>GameSession.StartFallSave</c>), or null.</summary>
+    public FallSave? PendingSave { get; internal set; }
+
+    /// <summary>Od Hand dice spent on their last turn: off their turn, only the rest can be spent (they come back at the start of their turn).</summary>
+    public int OdHandSpent { get; internal set; }
+
     /// <summary>Rolls they've made this round (for the Cursed dice, which go on the first three).</summary>
     public int RollsThisRound { get; internal set; }
 
@@ -223,6 +229,12 @@ public sealed class Hero
     /// <summary>The points bought so far, counting any spent during the run; null for a debug hero.</summary>
     public StatAllocation? Allocation { get; internal set; }
 
+    /// <summary>
+    /// The Focus Bonus: +1 for each rank bought in Od Hand and in Magic, added to magic attacks and to Focus
+    /// checks (learning a spell). A hero with no points bought (a debug hero) has their Magic rank.
+    /// </summary>
+    public int Focus => Allocation is { } bought ? bought.OdHandDice + bought.Magic : Math.Max(0, EffectiveStats.Magic);
+
     /// <summary>Points the character had to spend coming into the run.</summary>
     public int StartUnspentPoints { get; internal init; }
 
@@ -271,8 +283,11 @@ public sealed class Hero
 
     public bool Knows(Skill skill) => (Skills & skill) == skill;
 
-    /// <summary>Torches held (and so lit): one in each hand at most.</summary>
-    public int TorchesHeld => EquippedCards.Count(card => card.Definition.Torch);
+    /// <summary>Torches held (and so lit): one in each hand at most, and a flame of Hurl Fire (see <see cref="Flame"/>).</summary>
+    public int TorchesHeld => EquippedCards.Count(card => card.Definition.Torch) + (Flame ? 1 : 0);
+
+    /// <summary>A flame of Hurl Fire cast on themselves: a lit torch needing no hand, until a 1 in an attack puts it out or they fall to the floor below.</summary>
+    public bool Flame { get; internal set; }
 
     /// <summary>Their Medicine Bags, on the belt or in a hand, if they have any to hand.</summary>
     public CardInstance? MedicineBag => EquippedCards.Concat(_belt).FirstOrDefault(card => card.Definition.MedicineBag);

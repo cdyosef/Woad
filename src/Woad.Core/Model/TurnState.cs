@@ -281,3 +281,20 @@ public sealed class TurnState
 /// which breaks on a 1.
 /// </summary>
 internal sealed record WeaponSpent(CardInstance? Flung, int NamedBy, GridPosition At, CardInstance? Brittle);
+
+/// <summary>
+/// A hero's save after a fall, waiting on them: its dice (an exploding die, and any Od Hand dice added), their
+/// Focus Bonus and what it needs to reach (see <c>GameSession.StartFallSave</c>).
+/// </summary>
+public sealed class FallSave(int focus, int difficulty)
+{
+    public List<int> Faces { get; } = [];
+
+    public int Focus { get; } = focus;
+
+    public int Difficulty { get; } = difficulty;
+
+    public int Total => Faces.Sum() + Focus;
+
+    public bool Made => Total >= Difficulty;
+}

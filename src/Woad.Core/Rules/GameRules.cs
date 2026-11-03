@@ -59,6 +59,18 @@ public static class GameRules
     /// <summary>Seconds to decide whether to try your Luck on any other roll (a Wend roll, a search, one asked on with the clover glowing).</summary>
     public const double WendLuckSeconds = 3;
 
+    /// <summary>How far round the tile it's aimed at a Burst spell (a Blast) reaches: 1, a 3x3 area.</summary>
+    public const int BurstRadius = 1;
+
+    /// <summary>The most Od Hand dice a magic attack can add to its roll (a spell, or Hold Fire hurled).</summary>
+    public const int MagicOdHandDice = 1;
+
+    /// <summary>Percent of holes (pits, trap doors) with a room two floors straight down that go down that far.</summary>
+    public const int DeepHoleChance = 25;
+
+    /// <summary>What the save after a fall needs (an exploding die and the Focus Bonus) for each floor fallen, to keep the hero's lights and spells.</summary>
+    public const int TorchFallSave = 7;
+
     /// <summary>Dice a sprung trap attacks with.</summary>
     public const int TrapAttackDice = 1;
 

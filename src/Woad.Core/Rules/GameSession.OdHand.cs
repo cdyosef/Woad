@@ -380,7 +380,8 @@ public sealed partial class GameSession
         bool tools = toolBonus > 0 || lockDice > 0;
         (bool bag, int aidDice) = AidKit(hero, command, check, events);
         bool free = check.Kind is OdHandCheckKind.Learn or OdHandCheckKind.Retreat;
-        int bonus = toolBonus + (bag ? 1 : 0) - RollPenalty(hero.Conditions) + (check.Kind == OdHandCheckKind.Learn ? Math.Max(0, hero.EffectiveStats.Magic) : 0) - Curse(hero, events);
+        int bonus = toolBonus + (bag ? 1 : 0) - RollPenalty(hero.Conditions) + (check.Kind == OdHandCheckKind.Learn ? hero.Focus : 0)
+            + (check.Kind == OdHandCheckKind.Search ? LightBonus(hero) : 0) - Curse(hero, events);
         // Tools' own dice (Lockpicks on a lock); held torches' on a search; a Medicine Bag's, Bandages' and
         // a Shovel's on Aid; High Alert's Rumble dice on a search; and the free die that starts learning a
         // spell or running from a fight.

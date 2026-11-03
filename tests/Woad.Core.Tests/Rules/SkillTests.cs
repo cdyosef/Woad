@@ -64,7 +64,8 @@ public class SkillTests
 
         OdHandRolled rolled = session.Do(new Search(hero.Id)).SingleOf<OdHandRolled>();
 
-        Assert.Equal((1, 3), (rolled.ToolDice, rolled.Total));
+        // The torch's die, and +1 for its light.
+        Assert.Equal((1, 4), (rolled.ToolDice, rolled.Total));
         Assert.Equal(0, session.State.Turn!.OdHandDiceUsed);
         Assert.Contains("haven't learned to Search", session.Refuse(new Search(hero.Id)));
     }

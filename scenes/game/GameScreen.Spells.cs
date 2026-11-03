@@ -3,6 +3,7 @@ using Woad.Core.Commands;
 using Woad.Core.Content;
 using Woad.Core.Grid;
 using Woad.Core.Model;
+using Woad.Core.Rules;
 using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Game;
@@ -19,6 +20,9 @@ public partial class GameScreen
 
     /// <summary>The spell being aimed, by id, or null.</summary>
     private string? _casting;
+
+    /// <summary>The Od Hand dice a magic attack adds: the ones selected, one at most.</summary>
+    private int MagicOdHandDice => Math.Min(GameRules.MagicOdHandDice, Math.Min(SelectedOdHandDice, _session.OdHandDiceLeft));
 
     /// <summary>Swirly Eyes' target, while picking where to move it.</summary>
     private GridPosition? _swirling;
@@ -101,7 +105,7 @@ public partial class GameScreen
         SpellDefinition spell = _session.Content.GetSpell(spellId);
         if (spell.Shape == SpellShape.Around)
         {
-            Execute(new CastSpell(hero.Id, spellId, ExtraPower: ExtraPower(spell)));
+            Execute(new CastSpell(hero.Id, spellId, ExtraPower: ExtraPower(spell), OdHandDice: MagicOdHandDice));
             return;
         }
 
@@ -155,7 +159,7 @@ public partial class GameScreen
         int extra = ExtraPower(spell);
         _casting = null;
         _swirling = null;
-        Execute(new CastSpell(hero.Id, spell.Id, target, extra, moveTo));
+        Execute(new CastSpell(hero.Id, spell.Id, target, extra, moveTo, MagicOdHandDice));
     }
 
     private List<GridPosition> SwirlDestinations(SpellDefinition spell, GridPosition target) =>

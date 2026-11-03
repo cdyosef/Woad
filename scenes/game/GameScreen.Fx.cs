@@ -57,7 +57,18 @@ public partial class GameScreen
     /// </summary>
     private (object? Roll, bool Failing) LuckToAsk(Hero? hero, TurnState? turn, bool idle, bool pending)
     {
-        if (!idle || hero is null || turn is null || hero.LuckLeft < 1)
+        if (!idle || hero is null || turn is null)
+        {
+            return (null, false);
+        }
+
+        // A Focus check (learning a spell) always asks while there's Luck or an Od Hand die to add.
+        if (pending && turn.PendingRoll is { Check.Kind: OdHandCheckKind.Learn } focus && (hero.LuckLeft > 0 || _session.OdHandDiceLeft > 0 || hero.Power.Banked > 0))
+        {
+            return (focus, false);
+        }
+
+        if (hero.LuckLeft < 1)
         {
             return (null, false);
         }
@@ -130,6 +141,7 @@ public partial class GameScreen
         }
 
         SlowForLuck(true);
+        bool focusCheck = roll is PendingRoll { Check.Kind: OdHandCheckKind.Learn };
         _luckPrompt.Offer(failing ? GameRules.LuckSeconds : GameRules.WendLuckSeconds, () =>
         {
             _luckOffer = null;
@@ -143,8 +155,55 @@ public partial class GameScreen
                 _wendLuckDone = roll;
                 RefreshPanels();
             }
-        });
+        }, focusCheck ? "Focus: more?" : "Try your Luck?", focusCheck ? () => ExecuteForActiveHero(heroId => new AddOdHandDie(heroId)) : null, focusCheck && _session.OdHandDiceLeft > 0,
+            focusCheck ? () => ExecuteForActiveHero(heroId => new AddOdHandDie(heroId, Power: true)) : null, focusCheck && ActiveHero?.Power.Banked > 0);
     }
+
+    /// <summary>
+    /// A save after a fall waiting on a hero (one of the players'): "Keep your light?" with 3 seconds, zoomed in on
+    /// them and slowed down, to add unspent Od Hand dice (+Od Hand) or try their Luck on a die; No, or the time
+    /// running out, lets it stand. Null puts it away.
+    /// </summary>
+    private void OfferSave(Hero? saver)
+    {
+        if (saver?.PendingSave is not { } save)
+        {
+            if (_saveOffer is not null)
+            {
+                _saveOffer = null;
+                _luckPrompt.Close();
+                SlowForLuck(false);
+            }
+
+            return;
+        }
+
+        (object, int)? offer = (save, save.Total + 100 * saver.LuckLeft);
+        _luckPrompt.CanAdd(_session.OdHandUnspent(saver) > 0, saver.Power.Banked > 0);
+        if (Equals(offer, _saveOffer))
+        {
+            return;
+        }
+
+        _saveOffer = offer;
+        _luckOffer = null;
+        ZoomOnAction(saver.Id, []);
+        SlowForLuck(true);
+        int saverId = saver.Id;
+        _luckPrompt.Offer(GameRules.WendLuckSeconds, () =>
+        {
+            _saveOffer = null;
+            SlowForLuck(false);
+            Execute(new LetSaveStand(saverId));
+        }, $"Keep the light? {save.Total}/{save.Difficulty}", () => Execute(new BoostFallSave(saverId)), _session.OdHandUnspent(saver) > 0,
+            () => Execute(new BoostFallSave(saverId, Power: true)), saver.Power.Banked > 0);
+    }
+
+    /// <summary>The save after a fall on offer, and its total and Luck then (a change starts the countdown afresh).</summary>
+    private (object Save, int Total)? _saveOffer;
+
+    /// <summary>A player's hero with a save after a fall waiting on them, if any.</summary>
+    private Hero? Saver => _busy ? null : _session.State.Heroes.FirstOrDefault(hero => hero.PendingSave is not null && !hero.IsCompanion);
 
     /// <summary>How fast everything plays while Luck is asked: half speed.</summary>
     private const double LuckTimeScale = 0.5;
@@ -157,6 +216,24 @@ public partial class GameScreen
         {
             _board.ZoomOut();
         }
+    }
+
+    /// <summary>
+    /// Zooms the view in on an attack, afresh: zoomed in on the last one still (a monster's turn plays all
+    /// its attacks in a row), it first eases back out, so each attack gets its own zoom in.
+    /// </summary>
+    private async Task ZoomOnActionAfresh(int actorId, IEnumerable<int> targetIds)
+    {
+        if (_board.ActionZoomLevel > 1.01f)
+        {
+            _board.ZoomOut();
+            for (int frame = 0; frame < 40 && _board.ActionZoomLevel > 1.08f; frame++)
+            {
+                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            }
+        }
+
+        ZoomOnAction(actorId, targetIds);
     }
 
     /// <summary>Zooms the view in on an attack (or a roll): the attacker and its targets, those in the room on show.</summary>

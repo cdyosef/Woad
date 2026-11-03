@@ -16,6 +16,7 @@ public static class DieTypes
         Boon.ShiningLight => "Shining Light",
         Boon.Shadowbound => "Shadowbound",
         Boon.ThievesOil => "Thieves' Oil",
+        Boon.Flame => "Flame",
         _ => "Snowshoes",
     };
 
