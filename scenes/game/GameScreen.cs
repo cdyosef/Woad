@@ -789,6 +789,27 @@ public partial class GameScreen : Control
                 await UpdateFigure(hurled.HeroId, figure => figure.Torch = _session.State.GetHero(hurled.HeroId).TorchesHeld > 0, 0.1);
                 break;
 
+            case FallSaveRolled save:
+                _trayShowsMovement = false;
+                await _dice.ShowRoll($"{NameOf(save.HeroId)} keeps the light? ({save.Difficulty})", new DiceRoll([.. save.Faces]), save.Focus, newGroup: true, kind: DiceKind.OdHand);
+                break;
+
+            case FallSaveBoosted boosted:
+                foreach (int face in boosted.Faces)
+                {
+                    await _dice.AddDie(face);
+                }
+
+                break;
+
+            case OdHandDieAdded added:
+                await _dice.AddDie(added.Face);
+                break;
+
+            case FallSaveSettled settled:
+                CalloutOver(settled.HeroId, settled.Made ? "LIGHT KEPT" : "LIGHTS OUT", settled.Made ? Palette.Heal : Palette.Danger, 1);
+                break;
+
             case FlameWentOut flameOut:
                 CalloutOver(flameOut.HeroId, "FLAME OUT!", Palette.Fire);
                 await UpdateFigure(flameOut.HeroId, figure => figure.Torch = _session.State.GetHero(flameOut.HeroId).TorchesHeld > 0, 0.2);

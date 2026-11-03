@@ -115,6 +115,19 @@ public partial class DiceBar : Control
         await Tumble(_roller, [_roller.Faces.Length - 1]);
     }
 
+    /// <summary>Rolls one more plain die into the roller's dice (an Od Hand die added to a save or a Focus check).</summary>
+    public async Task AddDie(int face)
+    {
+        if (_roller is not { } old)
+        {
+            return;
+        }
+
+        int plain = old.PowerFrom >= old.Faces.Length ? old.Faces.Length + 1 : old.PowerFrom;
+        _roller = new Row(old.Caption, [.. old.Faces, face], old.Bonus, plain) { Won = old.Won, Kind = old.Kind, ToolFrom = old.ToolFrom, Types = old.Types, Cards = old.Cards };
+        await Tumble(_roller, [_roller.Faces.Length - 1]);
+    }
+
     /// <summary>
     /// Lights up the winner of what was just resolved: the roller on a hit (or a success), else the
     /// latest defender, whose dice are tagged with <paramref name="verdict"/> (HIT, MISS, BLOCKED).

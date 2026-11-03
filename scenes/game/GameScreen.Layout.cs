@@ -239,13 +239,22 @@ public partial class GameScreen
         _rumble.Visible &= !buried;
         _prone.Visible &= !_digOut.Visible;
 
-        // Luck is asked by the Luck menu's switches (or the clover glowing); a roll it isn't asked on stands at once.
-        (object? offered, bool failing) = LuckToAsk(hero, turn, idle, pending);
-        bool canReroll = offered is not null;
-        _dice.Rerollable = canReroll;
+        // A save after a fall comes first; then Luck, asked by the Luck menu's switches (or the clover glowing):
+        // a roll it isn't asked on stands at once.
         _luckHint.Visible = false;
         _heroPanel.LuckClover.Glowing = hero is not null && _luckPrimed.Contains(hero.Id);
-        OfferLuck(offered, hero?.LuckLeft ?? 0, pending, failing);
+        if (Saver is { } saver)
+        {
+            _dice.Rerollable = saver.LuckLeft > 0;
+            OfferSave(saver);
+        }
+        else
+        {
+            OfferSave(null);
+            (object? offered, bool failing) = LuckToAsk(hero, turn, idle, pending);
+            _dice.Rerollable = offered is not null && (hero?.LuckLeft ?? 0) > 0;
+            OfferLuck(offered, hero?.LuckLeft ?? 0, pending, failing);
+        }
 
         _menu.Disabled = _busy || state.Phase == RunPhase.Ended;
         _menu.Text = _confirmingLeave ? "Leave?" : "Menu";
@@ -778,8 +787,19 @@ public partial class GameScreen
         // Under the board, the dice bar: who rolls on the left, VS, who answers on the right.
         AddChild(new Panel { Position = new Vector2(SideWidth, StripHeight + BoardView.Pixels), Size = new Vector2(BoardView.Pixels, StripHeight) });
         _dice = new DiceBar { Position = new Vector2(SideWidth + 6, StripHeight + BoardView.Pixels + 1), Size = new Vector2(BoardView.Pixels - 12, 34) };
-        _dice.DieClicked += index => ExecuteForActiveHero(heroId => new RerollDie(heroId, index));
-        _luckPrompt = new LuckPrompt { Position = _dice.Position + new Vector2((_dice.Size.X - 172) / 2, -21) };
+        _dice.DieClicked += index =>
+        {
+            // Luck on the save after a fall waiting, or else on the roll in the tray.
+            if (Saver is { } saver)
+            {
+                Execute(new LuckOnFallSave(saver.Id, index));
+            }
+            else
+            {
+                ExecuteForActiveHero(heroId => new RerollDie(heroId, index));
+            }
+        };
+        _luckPrompt = new LuckPrompt { Position = _dice.Position + new Vector2((_dice.Size.X - 220) / 2, -21) };
         AddChild(_luckPrompt);
         _luckMenu = new LuckMenu { Position = BoardOrigin + new Vector2((BoardView.Pixels - 214) / 2, 60) };
         _luckMenu.Changed += asks => ExecuteForActiveHero(heroId => new SetLuckAsks(heroId, asks));

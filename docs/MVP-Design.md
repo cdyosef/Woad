@@ -590,7 +590,9 @@ All cost **1 Power** and can be upcast.
   **Flame Blast**, the Frost Scroll **Frost Blast**...): 3 dice of its type at range 3, but a **blast**, hitting
   everyone on the tile aimed at and the 8 around it (monsters; allies only with friendly fire on), the area
   showing as you aim. It costs 3 Power to cast. Learning it uses up the scroll.
-- The attempt is a Focus check: an **Od Hand roll plus your Focus Bonus** against **6 + the spell's level** (the scrolls'
+- The attempt is a Focus check: an **Od Hand roll plus your Focus Bonus** (and after the roll, "Focus:
+  more?" for 3 seconds, zoomed in, while you have Luck or Od Hand dice left: **+Od Hand** adds a die, or try
+  your Luck) against **6 + the spell's level** (the scrolls'
   spells are level 3: 9). It can be tried anywhere. In a dungeon or a fight it's an Od Hand roll like any
   other (your selected Od Hand dice, Power Dice and Luck): select the scroll and press **Learn** (where
   Equip would be). On the Woarld Map, pick the scroll in the **Party** menu and press **Learn**: there it's
@@ -702,9 +704,14 @@ total reaches its number:
   beside a chest or pot.
 - **Long falls:** where a room lies two floors straight down, about one hole in four (pits and trap doors)
   is **deep** and drops you there, through the room between; and landing on another pit, you fall on
-  through it. Every floor fallen past the first is **another heart**. Falling puts out a flame of Hold
-  Fire, and each lit torch in hand burns out unless a die and the Focus Bonus reach **7**, and 7 more for
-  each floor past the first.
+  through it. Every floor fallen past the first is **another heart**. Falling to a lower floor, a
+  **save** keeps your lights and spells (torches in hand, Hold Fire, Shining Light, Shadowbind, Snowshoes):
+  one **exploding** die (a 6 rolls another and adds it) and the Focus Bonus, against **7** for each floor
+  fallen. Missed, the torches in hand burn out and the rest ends. Short of it, "Keep the light?" asks for 3
+  seconds, zoomed in and slowed down, your turn or not: add your unspent Od Hand dice one at a time
+  (**+Od Hand**, each exploding too), try your Luck on a die, or let it stand.
+- **Spent dice come back only at the start of your turn:** Od Hand dice spent on your turn stay spent
+  through everyone else's (the one die you always defend with is the exception).
 - **Pits:** where a room lies underneath, its floor shows far down the pit; with nothing below (as on
   the last floor) the pit is black. You can walk into a pit: you lose a heart and drop into the room
   below, on the tile under the pit (or the nearest free one), or climb back out of a bottomless pit.

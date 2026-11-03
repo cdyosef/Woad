@@ -13,8 +13,13 @@ public partial class LuckPrompt : Panel
     private Label _question = null!;
     private double _left;
     private Action? _expired;
+    private Action? _add;
+    private string _asked = "Try your Luck?";
 
     internal Button NoButton { get; private set; } = null!;
+
+    /// <summary>Adds an Od Hand die to the roll (a save after a fall, a Focus check), when it's on offer.</summary>
+    internal Button AddButton { get; private set; } = null!;
 
     /// <summary>Seconds left to decide.</summary>
     internal double SecondsLeft => _left;
@@ -23,20 +28,31 @@ public partial class LuckPrompt : Panel
     {
         Visible = false;
         ZIndex = 5;
-        Size = new Vector2(172, 20);
+        Size = new Vector2(220, 20);
         _question = UiTheme.Label(new Vector2(6, 3), new Vector2(124, 14), "", color: Palette.Heal);
         AddChild(_question);
-        NoButton = UiTheme.CompactButton(new Vector2(132, 2), new Vector2(36, 16), "No");
+        AddButton = UiTheme.CompactButton(new Vector2(132, 2), new Vector2(46, 16), "+Od Hand");
+        AddButton.TooltipText = "Add one of your unspent Od Hand dice to the roll.";
+        AddButton.Pressed += () => _add?.Invoke();
+        AddChild(AddButton);
+        NoButton = UiTheme.CompactButton(new Vector2(180, 2), new Vector2(36, 16), "No");
         NoButton.TooltipText = "Let the roll stand.";
         NoButton.Pressed += () => Expire();
         AddChild(NoButton);
     }
 
-    /// <summary>Asks, with <paramref name="seconds"/> to decide; <paramref name="expired"/> runs on No or when the time's up.</summary>
-    public void Offer(double seconds, Action expired)
+    /// <summary>
+    /// Asks, with <paramref name="seconds"/> to decide; <paramref name="expired"/> runs on No or when the time's up.
+    /// <paramref name="add"/>, if given, is the +Od Hand button's (shown while <paramref name="canAdd"/>).
+    /// </summary>
+    public void Offer(double seconds, Action expired, string question = "Try your Luck?", Action? add = null, bool canAdd = false)
     {
         _left = seconds;
         _expired = expired;
+        _asked = question;
+        _add = add;
+        AddButton.Visible = add is not null;
+        AddButton.Disabled = !canAdd;
         Visible = true;
         MoveToFront();
         UpdateText();
@@ -71,5 +87,8 @@ public partial class LuckPrompt : Panel
         expired?.Invoke();
     }
 
-    private void UpdateText() => _question.Text = $"Try your Luck?  {Math.Max(0, (int)Math.Ceiling(_left))}";
+    /// <summary>Whether the +Od Hand button can be pressed (dice left to add).</summary>
+    public void CanAdd(bool can) => AddButton.Disabled = !can;
+
+    private void UpdateText() => _question.Text = $"{_asked}  {Math.Max(0, (int)Math.Ceiling(_left))}";
 }
