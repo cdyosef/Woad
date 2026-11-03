@@ -605,13 +605,14 @@ public partial class GameScreen
             await Click(this, _heroPanel.LuckClover);
             Check(_heroPanel.LuckClover.Glowing, "tapping the clover makes it glow");
 
+            // The question only stays up a few seconds (and the game runs slow while it does), so look for it as soon as it's up.
             await PressKey(Key.W);
-            await WaitUntilIdle();
-            Check(aria.LuckRemaining == 0 || _luckPrompt.Visible, "with the clover glowing, the Wend roll asks: Try your Luck?");
-            Check(!_heroPanel.LuckClover.Glowing, "asking uses the glow up");
+            await WaitFor(this, () => _luckPrompt.Visible, "the Wend roll to ask: Try your Luck?");
+            Check(!_heroPanel.LuckClover.Glowing, "with the clover glowing, the Wend roll asks, and asking uses the glow up");
             await SaveShot("luck_prompt_wend");
             await Click(this, _luckPrompt.NoButton);
             Check(!_luckPrompt.Visible, "No puts the question away");
+            await WaitUntilIdle();
             await ConfirmIfHeld();
             Check(_session.State.Turn!.MovementPoints > 0, "W rolls the Wend dice");
             await SaveShot("tray_wend");
