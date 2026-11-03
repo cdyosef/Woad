@@ -68,6 +68,9 @@ public static class GameRules
     /// <summary>Percent of holes (pits, trap doors) with a room two floors straight down that go down that far.</summary>
     public const int DeepHoleChance = 25;
 
+    /// <summary>What a torch in hand needs, a die and the Focus Bonus, to stay lit in a fall: this much for each floor fallen.</summary>
+    public const int TorchFallSave = 7;
+
     /// <summary>Dice a sprung trap attacks with.</summary>
     public const int TrapAttackDice = 1;
 

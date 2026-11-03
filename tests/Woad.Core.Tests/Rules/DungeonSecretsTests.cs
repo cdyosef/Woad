@@ -404,6 +404,25 @@ public class DungeonSecretsTests
     }
 
     [Fact]
+    public void ATorchInHandStaysLitThroughAFallOnlyWithADieAndFocusReachingSeven()
+    {
+        // One floor: 7 to beat. A 6 and no Focus isn't enough.
+        GameSession session = TestRun.Start(
+        [
+            new RoomSetup("A", TestRun.Room(Open), Features: new RoomFeatures { Traps = new Dictionary<GridPosition, TrapSetup> { [new(4, 3)] = new(TrapKind.TrapDoor, 4) } }),
+            new RoomSetup("B", TestRun.Room(Empty), Floor: 2, Role: RoomRole.Arrival),
+        ], new ScriptedDice(1, 6, 1, 6), cards: ["t_torch"], stats: TestRun.HeroStats with { Hearts = 6 });
+        Hero hero = session.HeroInSeat();
+        session.Do(new RollMovement(hero.Id));
+
+        IReadOnlyList<GameEvent> events = session.Do(new MoveHero(hero.Id, new GridPosition(4, 2)));
+
+        Assert.False(events.SingleOf<TorchFallChecked>().Saved);
+        Assert.Single(events.OfType<TorchBurnedOut>());
+        Assert.Equal(0, hero.TorchesHeld);
+    }
+
+    [Fact]
     public void ADeepHoleDropsTwoFloorsAHeartMoreForTheSecond()
     {
         GameSession session = Stacked(new ScriptedDice(1));

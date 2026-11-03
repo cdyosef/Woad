@@ -655,6 +655,9 @@ public sealed record FlameHurled(int HeroId, int MonsterId) : GameEvent;
 /// <summary>A 1 in an attack put out the flame of Hurl Fire a hero carried.</summary>
 public sealed record FlameWentOut(int HeroId) : GameEvent;
 
+/// <summary>A torch in hand in a fall: a die (<paramref name="Face"/>) and the Focus Bonus against the <paramref name="Difficulty"/>; <paramref name="Saved"/>, it stays lit.</summary>
+public sealed record TorchFallChecked(int HeroId, int CardId, int Face, int Focus, int Difficulty, bool Saved) : GameEvent;
+
 /// <summary>A 1 in a torch-lit attack burned the torch out: it's gone.</summary>
 public sealed record TorchBurnedOut(int HeroId, int CardId) : GameEvent;
 

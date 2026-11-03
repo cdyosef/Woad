@@ -22,6 +22,23 @@ public sealed partial class GameSession
             .Concat(room.LitBraziers)
             .Concat(State.HeroesIn(room).Where(hero => hero.ShiningRounds > 0).Select(hero => hero.Position));
 
+    /// <summary>
+    /// Each light in a room, as many times as it shines (a hero holding two torches is two lights): held torches
+    /// and flames, burning heroes and floor, burning or fiery creatures, lit braziers and Shining Light.
+    /// </summary>
+    private IEnumerable<GridPosition> LightSources(Room room) =>
+        State.HeroesIn(room).SelectMany(hero => Enumerable.Repeat(hero.Position, hero.TorchesHeld + (hero.FireDice > 0 ? 1 : 0) + (hero.ShiningRounds > 0 ? 1 : 0)))
+            .Concat(room.Flames.Keys)
+            .Concat(room.Monsters.Where(monster => monster.FireDice > 0 || monster.Definition.DieType == DieType.Fire).Select(monster => monster.Position))
+            .Concat(room.LitBraziers);
+
+    /// <summary>The light bonus on a search: +1 for each light whose glow (<see cref="GameRules.LightRadius"/>) the hero stands in, stacking.</summary>
+    public int LightBonus(Hero hero)
+    {
+        Room room = State.RoomOf(hero);
+        return LightSources(room).Count(light => light.ChebyshevDistanceTo(hero.Position) <= GameRules.LightRadius);
+    }
+
     /// <summary>The fire in a room: held torches, burning floor, and burning or fiery creatures.</summary>
     private IEnumerable<GridPosition> FiresIn(Room room) =>
         State.HeroesIn(room).Where(hero => hero.TorchesHeld > 0 || hero.FireDice > 0).Select(hero => hero.Position)

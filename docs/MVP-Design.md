@@ -626,7 +626,7 @@ total reaches its number:
 | Check | How | Number *(tunable)* |
 | --- | --- | --- |
 | **Pick a lock** | Stand in a locked doorway (or next to a locked chest) without a key and click it | Doors 4 + floor (at most 6); chests 5 + floor |
-| **Search** | **Search** button: reveals everything in the room your total reaches | Secret doors 4 + floor; traps 3 + floor; stashes 5 + floor |
+| **Search** | **Search** button: reveals everything in the room your total reaches; **+1 for each light** whose glow you stand in (each torch held, a flame, a lit brazier, burning floor, Shining Light...), stacking | Secret doors 4 + floor; traps 3 + floor; stashes 5 + floor |
 | **Disarm** | Click a trap you've found: on a tile or chest next to you, or your own doorway | 3 + floor |
 | **Steal** | **Steal** button, then an adjacent monster or hero; once a turn | Beat their roll: a monster's defense dice, a hero's Od Hand dice and tools |
 | **Aid** | The **Aid** card, then yourself or an ally beside you (diagonals too); clicking an ally Keeling Over aids them straight away | On someone Keeling Over (a Rouse): every 6 of the total is a mark of life; every die showing 1 is a Doom Die on their next Keel roll (see [Keeling Over](#loot-keeling-over-and-winning)). Otherwise it takes one stack of one ailment off, chosen when there are several: 10 (Nekrot 14). A Shovel in hand digs two stacks of Buried off |
@@ -702,7 +702,9 @@ total reaches its number:
   beside a chest or pot.
 - **Long falls:** where a room lies two floors straight down, about one hole in four (pits and trap doors)
   is **deep** and drops you there, through the room between; and landing on another pit, you fall on
-  through it. Every floor fallen past the first is **another heart**.
+  through it. Every floor fallen past the first is **another heart**. Falling puts out a flame of Hold
+  Fire, and each lit torch in hand burns out unless a die and the Focus Bonus reach **7**, and 7 more for
+  each floor past the first.
 - **Pits:** where a room lies underneath, its floor shows far down the pit; with nothing below (as on
   the last floor) the pit is black. You can walk into a pit: you lose a heart and drop into the room
   below, on the tile under the pit (or the nearest free one), or climb back out of a bottomless pit.
