@@ -615,23 +615,23 @@ def rumble(c):
 def boot(c):
     """A green boot, toe to the right: Wend's (after Chris's drawing)."""
     # The leg, its top a little higher at the front, and the heel flaring out to the sole.
-    c.poly([(4, 4.5), (14, 3.5), (21, 2.5), (18.6, 15), (12, 19), (4, 19)], GREEN[1])
-    c.poly([(4, 18), (12, 18), (12, 26.5), (2, 26.5)], GREEN[1])
+    c.poly([(4, 4.5), (14, 3.5), (21, 2.5), (18.6, 15), (4.6, 19), (2, 26.5)], GREEN[1])
+    c.poly([(4, 4.5), (14, 3.5), (21, 2.5), (18.6, 15), (12, 19), (4.6, 19)], GREEN[1])
+    c.poly([(4.6, 18), (12, 18), (12, 26), (2, 26)], GREEN[1])
     # The toe: a big dome from the foot of the laces down to the sole.
     c.poly([(18, 14.2), (21, 14.6), (24, 16), (26.5, 18.3), (28.3, 21.2), (29.4, 24), (29.8, 26), (10, 26), (10.5, 18.5), (13.5, 15.6)], GREEN[1])
     # Light down the back of the leg.
-    c.line(4, 5, 4, 18, GREEN[0])
-    c.line(4, 19, 2.6, 25, GREEN[0])
+    c.line(4.5, 5, 5.3, 18.5, GREEN[0])
+    c.line(5.3, 19.5, 3.2, 25, GREEN[0])
     # The opening at the top: a V, the tongue in shadow inside it.
     c.poly([(14, 3.6), (18.5, 3), (16.4, 7)], GREEN[2])
     # The tongue's edge, down the front of the leg.
     c.line(20.3, 3.5, 18.3, 14, GREEN[2])
     # Two laces criss-crossed between their eyelets.
-    for y in (5, 10):
-        for k in range(5):
-            c.dot(11 + k, y + k, GREEN[0])
-            c.dot(15 - k, y + k, GREEN[0])
-        for ex, ey in ((11, y), (15, y), (11, y + 4), (15, y + 4)):
+    for y in (8, 12):
+        c.line(15, y, 17, y + 2, GREEN[2])
+        c.line(17, y, 15, y + 2, GREEN[2])
+        for ex, ey in ((15, y), (17, y), (15, y + 2), (17, y + 2)):
             c.dot(ex, ey, OUTLINE)
     # The curve of the toes, from the foot of the laces sweeping down to the left, lit just under it.
     c.line(17.5, 14.6, 14, 15.8, GREEN[2])
