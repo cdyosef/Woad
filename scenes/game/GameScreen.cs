@@ -456,6 +456,7 @@ public partial class GameScreen : Control
         switch (gameEvent)
         {
             case TurnStarted turn:
+                _board.ZoomOut();
                 _viewedHeroId = null;
                 _selectedCardId = null;
                 _showingOrders = false;
@@ -524,11 +525,14 @@ public partial class GameScreen : Control
                 break;
 
             case HeroMoved moved:
+                // Moving on after an attack, the view zooms back out to follow.
+                _board.ZoomOut();
                 await Walk(moved.HeroId, moved.Path);
                 SyncDiving(moved.HeroId);
                 break;
 
             case MonsterMoved moved:
+                _board.ZoomOut();
                 await Walk(moved.MonsterId, moved.Path);
                 break;
 
@@ -974,7 +978,7 @@ public partial class GameScreen : Control
 
             case AttackRolled attack:
                 _trayShowsMovement = false;
-                ZoomOnAction(attack.AttackerId, attack.TargetIds);
+                await ZoomOnActionAfresh(attack.AttackerId, attack.TargetIds);
                 BeginStrike(attack.AttackerId, attack.Total, attack.Roll.Faces.TakeLast(attack.PowerDice).Sum());
                 await StrikeFx(attack);
                 await _dice.ShowRoll(_spellCaption ?? $"{NameOf(attack.AttackerId)} {(attack.Shove ? "shoves" : attack.Chain ? "flings its chain" : "attacks")}", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice, DiceKind.Rumble, types: attack.DieTypes, cards: AttackTray(attack));

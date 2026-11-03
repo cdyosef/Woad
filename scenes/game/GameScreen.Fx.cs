@@ -218,6 +218,24 @@ public partial class GameScreen
         }
     }
 
+    /// <summary>
+    /// Zooms the view in on an attack, afresh: zoomed in on the last one still (a monster's turn plays all
+    /// its attacks in a row), it first eases back out, so each attack gets its own zoom in.
+    /// </summary>
+    private async Task ZoomOnActionAfresh(int actorId, IEnumerable<int> targetIds)
+    {
+        if (_board.ActionZoomLevel > 1.01f)
+        {
+            _board.ZoomOut();
+            for (int frame = 0; frame < 40 && _board.ActionZoomLevel > 1.08f; frame++)
+            {
+                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            }
+        }
+
+        ZoomOnAction(actorId, targetIds);
+    }
+
     /// <summary>Zooms the view in on an attack (or a roll): the attacker and its targets, those in the room on show.</summary>
     private void ZoomOnAction(int actorId, IEnumerable<int> targetIds)
     {

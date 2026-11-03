@@ -163,6 +163,9 @@ public partial class BoardView : Control
     /// <summary>Eases the view back out to the whole room.</summary>
     public void ZoomOut() => _zoomTarget = 1;
 
+    /// <summary>How far in the zoom on the action is right now (1: not at all).</summary>
+    public float ActionZoomLevel => _zoom;
+
     /// <summary>The zoom has come to rest (in or out), so a tile stays where it is on screen.</summary>
     public bool ZoomSettled => _zoom == _zoomTarget && _zoomFocus.DistanceTo(_zoomFocusTarget) < 0.5f;
 
