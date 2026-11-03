@@ -614,22 +614,23 @@ def rumble(c):
 
 def boot(c):
     """A green boot, toe to the right: Wend's."""
-    # The shaft, its cuff turned down, lit on the left.
-    c.rect(9, 3, 13, 3, GREEN[0])
-    c.rect(9, 5, 13, 1, GREEN[2])
-    c.rect(10, 6, 11, 14, GREEN[1])
-    c.rect(10, 6, 2, 14, GREEN[0])
-    c.rect(19, 6, 2, 14, GREEN[2])
-    # The laces up the front.
-    for y in range(8, 19, 3):
-        c.rect(17, y, 3, 1, GREEN[2])
+    # The shaft, a thin cuff at the top, lit on the left.
+    c.rect(10, 5, 11, 16, GREEN[1])
+    c.rect(10, 5, 2, 16, GREEN[0])
+    c.rect(10, 4, 11, 1, GREEN[0])
+    c.rect(10, 5, 11, 1, GREEN[2])
+    # The laces criss-crossing up the front.
+    for y in (7, 11, 15):
+        c.line(15, y, 17, y + 2, GREEN[2])
+        c.line(17, y, 15, y + 2, GREEN[2])
     # The foot, out to a round toe.
-    c.poly([(10, 19), (21, 18), (26, 20), (29, 23), (29, 25), (10, 25)], GREEN[1])
-    c.rect(11, 19, 10, 1, GREEN[0])
-    c.rect(23, 20, 3, 1, GREEN[0])
-    # The sole and the heel.
-    c.rect(9, 25, 21, 2, GREEN[2])
-    c.rect(9, 27, 7, 2, GREEN[2])
+    c.rect(10, 19, 16, 6, GREEN[1])
+    c.circle(25, 22, 3.5, GREEN[1])
+    c.rect(11, 19, 1, 6, GREEN[0])
+    c.rect(22, 19, 3, 1, GREEN[0])
+    # The sole, a low heel under the back.
+    c.rect(10, 25, 18, 1, GREEN[2])
+    c.rect(10, 26, 4, 1, GREEN[2])
 
 
 def ability(c, name):
