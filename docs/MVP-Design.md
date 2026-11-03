@@ -395,6 +395,10 @@ facing door of the next room.
     Luck line on the sheet (+3).
   - **Companions** try their Luck by themselves: on a defense about to cost them a heart, and on an Aid
     roll about to fail to rouse their leader (a Luck die over their lowest die, the higher staying).
+  - **Bad Luck Curse** (a Hexer's): curses stack, and each puts a **Cursed die** on one of the hero's first
+    three rolls each round, any roll (Wend, attack, Od Hand, defense), looping: 1 curse, the first roll;
+    2, the first two; 3, the first three; 4, two on the first; and so on (7: three on the first). A Cursed die
+    takes its number off the roll; a 6 rolls another; each 1 lifts a curse. Aid and Holy Water cure it.
   - **Tap the clover** and it glows: your next roll asks, whatever its odds (3 seconds), even one switched
     off. Asking uses the glow up; tap it again to put it out.
   - While it asks, everything plays at **half speed** (the countdown runs in real seconds), and on an attack
@@ -627,7 +631,7 @@ total reaches its number:
 - **Lying about:** the first Search in each room picks up a Rock or a Stick, whatever it rolls (both on
   a total of 4 or more), and earns the searcher an Explorer bonus (see XP). More Rocks and Sticks lie
   hidden on a room's tiles, up to 2 of them: a Search reaching 2 + floor finds them, there to be picked up.
-- **What Aid cures:** Poison, Acid, Blind, Shine, Confused and Buried. Freeze, Black Hearts, Burning,
+- **What Aid cures:** Poison, Acid, Blind, Shine, Confused, Buried and Bad Luck Curses. Freeze, Black Hearts, Burning,
   Stun and Nekrot only with a **Medicine Bag** to hand. One stack a success, bag or not.
 - **Medicine Bag** (tool, stacks, goes on the belt and works from there or a hand): +1 and 1d6 on one
   Aid roll a turn (a 6 rolls another), even with no Od Hand dice left. A failed Aid it helped with a 1
@@ -805,7 +809,7 @@ total reaches its number:
 | Ogre Champ | 6 | 1 | 3d6 | 1d6+1 | Only in its den. Reach 2. Drawn bigger: fat, shirtless and horned, with a great club. Each hit knocks the hero a tile back, and every 6 on its roll a tile more, hit or miss |
 | Necromancer | 3 | 2 | 1d6+1 | 1d6 | Rare, from floor 2. Ranged 4; keeps its distance. Every other turn raises a Skeleton beside it (from a grave nearby if there is one): 2 at a time, 4 in all. They crumble when it falls and are worth no XP, loot or kill |
 | Ghoul | 4 | 6 | 3×1d6 | 1d6 | Rare, from floor 2. Greater undead: Holy Water hits it with 5 Radiate dice. Three attacks of a Necro die each, and every hit stuns. Its miasma attacks every living creature starting its turn beside it with a Poison die |
-| Hexer | 2 | 3 | 1d6+1 | 1d6 | Rare, from floor 2. Ranged 4; keeps its distance. Each hit drains a Luck reroll; with none left, it stuns |
+| Hexer | 2 | 3 | 1d6+1 | 1d6 | Rare, from floor 2. Ranged 4; keeps its distance. Has 1 Luck of its own; each hit steals a point of Luck (Luck, then Clover Luck), which it keeps; with none left, it stuns. Tries its Luck when its attack or defense is about to fail. Once a turn, a **Bad Luck Curse** on the nearest hero it can see. Dying, its unused Luck scatters as Lucky Clovers within 13 tiles |
 | Gelatinous Cube | 4 | 1 | 2d6 | 0d6+1 | Rare, from floor 2. Swallows the cards and gold on every tile it crawls over, dropping them where it falls; splits into two Slimes |
 | **Miniboss: Key Warden** | 5 | 2 | 2d6+1 | 1d6+1 | Guards the Boss Key in the last floor's vault; can't be shoved |
 | **Boss: Iron Warden** | 8 | 3 | 2d6+1 | 1d6+3, an extra die | Wears its Warden's Plate (armor 3, and an extra Defense die rolled in while a defense is losing). Each turn: first a **chain** flung at the nearest hero in sight within 6 who isn't beside it (3 dice): a hit drags them beside it, **shackled** (no Wend until a key or a picked lock, 9+, frees them: their own, or an ally's beside them). Then its **arc**: a swing through the 3 tiles toward its target (straight on, the tile ahead and the two beside it; on a diagonal, that corner and the two tiles next to it), striking everyone there, monsters too, with one roll; each 6 **cleaves** on into one more creature beside it. Then a **spin**: one roll with all its dice against every hero within 2. One time in four it drops Warden's Plate besides its loot |

@@ -282,6 +282,17 @@ public sealed partial class GameSession
         MonsterDefinition definition = monster.Definition;
         RaiseDead(room, monster, events);
 
+        // A Hexer lays a Bad Luck Curse on the nearest hero it can see, once a turn.
+        if (definition.Hexes && standing
+                .Where(hero => LineOfSight.IsClear(room.Layout, monster.NearestTile(hero.Position), hero.Position))
+                .OrderBy(hero => hero.Position.ChebyshevDistanceTo(monster.NearestTile(hero.Position)))
+                .ThenBy(hero => hero.Seat)
+                .FirstOrDefault() is { } cursed)
+        {
+            AddCondition(cursed.Conditions, cursed.Id, Condition.Cursed, 1, monster.Id, events);
+            events.Add(new BadLuckCursed(monster.Id, cursed.Id, cursed.Conditions[Condition.Cursed]));
+        }
+
         // A thief with loot runs from everyone, and does nothing else.
         if (definition.Thief && monster.HasLoot)
         {

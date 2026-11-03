@@ -147,6 +147,9 @@ public sealed record MonsterDefinition
     /// <summary>A hit also drains one of the hero's Luck rerolls; with none left, the hex stuns them instead.</summary>
     public bool Hexes { get; init; }
 
+    /// <summary>Luck it starts with: tried when its attack or defense is about to fail (a Hexer's, at least 1).</summary>
+    public int Luck { get; init; }
+
     /// <summary>Swallows the loot (cards and gold) on every tile it crawls over, and drops it where it falls.</summary>
     public bool Engulfs { get; init; }
 

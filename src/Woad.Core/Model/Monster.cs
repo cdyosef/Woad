@@ -22,6 +22,9 @@ public sealed class Monster
 
     public int Hearts { get; internal set; }
 
+    /// <summary>Luck it has to try (a Hexer's own, and what it steals), tried when its attack or defense is about to fail.</summary>
+    public int Luck { get; internal set; }
+
     /// <summary>Starting hearts: the definition's, plus more in a big party.</summary>
     public int MaxHearts { get; }
 

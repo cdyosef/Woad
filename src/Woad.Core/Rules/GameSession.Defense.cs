@@ -95,7 +95,7 @@ public sealed partial class GameSession
             events.Add(new LastChanceUsed(hero.Id, lucky.Id));
         }
 
-        int total = roll.Total + armor + guard.BlockUsed;
+        int total = roll.Total + armor + guard.BlockUsed - Curse(hero, events);
 
         // A companion about to lose a heart tries its Luck.
         if (hero.IsCompanion && hero.LuckLeft > 0 && attackTotal > total)
@@ -104,6 +104,43 @@ public sealed partial class GameSession
         }
 
         return total;
+    }
+
+    /// <summary>
+    /// The Cursed dice on a hero's next roll (see <see cref="Condition.Cursed"/>): with S stacks, roll r of the
+    /// first three this round gets S / 3 dice, and one more while r is under S mod 3. Each takes its number off
+    /// the roll; a 6 rolls another; each 1 lifts a stack. Every roll counts toward the three, cursed or not.
+    /// </summary>
+    /// <returns>What to take off the roll.</returns>
+    private int Curse(Hero hero, List<GameEvent> events)
+    {
+        int stacks = hero.Conditions[Condition.Cursed];
+        int nth = hero.RollsThisRound++;
+        int dice = nth >= GameRules.CursedRolls ? 0 : stacks / GameRules.CursedRolls + (nth < stacks % GameRules.CursedRolls ? 1 : 0);
+        if (dice == 0)
+        {
+            return 0;
+        }
+
+        var faces = new List<int>();
+        for (int left = dice; left > 0; left--)
+        {
+            int face = RollOneDie();
+            faces.Add(face);
+            if (face == GameRules.PowerDieFace)
+            {
+                left++;
+            }
+        }
+
+        int lifted = Math.Min(stacks, faces.Count(face => face == 1));
+        if (lifted > 0)
+        {
+            AddCondition(hero.Conditions, hero.Id, Condition.Cursed, -lifted, hero.Id, events);
+        }
+
+        events.Add(new CursedDiceRolled(hero.Id, [.. faces], faces.Sum(), lifted));
+        return faces.Sum();
     }
 
     /// <summary>

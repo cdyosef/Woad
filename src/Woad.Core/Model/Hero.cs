@@ -110,6 +110,9 @@ public sealed class Hero
     /// <summary>The Clover Luck they started the run with: a hero who doesn't get out keeps no more than this.</summary>
     public int StartCloverLuck { get; internal init; }
 
+    /// <summary>Rolls they've made this round (for the Cursed dice, which go on the first three).</summary>
+    public int RollsThisRound { get; internal set; }
+
     /// <summary>All the Luck they have to try: their Luck left this floor, then their Clover Luck.</summary>
     public int LuckLeft => LuckRemaining + CloverLuck;
 

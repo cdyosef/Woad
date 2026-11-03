@@ -4,6 +4,7 @@ using Woad.Core.Dice;
 using Woad.Core.Events;
 using Woad.Core.Grid;
 using Woad.Core.Model;
+using Woad.Core.Randomness;
 
 namespace Woad.Core.Rules;
 
@@ -256,7 +257,7 @@ public sealed partial class GameSession
     private void RollHeroAttack(Hero hero, int dice, int bonus, IReadOnlyList<int> targetIds, DamageSource source, List<GameEvent> events, int powerDice = 0, bool stunOnSix = false, int weaponDice = 0, CardDefinition? weapon = null, IReadOnlyList<(DieType Type, int Dice)>? typed = null, int torches = 0, int chill = 0, SpellCasting? casting = null, bool bullRush = false, WeaponSpent? spent = null)
     {
         dice = Math.Max(0, dice);
-        bonus -= AttackPenalty(hero.Conditions);
+        bonus -= AttackPenalty(hero.Conditions) + Curse(hero, events);
         DiceRoll rolled = _dice.Roll(dice + powerDice);
         (int[] weaponFaces, int crits) = RollBonusDice(weaponDice);
         (int[] typedFaces, DieType[] types) = RollTypedDice(typed ?? []);
@@ -458,7 +459,16 @@ public sealed partial class GameSession
         int armor = collapsed ? 0 : ArmorOf(monster);
         int dice = collapsed ? 0 : DefenseDiceOf(monster) + (ranged && monster.Prone ? 1 : 0);
         Guard? extra = !collapsed && monster.Definition.ExtraDefenseDice > 0 ? new Guard { Dice = monster.Definition.ExtraDefenseDice } : null;
-        return RollDefense(monster.Id, monster.Power, dice, armor, attackTotal, canSpend: !collapsed, events, extra).Total + armor;
+        DiceRoll roll = RollDefense(monster.Id, monster.Power, dice, armor, attackTotal, canSpend: !collapsed, events, extra);
+        int total = roll.Total + armor;
+
+        // A monster with Luck (a Hexer) about to be hit tries it.
+        if (monster.Luck > 0 && !collapsed && attackTotal > total)
+        {
+            total += TryLuck(monster.Id, roll.Faces, () => monster.Luck--, events);
+        }
+
+        return total;
     }
 
     /// <param name="crush">A crushing blow (the War Hammer): a hit knocks a shelled monster onto its back, and bones it breaks stay broken.</param>
@@ -495,6 +505,23 @@ public sealed partial class GameSession
         return damage;
     }
 
+    /// <summary>A monster's unused Luck (a Hexer's) scatters as Lucky Clovers on open floor within <see cref="GameRules.CloverScatter"/> of where it fell.</summary>
+    private void ScatterLuck(Room room, Monster monster, List<GameEvent> events)
+    {
+        if (monster.Luck < 1 || Content.FindCard(Content.GetTheme(State.ThemeId).Finds?.Clover ?? "lucky_clover") is not { } clover)
+        {
+            return;
+        }
+
+        List<GridPosition> open = [.. room.Positions.Where(tile => room.Layout[tile].IsWalkable() && tile.ChebyshevDistanceTo(monster.Position) <= GameRules.CloverScatter)];
+        for (int i = 0; i < monster.Luck && open.Count > 0; i++)
+        {
+            DropLoot(room, _random.Loot.Pick(open), new CardInstance(State.NextId(), clover, broughtInByHeroId: null), events);
+        }
+
+        monster.Luck = 0;
+    }
+
     /// <param name="crushed">Broken by a crushing blow: bones don't reassemble.</param>
     private void DefeatMonster(Hero? killer, Room room, Monster monster, DamageSource source, List<GameEvent> events, bool crushed = false)
     {
@@ -511,6 +538,7 @@ public sealed partial class GameSession
         room.RemoveMonster(monster);
         LetGo(monster);
         DropStolen(room, monster, SafeTile(room, monster.Position), events);
+        ScatterLuck(room, monster, events);
         if (killer is not null && monster.RaisedBy is null)
         {
             killer.Kills++;
@@ -699,7 +727,7 @@ public sealed partial class GameSession
             Thaw(hero.Conditions, hero.Id, types.Count(type => type == DieType.Fire), events);
             // Thieves' Oil turns Necro blows aside.
             int against = total - (hero.ThievesOilRounds > 0 && types.Contains(DieType.Necro) ? GameRules.OilNecroDefense : 0);
-            int dealt = DamageHero(room, hero, against, MonsterBane(monster), monster.Id, events, ranged: hero.Position.ChebyshevDistanceTo(monster.NearestTile(hero.Position)) > 1);
+            int dealt = DamageHero(room, hero, against, MonsterBane(monster), monster.Id, events, ranged: hero.Position.ChebyshevDistanceTo(monster.NearestTile(hero.Position)) > 1, lucky: (monster, roll.Faces));
             if (dealt > 0 && monster.Definition.Mugger)
             {
                 Mug(monster, hero, events);
@@ -792,11 +820,16 @@ public sealed partial class GameSession
     /// <param name="bane">What the attacker is, for the tombstone ("Slain by a Goblin").</param>
     /// <param name="ranged">From a distance: a prone hero rolls an extra defense die.</param>
     /// <returns>The damage it did: 1 for a hit (a heart, or a mark of death), 0 for a miss.</returns>
-    private int DamageHero(Room room, Hero hero, int attackTotal, string bane, int attackerId, List<GameEvent> events, bool ranged = false)
+    /// <param name="lucky">A monster with Luck (a Hexer) and its attack's dice: about to fail, it tries its Luck.</param>
+    private int DamageHero(Room room, Hero hero, int attackTotal, string bane, int attackerId, List<GameEvent> events, bool ranged = false, (Monster Monster, IReadOnlyList<int> Faces)? lucky = null)
     {
         attackTotal += hero.Stun.AttackBonus + Exposure(hero.Conditions) - (room.PlantsFor(hero.Position, heroes: true) ? 1 : 0);
         int lyingLow = ranged && hero.IsProne ? 1 : 0;
         int defense = HeroDefense(hero, attackTotal, events, lyingLow);
+        if (lucky is ({ Luck: > 0 } attacker, var faces) && attackTotal <= defense)
+        {
+            attackTotal += TryLuck(attacker.Id, faces, () => attacker.Luck--, events);
+        }
 
         int damage = DamageFor(attackTotal, defense);
         if (hero.IsKeelingOver)

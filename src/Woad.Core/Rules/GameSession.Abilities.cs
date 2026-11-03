@@ -56,13 +56,14 @@ public sealed partial class GameSession
         }
     }
 
-    /// <summary>A hex drains a Luck reroll; with none left, it stuns.</summary>
+    /// <summary>A hex steals a point of Luck (their Luck first, then Clover Luck), the Hexer keeping it; with none left, it stuns.</summary>
     private static void Hex(Monster monster, Hero hero, List<GameEvent> events)
     {
-        if (hero.LuckRemaining > 0)
+        if (hero.LuckLeft > 0)
         {
-            hero.LuckRemaining--;
-            events.Add(new Hexed(monster.Id, hero.Id, Drained: true, hero.LuckRemaining));
+            hero.SpendLuck();
+            monster.Luck++;
+            events.Add(new Hexed(monster.Id, hero.Id, Drained: true, hero.LuckLeft));
             return;
         }
 

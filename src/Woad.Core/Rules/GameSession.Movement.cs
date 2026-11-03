@@ -99,7 +99,7 @@ public sealed partial class GameSession
         DiceRoll roll = hero.FixedWendFace is int face ? new DiceRoll([.. Enumerable.Repeat(face, dice + command.PowerDice)]) : _dice.Roll(dice + command.PowerDice);
         Turn.CarriedSteps = Turn.MovementPoints;
         Turn.MovementRoll = roll;
-        Turn.MovementBonus = bonus - RollPenalty(hero.Conditions);
+        Turn.MovementBonus = bonus - RollPenalty(hero.Conditions) - Curse(hero, events);
         Turn.HasMoved = false;
         Turn.CountSteps();
         events.Add(new MovementRolled(command.HeroId, roll, bonus, Turn.MovementPoints, command.PowerDice));

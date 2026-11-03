@@ -202,7 +202,7 @@ public sealed class NewMonsterTests
     [Fact]
     public void AHexDrainsLuckThenStunsWhenThereIsNoneLeft()
     {
-        // Two rounds of the Hexer's 5 against the hero's 1.
+        // Two rounds of the Hexer's 5 against the hero's 1, a Cursed die (3) taken off the defense each time.
         GameSession session = TestRun.Start("""
             .........
             .........
@@ -213,17 +213,69 @@ public sealed class NewMonsterTests
             .........
             .........
             .........
-            """, new ScriptedDice(5, 1, 5, 1), stats: TestRun.HeroStats with { Luck = 1, Hearts = 6 });
+            """, new ScriptedDice(5, 1, 3, 5, 1, 3), stats: TestRun.HeroStats with { Luck = 1, Hearts = 6 });
         Hero hero = session.HeroInSeat();
+        Monster hexer = session.OnlyMonster();
 
         IReadOnlyList<GameEvent> first = session.Do(new EndTurn(hero.Id));
+        Assert.Equal(new BadLuckCursed(hexer.Id, hero.Id, 1), first.SingleOf<BadLuckCursed>());
         Assert.True(first.SingleOf<Hexed>().Drained);
         Assert.Equal(0, hero.LuckRemaining);
+        Assert.Equal(2, hexer.Luck);
         Assert.Empty(first.OfType<Stunned>());
 
         IReadOnlyList<GameEvent> second = session.EndRound();
         Assert.False(second.SingleOf<Hexed>().Drained);
         Assert.Single(second.OfType<Stunned>());
+    }
+
+    [Fact]
+    public void CursedDiceComeOffTheFirstRollsEachRoundExplodingOnASixAndLiftedByAOne()
+    {
+        // Four curses: two Cursed dice on the first roll. The Wend roll's 4; Cursed 2 and 6, the 6 rolling a 1.
+        GameSession session = TestRun.Start("""
+            .........
+            .........
+            .........
+            .........
+            ....1....
+            .........
+            .........
+            .........
+            .........
+            """, new ScriptedDice(4, 2, 6, 1));
+        Hero hero = session.HeroInSeat();
+        hero.Conditions.Add(Condition.Cursed, 4);
+
+        IReadOnlyList<GameEvent> events = session.Do(new RollMovement(hero.Id));
+
+        CursedDiceRolled cursed = events.SingleOf<CursedDiceRolled>();
+        Assert.Equal([2, 6, 1], cursed.Faces);
+        Assert.Equal((9, 1), (cursed.Total, cursed.Lifted));
+        Assert.Equal(3, hero.Conditions[Condition.Cursed]);
+        Assert.Equal(1, hero.RollsThisRound);
+    }
+
+    [Fact]
+    public void AHexerScattersItsLuckAsLuckyCloversWhenItDies()
+    {
+        GameSession session = TestRun.Create([new RoomSetup("A", TestRun.Room("""
+            .........
+            .........
+            .........
+            .........
+            ...1H....
+            .........
+            .........
+            .........
+            .........
+            """))], new ScriptedDice(5), themeId: TestContent.FindsThemeId, finds: new ScriptedDice(0), loot: new ScriptedDice(0));
+        session.Begin();
+        Hero hero = session.HeroInSeat();
+
+        session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id));
+
+        Assert.Single(session.RoomById().LootPositions.SelectMany(session.RoomById().LootAt), card => card.Definition.Clover);
     }
 
     [Fact]

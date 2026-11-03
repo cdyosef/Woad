@@ -329,6 +329,11 @@ public sealed partial class GameSession
         }
 
         State.Round++;
+        foreach (Hero hero in State.Heroes)
+        {
+            hero.RollsThisRound = 0;
+        }
+
         events.Add(new RoundStarted(State.Round));
         if (UsesInitiative)
         {
@@ -714,7 +719,7 @@ public sealed partial class GameSession
 
     /// <summary>A new monster; a boss is toughened for a party bigger than <see cref="GameRules.FullParty"/>.</summary>
     private static Monster CreateMonster(int id, MonsterDefinition definition, GridPosition position, int partySize) =>
-        new(id, definition, position, GameRules.ExtraMonsterHearts(partySize, definition.Boss));
+        new(id, definition, position, GameRules.ExtraMonsterHearts(partySize, definition.Boss)) { Luck = Math.Max(definition.Luck, definition.Hexes ? 1 : 0) };
 
     private static GridPosition FreeTileNear(GameState state, Room room, GridPosition near) =>
         room.Positions

@@ -44,6 +44,12 @@ public static class GameRules
     /// <summary>Search total to spot a trap, and Od Hand total to disarm it.</summary>
     public static int TrapDifficulty(int floor) => 3 + floor;
 
+    /// <summary>The rolls each round a Bad Luck Curse's Cursed dice go on: a hero's first three.</summary>
+    public const int CursedRolls = 3;
+
+    /// <summary>How far a Hexer's unused Luck scatters, as Lucky Clovers, when it dies.</summary>
+    public const int CloverScatter = 13;
+
     /// <summary>The most Clover Luck points a hero can hold (see <c>Hero.CloverLuck</c>).</summary>
     public const int MaxCloverLuck = 7;
 

@@ -773,6 +773,10 @@ public partial class GameScreen : Control
                 CalloutOver(explored.HeroId, "EXPLORER!", Palette.TrimBright);
                 break;
 
+            case CursedDiceRolled cursed:
+                FloatOver(cursed.HeroId, $"-{cursed.Total} CURSED", DieTypes.Tint(DieType.Cursed));
+                break;
+
             case LuckTried tried:
                 CalloutOver(tried.OwnerId, tried.LuckFace == 6 ? "LUCKY!" : "LUCK", Palette.Heal, 1, below: true);
                 break;
