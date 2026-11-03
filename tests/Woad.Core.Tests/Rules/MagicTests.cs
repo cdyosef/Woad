@@ -85,6 +85,30 @@ public class MagicTests
     }
 
     [Fact]
+    public void ABlastHitsEveryoneOnTheTileAndAroundIt()
+    {
+        // Flame Blast aimed at the first dummy: it and the one beside it, not the one further off.
+        GameSession session = TestRun.Start("""
+            .........
+            .........
+            .........
+            .........
+            ..1..d..d
+            ......d..
+            .........
+            .........
+            .........
+            """, new ScriptedDice(1, 1, 1));
+        Hero hero = Mage(session, magic: 0, power: 3, "flame_blast");
+        Room room = session.RoomById();
+        Monster aimed = room.MonsterAt(new GridPosition(5, 4))!, beside = room.MonsterAt(new GridPosition(6, 5))!;
+
+        IReadOnlyList<GameEvent> events = session.Do(new CastSpell(hero.Id, "flame_blast", aimed.Position));
+
+        Assert.Equal([aimed.Id, beside.Id], events.SingleOf<SpellCast>().TargetIds.Order());
+    }
+
+    [Fact]
     public void EachExtraPowerAddsADieUpToTheMagicRank()
     {
         GameSession session = TestRun.Start(Range, new ScriptedDice(2, 3));

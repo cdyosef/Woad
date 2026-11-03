@@ -235,6 +235,12 @@ public sealed partial class GameSession
             return "That's out of range.";
         }
 
+        if (spell.Shape == SpellShape.Burst)
+        {
+            targets = [.. BurstTiles(room, aim).SelectMany(tile => WhoIsOn(room, hero, tile)).Distinct()];
+            return targets.Count > 0 ? null : "There's no one there for the blast to reach.";
+        }
+
         if (WhoIsOn(room, hero, aim).Select(id => (int?)id).FirstOrDefault() is not int struck)
         {
             // Nobody there: ice on bare floor, or fire at an unlit brazier.
@@ -307,6 +313,10 @@ public sealed partial class GameSession
     private bool CanSwirlTo(Room room, Monster monster, GridPosition to) =>
         monster.Tiles.Count() == 1 && to.ChebyshevDistanceTo(monster.Position) == 1 && room.Layout.Contains(to) && !IsOccupied(room, to)
         && (room.Layout[to].IsWalkable(monster.Flies) || room.Layout[to] is TileKind.Pit or TileKind.DeepWater);
+
+    /// <summary>The tiles a Burst spell aimed at <paramref name="aim"/> covers: that tile and the 8 around it.</summary>
+    public static IEnumerable<GridPosition> BurstTiles(Room room, GridPosition aim) =>
+        room.Positions.Where(tile => tile.ChebyshevDistanceTo(aim) <= GameRules.BurstRadius);
 
     /// <summary>Whether a spell aimed from where the hero stands reaches the tile: in range, in sight unless it ignores sight, and within a blind hero's reach.</summary>
     private static bool InSpellRange(SpellDefinition spell, Room room, Hero hero, GridPosition tile) =>

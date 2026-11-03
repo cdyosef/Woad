@@ -585,8 +585,9 @@ All cost **1 Power** and can be upcast.
 ### Learning scrolls
 
 - Any spell scroll can be learned as a spell: each of the twelve teaches its **Blast** (the Flame Scroll
-  **Flame Blast**, the Frost Scroll **Frost Blast**...), which works just like the scroll (3 dice of its type
-  at range 3) and costs 3 Power to cast. Learning it uses up the scroll.
+  **Flame Blast**, the Frost Scroll **Frost Blast**...): 3 dice of its type at range 3, but a **blast**, hitting
+  everyone on the tile aimed at and the 8 around it (monsters; allies only with friendly fire on), the area
+  showing as you aim. It costs 3 Power to cast. Learning it uses up the scroll.
 - The attempt is an **Od Hand roll plus your Magic rank** against **6 + the spell's level** (the scrolls'
   spells are level 3: 9). It can be tried anywhere. In a dungeon or a fight it's an Od Hand roll like any
   other (your selected Od Hand dice, Power Dice and Luck): select the scroll and press **Learn** (where

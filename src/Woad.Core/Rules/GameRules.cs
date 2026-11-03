@@ -59,6 +59,9 @@ public static class GameRules
     /// <summary>Seconds to decide whether to try your Luck on any other roll (a Wend roll, a search, one asked on with the clover glowing).</summary>
     public const double WendLuckSeconds = 3;
 
+    /// <summary>How far round the tile it's aimed at a Burst spell (a Blast) reaches: 1, a 3x3 area.</summary>
+    public const int BurstRadius = 1;
+
     /// <summary>Dice a sprung trap attacks with.</summary>
     public const int TrapAttackDice = 1;
 

@@ -571,6 +571,12 @@ public partial class GameScreen
         {
             _board.SetBlast(ShownRoom.Positions.Where(position => position.ChebyshevDistanceTo(target) <= effect.AreaRadius));
         }
+        else if (_casting is { } spellId && tile is { } aim && Content.FindSpell(spellId) is { Shape: SpellShape.Burst }
+            && _session.GetSpellTargets(spellId).Contains(aim))
+        {
+            // A Blast shows the area it would cover.
+            _board.SetBlast(GameSession.BurstTiles(ShownRoom, aim));
+        }
         else
         {
             _board.SetBlast([]);

@@ -13,6 +13,12 @@ public enum SpellShape
 
     /// <summary>Every monster beside the caster (Quake); nothing to aim.</summary>
     Around,
+
+    /// <summary>
+    /// Everyone on a tile within range (and in sight) and the 8 around it (the Blasts learned from scrolls):
+    /// monsters, and with friendly fire on, the caster's allies.
+    /// </summary>
+    Burst,
 }
 
 /// <summary>Who a spell can be cast on as a boon instead of an attack (Lifeforce, Shining Light, Shadowbind).</summary>
