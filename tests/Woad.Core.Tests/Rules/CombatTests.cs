@@ -280,31 +280,46 @@ public class CombatTests
     }
 
     [Fact]
-    public void LuckHoldsTheAttackOpenForRerolls()
+    public void LuckIsOfferedOnceTheDefenseShowsTheAttackWouldFail()
     {
-        GameSession session = TestRun.Start(Duel('m'), new ScriptedDice(1, 5, 1), stats: GameRules.HeroBaseStats with { Luck = 2 });
+        // The attack's 1 against the grunt's 1: it would fail, so it waits for Luck. The Luck die's 5 wins it.
+        GameSession session = TestRun.Start(Duel('m'), new ScriptedDice(1, 1, 5), stats: GameRules.HeroBaseStats with { Luck = 2 });
         Hero hero = session.HeroInSeat();
         Monster grunt = session.OnlyMonster();
 
         IReadOnlyList<GameEvent> events = session.Do(new AttackMonster(hero.Id, grunt.Id));
-        Assert.IsType<AttackRolled>(Assert.Single(events));
+        Assert.Single(events.OfType<DefenseRolled>());
         Assert.NotNull(session.State.Turn!.PendingRoll);
         Assert.Contains("Finish the roll", session.Refuse(new EndTurn(hero.Id)));
 
-        var rerolled = session.Do(new RerollDie(hero.Id, 0)).SingleOf<DieRerolled>();
+        events = session.Do(new RerollDie(hero.Id, 0));
+        var rerolled = events.SingleOf<DieRerolled>();
         Assert.Equal((1, 5, (int?)null), (rerolled.OldFace, rerolled.NewFace, rerolled.MovementPoints));
         Assert.Equal(1, hero.LuckRemaining);
 
-        events = session.Do(new ConfirmAttack(hero.Id));
+        // Winning now, it lands at once, against the same defense.
+        Assert.Empty(events.OfType<DefenseRolled>());
         Assert.Contains(new MonsterDefeated(grunt.Id, hero.Id), events);
         Assert.Null(session.State.Turn.PendingRoll);
     }
 
     [Fact]
+    public void AnAttackThatWouldSucceedDoesntWaitForLuck()
+    {
+        GameSession session = TestRun.Start(Duel('m'), new ScriptedDice(5, 1), stats: GameRules.HeroBaseStats with { Luck = 2 });
+        Hero hero = session.HeroInSeat();
+        Monster grunt = session.OnlyMonster();
+
+        Assert.Contains(new MonsterDefeated(grunt.Id, hero.Id), session.Do(new AttackMonster(hero.Id, grunt.Id)));
+        Assert.Null(session.State.Turn!.PendingRoll);
+        Assert.Equal(2, hero.LuckRemaining);
+    }
+
+    [Fact]
     public void LuckKeepsTheHigherDieAndCantBetterASix()
     {
-        // A 4 rolled; the Luck die's 2 is lower, so the 4 stays. Then a 6 can't be bettered.
-        GameSession session = TestRun.Start(Duel('m'), new ScriptedDice(4, 2), stats: GameRules.HeroBaseStats with { Luck = 2 });
+        // A 4 rolled against a 5; the Luck die's 2 is lower, so the 4 stays. Then a 6 can't be bettered.
+        GameSession session = TestRun.Start(Duel('m'), new ScriptedDice(4, 5, 2), stats: GameRules.HeroBaseStats with { Luck = 2 });
         Hero hero = session.HeroInSeat();
         session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id));
 
@@ -314,7 +329,7 @@ public class CombatTests
         Assert.Equal([4], session.State.Turn!.PendingRoll!.Roll.Faces);
         Assert.Equal(1, hero.LuckRemaining);
 
-        GameSession sixes = TestRun.Start(Duel('m'), new ScriptedDice(6), stats: GameRules.HeroBaseStats with { Luck = 2 });
+        GameSession sixes = TestRun.Start(Duel('K'), new ScriptedDice(6, 6), stats: GameRules.HeroBaseStats with { Luck = 2 });
         Hero lucky = sixes.HeroInSeat();
         sixes.Do(new AttackMonster(lucky.Id, sixes.OnlyMonster().Id));
         sixes.Do(new BankPowerDie(lucky.Id));
@@ -324,14 +339,15 @@ public class CombatTests
     [Fact]
     public void SpendingTheLastLuckResolvesTheAttack()
     {
-        GameSession session = TestRun.Start(Duel('m'), new ScriptedDice(1, 5, 1), stats: GameRules.HeroBaseStats with { Luck = 1 });
+        // The attack's 1 against a 3; the Luck die's 2 still falls short, and there's no Luck left to try again.
+        GameSession session = TestRun.Start(Duel('m'), new ScriptedDice(1, 3, 2), stats: GameRules.HeroBaseStats with { Luck = 1 });
         Hero hero = session.HeroInSeat();
         Monster grunt = session.OnlyMonster();
         session.Do(new AttackMonster(hero.Id, grunt.Id));
 
         IReadOnlyList<GameEvent> events = session.Do(new RerollDie(hero.Id, 0));
 
-        Assert.Contains(new MonsterDefeated(grunt.Id, hero.Id), events);
+        Assert.Equal(0, events.SingleOf<Damaged>().Amount);
         Assert.Null(session.State.Turn!.PendingRoll);
         Assert.Contains("no Luck", session.Refuse(new RerollDie(hero.Id, 0)));
     }

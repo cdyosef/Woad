@@ -99,6 +99,26 @@ public class DungeonSecretsTests
     }
 
     [Fact]
+    public void AnOdHandCheckWaitsForLuckOnlyWhenItFallsShort()
+    {
+        // A 2 against the lock's 5 waits; the Luck die's 5 opens it.
+        Stats lucky = GameRules.HeroBaseStats with { Luck = 1, OdHandDice = 1 };
+        GameSession session = DoorRun(PassageKind.Locked, difficulty: 5, dice: new ScriptedDice(2, 5), stats: lucky);
+        Hero hero = session.HeroInSeat();
+        session.Do(new PickLock(hero.Id, hero.Position));
+        Assert.NotNull(session.State.Turn!.PendingRoll);
+        session.Do(new RerollDie(hero.Id, 0));
+        Assert.False(session.RoomById().PassageOn(Direction.East)!.IsLocked);
+
+        // A 5 straight away opens it with no wait, the Luck kept.
+        GameSession sure = DoorRun(PassageKind.Locked, difficulty: 5, dice: new ScriptedDice(5), stats: lucky);
+        Hero picker = sure.HeroInSeat();
+        sure.Do(new PickLock(picker.Id, picker.Position));
+        Assert.Null(sure.State.Turn!.PendingRoll);
+        Assert.Equal(1, picker.LuckRemaining);
+    }
+
+    [Fact]
     public void ALockedDoorTakesAKey()
     {
         GameSession session = DoorRun(PassageKind.Locked, dice: new ScriptedDice(1));

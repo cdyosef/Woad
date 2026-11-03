@@ -75,7 +75,8 @@ public sealed partial class GameSession
 
     /// <summary>
     /// After Power Dice change: a full bank rolls the rest in at once; any still waiting for the
-    /// hero's choice are announced; and a pending roll with nothing left to decide resolves.
+    /// hero's choice are announced; and a pending roll with nothing left to decide resolves: one that
+    /// would succeed, or with no Luck left to try (see <see cref="Failing"/>).
     /// </summary>
     private void SettlePowerDice(Hero hero, List<GameEvent> events)
     {
@@ -88,7 +89,7 @@ public sealed partial class GameSession
         {
             events.Add(new PowerDiceEarned(hero.Id, Turn.UnsettledPowerDice));
         }
-        else if (Turn.PendingRoll is { } pending && hero.LuckRemaining < 1)
+        else if (Turn.PendingRoll is { } pending && !(hero.LuckRemaining > 0 && Failing(pending, events)))
         {
             Turn.PendingRoll = null;
             ResolvePendingRoll(pending, events);

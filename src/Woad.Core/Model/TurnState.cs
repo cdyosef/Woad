@@ -141,6 +141,12 @@ public sealed class PendingRoll
     /// <summary>The spell this roll casts, and what comes of it besides the roll (null for anything else).</summary>
     public SpellCasting? Casting { get; internal init; }
 
+    /// <summary>
+    /// The monsters' defense totals (armor included), by id, rolled first while Luck was offered: they
+    /// stand, whatever the Luck does to the attack.
+    /// </summary>
+    internal Dictionary<int, int> Defenses { get; } = [];
+
     /// <summary>A weapon that doesn't last, to be settled as the dice land (a Rock flung, a Club).</summary>
     internal WeaponSpent? Spent { get; init; }
 }

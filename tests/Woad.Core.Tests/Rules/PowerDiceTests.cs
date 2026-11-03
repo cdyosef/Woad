@@ -132,18 +132,19 @@ public class PowerDiceTests
     }
 
     [Fact]
-    public void ARerollThatComesUpSixEarnsAPowerDie()
+    public void ALuckySixEarnsAPowerDieAndKeepsTheLuck()
     {
-        GameSession session = TestRun.Start(Duel('K'), new ScriptedDice(1, 6, 1), stats: GameRules.HeroBaseStats with { Luck = 1 });
+        // The attack's 1 against the Knight's 1 and armor 2; the Luck die comes up 6.
+        GameSession session = TestRun.Start(Duel('K'), new ScriptedDice(1, 1, 6), stats: GameRules.HeroBaseStats with { Luck = 1 });
         Hero hero = session.HeroInSeat();
-        session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id));
+        Assert.Equal(3, session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id)).SingleOf<DefenseRolled>().Total);
 
         IReadOnlyList<GameEvent> events = session.Do(new RerollDie(hero.Id, 0));
         Assert.Equal(new PowerDiceEarned(hero.Id, 1), events[^1]);
+        Assert.Equal(1, hero.LuckRemaining);
 
         events = session.Do(new BankPowerDie(hero.Id));
         Assert.Equal(1, hero.Power.Banked);
-        Assert.Equal(3, events.SingleOf<DefenseRolled>().Total);
         Assert.Equal(1, events.SingleOf<Damaged>().Amount);
     }
 

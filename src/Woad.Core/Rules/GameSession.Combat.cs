@@ -175,7 +175,12 @@ public sealed partial class GameSession
         int luck = RollOneDie();
         faces[command.DieIndex] = Math.Max(oldFace, luck);
         var rerolled = new DiceRoll(faces);
-        hero.LuckRemaining--;
+
+        // A Luck die that comes up 6 isn't used up: the Luck is saved for another time.
+        if (luck != GameRules.PowerDieFace)
+        {
+            hero.LuckRemaining--;
+        }
 
         if (attack is not null)
         {
@@ -294,22 +299,15 @@ public sealed partial class GameSession
         foreach (int targetId in attack.TargetIds)
         {
             // A spell's extra dice against this target (Quake's on rubble) add to its total and sixes.
-            int total = attack.Total;
+            int total = TotalAgainst(attack, hero, room, targetId);
             Dictionary<DieType, int> laid = sixes;
             if (attack.Casting?.Extra.GetValueOrDefault(targetId) is { Total: > 0 } extra)
             {
-                total += extra.Total;
                 laid = new Dictionary<DieType, int>(sixes) { [attack.Casting.Spell.DieType] = sixes.GetValueOrDefault(attack.Casting.Spell.DieType) + extra.Sixes };
             }
 
             if (room.FindMonster(targetId) is { } monster)
             {
-                // Shooting into the dark is harder.
-                if (attack.Source != DamageSource.Shove && monster.NearestTile(hero.Position).ChebyshevDistanceTo(hero.Position) > 1 && InDarkness(room, monster.NearestTile(hero.Position)))
-                {
-                    total -= 1;
-                }
-
                 Thaw(monster.Conditions, monster.Id, fireDice, events);
                 if (attack.Chill > 0)
                 {
@@ -319,7 +317,7 @@ public sealed partial class GameSession
 
                 // On a hit, the typed dice take hold, and a stunning weapon's sixes stun.
                 if (DamageMonster(hero, room, monster, total, attack.Source, events, ranged: monster.NearestTile(hero.Position).ChebyshevDistanceTo(hero.Position) > 1, crush: attack.Weapon?.Crush ?? false,
-                        purifying: attack.DieTypes.Any(type => type is DieType.Fire or DieType.Radiate)) > 0)
+                        purifying: attack.DieTypes.Any(type => type is DieType.Fire or DieType.Radiate), defended: attack.Defenses.TryGetValue(targetId, out int defended) ? defended : null) > 0)
                 {
                     hit.Add(targetId);
                     LayTypedDice(room, monster, laid, hero.Id, hero.Position, hero, events);
@@ -357,25 +355,90 @@ public sealed partial class GameSession
         return hit;
     }
 
+    /// <summary>
+    /// An attack's total against one of its targets: a spell's extra dice against it (Quake's on rubble)
+    /// added, and 1 less shooting a monster in the dark.
+    /// </summary>
+    private int TotalAgainst(PendingRoll attack, Hero hero, Room room, int targetId)
+    {
+        int total = attack.Total + (attack.Casting?.Extra.GetValueOrDefault(targetId) is { Total: > 0 } extra ? extra.Total : 0);
+        if (room.FindMonster(targetId) is { } monster && attack.Source != DamageSource.Shove
+            && monster.NearestTile(hero.Position).ChebyshevDistanceTo(hero.Position) > 1 && InDarkness(room, monster.NearestTile(hero.Position)))
+        {
+            total -= 1;
+        }
+
+        return total;
+    }
+
+    /// <summary>
+    /// Whether a hero's pending roll would fail, so Luck is worth offering: an Od Hand check short of its
+    /// number, or an attack some monster it's aimed at would hold off. The monsters defend first, now,
+    /// and that defense stands whatever the Luck does (see <see cref="PendingRoll.Defenses"/>).
+    /// Contests (a steal), searches and shoves don't wait for Luck.
+    /// </summary>
+    private bool Failing(PendingRoll roll, List<GameEvent> events)
+    {
+        if (roll.Check is { } check)
+        {
+            return check.Difficulty > 0 && roll.Total < check.Difficulty;
+        }
+
+        if (roll.Source == DamageSource.Shove)
+        {
+            return false;
+        }
+
+        Hero hero = State.GetHero(roll.HeroId);
+        Room room = State.RoomOf(hero);
+        bool failing = false;
+        foreach (int targetId in roll.TargetIds)
+        {
+            if (room.FindMonster(targetId) is not { } monster)
+            {
+                continue;
+            }
+
+            int total = AgainstMonster(room, monster, TotalAgainst(roll, hero, room, targetId));
+            if (!roll.Defenses.TryGetValue(targetId, out int defense))
+            {
+                defense = DefendMonster(room, monster, total, monster.NearestTile(hero.Position).ChebyshevDistanceTo(hero.Position) > 1, events);
+                roll.Defenses[targetId] = defense;
+            }
+
+            failing |= DamageFor(total, defense) == 0;
+        }
+
+        return failing;
+    }
+
     /// <summary>An attack hits, for 1 heart, when its total beats the defense total; ties go to the defender.</summary>
     private static int DamageFor(int attackTotal, int defenseTotal) =>
         attackTotal > defenseTotal ? GameRules.DamagePerHit : 0;
 
     /// <param name="ranged">From a distance: a prone monster rolls an extra defense die.</param>
-    /// <param name="crush">A crushing blow (the War Hammer): a hit knocks a shelled monster onto its back, and bones it breaks stay broken.</param>
-    /// <returns>The damage it did: 1 for a hit, 0 for a miss.</returns>
-    /// <param name="purifying">Fire or Radiate went into it: no grave dust puffs off.</param>
-    private int DamageMonster(Hero? attacker, Room room, Monster monster, int attackTotal, DamageSource source, List<GameEvent> events, bool ranged = false, bool crush = false, bool purifying = false)
+    /// <summary>An attack's total against a monster: a stunned, poisoned or glowing monster is easier to hit, one sheltering in its plants harder.</summary>
+    private static int AgainstMonster(Room room, Monster monster, int attackTotal) =>
+        attackTotal + monster.Stun.AttackBonus + Exposure(monster.Conditions) - (room.PlantsFor(monster.Position, heroes: false) ? 1 : 0);
+
+    /// <summary>A monster rolls its defense against <paramref name="attackTotal"/>: its total, armor included. A collapsed heap of bones has none at all.</summary>
+    private int DefendMonster(Room room, Monster monster, int attackTotal, bool ranged, List<GameEvent> events)
     {
-        // A stunned, poisoned or glowing monster is easier to hit; a collapsed heap of bones has no defense at all.
-        attackTotal += monster.Stun.AttackBonus + Exposure(monster.Conditions) - (room.PlantsFor(monster.Position, heroes: false) ? 1 : 0);
         bool collapsed = monster.Collapsed;
         int armor = collapsed ? 0 : ArmorOf(monster);
         int dice = collapsed ? 0 : DefenseDiceOf(monster) + (ranged && monster.Prone ? 1 : 0);
         Guard? extra = !collapsed && monster.Definition.ExtraDefenseDice > 0 ? new Guard { Dice = monster.Definition.ExtraDefenseDice } : null;
-        DiceRoll defense = RollDefense(monster.Id, monster.Power, dice, armor, attackTotal, canSpend: !collapsed, events, extra);
+        return RollDefense(monster.Id, monster.Power, dice, armor, attackTotal, canSpend: !collapsed, events, extra).Total + armor;
+    }
 
-        int damage = DamageFor(attackTotal, defense.Total + armor);
+    /// <param name="crush">A crushing blow (the War Hammer): a hit knocks a shelled monster onto its back, and bones it breaks stay broken.</param>
+    /// <returns>The damage it did: 1 for a hit, 0 for a miss.</returns>
+    /// <param name="purifying">Fire or Radiate went into it: no grave dust puffs off.</param>
+    /// <param name="defended">The monster's defense total, already rolled (it defended first, while Luck was offered); null rolls it now.</param>
+    private int DamageMonster(Hero? attacker, Room room, Monster monster, int attackTotal, DamageSource source, List<GameEvent> events, bool ranged = false, bool crush = false, bool purifying = false, int? defended = null)
+    {
+        attackTotal = AgainstMonster(room, monster, attackTotal);
+        int damage = DamageFor(attackTotal, defended ?? DefendMonster(room, monster, attackTotal, ranged, events));
         Wake(monster, events);
         monster.Hearts = Math.Max(0, monster.Hearts - damage);
         events.Add(new Damaged(monster.Id, damage, monster.Hearts));
