@@ -514,6 +514,7 @@ public partial class GameScreen : Control
                 break;
 
             case DieRerolled rerolled:
+                _lucky |= rerolled.LuckFace == 6;
                 await _dice.LuckRoll(rerolled.DieIndex, rerolled.LuckFace, rerolled.NewFace);
                 break;
 

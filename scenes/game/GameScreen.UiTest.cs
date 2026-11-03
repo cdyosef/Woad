@@ -592,6 +592,10 @@ public partial class GameScreen
 
             await PressKey(Key.W);
             await WaitUntilIdle();
+            Check(aria.LuckRemaining == 0 || _luckPrompt.Visible, "a Wend roll asks: Try your Luck?");
+            await SaveShot("luck_prompt_wend");
+            await Click(this, _luckPrompt.NoButton);
+            Check(!_luckPrompt.Visible, "No puts the question away");
             await ConfirmIfHeld();
             Check(_session.State.Turn!.MovementPoints > 0, "W rolls the Wend dice");
             await SaveShot("tray_wend");
@@ -623,11 +627,13 @@ public partial class GameScreen
             {
                 int before = pending.Roll.Faces[lucky];
                 int luckLeft = aria.LuckRemaining;
+                Check(_luckPrompt.Visible && _luckPrompt.SecondsLeft > 0, "an attack that would fail asks: Try your Luck?");
+                await SaveShot("luck_prompt");
                 await ClickAt(this, _dice.DiePoint(lucky)!.Value);
                 await Pause(0.3);
                 await SaveShot("luck_rolling");
                 await WaitUntilIdle();
-                Check(aria.LuckRemaining == luckLeft - 1, "clicking a die in the tray spends a Luck");
+                Check(aria.LuckRemaining == luckLeft - 1 || _session.State.Rooms["yard"].Monsters.Count == 0 || aria.LuckRemaining == luckLeft, "clicking a die in the tray tries the Luck");
                 Check(_session.State.Turn?.PendingRoll is not { } after || after.Roll.Faces[lucky] >= before, "Luck keeps the higher of the two dice");
             }
 

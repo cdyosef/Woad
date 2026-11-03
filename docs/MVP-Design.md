@@ -372,9 +372,15 @@ facing door of the next room.
 - **Luck** rerolls one of your own Wend, Rumble or Od Hand dice: click it in the tray, and a green Luck die
   rolls just above it. **The higher of the two stays**: higher, the Luck die drops onto it with a thump and
   takes its place; lower (or the same), it pops in a green burst and the die stays as it was. A 6 can't be
-  bettered, so Luck can't be spent on one. A Wend die can be rerolled any time before
-  your first step. With Luck left, an attack or Od Hand roll waits for you to reroll or confirm; spending
-  your last Luck resolves it. Luck doesn't apply to defense rolls.
+  bettered, so Luck can't be spent on one. **A lucky 6 doesn't use the Luck up**: confetti flies, and
+  LUCKY goes up in green over the HIT! or MISS.
+  - **Try your Luck?** It's only asked once a roll would fail: an Od Hand check short of its number, or an
+    attack a monster holds off (the monsters defend first, and their defense stands whatever the Luck
+    does). A roll that would succeed lands at once. It pops up over the tray with **5 seconds** to click a
+    die (outlined green); **No**, or the time running out, lets the roll stand. After each try that still
+    falls short, it asks again while there's Luck left.
+  - **Wend:** every Wend roll asks, with **3 seconds**.
+  - Contests (a steal), searches and shoves don't wait for Luck, and it doesn't apply to defense rolls.
 
 ### Fire
 

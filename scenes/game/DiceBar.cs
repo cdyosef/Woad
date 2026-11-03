@@ -186,6 +186,12 @@ public partial class DiceBar : Control
         luck.Shown = luckFace;
         luck.Angle = 0;
         QueueRedraw();
+        if (luckFace == 6)
+        {
+            // A lucky 6: confetti, and the Luck isn't used up.
+            Confetti(row.Rects[dieIndex].GetCenter() + new Vector2(0, -rise));
+        }
+
         await ToSignal(GetTree().CreateTimer(0.3), SceneTreeTimer.SignalName.Timeout);
 
         if (newFace == luckFace && luckFace != row.Faces[dieIndex])
@@ -224,6 +230,46 @@ public partial class DiceBar : Control
             QueueRedraw();
         }), 0.0f, 1.0f, seconds);
         await ToSignal(tween, Tween.SignalName.Finished);
+    }
+
+    private readonly List<(Vector2 From, Vector2 Velocity, Color Color, float Spin)> _confetti = [];
+    private float _confettiAge = -1;
+
+    private static readonly Color[] ConfettiColors = [Palette.Heal, Palette.TrimBright, Palette.DieRumble, Palette.DieDefense, Palette.Power, Palette.DieOdHand];
+
+    /// <summary>Throws confetti from <paramref name="at"/>: bits of every color flying up and out, then falling as they fade.</summary>
+    private async void Confetti(Vector2 at)
+    {
+        _confetti.Clear();
+        for (int i = 0; i < 24; i++)
+        {
+            float angle = -Mathf.Pi / 2 + (float)(Random.Shared.NextDouble() - 0.5) * 2.4f;
+            float speed = 25 + (float)Random.Shared.NextDouble() * 45;
+            _confetti.Add((at, Vector2.FromAngle(angle) * speed, ConfettiColors[i % ConfettiColors.Length], (float)Random.Shared.NextDouble() * 10));
+        }
+
+        await Animate(0.9, amount => _confettiAge = amount);
+        _confettiAge = -1;
+        _confetti.Clear();
+        QueueRedraw();
+    }
+
+    private void DrawConfetti()
+    {
+        if (_confettiAge < 0)
+        {
+            return;
+        }
+
+        float time = _confettiAge * 0.9f;
+        foreach ((Vector2 from, Vector2 velocity, Color color, float spin) in _confetti)
+        {
+            Vector2 at = from + velocity * time + new Vector2(0, 60 * time * time);
+            DrawSetTransform(at, spin * time, Vector2.One);
+            DrawRect(new Rect2(-1.5f, -1, 3, 2), color with { A = 1 - _confettiAge * 0.8f });
+        }
+
+        DrawSetTransform(Vector2.Zero, 0, Vector2.One);
     }
 
     /// <summary>The Luck die in the air over the die it might replace: rolling, falling, or bursting.</summary>
@@ -294,6 +340,7 @@ public partial class DiceBar : Control
         Font font = ThemeDB.FallbackFont;
         DrawSide(font, _roller, new Rect2(0, 0, SideWidth, Size.Y), _rerollable, alignRight: false);
         DrawLuck();
+        DrawConfetti();
         if (_defenders.Count == 0)
         {
             return;

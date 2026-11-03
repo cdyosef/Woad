@@ -44,6 +44,12 @@ public static class GameRules
     /// <summary>Search total to spot a trap, and Od Hand total to disarm it.</summary>
     public static int TrapDifficulty(int floor) => 3 + floor;
 
+    /// <summary>Seconds to decide whether to try your Luck on a roll that would fail.</summary>
+    public const double LuckSeconds = 5;
+
+    /// <summary>Seconds to decide whether to try your Luck on a Wend roll.</summary>
+    public const double WendLuckSeconds = 3;
+
     /// <summary>Dice a sprung trap attacks with.</summary>
     public const int TrapAttackDice = 1;
 

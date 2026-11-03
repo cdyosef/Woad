@@ -228,9 +228,10 @@ public partial class BoardView : Control
     /// <summary>A fighting-game callout (HIT!, K.O.!...) over a tile, kept inside the view.</summary>
     /// <param name="size">Multiples of the heading font: 2 for most, 3 for the big ones.</param>
     /// <param name="below">Shifts it down a line (for a second callout, like a combo count).</param>
-    public void Callout(GridPosition tile, string text, Color color, int size = 2, bool below = false)
+    /// <param name="lift">How far above the usual callout (LUCKY over a HIT!).</param>
+    public void Callout(GridPosition tile, string text, Color color, int size = 2, bool below = false, float lift = 0)
     {
-        Vector2 at = TileOrigin(tile) + new Vector2(TileSize / 2f, below ? 30 : 0);
+        Vector2 at = TileOrigin(tile) + new Vector2(TileSize / 2f, (below ? 30 : 0) - lift);
         float half = text.Length * UiTheme.HeadingPixelSize * size * 0.45f;
         at.X = Mathf.Clamp(at.X, _camera.X + half + 4, _camera.X + Pixels - half - 4);
         at.Y = Mathf.Clamp(at.Y, _camera.Y + 14 * size / 2f, _camera.Y + Pixels - 8);

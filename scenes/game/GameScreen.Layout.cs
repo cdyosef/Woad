@@ -37,6 +37,15 @@ public partial class GameScreen
     private Label _hoverInfo = null!;
     private RichTextLabel _log = null!;
     private Label _luckHint = null!;
+
+    /// <summary>"Try your Luck?" over the dice tray, with its countdown.</summary>
+    private LuckPrompt _luckPrompt = null!;
+
+    /// <summary>The roll Luck is on offer for (the pending roll, or the Wend roll) and the Luck left then: a new offer starts the countdown afresh.</summary>
+    private (object Roll, int Luck)? _luckOffer;
+
+    /// <summary>The Wend roll whose Luck offer has run out or been turned down: its dice can't be rerolled any more.</summary>
+    private object? _wendLuckDone;
     private Button _confirm = null!;
     private Button _addPower = null!;
     private Button _bankPower = null!;
@@ -217,10 +226,15 @@ public partial class GameScreen
         _rumble.Visible &= !buried;
         _prone.Visible &= !_digOut.Visible;
 
-        bool canReroll = idle && hero!.LuckRemaining > 0
-            && (pending || (_trayShowsMovement && turn!.MovementRoll is not null && !turn.HasMoved));
+        // Luck is offered on a roll that would fail (it waits, pending) and on a fresh Wend roll, for a few seconds.
+        object? offered = !idle || hero!.LuckRemaining < 1 ? null
+            : pending ? turn!.PendingRoll
+            : _trayShowsMovement && turn!.MovementRoll is { } wend && !turn.HasMoved && wend != _wendLuckDone ? wend
+            : null;
+        bool canReroll = offered is not null;
         _dice.Rerollable = canReroll;
-        _luckHint.Visible = canReroll;
+        _luckHint.Visible = false;
+        OfferLuck(offered, hero?.LuckRemaining ?? 0, pending);
 
         _menu.Disabled = _busy || state.Phase == RunPhase.Ended;
         _menu.Text = _confirmingLeave ? "Leave?" : "Menu";
@@ -748,6 +762,8 @@ public partial class GameScreen
         AddChild(new Panel { Position = new Vector2(SideWidth, StripHeight + BoardView.Pixels), Size = new Vector2(BoardView.Pixels, StripHeight) });
         _dice = new DiceBar { Position = new Vector2(SideWidth + 6, StripHeight + BoardView.Pixels + 1), Size = new Vector2(BoardView.Pixels - 12, 34) };
         _dice.DieClicked += index => ExecuteForActiveHero(heroId => new RerollDie(heroId, index));
+        _luckPrompt = new LuckPrompt { Position = _dice.Position + new Vector2((_dice.Size.X - 172) / 2, -21) };
+        AddChild(_luckPrompt);
         AddChild(_dice);
 
         var right = new Panel { Position = new Vector2(SideWidth + BoardView.Pixels, 0), Size = new Vector2(SideWidth, 360) };

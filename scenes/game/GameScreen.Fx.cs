@@ -1,7 +1,9 @@
 using Godot;
+using Woad.Core.Commands;
 using Woad.Core.Content;
 using Woad.Core.Events;
 using Woad.Core.Model;
+using Woad.Core.Rules;
 using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Game;
@@ -19,6 +21,9 @@ public partial class GameScreen
     private int _attackerId;
     private int _attackTotal;
     private int _attackPower;
+
+    /// <summary>A Luck die came up 6 on the attack being resolved: LUCKY goes up over its HIT! or MISS.</summary>
+    private bool _lucky;
 
     /// <summary>The latest defense roll, to tell a block from a miss and a crit from a plain hit.</summary>
     private DefenseRolled? _defense;
@@ -40,6 +45,42 @@ public partial class GameScreen
         _attackTotal = total;
         _attackPower = powerFaces;
         _defense = null;
+        _lucky = false;
+    }
+
+    /// <summary>
+    /// Opens (or keeps) "Try your Luck?" for <paramref name="roll"/>, or puts it away: a fresh countdown for
+    /// each new roll and after each try, 5 seconds on a roll that would fail and 3 on a Wend roll. When the
+    /// time's up (or No), a waiting roll stands as it is, and a Wend roll's dice can't be rerolled any more.
+    /// </summary>
+    private void OfferLuck(object? roll, int luck, bool pending)
+    {
+        (object, int)? offer = roll is null ? null : (roll, luck);
+        if (Equals(offer, _luckOffer))
+        {
+            return;
+        }
+
+        _luckOffer = offer;
+        if (roll is null)
+        {
+            _luckPrompt.Close();
+            return;
+        }
+
+        _luckPrompt.Offer(pending ? GameRules.LuckSeconds : GameRules.WendLuckSeconds, () =>
+        {
+            _luckOffer = null;
+            if (pending)
+            {
+                ExecuteForActiveHero(heroId => new ConfirmAttack(heroId));
+            }
+            else
+            {
+                _wendLuckDone = roll;
+                RefreshPanels();
+            }
+        });
     }
 
     private void ResetCombo()
@@ -87,6 +128,7 @@ public partial class GameScreen
                 _board.Callout(figure.Position, "MISS", Palette.TextDim);
             }
 
+            CalloutLucky(figure);
             await Pause(0.35);
             return;
         }
@@ -110,6 +152,7 @@ public partial class GameScreen
             : critical ? ("CRITICAL!", Palette.Power, 2)
             : ("HIT!", Palette.Danger, 2);
         _board.Callout(figure.Position, text, color, size);
+        CalloutLucky(figure);
         if (_comboHits >= 2)
         {
             _board.Callout(figure.Position, $"{_comboHits} HITS!", Palette.Fire, 2, below: true);
@@ -122,6 +165,15 @@ public partial class GameScreen
         token.Modulate = new Color(2.6f, 2.6f, 2.6f);
         await Pause(knockedOut || critical ? 0.14 : 0.08);
         await Reel(token);
+    }
+
+    /// <summary>LUCKY in green over the HIT! or MISS, when a lucky 6 went into the attack.</summary>
+    private void CalloutLucky(Figure figure)
+    {
+        if (_lucky)
+        {
+            _board.Callout(figure.Position, "LUCKY", Palette.Heal, 1, lift: 16);
+        }
     }
 
     /// <summary>The target reels from the blow: shaken side to side as its red flash fades.</summary>
