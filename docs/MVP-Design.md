@@ -377,14 +377,21 @@ facing door of the next room.
   takes its place; lower (or the same), it pops in a green burst and the die stays as it was. A 6 can't be
   bettered, so Luck can't be spent on one. **A lucky 6 doesn't use the Luck up**: confetti flies, and
   LUCKY goes up in green over the HIT! or MISS.
-  - **Try your Luck?** It's only asked once a roll would fail: an Od Hand check short of its number, or an
-    attack a monster holds off (the monsters defend first, and their defense stands whatever the Luck
-    does). A roll that would succeed lands at once. It pops up over the tray with **5 seconds** to click a
-    die (outlined green); **No**, or the time running out, lets the roll stand. After each try that still
-    falls short, it asks again while there's Luck left.
-  - **Wend:** every Wend roll asks, with **3 seconds**.
-  - While it asks, the view **zooms in** on the action (the hero, and what they're attacking) and
-    everything plays at **half speed**; the countdown runs in real seconds.
+  - **Try your Luck?** pops up over the tray with the dice outlined green to click; **No**, or the time
+    running out, lets the roll stand. While you have Luck every roll waits, its targets defending first
+    (monsters against attacks and shoves, the mark of a steal: that defense stands whatever the Luck
+    does), and the **Luck menu** decides whether it's asked.
+  - **The Luck menu:** hold the **Luck clover** (the Luck line on the sheet) for a switch per kind of roll:
+    Rumble attacks, Shove, Pick Lock, Disarm, Steal, Search, Aid, Learn and Wend, all on to start and
+    saved with the character. On, Luck is asked whenever that roll is **about to fail** (an Od Hand check
+    short of its number, a rouse with no mark of life, an attack, shove or steal the other side holds
+    off), with **5 seconds**; Search and Wend, which can't fail, ask every roll, with **3 seconds**. Off, it
+    isn't asked and the roll stands at once. After each try that still falls short, it asks again.
+  - **Tap the clover** and it glows: your next roll asks, whatever its odds (3 seconds), even one switched
+    off. Asking uses the glow up; tap it again to put it out.
+  - While it asks, everything plays at **half speed** (the countdown runs in real seconds), and on an attack
+    or a check the view **zooms in** on the action (the hero, and what they're attacking). A Wend roll keeps
+    the whole room in view, to click where to go.
   - Contests (a steal), searches and shoves don't wait for Luck, and it doesn't apply to defense rolls.
 
 ### Fire

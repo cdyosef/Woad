@@ -90,6 +90,9 @@ public partial class HeroPanel : Panel
     /// <summary>The Magic card was clicked: cast a spell.</summary>
     public event Action? MagicClicked;
 
+    /// <summary>Over the Luck line: tap to glow (the next roll asks), hold for the Luck menu.</summary>
+    public LuckClover LuckClover { get; private set; } = null!;
+
     internal CardSlot EquipmentSlot(EquipSlot slot) => _slots[slot];
 
     /// <summary>A point on the part of a belt card that shows, to click it (the ones nearer the buckle cover the rest).</summary>
@@ -144,6 +147,7 @@ public partial class HeroPanel : Panel
         MagicCard = Add(new SheetCard { Position = new(Columns[2], Rows[0]), Size = new(CardWidth, CardHeight), Back = "cast" });
         MagicCard.Pressed += () => MagicClicked?.Invoke();
         _luck = Add(UiTheme.RichLabel(new(3, Rows[0] + CardHeight + 2), new(58, 12)));
+        LuckClover = Add(new LuckClover { Position = new(2, Rows[0] + CardHeight + 1), Size = new(58, 13) });
         _magicRank = Add(UiTheme.RichLabel(new(137, Rows[0] + CardHeight + 2), new(38, 12)));
 
         // The bag: a deck, its cards listed under it.

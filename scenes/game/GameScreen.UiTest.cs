@@ -590,9 +590,25 @@ public partial class GameScreen
             Hero aria = ActiveHero!;
             Monster slime = _session.State.Rooms["yard"].Monsters.Single();
 
+            // The Luck clover: held, the Luck menu; Wend switched off there. Tapped, it glows: the next roll asks anyway.
+            Vector2 clover = _heroPanel.LuckClover.GetGlobalRect().GetCenter();
+            GetViewport().PushInput(new InputEventMouseMotion { Position = clover, GlobalPosition = clover }, inLocalCoords: true);
+            GetViewport().PushInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = clover, GlobalPosition = clover, ButtonMask = MouseButtonMask.Left }, inLocalCoords: true);
+            await Pause(0.6);
+            GetViewport().PushInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = clover, GlobalPosition = clover }, inLocalCoords: true);
+            await NextFrame(this);
+            Check(_luckMenu.Visible, "holding the Luck clover opens the Luck menu");
+            await Click(this, _luckMenu.SwitchFor(LuckRoll.Wend));
+            await WaitUntilIdle();
+            Check(!aria.LuckAsks.HasFlag(LuckRoll.Wend), "switching Wend off in the Luck menu");
+            _luckMenu.Visible = false;
+            await Click(this, _heroPanel.LuckClover);
+            Check(_heroPanel.LuckClover.Glowing, "tapping the clover makes it glow");
+
             await PressKey(Key.W);
             await WaitUntilIdle();
-            Check(aria.LuckRemaining == 0 || _luckPrompt.Visible, "a Wend roll asks: Try your Luck?");
+            Check(aria.LuckRemaining == 0 || _luckPrompt.Visible, "with the clover glowing, the Wend roll asks: Try your Luck?");
+            Check(!_heroPanel.LuckClover.Glowing, "asking uses the glow up");
             await SaveShot("luck_prompt_wend");
             await Click(this, _luckPrompt.NoButton);
             Check(!_luckPrompt.Visible, "No puts the question away");

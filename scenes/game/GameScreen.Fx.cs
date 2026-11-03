@@ -50,11 +50,57 @@ public partial class GameScreen
     }
 
     /// <summary>
-    /// Opens (or keeps) "Try your Luck?" for <paramref name="roll"/>, or puts it away: a fresh countdown for
-    /// each new roll and after each try, 5 seconds on a roll that would fail and 3 on a Wend roll. When the
-    /// time's up (or No), a waiting roll stands as it is, and a Wend roll's dice can't be rerolled any more.
+    /// Which roll to ask "Try your Luck?" on, if any: a waiting roll the hero's Luck menu asks on (about to
+    /// fail, or a search) or any roll while the clover glows; a fresh Wend roll while Wend is switched on
+    /// (or the clover glows). A waiting roll that isn't asked on is let stand at once. Also whether it's
+    /// about to fail (5 seconds to decide, rather than 3).
     /// </summary>
-    private void OfferLuck(object? roll, int luck, bool pending)
+    private (object? Roll, bool Failing) LuckToAsk(Hero? hero, TurnState? turn, bool idle, bool pending)
+    {
+        if (!idle || hero is null || turn is null || hero.LuckRemaining < 1)
+        {
+            return (null, false);
+        }
+
+        bool primed = _luckPrimed.Contains(hero.Id);
+        if (pending && turn.PendingRoll is { } roll)
+        {
+            bool failing = _session.PendingRollFails;
+            bool ask = primed || (_session.PendingLuckKind is { } kind && hero.LuckAsks.HasFlag(kind) && (failing || kind == LuckRoll.Search));
+            if (ask)
+            {
+                return (roll, failing);
+            }
+
+            // Not asked on: it stands, once (tried again next time if the screen was busy).
+            if (_letStand != roll)
+            {
+                _letStand = roll;
+                int heroId = hero.Id;
+                Callable.From(async () =>
+                {
+                    if (!await ExecuteAsync(new ConfirmAttack(heroId)))
+                    {
+                        _letStand = null;
+                    }
+                }).CallDeferred();
+            }
+
+            return (null, false);
+        }
+
+        return _trayShowsMovement && turn.MovementRoll is { } wend && !turn.HasMoved && wend != _wendLuckDone && (primed || hero.LuckAsks.HasFlag(LuckRoll.Wend))
+            ? (wend, false)
+            : (null, false);
+    }
+
+    /// <summary>
+    /// Opens (or keeps) "Try your Luck?" for <paramref name="roll"/>, or puts it away: a fresh countdown for
+    /// each new roll and after each try, 5 seconds on a roll about to fail and 3 otherwise. Asking uses up the
+    /// clover's glow. When the time's up (or No), a waiting roll stands as it is, and a Wend roll's dice
+    /// can't be rerolled any more.
+    /// </summary>
+    private void OfferLuck(object? roll, int luck, bool pending, bool failing)
     {
         (object, int)? offer = roll is null ? null : (roll, luck);
         if (Equals(offer, _luckOffer))
@@ -70,14 +116,21 @@ public partial class GameScreen
             return;
         }
 
-        // While Luck is asked, the view zooms in on the action and everything slows down.
+        // While Luck is asked, everything slows down, and on a roll that waits (an attack, a check) the view
+        // zooms in on the action. A Wend roll keeps the whole room in view, to click where to go.
         if (ActiveHero is { } hero)
         {
-            ZoomOnAction(hero.Id, _session.State.Turn?.PendingRoll?.TargetIds ?? []);
+            if (pending)
+            {
+                ZoomOnAction(hero.Id, _session.State.Turn?.PendingRoll?.TargetIds ?? []);
+            }
+
+            _luckPrimed.Remove(hero.Id);
+            _heroPanel.LuckClover.Glowing = false;
         }
 
         SlowForLuck(true);
-        _luckPrompt.Offer(pending ? GameRules.LuckSeconds : GameRules.WendLuckSeconds, () =>
+        _luckPrompt.Offer(failing ? GameRules.LuckSeconds : GameRules.WendLuckSeconds, () =>
         {
             _luckOffer = null;
             SlowForLuck(false);
