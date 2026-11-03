@@ -242,7 +242,7 @@ every room that holds at least one player. Rooms with no players stay paused.
      sprung trap ends your movement early. A negative Wend bonus always applies to your first move.
      **Rough ground** (rubble) and **water** cost 2 steps a tile. You can swim **deep water**, but if your
      turn ends in it, one of your unused Rumble dice keeps you afloat; with none left you **drown**: you
-     lose a heart and wash back to the last shallow-water or dry tile you stood on.
+     lose a heart and stay where you are, out in the deep water, to swim for it next turn.
    - **Leaps (Wend):** press **Leap**, pick a tile up to 3 away in a straight line (diagonals too) and
      commit; only then is one unused Wend die rolled. The leap carries half the roll, rounded down,
      never past your target. It sails over pits, water, traps and figures, but not walls, chests or pots.

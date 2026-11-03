@@ -326,8 +326,9 @@ public class HazardTests
         }
         else
         {
-            Assert.Equal(new Drowned(hero.Id, new GridPosition(4, 3), new GridPosition(4, 4)), events.SingleOf<Drowned>());
-            Assert.Equal(new GridPosition(4, 4), hero.Position);
+            // They stay out there, to swim for it next turn.
+            Assert.Equal(new Drowned(hero.Id, new GridPosition(4, 3)), events.SingleOf<Drowned>());
+            Assert.Equal(new GridPosition(4, 3), hero.Position);
             Assert.Equal(TestRun.HeroStats.Hearts - GameRules.DrownDamage, hero.Hearts);
         }
 

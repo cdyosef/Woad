@@ -860,10 +860,9 @@ public partial class GameScreen : Control
             case Drowned drowned:
                 if (_figures.TryGetValue(drowned.HeroId, out Figure? drowning) && drowning.RoomId == _shownRoomId)
                 {
-                    _board.FloatText(drowned.From, "drowning!", Palette.Danger);
+                    _board.FloatText(drowned.At, "drowning!", Palette.Danger);
                 }
 
-                await Walk(drowned.HeroId, [drowned.To]);
                 break;
 
             case OdHandRolled rolled:

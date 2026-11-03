@@ -193,7 +193,7 @@ public sealed partial class GameSession
 
     /// <summary>
     /// At the end of a hero's turn in deep water, one of their unused Rumble dice keeps them afloat.
-    /// With none left they drown: they wash back to their last dry footing and lose a heart.
+    /// With none left they drown: they lose a heart and stay out there, to swim for it next turn.
     /// </summary>
     private void KeepAfloat(Hero hero, List<GameEvent> events)
     {
@@ -215,9 +215,7 @@ public sealed partial class GameSession
             return;
         }
 
-        GridPosition from = hero.Position;
-        hero.Position = IsOccupied(room, hero.Footing) ? LandingNear(room, hero.Footing) ?? hero.Footing : hero.Footing;
-        events.Add(new Drowned(hero.Id, from, hero.Position));
+        events.Add(new Drowned(hero.Id, hero.Position));
         HurtHero(room, hero, GameRules.DrownDamage, "Drowned", events);
     }
 

@@ -460,8 +460,8 @@ public sealed record Leaped(int HeroId, GridPosition From, GridPosition Target, 
 /// <summary>A hero ended their turn in deep water and spent a Rumble die to stay afloat.</summary>
 public sealed record StayedAfloat(int HeroId) : GameEvent;
 
-/// <summary>A hero ended their turn in deep water with no Rumble die to spare: they wash back to dry footing (and lose a heart).</summary>
-public sealed record Drowned(int HeroId, GridPosition From, GridPosition To) : GameEvent;
+/// <summary>A hero ended their turn in deep water with no Rumble die to spare: they go under where they are (and lose a heart).</summary>
+public sealed record Drowned(int HeroId, GridPosition At) : GameEvent;
 
 /// <summary>A hero opened a locked gate inside a room: with a key, or <paramref name="Picked"/> with Od Hand.</summary>
 public sealed record GateOpened(int HeroId, string RoomId, GridPosition Gate, bool Picked) : GameEvent;
