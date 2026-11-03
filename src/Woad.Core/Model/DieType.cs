@@ -68,6 +68,9 @@ public enum Boon
 
     /// <summary>Thieves' Oil: disease is resisted on a 3 or more, and Necro attacks hit them 2 less.</summary>
     ThievesOil,
+
+    /// <summary>Hurl Fire cast on yourself: a flame that's a lit torch, needing no hand, until a 1 puts it out or a fall to the floor below.</summary>
+    Flame,
 }
 
 /// <summary>Tokens the typed dice leave on a hero or monster (fire and stun keep their own).</summary>

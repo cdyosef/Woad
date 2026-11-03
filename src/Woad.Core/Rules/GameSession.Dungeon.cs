@@ -217,6 +217,8 @@ public sealed partial class GameSession
         }
         hero.RoomId = target.Id;
         hero.Position = landing;
+        // Falling to the floor below puts a flame of Hurl Fire out (the stairs don't).
+        hero.Flame &= target.Floor == from.Floor;
         target.Explored = true;
         bool firstTime = target.Floor > hero.DeepestFloor;
         events.Add(new HeroFell(hero.Id, from.Id, target.Id, target.Floor, landing, firstTime, jumped));

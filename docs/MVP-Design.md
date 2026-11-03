@@ -553,7 +553,7 @@ All cost **1 Power** and can be upcast.
 | Spell | Range | Dice | What it does |
 | --- | --- | --- | --- |
 | Shooting Star | 8 | 1 Star | A 6 surges with Power |
-| Hurl Fire | 6 | 1 Fire | |
+| Hurl Fire | 6 | 1 Fire | On yourself: a **flame** that's a lit torch needing no hand (light, a Search die, a fire die on your attacks), until a 1 in an attack puts it out (before any torch) or you fall to the floor below; the stairs don't |
 | Poison Mist | 2, every creature in a straight line | 1 Poison, +1 per Poison token on you | Throws off every Poison token on you |
 | Icicle Arrow | 4 | 1 Ice | Or cast on the floor to lay ice (below) |
 | Acid Ball | 3 | 1 Acid | The same roll splashes one random creature beside the target, friend or foe |

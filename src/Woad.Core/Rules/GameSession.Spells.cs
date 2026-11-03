@@ -306,6 +306,11 @@ public sealed partial class GameSession
                 target.ShadowboundRounds = Math.Max(target.ShadowboundRounds, faces.Length);
                 events.Add(new BoonGained(target.Id, Boon.Shadowbound, target.ShadowboundRounds, 0));
                 break;
+
+            case DieType.Fire:
+                target.Flame = true;
+                events.Add(new BoonGained(target.Id, Boon.Flame, 0, 0));
+                break;
         }
     }
 

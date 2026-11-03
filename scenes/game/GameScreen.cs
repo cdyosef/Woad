@@ -740,7 +740,7 @@ public partial class GameScreen : Control
                 break;
 
             case BoonGained gained:
-                FloatOver(gained.HeroId, DieTypes.Name(gained.Boon), gained.Boon switch { Boon.ShiningLight => DieTypes.Tint(DieType.Radiate), Boon.Shadowbound => DieTypes.Tint(DieType.Shadow), Boon.ThievesOil => Palette.Loot, _ => DieTypes.Tint(DieType.Ice) });
+                FloatOver(gained.HeroId, DieTypes.Name(gained.Boon), gained.Boon switch { Boon.ShiningLight => DieTypes.Tint(DieType.Radiate), Boon.Shadowbound => DieTypes.Tint(DieType.Shadow), Boon.ThievesOil => Palette.Loot, Boon.Flame => Palette.Fire, _ => DieTypes.Tint(DieType.Ice) });
                 await UpdateFigure(gained.HeroId, figure => SetBoon(figure, gained.Boon, true), 0.2);
                 break;
 
@@ -783,6 +783,11 @@ public partial class GameScreen : Control
 
             case WeaponBroke broke:
                 CalloutOver(broke.HeroId, "SNAP!", Palette.Danger);
+                break;
+
+            case FlameWentOut flameOut:
+                CalloutOver(flameOut.HeroId, "FLAME OUT!", Palette.Fire);
+                await UpdateFigure(flameOut.HeroId, figure => figure.Torch = _session.State.GetHero(flameOut.HeroId).TorchesHeld > 0, 0.2);
                 break;
 
             case TorchBurnedOut burnedOut:
@@ -1598,6 +1603,9 @@ public partial class GameScreen : Control
                 break;
             case Boon.Snowshoes:
                 figure.Snowshoes = on;
+                break;
+            case Boon.Flame when on:
+                figure.Torch = true;
                 break;
         }
     }

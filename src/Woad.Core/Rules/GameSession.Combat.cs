@@ -346,8 +346,13 @@ public sealed partial class GameSession
         WeaponAftermath(hero, room, attack, events);
         SpellAftermath(hero, room, attack, hit, events);
 
-        // Any 1 in a torch-lit attack burns one of the torches out.
-        if (attack.Torches > 0 && attack.Roll.Faces.Contains(1) && hero.EquippedCards.LastOrDefault(card => card.Definition.Torch) is { } torch)
+        // Any 1 in a torch-lit attack burns one of the torches out: a flame of Hurl Fire first.
+        if (attack.Torches > 0 && attack.Roll.Faces.Contains(1) && hero.Flame)
+        {
+            hero.Flame = false;
+            events.Add(new FlameWentOut(hero.Id));
+        }
+        else if (attack.Torches > 0 && attack.Roll.Faces.Contains(1) && hero.EquippedCards.LastOrDefault(card => card.Definition.Torch) is { } torch)
         {
             hero.Remove(torch);
             events.Add(new TorchBurnedOut(hero.Id, torch.Id));

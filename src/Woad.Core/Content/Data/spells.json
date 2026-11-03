@@ -1,6 +1,6 @@
 [
   { "id": "shooting_star", "name": "Shooting Star", "dieType": "star", "range": 8, "basic": true, "text": "Range 8. A Star die: its 6 surges with Power." },
-  { "id": "hurl_fire", "name": "Hurl Fire", "dieType": "fire", "range": 6, "basic": true, "text": "Range 6. A Fire die: a 6 sets the target alight." },
+  { "id": "hurl_fire", "name": "Hurl Fire", "dieType": "fire", "range": 6, "ward": "self", "basic": true, "text": "Range 6. A Fire die: a 6 sets the target alight. On yourself: a flame that's a lit torch, needing no hand (light, a Search die, a fire die on your attacks), until a 1 in an attack puts it out or you fall to the floor below." },
   { "id": "poison_mist", "name": "Poison Mist", "dieType": "poison", "range": 2, "shape": "line", "drawsPoison": true, "basic": true, "text": "Everyone in a straight line, 2 tiles. A Poison die, and one more for each Poison token on you: casting throws them all off." },
   { "id": "icicle_arrow", "name": "Icicle Arrow", "dieType": "ice", "range": 4, "floor": true, "basic": true, "text": "Range 4. An Ice die: a 6 freezes the target a stack. At bare floor, lay as many patches of ice as you roll (on an icy tile someone of yours stands on: Snowshoes), lasting a round per die." },
   { "id": "acid_ball", "name": "Acid Ball", "dieType": "acid", "range": 3, "splash": true, "basic": true, "text": "Range 3. An Acid die; the same roll splashes one random creature beside the target, friend or foe." },

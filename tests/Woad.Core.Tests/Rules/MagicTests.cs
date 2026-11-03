@@ -85,6 +85,35 @@ public class MagicTests
     }
 
     [Fact]
+    public void HurlFireOnYourselfIsAFlameThatBurnsLikeATorchTillAOne()
+    {
+        // The flame's own die; then an attack whose 1 (the Rumble die) puts it out, its fire die a 3.
+        GameSession session = TestRun.Start("""
+            .........
+            .........
+            .........
+            .........
+            .1d......
+            .........
+            .........
+            .........
+            .........
+            """, new ScriptedDice(4, 1, 3), stats: TestRun.HeroStats with { AttackDice = 2 });
+        Hero hero = Mage(session, magic: 0, power: 1, "hurl_fire");
+
+        session.Do(new CastSpell(hero.Id, "hurl_fire", hero.Position));
+        Assert.True(hero.Flame);
+        Assert.Equal(1, hero.TorchesHeld);
+
+        session.State.Turn!.AttackDiceUsed = 0;
+        IReadOnlyList<GameEvent> events = session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id, Dice: 1, UseWeapon: false));
+
+        Assert.Contains(DieType.Fire, events.SingleOf<AttackRolled>().DieTypes);
+        Assert.Single(events.OfType<FlameWentOut>());
+        Assert.False(hero.Flame);
+    }
+
+    [Fact]
     public void ABlastHitsEveryoneOnTheTileAndAroundIt()
     {
         // Flame Blast aimed at the first dummy: it and the one beside it, not the one further off.
