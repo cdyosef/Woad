@@ -612,6 +612,26 @@ def rumble(c):
     c.rect(12, 24, 13, 1, RED[1])
 
 
+def boot(c):
+    """A green boot, toe to the right: Wend's."""
+    # The shaft, its cuff turned down, lit on the left.
+    c.rect(9, 3, 13, 3, GREEN[0])
+    c.rect(9, 5, 13, 1, GREEN[2])
+    c.rect(10, 6, 11, 14, GREEN[1])
+    c.rect(10, 6, 2, 14, GREEN[0])
+    c.rect(19, 6, 2, 14, GREEN[2])
+    # The laces up the front.
+    for y in range(8, 19, 3):
+        c.rect(17, y, 3, 1, GREEN[2])
+    # The foot, out to a round toe.
+    c.poly([(10, 19), (21, 18), (26, 20), (29, 23), (29, 25), (10, 25)], GREEN[1])
+    c.rect(11, 19, 10, 1, GREEN[0])
+    c.rect(23, 20, 3, 1, GREEN[0])
+    # The sole and the heel.
+    c.rect(9, 25, 21, 2, GREEN[2])
+    c.rect(9, 27, 7, 2, GREEN[2])
+
+
 def ability(c, name):
     if name == "rumble":
         rumble(c)
@@ -621,10 +641,7 @@ def ability(c, name):
         c.poly([(22, 10), (29, 16), (22, 22)], RED[1])
         c.rect(17, 14, 6, 4, RED[1])
     elif name == "wend":
-        for x, y in ((7, 24), (13, 17), (19, 22), (24, 12)):
-            c.circle(x, y, 2.6, LEATHER[1])
-            c.dot(x - 1, y - 3, LEATHER[0])
-            c.dot(x + 1, y - 3, LEATHER[0])
+        boot(c)
     elif name == "leap":
         for k in range(14):
             t = k / 13
