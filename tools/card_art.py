@@ -626,9 +626,12 @@ def boot(c):
     # The foot, out to a tall round toe.
     c.rect(12, 18, 14, 7, GREEN[1])
     c.circle(26, 21, 4, GREEN[1])
-    # Light over the curve of the toes, in front of the laces, tapering off to the left.
-    for x0, x1, y in ((21, 26, 18), (24, 27, 19), (27, 28, 18), (28, 29, 20), (29, 29, 21)):
+    # Light over the curve of the toes, from just under the laces sweeping down to the left and
+    # tapering off, a shadow under it.
+    for x0, x1, y in ((17, 21, 19), (15, 18, 20), (13, 15, 21), (12, 12, 22)):
         c.rect(x0, y, x1 - x0 + 1, 1, GREEN[0])
+    for x0, x1, y in ((19, 22, 20), (16, 18, 21), (14, 15, 22)):
+        c.rect(x0, y, x1 - x0 + 1, 1, GREEN[2])
     # Shade under it, deepest round the toe and tapering off to the left.
     for x0, x1, y in ((17, 29, 24), (24, 29, 23), (28, 29, 22)):
         c.rect(x0, y, x1 - x0 + 1, 1, GREEN[2])
