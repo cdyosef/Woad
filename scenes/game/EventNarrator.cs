@@ -16,8 +16,9 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         AttackRolled { Miasma: true } miasma => $"The {nameOf(miasma.AttackerId)}'s miasma chokes {Names(miasma.TargetIds)}: {miasma.Total} of poison.",
         AttackRolled attack => $"{nameOf(attack.AttackerId)} attacks {Names(attack.TargetIds)} with {attack.Total}.",
         DieRerolled { MovementPoints: int points } rerolled =>
-            $"{nameOf(rerolled.HeroId)} turns a {rerolled.OldFace} into a {rerolled.NewFace}: {Count(points, "step")}.",
-        DieRerolled rerolled => $"{nameOf(rerolled.HeroId)} turns a {rerolled.OldFace} into a {rerolled.NewFace}.",
+            $"{nameOf(rerolled.HeroId)}'s Luck rolls a {rerolled.LuckFace}: the {rerolled.NewFace} stays, {Count(points, "step")}.",
+        DieRerolled rerolled when rerolled.NewFace == rerolled.OldFace => $"{nameOf(rerolled.HeroId)}'s Luck rolls a {rerolled.LuckFace}: the {rerolled.OldFace} stays.",
+        DieRerolled rerolled => $"{nameOf(rerolled.HeroId)}'s Luck rolls a {rerolled.NewFace} over the {rerolled.OldFace}: the {rerolled.NewFace} stays.",
         HeroEnteredRoom entered => $"{nameOf(entered.HeroId)} enters a new room.",
         CompanionOrdered { Order: CompanionOrder.FindMe } ordered => $"{nameOf(ordered.OwnerId)} tells {nameOf(ordered.CompanionId)} to come and find {nameOf(ordered.OwnerId)}.",
         CompanionOrdered ordered => $"{nameOf(ordered.OwnerId)} tells {nameOf(ordered.CompanionId)} to {Command(ordered.Order)}.",

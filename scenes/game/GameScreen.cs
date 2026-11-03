@@ -514,7 +514,7 @@ public partial class GameScreen : Control
                 break;
 
             case DieRerolled rerolled:
-                await _dice.Reroll(rerolled.DieIndex, rerolled.NewFace);
+                await _dice.LuckRoll(rerolled.DieIndex, rerolled.LuckFace, rerolled.NewFace);
                 break;
 
             case HeroMoved moved:

@@ -615,6 +615,22 @@ public partial class GameScreen
 
             await UseAbility(_rumble);
             await ClickTile(slime.Position);
+            await WaitUntilIdle();
+
+            // Luck: clicking a die rolls the green Luck die over it, and the higher of the two stays.
+            if (_session.State.Turn?.PendingRoll is { } pending && aria.LuckRemaining > 0
+                && pending.Roll.Faces.Select((face, index) => (face, index)).Where(die => die.face < 6).Select(die => (int?)die.index).FirstOrDefault() is int lucky)
+            {
+                int before = pending.Roll.Faces[lucky];
+                int luckLeft = aria.LuckRemaining;
+                await ClickAt(this, _dice.DiePoint(lucky)!.Value);
+                await Pause(0.3);
+                await SaveShot("luck_rolling");
+                await WaitUntilIdle();
+                Check(aria.LuckRemaining == luckLeft - 1, "clicking a die in the tray spends a Luck");
+                Check(_session.State.Turn?.PendingRoll is not { } after || after.Roll.Faces[lucky] >= before, "Luck keeps the higher of the two dice");
+            }
+
             await ConfirmIfHeld();
             Check(_session.State.Turn!.AttackDiceUsed > 0 || _session.State.Turn.HeroId != aria.Id, "Rumble, then a click on the slime, attacks it");
             await WaitUntilIdle();

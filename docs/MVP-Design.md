@@ -369,7 +369,10 @@ facing door of the next room.
 - **Melee** needs an adjacent target. Heroes can strike diagonally too, unless walls close off both corners between them; monsters strike orthogonally only. **Ranged** needs line of sight; walls block it.
 - **Line of sight** runs between tile centers. Only walls (cracked ones too) block it, not pits, chests or
   other figures, and grazing a wall's corner is allowed.
-- **Luck** rerolls one of your own Wend, Rumble or Od Hand dice. A Wend die can be rerolled any time before
+- **Luck** rerolls one of your own Wend, Rumble or Od Hand dice: click it in the tray, and a green Luck die
+  rolls just above it. **The higher of the two stays**: higher, the Luck die drops onto it with a thump and
+  takes its place; lower (or the same), it pops in a green burst and the die stays as it was. A 6 can't be
+  bettered, so Luck can't be spent on one. A Wend die can be rerolled any time before
   your first step. With Luck left, an attack or Od Hand roll waits for you to reroll or confirm; spending
   your last Luck resolves it. Luck doesn't apply to defense rolls.
 
@@ -420,7 +423,7 @@ facing door of the next room.
 - **Other typed dice** (below) earn no Power Dice at all.
 - **Between runs:** Power Dice still banked at the end of a dungeon or a fight go home with the character
   and come along to the next one.
-- A Luck reroll that comes up 6 earns a Power Die too. Od Hand rolls earn and use Power Dice like attacks and
+- A Luck die that comes up 6 (so it stays) earns a Power Die too. Od Hand rolls earn and use Power Dice like attacks and
   moves.
 
 ### Damage types

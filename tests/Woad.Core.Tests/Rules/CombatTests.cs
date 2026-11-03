@@ -301,6 +301,27 @@ public class CombatTests
     }
 
     [Fact]
+    public void LuckKeepsTheHigherDieAndCantBetterASix()
+    {
+        // A 4 rolled; the Luck die's 2 is lower, so the 4 stays. Then a 6 can't be bettered.
+        GameSession session = TestRun.Start(Duel('m'), new ScriptedDice(4, 2), stats: GameRules.HeroBaseStats with { Luck = 2 });
+        Hero hero = session.HeroInSeat();
+        session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id));
+
+        var rerolled = session.Do(new RerollDie(hero.Id, 0)).SingleOf<DieRerolled>();
+
+        Assert.Equal((4, 4, 2), (rerolled.OldFace, rerolled.NewFace, rerolled.LuckFace));
+        Assert.Equal([4], session.State.Turn!.PendingRoll!.Roll.Faces);
+        Assert.Equal(1, hero.LuckRemaining);
+
+        GameSession sixes = TestRun.Start(Duel('m'), new ScriptedDice(6), stats: GameRules.HeroBaseStats with { Luck = 2 });
+        Hero lucky = sixes.HeroInSeat();
+        sixes.Do(new AttackMonster(lucky.Id, sixes.OnlyMonster().Id));
+        sixes.Do(new BankPowerDie(lucky.Id));
+        Assert.Contains("a 6 already", sixes.Refuse(new RerollDie(lucky.Id, 0)));
+    }
+
+    [Fact]
     public void SpendingTheLastLuckResolvesTheAttack()
     {
         GameSession session = TestRun.Start(Duel('m'), new ScriptedDice(1, 5, 1), stats: GameRules.HeroBaseStats with { Luck = 1 });

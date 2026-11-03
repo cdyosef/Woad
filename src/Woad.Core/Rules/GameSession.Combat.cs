@@ -164,26 +164,33 @@ public sealed partial class GameSession
             return "There's no such die.";
         }
 
+        if (roll.Faces[command.DieIndex] == GameRules.PowerDieFace)
+        {
+            return "That die is a 6 already: Luck can't better it.";
+        }
+
+        // The Luck die rolls over the die it might replace, and the higher of the two stays.
         int[] faces = [.. roll.Faces];
         int oldFace = faces[command.DieIndex];
-        faces[command.DieIndex] = RollOneDie();
+        int luck = RollOneDie();
+        faces[command.DieIndex] = Math.Max(oldFace, luck);
         var rerolled = new DiceRoll(faces);
         hero.LuckRemaining--;
 
         if (attack is not null)
         {
             attack.Roll = rerolled;
-            events.Add(new DieRerolled(hero.Id, command.DieIndex, oldFace, faces[command.DieIndex], rerolled, null));
+            events.Add(new DieRerolled(hero.Id, command.DieIndex, oldFace, faces[command.DieIndex], rerolled, null) { LuckFace = luck });
         }
         else
         {
             Turn.MovementRoll = rerolled;
             Turn.CountSteps();
-            events.Add(new DieRerolled(hero.Id, command.DieIndex, oldFace, faces[command.DieIndex], rerolled, Turn.MovementPoints));
+            events.Add(new DieRerolled(hero.Id, command.DieIndex, oldFace, faces[command.DieIndex], rerolled, Turn.MovementPoints) { LuckFace = luck });
         }
 
-        // A reroll that comes up 6 earns a Power Die; spending the last Luck resolves the attack.
-        EarnPowerDice(hero, faces[command.DieIndex] == GameRules.PowerDieFace ? 1 : 0, events);
+        // A Luck die that comes up 6 (and so stays) earns a Power Die; spending the last Luck resolves the attack.
+        EarnPowerDice(hero, luck == GameRules.PowerDieFace ? 1 : 0, events);
         return null;
     }
 
