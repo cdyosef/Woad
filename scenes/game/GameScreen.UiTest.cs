@@ -611,7 +611,7 @@ public partial class GameScreen
             await WaitUntilIdle();
             Check(!_rumbling, "a click off target puts Rumble away");
 
-            await DoubleClickAt(this, _board.GetGlobalRect().Position + BoardView.TileOrigin(slime.Position) + new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f));
+            await DoubleClickAt(this, TileCenter(slime.Position));
             await WaitUntilIdle();
             Check(_rumbling && _session.State.Turn!.AttackDiceUsed == 0, "double-clicking a monster in reach aims Rumble at it, without attacking yet");
             await ClickTile(new GridPosition(0, 0));
@@ -1185,7 +1185,7 @@ public partial class GameScreen
             await WaitUntilIdle();
             Hero aria = ActiveHero!;
             Monster slime = _session.State.Rooms["yard"].Monsters.Single();
-            Vector2 at = _board.GetGlobalRect().Position + BoardView.TileOrigin(slime.Position) + new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f);
+            Vector2 at = TileCenter(slime.Position);
 
             await DoubleClickAt(this, at);
             await WaitUntilIdle();
@@ -1560,6 +1560,9 @@ public partial class GameScreen
             await Click(this, _addPower);
             await WaitFor(this, () => !_busy, "the Power Die to roll");
         }
+
+        // Tiles are only where they'll be clicked once the view has stopped zooming.
+        await WaitFor(this, () => _board.ZoomSettled, "the view to stop zooming");
     }
 
     /// <summary>Clicks a card on the fanned belt, on the part of it that shows.</summary>
@@ -1589,5 +1592,5 @@ public partial class GameScreen
     }
 
     private Task ClickTile(GridPosition tile) =>
-        ClickAt(this, _board.GetGlobalRect().Position + BoardView.TileOrigin(tile) + new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f));
+        ClickAt(this, TileCenter(tile));
 }

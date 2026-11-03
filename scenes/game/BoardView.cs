@@ -53,6 +53,12 @@ public partial class BoardView : Control
     private float _zoom = 1;
     private float _zoomTarget = 1;
 
+    /// <summary>What's in view, in board pixels: the camera's view, or less of the board while zoomed in on the action.</summary>
+    private Rect2 ViewRect => new(_view, new Vector2(Pixels, Pixels) / _zoom);
+
+    /// <summary>The board pixel at the top-left of what's in view, zoom and all.</summary>
+    private Vector2 _view;
+
     /// <summary>The board pixel the zoom centers on, gliding toward <see cref="_zoomFocusTarget"/> as the action moves.</summary>
     private Vector2 _zoomFocus;
     private Vector2 _zoomFocusTarget;
@@ -123,11 +129,14 @@ public partial class BoardView : Control
     /// <summary>Eases the view back out to the whole room.</summary>
     public void ZoomOut() => _zoomTarget = 1;
 
+    /// <summary>The zoom has come to rest (in or out), so a tile stays where it is on screen.</summary>
+    public bool ZoomSettled => _zoom == _zoomTarget && _zoomFocus.DistanceTo(_zoomFocusTarget) < 0.5f;
+
     /// <summary>The tile panning must keep in view (the active hero's), or null to pan freely.</summary>
     public void SetPanAnchor(GridPosition? tile) => _anchor = tile;
 
     /// <summary>Whether a tile is inside the view right now (and so can be clicked).</summary>
-    public bool IsInView(GridPosition tile) => new Rect2(_camera, Pixels, Pixels).Encloses(TileRect(tile));
+    public bool IsInView(GridPosition tile) => ViewRect.Encloses(TileRect(tile));
 
     public override void _Process(double delta)
     {
@@ -161,9 +170,9 @@ public partial class BoardView : Control
         }
 
         float zoomed = Mathf.Clamp((_zoom - 1) / (ActionZoom - 1), 0, 1);
-        Vector2 view = _camera.Lerp(_zoomFocus - new Vector2(Pixels, Pixels) / (2 * _zoom), zoomed);
+        _view = _camera.Lerp(_zoomFocus - new Vector2(Pixels, Pixels) / (2 * _zoom), zoomed);
         Scale = new Vector2(_zoom, _zoom);
-        Position = -view * _zoom + jolt.Round();
+        Position = -_view * _zoom + jolt.Round();
 
         // A room much bigger than the view draws only what's near it: once the view has moved, again.
         if (Culls && _drawnAt.DistanceTo(_camera) > TileSize / 2f)
@@ -466,7 +475,7 @@ public partial class BoardView : Control
     public override void _GuiInput(InputEvent @event)
     {
         // The board runs on beyond the view, under the panels around it: only the part in view takes the mouse.
-        if (@event is InputEventMouse mouse && !_dragging && !new Rect2(_camera, Pixels, Pixels).HasPoint(mouse.Position))
+        if (@event is InputEventMouse mouse && !_dragging && !ViewRect.HasPoint(mouse.Position))
         {
             return;
         }
@@ -1176,7 +1185,7 @@ public partial class BoardView : Control
     private GridPosition? TileAt(Vector2 position)
     {
         // Only tiles inside the view: the board runs on under the panels around it.
-        if (!new Rect2(_camera, Pixels, Pixels).HasPoint(position))
+        if (!ViewRect.HasPoint(position))
         {
             return null;
         }

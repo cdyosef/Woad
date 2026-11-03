@@ -68,7 +68,7 @@ public partial class GameScreen : Control
 
     /// <summary>The middle of a board tile, in screen (640x360) coordinates.</summary>
     internal Vector2 TileCenter(GridPosition tile) =>
-        _board.GetGlobalRect().Position + BoardView.TileOrigin(tile) + new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f);
+        _board.GetGlobalTransform() * (BoardView.TileOrigin(tile) + new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f));
 
     private Hero? ActiveHero => _session.State.ActiveHero;
 
