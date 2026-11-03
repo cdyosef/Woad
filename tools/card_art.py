@@ -612,6 +612,41 @@ def rumble(c):
     c.rect(12, 24, 13, 1, RED[1])
 
 
+def boot(c):
+    """A green boot, toe to the right: Wend's (after Chris's drawing)."""
+    # The leg, its top a little higher at the front, and the heel flaring out to the sole.
+    c.poly([(4, 4.5), (14, 3.5), (21, 2.5), (18.6, 15), (4.6, 19), (2, 26.5)], GREEN[1])
+    c.poly([(4, 4.5), (14, 3.5), (21, 2.5), (18.6, 15), (12, 19), (4.6, 19)], GREEN[1])
+    c.poly([(4.6, 18), (12, 18), (12, 26), (2, 26)], GREEN[1])
+    # The toe: a big dome from the foot of the laces down to the sole.
+    c.poly([(18, 14.2), (21, 14.6), (24, 16), (26.5, 18.3), (28.3, 21.2), (29.4, 24), (29.8, 26), (10, 26), (10.5, 18.5), (13.5, 15.6)], GREEN[1])
+    # Light down the back of the leg.
+    c.line(4.5, 5, 5.3, 18.5, GREEN[0])
+    c.line(5.3, 19.5, 3.2, 25, GREEN[0])
+    # The opening at the top: a V, the tongue in shadow inside it.
+    c.poly([(14, 3.6), (18.5, 3), (16.4, 7)], GREEN[2])
+    # The tongue's edge, down the front of the leg.
+    c.line(20.3, 3.5, 18.3, 14, GREEN[2])
+    # Two laces criss-crossed between their eyelets.
+    for y in (8, 12):
+        c.line(15, y, 17, y + 2, GREEN[2])
+        c.line(17, y, 15, y + 2, GREEN[2])
+        for ex, ey in ((15, y), (17, y), (15, y + 2), (17, y + 2)):
+            c.dot(ex, ey, OUTLINE)
+    # The curve of the toes, from the foot of the laces sweeping down to the left, lit just under it.
+    c.line(17.5, 14.6, 14, 15.8, GREEN[2])
+    c.line(14, 15.8, 11, 18.4, GREEN[2])
+    c.line(18.5, 15.6, 14.5, 16.8, GREEN[0])
+    c.line(14, 17, 12.5, 18.4, GREEN[0])
+    # Shade round the far side of the dome.
+    c.line(26.8, 19.5, 28.6, 23, GREEN[2])
+    c.line(28.7, 23.2, 29, 25.5, GREEN[2])
+    # The sole: a seam, then the tread.
+    c.rect(2, 26, 28, 1, GREEN[2])
+    c.rect(2, 27, 28, 2, GREEN[1])
+    c.rect(2, 28, 28, 1, GREEN[2])
+
+
 def ability(c, name):
     if name == "rumble":
         rumble(c)
@@ -621,10 +656,7 @@ def ability(c, name):
         c.poly([(22, 10), (29, 16), (22, 22)], RED[1])
         c.rect(17, 14, 6, 4, RED[1])
     elif name == "wend":
-        for x, y in ((7, 24), (13, 17), (19, 22), (24, 12)):
-            c.circle(x, y, 2.6, LEATHER[1])
-            c.dot(x - 1, y - 3, LEATHER[0])
-            c.dot(x + 1, y - 3, LEATHER[0])
+        boot(c)
     elif name == "leap":
         for k in range(14):
             t = k / 13
