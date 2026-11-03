@@ -785,6 +785,10 @@ public partial class GameScreen : Control
                 CalloutOver(broke.HeroId, "SNAP!", Palette.Danger);
                 break;
 
+            case FlameHurled hurled:
+                await UpdateFigure(hurled.HeroId, figure => figure.Torch = _session.State.GetHero(hurled.HeroId).TorchesHeld > 0, 0.1);
+                break;
+
             case FlameWentOut flameOut:
                 CalloutOver(flameOut.HeroId, "FLAME OUT!", Palette.Fire);
                 await UpdateFigure(flameOut.HeroId, figure => figure.Torch = _session.State.GetHero(flameOut.HeroId).TorchesHeld > 0, 0.2);

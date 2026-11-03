@@ -108,7 +108,7 @@ public partial class GameScreen
     private void AimAt(Monster monster)
     {
         _rumbling = true;
-        _stealing = _shoving = _leaping = _rushing = false;
+        _stealing = _shoving = _leaping = _rushing = _hurling = false;
         _goal = null;
         Log($"Click the {monster.Definition.Name} again to attack it. Right-click to cancel.", Palette.Danger);
         RefreshPanels();
@@ -269,6 +269,22 @@ public partial class GameScreen
             else
             {
                 _leaping = _rushing = false;
+                RefreshPanels();
+            }
+
+            return;
+        }
+
+        if (_hurling)
+        {
+            if (room.MonsterAt(tile) is { } burned && _session.GetHeldFireTargets().Contains(burned.Position))
+            {
+                _hurling = false;
+                ExecuteOdHand((heroId, dice, _, power) => new HurlHeldFire(heroId, burned.Id, dice ?? 0, power));
+            }
+            else
+            {
+                _hurling = false;
                 RefreshPanels();
             }
 
@@ -643,6 +659,11 @@ public partial class GameScreen
         if (_shoving)
         {
             return "Shove: click a monster next to you (orange) to push it a tile. Right-click to cancel.";
+        }
+
+        if (_hurling)
+        {
+            return "Hold Fire: click a monster in reach (orange) to hurl the flame at it, with your selected Od Hand dice. Right-click to cancel.";
         }
 
         if (_rumbling)

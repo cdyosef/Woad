@@ -163,6 +163,7 @@ public sealed partial class GameSession
             OrderCompanion c => Handle(c, events),
             SwitchControl c => Handle(c, events),
             SetLuckAsks c => Handle(c),
+            HurlHeldFire c => Handle(c, events),
             Shove c => Handle(c, events),
             AttackAlly c => Handle(c, events),
             Leap c => Handle(c, events),

@@ -154,6 +154,76 @@ public sealed partial class GameSession
         return null;
     }
 
+    /// <summary>The spell the flame of Hold Fire comes from, and is hurled as.</summary>
+    private const string HurlFireId = "hurl_fire";
+
+    /// <summary>Why the active hero can't hurl the flame of Hold Fire now (at <paramref name="monsterId"/>, if given), or null.</summary>
+    public string? CheckHurlHeldFire(int? monsterId = null, int dice = 0)
+    {
+        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
+        {
+            return "Finish the roll first.";
+        }
+
+        Hero hero = ActiveHero;
+        if (!hero.Flame)
+        {
+            return "You hold no fire to hurl.";
+        }
+
+        if (dice < 0 || dice > OdHandDiceLeft)
+        {
+            return OdHandDiceLeft == 0 ? "You've no Od Hand dice left to add." : $"Add 0 to {OdHandDiceLeft} Od Hand dice.";
+        }
+
+        if (monsterId is not int id)
+        {
+            return GetHeldFireTargets().Count > 0 ? null : "There's no monster in reach to hurl it at.";
+        }
+
+        return ActiveRoom.FindMonster(id) is { } monster && GetHeldFireTargets().Contains(monster.Position) ? null : "That's out of reach.";
+    }
+
+    /// <summary>Where the flame of Hold Fire could be hurled: monsters within Hurl Fire's range and sight.</summary>
+    public IReadOnlyList<GridPosition> GetHeldFireTargets()
+    {
+        if (State.Turn is null || !ActiveHero.Flame || Content.FindSpell(HurlFireId) is not { } spell)
+        {
+            return [];
+        }
+
+        Hero hero = ActiveHero;
+        Room room = ActiveRoom;
+        return [.. room.Monsters.Where(monster => SpellReaches(hero, room, monster) && InSpellRange(spell, room, hero, monster.NearestTile(hero.Position))).Select(monster => monster.Position)];
+    }
+
+    private string? Handle(HurlHeldFire command, List<GameEvent> events)
+    {
+        if (CheckHurlHeldFire(command.MonsterId, command.Dice) is { } error)
+        {
+            return error;
+        }
+
+        if (CheckBankedPowerDice(ActiveHero, command.PowerDice) is { } powerError)
+        {
+            return powerError;
+        }
+
+        // Thrown, the flame goes: a Fire die and the Magic, with the Od Hand dice added; no Power to pay.
+        Hero hero = ActiveHero;
+        Room room = ActiveRoom;
+        Monster monster = room.FindMonster(command.MonsterId)!;
+        SpellDefinition spell = Content.GetSpell(HurlFireId);
+        hero.Flame = false;
+        Turn.OdHandDiceUsed += command.Dice;
+        Reveal(hero, events);
+        events.Add(new FlameHurled(hero.Id, monster.Id));
+        SpendBankedPowerDice(hero, command.PowerDice, events);
+        var casting = new SpellCasting(spell, monster.Position, new Dictionary<int, (int, int)>(), 0, null);
+        RollHeroAttack(hero, command.Dice, hero.EffectiveStats.Magic, [monster.Id], DamageSource.Spell, events, command.PowerDice, typed: [(spell.DieType, spell.Dice)], casting: casting);
+        return null;
+    }
+
     /// <summary>Whether the active hero could cast the spell at all now: they know it, it's their move, and they have the Power and a Rumble die.</summary>
     private string? CheckCast(string spellId, int extraPower)
     {

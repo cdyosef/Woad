@@ -114,6 +114,25 @@ public class MagicTests
     }
 
     [Fact]
+    public void HoldFireIsHurledWithOdHandDiceForNoPowerAndTheFlameIsGone()
+    {
+        // The Od Hand die's 3 and the Fire die's 2, plus Magic 1: 6.
+        GameSession session = TestRun.Start(Range, new ScriptedDice(3, 2), stats: TestRun.HeroStats with { OdHandDice = 1 });
+        Hero hero = Mage(session, magic: 1, power: 0, "hurl_fire");
+        hero.Flame = true;
+        Monster dummy = session.OnlyMonster();
+        Assert.Contains(dummy.Position, session.GetHeldFireTargets());
+
+        IReadOnlyList<GameEvent> events = session.Do(new HurlHeldFire(hero.Id, dummy.Id, Dice: 1));
+
+        Assert.Single(events.OfType<FlameHurled>());
+        Assert.Equal(6, events.SingleOf<AttackRolled>().Total);
+        Assert.False(hero.Flame);
+        Assert.Equal((0, 0), (session.OdHandDiceLeft, hero.Power.Banked));
+        Assert.Contains("no fire", session.Refuse(new HurlHeldFire(hero.Id, dummy.Id)));
+    }
+
+    [Fact]
     public void ABlastHitsEveryoneOnTheTileAndAroundIt()
     {
         // Flame Blast aimed at the first dummy: it and the one beside it, not the one further off.

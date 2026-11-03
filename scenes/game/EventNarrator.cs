@@ -128,6 +128,7 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         ControlSwitched made => $"{nameOf(made.HeroId)} is a hero now, played by a player.",
         WeaponBroke broke => $"{nameOf(broke.HeroId)}'s {cardNameOf(broke.CardId)} breaks.",
         StoneLanded landed => $"The {cardNameOf(landed.CardId)} comes down whole, there to be picked up.",
+        FlameHurled hurled => $"{nameOf(hurled.HeroId)} hurls the flame they held at the {nameOf(hurled.MonsterId)}!",
         FlameWentOut flameOut => $"{nameOf(flameOut.HeroId)}'s flame gutters and goes out.",
         TorchBurnedOut burnedOut => $"{nameOf(burnedOut.HeroId)}'s torch gutters and burns out.",
         HeroShackled shackled => $"{nameOf(shackled.MonsterId)}'s chain shackles {nameOf(shackled.HeroId)}! No moving until a key or a picked lock ({shackled.Lock}+) frees them.",

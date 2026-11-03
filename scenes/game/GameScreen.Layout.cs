@@ -96,6 +96,11 @@ public partial class GameScreen
     /// <summary>Shove was pressed: the next click on an adjacent monster tries to push it.</summary>
     private bool _shoving;
 
+    /// <summary>Hold Fire's card played: the next click on a monster in reach hurls the flame at it.</summary>
+    private bool _hurling;
+
+    private Button _holdFire = null!;
+
     /// <summary>Leap was pressed: the next click on a purple tile leaps toward it.</summary>
     private bool _leaping;
 
@@ -331,6 +336,12 @@ public partial class GameScreen
         if (_shoving)
         {
             _board.SetHighlights([], [], _session.GetShoveTargets(), []);
+            return;
+        }
+
+        if (_hurling)
+        {
+            _board.SetHighlights([], [], _session.GetHeldFireTargets(), []);
             return;
         }
 

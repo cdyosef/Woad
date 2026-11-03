@@ -222,6 +222,12 @@ public sealed record Escape(int HeroId) : GameCommand(HeroId);
 /// </summary>
 public sealed record OrderCompanion(int HeroId, int CompanionId, CompanionOrder Order) : GameCommand(HeroId);
 
+/// <summary>
+/// Hurls the flame of Hold Fire (Hurl Fire cast on yourself) at a monster in Hurl Fire's range: its Fire die and
+/// the hero's Magic, with the Od Hand dice they add (<paramref name="Dice"/>); no Power, and the flame is gone.
+/// </summary>
+public sealed record HurlHeldFire(int HeroId, int MonsterId, int Dice = 0, int PowerDice = 0) : GameCommand(HeroId);
+
 /// <summary>Sets which rolls Luck is asked on when they're about to fail (the Luck menu). Free, any time on the hero's turn.</summary>
 public sealed record SetLuckAsks(int HeroId, LuckRoll Asks) : GameCommand(HeroId);
 

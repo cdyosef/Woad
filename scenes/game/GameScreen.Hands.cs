@@ -95,6 +95,20 @@ public partial class GameScreen
             RefreshPanels();
         };
         hidden.AddChild(_bullRush);
+        _holdFire = new Button { Text = "Hold Fire" };
+        _holdFire.Pressed += () =>
+        {
+            bool hurling = !_hurling;
+            CancelSelection();
+            _hurling = hurling;
+            if (_hurling)
+            {
+                Log("Hold Fire: click a monster in reach to hurl the flame at it, with the Od Hand dice you've selected. Right-click to cancel.", Palette.Fire);
+            }
+
+            RefreshPanels();
+        };
+        hidden.AddChild(_holdFire);
         _highAlert = new Button { Text = "High Alert" };
         _highAlert.Pressed += () => Execute(new HighAlert(ActiveHero!.Id));
         hidden.AddChild(_highAlert);
@@ -129,6 +143,7 @@ public partial class GameScreen
             new("disarm", "Disarm", _disarm, () => Beside().Any(tile => _session.CheckDisarm(tile) is null), () => HasMeans(Skill.Disarm)),
             new("rouse", "Aid", _aid, () => _session.GetAidTargets().Count > 0, () => HasMeans(Skill.Aid)),
             new("parry", "Parry", _parry, Threatened, () => Knows(Skill.Parry)),
+            new("spell_hurl_fire", "Hold Fire", _holdFire, () => _session.GetHeldFireTargets().Count > 0, () => ActiveHero?.Flame == true),
             new("learn", "Learn", _learn, () => true),
         ]);
         _odHand.Slot = EquipSlot.OffHand;
@@ -536,6 +551,8 @@ public partial class GameScreen
         Hold(_guard, ready, !turn ? "" : _session.GetGuardTargets().Count > 0 ? null : _session.CheckGuard(ActiveHero!.Id) ?? "");
         Hold(_highAlert, ready, turn ? _session.CheckHighAlert() : "");
         Hold(_bullRush, ready, turn ? _session.CheckBullRush() : "");
+        Hold(_holdFire, ready, turn ? _session.CheckHurlHeldFire() : "");
+        _hurling &= !_holdFire.Disabled;
         _rushing &= !_bullRush.Disabled;
 
         Hero? hero = ActiveHero;
