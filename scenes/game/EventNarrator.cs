@@ -36,7 +36,7 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         Leaped leap when leap.Landing == leap.Target => $"{nameOf(leap.HeroId)} leaps ({leap.Roll}) and lands on target.",
         Leaped leap => $"{nameOf(leap.HeroId)} leaps ({leap.Roll}) but comes down short!",
         StayedAfloat afloat => $"{nameOf(afloat.HeroId)} treads water, spending a Rumble die to stay afloat.",
-        Drowned drowned => $"{nameOf(drowned.HeroId)} has no strength left to swim and is washed back to shore!",
+        Drowned drowned => $"{nameOf(drowned.HeroId)} has no strength left to swim and goes under!",
         PowerDiceEarned earned => $"{nameOf(earned.HeroId)} rolled a 6 and earns a Power Die!",
         PowerDieAdded added => $"{nameOf(added.HeroId)} adds a Power Die: {added.Face}, for {added.Total}.",
         ConditionChanged { Count: 0 } cleared => $"{nameOf(cleared.EntityId)} is rid of {DieTypes.Label(cleared.Condition).ToLowerInvariant()}.",
