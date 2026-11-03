@@ -613,31 +613,38 @@ def rumble(c):
 
 
 def boot(c):
-    """A green boot, toe to the right: Wend's."""
-    # The shaft, a thin cuff at the top, lit on the left.
-    c.rect(10, 5, 11, 20, GREEN[1])
-    c.rect(10, 5, 2, 20, GREEN[0])
-    c.rect(10, 4, 11, 1, GREEN[0])
-    c.rect(10, 5, 11, 1, GREEN[2])
-    # The laces criss-crossing up the front of the leg.
-    for y in (7, 11, 15):
-        c.line(17, y, 19, y + 2, GREEN[2])
-        c.line(19, y, 17, y + 2, GREEN[2])
-    # The foot, out to a tall round toe.
-    c.rect(12, 18, 14, 7, GREEN[1])
-    c.circle(26, 21, 4, GREEN[1])
-    # Light over the curve of the toes, from just under the laces sweeping down to the left and
-    # tapering off, a shadow under it.
-    for x0, x1, y in ((17, 21, 19), (15, 18, 20), (13, 15, 21), (12, 12, 22)):
-        c.rect(x0, y, x1 - x0 + 1, 1, GREEN[0])
-    for x0, x1, y in ((19, 22, 20), (16, 18, 21), (14, 15, 22)):
-        c.rect(x0, y, x1 - x0 + 1, 1, GREEN[2])
-    # Shade under it, deepest round the toe and tapering off to the left.
-    for x0, x1, y in ((17, 29, 24), (24, 29, 23), (28, 29, 22)):
-        c.rect(x0, y, x1 - x0 + 1, 1, GREEN[2])
-    # The sole, heel and toe even, a notch where they meet.
-    c.rect(10, 25, 19, 2, GREEN[2])
-    c.dot(14, 26, OUTLINE)
+    """A green boot, toe to the right: Wend's (after Chris's drawing)."""
+    # The leg, its top a little higher at the front, and the heel flaring out to the sole.
+    c.poly([(4, 4.5), (14, 3.5), (21, 2.5), (18.6, 15), (12, 19), (4, 19)], GREEN[1])
+    c.poly([(4, 18), (12, 18), (12, 26.5), (2, 26.5)], GREEN[1])
+    # The toe: a big dome from the foot of the laces down to the sole.
+    c.poly([(18, 14.2), (21, 14.6), (24, 16), (26.5, 18.3), (28.3, 21.2), (29.4, 24), (29.8, 26), (10, 26), (10.5, 18.5), (13.5, 15.6)], GREEN[1])
+    # Light down the back of the leg.
+    c.line(4, 5, 4, 18, GREEN[0])
+    c.line(4, 19, 2.6, 25, GREEN[0])
+    # The opening at the top: a V, the tongue in shadow inside it.
+    c.poly([(14, 3.6), (18.5, 3), (16.4, 7)], GREEN[2])
+    # The tongue's edge, down the front of the leg.
+    c.line(20.3, 3.5, 18.3, 14, GREEN[2])
+    # Two laces criss-crossed between their eyelets.
+    for y in (5, 10):
+        for k in range(5):
+            c.dot(11 + k, y + k, GREEN[0])
+            c.dot(15 - k, y + k, GREEN[0])
+        for ex, ey in ((11, y), (15, y), (11, y + 4), (15, y + 4)):
+            c.dot(ex, ey, OUTLINE)
+    # The curve of the toes, from the foot of the laces sweeping down to the left, lit just under it.
+    c.line(17.5, 14.6, 14, 15.8, GREEN[2])
+    c.line(14, 15.8, 11, 18.4, GREEN[2])
+    c.line(18.5, 15.6, 14.5, 16.8, GREEN[0])
+    c.line(14, 17, 12.5, 18.4, GREEN[0])
+    # Shade round the far side of the dome.
+    c.line(26.8, 19.5, 28.6, 23, GREEN[2])
+    c.line(28.7, 23.2, 29, 25.5, GREEN[2])
+    # The sole: a seam, then the tread.
+    c.rect(2, 26, 28, 1, GREEN[2])
+    c.rect(2, 27, 28, 2, GREEN[1])
+    c.rect(2, 28, 28, 1, GREEN[2])
 
 
 def ability(c, name):
