@@ -799,7 +799,7 @@ public partial class GameScreen
                 ExecuteForActiveHero(heroId => new RerollDie(heroId, index));
             }
         };
-        _luckPrompt = new LuckPrompt { Position = _dice.Position + new Vector2((_dice.Size.X - 220) / 2, -21) };
+        _luckPrompt = new LuckPrompt { Position = _dice.Position + new Vector2((_dice.Size.X - 264) / 2, -21) };
         AddChild(_luckPrompt);
         _luckMenu = new LuckMenu { Position = BoardOrigin + new Vector2((BoardView.Pixels - 214) / 2, 60) };
         _luckMenu.Changed += asks => ExecuteForActiveHero(heroId => new SetLuckAsks(heroId, asks));

@@ -8,7 +8,7 @@ namespace Woad.Core.Rules;
 /// The save after a fall to a lower floor: what lights and spells a hero has (torches in hand, the flame of
 /// Hold Fire, Shining Light, Shadowbind, Snowshoes) stay only if one exploding die and the Focus Bonus reach
 /// <see cref="GameRules.TorchFallSave"/> for each floor fallen. Short of it, the hero can boost it: add the
-/// Od Hand dice they have unspent, one at a time (exploding too), or try their Luck on a die. The save waits
+/// Od Hand dice they have unspent or their banked Power Dice, one at a time (exploding too), or try their Luck on a die. The save waits
 /// on the hero (see <see cref="Hero.PendingSave"/>) until they let it stand, it's made, or their next turn
 /// starts; a companion's, or one that can't be boosted, settles at once.
 /// </summary>
@@ -68,11 +68,14 @@ public sealed partial class GameSession
         save.Faces.AddRange(RollExploding());
         events.Add(new FallSaveRolled(hero.Id, [.. save.Faces], save.Focus, save.Difficulty));
         hero.PendingSave = save;
-        if (save.Made || hero.IsCompanion || (OdHandUnspent(hero) == 0 && hero.LuckLeft == 0))
+        if (save.Made || hero.IsCompanion || !CanBoost(hero))
         {
             SettleFallSave(hero, events);
         }
     }
+
+    /// <summary>Whether a hero has anything to boost a save with: unspent Od Hand dice, Luck, or banked Power Dice.</summary>
+    private bool CanBoost(Hero hero) => OdHandUnspent(hero) > 0 || hero.LuckLeft > 0 || hero.Power.Banked > 0;
 
     /// <summary>Settles a hero's save: made, everything stays lit; missed, the torches in hand burn out and the flame and spells on them end.</summary>
     private void SettleFallSave(Hero hero, List<GameEvent> events)
@@ -113,32 +116,41 @@ public sealed partial class GameSession
     }
 
     /// <summary>Why the hero can't do something to their waiting save now, or null.</summary>
-    public string? CheckFallSave(int heroId, bool boost = false, bool luck = false)
+    public string? CheckFallSave(int heroId, bool boost = false, bool luck = false, bool power = false)
     {
         if (State.Heroes.FirstOrDefault(hero => hero.Id == heroId) is not { PendingSave: not null } hero)
         {
             return "There's no save waiting.";
         }
 
-        return boost && OdHandUnspent(hero) < 1 ? "You've no Od Hand dice left to add."
+        return power ? (hero.Power.Banked < 1 ? "You've no Power Dice banked." : null)
+            : boost && OdHandUnspent(hero) < 1 ? "You've no Od Hand dice left to add."
             : luck && hero.LuckLeft < 1 ? "You have no Luck left."
             : null;
     }
 
     private string? Handle(BoostFallSave command, List<GameEvent> events)
     {
-        if (CheckFallSave(command.HeroId, boost: true) is { } error)
+        if (CheckFallSave(command.HeroId, boost: !command.Power, power: command.Power) is { } error)
         {
             return error;
         }
 
         Hero hero = State.GetHero(command.HeroId);
         FallSave save = hero.PendingSave!;
-        SpendOdHandDie(hero);
+        if (command.Power)
+        {
+            SpendBankedPowerDice(hero, 1, events);
+        }
+        else
+        {
+            SpendOdHandDie(hero);
+        }
+
         List<int> faces = RollExploding();
         save.Faces.AddRange(faces);
         events.Add(new FallSaveBoosted(hero.Id, [.. faces], save.Total));
-        if (save.Made || (OdHandUnspent(hero) == 0 && hero.LuckLeft == 0))
+        if (save.Made || !CanBoost(hero))
         {
             SettleFallSave(hero, events);
         }
@@ -175,7 +187,7 @@ public sealed partial class GameSession
 
         save.Faces[command.DieIndex] = Math.Max(old, luck);
         events.Add(new DieRerolled(hero.Id, command.DieIndex, old, save.Faces[command.DieIndex], new Dice.DiceRoll([.. save.Faces]), null) { LuckFace = luck });
-        if (save.Made || (OdHandUnspent(hero) == 0 && hero.LuckLeft == 0))
+        if (save.Made || !CanBoost(hero))
         {
             SettleFallSave(hero, events);
         }
@@ -195,21 +207,30 @@ public sealed partial class GameSession
     }
 
     /// <summary>Why the active hero can't add an Od Hand die to the Focus check waiting on Luck, or null.</summary>
-    public string? CheckAddOdHandDie() =>
-        State.Turn?.PendingRoll is not { Check.Kind: OdHandCheckKind.Learn } ? "Only a Focus check (learning a spell) can take more Od Hand dice now."
+    public string? CheckAddOdHandDie(bool power = false) =>
+        State.Turn?.PendingRoll is not { Check.Kind: OdHandCheckKind.Learn } ? "Only a Focus check (learning a spell) can take more dice now."
+        : power ? (ActiveHero.Power.Banked < 1 ? "You've no Power Dice banked." : null)
         : OdHandDiceLeft < 1 ? "You've no Od Hand dice left to add."
         : null;
 
     private string? Handle(AddOdHandDie command, List<GameEvent> events)
     {
-        if (CheckAddOdHandDie() is { } error)
+        if (CheckAddOdHandDie(command.Power) is { } error)
         {
             return error;
         }
 
-        // A die more on the Focus check: it waits again while there's more to add, or Luck to try.
+        // A die more on the Focus check, an Od Hand die or a banked Power Die: it waits again while there's more to add, or Luck to try.
         PendingRoll pending = Turn.PendingRoll!;
-        Turn.OdHandDiceUsed++;
+        if (command.Power)
+        {
+            SpendBankedPowerDice(ActiveHero, 1, events);
+        }
+        else
+        {
+            Turn.OdHandDiceUsed++;
+        }
+
         int face = RollOneDie();
         pending.Roll = pending.Roll.With(face);
         events.Add(new OdHandDieAdded(command.HeroId, face, pending.Total));

@@ -40,6 +40,23 @@ public class ScrollLearningTests
     }
 
     [Fact]
+    public void AFocusCheckTakesABankedPowerDieAfterTheRoll()
+    {
+        // 3 and the free die's 2 and Magic 2: 7, short of 9, and no Od Hand die left; a banked Power Die (4): 11.
+        GameSession session = TestRun.Start(Huddle, new ScriptedDice(3, 2, 4), cards: ["t_scroll"], stats: TestRun.HeroStats with { OdHandDice = 1 });
+        Hero hero = session.HeroInSeat();
+        hero.BaseStats = hero.BaseStats with { Magic = 2 };
+        hero.Power.Banked = 1;
+
+        session.Do(new LearnSpell(hero.Id, hero.Card("t_scroll").Id, Dice: 1));
+        IReadOnlyList<GameEvent> events = session.Do(new AddOdHandDie(hero.Id, Power: true));
+
+        Assert.Equal(11, events.SingleOf<OdHandDieAdded>().Total);
+        Assert.Single(events.OfType<SpellLearned>());
+        Assert.Equal(0, hero.Power.Banked);
+    }
+
+    [Fact]
     public void BeatingSixPlusTheSpellsLevelLearnsItAndUsesUpTheScroll()
     {
         // One Od Hand die (3), the free die that starts every attempt (2) and Magic 4: 9, just enough for a level 3 spell.

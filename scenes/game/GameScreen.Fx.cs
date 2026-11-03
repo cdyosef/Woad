@@ -63,7 +63,7 @@ public partial class GameScreen
         }
 
         // A Focus check (learning a spell) always asks while there's Luck or an Od Hand die to add.
-        if (pending && turn.PendingRoll is { Check.Kind: OdHandCheckKind.Learn } focus && (hero.LuckLeft > 0 || _session.OdHandDiceLeft > 0))
+        if (pending && turn.PendingRoll is { Check.Kind: OdHandCheckKind.Learn } focus && (hero.LuckLeft > 0 || _session.OdHandDiceLeft > 0 || hero.Power.Banked > 0))
         {
             return (focus, false);
         }
@@ -155,7 +155,8 @@ public partial class GameScreen
                 _wendLuckDone = roll;
                 RefreshPanels();
             }
-        }, focusCheck ? "Focus: more?" : "Try your Luck?", focusCheck ? () => ExecuteForActiveHero(heroId => new AddOdHandDie(heroId)) : null, focusCheck && _session.OdHandDiceLeft > 0);
+        }, focusCheck ? "Focus: more?" : "Try your Luck?", focusCheck ? () => ExecuteForActiveHero(heroId => new AddOdHandDie(heroId)) : null, focusCheck && _session.OdHandDiceLeft > 0,
+            focusCheck ? () => ExecuteForActiveHero(heroId => new AddOdHandDie(heroId, Power: true)) : null, focusCheck && ActiveHero?.Power.Banked > 0);
     }
 
     /// <summary>
@@ -178,7 +179,7 @@ public partial class GameScreen
         }
 
         (object, int)? offer = (save, save.Total + 100 * saver.LuckLeft);
-        _luckPrompt.CanAdd(_session.OdHandUnspent(saver) > 0);
+        _luckPrompt.CanAdd(_session.OdHandUnspent(saver) > 0, saver.Power.Banked > 0);
         if (Equals(offer, _saveOffer))
         {
             return;
@@ -194,7 +195,8 @@ public partial class GameScreen
             _saveOffer = null;
             SlowForLuck(false);
             Execute(new LetSaveStand(saverId));
-        }, $"Keep the light? {save.Total}/{save.Difficulty}", () => Execute(new BoostFallSave(saverId)), _session.OdHandUnspent(saver) > 0);
+        }, $"Keep the light? {save.Total}/{save.Difficulty}", () => Execute(new BoostFallSave(saverId)), _session.OdHandUnspent(saver) > 0,
+            () => Execute(new BoostFallSave(saverId, Power: true)), saver.Power.Banked > 0);
     }
 
     /// <summary>The save after a fall on offer, and its total and Luck then (a change starts the countdown afresh).</summary>

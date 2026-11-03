@@ -454,6 +454,23 @@ public class DungeonSecretsTests
     }
 
     [Fact]
+    public void AFallsSaveTakesABankedPowerDie()
+    {
+        // A 3, short; a Power Die's 5 makes it.
+        GameSession session = TrapDoorWithTorch(new ScriptedDice(1, 6, 1, 3, 5));
+        Hero hero = session.HeroInSeat();
+        hero.Power.Banked = 1;
+        session.Do(new RollMovement(hero.Id));
+        session.Do(new MoveHero(hero.Id, new GridPosition(4, 2)));
+
+        IReadOnlyList<GameEvent> events = session.Do(new BoostFallSave(hero.Id, Power: true));
+
+        Assert.True(events.SingleOf<FallSaveSettled>().Made);
+        Assert.Equal(0, hero.Power.Banked);
+        Assert.Equal(1, session.OdHandUnspent(hero));
+    }
+
+    [Fact]
     public void ADeepHoleDropsTwoFloorsAHeartMoreForTheSecond()
     {
         GameSession session = Stacked(new ScriptedDice(1));

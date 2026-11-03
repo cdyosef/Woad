@@ -229,8 +229,8 @@ public sealed record OrderCompanion(int HeroId, int CompanionId, CompanionOrder 
 /// </summary>
 public sealed record HurlHeldFire(int HeroId, GridPosition Target, int Dice = 0, int PowerDice = 0) : GameCommand(HeroId);
 
-/// <summary>Adds one of the hero's unspent Od Hand dice (exploding) to their save after a fall. Their turn or not.</summary>
-public sealed record BoostFallSave(int HeroId) : GameCommand(HeroId);
+/// <summary>Adds one of the hero's unspent Od Hand dice (exploding) to their save after a fall, or with <paramref name="Power"/> one of their banked Power Dice. Their turn or not.</summary>
+public sealed record BoostFallSave(int HeroId, bool Power = false) : GameCommand(HeroId);
 
 /// <summary>Tries the hero's Luck on a die of their save after a fall: the higher stays. Their turn or not.</summary>
 public sealed record LuckOnFallSave(int HeroId, int DieIndex) : GameCommand(HeroId);
@@ -238,8 +238,8 @@ public sealed record LuckOnFallSave(int HeroId, int DieIndex) : GameCommand(Hero
 /// <summary>Lets the hero's save after a fall stand as it is.</summary>
 public sealed record LetSaveStand(int HeroId) : GameCommand(HeroId);
 
-/// <summary>Adds an Od Hand die to the Focus check (learning a spell) waiting on the hero's choice.</summary>
-public sealed record AddOdHandDie(int HeroId) : GameCommand(HeroId);
+/// <summary>Adds an Od Hand die to the Focus check (learning a spell) waiting on the hero's choice, or with <paramref name="Power"/> one of their banked Power Dice.</summary>
+public sealed record AddOdHandDie(int HeroId, bool Power = false) : GameCommand(HeroId);
 
 /// <summary>Sets which rolls Luck is asked on when they're about to fail (the Luck menu). Free, any time on the hero's turn.</summary>
 public sealed record SetLuckAsks(int HeroId, LuckRoll Asks) : GameCommand(HeroId);
