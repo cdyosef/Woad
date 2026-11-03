@@ -402,7 +402,8 @@ public partial class GameScreen
     /// <summary>
     /// Debug mode (<c>-- --cameratest</c>, with <see cref="DemoRun.BigHall"/>): in a hall bigger than the
     /// view, the camera starts on Aria, a right-drag pans no further than keeps her in view, a plain
-    /// right-click still cancels, and on Bran's turn the view scrolls across the hall to him.
+    /// right-click still cancels, the wheel zooms in and out (and Home puts it back), and on Bran's turn
+    /// the view scrolls across the hall to him.
     /// </summary>
     private async void RunCameraTest()
     {
@@ -417,6 +418,15 @@ public partial class GameScreen
             await RightDrag(this, middle, middle - new Vector2(400, 400));
             Check(_board.Position != before, "dragging with the right button pans the view");
             Check(_board.IsInView(aria.Position), "panning stops where Aria would leave the view");
+
+            Vector2 over = _board.GetGlobalTransformWithCanvas() * (BoardView.TileOrigin(aria.Position) + new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f));
+            await Wheel(this, over, MouseButton.WheelUp, 4);
+            Check(_board.UserZoom > 1.3f, "the wheel zooms in");
+            Check(_board.IsInView(aria.Position), "zoomed in about her, Aria stays in view");
+            await Wheel(this, over, MouseButton.WheelDown, 30);
+            Check(_board.UserZoom < 1, "the wheel zooms out, the hall being bigger than the view");
+            _board.ResetZoom();
+            Check(_board.UserZoom == 1, "Home puts the zoom back");
 
             await UseAbility(_search);
             await ConfirmIfHeld();

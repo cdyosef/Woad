@@ -1139,8 +1139,13 @@ them up there like any character.
 
 - **Camera:** the board is a 9×9 view onto the room. A bigger room scrolls to follow whoever is acting
   and comes back to the active hero after each of their actions; a smaller one sits centered in solid
-  rock. Right-drag (or the arrow keys) pans to look around, but only as far as keeps the active hero in
-  view. A plain right-click still cancels.
+  rock. Right-drag, the arrow keys, a finger dragged on a touch screen or a two-finger swipe on a
+  touchpad pans to look around, but only as far as keeps the active hero in view. A plain right-click
+  still cancels; a tap on a touch screen clicks the tile it lifts from, if the finger didn't move.
+- **Zoom:** the mouse wheel zooms the board in and out about the pointer, as do a pinch on a touchpad or
+  a touch screen and the + and - keys; Home puts it back. It goes in to 2.5×, and out (to as little as
+  half) only as far as the whole room fits. The zoom carries from room to room, and the zoom on the
+  action (attacks, Luck questions) goes on top of it, to 3× at most.
 - **Scaling:** a 640×360 layout, integer scaled to 1280×720, 1920×1080, 2560×1440 and 4K, with
   nearest-neighbor filtering. The window stretches in `canvas_items` mode, so text renders at full
   resolution and stays sharp while the layout keeps its 640×360 coordinates.

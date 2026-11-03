@@ -9,8 +9,9 @@ namespace Woad.Scenes.Game;
 /// Draws one room's terrain, its stone rim and doors (see BoardView.Walls.cs), revealed traps, loot and
 /// keys, and the move/target highlights, and reports clicks on tiles. It sits in a clipping frame the
 /// size of a standard room (<see cref="Pixels"/>) and is its own camera: a bigger room scrolls to
-/// follow whoever is acting, a smaller one is centered. The player can pan (right-drag or the arrow
-/// keys), but only as far as keeps the active hero in view.
+/// follow whoever is acting, a smaller one is centered. The player can pan (right-drag, a finger, a
+/// touchpad swipe or the arrow keys), but only as far as keeps the active hero in view, and zoom (the
+/// wheel, a pinch, + and -; Home puts it back).
 /// </summary>
 public partial class BoardView : Control
 {
@@ -23,6 +24,22 @@ public partial class BoardView : Control
 
     /// <summary>A right-click that moves less than this is a click (cancel), not a drag.</summary>
     private const float DragThreshold = 4;
+
+    /// <summary>A finger that moves less than this is a tap (a click on the tile), not a drag.</summary>
+    private const float TouchThreshold = 12;
+
+    /// <summary>How far the player can zoom in, and out (no further out than the whole room fits).</summary>
+    public const float MaxUserZoom = 2.5f;
+    private const float MinUserZoom = 0.5f;
+
+    /// <summary>The most the zoom on the action goes to, on top of the player's.</summary>
+    private const float MaxZoom = 3;
+
+    /// <summary>One notch of the wheel zooms by this much.</summary>
+    private const float WheelStep = 1.1f;
+
+    /// <summary>How far a touchpad's two-finger swipe pans, in pixels for a whole wheel step.</summary>
+    private const float SwipePan = 40;
 
     private Room? _room;
     private GridPosition? _hovered;
@@ -46,15 +63,32 @@ public partial class BoardView : Control
     private bool _dragged;
     private Vector2 _dragFrom;
 
+    /// <summary>A finger is down on the board (a touch screen): a tap clicks <see cref="_touchTile"/> when it lifts; a drag pans.</summary>
+    private bool _touching;
+    private GridPosition? _touchTile;
+    private bool _touchDouble;
+
+    /// <summary>The fingers down on the board, by index, where they are on screen (two pinch to zoom).</summary>
+    private readonly Dictionary<int, Vector2> _touches = [];
+
+    /// <summary>How far the player has zoomed the board (1: a standard room fills the view).</summary>
+    public float UserZoom { get; private set; } = 1;
+
+    /// <summary>The board pixels across the view at the player's zoom.</summary>
+    private float ViewPixels => Pixels / UserZoom;
+
+    /// <summary>The zoom on the action at its peak this time (less when the player's zoomed right in).</summary>
+    private float _actionPeak = ActionZoom;
+
     /// <summary>How hard the view is shaking (pixels), dying away.</summary>
     private float _shake;
 
-    /// <summary>How far in the view is zoomed on the action (1 for not at all), easing toward <see cref="_zoomTarget"/>.</summary>
+    /// <summary>How far in the view is zoomed on the action, on top of the player's zoom (1 for not at all), easing toward <see cref="_zoomTarget"/>.</summary>
     private float _zoom = 1;
     private float _zoomTarget = 1;
 
     /// <summary>What's in view, in board pixels: the camera's view, or less of the board while zoomed in on the action.</summary>
-    private Rect2 ViewRect => new(_view, new Vector2(Pixels, Pixels) / _zoom);
+    private Rect2 ViewRect => new(_view, new Vector2(Pixels, Pixels) / (UserZoom * _zoom));
 
     /// <summary>The board pixel at the top-left of what's in view, zoom and all.</summary>
     private Vector2 _view;
@@ -97,7 +131,7 @@ public partial class BoardView : Control
         if (snap)
         {
             _camera = Desired();
-            Position = -_camera;
+            Place(Vector2.Zero);
         }
     }
 
@@ -123,7 +157,7 @@ public partial class BoardView : Control
             _zoomFocus = _zoomFocusTarget;
         }
 
-        _zoomTarget = ActionZoom;
+        _zoomTarget = _actionPeak = Mathf.Clamp(MaxZoom / UserZoom, 1, ActionZoom);
     }
 
     /// <summary>Eases the view back out to the whole room.</summary>
@@ -169,10 +203,7 @@ public partial class BoardView : Control
             _zoom = _zoomTarget;
         }
 
-        float zoomed = Mathf.Clamp((_zoom - 1) / (ActionZoom - 1), 0, 1);
-        _view = _camera.Lerp(_zoomFocus - new Vector2(Pixels, Pixels) / (2 * _zoom), zoomed);
-        Scale = new Vector2(_zoom, _zoom);
-        Position = -_view * _zoom + jolt.Round();
+        Place(jolt.Round());
 
         // A room much bigger than the view draws only what's near it: once the view has moved, again.
         if (Culls && _drawnAt.DistanceTo(_camera) > TileSize / 2f)
@@ -257,7 +288,7 @@ public partial class BoardView : Control
 
     /// <summary>The part of the board drawn: the view and two tiles round it, or all of it.</summary>
     private Rect2 ShownRect() => Culls
-        ? new Rect2(_camera - new Vector2(2 * TileSize, 2 * TileSize), new Vector2(Pixels + 4 * TileSize, Pixels + 4 * TileSize))
+        ? new Rect2(_camera - new Vector2(2 * TileSize, 2 * TileSize), new Vector2(ViewPixels + 4 * TileSize, ViewPixels + 4 * TileSize))
         : new Rect2(Vector2.Zero, RoomPixels);
 
     /// <summary>The tiles drawn (see <see cref="ShownRect"/>).</summary>
@@ -285,8 +316,8 @@ public partial class BoardView : Control
     {
         Vector2 at = TileOrigin(tile) + new Vector2(TileSize / 2f, (below ? 30 : 0) - lift);
         float half = text.Length * UiTheme.HeadingPixelSize * size * 0.45f;
-        at.X = Mathf.Clamp(at.X, _camera.X + half + 4, _camera.X + Pixels - half - 4);
-        at.Y = Mathf.Clamp(at.Y, _camera.Y + 14 * size / 2f, _camera.Y + Pixels - 8);
+        at.X = Mathf.Clamp(at.X, _camera.X + half + 4, _camera.X + ViewPixels - half - 4);
+        at.Y = Mathf.Clamp(at.Y, _camera.Y + 14 * size / 2f, _camera.Y + ViewPixels - 8);
         AddChild(new ActionCallout { Position = at, Text = text, Color = color, Size = size });
     }
 
@@ -359,7 +390,7 @@ public partial class BoardView : Control
             ? _follow.Position + new Vector2(TileSize / 2f, TileSize / 2f)
             : _lookAt is { } tile ? TileOrigin(tile) + new Vector2(TileSize / 2f, TileSize / 2f)
             : RoomPixels / 2;
-        return Clamp(center - new Vector2(Pixels / 2f, Pixels / 2f));
+        return Clamp(center - new Vector2(ViewPixels / 2, ViewPixels / 2));
     }
 
     /// <summary>
@@ -371,7 +402,7 @@ public partial class BoardView : Control
         get
         {
             Vector2 room = RoomPixels;
-            return (_camera.X > 1, _camera.Y > 1, _camera.X + Pixels < room.X - 1, _camera.Y + Pixels < room.Y - 1);
+            return (_camera.X > 1, _camera.Y > 1, _camera.X + ViewPixels < room.X - 1, _camera.Y + ViewPixels < room.Y - 1);
         }
     }
 
@@ -381,7 +412,8 @@ public partial class BoardView : Control
     private Vector2 Clamp(Vector2 camera)
     {
         Vector2 room = RoomPixels;
-        float Axis(float value, float size) => size <= Pixels ? (size - Pixels) / 2 : Mathf.Clamp(value, 0, size - Pixels);
+        float view = ViewPixels;
+        float Axis(float value, float size) => size <= view ? (size - view) / 2 : Mathf.Clamp(value, 0, size - view);
         return new Vector2(Axis(camera.X, room.X), Axis(camera.Y, room.Y));
     }
 
@@ -394,12 +426,56 @@ public partial class BoardView : Control
         {
             Vector2 at = TileOrigin(tile);
             Vector2 room = RoomPixels;
-            float Keep(float value, float anchor, float size) => size <= Pixels ? value : Mathf.Clamp(value, anchor + TileSize - Pixels, anchor);
+            float view = ViewPixels;
+            float Keep(float value, float anchor, float size) => size <= view ? value : Mathf.Clamp(value, anchor + TileSize - view, anchor);
             camera = new Vector2(Keep(camera.X, at.X, room.X), Keep(camera.Y, at.Y, room.Y));
         }
 
         _camera = camera;
-        Position = -_camera;
+        Place(Vector2.Zero);
+    }
+
+    /// <summary>The least the player can zoom to here: out until the whole room fits, but no further than <see cref="MinUserZoom"/>, nor below 1.</summary>
+    private float LeastZoom => Mathf.Clamp(Pixels / Mathf.Max(RoomPixels.X, RoomPixels.Y), MinUserZoom, 1);
+
+    /// <summary>Zooms the player's view by <paramref name="factor"/>, keeping <paramref name="at"/> (a board pixel) where it is on screen.</summary>
+    public void ZoomAt(Vector2 at, float factor)
+    {
+        float zoom = Mathf.Clamp(UserZoom * factor, LeastZoom, MaxUserZoom);
+        if (Mathf.IsEqualApprox(zoom, UserZoom))
+        {
+            return;
+        }
+
+        Vector2 onScreen = (at - _camera) * UserZoom;
+        UserZoom = zoom;
+        _camera = at - onScreen / zoom;
+        Pan(Vector2.Zero);
+        QueueRedraw();
+    }
+
+    /// <summary>Zooms the player's view in or out about its middle (+ and -).</summary>
+    public void ZoomBy(float factor) => ZoomAt(_camera + new Vector2(ViewPixels / 2, ViewPixels / 2), factor);
+
+    /// <summary>Puts the player's zoom back to 1 and the view back on the action (Home).</summary>
+    public void ResetZoom()
+    {
+        UserZoom = Mathf.Max(1, LeastZoom);
+        _panned = false;
+        QueueRedraw();
+    }
+
+    /// <summary>
+    /// Sets the board's scale and position from the camera, the player's zoom and the zoom on the action:
+    /// zoomed in on the action, the view is centered on it; easing out, it slides back to where the camera is.
+    /// </summary>
+    private void Place(Vector2 jolt)
+    {
+        float scale = UserZoom * _zoom;
+        float zoomed = _actionPeak > 1 ? Mathf.Clamp((_zoom - 1) / (_actionPeak - 1), 0, 1) : 0;
+        _view = _camera.Lerp(_zoomFocus - new Vector2(Pixels, Pixels) / (2 * scale), zoomed);
+        Scale = new Vector2(scale, scale);
+        Position = -_view * scale + jolt;
     }
 
     public static Vector2 TileOrigin(GridPosition tile) => new(tile.X * TileSize, tile.Y * TileSize);
@@ -415,9 +491,11 @@ public partial class BoardView : Control
         Size = RoomPixels;
         if (newRoom)
         {
+            // The player's zoom carries over, as far as the new room allows.
             _panned = false;
+            UserZoom = Mathf.Clamp(UserZoom, LeastZoom, MaxUserZoom);
             _camera = Desired();
-            Position = -_camera;
+            Place(Vector2.Zero);
         }
 
         QueueRedraw();
@@ -483,12 +561,61 @@ public partial class BoardView : Control
         switch (@event)
         {
             case InputEventMouseMotion motion when _dragging:
-                _dragged |= motion.Position.DistanceTo(_dragFrom) > DragThreshold;
-                if (_dragged)
+                _dragged |= motion.GlobalPosition.DistanceTo(_dragFrom) > (_touching ? TouchThreshold : DragThreshold);
+                if (_dragged && _touches.Count < 2)
                 {
                     Pan(-motion.Relative);
                 }
 
+                AcceptEvent();
+                break;
+
+            // A finger on a touch screen (it comes as the mouse): a drag pans; a tap clicks the tile when it lifts.
+            case InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left } touch when touch.Device == InputEvent.DeviceIdEmulation:
+                _dragging = _touching = true;
+                _dragged = _touches.Count > 1;
+                _dragFrom = touch.GlobalPosition;
+                _touchTile = TileAt(touch.Position);
+                _touchDouble = touch.DoubleClick;
+                AcceptEvent();
+                break;
+
+            case InputEventMouseButton { Pressed: false, ButtonIndex: MouseButton.Left } lift when _touching:
+                if (!_dragged && _touchTile is { } tapped)
+                {
+                    (_touchDouble ? TileDoubleClicked : TileClicked)?.Invoke(tapped);
+                }
+
+                _dragging = _touching = false;
+                AcceptEvent();
+                break;
+
+            // The wheel: a mouse's notch zooms, about the pointer, and so does a touchpad's pinch (it comes as
+            // Ctrl and the wheel); a touchpad's two-finger swipe (finer steps), Shift and the wheel, or a tilt, pans.
+            case InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.WheelUp or MouseButton.WheelDown or MouseButton.WheelLeft or MouseButton.WheelRight } wheel:
+                float steps = wheel.Factor > 0 ? wheel.Factor : 1;
+                bool vertical = wheel.ButtonIndex is MouseButton.WheelUp or MouseButton.WheelDown && !wheel.ShiftPressed;
+                float sign = wheel.ButtonIndex is MouseButton.WheelUp or MouseButton.WheelLeft ? -1 : 1;
+                if (vertical && (wheel.CtrlPressed || steps >= 0.999f))
+                {
+                    ZoomAt(wheel.Position, Mathf.Pow(WheelStep, -sign * steps));
+                }
+                else
+                {
+                    Pan((vertical ? new Vector2(0, sign) : new Vector2(sign, 0)) * steps * SwipePan / UserZoom);
+                }
+
+                AcceptEvent();
+                break;
+
+            // A touchpad's gestures, where they come as such (a Mac's): a pinch zooms, a two-finger swipe pans.
+            case InputEventMagnifyGesture pinch:
+                ZoomAt(pinch.Position, pinch.Factor);
+                AcceptEvent();
+                break;
+
+            case InputEventPanGesture swipe:
+                Pan(swipe.Delta * SwipePan / UserZoom);
                 AcceptEvent();
                 break;
 
@@ -516,7 +643,7 @@ public partial class BoardView : Control
             case InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Right or MouseButton.Middle } press:
                 _dragging = true;
                 _dragged = false;
-                _dragFrom = press.Position;
+                _dragFrom = press.GlobalPosition;
                 AcceptEvent();
                 break;
 
@@ -530,6 +657,71 @@ public partial class BoardView : Control
                 AcceptEvent();
                 break;
         }
+    }
+
+    /// <summary>Two fingers on the board (a touch screen) pinch to zoom, and pan as they move together.</summary>
+    public override void _Input(InputEvent @event)
+    {
+        if (!IsVisibleInTree())
+        {
+            return;
+        }
+
+        Transform2D toBoard = GetGlobalTransformWithCanvas().AffineInverse();
+        switch (@event)
+        {
+            case InputEventScreenTouch { Pressed: true } touch when ViewRect.HasPoint(toBoard * touch.Position):
+                _touches[touch.Index] = touch.Position;
+                _dragged |= _touches.Count > 1;
+                break;
+
+            case InputEventScreenTouch { Pressed: false } touch:
+                _touches.Remove(touch.Index);
+                break;
+
+            case InputEventScreenDrag drag when _touches.Count == 2 && _touches.ContainsKey(drag.Index):
+                Vector2 other = _touches.First(finger => finger.Key != drag.Index).Value;
+                Vector2 was = _touches[drag.Index];
+                _touches[drag.Index] = drag.Position;
+                Pan(toBoard * ((was + other) / 2) - toBoard * ((drag.Position + other) / 2));
+                if (was.DistanceTo(other) > 1)
+                {
+                    ZoomAt(GetGlobalTransformWithCanvas().AffineInverse() * ((drag.Position + other) / 2), drag.Position.DistanceTo(other) / was.DistanceTo(other));
+                }
+
+                GetViewport().SetInputAsHandled();
+                break;
+
+            case InputEventScreenDrag drag when _touches.ContainsKey(drag.Index):
+                _touches[drag.Index] = drag.Position;
+                break;
+        }
+    }
+
+    /// <summary>+ and - zoom the board; Home puts the zoom back.</summary>
+    public override void _UnhandledKeyInput(InputEvent @event)
+    {
+        if (!IsVisibleInTree() || @event is not InputEventKey { Pressed: true } key)
+        {
+            return;
+        }
+
+        switch (key.Keycode)
+        {
+            case Key.Equal or Key.Plus or Key.KpAdd:
+                ZoomBy(WheelStep * WheelStep);
+                break;
+            case Key.Minus or Key.KpSubtract:
+                ZoomBy(1 / (WheelStep * WheelStep));
+                break;
+            case Key.Home:
+                ResetZoom();
+                break;
+            default:
+                return;
+        }
+
+        GetViewport().SetInputAsHandled();
     }
 
     public override void _Notification(int what)
