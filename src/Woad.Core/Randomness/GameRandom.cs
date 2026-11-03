@@ -13,6 +13,9 @@ public sealed class GameRandom(ulong seed)
 
     public IRandomSource Behavior { get; init; } = new Pcg32(seed, sequence: 3);
 
+    /// <summary>Which holes go down deep (see <c>Room.DeepHoles</c>): its own stream, so the rest stay as they were.</summary>
+    public IRandomSource Holes { get; init; } = new Pcg32(seed, sequence: 5);
+
     /// <summary>What lies about on the floor (Rocks and Sticks), and where it's hidden: its own stream, so the rest stay as they were.</summary>
     public IRandomSource Finds { get; init; } = new Pcg32(seed, sequence: 4);
 }

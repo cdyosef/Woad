@@ -331,7 +331,11 @@ public sealed record TrapSprung(int HeroId, TrapKind Kind, GridPosition Position
 public sealed record TrapAttacked(int HeroId, TrapKind Kind, DiceRoll Roll, int Bonus, int Total, bool Found) : GameEvent;
 
 /// <summary>A hero dropped through a trap door into another room (<paramref name="Jumped"/> on purpose, unhurt).</summary>
-public sealed record HeroFell(int HeroId, string FromRoomId, string RoomId, int Floor, GridPosition Position, bool FirstTimeOnFloor, bool Jumped) : GameEvent;
+public sealed record HeroFell(int HeroId, string FromRoomId, string RoomId, int Floor, GridPosition Position, bool FirstTimeOnFloor, bool Jumped) : GameEvent
+{
+    /// <summary>How many floors they've fallen in all, landing here (more than 1 through a deep hole, or falling on through a pit).</summary>
+    public int Floors { get; init; } = 1;
+}
 
 /// <summary>Keys appeared on the floor: dropped by a monster, from a cleared room or a found stash.</summary>
 public sealed record KeysAppeared(string RoomId, GridPosition Position, int Count) : GameEvent;

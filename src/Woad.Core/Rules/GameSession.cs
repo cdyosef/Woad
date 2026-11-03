@@ -458,6 +458,23 @@ public sealed partial class GameSession
                 .FirstOrDefault(below => below.Floor == room.Floor + 1 && below.MapPosition == room.MapPosition && below.Role is not (RoomRole.Boss or RoomRole.Secret))?.Id;
         }
 
+        // Some holes go down deep: two floors, straight through the room underneath.
+        foreach (Room room in state.Rooms.Values.OrderBy(room => room.Id, StringComparer.Ordinal))
+        {
+            if (room.BelowRoomId is not { } belowId || state.Rooms[belowId].BelowRoomId is not { } deepId)
+            {
+                continue;
+            }
+
+            foreach (GridPosition hole in room.TilesOfKind(TileKind.Pit).Concat(room.Traps.Where(trap => trap.Value.Kind == TrapKind.TrapDoor).Select(trap => trap.Key)))
+            {
+                if (random.Holes.NextInt(0, 100) < GameRules.DeepHoleChance)
+                {
+                    room.MakeDeep(hole, deepId);
+                }
+            }
+        }
+
         if (!state.Rooms.TryGetValue(setup.StartRoomId, out Room? startRoom))
         {
             throw new ArgumentException($"Start room '{setup.StartRoomId}' isn't one of the run's rooms.", nameof(setup));

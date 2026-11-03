@@ -65,6 +65,9 @@ public static class GameRules
     /// <summary>The most Od Hand dice a magic attack can add to its roll (a spell, or Hold Fire hurled).</summary>
     public const int MagicOdHandDice = 1;
 
+    /// <summary>Percent of holes (pits, trap doors) with a room two floors straight down that go down that far.</summary>
+    public const int DeepHoleChance = 25;
+
     /// <summary>Dice a sprung trap attacks with.</summary>
     public const int TrapAttackDice = 1;
 

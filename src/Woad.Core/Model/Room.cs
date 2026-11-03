@@ -72,6 +72,16 @@ public sealed class Room
     /// </summary>
     public string? BelowRoomId { get; internal set; }
 
+    /// <summary>
+    /// Deep holes (pits and trap doors) in this room, and the room they drop into: two floors down, straight
+    /// through the room underneath.
+    /// </summary>
+    public IReadOnlyDictionary<GridPosition, string> DeepHoles => _deepHoles;
+
+    private readonly Dictionary<GridPosition, string> _deepHoles = [];
+
+    internal void MakeDeep(GridPosition hole, string roomId) => _deepHoles[hole] = roomId;
+
     /// <summary>A trap room's doors stay shut while any monster is left in it.</summary>
     public bool Trap { get; }
 

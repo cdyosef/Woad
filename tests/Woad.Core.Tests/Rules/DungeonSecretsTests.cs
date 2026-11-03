@@ -366,6 +366,57 @@ public class DungeonSecretsTests
         Assert.Equal(2, events.SingleOf<ChestOpened>().CardIds.Count);
     }
 
+    /// <summary>Three rooms stacked a floor apart, a pit at (4,3) in the top two.</summary>
+    private static GameSession Stacked(ScriptedDice dice)
+    {
+        const string Pitted = """
+            .........
+            .........
+            .........
+            ....~....
+            ....1....
+            .........
+            .........
+            .........
+            .........
+            """;
+        return TestRun.Start(
+        [
+            new RoomSetup("A", TestRun.Room(Pitted)),
+            new RoomSetup("B", TestRun.Room(Pitted.Replace('1', '.')), Floor: 2, Role: RoomRole.Arrival),
+            new RoomSetup("C", TestRun.Room(Empty), Floor: 3, Role: RoomRole.Arrival),
+        ], dice, stats: TestRun.HeroStats with { Hearts = 6 });
+    }
+
+    [Fact]
+    public void LandingOnAnotherPitFallsOnThroughItAHeartMoreAFloor()
+    {
+        GameSession session = Stacked(new ScriptedDice(1));
+        Hero hero = session.HeroInSeat();
+        session.Do(new RollMovement(hero.Id));
+
+        IReadOnlyList<GameEvent> events = session.Do(new MoveHero(hero.Id, new GridPosition(4, 3)));
+
+        Assert.Equal(["B", "C"], events.OfType<HeroFell>().Select(fell => fell.RoomId));
+        Assert.Equal(2, events.OfType<HeroFell>().Last().Floors);
+        Assert.Equal("C", hero.RoomId);
+        Assert.Equal(6 - GameRules.FallDamage - 1, hero.Hearts);
+    }
+
+    [Fact]
+    public void ADeepHoleDropsTwoFloorsAHeartMoreForTheSecond()
+    {
+        GameSession session = Stacked(new ScriptedDice(1));
+        Hero hero = session.HeroInSeat();
+        session.RoomById().MakeDeep(new GridPosition(4, 3), "C");
+        session.Do(new RollMovement(hero.Id));
+
+        IReadOnlyList<GameEvent> events = session.Do(new MoveHero(hero.Id, new GridPosition(4, 3)));
+
+        Assert.Equal("C", events.SingleOf<HeroFell>().RoomId);
+        Assert.Equal(6 - GameRules.FallDamage - 1, hero.Hearts);
+    }
+
     [Fact]
     public void AChestTrapStabsWhoeverOpensIt()
     {

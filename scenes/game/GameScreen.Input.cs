@@ -790,6 +790,8 @@ public partial class GameScreen
             TileKind.CrackedWall => "A cracked wall. A bomb's blast would break it, and something may be sealed inside.",
             TileKind.Pot => "A clay pot. Stand next to it and click to smash it: coins, a heart, or nothing.",
             TileKind.Wall => "A stone pillar.",
+            TileKind.Pit when room.DeepHoles.ContainsKey(tile) =>
+                "A deep pit: it drops two floors, straight through the room below. Fall in and you lose a heart for each floor. Leap over it with a Wend die.",
             TileKind.Pit when room.BelowRoomId is not null =>
                 "A pit: the room below shows far down. Fall in (or be shoved) and you drop to it, losing a heart. Leap over it with a Wend die.",
             TileKind.Pit => "A bottomless pit. Fall in and you lose a heart climbing out; a monster shoved in is gone. Leap over it with a Wend die.",

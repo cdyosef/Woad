@@ -700,6 +700,9 @@ total reaches its number:
   go through (open it) anyway, +1 defense; a locked door still needs opening first. Od Hand disarms them;
   **a failed Disarm sets the trap off** on whoever tried. Traps never cut a room in two, and never sit
   beside a chest or pot.
+- **Long falls:** where a room lies two floors straight down, about one hole in four (pits and trap doors)
+  is **deep** and drops you there, through the room between; and landing on another pit, you fall on
+  through it. Every floor fallen past the first is **another heart**.
 - **Pits:** where a room lies underneath, its floor shows far down the pit; with nothing below (as on
   the last floor) the pit is black. You can walk into a pit: you lose a heart and drop into the room
   below, on the tile under the pit (or the nearest free one), or climb back out of a bottomless pit.
