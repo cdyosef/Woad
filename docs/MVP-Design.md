@@ -393,6 +393,8 @@ facing door of the next room.
     out, by anyone, Luck stat or not, and kept until used, run to run (a lucky 6 doesn't use it up either).
     A hero who doesn't get out of the dungeon keeps no more of it than they brought in. It shows after the
     Luck line on the sheet (+3).
+  - **Companions** try their Luck by themselves: on a defense about to cost them a heart, and on an Aid
+    roll about to fail to rouse their leader (a Luck die over their lowest die, the higher staying).
   - **Tap the clover** and it glows: your next roll asks, whatever its odds (3 seconds), even one switched
     off. Asking uses the glow up; tap it again to put it out.
   - While it asks, everything plays at **half speed** (the countdown runs in real seconds), and on an attack

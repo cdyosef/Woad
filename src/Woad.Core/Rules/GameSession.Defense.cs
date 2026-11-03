@@ -95,7 +95,37 @@ public sealed partial class GameSession
             events.Add(new LastChanceUsed(hero.Id, lucky.Id));
         }
 
-        return roll.Total + armor + guard.BlockUsed;
+        int total = roll.Total + armor + guard.BlockUsed;
+
+        // A companion about to lose a heart tries its Luck.
+        if (hero.IsCompanion && hero.LuckLeft > 0 && attackTotal > total)
+        {
+            total += TryLuck(hero.Id, roll.Faces, hero.SpendLuck, events);
+        }
+
+        return total;
+    }
+
+    /// <summary>
+    /// Luck tried by the game itself (a companion about to lose a heart, a Hexer about to fail): a Luck die
+    /// rolled over the lowest die short of a 6, the higher of the two staying. A lucky 6 isn't spent.
+    /// </summary>
+    /// <returns>How much the roll gained.</returns>
+    private int TryLuck(int ownerId, IReadOnlyList<int> faces, Action spend, List<GameEvent> events)
+    {
+        if (faces.Where(face => face < GameRules.PowerDieFace).DefaultIfEmpty(0).Min() is not (> 0 and int lowest))
+        {
+            return 0;
+        }
+
+        int luck = RollOneDie();
+        if (luck != GameRules.PowerDieFace)
+        {
+            spend();
+        }
+
+        events.Add(new LuckTried(ownerId, lowest, luck));
+        return Math.Max(0, luck - lowest);
     }
 
     /// <summary>A hero's Block and extra Defense dice come back at the start of their turn.</summary>

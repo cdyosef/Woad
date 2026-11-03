@@ -773,6 +773,10 @@ public partial class GameScreen : Control
                 CalloutOver(explored.HeroId, "EXPLORER!", Palette.TrimBright);
                 break;
 
+            case LuckTried tried:
+                CalloutOver(tried.OwnerId, tried.LuckFace == 6 ? "LUCKY!" : "LUCK", Palette.Heal, 1, below: true);
+                break;
+
             case WeaponBroke broke:
                 CalloutOver(broke.HeroId, "SNAP!", Palette.Danger);
                 break;

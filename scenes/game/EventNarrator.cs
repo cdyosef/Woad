@@ -15,6 +15,8 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         AttackRolled { Shove: true } shove => $"{nameOf(shove.AttackerId)} shoves {Names(shove.TargetIds)} with {shove.Total}.",
         AttackRolled { Miasma: true } miasma => $"The {nameOf(miasma.AttackerId)}'s miasma chokes {Names(miasma.TargetIds)}: {miasma.Total} of poison.",
         AttackRolled attack => $"{nameOf(attack.AttackerId)} attacks {Names(attack.TargetIds)} with {attack.Total}.",
+        LuckTried tried when tried.LuckFace > tried.Over => $"{nameOf(tried.OwnerId)} tries their Luck: a {tried.LuckFace} over the {tried.Over}!",
+        LuckTried tried => $"{nameOf(tried.OwnerId)} tries their Luck: a {tried.LuckFace}, and the {tried.Over} stays.",
         DieRerolled { MovementPoints: int points } rerolled =>
             $"{nameOf(rerolled.HeroId)}'s Luck rolls a {rerolled.LuckFace}: the {rerolled.NewFace} stays, {Count(points, "step")}.",
         DieRerolled rerolled when rerolled.NewFace == rerolled.OldFace => $"{nameOf(rerolled.HeroId)}'s Luck rolls a {rerolled.LuckFace}: the {rerolled.OldFace} stays.",

@@ -76,6 +76,9 @@ public sealed record PowerDiceBanked(int OwnerId, int Count, int Banked) : GameE
 public sealed record PowerDiceSpent(int OwnerId, int Count, int Banked) : GameEvent;
 
 /// <summary>A Luck reroll. <paramref name="MovementPoints"/> is the new total when it was a movement die.</summary>
+/// <summary>Luck the game tried for a companion or a monster: a Luck die over its lowest die (<paramref name="Over"/>), the higher staying.</summary>
+public sealed record LuckTried(int OwnerId, int Over, int LuckFace) : GameEvent;
+
 public sealed record DieRerolled(int HeroId, int DieIndex, int OldFace, int NewFace, DiceRoll Roll, int? MovementPoints) : GameEvent
 {
     /// <summary>What the Luck die rolled: it replaced the die (<see cref="NewFace"/>) only if it was higher.</summary>
