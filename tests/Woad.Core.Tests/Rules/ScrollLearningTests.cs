@@ -25,6 +25,21 @@ public class ScrollLearningTests
         """;
 
     [Fact]
+    public void AFocusCheckTakesAnOdHandDieMoreAfterTheRoll()
+    {
+        // 3 and the free die's 2 and Magic 2: 7, short of 9; an Od Hand die more (4): 11.
+        GameSession session = TestRun.Start(Huddle, new ScriptedDice(3, 2, 4), cards: ["t_scroll"], stats: TestRun.HeroStats with { OdHandDice = 2 });
+        Hero hero = session.HeroInSeat();
+        hero.BaseStats = hero.BaseStats with { Magic = 2 };
+
+        session.Do(new LearnSpell(hero.Id, hero.Card("t_scroll").Id, Dice: 1));
+        IReadOnlyList<GameEvent> events = session.Do(new AddOdHandDie(hero.Id));
+
+        Assert.Equal(11, events.SingleOf<OdHandDieAdded>().Total);
+        Assert.Single(events.OfType<SpellLearned>());
+    }
+
+    [Fact]
     public void BeatingSixPlusTheSpellsLevelLearnsItAndUsesUpTheScroll()
     {
         // One Od Hand die (3), the free die that starts every attempt (2) and Magic 4: 9, just enough for a level 3 spell.
@@ -33,9 +48,11 @@ public class ScrollLearningTests
         hero.BaseStats = hero.BaseStats with { Magic = 4 };
         CardInstance scroll = hero.Card("t_scroll");
 
+        // A Focus check waits while there's an Od Hand die more to add; let it stand.
         IReadOnlyList<GameEvent> events = session.Do(new LearnSpell(hero.Id, scroll.Id, Dice: 1));
-
         Assert.Equal(9, events.SingleOf<OdHandRolled>().Total);
+        events = session.Do(new ConfirmAttack(hero.Id));
+
         Assert.Equal(new SpellLearned(hero.Id, "flame_blast"), events.SingleOf<SpellLearned>());
         Assert.Contains(hero.Spells, spell => spell.Id == "flame_blast");
         Assert.Equal(1, scroll.Count);

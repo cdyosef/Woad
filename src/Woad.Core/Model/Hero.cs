@@ -110,6 +110,12 @@ public sealed class Hero
     /// <summary>The Clover Luck they started the run with: a hero who doesn't get out keeps no more than this.</summary>
     public int StartCloverLuck { get; internal init; }
 
+    /// <summary>A save after a fall waiting on them (see <c>GameSession.StartFallSave</c>), or null.</summary>
+    public FallSave? PendingSave { get; internal set; }
+
+    /// <summary>Od Hand dice spent on their last turn: off their turn, only the rest can be spent (they come back at the start of their turn).</summary>
+    public int OdHandSpent { get; internal set; }
+
     /// <summary>Rolls they've made this round (for the Cursed dice, which go on the first three).</summary>
     public int RollsThisRound { get; internal set; }
 

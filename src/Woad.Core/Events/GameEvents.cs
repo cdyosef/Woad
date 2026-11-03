@@ -655,8 +655,17 @@ public sealed record FlameHurled(int HeroId, int MonsterId) : GameEvent;
 /// <summary>A 1 in an attack put out the flame of Hurl Fire a hero carried.</summary>
 public sealed record FlameWentOut(int HeroId) : GameEvent;
 
-/// <summary>A torch in hand in a fall: a die (<paramref name="Face"/>) and the Focus Bonus against the <paramref name="Difficulty"/>; <paramref name="Saved"/>, it stays lit.</summary>
-public sealed record TorchFallChecked(int HeroId, int CardId, int Face, int Focus, int Difficulty, bool Saved) : GameEvent;
+/// <summary>A hero's save after a fall: its exploding die (<paramref name="Faces"/>), their Focus Bonus, and what it needs.</summary>
+public sealed record FallSaveRolled(int HeroId, IReadOnlyList<int> Faces, int Focus, int Difficulty) : GameEvent;
+
+/// <summary>An Od Hand die (exploding) added to a hero's save after a fall: its <paramref name="Faces"/> and the new total.</summary>
+public sealed record FallSaveBoosted(int HeroId, IReadOnlyList<int> Faces, int Total) : GameEvent;
+
+/// <summary>A hero's save after a fall settled: <paramref name="Made"/>, their lights and spells stay; otherwise they're out.</summary>
+public sealed record FallSaveSettled(int HeroId, int Total, int Difficulty, bool Made) : GameEvent;
+
+/// <summary>An Od Hand die added to a Focus check: its face and the new total.</summary>
+public sealed record OdHandDieAdded(int HeroId, int Face, int Total) : GameEvent;
 
 /// <summary>A 1 in a torch-lit attack burned the torch out: it's gone.</summary>
 public sealed record TorchBurnedOut(int HeroId, int CardId) : GameEvent;

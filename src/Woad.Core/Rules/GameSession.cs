@@ -163,6 +163,10 @@ public sealed partial class GameSession
             OrderCompanion c => Handle(c, events),
             SwitchControl c => Handle(c, events),
             SetLuckAsks c => Handle(c),
+            BoostFallSave c => Handle(c, events),
+            LuckOnFallSave c => Handle(c, events),
+            LetSaveStand c => Handle(c, events),
+            AddOdHandDie c => Handle(c, events),
             HurlHeldFire c => Handle(c, events),
             Shove c => Handle(c, events),
             AttackAlly c => Handle(c, events),
@@ -224,6 +228,17 @@ public sealed partial class GameSession
             return "The run isn't in progress.";
         }
 
+        // A save after a fall is the faller's to settle, whoever's turn it is; nothing else of theirs till it is.
+        if (command is BoostFallSave or LuckOnFallSave or LetSaveStand)
+        {
+            return null;
+        }
+
+        if (State.Heroes.FirstOrDefault(hero => hero.Id == command.HeroId) is { PendingSave: not null })
+        {
+            return "Settle the fall first: add Od Hand dice, try your Luck, or let it stand.";
+        }
+
         if (command.HeroId != Turn.HeroId)
         {
             return "It isn't that hero's turn.";
@@ -249,7 +264,7 @@ public sealed partial class GameSession
             return "You rolled a 6: add your Power Die to the roll or bank it first.";
         }
 
-        if (Turn.PendingRoll is not null && command is not (RerollDie or ConfirmAttack or AddPowerDie or BankPowerDie))
+        if (Turn.PendingRoll is not null && command is not (RerollDie or ConfirmAttack or AddPowerDie or BankPowerDie or AddOdHandDie))
         {
             return "Finish the roll first: reroll a die with Luck or confirm it.";
         }
@@ -281,6 +296,8 @@ public sealed partial class GameSession
     {
         if (State.Turn is { } ended)
         {
+            // Od Hand dice spent this turn stay spent till the hero's next turn.
+            State.GetHero(ended.HeroId).OdHandSpent = ended.OdHandDiceUsed;
             WearOffStun(State.GetHero(ended.HeroId), events);
             if (!ended.KeelingOver)
             {
@@ -348,6 +365,9 @@ public sealed partial class GameSession
 
     private void StartTurn(Hero hero, List<GameEvent> events)
     {
+        // A save still waiting from a fall settles as it is; spent dice come back now.
+        SettleFallSave(hero, events);
+        hero.OdHandSpent = 0;
         State.Turn = new TurnState(hero.Id) { KeelingOver = hero.IsKeelingOver };
         events.Add(new TurnStarted(hero.Id));
         RechargeDefense(hero);

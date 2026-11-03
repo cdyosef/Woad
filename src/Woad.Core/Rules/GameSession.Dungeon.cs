@@ -241,23 +241,10 @@ public sealed partial class GameSession
         }
         hero.RoomId = target.Id;
         hero.Position = landing;
-        // Falling to the floor below puts out a flame of Hurl Fire (the stairs don't); each torch in hand burns
-        // out unless a die and the Focus Bonus reach 7, and 7 more for each floor past the first.
+        // Falling to the floor below, their lights and spells need a save (the stairs don't).
         if (target.Floor > from.Floor)
         {
-            hero.Flame = false;
-            int difficulty = GameRules.TorchFallSave * floors;
-            foreach (CardInstance torch in hero.EquippedCards.Where(card => card.Definition.Torch).ToList())
-            {
-                int face = RollOneDie();
-                bool saved = face + hero.Focus >= difficulty;
-                events.Add(new TorchFallChecked(hero.Id, torch.Id, face, hero.Focus, difficulty, saved));
-                if (!saved)
-                {
-                    hero.Remove(torch);
-                    events.Add(new TorchBurnedOut(hero.Id, torch.Id));
-                }
-            }
+            StartFallSave(hero, floors, events);
         }
         target.Explored = true;
         bool firstTime = target.Floor > hero.DeepestFloor;
