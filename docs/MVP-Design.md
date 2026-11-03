@@ -281,6 +281,9 @@ with how many are to hand (the Sling's Rocks). Hovering shows its name and rules
 diamond lattice in a cream frame. Each square on the sheet is a **slot**: face down with the slot's mark and
 name while it's empty (it can't be picked up), the card sitting on it once there is one.
 
+**Attacks zoom in:** every attack (a hero's or a monster's, in the room on show) zooms the view in on the
+attacker and its targets while it plays out, and back out after.
+
 **The pool squares.** Three equipment squares double as the pools' stacks: the main hand is Rumble, the off
 hand Od Hand, the feet Wend. Each holds the cards out of your hand for that pool, staggered so each corner
 index shows, the selected one in front:
@@ -380,6 +383,8 @@ facing door of the next room.
     die (outlined green); **No**, or the time running out, lets the roll stand. After each try that still
     falls short, it asks again while there's Luck left.
   - **Wend:** every Wend roll asks, with **3 seconds**.
+  - While it asks, the view **zooms in** on the action (the hero, and what they're attacking) and
+    everything plays at **half speed**; the countdown runs in real seconds.
   - Contests (a steal), searches and shoves don't wait for Luck, and it doesn't apply to defense rolls.
 
 ### Fire

@@ -2,6 +2,7 @@ using Godot;
 using Woad.Core.Commands;
 using Woad.Core.Content;
 using Woad.Core.Events;
+using Woad.Core.Grid;
 using Woad.Core.Model;
 using Woad.Core.Rules;
 using Woad.Scenes.Ui;
@@ -65,12 +66,21 @@ public partial class GameScreen
         if (roll is null)
         {
             _luckPrompt.Close();
+            SlowForLuck(false);
             return;
         }
 
+        // While Luck is asked, the view zooms in on the action and everything slows down.
+        if (ActiveHero is { } hero)
+        {
+            ZoomOnAction(hero.Id, _session.State.Turn?.PendingRoll?.TargetIds ?? []);
+        }
+
+        SlowForLuck(true);
         _luckPrompt.Offer(pending ? GameRules.LuckSeconds : GameRules.WendLuckSeconds, () =>
         {
             _luckOffer = null;
+            SlowForLuck(false);
             if (pending)
             {
                 ExecuteForActiveHero(heroId => new ConfirmAttack(heroId));
@@ -81,6 +91,28 @@ public partial class GameScreen
                 RefreshPanels();
             }
         });
+    }
+
+    /// <summary>How fast everything plays while Luck is asked: half speed.</summary>
+    private const double LuckTimeScale = 0.5;
+
+    /// <summary>Slows everything down while Luck is asked (the countdown runs on real seconds), and back up after, the view zooming back out.</summary>
+    private void SlowForLuck(bool slow)
+    {
+        Engine.TimeScale = slow ? LuckTimeScale : 1;
+        if (!slow && !_busy)
+        {
+            _board.ZoomOut();
+        }
+    }
+
+    /// <summary>Zooms the view in on an attack (or a roll): the attacker and its targets, those in the room on show.</summary>
+    private void ZoomOnAction(int actorId, IEnumerable<int> targetIds)
+    {
+        List<GridPosition> tiles = [.. new[] { actorId }.Concat(targetIds)
+            .Select(id => _figures.TryGetValue(id, out Figure? figure) && figure.RoomId == _shownRoomId ? figure.Position : (GridPosition?)null)
+            .OfType<GridPosition>()];
+        _board.ZoomOn(tiles);
     }
 
     private void ResetCombo()

@@ -55,7 +55,8 @@ public partial class LuckPrompt : Panel
             return;
         }
 
-        _left -= delta;
+        // Real seconds, though the game runs slow while it asks.
+        _left -= delta / Math.Max(Engine.TimeScale, 0.01);
         UpdateText();
         if (_left <= 0)
         {

@@ -49,6 +49,17 @@ public partial class BoardView : Control
     /// <summary>How hard the view is shaking (pixels), dying away.</summary>
     private float _shake;
 
+    /// <summary>How far in the view is zoomed on the action (1 for not at all), easing toward <see cref="_zoomTarget"/>.</summary>
+    private float _zoom = 1;
+    private float _zoomTarget = 1;
+
+    /// <summary>The board pixel the zoom centers on, gliding toward <see cref="_zoomFocusTarget"/> as the action moves.</summary>
+    private Vector2 _zoomFocus;
+    private Vector2 _zoomFocusTarget;
+
+    /// <summary>How far in the view zooms on the action: an attack, or a Luck question.</summary>
+    public const float ActionZoom = 1.6f;
+
     public event Action<GridPosition>? TileClicked;
 
     /// <summary>The second press of a double-click (the first came through <see cref="TileClicked"/>).</summary>
@@ -92,6 +103,26 @@ public partial class BoardView : Control
         _panned = false;
     }
 
+    /// <summary>Zooms the view in on the action, centered between <paramref name="tiles"/> (an attacker and its target).</summary>
+    public void ZoomOn(IReadOnlyCollection<GridPosition> tiles)
+    {
+        if (tiles.Count == 0)
+        {
+            return;
+        }
+
+        _zoomFocusTarget = tiles.Aggregate(Vector2.Zero, (sum, tile) => sum + TileOrigin(tile)) / tiles.Count + new Vector2(TileSize / 2f, TileSize / 2f);
+        if (_zoom <= 1.01f)
+        {
+            _zoomFocus = _zoomFocusTarget;
+        }
+
+        _zoomTarget = ActionZoom;
+    }
+
+    /// <summary>Eases the view back out to the whole room.</summary>
+    public void ZoomOut() => _zoomTarget = 1;
+
     /// <summary>The tile panning must keep in view (the active hero's), or null to pan freely.</summary>
     public void SetPanAnchor(GridPosition? tile) => _anchor = tile;
 
@@ -120,7 +151,19 @@ public partial class BoardView : Control
 
         _shake = Mathf.MoveToward(_shake, 0, 30 * (float)delta);
         Vector2 jolt = _shake > 0.05f ? new Vector2((float)(Random.Shared.NextDouble() * 2 - 1), (float)(Random.Shared.NextDouble() * 2 - 1)) * _shake : Vector2.Zero;
-        Position = -_camera + jolt.Round();
+
+        // Zoomed in, the view is centered on the action; easing out, it slides back to where the camera is.
+        _zoom = Mathf.Lerp(_zoom, _zoomTarget, 1 - Mathf.Exp(-8 * (float)delta));
+        _zoomFocus = _zoomFocus.Lerp(_zoomFocusTarget, 1 - Mathf.Exp(-8 * (float)delta));
+        if (Mathf.Abs(_zoom - _zoomTarget) < 0.002f)
+        {
+            _zoom = _zoomTarget;
+        }
+
+        float zoomed = Mathf.Clamp((_zoom - 1) / (ActionZoom - 1), 0, 1);
+        Vector2 view = _camera.Lerp(_zoomFocus - new Vector2(Pixels, Pixels) / (2 * _zoom), zoomed);
+        Scale = new Vector2(_zoom, _zoom);
+        Position = -view * _zoom + jolt.Round();
 
         // A room much bigger than the view draws only what's near it: once the view has moved, again.
         if (Culls && _drawnAt.DistanceTo(_camera) > TileSize / 2f)

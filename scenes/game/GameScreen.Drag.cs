@@ -22,6 +22,8 @@ public partial class GameScreen
 
     public override void _ExitTree()
     {
+        // Leaving mid-question, the game mustn't stay in slow motion.
+        Engine.TimeScale = 1;
         CardDrag.Dropped -= OnCardDropped;
         CardDrag.AbilityDropped -= OnAbilityDropped;
     }

@@ -381,6 +381,11 @@ public partial class GameScreen : Control
         {
             _busy = false;
             _playingTurn = default;
+            if (!_luckPrompt.Visible)
+            {
+                _board.ZoomOut();
+            }
+
             ReloadFigures();
             ShowRoom(ActiveHero is { } hero ? hero.RoomId : _shownRoomId);
             RefreshPanels();
@@ -928,6 +933,7 @@ public partial class GameScreen : Control
 
             case AttackRolled attack:
                 _trayShowsMovement = false;
+                ZoomOnAction(attack.AttackerId, attack.TargetIds);
                 BeginStrike(attack.AttackerId, attack.Total, attack.Roll.Faces.TakeLast(attack.PowerDice).Sum());
                 await StrikeFx(attack);
                 await _dice.ShowRoll(_spellCaption ?? $"{NameOf(attack.AttackerId)} {(attack.Shove ? "shoves" : attack.Chain ? "flings its chain" : "attacks")}", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice, DiceKind.Rumble, types: attack.DieTypes, cards: AttackTray(attack));
