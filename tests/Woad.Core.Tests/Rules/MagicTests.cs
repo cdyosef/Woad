@@ -123,13 +123,30 @@ public class MagicTests
         Monster dummy = session.OnlyMonster();
         Assert.Contains(dummy.Position, session.GetHeldFireTargets());
 
-        IReadOnlyList<GameEvent> events = session.Do(new HurlHeldFire(hero.Id, dummy.Id, Dice: 1));
+        IReadOnlyList<GameEvent> events = session.Do(new HurlHeldFire(hero.Id, dummy.Position, Dice: 1));
 
         Assert.Single(events.OfType<FlameHurled>());
         Assert.Equal(6, events.SingleOf<AttackRolled>().Total);
         Assert.False(hero.Flame);
         Assert.Equal((0, 0), (session.OdHandDiceLeft, hero.Power.Banked));
-        Assert.Contains("no fire", session.Refuse(new HurlHeldFire(hero.Id, dummy.Id)));
+        Assert.Contains("no fire", session.Refuse(new HurlHeldFire(hero.Id, dummy.Position)));
+    }
+
+    [Fact]
+    public void MagicAttacksAddAnOdHandDieAtMostAndTheFocusBonus()
+    {
+        // Focus: a rank of Od Hand and two of Magic bought, 3. The Od Hand die's 4 and the Fire die's 2: 9.
+        GameSession session = TestRun.Start(Range, new ScriptedDice(4, 2), stats: TestRun.HeroStats with { OdHandDice = 2 });
+        Hero hero = Mage(session, magic: 2, power: 2, "hurl_fire");
+        hero.Allocation = new Woad.Core.Characters.StatAllocation { OdHandDice = 1, Magic = 2 };
+        Monster dummy = session.OnlyMonster();
+        Assert.Equal(3, hero.Focus);
+
+        Assert.Contains("at most 1 Od Hand die", session.Refuse(new CastSpell(hero.Id, "hurl_fire", dummy.Position, OdHandDice: 2)));
+        IReadOnlyList<GameEvent> events = session.Do(new CastSpell(hero.Id, "hurl_fire", dummy.Position, OdHandDice: 1));
+
+        Assert.Equal(9, events.SingleOf<AttackRolled>().Total);
+        Assert.Equal(1, session.OdHandDiceLeft);
     }
 
     [Fact]

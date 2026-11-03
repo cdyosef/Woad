@@ -38,7 +38,7 @@ public sealed record AttackMonster(int HeroId, int MonsterId, int? Dice = null, 
 /// like Quake). It costs its Power plus <paramref name="ExtraPower"/> more (a die each, up to the Magic
 /// rank) and the Rumble dice left this turn. Swirly Eyes moves a target it hits to <paramref name="MoveTo"/>.
 /// </summary>
-public sealed record CastSpell(int HeroId, string SpellId, GridPosition? Target = null, int ExtraPower = 0, GridPosition? MoveTo = null) : GameCommand(HeroId);
+public sealed record CastSpell(int HeroId, string SpellId, GridPosition? Target = null, int ExtraPower = 0, GridPosition? MoveTo = null, int OdHandDice = 0) : GameCommand(HeroId);
 
 /// <summary>Lay a patch of the ice an Icicle Arrow rolled (or give Snowshoes to someone on an icy tile).</summary>
 public sealed record LayIce(int HeroId, GridPosition Tile) : GameCommand(HeroId);
@@ -224,9 +224,10 @@ public sealed record OrderCompanion(int HeroId, int CompanionId, CompanionOrder 
 
 /// <summary>
 /// Hurls the flame of Hold Fire (Hurl Fire cast on yourself) at a monster in Hurl Fire's range: its Fire die and
-/// the hero's Magic, with the Od Hand dice they add (<paramref name="Dice"/>); no Power, and the flame is gone.
+/// the hero's Focus, with an Od Hand die if they add one (<paramref name="Dice"/>); no Power, and the flame is gone.
+/// At an unlit brazier, it lights it.
 /// </summary>
-public sealed record HurlHeldFire(int HeroId, int MonsterId, int Dice = 0, int PowerDice = 0) : GameCommand(HeroId);
+public sealed record HurlHeldFire(int HeroId, GridPosition Target, int Dice = 0, int PowerDice = 0) : GameCommand(HeroId);
 
 /// <summary>Sets which rolls Luck is asked on when they're about to fail (the Luck menu). Free, any time on the hero's turn.</summary>
 public sealed record SetLuckAsks(int HeroId, LuckRoll Asks) : GameCommand(HeroId);

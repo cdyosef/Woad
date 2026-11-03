@@ -645,7 +645,7 @@ public sealed record StoneLanded(int HeroId, int CardId, string RoomId, GridPosi
 /// <summary>The first Search in a room: the searcher picked up what lay about (<paramref name="Found"/>, by name) and earned an Explorer bonus.</summary>
 public sealed record Explored(int HeroId, string RoomId, IReadOnlyList<string> Found) : GameEvent;
 
-/// <summary>A hero hurled the flame of Hold Fire at a monster (its roll follows); the flame is gone.</summary>
+/// <summary>A hero hurled the flame of Hold Fire at a monster (its roll follows), or at a brazier (<paramref name="MonsterId"/> 0) to light it; the flame is gone.</summary>
 public sealed record FlameHurled(int HeroId, int MonsterId) : GameEvent;
 
 /// <summary>A 1 in an attack put out the flame of Hurl Fire a hero carried.</summary>

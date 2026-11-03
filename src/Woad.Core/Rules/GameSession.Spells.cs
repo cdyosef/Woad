@@ -83,6 +83,11 @@ public sealed partial class GameSession
             return aimError;
         }
 
+        if (CheckMagicOdHand(command.OdHandDice) is { } odHandError)
+        {
+            return odHandError;
+        }
+
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
         int power = spell.Cost + command.ExtraPower;
@@ -149,16 +154,33 @@ public sealed partial class GameSession
             }
         }
 
+        // A fiery Blast lights the braziers it covers.
+        if (spell.Shape == SpellShape.Burst && spell.DieType == DieType.Fire && command.Target is { } blasted)
+        {
+            foreach (GridPosition brazier in BurstTiles(room, blasted).Where(tile => UnlitBrazierAt(room, tile)).ToList())
+            {
+                Kindle(room, brazier, events);
+            }
+        }
+
+        // An Od Hand die added, and the Focus Bonus.
+        Turn.OdHandDiceUsed += command.OdHandDice;
         var casting = new SpellCasting(spell, command.Target, extra, spell.Shove ? rumble : 0, spell.Swirl ? command.MoveTo : null);
-        RollHeroAttack(hero, 0, hero.EffectiveStats.Magic, targets, DamageSource.Spell, events, typed: [(spell.DieType, dice)], casting: casting);
+        RollHeroAttack(hero, command.OdHandDice, hero.Focus, targets, DamageSource.Spell, events, typed: [(spell.DieType, dice)], casting: casting);
         return null;
     }
 
     /// <summary>The spell the flame of Hold Fire comes from, and is hurled as.</summary>
     private const string HurlFireId = "hurl_fire";
 
-    /// <summary>Why the active hero can't hurl the flame of Hold Fire now (at <paramref name="monsterId"/>, if given), or null.</summary>
-    public string? CheckHurlHeldFire(int? monsterId = null, int dice = 0)
+    /// <summary>Why a magic attack can't add <paramref name="dice"/> Od Hand dice: at most one, and only while there are some left.</summary>
+    private string? CheckMagicOdHand(int dice) =>
+        dice < 0 || dice > GameRules.MagicOdHandDice ? $"A magic attack can add at most {GameRules.MagicOdHandDice} Od Hand die."
+        : dice > OdHandDiceLeft ? "You've no Od Hand dice left to add."
+        : null;
+
+    /// <summary>Why the active hero can't hurl the flame of Hold Fire now (at <paramref name="target"/>, if given), or null.</summary>
+    public string? CheckHurlHeldFire(GridPosition? target = null, int dice = 0)
     {
         if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
         {
@@ -171,20 +193,20 @@ public sealed partial class GameSession
             return "You hold no fire to hurl.";
         }
 
-        if (dice < 0 || dice > OdHandDiceLeft)
+        if (CheckMagicOdHand(dice) is { } odHand)
         {
-            return OdHandDiceLeft == 0 ? "You've no Od Hand dice left to add." : $"Add 0 to {OdHandDiceLeft} Od Hand dice.";
+            return odHand;
         }
 
-        if (monsterId is not int id)
+        if (target is not { } aim)
         {
-            return GetHeldFireTargets().Count > 0 ? null : "There's no monster in reach to hurl it at.";
+            return GetHeldFireTargets().Count > 0 ? null : "There's nothing in reach to hurl it at.";
         }
 
-        return ActiveRoom.FindMonster(id) is { } monster && GetHeldFireTargets().Contains(monster.Position) ? null : "That's out of reach.";
+        return GetHeldFireTargets().Contains(aim) || (ActiveRoom.MonsterAt(aim) is { } monster && GetHeldFireTargets().Contains(monster.Position)) ? null : "That's out of reach.";
     }
 
-    /// <summary>Where the flame of Hold Fire could be hurled: monsters within Hurl Fire's range and sight.</summary>
+    /// <summary>Where the flame of Hold Fire could be hurled: monsters within Hurl Fire's range and sight, and unlit braziers there to light.</summary>
     public IReadOnlyList<GridPosition> GetHeldFireTargets()
     {
         if (State.Turn is null || !ActiveHero.Flame || Content.FindSpell(HurlFireId) is not { } spell)
@@ -194,12 +216,13 @@ public sealed partial class GameSession
 
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
-        return [.. room.Monsters.Where(monster => SpellReaches(hero, room, monster) && InSpellRange(spell, room, hero, monster.NearestTile(hero.Position))).Select(monster => monster.Position)];
+        return [.. room.Monsters.Where(monster => SpellReaches(hero, room, monster) && InSpellRange(spell, room, hero, monster.NearestTile(hero.Position))).Select(monster => monster.Position),
+            .. room.Positions.Where(tile => UnlitBrazierAt(room, tile) && InSpellRange(spell, room, hero, tile))];
     }
 
     private string? Handle(HurlHeldFire command, List<GameEvent> events)
     {
-        if (CheckHurlHeldFire(command.MonsterId, command.Dice) is { } error)
+        if (CheckHurlHeldFire(command.Target, command.Dice) is { } error)
         {
             return error;
         }
@@ -209,18 +232,26 @@ public sealed partial class GameSession
             return powerError;
         }
 
-        // Thrown, the flame goes: a Fire die and the Magic, with the Od Hand dice added; no Power to pay.
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
-        Monster monster = room.FindMonster(command.MonsterId)!;
         SpellDefinition spell = Content.GetSpell(HurlFireId);
         hero.Flame = false;
-        Turn.OdHandDiceUsed += command.Dice;
         Reveal(hero, events);
+
+        // At an unlit brazier with no one there, it lights it.
+        if (room.MonsterAt(command.Target) is not { } monster)
+        {
+            events.Add(new FlameHurled(hero.Id, 0));
+            Kindle(room, command.Target, events);
+            return null;
+        }
+
+        // At a monster: a Fire die and the Focus Bonus, with an Od Hand die if added; no Power to pay.
+        Turn.OdHandDiceUsed += command.Dice;
         events.Add(new FlameHurled(hero.Id, monster.Id));
         SpendBankedPowerDice(hero, command.PowerDice, events);
         var casting = new SpellCasting(spell, monster.Position, new Dictionary<int, (int, int)>(), 0, null);
-        RollHeroAttack(hero, command.Dice, hero.EffectiveStats.Magic, [monster.Id], DamageSource.Spell, events, command.PowerDice, typed: [(spell.DieType, spell.Dice)], casting: casting);
+        RollHeroAttack(hero, command.Dice, hero.Focus, [monster.Id], DamageSource.Spell, events, command.PowerDice, typed: [(spell.DieType, spell.Dice)], casting: casting);
         return null;
     }
 
@@ -308,6 +339,12 @@ public sealed partial class GameSession
         if (spell.Shape == SpellShape.Burst)
         {
             targets = [.. BurstTiles(room, aim).SelectMany(tile => WhoIsOn(room, hero, tile)).Distinct()];
+            if (targets.Count == 0 && spell.DieType == DieType.Fire && UnlitBrazierAt(room, aim))
+            {
+                mode = SpellMode.Kindle;
+                return null;
+            }
+
             return targets.Count > 0 ? null : "There's no one there for the blast to reach.";
         }
 

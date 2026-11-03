@@ -290,6 +290,32 @@ public class TerrainMagicTests
     }
 
     [Fact]
+    public void AFlameBlastOrTheHeldFireHurledLightsABrazier()
+    {
+        GameSession session = Dark("""
+            .........
+            .........
+            .........
+            .........
+            .1..^.^..
+            .........
+            .........
+            .........
+            .........
+            """, new ScriptedDice());
+        Hero hero = Mage(session, 0, 3, "flame_blast");
+        Room room = session.RoomById();
+
+        Assert.Equal(new BrazierLit(room.Id, new GridPosition(4, 4)), session.Do(new CastSpell(hero.Id, "flame_blast", new GridPosition(4, 4))).SingleOf<BrazierLit>());
+
+        session.State.Turn!.AttackDiceUsed = 0;
+        hero.Flame = true;
+        IReadOnlyList<GameEvent> events = session.Do(new HurlHeldFire(hero.Id, new GridPosition(6, 4)));
+        Assert.Equal(new BrazierLit(room.Id, new GridPosition(6, 4)), events.SingleOf<BrazierLit>());
+        Assert.False(hero.Flame);
+    }
+
+    [Fact]
     public void SomeGeneratedRoomsAreDarkWithBraziersButNeverWhereYouArrive()
     {
         ContentCatalog content = ContentCatalog.LoadDefault();

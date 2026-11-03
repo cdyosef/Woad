@@ -223,6 +223,12 @@ public sealed class Hero
     /// <summary>The points bought so far, counting any spent during the run; null for a debug hero.</summary>
     public StatAllocation? Allocation { get; internal set; }
 
+    /// <summary>
+    /// The Focus Bonus: +1 for each rank bought in Od Hand and in Magic, added to magic attacks and to Focus
+    /// checks (learning a spell). A hero with no points bought (a debug hero) has their Magic rank.
+    /// </summary>
+    public int Focus => Allocation is { } bought ? bought.OdHandDice + bought.Magic : Math.Max(0, EffectiveStats.Magic);
+
     /// <summary>Points the character had to spend coming into the run.</summary>
     public int StartUnspentPoints { get; internal init; }
 

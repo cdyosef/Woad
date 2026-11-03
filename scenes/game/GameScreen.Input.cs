@@ -277,10 +277,10 @@ public partial class GameScreen
 
         if (_hurling)
         {
-            if (room.MonsterAt(tile) is { } burned && _session.GetHeldFireTargets().Contains(burned.Position))
+            if (_session.CheckHurlHeldFire(tile) is null)
             {
                 _hurling = false;
-                ExecuteOdHand((heroId, dice, _, power) => new HurlHeldFire(heroId, burned.Id, dice ?? 0, power));
+                Execute(new HurlHeldFire(hero.Id, tile, MagicOdHandDice, SelectedPowerDice));
             }
             else
             {

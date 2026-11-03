@@ -62,6 +62,9 @@ public static class GameRules
     /// <summary>How far round the tile it's aimed at a Burst spell (a Blast) reaches: 1, a 3x3 area.</summary>
     public const int BurstRadius = 1;
 
+    /// <summary>The most Od Hand dice a magic attack can add to its roll (a spell, or Hold Fire hurled).</summary>
+    public const int MagicOdHandDice = 1;
+
     /// <summary>Dice a sprung trap attacks with.</summary>
     public const int TrapAttackDice = 1;
 

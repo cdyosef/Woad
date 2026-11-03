@@ -536,8 +536,10 @@ Magic is dangerous in this world, and people don't like it, for good reason.
   spent, not rolled in.
 - **Upcasting:** each extra Power spent adds one more die of the spell's type, up to your Magic rank in
   extra dice. At Magic 2, Hurl Fire is 1 to 3 Fire dice.
-- The attack is the spell's dice **plus your Magic rank**, against the target's defense and armor like
-  any attack. Its dice are typed (see Damage types): a 6 rolls another of its type in and, on a hit, lays
+- The attack is the spell's dice **plus your Focus Bonus**, and **one Od Hand die** if you've one selected
+  (at most one, whatever's selected), against the target's defense and armor like any attack. The **Focus
+  Bonus** is +1 for each rank bought in Od Hand and in Magic; it goes on Focus checks too (learning a
+  spell). Its dice are typed (see Damage types): a 6 rolls another of its type in and, on a hit, lays
   its effect.
 - Casting takes all your **Rumble dice** left this turn (you need at least one), so it's instead of
   attacking, and once a turn.
@@ -588,7 +590,7 @@ All cost **1 Power** and can be upcast.
   **Flame Blast**, the Frost Scroll **Frost Blast**...): 3 dice of its type at range 3, but a **blast**, hitting
   everyone on the tile aimed at and the 8 around it (monsters; allies only with friendly fire on), the area
   showing as you aim. It costs 3 Power to cast. Learning it uses up the scroll.
-- The attempt is an **Od Hand roll plus your Magic rank** against **6 + the spell's level** (the scrolls'
+- The attempt is a Focus check: an **Od Hand roll plus your Focus Bonus** against **6 + the spell's level** (the scrolls'
   spells are level 3: 9). It can be tried anywhere. In a dungeon or a fight it's an Od Hand roll like any
   other (your selected Od Hand dice, Power Dice and Luck): select the scroll and press **Learn** (where
   Equip would be). On the Woarld Map, pick the scroll in the **Party** menu and press **Learn**: there it's
@@ -606,7 +608,7 @@ All cost **1 Power** and can be upcast.
 - About **a quarter** of the rooms past the first are dark (never an arrival or the boss's room), each with
   a **brazier** or two, unlit, standing where they block no way through. Braziers block movement, not sight.
 - Any fire beside a brazier lights it: a held torch, burning floor, a burning or fiery creature. So does
-  fire aimed at it (Hurl Fire, a Flame Scroll). Lit, it stays lit.
+  fire aimed at it (Hurl Fire, a Flame Scroll, Flame Blast, or the flame of Hold Fire hurled). Lit, it stays lit.
 - Monsters in darkness are hard to make out: ranged attacks on them take **-1**, and Shadowbind rolls a die
   more against them. On the board, darkness dims the tiles no light reaches.
 
