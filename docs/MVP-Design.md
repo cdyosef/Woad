@@ -592,7 +592,8 @@ All cost **1 Power** and can be upcast.
   showing as you aim. It costs 3 Power to cast. Learning it uses up the scroll.
 - The attempt is a Focus check: an **Od Hand roll plus your Focus Bonus** (and after the roll, "Focus:
   more?" for 3 seconds, zoomed in, while you have Luck, Od Hand dice or banked Power Dice left: **+Od Hand** adds a die,
-  **+Power** spends a banked Power Die for one, or try your Luck) against **6 + the spell's level** (the scrolls'
+  **+Power** spends a banked Power Die for one, each exploding rather than earning a Power Die; or try
+  your Luck) against **6 + the spell's level** (the scrolls'
   spells are level 3: 9). It can be tried anywhere. In a dungeon or a fight it's an Od Hand roll like any
   other (your selected Od Hand dice, Power Dice and Luck): select the scroll and press **Learn** (where
   Equip would be). On the Woarld Map, pick the scroll in the **Party** menu and press **Learn**: there it's

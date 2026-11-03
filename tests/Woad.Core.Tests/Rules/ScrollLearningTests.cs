@@ -57,6 +57,22 @@ public class ScrollLearningTests
     }
 
     [Fact]
+    public void ADieAddedToAFocusCheckExplodesRatherThanBanking()
+    {
+        // 1 and the free die's 1 and Magic 2: 4; an Od Hand die more: 6 and 1, exploding, 11.
+        GameSession session = TestRun.Start(Huddle, new ScriptedDice(1, 1, 6, 1), cards: ["t_scroll"], stats: TestRun.HeroStats with { OdHandDice = 2 });
+        Hero hero = session.HeroInSeat();
+        hero.BaseStats = hero.BaseStats with { Magic = 2 };
+
+        session.Do(new LearnSpell(hero.Id, hero.Card("t_scroll").Id, Dice: 1));
+        IReadOnlyList<GameEvent> events = session.Do(new AddOdHandDie(hero.Id));
+
+        Assert.Equal(new[] { 6, 1 }, events.SingleOf<OdHandDieAdded>().Faces);
+        Assert.Equal(11, events.SingleOf<OdHandDieAdded>().Total);
+        Assert.Empty(events.OfType<PowerDiceEarned>());
+    }
+
+    [Fact]
     public void BeatingSixPlusTheSpellsLevelLearnsItAndUsesUpTheScroll()
     {
         // One Od Hand die (3), the free die that starts every attempt (2) and Magic 4: 9, just enough for a level 3 spell.

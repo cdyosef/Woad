@@ -134,7 +134,7 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         FallSaveBoosted boosted => $"An Od Hand die more: {string.Join(" + ", boosted.Faces)}, {boosted.Total} in all.",
         FallSaveSettled { Made: true } made => $"{nameOf(made.HeroId)} keeps their light ({made.Total} against {made.Difficulty}).",
         FallSaveSettled lost => $"{nameOf(lost.HeroId)}'s light goes out in the fall ({lost.Total} against {lost.Difficulty}).",
-        OdHandDieAdded added => $"{nameOf(added.HeroId)} adds an Od Hand die: {added.Face}, {added.Total} in all.",
+        OdHandDieAdded added => $"{nameOf(added.HeroId)} adds a die: {string.Join(" + ", added.Faces)}, {added.Total} in all.",
         FlameWentOut flameOut => $"{nameOf(flameOut.HeroId)}'s flame gutters and goes out.",
         TorchBurnedOut burnedOut => $"{nameOf(burnedOut.HeroId)}'s torch gutters and burns out.",
         HeroShackled shackled => $"{nameOf(shackled.MonsterId)}'s chain shackles {nameOf(shackled.HeroId)}! No moving until a key or a picked lock ({shackled.Lock}+) frees them.",

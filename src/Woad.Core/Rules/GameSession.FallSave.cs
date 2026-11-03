@@ -231,10 +231,15 @@ public sealed partial class GameSession
             Turn.OdHandDiceUsed++;
         }
 
-        int face = RollOneDie();
-        pending.Roll = pending.Roll.With(face);
-        events.Add(new OdHandDieAdded(command.HeroId, face, pending.Total));
-        EarnPowerDice(ActiveHero, face == GameRules.PowerDieFace ? 1 : 0, events);
+        // It explodes, as on the save after a fall: a 6 rolls another rather than earning a Power Die.
+        List<int> faces = RollExploding();
+        foreach (int face in faces)
+        {
+            pending.Roll = pending.Roll.With(face);
+        }
+
+        events.Add(new OdHandDieAdded(command.HeroId, [.. faces], pending.Total));
+        SettlePowerDice(ActiveHero, events);
         return null;
     }
 }

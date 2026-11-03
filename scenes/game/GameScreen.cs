@@ -803,7 +803,11 @@ public partial class GameScreen : Control
                 break;
 
             case OdHandDieAdded added:
-                await _dice.AddDie(added.Face);
+                foreach (int face in added.Faces)
+                {
+                    await _dice.AddDie(face);
+                }
+
                 break;
 
             case FallSaveSettled settled:

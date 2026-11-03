@@ -664,8 +664,8 @@ public sealed record FallSaveBoosted(int HeroId, IReadOnlyList<int> Faces, int T
 /// <summary>A hero's save after a fall settled: <paramref name="Made"/>, their lights and spells stay; otherwise they're out.</summary>
 public sealed record FallSaveSettled(int HeroId, int Total, int Difficulty, bool Made) : GameEvent;
 
-/// <summary>An Od Hand die added to a Focus check: its face and the new total.</summary>
-public sealed record OdHandDieAdded(int HeroId, int Face, int Total) : GameEvent;
+/// <summary>An Od Hand or Power Die added to a Focus check, exploding: its <paramref name="Faces"/> and the new total.</summary>
+public sealed record OdHandDieAdded(int HeroId, IReadOnlyList<int> Faces, int Total) : GameEvent;
 
 /// <summary>A 1 in a torch-lit attack burned the torch out: it's gone.</summary>
 public sealed record TorchBurnedOut(int HeroId, int CardId) : GameEvent;
