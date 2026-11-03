@@ -329,6 +329,21 @@ public sealed partial class GameSession
     }
 
     /// <summary>A shove roll that beats the target's defense pushes it; then any trap or pit there takes it.</summary>
+    /// <summary>Whether a shove beats the monster's defense: rolled now, or first while Luck was offered (and standing since).</summary>
+    private bool ShoveBeats(PendingRoll shove, Room room, Monster monster, List<GameEvent> events)
+    {
+        int push = shove.Total + monster.Stun.AttackBonus;
+        if (!shove.Defenses.TryGetValue(monster.Id, out int defense))
+        {
+            bool collapsed = monster.Collapsed;
+            int armor = collapsed ? 0 : ArmorOf(monster);
+            defense = RollDefense(monster.Id, monster.Power, collapsed ? 0 : DefenseDiceOf(monster), armor, push, canSpend: !collapsed, events).Total + armor;
+            shove.Defenses[monster.Id] = defense;
+        }
+
+        return push > defense;
+    }
+
     private void ResolveShove(PendingRoll shove, List<GameEvent> events)
     {
         Hero hero = State.GetHero(shove.HeroId);
@@ -345,10 +360,7 @@ public sealed partial class GameSession
         }
 
         bool collapsed = monster.Collapsed;
-        int armor = collapsed ? 0 : ArmorOf(monster);
-        int push = shove.Total + monster.Stun.AttackBonus;
-        DiceRoll defense = RollDefense(monster.Id, monster.Power, collapsed ? 0 : DefenseDiceOf(monster), armor, push, canSpend: !collapsed, events);
-        bool beaten = push > defense.Total + armor;
+        bool beaten = ShoveBeats(shove, room, monster, events);
 
         // A shelled monster the shove beats goes over onto its back, pushed or not.
         if (beaten && monster.Definition.Shell && !monster.Prone && !collapsed)

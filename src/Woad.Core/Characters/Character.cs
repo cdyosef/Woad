@@ -140,6 +140,11 @@ public sealed class Character
 
     public void SetPolicy(CompanionPolicy policy) => Policy = policy;
 
+    /// <summary>The rolls Luck is asked on when they're about to fail (the Luck menu's switches).</summary>
+    public LuckRoll LuckAsks { get; private set; } = LuckRoll.All;
+
+    public void SetLuckAsks(LuckRoll asks) => LuckAsks = asks & LuckRoll.All;
+
     /// <summary>Power Dice banked and carried from one dungeon or fight to the next (up to the bank's limit).</summary>
     public int PowerDice { get; private set; }
 
@@ -370,6 +375,7 @@ public sealed class Character
         }
 
         Policy = result.Policy ?? Policy;
+        LuckAsks = result.LuckAsks ?? LuckAsks;
         // A look changed in the run (the belt square's art, gear shown on the figure) is kept.
         Appearance = result.Appearance == Appearance.Default ? Appearance : result.Appearance;
         _lingering.Clear();
@@ -415,7 +421,7 @@ public sealed class Character
     /// <summary>The hero this character plays as in a run, carrying everything they own.</summary>
     /// <param name="ownerSeat">For a companion, the seat of the player it belongs to.</param>
     public HeroSetup ToHeroSetup(int? ownerSeat = null) => new(Name, BaseStats, [.. _equipped, .. _belt, .. _backpack, .. _carried], Id, Portrait, ownerSeat, Appearance, GuildStanding: GuildStanding, PowerDice: PowerDice, Skills: Allocation.Skills,
-        Allocation: Allocation, Xp: Xp, UnspentPoints: UnspentPoints, Policy: Policy, Spells: [.. _spells], Lingering: _lingering);
+        Allocation: Allocation, Xp: Xp, UnspentPoints: UnspentPoints, Policy: Policy, Spells: [.. _spells], Lingering: _lingering, LuckAsks: LuckAsks);
 
     /// <summary>
     /// Puts a card where a new hero would: in their arms if it's carry-only, a mod on the belt or buckle,

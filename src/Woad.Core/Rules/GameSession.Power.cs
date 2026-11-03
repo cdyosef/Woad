@@ -76,7 +76,9 @@ public sealed partial class GameSession
     /// <summary>
     /// After Power Dice change: a full bank rolls the rest in at once; any still waiting for the
     /// hero's choice are announced; and a pending roll with nothing left to decide resolves: one that
-    /// would succeed, or with no Luck left to try (see <see cref="Failing"/>).
+    /// Luck can't be tried on (a retreat), or with none left. A roll the hero could try their Luck on waits,
+    /// whatever its odds, its targets defending first (see <see cref="FacedUp"/>); the screen asks, by the
+    /// hero's Luck menu, or lets it stand.
     /// </summary>
     private void SettlePowerDice(Hero hero, List<GameEvent> events)
     {
@@ -89,11 +91,18 @@ public sealed partial class GameSession
         {
             events.Add(new PowerDiceEarned(hero.Id, Turn.UnsettledPowerDice));
         }
-        else if (Turn.PendingRoll is { } pending && !(hero.LuckRemaining > 0 && Failing(pending, events)))
+        else if (Turn.PendingRoll is { } pending && !(hero.LuckRemaining > 0 && LuckKind(pending) is not null && FacedUp(pending, events)))
         {
             Turn.PendingRoll = null;
             ResolvePendingRoll(pending, events);
         }
+    }
+
+    /// <summary>The roll's targets defend first, while Luck is offered (see <see cref="Failing"/>). True: it waits.</summary>
+    private bool FacedUp(PendingRoll roll, List<GameEvent> events)
+    {
+        Failing(roll, events);
+        return true;
     }
 
     /// <summary>Rolls one earned Power Die into the pending roll, or else the move in progress. Its own 6 earns another.</summary>

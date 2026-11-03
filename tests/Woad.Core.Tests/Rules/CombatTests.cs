@@ -292,27 +292,62 @@ public class CombatTests
         Assert.NotNull(session.State.Turn!.PendingRoll);
         Assert.Contains("Finish the roll", session.Refuse(new EndTurn(hero.Id)));
 
+        Assert.True(session.PendingRollFails);
+        Assert.Equal(LuckRoll.Rumble, session.PendingLuckKind);
+
         events = session.Do(new RerollDie(hero.Id, 0));
         var rerolled = events.SingleOf<DieRerolled>();
         Assert.Equal((1, 5, (int?)null), (rerolled.OldFace, rerolled.NewFace, rerolled.MovementPoints));
         Assert.Equal(1, hero.LuckRemaining);
 
-        // Winning now, it lands at once, against the same defense.
+        // Winning now against the same defense, it waits only for the go-ahead.
         Assert.Empty(events.OfType<DefenseRolled>());
-        Assert.Contains(new MonsterDefeated(grunt.Id, hero.Id), events);
+        Assert.False(session.PendingRollFails);
+        Assert.Contains(new MonsterDefeated(grunt.Id, hero.Id), session.Do(new ConfirmAttack(hero.Id)));
         Assert.Null(session.State.Turn.PendingRoll);
     }
 
     [Fact]
-    public void AnAttackThatWouldSucceedDoesntWaitForLuck()
+    public void AnAttackThatWouldSucceedStillWaitsWhileThereIsLuck()
     {
+        // The screen asks only when the Luck menu says (or the clover glows); the roll waits all the same.
         GameSession session = TestRun.Start(Duel('m'), new ScriptedDice(5, 1), stats: GameRules.HeroBaseStats with { Luck = 2 });
         Hero hero = session.HeroInSeat();
         Monster grunt = session.OnlyMonster();
 
-        Assert.Contains(new MonsterDefeated(grunt.Id, hero.Id), session.Do(new AttackMonster(hero.Id, grunt.Id)));
-        Assert.Null(session.State.Turn!.PendingRoll);
+        session.Do(new AttackMonster(hero.Id, grunt.Id));
+        Assert.False(session.PendingRollFails);
+        Assert.Contains(new MonsterDefeated(grunt.Id, hero.Id), session.Do(new ConfirmAttack(hero.Id)));
         Assert.Equal(2, hero.LuckRemaining);
+    }
+
+    [Fact]
+    public void AShoveDefendsFirstWhileLuckIsOffered()
+    {
+        GameSession session = TestRun.Start(Duel('m'), new ScriptedDice(1, 3), stats: GameRules.HeroBaseStats with { Luck = 1 });
+        Hero hero = session.HeroInSeat();
+
+        Assert.Single(session.Do(new Shove(hero.Id, session.OnlyMonster().Id)).OfType<DefenseRolled>());
+        Assert.Equal(LuckRoll.Shove, session.PendingLuckKind);
+        Assert.True(session.PendingRollFails);
+    }
+
+    [Fact]
+    public void TheLuckMenuSwitchesAreKept()
+    {
+        GameSession session = TestRun.Start(Duel('m'));
+        Hero hero = session.HeroInSeat();
+
+        session.Do(new SetLuckAsks(hero.Id, LuckRoll.Rumble | LuckRoll.Wend));
+
+        Assert.Equal(LuckRoll.Rumble | LuckRoll.Wend, hero.LuckAsks);
+        Assert.Equal(LuckRoll.Rumble | LuckRoll.Wend, RunResultsLuck(session));
+    }
+
+    private static LuckRoll? RunResultsLuck(GameSession session)
+    {
+        session.State.Phase = RunPhase.Ended;
+        return RunResults.For(session.State).Single().LuckAsks;
     }
 
     [Fact]

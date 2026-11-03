@@ -143,6 +143,9 @@ public sealed class Hero
 
     public int Kills { get; internal set; }
 
+    /// <summary>The rolls Luck is asked on when they're about to fail (the Luck menu's switches).</summary>
+    public LuckRoll LuckAsks { get; internal set; } = LuckRoll.All;
+
     /// <summary>Rooms they searched first (each an Explorer bonus): the most on a run wins the Explorer Award.</summary>
     public int ExplorerBonus { get; internal set; }
 

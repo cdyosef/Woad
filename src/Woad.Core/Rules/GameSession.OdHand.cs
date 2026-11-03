@@ -583,7 +583,7 @@ public sealed partial class GameSession
                 break;
 
             case OdHandCheckKind.Steal:
-                ResolveSteal(hero, room, check.TargetId, total, events);
+                ResolveSteal(hero, room, check.TargetId, total, StealGuard(roll, room, check.TargetId, events), events);
                 break;
 
             case OdHandCheckKind.Retreat:
@@ -678,19 +678,39 @@ public sealed partial class GameSession
     /// Beat it to take something: from a monster a key or a card (once per monster), from a hero
     /// one of their keys or backpack cards at random.
     /// </summary>
-    private void ResolveSteal(Hero thief, Room room, int targetId, int total, List<GameEvent> events)
+    /// <summary>
+    /// What the mark of a steal holds on with: a merchant's 2 dice, a monster's defense dice, a hero's Od Hand
+    /// dice. Rolled now, or first while Luck was offered (and standing since).
+    /// </summary>
+    private int StealGuard(PendingRoll roll, Room room, int targetId, List<GameEvent> events)
+    {
+        if (roll.Defenses.TryGetValue(targetId, out int held))
+        {
+            return held;
+        }
+
+        int dice = room.FindMerchant(targetId) is not null ? 2
+            : room.FindMonster(targetId) is { } monster ? monster.Definition.DefenseDice
+            : State.Heroes.FirstOrDefault(hero => hero.Id == targetId) is { } victim ? Math.Max(0, victim.EffectiveStats.OdHandDice)
+            : 0;
+        DiceRoll guard = _dice.Roll(dice);
+        events.Add(new DefenseRolled(targetId, guard, 0, guard.Total));
+        roll.Defenses[targetId] = guard.Total;
+        return guard.Total;
+    }
+
+    /// <param name="guard">What the mark holds on with (see <see cref="StealGuard"/>).</param>
+    private void ResolveSteal(Hero thief, Room room, int targetId, int total, int guard, List<GameEvent> events)
     {
         if (room.FindMerchant(targetId) is { } merchant)
         {
-            StealFromMerchant(thief, room, merchant, total, events);
+            StealFromMerchant(thief, room, merchant, total, guard, events);
             return;
         }
 
         if (room.FindMonster(targetId) is { } monster)
         {
-            DiceRoll guard = _dice.Roll(monster.Definition.DefenseDice);
-            events.Add(new DefenseRolled(monster.Id, guard, 0, guard.Total));
-            if (total <= guard.Total)
+            if (total <= guard)
             {
                 events.Add(new CheckFailed(thief.Id, OdHandCheckKind.Steal));
                 return;
@@ -712,9 +732,7 @@ public sealed partial class GameSession
 
         Hero victim = State.GetHero(targetId);
         Stats stats = victim.EffectiveStats;
-        DiceRoll hold = _dice.Roll(Math.Max(0, stats.OdHandDice));
-        events.Add(new DefenseRolled(victim.Id, hold, 0, hold.Total));
-        if (total <= hold.Total || (victim.Keys == 0 && victim.Backpack.Count == 0))
+        if (total <= guard || (victim.Keys == 0 && victim.Backpack.Count == 0))
         {
             events.Add(new CheckFailed(thief.Id, OdHandCheckKind.Steal));
             return;

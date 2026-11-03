@@ -143,9 +143,9 @@ public class PowerDiceTests
         Assert.Equal(new PowerDiceEarned(hero.Id, 1), events[^1]);
         Assert.Equal(1, hero.LuckRemaining);
 
-        events = session.Do(new BankPowerDie(hero.Id));
+        session.Do(new BankPowerDie(hero.Id));
         Assert.Equal(1, hero.Power.Banked);
-        Assert.Equal(1, events.SingleOf<Damaged>().Amount);
+        Assert.Equal(1, session.Do(new ConfirmAttack(hero.Id)).SingleOf<Damaged>().Amount);
     }
 
     [Fact]

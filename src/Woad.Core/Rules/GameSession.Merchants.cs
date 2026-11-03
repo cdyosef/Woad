@@ -230,11 +230,9 @@ public sealed partial class GameSession
     /// A theft from a merchant: their roll is two dice. Beaten, they lose a card at random; either way the
     /// thief's name suffers with the Guild and the Law, less if they're caught empty-handed.
     /// </summary>
-    private void StealFromMerchant(Hero thief, Room room, Merchant merchant, int total, List<GameEvent> events)
+    private void StealFromMerchant(Hero thief, Room room, Merchant merchant, int total, int guard, List<GameEvent> events)
     {
-        DiceRoll guard = _dice.Roll(2);
-        events.Add(new DefenseRolled(merchant.Id, guard, 0, guard.Total));
-        bool caught = total <= guard.Total || merchant.Stock.Count == 0;
+        bool caught = total <= guard || merchant.Stock.Count == 0;
         string? cardId = caught ? null : merchant.Stock[_random.Loot.NextInt(0, merchant.Stock.Count)];
         if (cardId is not null)
         {

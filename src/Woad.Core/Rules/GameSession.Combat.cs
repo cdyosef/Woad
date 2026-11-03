@@ -371,26 +371,56 @@ public sealed partial class GameSession
         return total;
     }
 
+    private string? Handle(SetLuckAsks command)
+    {
+        ActiveHero.LuckAsks = command.Asks & LuckRoll.All;
+        return null;
+    }
+
+    /// <summary>The kind of roll the active hero's pending roll is, for the Luck menu's switches; null for one Luck doesn't ask on (a retreat).</summary>
+    public LuckRoll? PendingLuckKind => State.Turn?.PendingRoll is { } roll ? LuckKind(roll) : null;
+
+    /// <summary>Whether the active hero's pending roll is about to fail (see <see cref="Failing"/>), so Luck would be asked.</summary>
+    public bool PendingRollFails => State.Turn?.PendingRoll is { } roll && Failing(roll, []);
+
+    private static LuckRoll? LuckKind(PendingRoll roll) => roll.Check?.Kind switch
+    {
+        null => roll.Source == DamageSource.Shove ? LuckRoll.Shove : LuckRoll.Rumble,
+        OdHandCheckKind.PickDoor or OdHandCheckKind.PickChest or OdHandCheckKind.PickGate or OdHandCheckKind.PickChains or OdHandCheckKind.PickShackles => LuckRoll.PickLock,
+        OdHandCheckKind.Disarm or OdHandCheckKind.DefuseBomb => LuckRoll.Disarm,
+        OdHandCheckKind.Steal => LuckRoll.Steal,
+        OdHandCheckKind.Search => LuckRoll.Search,
+        OdHandCheckKind.Rouse or OdHandCheckKind.Cure => LuckRoll.Aid,
+        OdHandCheckKind.Learn => LuckRoll.Learn,
+        _ => null,
+    };
+
     /// <summary>
-    /// Whether a hero's pending roll would fail, so Luck is worth offering: an Od Hand check short of its
-    /// number, or an attack some monster it's aimed at would hold off. The monsters defend first, now,
-    /// and that defense stands whatever the Luck does (see <see cref="PendingRoll.Defenses"/>).
-    /// Contests (a steal), searches and shoves don't wait for Luck.
+    /// Whether a hero's pending roll is about to fail, so Luck is worth asking: an Od Hand check short of
+    /// its number, a rouse with no mark of life, a steal the other side holds on to, or an attack or shove
+    /// some monster it's aimed at would hold off. Those defend first, now, and their defense stands
+    /// whatever the Luck does (see <see cref="PendingRoll.Defenses"/>). A search can't fail.
     /// </summary>
     private bool Failing(PendingRoll roll, List<GameEvent> events)
     {
+        Hero hero = State.GetHero(roll.HeroId);
+        Room room = State.RoomOf(hero);
         if (roll.Check is { } check)
         {
-            return check.Difficulty > 0 && roll.Total < check.Difficulty;
+            return check.Kind switch
+            {
+                OdHandCheckKind.Search => false,
+                OdHandCheckKind.Rouse => roll.Total < GameRules.RousePerMark,
+                OdHandCheckKind.Steal => roll.Total <= StealGuard(roll, room, check.TargetId, events),
+                _ => check.Difficulty > 0 && roll.Total < check.Difficulty,
+            };
         }
 
         if (roll.Source == DamageSource.Shove)
         {
-            return false;
+            return roll.TargetIds is [int shoved] && room.FindMonster(shoved) is { } pushed && !ShoveBeats(roll, room, pushed, events);
         }
 
-        Hero hero = State.GetHero(roll.HeroId);
-        Room room = State.RoomOf(hero);
         bool failing = false;
         foreach (int targetId in roll.TargetIds)
         {

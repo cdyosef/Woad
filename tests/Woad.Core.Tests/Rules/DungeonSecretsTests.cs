@@ -99,22 +99,24 @@ public class DungeonSecretsTests
     }
 
     [Fact]
-    public void AnOdHandCheckWaitsForLuckOnlyWhenItFallsShort()
+    public void AnOdHandCheckSaysWhenItFallsShort()
     {
-        // A 2 against the lock's 5 waits; the Luck die's 5 opens it.
+        // A 2 against the lock's 5 is about to fail; the Luck die's 5 opens it (the last Luck spent, it resolves).
         Stats lucky = GameRules.HeroBaseStats with { Luck = 1, OdHandDice = 1 };
         GameSession session = DoorRun(PassageKind.Locked, difficulty: 5, dice: new ScriptedDice(2, 5), stats: lucky);
         Hero hero = session.HeroInSeat();
         session.Do(new PickLock(hero.Id, hero.Position));
-        Assert.NotNull(session.State.Turn!.PendingRoll);
+        Assert.Equal((LuckRoll.PickLock, true), (session.PendingLuckKind!.Value, session.PendingRollFails));
         session.Do(new RerollDie(hero.Id, 0));
         Assert.False(session.RoomById().PassageOn(Direction.East)!.IsLocked);
 
-        // A 5 straight away opens it with no wait, the Luck kept.
+        // A 5 straight away isn't about to fail.
         GameSession sure = DoorRun(PassageKind.Locked, difficulty: 5, dice: new ScriptedDice(5), stats: lucky);
         Hero picker = sure.HeroInSeat();
         sure.Do(new PickLock(picker.Id, picker.Position));
-        Assert.Null(sure.State.Turn!.PendingRoll);
+        Assert.False(sure.PendingRollFails);
+        sure.Do(new ConfirmAttack(picker.Id));
+        Assert.False(sure.RoomById().PassageOn(Direction.East)!.IsLocked);
         Assert.Equal(1, picker.LuckRemaining);
     }
 

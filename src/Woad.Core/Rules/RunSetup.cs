@@ -31,7 +31,8 @@ public sealed record HeroSetup(
     CompanionPolicy? Policy = null,
     IReadOnlyList<string>? Spells = null,
     Skill Skills = Content.Skills.All,
-    IReadOnlyDictionary<Condition, int>? Lingering = null);
+    IReadOnlyDictionary<Condition, int>? Lingering = null,
+    LuckRoll LuckAsks = LuckRoll.All);
 
 /// <summary>A merchant chained up in a room, the Od Hand needed to pick the lock of their chains, and their name.</summary>
 public sealed record MerchantSetup(GridPosition Position, int LockDifficulty, string Name);
