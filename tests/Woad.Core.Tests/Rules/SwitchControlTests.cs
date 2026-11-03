@@ -50,6 +50,21 @@ public sealed class SwitchControlTests
     }
 
     [Fact]
+    public void ACompanionAboutToLoseAHeartTriesItsLuck()
+    {
+        // A blow of 5 (friendly fire) against the companion's 2: its Luck die comes up 6 (+4, and it isn't spent).
+        GameSession session = TestRun.Start(Room, new ScriptedDice(5, 2, 6), heroes: 2, owners: [null, 0], friendlyFire: true);
+        Hero player = session.HeroInSeat(), companion = session.HeroInSeat(1);
+        companion.CloverLuck = 1;
+
+        IReadOnlyList<GameEvent> events = session.Do(new AttackAlly(player.Id, companion.Id, UseWeapon: false));
+
+        Assert.Equal(new LuckTried(companion.Id, 2, 6), events.SingleOf<LuckTried>());
+        Assert.Equal(0, events.SingleOf<Damaged>().Amount);
+        Assert.Equal(1, companion.CloverLuck);
+    }
+
+    [Fact]
     public void TheLastHeroCantBeHandedOverNorAnotherPlayersHero()
     {
         GameSession pair = TestRun.Start(Room, heroes: 2, owners: [null, 0]);

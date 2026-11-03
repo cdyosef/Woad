@@ -21,6 +21,26 @@ public enum DamageSource
     Fire,
 }
 
+/// <summary>
+/// The kinds of roll a hero can try their Luck on, each a switch in their Luck menu: on, Luck is asked
+/// whenever that roll is about to fail (Wend and Search, which can't, every roll).
+/// </summary>
+[Flags]
+public enum LuckRoll
+{
+    None = 0,
+    Rumble = 1 << 0,
+    Shove = 1 << 1,
+    PickLock = 1 << 2,
+    Disarm = 1 << 3,
+    Steal = 1 << 4,
+    Search = 1 << 5,
+    Aid = 1 << 6,
+    Learn = 1 << 7,
+    Wend = 1 << 8,
+    All = Rumble | Shove | PickLock | Disarm | Steal | Search | Aid | Learn | Wend,
+}
+
 public enum OdHandCheckKind
 {
     /// <summary>Pick the lock of the door the hero stands in.</summary>
@@ -140,6 +160,12 @@ public sealed class PendingRoll
 
     /// <summary>The spell this roll casts, and what comes of it besides the roll (null for anything else).</summary>
     public SpellCasting? Casting { get; internal init; }
+
+    /// <summary>
+    /// The monsters' defense totals (armor included), by id, rolled first while Luck was offered: they
+    /// stand, whatever the Luck does to the attack.
+    /// </summary>
+    internal Dictionary<int, int> Defenses { get; } = [];
 
     /// <summary>A weapon that doesn't last, to be settled as the dice land (a Rock flung, a Club).</summary>
     internal WeaponSpent? Spent { get; init; }

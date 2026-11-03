@@ -1,7 +1,10 @@
 using Godot;
+using Woad.Core.Commands;
 using Woad.Core.Content;
 using Woad.Core.Events;
+using Woad.Core.Grid;
 using Woad.Core.Model;
+using Woad.Core.Rules;
 using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Game;
@@ -19,6 +22,9 @@ public partial class GameScreen
     private int _attackerId;
     private int _attackTotal;
     private int _attackPower;
+
+    /// <summary>A Luck die came up 6 on the attack being resolved: LUCKY goes up over its HIT! or MISS.</summary>
+    private bool _lucky;
 
     /// <summary>The latest defense roll, to tell a block from a miss and a crit from a plain hit.</summary>
     private DefenseRolled? _defense;
@@ -40,6 +46,126 @@ public partial class GameScreen
         _attackTotal = total;
         _attackPower = powerFaces;
         _defense = null;
+        _lucky = false;
+    }
+
+    /// <summary>
+    /// Which roll to ask "Try your Luck?" on, if any: a waiting roll the hero's Luck menu asks on (about to
+    /// fail, or a search) or any roll while the clover glows; a fresh Wend roll while Wend is switched on
+    /// (or the clover glows). A waiting roll that isn't asked on is let stand at once. Also whether it's
+    /// about to fail (5 seconds to decide, rather than 3).
+    /// </summary>
+    private (object? Roll, bool Failing) LuckToAsk(Hero? hero, TurnState? turn, bool idle, bool pending)
+    {
+        if (!idle || hero is null || turn is null || hero.LuckLeft < 1)
+        {
+            return (null, false);
+        }
+
+        bool primed = _luckPrimed.Contains(hero.Id);
+        if (pending && turn.PendingRoll is { } roll)
+        {
+            bool failing = _session.PendingRollFails;
+            bool ask = primed || (_session.PendingLuckKind is { } kind && hero.LuckAsks.HasFlag(kind) && (failing || kind == LuckRoll.Search));
+            if (ask)
+            {
+                return (roll, failing);
+            }
+
+            // Not asked on: it stands, once (tried again next time if the screen was busy).
+            if (_letStand != roll)
+            {
+                _letStand = roll;
+                int heroId = hero.Id;
+                Callable.From(async () =>
+                {
+                    if (!await ExecuteAsync(new ConfirmAttack(heroId)))
+                    {
+                        _letStand = null;
+                    }
+                }).CallDeferred();
+            }
+
+            return (null, false);
+        }
+
+        return _trayShowsMovement && turn.MovementRoll is { } wend && !turn.HasMoved && wend != _wendLuckDone && (primed || hero.LuckAsks.HasFlag(LuckRoll.Wend))
+            ? (wend, false)
+            : (null, false);
+    }
+
+    /// <summary>
+    /// Opens (or keeps) "Try your Luck?" for <paramref name="roll"/>, or puts it away: a fresh countdown for
+    /// each new roll and after each try, 5 seconds on a roll about to fail and 3 otherwise. Asking uses up the
+    /// clover's glow. When the time's up (or No), a waiting roll stands as it is, and a Wend roll's dice
+    /// can't be rerolled any more.
+    /// </summary>
+    private void OfferLuck(object? roll, int luck, bool pending, bool failing)
+    {
+        (object, int)? offer = roll is null ? null : (roll, luck);
+        if (Equals(offer, _luckOffer))
+        {
+            return;
+        }
+
+        _luckOffer = offer;
+        if (roll is null)
+        {
+            _luckPrompt.Close();
+            SlowForLuck(false);
+            return;
+        }
+
+        // While Luck is asked, everything slows down, and on a roll that waits (an attack, a check) the view
+        // zooms in on the action. A Wend roll keeps the whole room in view, to click where to go.
+        if (ActiveHero is { } hero)
+        {
+            if (pending)
+            {
+                ZoomOnAction(hero.Id, _session.State.Turn?.PendingRoll?.TargetIds ?? []);
+            }
+
+            _luckPrimed.Remove(hero.Id);
+            _heroPanel.LuckClover.Glowing = false;
+        }
+
+        SlowForLuck(true);
+        _luckPrompt.Offer(failing ? GameRules.LuckSeconds : GameRules.WendLuckSeconds, () =>
+        {
+            _luckOffer = null;
+            SlowForLuck(false);
+            if (pending)
+            {
+                ExecuteForActiveHero(heroId => new ConfirmAttack(heroId));
+            }
+            else
+            {
+                _wendLuckDone = roll;
+                RefreshPanels();
+            }
+        });
+    }
+
+    /// <summary>How fast everything plays while Luck is asked: half speed.</summary>
+    private const double LuckTimeScale = 0.5;
+
+    /// <summary>Slows everything down while Luck is asked (the countdown runs on real seconds), and back up after, the view zooming back out.</summary>
+    private void SlowForLuck(bool slow)
+    {
+        Engine.TimeScale = slow ? LuckTimeScale : 1;
+        if (!slow && !_busy)
+        {
+            _board.ZoomOut();
+        }
+    }
+
+    /// <summary>Zooms the view in on an attack (or a roll): the attacker and its targets, those in the room on show.</summary>
+    private void ZoomOnAction(int actorId, IEnumerable<int> targetIds)
+    {
+        List<GridPosition> tiles = [.. new[] { actorId }.Concat(targetIds)
+            .Select(id => _figures.TryGetValue(id, out Figure? figure) && figure.RoomId == _shownRoomId ? figure.Position : (GridPosition?)null)
+            .OfType<GridPosition>()];
+        _board.ZoomOn(tiles);
     }
 
     private void ResetCombo()
@@ -87,6 +213,7 @@ public partial class GameScreen
                 _board.Callout(figure.Position, "MISS", Palette.TextDim);
             }
 
+            CalloutLucky(figure);
             await Pause(0.35);
             return;
         }
@@ -110,6 +237,7 @@ public partial class GameScreen
             : critical ? ("CRITICAL!", Palette.Power, 2)
             : ("HIT!", Palette.Danger, 2);
         _board.Callout(figure.Position, text, color, size);
+        CalloutLucky(figure);
         if (_comboHits >= 2)
         {
             _board.Callout(figure.Position, $"{_comboHits} HITS!", Palette.Fire, 2, below: true);
@@ -122,6 +250,15 @@ public partial class GameScreen
         token.Modulate = new Color(2.6f, 2.6f, 2.6f);
         await Pause(knockedOut || critical ? 0.14 : 0.08);
         await Reel(token);
+    }
+
+    /// <summary>LUCKY in green over the HIT! or MISS, when a lucky 6 went into the attack.</summary>
+    private void CalloutLucky(Figure figure)
+    {
+        if (_lucky)
+        {
+            _board.Callout(figure.Position, "LUCKY", Palette.Heal, 1, lift: 16);
+        }
     }
 
     /// <summary>The target reels from the blow: shaken side to side as its red flash fades.</summary>

@@ -25,7 +25,8 @@ public sealed record TrayCard(Texture2D? Picture, string Name, int Dice, string 
 /// dice tumble before they land with a small pop, and the side that wins glows gold. Dice are colored
 /// by what they are (see <see cref="DiceKind"/>); tools' dice are bronze, Power Dice purple, and typed
 /// dice (fire, ice...) their type's own color. When
-/// Luck allows, the roller's dice can be clicked to reroll them. A hero's roll shows the cards it was
+/// Luck allows, the roller's dice can be clicked to reroll them: a green Luck die rolls over the one
+/// clicked, and the higher stays (see <see cref="LuckRoll"/>). A hero's roll shows the cards it was
 /// played with over their own dice (the pool's card first, then the weapon, tool or skill), the
 /// caption going underneath; a defender's is mirrored, its pool's card on the far right.
 /// </summary>
@@ -54,6 +55,10 @@ public partial class DiceBar : Control
     private bool _rerollable;
 
     public event Action<int>? DieClicked;
+
+    /// <summary>Where the roller's die <paramref name="index"/> is on screen, to click it; null if there's no such die.</summary>
+    internal Vector2? DiePoint(int index) =>
+        _roller is { } row && index < row.Rects.Length ? GetGlobalTransform() * row.Rects[index].GetCenter() : null;
 
     /// <summary>A typed die (fire, ice...) has been shown in its own color (for the tests).</summary>
     internal bool ShowedTypedDice { get; private set; }
@@ -155,15 +160,174 @@ public partial class DiceBar : Control
         }
     }
 
-    public async Task Reroll(int dieIndex, int newFace)
+    /// <summary>
+    /// A Luck reroll: the green Luck die tumbles just above the die it might replace. Higher, it drops onto
+    /// it with a thump and takes its place (<paramref name="newFace"/>); otherwise it pops in a green burst.
+    /// </summary>
+    public async Task LuckRoll(int dieIndex, int luckFace, int newFace)
     {
-        if (_roller is null || dieIndex >= _roller.Faces.Length)
+        if (_roller is not { } row || dieIndex >= row.Faces.Length)
         {
             return;
         }
 
-        _roller.Faces[dieIndex] = newFace;
-        await Tumble(_roller, [dieIndex]);
+        float rise = row.Rects[dieIndex].Size.Y + 3;
+        var luck = new LuckDie(dieIndex) { Lift = -rise };
+        _luck = luck;
+        Sfx.Play("dice");
+        for (int frame = 0; frame < 8; frame++)
+        {
+            luck.Shown = Random.Shared.Next(1, 7);
+            luck.Angle = (float)(Random.Shared.NextDouble() - 0.5);
+            QueueRedraw();
+            await ToSignal(GetTree().CreateTimer(0.04), SceneTreeTimer.SignalName.Timeout);
+        }
+
+        luck.Shown = luckFace;
+        luck.Angle = 0;
+        QueueRedraw();
+        if (luckFace == 6)
+        {
+            // A lucky 6: confetti, and the Luck isn't used up.
+            Confetti(row.Rects[dieIndex].GetCenter() + new Vector2(0, -rise));
+        }
+
+        await ToSignal(GetTree().CreateTimer(0.3), SceneTreeTimer.SignalName.Timeout);
+
+        if (newFace == luckFace && luckFace != row.Faces[dieIndex])
+        {
+            // Higher: it falls on top of the die, and lands with a thump that squashes it.
+            await Animate(0.12, amount => luck.Lift = -rise * (1 - amount * amount));
+            row.Faces[dieIndex] = newFace;
+            row.Shown[dieIndex] = newFace;
+            _luck = null;
+            Sfx.Play("block");
+            await Animate(0.2, amount =>
+            {
+                row.Pop[dieIndex] = -0.3f * (1 - amount);
+                row.Offset[dieIndex] = new Vector2(0, 2 * (1 - amount));
+            });
+            row.Offset[dieIndex] = Vector2.Zero;
+        }
+        else
+        {
+            // Lower (or no better): it pops in a green burst, and the die stays as it was.
+            Sfx.Play("click");
+            await Animate(0.32, amount => luck.Burst = amount);
+            _luck = null;
+        }
+
+        QueueRedraw();
+    }
+
+    /// <summary>Runs <paramref name="step"/> from 0 to 1 over <paramref name="seconds"/>, redrawing as it goes.</summary>
+    private async Task Animate(double seconds, Action<float> step)
+    {
+        Tween tween = CreateTween();
+        tween.TweenMethod(Callable.From<float>(amount =>
+        {
+            step(amount);
+            QueueRedraw();
+        }), 0.0f, 1.0f, seconds);
+        await ToSignal(tween, Tween.SignalName.Finished);
+    }
+
+    private readonly List<(Vector2 From, Vector2 Velocity, Color Color, float Spin)> _confetti = [];
+    private float _confettiAge = -1;
+
+    private static readonly Color[] ConfettiColors = [Palette.Heal, Palette.TrimBright, Palette.DieRumble, Palette.DieDefense, Palette.Power, Palette.DieOdHand];
+
+    /// <summary>Throws confetti from <paramref name="at"/>: bits of every color flying up and out, then falling as they fade.</summary>
+    private async void Confetti(Vector2 at)
+    {
+        _confetti.Clear();
+        for (int i = 0; i < 24; i++)
+        {
+            float angle = -Mathf.Pi / 2 + (float)(Random.Shared.NextDouble() - 0.5) * 2.4f;
+            float speed = 25 + (float)Random.Shared.NextDouble() * 45;
+            _confetti.Add((at, Vector2.FromAngle(angle) * speed, ConfettiColors[i % ConfettiColors.Length], (float)Random.Shared.NextDouble() * 10));
+        }
+
+        await Animate(0.9, amount => _confettiAge = amount);
+        _confettiAge = -1;
+        _confetti.Clear();
+        QueueRedraw();
+    }
+
+    private void DrawConfetti()
+    {
+        if (_confettiAge < 0)
+        {
+            return;
+        }
+
+        float time = _confettiAge * 0.9f;
+        foreach ((Vector2 from, Vector2 velocity, Color color, float spin) in _confetti)
+        {
+            Vector2 at = from + velocity * time + new Vector2(0, 60 * time * time);
+            DrawSetTransform(at, spin * time, Vector2.One);
+            DrawRect(new Rect2(-1.5f, -1, 3, 2), color with { A = 1 - _confettiAge * 0.8f });
+        }
+
+        DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+    }
+
+    /// <summary>The Luck die in the air over the die it might replace: rolling, falling, or bursting.</summary>
+    private sealed class LuckDie(int index)
+    {
+        public int Index { get; } = index;
+
+        public int Shown { get; set; } = 1;
+
+        public float Angle { get; set; }
+
+        /// <summary>How far above the die it is (negative, up).</summary>
+        public float Lift { get; set; }
+
+        /// <summary>How far through its green burst it is, 0 to 1; 0 while it's whole.</summary>
+        public float Burst { get; set; }
+    }
+
+    private LuckDie? _luck;
+
+    private static readonly Color LuckGreen = Palette.Heal;
+
+    /// <summary>The Luck die over its die, or its green burst.</summary>
+    private void DrawLuck()
+    {
+        if (_luck is not { } luck || _roller is not { } row || luck.Index >= row.Rects.Length)
+        {
+            return;
+        }
+
+        Rect2 under = row.Rects[luck.Index];
+        Vector2 center = under.GetCenter() + new Vector2(0, luck.Lift);
+        float size = under.Size.X;
+        if (luck.Burst <= 0)
+        {
+            DrawSetTransform(center, luck.Angle, Vector2.One);
+            DrawDie(luck.Shown, size, success: false, clickable: false, LuckGreen);
+            DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+            return;
+        }
+
+        // The burst: the die shrinking away in a ring of green sparks.
+        float burst = luck.Burst;
+        float left = 1 - burst;
+        if (left > 0.5f)
+        {
+            float shrink = (left - 0.5f) * 2;
+            DrawSetTransform(center, 0, new Vector2(shrink, shrink));
+            DrawDie(luck.Shown, size, success: false, clickable: false, LuckGreen);
+            DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        }
+
+        DrawArc(center, size * (0.4f + burst), 0, Mathf.Tau, 20, LuckGreen with { A = left }, 1.5f);
+        for (int k = 0; k < 8; k++)
+        {
+            Vector2 toward = Vector2.FromAngle(k * Mathf.Tau / 8 + 0.3f);
+            DrawCircle(center + toward * size * (0.3f + 1.1f * burst), 1.5f * left + 0.5f, LuckGreen with { A = left });
+        }
     }
 
     public override void _Draw()
@@ -175,6 +339,8 @@ public partial class DiceBar : Control
 
         Font font = ThemeDB.FallbackFont;
         DrawSide(font, _roller, new Rect2(0, 0, SideWidth, Size.Y), _rerollable, alignRight: false);
+        DrawLuck();
+        DrawConfetti();
         if (_defenders.Count == 0)
         {
             return;

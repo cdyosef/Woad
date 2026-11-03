@@ -68,7 +68,7 @@ public partial class GameScreen : Control
 
     /// <summary>The middle of a board tile, in screen (640x360) coordinates.</summary>
     internal Vector2 TileCenter(GridPosition tile) =>
-        _board.GetGlobalRect().Position + BoardView.TileOrigin(tile) + new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f);
+        _board.GetGlobalTransform() * (BoardView.TileOrigin(tile) + new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f));
 
     private Hero? ActiveHero => _session.State.ActiveHero;
 
@@ -381,6 +381,11 @@ public partial class GameScreen : Control
         {
             _busy = false;
             _playingTurn = default;
+            if (!_luckPrompt.Visible)
+            {
+                _board.ZoomOut();
+            }
+
             ReloadFigures();
             ShowRoom(ActiveHero is { } hero ? hero.RoomId : _shownRoomId);
             RefreshPanels();
@@ -514,7 +519,8 @@ public partial class GameScreen : Control
                 break;
 
             case DieRerolled rerolled:
-                await _dice.Reroll(rerolled.DieIndex, rerolled.NewFace);
+                _lucky |= rerolled.LuckFace == 6;
+                await _dice.LuckRoll(rerolled.DieIndex, rerolled.LuckFace, rerolled.NewFace);
                 break;
 
             case HeroMoved moved:
@@ -767,6 +773,14 @@ public partial class GameScreen : Control
                 CalloutOver(explored.HeroId, "EXPLORER!", Palette.TrimBright);
                 break;
 
+            case CursedDiceRolled cursed:
+                FloatOver(cursed.HeroId, $"-{cursed.Total} CURSED", DieTypes.Tint(DieType.Cursed));
+                break;
+
+            case LuckTried tried:
+                CalloutOver(tried.OwnerId, tried.LuckFace == 6 ? "LUCKY!" : "LUCK", Palette.Heal, 1, below: true);
+                break;
+
             case WeaponBroke broke:
                 CalloutOver(broke.HeroId, "SNAP!", Palette.Danger);
                 break;
@@ -926,6 +940,7 @@ public partial class GameScreen : Control
 
             case AttackRolled attack:
                 _trayShowsMovement = false;
+                ZoomOnAction(attack.AttackerId, attack.TargetIds);
                 BeginStrike(attack.AttackerId, attack.Total, attack.Roll.Faces.TakeLast(attack.PowerDice).Sum());
                 await StrikeFx(attack);
                 await _dice.ShowRoll(_spellCaption ?? $"{NameOf(attack.AttackerId)} {(attack.Shove ? "shoves" : attack.Chain ? "flings its chain" : "attacks")}", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice, DiceKind.Rumble, types: attack.DieTypes, cards: AttackTray(attack));

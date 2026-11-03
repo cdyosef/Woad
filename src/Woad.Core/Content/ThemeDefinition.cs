@@ -44,6 +44,12 @@ public sealed record FindsDefinition
 
     /// <summary>The most hidden on the tiles of one room (none to this many).</summary>
     public int Hidden { get; init; } = 2;
+
+    /// <summary>A Lucky Clover's card: one lies in plain sight in some rooms (<see cref="CloverChance"/>), and a 6 on a room's first Search turns one up.</summary>
+    public string? Clover { get; init; }
+
+    /// <summary>Percent of rooms with a Lucky Clover lying in plain sight.</summary>
+    public int CloverChance { get; init; }
 }
 
 /// <summary>Percent chances of finding a small key.</summary>

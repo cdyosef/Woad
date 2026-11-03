@@ -53,6 +53,14 @@ public static class CompanionBot
             return new DigOut(hero.Id);
         }
 
+        // Rousing its leader and about to fail, a companion tries its Luck on its lowest die first.
+        if (turn.PendingRoll is { Check: { Kind: OdHandCheckKind.Rouse } rouse } pending && rouse.TargetId == hero.OwnerId
+            && hero.LuckLeft > 0 && session.PendingRollFails
+            && pending.Roll.Faces.Select((face, index) => (face, index)).Where(die => die.face < 6).OrderBy(die => die.face).Select(die => (int?)die.index).FirstOrDefault() is int lowest)
+        {
+            return new RerollDie(hero.Id, lowest);
+        }
+
         if (turn.PendingRoll is not null)
         {
             return new ConfirmAttack(hero.Id);

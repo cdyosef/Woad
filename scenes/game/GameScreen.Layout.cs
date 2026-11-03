@@ -37,6 +37,23 @@ public partial class GameScreen
     private Label _hoverInfo = null!;
     private RichTextLabel _log = null!;
     private Label _luckHint = null!;
+
+    /// <summary>"Try your Luck?" over the dice tray, with its countdown.</summary>
+    private LuckPrompt _luckPrompt = null!;
+
+    /// <summary>The roll Luck is on offer for (the pending roll, or the Wend roll) and the Luck left then: a new offer starts the countdown afresh.</summary>
+    private (object Roll, int Luck)? _luckOffer;
+
+    /// <summary>The Wend roll whose Luck offer has run out or been turned down: its dice can't be rerolled any more.</summary>
+    private object? _wendLuckDone;
+
+    /// <summary>Heroes (by id) whose Luck clover is glowing: their next roll asks, whatever its odds.</summary>
+    private readonly HashSet<int> _luckPrimed = [];
+
+    /// <summary>The waiting roll the screen has already let stand (Luck not asked on it), so it's confirmed once.</summary>
+    private object? _letStand;
+
+    private LuckMenu _luckMenu = null!;
     private Button _confirm = null!;
     private Button _addPower = null!;
     private Button _bankPower = null!;
@@ -217,10 +234,13 @@ public partial class GameScreen
         _rumble.Visible &= !buried;
         _prone.Visible &= !_digOut.Visible;
 
-        bool canReroll = idle && hero!.LuckRemaining > 0
-            && (pending || (_trayShowsMovement && turn!.MovementRoll is not null && !turn.HasMoved));
+        // Luck is asked by the Luck menu's switches (or the clover glowing); a roll it isn't asked on stands at once.
+        (object? offered, bool failing) = LuckToAsk(hero, turn, idle, pending);
+        bool canReroll = offered is not null;
         _dice.Rerollable = canReroll;
-        _luckHint.Visible = canReroll;
+        _luckHint.Visible = false;
+        _heroPanel.LuckClover.Glowing = hero is not null && _luckPrimed.Contains(hero.Id);
+        OfferLuck(offered, hero?.LuckLeft ?? 0, pending, failing);
 
         _menu.Disabled = _busy || state.Phase == RunPhase.Ended;
         _menu.Text = _confirmingLeave ? "Leave?" : "Menu";
@@ -748,6 +768,34 @@ public partial class GameScreen
         AddChild(new Panel { Position = new Vector2(SideWidth, StripHeight + BoardView.Pixels), Size = new Vector2(BoardView.Pixels, StripHeight) });
         _dice = new DiceBar { Position = new Vector2(SideWidth + 6, StripHeight + BoardView.Pixels + 1), Size = new Vector2(BoardView.Pixels - 12, 34) };
         _dice.DieClicked += index => ExecuteForActiveHero(heroId => new RerollDie(heroId, index));
+        _luckPrompt = new LuckPrompt { Position = _dice.Position + new Vector2((_dice.Size.X - 172) / 2, -21) };
+        AddChild(_luckPrompt);
+        _luckMenu = new LuckMenu { Position = BoardOrigin + new Vector2((BoardView.Pixels - 214) / 2, 60) };
+        _luckMenu.Changed += asks => ExecuteForActiveHero(heroId => new SetLuckAsks(heroId, asks));
+        AddChild(_luckMenu);
+        _heroPanel.LuckClover.Tapped += () =>
+        {
+            if (ActiveHero is { IsCompanion: false } hero && !_luckPrimed.Remove(hero.Id))
+            {
+                if (hero.LuckLeft < 1)
+                {
+                    Log("You've no Luck left.", Palette.TextDim);
+                    return;
+                }
+
+                _luckPrimed.Add(hero.Id);
+                Log("Your Luck is ready: your next roll asks.", Palette.Heal);
+            }
+
+            RefreshPanels();
+        };
+        _heroPanel.LuckClover.Held += () =>
+        {
+            if (ActiveHero is { IsCompanion: false } hero)
+            {
+                _luckMenu.Open(hero.LuckAsks);
+            }
+        };
         AddChild(_dice);
 
         var right = new Panel { Position = new Vector2(SideWidth + BoardView.Pixels, 0), Size = new Vector2(SideWidth, 360) };

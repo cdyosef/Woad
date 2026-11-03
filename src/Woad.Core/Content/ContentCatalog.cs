@@ -278,7 +278,8 @@ public sealed class ContentCatalog
                 errors.Add($"Theme '{theme.Id}' den needs a known monster and a floor from 1 to {theme.Floors}.");
             }
 
-            if (theme.Finds is { } finds && (finds.Cards.Count == 0 || finds.Hidden < 0 || finds.Cards.Any(card => !cardIds.Contains(card))))
+            if (theme.Finds is { } finds && (finds.Cards.Count == 0 || finds.Hidden < 0 || finds.Cards.Any(card => !cardIds.Contains(card))
+                    || (finds.Clover is { } clover && !cardIds.Contains(clover))))
             {
                 errors.Add($"Theme '{theme.Id}' finds need known cards, and hidden can't be negative.");
             }

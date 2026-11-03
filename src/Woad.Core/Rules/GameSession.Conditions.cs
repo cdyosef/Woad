@@ -304,7 +304,10 @@ public sealed partial class GameSession
     private static void Cure(Hero hero, CardEffect effect, List<GameEvent> events)
     {
         IEnumerable<Condition> cured = effect.Cures is { } named ? [named] : [];
-        foreach (Condition condition in cured.Concat(effect.CuresDisease ? Conditions.Diseases : []).Where(hero.Conditions.Has))
+
+        // Holy Water lifts curses too.
+        IEnumerable<Condition> curses = effect.Kind == CardEffectKind.Holy ? [Condition.Cursed] : [];
+        foreach (Condition condition in cured.Concat(effect.CuresDisease ? Conditions.Diseases : []).Concat(curses).Where(hero.Conditions.Has))
         {
             hero.Conditions.Clear(condition);
             events.Add(new ConditionChanged(hero.Id, condition, 0, hero.Id));

@@ -17,12 +17,13 @@ public enum Ailment
     Burning,
     Stun,
     Nekrot,
+    Cursed,
 }
 
 public static class Ailments
 {
     /// <summary>What Aid cures with Od Hand alone.</summary>
-    public static readonly IReadOnlyList<Ailment> AidCures = [Ailment.Poison, Ailment.Acid, Ailment.Blind, Ailment.Shine, Ailment.Confused, Ailment.Buried];
+    public static readonly IReadOnlyList<Ailment> AidCures = [Ailment.Poison, Ailment.Acid, Ailment.Blind, Ailment.Shine, Ailment.Confused, Ailment.Buried, Ailment.Cursed];
 
     /// <summary>What Aid cures only with a Medicine Bag to hand.</summary>
     public static readonly IReadOnlyList<Ailment> MedicineBagCures = [Ailment.Freeze, Ailment.BlackHeart, Ailment.Burning, Ailment.Stun, Ailment.Nekrot];
@@ -41,6 +42,7 @@ public static class Ailments
         Ailment.Freeze => Condition.Freeze,
         Ailment.BlackHeart => Condition.BlackHeart,
         Ailment.Nekrot => Condition.Nekrot,
+        Ailment.Cursed => Condition.Cursed,
         _ => null,
     };
 
@@ -49,6 +51,7 @@ public static class Ailments
         Ailment.BlackHeart => "Black Hearts",
         Ailment.Burning => "Burning",
         Ailment.Stun => "Stun",
+        Ailment.Cursed => "Bad Luck Curse",
         _ => ailment.ToString(),
     };
 

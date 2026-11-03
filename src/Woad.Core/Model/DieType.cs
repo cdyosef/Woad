@@ -49,6 +49,9 @@ public enum DieType
 
     /// <summary>Blind: a Blind token (see <see cref="Condition.Blind"/>).</summary>
     Shadow,
+
+    /// <summary>A Cursed die (see <see cref="Condition.Cursed"/>): it takes its number off the roll; a 6 rolls another, a 1 lifts a curse.</summary>
+    Cursed,
 }
 
 /// <summary>What a spell cast as a boon gives a hero, for some rounds.</summary>
@@ -110,6 +113,13 @@ public enum Condition
     /// with it rises as a zombie on the monsters' side.
     /// </summary>
     Nekrot,
+
+    /// <summary>
+    /// A Bad Luck Curse (a Hexer's), stacking: each stack puts a Cursed die on one of the hero's first three
+    /// rolls each round, looping (4 stacks: two on the first roll, one on each of the next two). A Cursed die
+    /// takes its number off the roll; a 6 rolls another, and a 1 lifts a stack. Cured by Aid and Holy Water.
+    /// </summary>
+    Cursed,
 }
 
 /// <summary>The tokens on one hero or monster.</summary>

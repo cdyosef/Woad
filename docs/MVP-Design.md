@@ -281,6 +281,9 @@ with how many are to hand (the Sling's Rocks). Hovering shows its name and rules
 diamond lattice in a cream frame. Each square on the sheet is a **slot**: face down with the slot's mark and
 name while it's empty (it can't be picked up), the card sitting on it once there is one.
 
+**Attacks zoom in:** every attack (a hero's or a monster's, in the room on show) zooms the view in on the
+attacker and its targets while it plays out, and back out after.
+
 **The pool squares.** Three equipment squares double as the pools' stacks: the main hand is Rumble, the off
 hand Od Hand, the feet Wend. Each holds the cards out of your hand for that pool, staggered so each corner
 index shows, the selected one in front:
@@ -369,9 +372,39 @@ facing door of the next room.
 - **Melee** needs an adjacent target. Heroes can strike diagonally too, unless walls close off both corners between them; monsters strike orthogonally only. **Ranged** needs line of sight; walls block it.
 - **Line of sight** runs between tile centers. Only walls (cracked ones too) block it, not pits, chests or
   other figures, and grazing a wall's corner is allowed.
-- **Luck** rerolls one of your own Wend, Rumble or Od Hand dice. A Wend die can be rerolled any time before
-  your first step. With Luck left, an attack or Od Hand roll waits for you to reroll or confirm; spending
-  your last Luck resolves it. Luck doesn't apply to defense rolls.
+- **Luck** rerolls one of your own Wend, Rumble or Od Hand dice: click it in the tray, and a green Luck die
+  rolls just above it. **The higher of the two stays**: higher, the Luck die drops onto it with a thump and
+  takes its place; lower (or the same), it pops in a green burst and the die stays as it was. A 6 can't be
+  bettered, so Luck can't be spent on one. **A lucky 6 doesn't use the Luck up**: confetti flies, and
+  LUCKY goes up in green over the HIT! or MISS.
+  - **Try your Luck?** pops up over the tray with the dice outlined green to click; **No**, or the time
+    running out, lets the roll stand. While you have Luck every roll waits, its targets defending first
+    (monsters against attacks and shoves, the mark of a steal: that defense stands whatever the Luck
+    does), and the **Luck menu** decides whether it's asked.
+  - **The Luck menu:** hold the **Luck clover** (the Luck line on the sheet) for a switch per kind of roll:
+    Rumble attacks, Shove, Pick Lock, Disarm, Steal, Search, Aid, Learn and Wend, all on to start and
+    saved with the character. On, Luck is asked whenever that roll is **about to fail** (an Od Hand check
+    short of its number, a rouse with no mark of life, an attack, shove or steal the other side holds
+    off), with **5 seconds**; Search and Wend, which can't fail, ask every roll, with **3 seconds**. Off, it
+    isn't asked and the roll stands at once. After each try that still falls short, it asks again.
+  - **Lucky Clovers:** about one room in eight has one lying in plain sight, and a 6 on a room's first
+    Search (the Explorer roll) turns one up. Picked up, a clover is a **Clover Luck** point straight away
+    (never a card carried), up to **7**; one more stays where it lies. Clover Luck is used once your Luck runs
+    out, by anyone, Luck stat or not, and kept until used, run to run (a lucky 6 doesn't use it up either).
+    A hero who doesn't get out of the dungeon keeps no more of it than they brought in. It shows after the
+    Luck line on the sheet (+3).
+  - **Companions** try their Luck by themselves: on a defense about to cost them a heart, and on an Aid
+    roll about to fail to rouse their leader (a Luck die over their lowest die, the higher staying).
+  - **Bad Luck Curse** (a Hexer's): curses stack, and each puts a **Cursed die** on one of the hero's first
+    three rolls each round, any roll (Wend, attack, Od Hand, defense), looping: 1 curse, the first roll;
+    2, the first two; 3, the first three; 4, two on the first; and so on (7: three on the first). A Cursed die
+    takes its number off the roll; a 6 rolls another; each 1 lifts a curse. Aid and Holy Water cure it.
+  - **Tap the clover** and it glows: your next roll asks, whatever its odds (3 seconds), even one switched
+    off. Asking uses the glow up; tap it again to put it out.
+  - While it asks, everything plays at **half speed** (the countdown runs in real seconds), and on an attack
+    or a check the view **zooms in** on the action (the hero, and what they're attacking). A Wend roll keeps
+    the whole room in view, to click where to go.
+  - Contests (a steal), searches and shoves don't wait for Luck, and it doesn't apply to defense rolls.
 
 ### Fire
 
@@ -420,7 +453,7 @@ facing door of the next room.
 - **Other typed dice** (below) earn no Power Dice at all.
 - **Between runs:** Power Dice still banked at the end of a dungeon or a fight go home with the character
   and come along to the next one.
-- A Luck reroll that comes up 6 earns a Power Die too. Od Hand rolls earn and use Power Dice like attacks and
+- A Luck die that comes up 6 (so it stays) earns a Power Die too. Od Hand rolls earn and use Power Dice like attacks and
   moves.
 
 ### Damage types
@@ -598,7 +631,7 @@ total reaches its number:
 - **Lying about:** the first Search in each room picks up a Rock or a Stick, whatever it rolls (both on
   a total of 4 or more), and earns the searcher an Explorer bonus (see XP). More Rocks and Sticks lie
   hidden on a room's tiles, up to 2 of them: a Search reaching 2 + floor finds them, there to be picked up.
-- **What Aid cures:** Poison, Acid, Blind, Shine, Confused and Buried. Freeze, Black Hearts, Burning,
+- **What Aid cures:** Poison, Acid, Blind, Shine, Confused, Buried and Bad Luck Curses. Freeze, Black Hearts, Burning,
   Stun and Nekrot only with a **Medicine Bag** to hand. One stack a success, bag or not.
 - **Medicine Bag** (tool, stacks, goes on the belt and works from there or a hand): +1 and 1d6 on one
   Aid roll a turn (a 6 rolls another), even with no Od Hand dice left. A failed Aid it helped with a 1
@@ -776,7 +809,7 @@ total reaches its number:
 | Ogre Champ | 6 | 1 | 3d6 | 1d6+1 | Only in its den. Reach 2. Drawn bigger: fat, shirtless and horned, with a great club. Each hit knocks the hero a tile back, and every 6 on its roll a tile more, hit or miss |
 | Necromancer | 3 | 2 | 1d6+1 | 1d6 | Rare, from floor 2. Ranged 4; keeps its distance. Every other turn raises a Skeleton beside it (from a grave nearby if there is one): 2 at a time, 4 in all. They crumble when it falls and are worth no XP, loot or kill |
 | Ghoul | 4 | 6 | 3×1d6 | 1d6 | Rare, from floor 2. Greater undead: Holy Water hits it with 5 Radiate dice. Three attacks of a Necro die each, and every hit stuns. Its miasma attacks every living creature starting its turn beside it with a Poison die |
-| Hexer | 2 | 3 | 1d6+1 | 1d6 | Rare, from floor 2. Ranged 4; keeps its distance. Each hit drains a Luck reroll; with none left, it stuns |
+| Hexer | 2 | 3 | 1d6+1 | 1d6 | Rare, from floor 2. Ranged 4; keeps its distance. Has 1 Luck of its own; each hit steals a point of Luck (Luck, then Clover Luck), which it keeps; with none left, it stuns. Tries its Luck when its attack or defense is about to fail. Once a turn, a **Bad Luck Curse** on the nearest hero it can see. Dying, its unused Luck scatters as Lucky Clovers within 13 tiles |
 | Gelatinous Cube | 4 | 1 | 2d6 | 0d6+1 | Rare, from floor 2. Swallows the cards and gold on every tile it crawls over, dropping them where it falls; splits into two Slimes |
 | **Miniboss: Key Warden** | 5 | 2 | 2d6+1 | 1d6+1 | Guards the Boss Key in the last floor's vault; can't be shoved |
 | **Boss: Iron Warden** | 8 | 3 | 2d6+1 | 1d6+3, an extra die | Wears its Warden's Plate (armor 3, and an extra Defense die rolled in while a defense is losing). Each turn: first a **chain** flung at the nearest hero in sight within 6 who isn't beside it (3 dice): a hit drags them beside it, **shackled** (no Wend until a key or a picked lock, 9+, frees them: their own, or an ally's beside them). Then its **arc**: a swing through the 3 tiles toward its target (straight on, the tile ahead and the two beside it; on a diagonal, that corner and the two tiles next to it), striking everyone there, monsters too, with one roll; each 6 **cleaves** on into one more creature beside it. Then a **spin**: one roll with all its dice against every hero within 2. One time in four it drops Warden's Plate besides its loot |

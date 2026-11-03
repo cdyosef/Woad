@@ -222,6 +222,9 @@ public sealed record Escape(int HeroId) : GameCommand(HeroId);
 /// </summary>
 public sealed record OrderCompanion(int HeroId, int CompanionId, CompanionOrder Order) : GameCommand(HeroId);
 
+/// <summary>Sets which rolls Luck is asked on when they're about to fail (the Luck menu). Free, any time on the hero's turn.</summary>
+public sealed record SetLuckAsks(int HeroId, LuckRoll Asks) : GameCommand(HeroId);
+
 /// <summary>
 /// On their turn, a player hands a hero over: one of their companions becomes a hero, played by a player
 /// (<paramref name="NewOwnerId"/> null), or their own hero becomes a companion of another player

@@ -34,6 +34,7 @@ public static class DieTypes
         DieType.Elektrik => new Color("ffe03a"),
         DieType.Psycho => new Color("e878e8"),
         DieType.Shadow => new Color("5a5878"),
+        DieType.Cursed => new Color("6a2a5a"),
         DieType.Star => Palette.Power,
         _ => Palette.DieRumble,
     };
@@ -53,6 +54,7 @@ public static class DieTypes
         DieType.Elektrik => "a 6 stuns you",
         DieType.Psycho => "a 6 confuses you",
         DieType.Shadow => "a 6 blinds you",
+        DieType.Cursed => "takes its number off; a 6 rolls another, a 1 lifts a curse",
         DieType.Star => "a 6 surges with Power",
         _ => "a 6 earns a Power Die",
     };
@@ -68,6 +70,7 @@ public static class DieTypes
         Condition.Confused => Tint(DieType.Psycho),
         Condition.Blind => Tint(DieType.Shadow),
         Condition.Nekrot => Nekrot,
+        Condition.Cursed => Tint(DieType.Cursed),
         _ => Palette.Text,
     };
 
@@ -75,6 +78,7 @@ public static class DieTypes
     {
         Condition.BlackHeart => "Black Heart",
         Condition.Corroded => "Armor eaten",
+        Condition.Cursed => "Bad Luck Curse",
         _ => condition.ToString(),
     };
 
@@ -91,6 +95,7 @@ public static class DieTypes
         Condition.Confused => "CONFUSED!",
         Condition.Blind => "BLINDED!",
         Condition.Nekrot => "NEKROT!",
+        Condition.Cursed => "CURSED!",
         _ => "!",
     };
 
@@ -107,6 +112,7 @@ public static class DieTypes
         Condition.Confused => $"confused ({count})",
         Condition.Blind => $"blind ({count}: -{count} to attacks)",
         Condition.Nekrot => "Nekrot: every heart lost turns black, run after run, until cured",
+        Condition.Cursed => count == 1 ? "cursed: a Cursed die off your first roll each round" : $"cursed ({count}: Cursed dice off your first rolls each round)",
         _ => condition.ToString(),
     };
 }

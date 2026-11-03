@@ -99,6 +99,28 @@ public class DungeonSecretsTests
     }
 
     [Fact]
+    public void AnOdHandCheckSaysWhenItFallsShort()
+    {
+        // A 2 against the lock's 5 is about to fail; the Luck die's 5 opens it (the last Luck spent, it resolves).
+        Stats lucky = GameRules.HeroBaseStats with { Luck = 1, OdHandDice = 1 };
+        GameSession session = DoorRun(PassageKind.Locked, difficulty: 5, dice: new ScriptedDice(2, 5), stats: lucky);
+        Hero hero = session.HeroInSeat();
+        session.Do(new PickLock(hero.Id, hero.Position));
+        Assert.Equal((LuckRoll.PickLock, true), (session.PendingLuckKind!.Value, session.PendingRollFails));
+        session.Do(new RerollDie(hero.Id, 0));
+        Assert.False(session.RoomById().PassageOn(Direction.East)!.IsLocked);
+
+        // A 5 straight away isn't about to fail.
+        GameSession sure = DoorRun(PassageKind.Locked, difficulty: 5, dice: new ScriptedDice(5), stats: lucky);
+        Hero picker = sure.HeroInSeat();
+        sure.Do(new PickLock(picker.Id, picker.Position));
+        Assert.False(sure.PendingRollFails);
+        sure.Do(new ConfirmAttack(picker.Id));
+        Assert.False(sure.RoomById().PassageOn(Direction.East)!.IsLocked);
+        Assert.Equal(1, picker.LuckRemaining);
+    }
+
+    [Fact]
     public void ALockedDoorTakesAKey()
     {
         GameSession session = DoorRun(PassageKind.Locked, dice: new ScriptedDice(1));

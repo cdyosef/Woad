@@ -65,6 +65,41 @@ public sealed class ExplorerTests
     }
 
     [Fact]
+    public void ASixOnTheFirstSearchTurnsUpALuckyClover()
+    {
+        GameSession session = Run(new ScriptedDice(6), new ScriptedDice(0));
+        Hero hero = session.HeroInSeat();
+
+        // The 6 earns a Power Die: banked, the search lands.
+        session.Do(new Search(hero.Id));
+        Assert.Contains("T-Clover", session.Do(new BankPowerDie(hero.Id)).SingleOf<Explored>().Found);
+        Assert.Equal(1, hero.CloverLuck);
+        Assert.DoesNotContain(hero.AllCards, card => card.Definition.Id == "t_clover");
+    }
+
+    [Fact]
+    public void CloverLuckIsKeptUpToSevenAndSpentAfterLuck()
+    {
+        GameSession session = Run(new ScriptedDice(1, 3, 2), new ScriptedDice(0));
+        Hero hero = session.HeroInSeat();
+        Room room = session.RoomById();
+        var clover = TestContent.Catalog.GetCard("t_clover");
+        hero.CloverLuck = GameRules.MaxCloverLuck - 1;
+        room.AddLoot(hero.Position, [new CardInstance(session.State.NextId(), clover, null, count: 2)]);
+
+        session.Do(new PickUpLoot(hero.Id));
+
+        // Seven at most: the other stays where it lies.
+        Assert.Equal(GameRules.MaxCloverLuck, hero.CloverLuck);
+        Assert.Equal(1, room.LootAt(hero.Position).Single().Count);
+        Assert.False(hero.CanCarry(clover));
+
+        // With no Luck of their own, a reroll spends Clover Luck.
+        hero.LuckRemaining = 0;
+        Assert.Equal(GameRules.MaxCloverLuck, hero.LuckLeft);
+    }
+
+    [Fact]
     public void MoreLiesHiddenOnTheTilesForASearchToFind()
     {
         // One hidden, on the first open tile, a Rock; the search's own pick is a Rock too.

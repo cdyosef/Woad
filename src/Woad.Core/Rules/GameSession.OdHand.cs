@@ -380,7 +380,7 @@ public sealed partial class GameSession
         bool tools = toolBonus > 0 || lockDice > 0;
         (bool bag, int aidDice) = AidKit(hero, command, check, events);
         bool free = check.Kind is OdHandCheckKind.Learn or OdHandCheckKind.Retreat;
-        int bonus = toolBonus + (bag ? 1 : 0) - RollPenalty(hero.Conditions) + (check.Kind == OdHandCheckKind.Learn ? Math.Max(0, hero.EffectiveStats.Magic) : 0);
+        int bonus = toolBonus + (bag ? 1 : 0) - RollPenalty(hero.Conditions) + (check.Kind == OdHandCheckKind.Learn ? Math.Max(0, hero.EffectiveStats.Magic) : 0) - Curse(hero, events);
         // Tools' own dice (Lockpicks on a lock); held torches' on a search; a Medicine Bag's, Bandages' and
         // a Shovel's on Aid; High Alert's Rumble dice on a search; and the free die that starts learning a
         // spell or running from a fight.
@@ -566,7 +566,7 @@ public sealed partial class GameSession
                 break;
 
             case OdHandCheckKind.Search:
-                Explore(hero, room, total, events);
+                Explore(hero, room, roll.Roll, total, events);
                 Reveal(hero, room, total, events);
                 break;
 
@@ -583,7 +583,7 @@ public sealed partial class GameSession
                 break;
 
             case OdHandCheckKind.Steal:
-                ResolveSteal(hero, room, check.TargetId, total, events);
+                ResolveSteal(hero, room, check.TargetId, total, StealGuard(roll, room, check.TargetId, events), events);
                 break;
 
             case OdHandCheckKind.Retreat:
@@ -598,10 +598,10 @@ public sealed partial class GameSession
 
     /// <summary>
     /// The first Search in a room picks up something lying about, a Rock or a Stick (both, on a total of
-    /// <see cref="GameRules.AllFindsAt"/>), whatever it rolls, and the searcher gets an Explorer bonus: XP,
-    /// and a mark toward the Explorer Award.
+    /// <see cref="GameRules.AllFindsAt"/>), whatever it rolls, and a Lucky Clover with a 6 among its dice;
+    /// the searcher gets an Explorer bonus: XP, and a mark toward the Explorer Award.
     /// </summary>
-    private void Explore(Hero hero, Room room, int total, List<GameEvent> events)
+    private void Explore(Hero hero, Room room, DiceRoll roll, int total, List<GameEvent> events)
     {
         if (room.Searched)
         {
@@ -615,6 +615,12 @@ public sealed partial class GameSession
         }
 
         IReadOnlyList<string> found = total >= GameRules.AllFindsAt ? finds.Cards : [_random.Finds.Pick(finds.Cards)];
+
+        // A 6 on it turns up a Lucky Clover too.
+        if (finds.Clover is { } clover && roll.Faces.Contains(GameRules.PowerDieFace))
+        {
+            found = [.. found, clover];
+        }
         List<CardInstance> cards = [.. found.Select(id => new CardInstance(State.NextId(), Content.GetCard(id), broughtInByHeroId: null))];
         events.Add(new Explored(hero.Id, room.Id, [.. cards.Select(card => card.Definition.Name)]));
         GiveCards(hero, room, cards, events);
@@ -678,19 +684,39 @@ public sealed partial class GameSession
     /// Beat it to take something: from a monster a key or a card (once per monster), from a hero
     /// one of their keys or backpack cards at random.
     /// </summary>
-    private void ResolveSteal(Hero thief, Room room, int targetId, int total, List<GameEvent> events)
+    /// <summary>
+    /// What the mark of a steal holds on with: a merchant's 2 dice, a monster's defense dice, a hero's Od Hand
+    /// dice. Rolled now, or first while Luck was offered (and standing since).
+    /// </summary>
+    private int StealGuard(PendingRoll roll, Room room, int targetId, List<GameEvent> events)
+    {
+        if (roll.Defenses.TryGetValue(targetId, out int held))
+        {
+            return held;
+        }
+
+        int dice = room.FindMerchant(targetId) is not null ? 2
+            : room.FindMonster(targetId) is { } monster ? monster.Definition.DefenseDice
+            : State.Heroes.FirstOrDefault(hero => hero.Id == targetId) is { } victim ? Math.Max(0, victim.EffectiveStats.OdHandDice)
+            : 0;
+        DiceRoll guard = _dice.Roll(dice);
+        events.Add(new DefenseRolled(targetId, guard, 0, guard.Total));
+        roll.Defenses[targetId] = guard.Total;
+        return guard.Total;
+    }
+
+    /// <param name="guard">What the mark holds on with (see <see cref="StealGuard"/>).</param>
+    private void ResolveSteal(Hero thief, Room room, int targetId, int total, int guard, List<GameEvent> events)
     {
         if (room.FindMerchant(targetId) is { } merchant)
         {
-            StealFromMerchant(thief, room, merchant, total, events);
+            StealFromMerchant(thief, room, merchant, total, guard, events);
             return;
         }
 
         if (room.FindMonster(targetId) is { } monster)
         {
-            DiceRoll guard = _dice.Roll(monster.Definition.DefenseDice);
-            events.Add(new DefenseRolled(monster.Id, guard, 0, guard.Total));
-            if (total <= guard.Total)
+            if (total <= guard)
             {
                 events.Add(new CheckFailed(thief.Id, OdHandCheckKind.Steal));
                 return;
@@ -712,9 +738,7 @@ public sealed partial class GameSession
 
         Hero victim = State.GetHero(targetId);
         Stats stats = victim.EffectiveStats;
-        DiceRoll hold = _dice.Roll(Math.Max(0, stats.OdHandDice));
-        events.Add(new DefenseRolled(victim.Id, hold, 0, hold.Total));
-        if (total <= hold.Total || (victim.Keys == 0 && victim.Backpack.Count == 0))
+        if (total <= guard || (victim.Keys == 0 && victim.Backpack.Count == 0))
         {
             events.Add(new CheckFailed(thief.Id, OdHandCheckKind.Steal));
             return;

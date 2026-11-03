@@ -399,6 +399,7 @@ public partial class GameScreen
                 Condition.Poison => "poison gone",
                 Condition.Shine => "glow fades",
                 Condition.Confused => "comes to",
+                Condition.Cursed => "curse lifts",
                 Condition.Corroded => "armor mended",
                 _ => "spent",
             }, Palette.Text);

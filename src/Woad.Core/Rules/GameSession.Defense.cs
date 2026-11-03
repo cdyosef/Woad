@@ -95,7 +95,74 @@ public sealed partial class GameSession
             events.Add(new LastChanceUsed(hero.Id, lucky.Id));
         }
 
-        return roll.Total + armor + guard.BlockUsed;
+        int total = roll.Total + armor + guard.BlockUsed - Curse(hero, events);
+
+        // A companion about to lose a heart tries its Luck.
+        if (hero.IsCompanion && hero.LuckLeft > 0 && attackTotal > total)
+        {
+            total += TryLuck(hero.Id, roll.Faces, hero.SpendLuck, events);
+        }
+
+        return total;
+    }
+
+    /// <summary>
+    /// The Cursed dice on a hero's next roll (see <see cref="Condition.Cursed"/>): with S stacks, roll r of the
+    /// first three this round gets S / 3 dice, and one more while r is under S mod 3. Each takes its number off
+    /// the roll; a 6 rolls another; each 1 lifts a stack. Every roll counts toward the three, cursed or not.
+    /// </summary>
+    /// <returns>What to take off the roll.</returns>
+    private int Curse(Hero hero, List<GameEvent> events)
+    {
+        int stacks = hero.Conditions[Condition.Cursed];
+        int nth = hero.RollsThisRound++;
+        int dice = nth >= GameRules.CursedRolls ? 0 : stacks / GameRules.CursedRolls + (nth < stacks % GameRules.CursedRolls ? 1 : 0);
+        if (dice == 0)
+        {
+            return 0;
+        }
+
+        var faces = new List<int>();
+        for (int left = dice; left > 0; left--)
+        {
+            int face = RollOneDie();
+            faces.Add(face);
+            if (face == GameRules.PowerDieFace)
+            {
+                left++;
+            }
+        }
+
+        int lifted = Math.Min(stacks, faces.Count(face => face == 1));
+        if (lifted > 0)
+        {
+            AddCondition(hero.Conditions, hero.Id, Condition.Cursed, -lifted, hero.Id, events);
+        }
+
+        events.Add(new CursedDiceRolled(hero.Id, [.. faces], faces.Sum(), lifted));
+        return faces.Sum();
+    }
+
+    /// <summary>
+    /// Luck tried by the game itself (a companion about to lose a heart, a Hexer about to fail): a Luck die
+    /// rolled over the lowest die short of a 6, the higher of the two staying. A lucky 6 isn't spent.
+    /// </summary>
+    /// <returns>How much the roll gained.</returns>
+    private int TryLuck(int ownerId, IReadOnlyList<int> faces, Action spend, List<GameEvent> events)
+    {
+        if (faces.Where(face => face < GameRules.PowerDieFace).DefaultIfEmpty(0).Min() is not (> 0 and int lowest))
+        {
+            return 0;
+        }
+
+        int luck = RollOneDie();
+        if (luck != GameRules.PowerDieFace)
+        {
+            spend();
+        }
+
+        events.Add(new LuckTried(ownerId, lowest, luck));
+        return Math.Max(0, luck - lowest);
     }
 
     /// <summary>A hero's Block and extra Defense dice come back at the start of their turn.</summary>

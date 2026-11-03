@@ -76,7 +76,20 @@ public sealed record PowerDiceBanked(int OwnerId, int Count, int Banked) : GameE
 public sealed record PowerDiceSpent(int OwnerId, int Count, int Banked) : GameEvent;
 
 /// <summary>A Luck reroll. <paramref name="MovementPoints"/> is the new total when it was a movement die.</summary>
-public sealed record DieRerolled(int HeroId, int DieIndex, int OldFace, int NewFace, DiceRoll Roll, int? MovementPoints) : GameEvent;
+/// <summary>A cursed hero's Cursed dice: their <paramref name="Faces"/> (a 6 rolled another), <paramref name="Total"/> off the roll, and <paramref name="Lifted"/> curses the 1s lifted.</summary>
+public sealed record CursedDiceRolled(int HeroId, IReadOnlyList<int> Faces, int Total, int Lifted) : GameEvent;
+
+/// <summary>A Hexer laid a Bad Luck Curse on a hero it could see: they have <paramref name="Stacks"/> now.</summary>
+public sealed record BadLuckCursed(int MonsterId, int HeroId, int Stacks) : GameEvent;
+
+/// <summary>Luck the game tried for a companion or a monster: a Luck die over its lowest die (<paramref name="Over"/>), the higher staying.</summary>
+public sealed record LuckTried(int OwnerId, int Over, int LuckFace) : GameEvent;
+
+public sealed record DieRerolled(int HeroId, int DieIndex, int OldFace, int NewFace, DiceRoll Roll, int? MovementPoints) : GameEvent
+{
+    /// <summary>What the Luck die rolled: it replaced the die (<see cref="NewFace"/>) only if it was higher.</summary>
+    public int LuckFace { get; init; }
+}
 
 public sealed record HeroMoved(int HeroId, IReadOnlyList<GridPosition> Path, int MovementPointsLeft) : GameEvent;
 

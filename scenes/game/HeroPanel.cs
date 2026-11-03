@@ -90,6 +90,9 @@ public partial class HeroPanel : Panel
     /// <summary>The Magic card was clicked: cast a spell.</summary>
     public event Action? MagicClicked;
 
+    /// <summary>Over the Luck line: tap to glow (the next roll asks), hold for the Luck menu.</summary>
+    public LuckClover LuckClover { get; private set; } = null!;
+
     internal CardSlot EquipmentSlot(EquipSlot slot) => _slots[slot];
 
     /// <summary>A point on the part of a belt card that shows, to click it (the ones nearer the buckle cover the rest).</summary>
@@ -143,7 +146,8 @@ public partial class HeroPanel : Panel
 
         MagicCard = Add(new SheetCard { Position = new(Columns[2], Rows[0]), Size = new(CardWidth, CardHeight), Back = "cast" });
         MagicCard.Pressed += () => MagicClicked?.Invoke();
-        _luck = Add(UiTheme.RichLabel(new(3, Rows[0] + CardHeight + 2), new(58, 12)));
+        _luck = Add(UiTheme.RichLabel(new(3, Rows[0] + CardHeight + 2), new(76, 12)));
+        LuckClover = Add(new LuckClover { Position = new(2, Rows[0] + CardHeight + 1), Size = new(76, 13) });
         _magicRank = Add(UiTheme.RichLabel(new(137, Rows[0] + CardHeight + 2), new(38, 12)));
 
         // The bag: a deck, its cards listed under it.
@@ -344,7 +348,10 @@ public partial class HeroPanel : Panel
             _bagCards[i].Show(card, "", card is not null && card.Id == selectedCardId, hero);
         }
 
-        _luck.Text = $"{UiTheme.Icon("icon_luck", "Luck")} [color={Palette.Hex(Palette.Heal)}]{hero.LuckRemaining}/{stats.Luck} Luck[/color]";
+        // Clover Luck after it, brighter: used once the Luck runs out.
+        string clover = hero.CloverLuck > 0 ? $" [color={Palette.Hex(Palette.Heal.Lightened(0.35f))}]+{hero.CloverLuck}[/color]" : "";
+        _luck.Text = $"{UiTheme.Icon("icon_luck", "Luck")} [color={Palette.Hex(Palette.Heal)}]{hero.LuckRemaining}/{stats.Luck} Luck[/color]{clover}";
+        _luck.TooltipText = hero.CloverLuck > 0 ? $"Luck {hero.LuckRemaining}/{stats.Luck} this floor, and {hero.CloverLuck} Clover Luck from Lucky Clovers, used after it runs out." : "";
         bool knowsMagic = stats.Magic > 0 || hero.Spells.Count > 0;
         if (knowsMagic)
         {

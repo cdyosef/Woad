@@ -162,6 +162,7 @@ public sealed partial class GameSession
             Escape c => Handle(c, events),
             OrderCompanion c => Handle(c, events),
             SwitchControl c => Handle(c, events),
+            SetLuckAsks c => Handle(c),
             Shove c => Handle(c, events),
             AttackAlly c => Handle(c, events),
             Leap c => Handle(c, events),
@@ -227,7 +228,7 @@ public sealed partial class GameSession
             return "It isn't that hero's turn.";
         }
 
-        if (command is OrderCompanion or SwitchControl)
+        if (command is OrderCompanion or SwitchControl or SetLuckAsks)
         {
             return null;
         }
@@ -328,6 +329,11 @@ public sealed partial class GameSession
         }
 
         State.Round++;
+        foreach (Hero hero in State.Heroes)
+        {
+            hero.RollsThisRound = 0;
+        }
+
         events.Add(new RoundStarted(State.Round));
         if (UsesInitiative)
         {
@@ -435,7 +441,7 @@ public sealed partial class GameSession
             AddFeatures(room, roomSetup.Features ?? RoomFeatures.None);
             if (!setup.Skirmish && theme.Finds is { } finds)
             {
-                HideFinds(room, finds, roomSetup.DoorTiles, random.Finds);
+                HideFinds(room, finds, roomSetup.DoorTiles, random.Finds, content, state);
             }
 
             state.AddRoom(room);
@@ -496,6 +502,9 @@ public sealed partial class GameSession
                 StartXp = heroSetup.Xp,
                 StartUnspentPoints = heroSetup.UnspentPoints,
                 Policy = heroSetup.Policy ?? CompanionPolicy.Default,
+                LuckAsks = heroSetup.LuckAsks,
+                CloverLuck = Math.Clamp(heroSetup.CloverLuck, 0, GameRules.MaxCloverLuck),
+                StartCloverLuck = Math.Clamp(heroSetup.CloverLuck, 0, GameRules.MaxCloverLuck),
                 Skills = heroSetup.Skills,
             };
             state.AddHero(hero);
@@ -572,7 +581,7 @@ public sealed partial class GameSession
     /// Hides what lies about (a Rock, a Stick) on a few of a room's open tiles, for a Search to find: none
     /// where heroes arrive, monsters stand, by a door, or where something's hidden already.
     /// </summary>
-    private static void HideFinds(Room room, FindsDefinition finds, IReadOnlyDictionary<Direction, GridPosition>? doorTiles, IRandomSource random)
+    private static void HideFinds(Room room, FindsDefinition finds, IReadOnlyDictionary<Direction, GridPosition>? doorTiles, IRandomSource random, ContentCatalog content, GameState state)
     {
         HashSet<GridPosition> taken = [.. room.ArrivalTiles, .. room.Monsters.Select(monster => monster.Position), .. room.Traps.Keys, .. room.Caches.Keys,
             .. (doorTiles?.Values ?? []).SelectMany(door => door.SurroundingTiles().Append(door))];
@@ -582,6 +591,12 @@ public sealed partial class GameSession
             GridPosition tile = random.Pick(open);
             open.Remove(tile);
             room.HideCache(tile, new Cache(GameRules.FindDifficulty(room.Floor), 0, 0, false, [random.Pick(finds.Cards)]));
+        }
+
+        // Now and then a Lucky Clover, lying in plain sight.
+        if (finds.Clover is { } clover && finds.CloverChance > 0 && random.NextInt(0, 100) < finds.CloverChance && open.Count > 0)
+        {
+            room.AddLoot(random.Pick(open), [new CardInstance(state.NextId(), content.GetCard(clover), broughtInByHeroId: null)]);
         }
     }
 
@@ -704,7 +719,7 @@ public sealed partial class GameSession
 
     /// <summary>A new monster; a boss is toughened for a party bigger than <see cref="GameRules.FullParty"/>.</summary>
     private static Monster CreateMonster(int id, MonsterDefinition definition, GridPosition position, int partySize) =>
-        new(id, definition, position, GameRules.ExtraMonsterHearts(partySize, definition.Boss));
+        new(id, definition, position, GameRules.ExtraMonsterHearts(partySize, definition.Boss)) { Luck = Math.Max(definition.Luck, definition.Hexes ? 1 : 0) };
 
     private static GridPosition FreeTileNear(GameState state, Room room, GridPosition near) =>
         room.Positions

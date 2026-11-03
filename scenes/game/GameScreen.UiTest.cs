@@ -590,7 +590,28 @@ public partial class GameScreen
             Hero aria = ActiveHero!;
             Monster slime = _session.State.Rooms["yard"].Monsters.Single();
 
+            // The Luck clover: held, the Luck menu; Wend switched off there. Tapped, it glows: the next roll asks anyway.
+            Vector2 clover = _heroPanel.LuckClover.GetGlobalRect().GetCenter();
+            GetViewport().PushInput(new InputEventMouseMotion { Position = clover, GlobalPosition = clover }, inLocalCoords: true);
+            GetViewport().PushInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = clover, GlobalPosition = clover, ButtonMask = MouseButtonMask.Left }, inLocalCoords: true);
+            await Pause(0.6);
+            GetViewport().PushInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = clover, GlobalPosition = clover }, inLocalCoords: true);
+            await NextFrame(this);
+            Check(_luckMenu.Visible, "holding the Luck clover opens the Luck menu");
+            await Click(this, _luckMenu.SwitchFor(LuckRoll.Wend));
+            await WaitUntilIdle();
+            Check(!aria.LuckAsks.HasFlag(LuckRoll.Wend), "switching Wend off in the Luck menu");
+            _luckMenu.Visible = false;
+            await Click(this, _heroPanel.LuckClover);
+            Check(_heroPanel.LuckClover.Glowing, "tapping the clover makes it glow");
+
+            // The question only stays up a few seconds (and the game runs slow while it does), so look for it as soon as it's up.
             await PressKey(Key.W);
+            await WaitFor(this, () => _luckPrompt.Visible, "the Wend roll to ask: Try your Luck?");
+            Check(!_heroPanel.LuckClover.Glowing, "with the clover glowing, the Wend roll asks, and asking uses the glow up");
+            await SaveShot("luck_prompt_wend");
+            await Click(this, _luckPrompt.NoButton);
+            Check(!_luckPrompt.Visible, "No puts the question away");
             await WaitUntilIdle();
             await ConfirmIfHeld();
             Check(_session.State.Turn!.MovementPoints > 0, "W rolls the Wend dice");
@@ -607,7 +628,7 @@ public partial class GameScreen
             await WaitUntilIdle();
             Check(!_rumbling, "a click off target puts Rumble away");
 
-            await DoubleClickAt(this, _board.GetGlobalRect().Position + BoardView.TileOrigin(slime.Position) + new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f));
+            await DoubleClickAt(this, TileCenter(slime.Position));
             await WaitUntilIdle();
             Check(_rumbling && _session.State.Turn!.AttackDiceUsed == 0, "double-clicking a monster in reach aims Rumble at it, without attacking yet");
             await ClickTile(new GridPosition(0, 0));
@@ -615,6 +636,24 @@ public partial class GameScreen
 
             await UseAbility(_rumble);
             await ClickTile(slime.Position);
+            await WaitUntilIdle();
+
+            // Luck: clicking a die rolls the green Luck die over it, and the higher of the two stays.
+            if (_session.State.Turn?.PendingRoll is { } pending && aria.LuckRemaining > 0
+                && pending.Roll.Faces.Select((face, index) => (face, index)).Where(die => die.face < 6).Select(die => (int?)die.index).FirstOrDefault() is int lucky)
+            {
+                int before = pending.Roll.Faces[lucky];
+                int luckLeft = aria.LuckRemaining;
+                Check(_luckPrompt.Visible && _luckPrompt.SecondsLeft > 0, "an attack that would fail asks: Try your Luck?");
+                await SaveShot("luck_prompt");
+                await ClickAt(this, _dice.DiePoint(lucky)!.Value);
+                await Pause(0.3);
+                await SaveShot("luck_rolling");
+                await WaitUntilIdle();
+                Check(aria.LuckRemaining == luckLeft - 1 || _session.State.Rooms["yard"].Monsters.Count == 0 || aria.LuckRemaining == luckLeft, "clicking a die in the tray tries the Luck");
+                Check(_session.State.Turn?.PendingRoll is not { } after || after.Roll.Faces[lucky] >= before, "Luck keeps the higher of the two dice");
+            }
+
             await ConfirmIfHeld();
             Check(_session.State.Turn!.AttackDiceUsed > 0 || _session.State.Turn.HeroId != aria.Id, "Rumble, then a click on the slime, attacks it");
             await WaitUntilIdle();
@@ -1163,7 +1202,7 @@ public partial class GameScreen
             await WaitUntilIdle();
             Hero aria = ActiveHero!;
             Monster slime = _session.State.Rooms["yard"].Monsters.Single();
-            Vector2 at = _board.GetGlobalRect().Position + BoardView.TileOrigin(slime.Position) + new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f);
+            Vector2 at = TileCenter(slime.Position);
 
             await DoubleClickAt(this, at);
             await WaitUntilIdle();
@@ -1538,6 +1577,9 @@ public partial class GameScreen
             await Click(this, _addPower);
             await WaitFor(this, () => !_busy, "the Power Die to roll");
         }
+
+        // Tiles are only where they'll be clicked once the view has stopped zooming.
+        await WaitFor(this, () => _board.ZoomSettled, "the view to stop zooming");
     }
 
     /// <summary>Clicks a card on the fanned belt, on the part of it that shows.</summary>
@@ -1567,5 +1609,5 @@ public partial class GameScreen
     }
 
     private Task ClickTile(GridPosition tile) =>
-        ClickAt(this, _board.GetGlobalRect().Position + BoardView.TileOrigin(tile) + new Vector2(BoardView.TileSize / 2f, BoardView.TileSize / 2f));
+        ClickAt(this, TileCenter(tile));
 }
