@@ -313,8 +313,10 @@ public partial class GameScreen
 
         CardDefinition? weapon = attack.WeaponId is { } id ? Content.FindCard(id) : null;
         int rumble = attack.Roll.Faces.Count - attack.PowerDice - attack.WeaponDice;
-        List<TrayCard> cards = [PoolTray("icon_rumble", "Rumble", rumble, weapon is null ? Plus(attack.Bonus) : "", Palette.DieRumble)];
-        if (PlayedTray(_rumbleHand, attack.AttackerId) is { } skill)
+        List<TrayCard> cards = [attack.OffHand
+            ? PoolTray("icon_odhand", "Od Hand", rumble, "", Palette.DieOdHand)
+            : PoolTray("icon_rumble", "Rumble", rumble, weapon is null ? Plus(attack.Bonus) : "", Palette.DieRumble)];
+        if (!attack.OffHand && PlayedTray(_rumbleHand, attack.AttackerId) is { } skill)
         {
             cards.Add(skill);
         }

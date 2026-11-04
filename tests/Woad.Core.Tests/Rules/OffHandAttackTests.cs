@@ -44,6 +44,7 @@ public sealed class OffHandAttackTests
         // One die; 2 for the Od Hand ranks (the Magic ranks don't count) and the Dagger's 1.
         Assert.Single(offHand.Roll.Faces);
         Assert.Equal(3, offHand.Bonus);
+        Assert.True(offHand.OffHand);
         Assert.Equal(1, session.State.Turn!.OdHandDiceUsed);
         Assert.Contains("already attacked with your off hand", session.Refuse(new OffHandAttack(hero.Id, dummy)));
     }

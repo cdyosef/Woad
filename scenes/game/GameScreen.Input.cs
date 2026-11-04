@@ -401,6 +401,11 @@ public partial class GameScreen
         {
             _ = GoToward(hero, room, tile);
         }
+        else if (room.MonsterAt(tile) is { } struck && _session.AttackDiceLeft == 0 && _session.CheckOffHandAttack(struck.Id) is null)
+        {
+            // Rumble spent, and the off hand can follow up on it: it does.
+            Execute(new OffHandAttack(hero.Id, struck.Id, SelectedPowerDice));
+        }
         else if (room.MonsterAt(tile) is not null)
         {
             Log("Press Rumble (or Space), or double-click it, to attack.", Palette.TextDim);

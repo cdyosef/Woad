@@ -988,7 +988,10 @@ public partial class GameScreen : Control
                 await ZoomOnActionAfresh(attack.AttackerId, attack.TargetIds);
                 BeginStrike(attack.AttackerId, attack.Total, attack.Roll.Faces.TakeLast(attack.PowerDice).Sum());
                 await StrikeFx(attack);
-                await _dice.ShowRoll(_spellCaption ?? $"{NameOf(attack.AttackerId)} {(attack.Shove ? "shoves" : attack.Chain ? "flings its chain" : "attacks")}", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice, DiceKind.Rumble, types: attack.DieTypes, cards: AttackTray(attack));
+                // An off-hand follow-up is an Od Hand roll: its color, its card.
+                string doing = attack.OffHand ? $"follows up with the {(attack.WeaponId is { } offHandId ? Content.FindCard(offHandId)?.Name : null) ?? "off hand"}"
+                    : attack.Shove ? "shoves" : attack.Chain ? "flings its chain" : "attacks";
+                await _dice.ShowRoll(_spellCaption ?? $"{NameOf(attack.AttackerId)} {doing}", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice, attack.OffHand ? DiceKind.OdHand : DiceKind.Rumble, types: attack.DieTypes, cards: AttackTray(attack));
                 _spellCaption = null;
                 // A hero's sixes get their own events; a monster's roll straight in, so call them out here.
                 if (attack.PowerDice > 0 && !IsHero(attack.AttackerId))

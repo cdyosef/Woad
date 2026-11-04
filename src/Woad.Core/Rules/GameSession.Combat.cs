@@ -257,7 +257,7 @@ public sealed partial class GameSession
     /// <param name="casting">The spell this casts, if it's a spell.</param>
     /// <param name="bullRush">The blow at the end of a bull rush (see <see cref="BullRushAftermath"/>).</param>
     /// <param name="spent">A weapon that doesn't last, settled as the dice land (see <see cref="SpendWeapon"/>).</param>
-    private void RollHeroAttack(Hero hero, int dice, int bonus, IReadOnlyList<int> targetIds, DamageSource source, List<GameEvent> events, int powerDice = 0, bool stunOnSix = false, int weaponDice = 0, CardDefinition? weapon = null, IReadOnlyList<(DieType Type, int Dice)>? typed = null, int torches = 0, int chill = 0, SpellCasting? casting = null, bool bullRush = false, WeaponSpent? spent = null)
+    private void RollHeroAttack(Hero hero, int dice, int bonus, IReadOnlyList<int> targetIds, DamageSource source, List<GameEvent> events, int powerDice = 0, bool stunOnSix = false, int weaponDice = 0, CardDefinition? weapon = null, IReadOnlyList<(DieType Type, int Dice)>? typed = null, int torches = 0, int chill = 0, SpellCasting? casting = null, bool bullRush = false, WeaponSpent? spent = null, bool offHand = false)
     {
         dice = Math.Max(0, dice);
         bonus -= AttackPenalty(hero.Conditions) + Curse(hero, events);
@@ -266,7 +266,7 @@ public sealed partial class GameSession
         (int[] typedFaces, DieType[] types) = RollTypedDice(typed ?? []);
         var roll = new DiceRoll([.. rolled.Faces.Take(dice), .. weaponFaces[..weaponDice], .. typedFaces, .. rolled.Faces.Skip(dice), .. weaponFaces[weaponDice..]]);
         DieType[] dieTypes = [.. Enumerable.Repeat(DieType.Plain, dice + weaponDice), .. types];
-        events.Add(new AttackRolled(hero.Id, roll, bonus, roll.Total + bonus, targetIds, powerDice + crits, source == DamageSource.Shove) { WeaponDice = weaponDice, DieTypes = dieTypes, WeaponId = casting is null ? weapon?.Id : null });
+        events.Add(new AttackRolled(hero.Id, roll, bonus, roll.Total + bonus, targetIds, powerDice + crits, source == DamageSource.Shove) { WeaponDice = weaponDice, DieTypes = dieTypes, WeaponId = casting is null ? weapon?.Id : null, OffHand = offHand });
         if (crits > 0)
         {
             events.Add(new CritRolled(hero.Id, crits));

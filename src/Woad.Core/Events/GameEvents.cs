@@ -109,6 +109,9 @@ public sealed record AttackRolled(int AttackerId, DiceRoll Roll, int Bonus, int 
     /// <summary>Not a blow but a Ghoul's miasma, breathed on whoever started their turn beside it.</summary>
     public bool Miasma { get; init; }
 
+    /// <summary>An off-hand follow-up by the Od Hand card: its die is an Od Hand die, not a Rumble one.</summary>
+    public bool OffHand { get; init; }
+
     /// <summary>What each face is made of (fire, ice...), in order; Plain past its end. A typed die's 6 rolled another in.</summary>
     public IReadOnlyList<DieType> DieTypes { get; init; } = [];
 
