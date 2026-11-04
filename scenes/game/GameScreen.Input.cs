@@ -682,7 +682,7 @@ public partial class GameScreen
 
         if (_offHanding)
         {
-            return "Od Hand: click a monster in reach (orange) to attack it with what's in your off hand: one Od Hand die, your Focus Bonus and its value. Click yourself to search instead. Right-click to cancel.";
+            return "Od Hand: click a monster you've attacked with Rumble (orange) to follow up with what's in your off hand: one Od Hand die, your Od Hand Bonus and its value. Click yourself to search instead. Right-click to cancel.";
         }
 
         if (_hurling)

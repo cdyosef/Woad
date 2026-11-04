@@ -235,6 +235,9 @@ public sealed class Hero
     /// </summary>
     public int Focus => Allocation is { } bought ? bought.OdHandDice + bought.Magic : Math.Max(0, EffectiveStats.Magic);
 
+    /// <summary>The Od Hand Bonus: +1 for each rank bought in Od Hand, added to an off-hand attack by the Od Hand card.</summary>
+    public int OdHandBonus => Allocation?.OdHandDice ?? 0;
+
     /// <summary>Points the character had to spend coming into the run.</summary>
     public int StartUnspentPoints { get; internal init; }
 

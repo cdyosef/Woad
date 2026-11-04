@@ -7,9 +7,10 @@ using Woad.Core.Model;
 namespace Woad.Core.Rules;
 
 /// <summary>
-/// The Od Hand card with something in the off hand: an attack with it, on top of the Rumble attack. A torch,
-/// a Stick, a Rock, a Dagger or any weapon held there: one Od Hand die at most, plus the Focus Bonus and the
-/// item's own value (a Dagger's doubles against a stunned or prone monster), once a turn. It reaches as the
+/// The Od Hand card with something in the off hand: a follow-up to the Rumble attack, on a monster the hero
+/// has already attacked with Rumble this turn. A torch, a Stick, a Rock, a Dagger or any weapon held there:
+/// one Od Hand die at most, plus the Od Hand Bonus (+1 for each Od Hand rank bought) and the item's own value
+/// (a Dagger's doubles against a stunned or prone monster), once a turn. It reaches as the
 /// item does (a Rock or a Dagger thrown), breaks or lands as it would, and a torch's die is a fire die: a 6
 /// sets the target alight, a 1 burns the torch out.
 /// </summary>
@@ -21,7 +22,7 @@ public sealed partial class GameSession
             ? off
             : null;
 
-    /// <summary>The monsters the active hero could attack with what's in their off hand now.</summary>
+    /// <summary>The monsters the active hero could follow up on with what's in their off hand now: in its reach, and attacked with Rumble this turn.</summary>
     public IReadOnlyList<Monster> GetOffHandTargets()
     {
         if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0, OffHandAttacked: false } || OdHandDiceLeft < 1 || OffHandItem(ActiveHero) is not { } item)
@@ -31,7 +32,7 @@ public sealed partial class GameSession
 
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
-        return [.. room.Monsters.Where(monster => CanHeroAttack(hero, room, monster, item))];
+        return [.. room.Monsters.Where(monster => Turn.RumbledIds.Contains(monster.Id) && CanHeroAttack(hero, room, monster, item))];
     }
 
     /// <summary>Why the active hero can't attack with what's in their off hand (that monster, or anyone), or null.</summary>
@@ -58,8 +59,14 @@ public sealed partial class GameSession
         }
 
         IReadOnlyList<Monster> targets = GetOffHandTargets();
-        return monsterId is int id ? (targets.Any(monster => monster.Id == id) ? null : "That's out of reach of your off hand.")
-            : targets.Count > 0 ? null : "There's nothing in reach of your off hand.";
+        if (monsterId is int id)
+        {
+            return targets.Any(monster => monster.Id == id) ? null
+                : !turn.RumbledIds.Contains(id) ? "Attack it with Rumble first: the off hand follows up."
+                : "That's out of reach of your off hand.";
+        }
+
+        return targets.Count > 0 ? null : turn.RumbledIds.Count == 0 ? "Attack with Rumble first: the off hand follows up." : "There's nothing you've attacked in reach of your off hand.";
     }
 
     private string? Handle(OffHandAttack command, List<GameEvent> events)
@@ -78,7 +85,7 @@ public sealed partial class GameSession
         Reaches(hero, item, room.Layout, hero.Position, at, out bool thrown);
         int value = weapon.AttackBonus + weapon.Modifiers.Weapon;
         int ambush = weapon.Ambush && (monster.Stun.IsStunned || monster.Prone) ? value : 0;
-        int bonus = hero.Focus + value + ambush;
+        int bonus = hero.OdHandBonus + value + ambush;
 
         // One Od Hand die; a Dagger's strike is spent on it, so it doesn't add to a Rumble attack too.
         Turn.OdHandDiceUsed++;

@@ -953,7 +953,7 @@ public partial class GameScreen
                 _offHanding = aiming;
                 if (aiming)
                 {
-                    Log("Od Hand: click a monster in reach (orange) to attack it with what's in your off hand; click yourself to search instead. Right-click to cancel.", Palette.DieOdHand);
+                    Log("Od Hand: click a monster you've attacked with Rumble (orange) to follow up with what's in your off hand; click yourself to search instead. Right-click to cancel.", Palette.DieOdHand);
                 }
 
                 RefreshPanels();

@@ -77,6 +77,7 @@ public sealed partial class GameSession
         bool armed = useWeapon && wielding.HasStrike && (weaponBonus > 0 || wielding.Dice > 0);
         int bonus = (armed ? weaponBonus : 0) + extra;
         Turn.AttackDiceUsed += dice;
+        Turn.RumbledIds.Add(monster.Id);
         WeaponSpent? spent = UseWeapon(hero, room, wielding, armed, monster.Position, events);
         SpendBankedPowerDice(hero, powerDice, events);
         (int star, int weaponDice, IReadOnlyList<(DieType, int)> typed) = Arm(hero, dice + ProneBonus(monster, hero.Position), wielding.Weapon, armed ? wielding.Dice + earth : 0, hero.TorchesHeld);

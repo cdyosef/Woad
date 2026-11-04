@@ -12,7 +12,7 @@ namespace Woad.Core.Tests.Rules;
 /// <summary>The Od Hand card with something in the off hand: an attack with it, on top of the Rumble attack.</summary>
 public sealed class OffHandAttackTests
 {
-    private static GameSession Duel(string row, string[] cards, ScriptedDice dice, int focus = 0)
+    private static GameSession Duel(string row, string[] cards, ScriptedDice dice, int odHandRanks = 0)
     {
         GameSession session = TestRun.Start($"""
             .........
@@ -26,21 +26,22 @@ public sealed class OffHandAttackTests
             .........
             """, dice, stats: TestRun.HeroStats with { AttackDice = 1, OdHandDice = 2 }, cards: cards);
         Hero hero = session.HeroInSeat();
-        hero.BaseStats = hero.BaseStats with { Magic = focus };
+        hero.Allocation = new Woad.Core.Characters.StatAllocation { OdHandDice = odHandRanks, Magic = 3 };
         return session;
     }
 
     [Fact]
-    public void AnOffHandDaggerAttacksWithOneOdHandDieTheFocusBonusAndItsValueOnTopOfRumble()
+    public void AnOffHandDaggerFollowsUpWithOneOdHandDieTheOdHandBonusAndItsValue()
     {
-        GameSession session = Duel("....1d...", ["t_rapier", "t_dagger"], new ScriptedDice(1, 1), focus: 2);
+        GameSession session = Duel("....1d...", ["t_rapier", "t_dagger"], new ScriptedDice(1, 1), odHandRanks: 2);
         Hero hero = session.HeroInSeat();
         int dummy = session.OnlyMonster().Id;
+        Assert.Contains("Rumble first", session.Refuse(new OffHandAttack(hero.Id, dummy)));
 
         session.Do(new AttackMonster(hero.Id, dummy, Dice: 1));
         AttackRolled offHand = session.Do(new OffHandAttack(hero.Id, dummy)).SingleOf<AttackRolled>();
 
-        // One die; Focus 2 and the Dagger's 1.
+        // One die; 2 for the Od Hand ranks (the Magic ranks don't count) and the Dagger's 1.
         Assert.Single(offHand.Roll.Faces);
         Assert.Equal(3, offHand.Bonus);
         Assert.Equal(1, session.State.Turn!.OdHandDiceUsed);
@@ -50,8 +51,10 @@ public sealed class OffHandAttackTests
     [Fact]
     public void ATorchInTheOffHandAttacksWithAFireDie()
     {
-        GameSession session = Duel("....1d...", ["t_torch"], new ScriptedDice(3));
+        // The Rumble attack: a die and the torch's fire die; then the follow-up's fire die.
+        GameSession session = Duel("....1d...", ["t_torch"], new ScriptedDice(2, 2, 3));
         Hero hero = session.HeroInSeat();
+        session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id, Dice: 1));
 
         AttackRolled attack = session.Do(new OffHandAttack(hero.Id, session.OnlyMonster().Id)).SingleOf<AttackRolled>();
 
@@ -61,8 +64,10 @@ public sealed class OffHandAttackTests
     [Fact]
     public void AnOffHandRockIsThrownAndGoneUnlessItLandsOnASix()
     {
-        GameSession session = Duel(".1.d.....", ["t_rock"], new ScriptedDice(2));
+        // The Rumble attack throws one Rock, the follow-up the other.
+        GameSession session = Duel(".1.d.....", ["t_rock", "t_rock"], new ScriptedDice(2, 2));
         Hero hero = session.HeroInSeat();
+        session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id, Dice: 1));
 
         IReadOnlyList<GameEvent> events = session.Do(new OffHandAttack(hero.Id, session.OnlyMonster().Id));
 
@@ -110,12 +115,15 @@ public sealed class OffHandAttackTests
     [Fact]
     public void ARockIsThrownAtRangeThreeAndAStickAtTwo()
     {
-        GameSession rock = Duel("1..d.....", ["t_rock"], new ScriptedDice(2));
+        GameSession rock = Duel("1..d.....", ["t_rock", "t_rock"], new ScriptedDice(2, 2));
+        rock.Do(new AttackMonster(rock.HeroInSeat().Id, rock.OnlyMonster().Id, Dice: 1));
         Assert.Single(rock.Do(new OffHandAttack(rock.HeroInSeat().Id, rock.OnlyMonster().Id)).OfType<AttackRolled>());
 
+        // A Stick in the off hand, the monster as good as attacked with Rumble already.
         GameSession stick = Duel("1..d.....", ["t_stick"], new ScriptedDice());
         Hero hero = stick.HeroInSeat();
         stick.Do(new EquipCard(hero.Id, hero.Card("t_stick").Id, EquipSlot.OffHand));
+        stick.State.Turn!.RumbledIds.Add(stick.OnlyMonster().Id);
         Assert.Contains("out of reach", stick.Refuse(new OffHandAttack(hero.Id, stick.OnlyMonster().Id)));
     }
 

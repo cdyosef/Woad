@@ -199,6 +199,9 @@ public sealed class TurnState
     /// <summary>The hero has attacked with what's in their off hand, by the Od Hand card, this turn.</summary>
     public bool OffHandAttacked { get; internal set; }
 
+    /// <summary>Monsters the hero has made a Rumble attack on this turn: only they can take the off hand's follow-up.</summary>
+    public HashSet<int> RumbledIds { get; } = [];
+
     public int MoveDiceUsed { get; internal set; }
 
     /// <summary>Wend dice gained this turn (the Coward's Cloak turns Rumble and Od Hand dice into them).</summary>
