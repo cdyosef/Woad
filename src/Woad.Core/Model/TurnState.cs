@@ -199,8 +199,11 @@ public sealed class TurnState
     /// <summary>The hero has attacked with what's in their off hand, by the Od Hand card, this turn.</summary>
     public bool OffHandAttacked { get; internal set; }
 
-    /// <summary>Monsters the hero has made a Rumble attack on this turn: only they can take the off hand's follow-up.</summary>
-    public HashSet<int> RumbledIds { get; } = [];
+    /// <summary>The hero has made a Rumble attack (a Shove or a Bull Rush too) this turn: the off hand can follow up.</summary>
+    public bool Rumbled { get; internal set; }
+
+    /// <summary>The Rumble Bonus has gone on an attack this turn.</summary>
+    public bool RumbleBonusUsed { get; internal set; }
 
     public int MoveDiceUsed { get; internal set; }
 

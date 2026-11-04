@@ -123,8 +123,32 @@ public sealed class OffHandAttackTests
         GameSession stick = Duel("1..d.....", ["t_stick"], new ScriptedDice());
         Hero hero = stick.HeroInSeat();
         stick.Do(new EquipCard(hero.Id, hero.Card("t_stick").Id, EquipSlot.OffHand));
-        stick.State.Turn!.RumbledIds.Add(stick.OnlyMonster().Id);
+        stick.State.Turn!.Rumbled = true;
         Assert.Contains("out of reach", stick.Refuse(new OffHandAttack(hero.Id, stick.OnlyMonster().Id)));
+    }
+
+    [Fact]
+    public void AShoveLetsTheOffHandFollowUpOnAnotherMonster()
+    {
+        // Shove the one beside you, then the Dagger goes into the other.
+        GameSession session = TestRun.Start("""
+            .........
+            .........
+            .........
+            ....d....
+            ....1d...
+            .........
+            .........
+            .........
+            .........
+            """, new ScriptedDice(1, 2), stats: TestRun.HeroStats with { AttackDice = 1 }, cards: ["t_dagger"]);
+        Hero hero = session.HeroInSeat();
+        Monster[] dummies = [.. session.RoomById().Monsters.OrderBy(monster => monster.Position.Y)];
+
+        session.Do(new Shove(hero.Id, dummies[1].Id, Dice: 1));
+        AttackRolled followUp = session.Do(new OffHandAttack(hero.Id, dummies[0].Id)).SingleOf<AttackRolled>();
+
+        Assert.Equal([dummies[0].Id], followUp.TargetIds);
     }
 
     [Fact]

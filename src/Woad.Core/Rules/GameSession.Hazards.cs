@@ -252,8 +252,11 @@ public sealed partial class GameSession
         Reveal(hero, events);
         Wielding wielding = Wield(hero, ActiveRoom, at) is { Thrown: false } held ? held : Wielding.BareHanded;
         int bonus = command.UseWeapon && wielding.HasStrike ? wielding.Bonus : 0;
+        bool armed = bonus > 0;
+        bonus += TakeRumbleBonus(command.HoldRumbleBonus, dice);
         Turn.AttackDiceUsed += dice;
-        WeaponSpent? spent = UseWeapon(hero, ActiveRoom, wielding, bonus > 0, at, events);
+        Turn.Rumbled = true;
+        WeaponSpent? spent = UseWeapon(hero, ActiveRoom, wielding, armed, at, events);
         SpendBankedPowerDice(hero, command.PowerDice, events);
         RollHeroAttack(hero, dice, bonus, [command.TargetId], DamageSource.Shove, events, command.PowerDice, spent: spent);
         return null;

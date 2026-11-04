@@ -238,7 +238,7 @@ public class MovementTests
     [Fact]
     public void LuckRerollsAMovementDieBeforeTheFirstStep()
     {
-        GameSession session = TestRun.Start(Open, new ScriptedDice(1, 5), stats: GameRules.HeroBaseStats with { Luck = 2 });
+        GameSession session = TestRun.Start(Open, new ScriptedDice(1, 5), stats: GameRules.HeroBaseStats with { Luck = 2, Speed = 2 });
         Hero hero = session.HeroInSeat();
         session.Do(new RollMovement(hero.Id));
 

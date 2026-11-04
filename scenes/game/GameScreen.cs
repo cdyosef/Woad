@@ -457,6 +457,7 @@ public partial class GameScreen : Control
         {
             case TurnStarted turn:
                 _board.ZoomOut();
+                _rumbleBonusHeld = false;
                 _viewedHeroId = null;
                 _selectedCardId = null;
                 _showingOrders = false;

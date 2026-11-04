@@ -7,8 +7,8 @@ using Woad.Core.Model;
 namespace Woad.Core.Rules;
 
 /// <summary>
-/// The Od Hand card with something in the off hand: a follow-up to the Rumble attack, on a monster the hero
-/// has already attacked with Rumble this turn. A torch, a Stick, a Rock, a Dagger or any weapon held there:
+/// The Od Hand card with something in the off hand: a follow-up once the hero has made a Rumble attack (a
+/// Shove or a Bull Rush too) this turn, on any monster in its reach. A torch, a Stick, a Rock, a Dagger or any weapon held there:
 /// one Od Hand die at most, plus the Od Hand Bonus (+1 for each Od Hand rank bought) and the item's own value
 /// (a Dagger's doubles against a stunned or prone monster), once a turn. It reaches as the
 /// item does (a Rock or a Dagger thrown), breaks or lands as it would, and a torch's die is a fire die: a 6
@@ -22,17 +22,17 @@ public sealed partial class GameSession
             ? off
             : null;
 
-    /// <summary>The monsters the active hero could follow up on with what's in their off hand now: in its reach, and attacked with Rumble this turn.</summary>
+    /// <summary>The monsters the active hero could follow up on with what's in their off hand now: in its reach, once they've Rumbled this turn.</summary>
     public IReadOnlyList<Monster> GetOffHandTargets()
     {
-        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0, OffHandAttacked: false } || OdHandDiceLeft < 1 || OffHandItem(ActiveHero) is not { } item)
+        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0, OffHandAttacked: false, Rumbled: true } || OdHandDiceLeft < 1 || OffHandItem(ActiveHero) is not { } item)
         {
             return [];
         }
 
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
-        return [.. room.Monsters.Where(monster => Turn.RumbledIds.Contains(monster.Id) && CanHeroAttack(hero, room, monster, item))];
+        return [.. room.Monsters.Where(monster => CanHeroAttack(hero, room, monster, item))];
     }
 
     /// <summary>Why the active hero can't attack with what's in their off hand (that monster, or anyone), or null.</summary>
@@ -58,15 +58,14 @@ public sealed partial class GameSession
             return NoOdHandDice;
         }
 
-        IReadOnlyList<Monster> targets = GetOffHandTargets();
-        if (monsterId is int id)
+        if (!turn.Rumbled)
         {
-            return targets.Any(monster => monster.Id == id) ? null
-                : !turn.RumbledIds.Contains(id) ? "Attack it with Rumble first: the off hand follows up."
-                : "That's out of reach of your off hand.";
+            return "Attack with Rumble first (a Shove or Bull Rush will do): the off hand follows up.";
         }
 
-        return targets.Count > 0 ? null : turn.RumbledIds.Count == 0 ? "Attack with Rumble first: the off hand follows up." : "There's nothing you've attacked in reach of your off hand.";
+        IReadOnlyList<Monster> targets = GetOffHandTargets();
+        return monsterId is int id ? (targets.Any(monster => monster.Id == id) ? null : "That's out of reach of your off hand.")
+            : targets.Count > 0 ? null : "There's nothing in reach of your off hand.";
     }
 
     private string? Handle(OffHandAttack command, List<GameEvent> events)

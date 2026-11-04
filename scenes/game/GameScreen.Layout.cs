@@ -83,6 +83,9 @@ public partial class GameScreen
     private int _moveDiceHeld;
     private bool _weaponHeld;
     private bool _speedHeld;
+
+    /// <summary>The Rumble Bonus held back from the next attacks this turn (see <see cref="ToggleBonus"/>).</summary>
+    private bool _rumbleBonusHeld;
     private int _powerDiceSelected;
     private bool _toolsHeld;
 
@@ -953,7 +956,7 @@ public partial class GameScreen
                 _offHanding = aiming;
                 if (aiming)
                 {
-                    Log("Od Hand: click a monster you've attacked with Rumble (orange) to follow up with what's in your off hand; click yourself to search instead. Right-click to cancel.", Palette.DieOdHand);
+                    Log("Od Hand: click a monster in reach (orange) to follow up your Rumble attack with what's in your off hand; click yourself to search instead. Right-click to cancel.", Palette.DieOdHand);
                 }
 
                 RefreshPanels();

@@ -63,6 +63,25 @@ public sealed partial class GameSession
     /// <summary>The Speed the active hero can still add to a move this turn (0 once used; may be negative).</summary>
     public int SpeedBonusLeft => State.Turn is { SpeedUsed: false } ? ActiveHero.EffectiveStats.Speed : 0;
 
+    /// <summary>The Rumble Bonus the active hero has yet to put on an attack this turn.</summary>
+    public int RumbleBonusLeft => State.Turn is { RumbleBonusUsed: false } ? ActiveHero.RumbleBonus : 0;
+
+    /// <summary>
+    /// The Rumble Bonus for an attack of <paramref name="dice"/> Rumble dice, spent: on the first attack, or one
+    /// it was held back from until the attack that rolls the last of the Rumble dice. Call before spending the dice.
+    /// </summary>
+    private int TakeRumbleBonus(bool hold, int dice)
+    {
+        int bonus = RumbleBonusLeft;
+        if (bonus == 0 || (hold && dice < AttackDiceLeft))
+        {
+            return 0;
+        }
+
+        Turn.RumbleBonusUsed = true;
+        return bonus;
+    }
+
     private Hero ActiveHero => State.ActiveHero!;
 
     private TurnState Turn => State.Turn!;

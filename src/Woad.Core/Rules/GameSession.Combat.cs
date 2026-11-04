@@ -63,21 +63,22 @@ public sealed partial class GameSession
         }
 
         Reveal(hero, events);
-        StrikeMonster(hero, room, monster, only, dice, command.UseWeapon, command.PowerDice, 0, events);
+        StrikeMonster(hero, room, monster, only, dice, command.UseWeapon, command.PowerDice, 0, events, holdBonus: command.HoldRumbleBonus);
         return null;
     }
 
     /// <summary>A Rumble attack on a monster, with the weapon in hand (or <paramref name="only"/>) and <paramref name="extra"/> on top (a bull rush's tiles to spare).</summary>
-    private void StrikeMonster(Hero hero, Room room, Monster monster, CardInstance? only, int dice, bool useWeapon, int powerDice, int extra, List<GameEvent> events, bool bullRush = false)
+    /// <param name="holdBonus">The Rumble Bonus held back for a later attack (it still goes on one rolling the last Rumble dice).</param>
+    private void StrikeMonster(Hero hero, Room room, Monster monster, CardInstance? only, int dice, bool useWeapon, int powerDice, int extra, List<GameEvent> events, bool bullRush = false, bool holdBonus = false)
     {
         Wielding wielding = Wield(hero, room, monster.Position, monster, only);
         // A Shovel strikes earth creatures with a die more and +1.
         int earth = wielding.HasStrike && wielding.Weapon?.Shovel == true && monster.Definition.DieType == DieType.Earth ? 1 : 0;
         int weaponBonus = wielding.Bonus + earth + (monster.Definition.Swimmer && wielding.HasStrike && !wielding.OffHand ? wielding.Weapon?.SwimmerBonus ?? 0 : 0);
         bool armed = useWeapon && wielding.HasStrike && (weaponBonus > 0 || wielding.Dice > 0);
-        int bonus = (armed ? weaponBonus : 0) + extra;
+        int bonus = (armed ? weaponBonus : 0) + extra + TakeRumbleBonus(holdBonus, dice);
         Turn.AttackDiceUsed += dice;
-        Turn.RumbledIds.Add(monster.Id);
+        Turn.Rumbled = true;
         WeaponSpent? spent = UseWeapon(hero, room, wielding, armed, monster.Position, events);
         SpendBankedPowerDice(hero, powerDice, events);
         (int star, int weaponDice, IReadOnlyList<(DieType, int)> typed) = Arm(hero, dice + ProneBonus(monster, hero.Position), wielding.Weapon, armed ? wielding.Dice + earth : 0, hero.TorchesHeld);
@@ -136,8 +137,9 @@ public sealed partial class GameSession
         Reveal(hero, events);
         Wielding wielding = Wield(hero, ActiveRoom, target.Position, only: only);
         bool armed = command.UseWeapon && wielding.HasStrike && (wielding.Bonus > 0 || wielding.Dice > 0);
-        int bonus = armed ? wielding.Bonus : 0;
+        int bonus = (armed ? wielding.Bonus : 0) + TakeRumbleBonus(command.HoldRumbleBonus, dice);
         Turn.AttackDiceUsed += dice;
+        Turn.Rumbled = true;
         WeaponSpent? spent = UseWeapon(hero, ActiveRoom, wielding, armed, target.Position, events);
         SpendBankedPowerDice(hero, command.PowerDice, events);
         (int star, int weaponDice, IReadOnlyList<(DieType, int)> typed) = Arm(hero, dice + ProneBonus(target, hero.Position), wielding.Weapon, armed ? wielding.Dice : 0, torches: 0);

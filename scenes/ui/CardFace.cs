@@ -74,6 +74,9 @@ public static class CardFace
         return new Rect2(rect.Position.X + 2 + i / perColumn * 5, top + i % perColumn * 5, 6, 6);
     }
 
+    /// <summary>Where a card in <paramref name="rect"/> shows its (first) bonus: the bottom right, over the name band.</summary>
+    public static Rect2 BonusRect(Rect2 rect) => new(rect.End.X - 16, rect.End.Y - Band - 9, 15, 9);
+
     /// <summary>A card face up in <paramref name="rect"/>. Small cards (the drag preview) drop the name; dim ones are greyed (can't be used now).</summary>
     public static void DrawFront(CanvasItem canvas, Rect2 rect, Texture2D? picture, string name, Marks? marked = null,
         bool selected = false, bool hover = false, bool dim = false, bool small = false, Color? border = null)

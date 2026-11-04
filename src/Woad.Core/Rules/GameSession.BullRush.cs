@@ -213,7 +213,7 @@ public sealed partial class GameSession
         }
 
         Reveal(hero, events);
-        StrikeMonster(hero, room, struck, null, dice, command.UseWeapon, command.PowerDice, leftover, events, bullRush: true);
+        StrikeMonster(hero, room, struck, null, dice, command.UseWeapon, command.PowerDice, leftover, events, bullRush: true, holdBonus: command.HoldRumbleBonus);
         return null;
     }
 

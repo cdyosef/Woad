@@ -238,6 +238,9 @@ public sealed class Hero
     /// <summary>The Od Hand Bonus: +1 for each rank bought in Od Hand, added to an off-hand attack by the Od Hand card.</summary>
     public int OdHandBonus => Allocation?.OdHandDice ?? 0;
 
+    /// <summary>The Rumble Bonus: +1 for each rank bought in Rumble, added to one Rumble attack a turn.</summary>
+    public int RumbleBonus => Allocation?.AttackDice ?? 0;
+
     /// <summary>Points the character had to spend coming into the run.</summary>
     public int StartUnspentPoints { get; internal init; }
 

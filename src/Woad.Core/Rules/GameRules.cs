@@ -200,10 +200,10 @@ public static class GameRules
     {
         Hearts = 3,
         MoveDice = 1,
-        Speed = 2,
+        Speed = 0,
         AttackDice = 1,
         DefenseDice = 1,
-        OdHandDice = 0,
+        OdHandDice = 1,
         Luck = 0,
     };
 }

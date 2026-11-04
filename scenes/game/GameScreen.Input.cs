@@ -29,11 +29,11 @@ public partial class GameScreen
 
         if (room.MonsterAt(tile) is { } monster)
         {
-            Execute(new AttackMonster(hero.Id, monster.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice, ReadiedWeaponId));
+            Execute(new AttackMonster(hero.Id, monster.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice, ReadiedWeaponId, _rumbleBonusHeld));
         }
         else if (_session.GetAttackableAllies().FirstOrDefault(ally => ally.Position == tile) is { } ally)
         {
-            Execute(new AttackAlly(hero.Id, ally.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice, ReadiedWeaponId));
+            Execute(new AttackAlly(hero.Id, ally.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice, ReadiedWeaponId, _rumbleBonusHeld));
         }
         else if (room.BombAt(tile) is { } bomb)
         {
@@ -254,7 +254,7 @@ public partial class GameScreen
             }
             else
             {
-                Execute(new BullRush(hero.Id, tile, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
+                Execute(new BullRush(hero.Id, tile, SelectedAttackDice, !_weaponHeld, SelectedPowerDice, _rumbleBonusHeld));
             }
 
             return;
@@ -322,7 +322,7 @@ public partial class GameScreen
                     return;
                 }
 
-                Execute(new Shove(hero.Id, targetId, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
+                Execute(new Shove(hero.Id, targetId, SelectedAttackDice, !_weaponHeld, SelectedPowerDice, _rumbleBonusHeld));
             }
             else
             {
@@ -682,7 +682,7 @@ public partial class GameScreen
 
         if (_offHanding)
         {
-            return "Od Hand: click a monster you've attacked with Rumble (orange) to follow up with what's in your off hand: one Od Hand die, your Od Hand Bonus and its value. Click yourself to search instead. Right-click to cancel.";
+            return "Od Hand: click a monster in reach (orange) to follow up your Rumble attack with what's in your off hand: one Od Hand die, your Od Hand Bonus and its value. Click yourself to search instead. Right-click to cancel.";
         }
 
         if (_hurling)
