@@ -678,9 +678,8 @@ public partial class DiceBar : Control
         DrawRect(rect, clickable ? Palette.Heal : success ? Palette.TrimBright : Palette.Ink, filled: false, width: clickable || success ? 1.5f : 1);
         if (face == 6 && DieTypes.Symbol(type) is { } symbol)
         {
-            // Dark on a light die, light on a dark one.
-            Color ink = fill.Luminance < 0.4f ? Palette.Text : Palette.Ink;
-            DrawTextureRect(symbol, rect.Grow(-size * 0.14f), tile: false, modulate: ink);
+            // Drawn in its own colors.
+            DrawTextureRect(symbol, rect.Grow(-size * 0.14f), tile: false);
             return;
         }
 
