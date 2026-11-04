@@ -658,53 +658,64 @@ def geraint(c):
     c.poly([(12.5, 23), (19.5, 23), (16, 31)], PARCHMENT[1])
     c.line(12, 23.5, 15.5, 31, WHITE[2])
     c.line(20, 23.5, 16.5, 31, BLACK[2])
-    # Long hair falling past his shoulders behind his face.
-    c.poly([(8, 6), (24, 6), (26.5, 14), (27, 28), (21, 27), (20, 21), (12, 21), (11, 27), (5, 28), (5.5, 14)], HAIR[1])
-    for x0, x1 in ((7, 6), (9, 8.5), (24, 25.5), (22.5, 23)):
+    # Long stringy hair falling past his shoulders behind his face, ragged at the ends.
+    c.poly([(8, 6), (24, 6), (26.5, 13), (27.5, 25), (26.5, 29), (25.5, 26), (24.5, 29.5), (23, 26), (21.5, 28), (20, 21),
+            (12, 21), (10.5, 28), (9, 26), (7.5, 29.5), (6.5, 26), (5.5, 29), (4.5, 25), (5.5, 13)], HAIR[1])
+    for x0, x1 in ((7, 5.5), (8.5, 7.5), (9.5, 10), (23, 24.5), (24.5, 26), (22.5, 22.5)):
         c.line(x0, 10, x1, 27, HAIR[2])
-    c.line(25.5, 10, 26, 26, HAIR[0])
-    # His face.
-    c.poly([(11, 9), (21, 9), (21, 18), (19, 21), (13, 21), (11, 18)], SKIN[1])
-    c.rect(12, 9, 4, 3, SKIN[0])
+    for x0, x1 in ((6.5, 6.5), (25.5, 27)):
+        c.line(x0, 12, x1, 24, HAIR[0])
+    # His long face.
+    c.poly([(11.5, 9), (20.5, 9), (20.5, 18), (19, 21), (13, 21), (11.5, 18)], SKIN[1])
+    c.rect(12, 9, 4, 2, SKIN[0])
     c.rect(12, 15, 2, 2, SKIN[0])
     c.line(20, 10, 20, 18, SKIN[2])
-    # Locks hanging down either side of it.
-    c.line(10.5, 9, 10, 20, HAIR[1], 2)
-    c.line(21.5, 9, 22, 20, HAIR[1], 2)
-    c.line(11.5, 9, 11.5, 13, HAIR[2])
-    c.line(20.5, 9, 20.5, 13, HAIR[2])
+    # Locks hanging down over either side of it.
+    c.line(11, 9, 10.5, 20, HAIR[1], 2)
+    c.line(21, 9, 21.5, 20, HAIR[1], 2)
+    c.line(12, 9, 11.5, 15, HAIR[2])
+    c.line(20, 9, 20.5, 15, HAIR[2])
+    # Brows knitted into a scowl.
+    c.line(12.5, 10, 15, 11, HAIR[2])
+    c.line(19.5, 10, 17, 11, HAIR[2])
     # The cap, its brim in shadow.
     c.poly([(8.5, 9), (9.5, 4.5), (12.5, 2), (19.5, 2), (22.5, 4.5), (23.5, 9)], LEATHER[1])
     c.rect(12, 2, 7, 1, LEATHER[0])
     c.rect(9, 8, 15, 1, LEATHER[2])
-    # Goggles pushed up on the cap.
-    c.line(9, 5.5, 23, 5.5, BRASS[2])
+    # Goggles pushed up on the cap: brass rims round smoked lenses.
+    c.line(9, 5.5, 23, 5.5, LEATHER[2])
     for gx in (13, 19):
         c.circle(gx, 5.5, 2.4, BRASS[1])
-        c.circle(gx, 5.5, 1.5, ICE[2])
-        c.dot(gx - 1, 4, ICE[0])
-    # Little round dark spectacles, a glint on each.
-    c.line(11, 12, 12, 12, OUTLINE)
-    c.line(20, 12, 21, 12, OUTLINE)
+        c.circle(gx, 5.5, 1.5, BLACK[1])
+        c.dot(gx - 1, 4, BRASS[0])
+        c.dot(gx - 1, 5, WHITE[1])
+    # Little round wire spectacles, his eyes peering through them.
+    c.line(11, 12, 11.5, 12, OUTLINE)
+    c.line(20.5, 12, 21, 12, OUTLINE)
     c.dot(16, 12, OUTLINE)
     for sx in (13.5, 18.5):
-        c.circle(sx, 13, 1.9, OUTLINE)
-        c.circle(sx, 13, 1.2, BLACK[1])
-        c.dot(sx - 1, 12, WHITE[0])
-    # The nose.
-    c.rect(15, 15, 2, 1, SKIN[2])
+        c.ring(sx, 13.5, 2, OUTLINE, 0.9)
+        c.rect(int(sx) - 1, 12, 2, 3, SKIN[0])
+        c.dot(sx + (0.5 if sx > 16 else -0.5), 13, OUTLINE)
+        c.dot(sx + (-0.5 if sx > 16 else 0.5), 12, WHITE[0])
+    # A long nose.
+    c.rect(15, 14, 2, 2, SKIN[1])
     c.dot(15, 14, SKIN[0])
-    # A drooping moustache and a scraggly beard.
-    c.poly([(12, 18), (20, 18), (20.5, 21), (17.5, 24.5), (14.5, 24.5), (11.5, 21)], HAIR[0])
+    c.rect(15, 16, 2, 1, SKIN[2])
+    c.dot(17, 15, SKIN[2])
+    # A drooping moustache and a long stringy beard down onto his chest.
+    c.poly([(12, 18), (20, 18), (20.5, 22), (19, 25), (18, 28), (17, 25.5), (16, 29), (15, 25.5), (14, 28), (13, 25), (11.5, 22)], HAIR[0])
     c.line(13, 17.5, 19, 17.5, HAIR[2])
-    for x in (13, 15, 17, 19):
-        c.line(x, 20, x - 0.5 + (x > 16), 23, HAIR[1])
+    c.line(13, 18, 12.5, 20, HAIR[2])
+    c.line(19, 18, 19.5, 20, HAIR[2])
+    for x in (14, 16, 18):
+        c.line(x, 21, x - 0.5 + (x > 16), 26, HAIR[1])
     c.rect(15, 19, 2, 1, SKIN[2])
-    # The cigarette holder in the corner of his mouth, its tip glowing, smoke curling up.
-    c.line(18, 19, 24.5, 16, OUTLINE)
-    c.line(25, 15.8, 28, 14.4, WHITE[0])
-    c.dot(29, 14, FLAME[1])
-    for sx, sy in ((29, 12), (28, 11), (28, 10), (29, 9), (30, 8), (30, 7), (29, 6)):
+    # The long cigarette holder in the corner of his mouth, its tip glowing, smoke curling up.
+    c.line(18, 19, 25, 15, OUTLINE)
+    c.line(25.5, 14.7, 28.5, 13, WHITE[0])
+    c.dot(29, 12.7, FLAME[1])
+    for sx, sy in ((29, 11), (28, 10), (28, 9), (29, 8), (30, 7), (30, 6), (29, 5), (28, 4)):
         c.dot(sx, sy, WHITE[2])
 
 
