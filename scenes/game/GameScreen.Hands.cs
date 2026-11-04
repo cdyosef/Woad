@@ -109,6 +109,9 @@ public partial class GameScreen
             RefreshPanels();
         };
         hidden.AddChild(_holdFire);
+        _lightStick = new Button { Text = "Light" };
+        _lightStick.Pressed += () => Execute(new LightStick(ActiveHero!.Id));
+        hidden.AddChild(_lightStick);
         _highAlert = new Button { Text = "High Alert" };
         _highAlert.Pressed += () => Execute(new HighAlert(ActiveHero!.Id));
         hidden.AddChild(_highAlert);
@@ -144,6 +147,7 @@ public partial class GameScreen
             new("rouse", "Aid", _aid, () => _session.GetAidTargets().Count > 0, () => HasMeans(Skill.Aid)),
             new("parry", "Parry", _parry, Threatened, () => Knows(Skill.Parry)),
             new("spell_hurl_fire", "Hold Fire", _holdFire, () => _session.GetHeldFireTargets().Count > 0, () => ActiveHero?.Flame == true),
+            new("lit_stick", "Light", _lightStick, () => true, () => ActiveHero is { } holder && GameSession.StickInHand(holder) is not null),
             new("learn", "Learn", _learn, () => true),
         ]);
         _odHand.Slot = EquipSlot.OffHand;
@@ -552,7 +556,9 @@ public partial class GameScreen
         Hold(_highAlert, ready, turn ? _session.CheckHighAlert() : "");
         Hold(_bullRush, ready, turn ? _session.CheckBullRush() : "");
         Hold(_holdFire, ready, turn ? _session.CheckHurlHeldFire() : "");
+        Hold(_lightStick, ready, turn ? _session.CheckLightStick() : "");
         _hurling &= !_holdFire.Disabled;
+        _offHanding &= _session.State.Turn is not null && _session.CheckOffHandAttack() is null;
         _rushing &= !_bullRush.Disabled;
 
         Hero? hero = ActiveHero;

@@ -150,6 +150,12 @@ public sealed record CardDefinition
     /// <summary>Uses per floor when <see cref="Usage"/> is <see cref="CardUsage.Charges"/>.</summary>
     public int Charges { get; init; }
 
+    /// <summary>The card this one becomes, one at a time, held to a fire (a Stick: a Lit Stick), or null.</summary>
+    public string? LightsAs { get; init; }
+
+    /// <summary>Rounds it burns before it's gone, held or not (a Lit Stick); 0 for none.</summary>
+    public int BurnsFor { get; init; }
+
     /// <summary>Bonuses granted while equipped.</summary>
     public Stats Modifiers { get; init; } = Stats.None;
 

@@ -349,6 +349,14 @@ def draw(item):
         c.line(16, 15, 22, 15, WOOD[2])
         c.poly([(22, 13), (26, 13), (24, 17)], GREEN[1])
         c.line(7, 26, 15, 16, WOOD[0])
+    elif i == "lit_stick":
+        # The Stick, alight at its tip.
+        c.line(6, 27, 16, 15, WOOD[1], 2)
+        c.line(16, 15, 22, 8, WOOD[1], 2)
+        c.line(7, 26, 15, 16, WOOD[0])
+        c.poly([(19, 11), (21, 3), (24, 7), (27, 2), (28, 10), (25, 14), (20, 14)], FLAME[2])
+        c.poly([(21, 11), (23, 6), (25, 9), (26, 6), (26, 11), (23, 13)], FLAME[1])
+        c.poly([(22, 11), (24, 8), (25, 11), (23, 12)], FLAME[0])
     elif i == "rock":
         c.poly([(7, 20), (11, 11), (19, 9), (25, 14), (26, 22), (17, 25), (9, 24)], STONE[1])
         c.poly([(11, 13), (18, 11), (16, 16), (10, 18)], STONE[0])
@@ -1046,7 +1054,7 @@ ITEMS = [
     "leather_armor", "studded_armor", "chain_mail", "wardens_plate", "storm_mail", "dash_boots",
     "flame_scroll", "frost_scroll", "venom_scroll", "acid_scroll", "grave_scroll", "gale_scroll", "sun_scroll",
     "bloom_scroll", "quake_scroll", "spark_scroll", "mind_scroll", "shadow_scroll", "frost_wand", "boomerang",
-    "club", "stick", "rock", "sling", "rock_bag", "lucky_clover",
+    "club", "stick", "lit_stick", "rock", "sling", "rock_bag", "lucky_clover",
     "torch", "lockpicks", "holy_key", "saints_relic", "modern_medicine", "thieves_oil", "burgling_tools", "cutpurse_knife", "sticky_gloves", "bomb", "autosmith_hammer", "eye_drops", "holy_water", "health_potion",
     "antidote", "strong_base", "smelling_salts", "bandages", "medicine_bag", "shovel", "sineater_doll",
     "loose_coins", "coin_pouch", "emerald", "pearl", "golden_idol",

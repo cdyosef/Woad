@@ -227,6 +227,15 @@ public sealed record OrderCompanion(int HeroId, int CompanionId, CompanionOrder 
 /// the hero's Focus, with an Od Hand die if they add one (<paramref name="Dice"/>); no Power, and the flame is gone.
 /// At an unlit brazier, it lights it.
 /// </summary>
+/// <summary>
+/// The Od Hand card with something in the off hand: attack a monster with it (a torch, a Stick, a Rock, a
+/// Dagger...), one Od Hand die, the Focus Bonus and the item's own value, on top of the Rumble attack. Once a turn.
+/// </summary>
+/// <summary>Holds a Stick in hand to a fire beside the hero (or one they hold): it becomes a Lit Stick.</summary>
+public sealed record LightStick(int HeroId) : GameCommand(HeroId);
+
+public sealed record OffHandAttack(int HeroId, int MonsterId, int PowerDice = 0) : GameCommand(HeroId);
+
 public sealed record HurlHeldFire(int HeroId, GridPosition Target, int Dice = 0, int PowerDice = 0) : GameCommand(HeroId);
 
 /// <summary>Adds one of the hero's unspent Od Hand dice (exploding) to their save after a fall, or with <paramref name="Power"/> one of their banked Power Dice. Their turn or not.</summary>

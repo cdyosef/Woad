@@ -13,6 +13,7 @@ public sealed class CardInstance
         Id = id;
         Definition = definition;
         ChargesRemaining = definition.Charges;
+        RoundsLeft = definition.BurnsFor;
         BroughtInByHeroId = broughtInByHeroId;
         Count = count;
         BroughtInCount = broughtInByHeroId is null ? 0 : count;
@@ -32,6 +33,9 @@ public sealed class CardInstance
     public CardDefinition Definition { get; }
 
     public int ChargesRemaining { get; internal set; }
+
+    /// <summary>Rounds left before it burns out (see <see cref="CardDefinition.BurnsFor"/>).</summary>
+    public int RoundsLeft { get; internal set; }
 
     /// <summary>Wear it has taken (acid eats armor): off its armor, or a weapon's value, until mended.</summary>
     public int Wear { get; internal set; }

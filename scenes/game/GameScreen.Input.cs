@@ -275,6 +275,25 @@ public partial class GameScreen
             return;
         }
 
+        if (_offHanding)
+        {
+            _offHanding = false;
+            if (room.MonsterAt(tile) is { } struck && _session.CheckOffHandAttack(struck.Id) is null)
+            {
+                Execute(new OffHandAttack(hero.Id, struck.Id, SelectedPowerDice));
+            }
+            else if (tile == hero.Position && _session.CheckSearch() is null)
+            {
+                ExecuteOdHand((heroId, dice, tools, power) => new Search(heroId, dice, tools, power));
+            }
+            else
+            {
+                RefreshPanels();
+            }
+
+            return;
+        }
+
         if (_hurling)
         {
             if (_session.CheckHurlHeldFire(tile) is null)
@@ -659,6 +678,11 @@ public partial class GameScreen
         if (_shoving)
         {
             return "Shove: click a monster next to you (orange) to push it a tile. Right-click to cancel.";
+        }
+
+        if (_offHanding)
+        {
+            return "Od Hand: click a monster in reach (orange) to attack it with what's in your off hand: one Od Hand die, your Focus Bonus and its value. Click yourself to search instead. Right-click to cancel.";
         }
 
         if (_hurling)
@@ -1100,7 +1124,7 @@ public partial class GameScreen
         _stealing = false;
         _shoving = false;
         _leaping = _rushing = false;
-        _rumbling = false;
+        _rumbling = _offHanding = false;
         _selectedCardId = null;
         _targeting = false;
         StopCasting();

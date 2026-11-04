@@ -196,6 +196,9 @@ public sealed class TurnState
     /// <summary>An off-hand Dagger has added its value to an attack this turn.</summary>
     public bool OffHandStrikeUsed { get; internal set; }
 
+    /// <summary>The hero has attacked with what's in their off hand, by the Od Hand card, this turn.</summary>
+    public bool OffHandAttacked { get; internal set; }
+
     public int MoveDiceUsed { get; internal set; }
 
     /// <summary>Wend dice gained this turn (the Coward's Cloak turns Rumble and Od Hand dice into them).</summary>
