@@ -21,10 +21,10 @@ public static class DieTypes
     };
 
     /// <summary>
-    /// The symbol a damage die shows on its 6 in place of the pips (assets/dice), or null: plain dice, Star
-    /// (Power Surge) and Cursed dice keep their pips.
+    /// The symbol a damage die (or a Star die, Power Surge) shows on its 6 in place of the pips (assets/dice),
+    /// or null: plain and Cursed dice keep their pips.
     /// </summary>
-    public static Texture2D? Symbol(DieType type) => type is DieType.Plain or DieType.Star or DieType.Cursed
+    public static Texture2D? Symbol(DieType type) => type is DieType.Plain or DieType.Cursed
         ? null
         : GameArt.Texture($"res://assets/dice/{type.ToString().ToLowerInvariant()}.png");
 
