@@ -78,6 +78,37 @@ public partial class ActionCallout : Node2D
 }
 
 /// <summary>A strike landing on a tile: a bright slash across it and a burst of sparks, gone in a blink.</summary>
+/// <summary>A search's pulse: a white square ring spreading out from the searcher to as far as the search reaches, fading.</summary>
+public partial class SearchPulse : Node2D
+{
+    private const double Seconds = 0.6;
+    private double _age;
+
+    /// <summary>How far out it spreads, in pixels from the searcher's middle.</summary>
+    public float Reach { get; init; }
+
+    public override void _Ready() => ZIndex = 15;
+
+    public override void _Process(double delta)
+    {
+        _age += delta;
+        if (_age >= Seconds)
+        {
+            QueueFree();
+            return;
+        }
+
+        QueueRedraw();
+    }
+
+    public override void _Draw()
+    {
+        float t = (float)(_age / Seconds);
+        float half = Mathf.Lerp(BoardView.TileSize / 2f, Reach, 1 - (1 - t) * (1 - t));
+        DrawRect(new Rect2(-half, -half, half * 2, half * 2), new Color(1, 1, 1, 0.8f * (1 - t)), filled: false, width: 2);
+    }
+}
+
 public partial class HitSpark : Node2D
 {
     private const double Seconds = 0.35;

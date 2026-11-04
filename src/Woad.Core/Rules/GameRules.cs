@@ -125,6 +125,9 @@ public static class GameRules
     /// <summary>How far a light reaches in a dark room (diagonals count as 1).</summary>
     public const int LightRadius = 2;
 
+    /// <summary>How far a search reaches, in tiles (diagonals counting one): from anywhere in a standard room, all of it.</summary>
+    public const int SearchRange = 8;
+
     /// <summary>What a roll to learn a spell from a scroll needs, before the spell's level.</summary>
     public const int LearnBase = 6;
 

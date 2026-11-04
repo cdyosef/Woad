@@ -395,7 +395,7 @@ public sealed partial class GameSession
         OdHandCheckKind.PickDoor or OdHandCheckKind.PickChest or OdHandCheckKind.PickGate or OdHandCheckKind.PickChains or OdHandCheckKind.PickShackles => LuckRoll.PickLock,
         OdHandCheckKind.Disarm or OdHandCheckKind.DefuseBomb => LuckRoll.Disarm,
         OdHandCheckKind.Steal => LuckRoll.Steal,
-        OdHandCheckKind.Search => LuckRoll.Search,
+        OdHandCheckKind.Search or OdHandCheckKind.Feel => LuckRoll.Search,
         OdHandCheckKind.Rouse or OdHandCheckKind.Cure => LuckRoll.Aid,
         OdHandCheckKind.Learn => LuckRoll.Learn,
         _ => null,
@@ -415,7 +415,7 @@ public sealed partial class GameSession
         {
             return check.Kind switch
             {
-                OdHandCheckKind.Search => false,
+                OdHandCheckKind.Search or OdHandCheckKind.Feel => false,
                 OdHandCheckKind.Rouse => roll.Total < GameRules.RousePerMark,
                 OdHandCheckKind.Steal => roll.Total <= StealGuard(roll, room, check.TargetId, events),
                 _ => check.Difficulty > 0 && roll.Total < check.Difficulty,

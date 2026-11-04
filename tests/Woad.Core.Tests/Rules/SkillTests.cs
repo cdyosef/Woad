@@ -38,12 +38,13 @@ public class SkillTests
     [Fact]
     public void WithoutTheSkillOdHandDiceCantBeRolledOnIt()
     {
+        // Without Search the Od Hand card only feels around.
         GameSession session = TestRun.Start(Open, new ScriptedDice(4), skills: Skill.None);
         Hero hero = session.HeroInSeat();
 
-        Assert.Contains("haven't learned to Search", session.CheckSearch());
-        Assert.Contains("haven't learned to Search", session.Refuse(new Search(hero.Id)));
+        Assert.False(session.Searches);
         Assert.Equal(0, session.OdHandDiceFor(Skill.Search));
+        Assert.Equal(OdHandCheckKind.Feel, session.Do(new Search(hero.Id, Dice: 1)).SingleOf<OdHandRolled>().Kind);
     }
 
     [Fact]
@@ -67,7 +68,7 @@ public class SkillTests
         // The torch's die, and +1 for its light.
         Assert.Equal((1, 4), (rolled.ToolDice, rolled.Total));
         Assert.Equal(0, session.State.Turn!.OdHandDiceUsed);
-        Assert.Contains("haven't learned to Search", session.Refuse(new Search(hero.Id)));
+        Assert.False(session.Searches);
     }
 
     [Fact]
@@ -335,7 +336,7 @@ public class SkillTests
     {
         GameSession session = TestRun.Start(Open, new ScriptedDice(4), skills: Skill.HighAlert);
         Hero hero = session.HeroInSeat();
-        Assert.Contains("haven't learned to Search", session.CheckSearch());
+        Assert.False(session.Searches);
 
         session.Do(new HighAlert(hero.Id));
         OdHandRolled rolled = session.Do(new Search(hero.Id)).SingleOf<OdHandRolled>();

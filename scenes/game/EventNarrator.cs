@@ -281,6 +281,7 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         OdHandCheckKind.PickDoor => "picks the door's lock",
         OdHandCheckKind.PickChest => "picks the chest's lock",
         OdHandCheckKind.Search => "searches the room",
+        OdHandCheckKind.Feel => "feels around",
         OdHandCheckKind.Disarm => "works at the trap",
         OdHandCheckKind.PickGate => "picks the gate's lock",
         OdHandCheckKind.Rouse => "aids a fallen ally",

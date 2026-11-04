@@ -52,8 +52,11 @@ public enum OdHandCheckKind
     /// <summary>Pick the lock of an adjacent gate in a wall dividing the room.</summary>
     PickGate,
 
-    /// <summary>Search the whole room for secrets.</summary>
+    /// <summary>Search the room for secrets, as far as <see cref="Rules.GameRules.SearchRange"/>.</summary>
     Search,
+
+    /// <summary>Feel around: a search of the tiles next to the hero only, by one who can't Search (no skill, no light in hand).</summary>
+    Feel,
 
     /// <summary>Disarm a revealed trap on an adjacent tile, an adjacent chest or the door the hero stands in.</summary>
     Disarm,
