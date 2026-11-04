@@ -647,6 +647,67 @@ def boot(c):
     c.rect(2, 28, 28, 1, GREEN[2])
 
 
+HAIR = ("#7a6050", "#4a3830", "#2a2024")
+
+
+def geraint(c):
+    """Geraint Loomwood, Artifixer for Hire (after Chris's drawing): long hair under a cap with goggles
+    on the brow, little round spectacles, a scraggly beard and a long cigarette holder in his teeth."""
+    # His coat, open at the neck on a pale shirt.
+    c.poly([(0, 32), (2, 26), (9, 23), (23, 23), (30, 26), (32, 32)], BLACK[0])
+    c.poly([(12.5, 23), (19.5, 23), (16, 31)], PARCHMENT[1])
+    c.line(12, 23.5, 15.5, 31, WHITE[2])
+    c.line(20, 23.5, 16.5, 31, BLACK[2])
+    # Long hair falling past his shoulders behind his face.
+    c.poly([(8, 6), (24, 6), (26.5, 14), (27, 28), (21, 27), (20, 21), (12, 21), (11, 27), (5, 28), (5.5, 14)], HAIR[1])
+    for x0, x1 in ((7, 6), (9, 8.5), (24, 25.5), (22.5, 23)):
+        c.line(x0, 10, x1, 27, HAIR[2])
+    c.line(25.5, 10, 26, 26, HAIR[0])
+    # His face.
+    c.poly([(11, 9), (21, 9), (21, 18), (19, 21), (13, 21), (11, 18)], SKIN[1])
+    c.rect(12, 9, 4, 3, SKIN[0])
+    c.rect(12, 15, 2, 2, SKIN[0])
+    c.line(20, 10, 20, 18, SKIN[2])
+    # Locks hanging down either side of it.
+    c.line(10.5, 9, 10, 20, HAIR[1], 2)
+    c.line(21.5, 9, 22, 20, HAIR[1], 2)
+    c.line(11.5, 9, 11.5, 13, HAIR[2])
+    c.line(20.5, 9, 20.5, 13, HAIR[2])
+    # The cap, its brim in shadow.
+    c.poly([(8.5, 9), (9.5, 4.5), (12.5, 2), (19.5, 2), (22.5, 4.5), (23.5, 9)], LEATHER[1])
+    c.rect(12, 2, 7, 1, LEATHER[0])
+    c.rect(9, 8, 15, 1, LEATHER[2])
+    # Goggles pushed up on the cap.
+    c.line(9, 5.5, 23, 5.5, BRASS[2])
+    for gx in (13, 19):
+        c.circle(gx, 5.5, 2.4, BRASS[1])
+        c.circle(gx, 5.5, 1.5, ICE[2])
+        c.dot(gx - 1, 4, ICE[0])
+    # Little round dark spectacles, a glint on each.
+    c.line(11, 12, 12, 12, OUTLINE)
+    c.line(20, 12, 21, 12, OUTLINE)
+    c.dot(16, 12, OUTLINE)
+    for sx in (13.5, 18.5):
+        c.circle(sx, 13, 1.9, OUTLINE)
+        c.circle(sx, 13, 1.2, BLACK[1])
+        c.dot(sx - 1, 12, WHITE[0])
+    # The nose.
+    c.rect(15, 15, 2, 1, SKIN[2])
+    c.dot(15, 14, SKIN[0])
+    # A drooping moustache and a scraggly beard.
+    c.poly([(12, 18), (20, 18), (20.5, 21), (17.5, 24.5), (14.5, 24.5), (11.5, 21)], HAIR[0])
+    c.line(13, 17.5, 19, 17.5, HAIR[2])
+    for x in (13, 15, 17, 19):
+        c.line(x, 20, x - 0.5 + (x > 16), 23, HAIR[1])
+    c.rect(15, 19, 2, 1, SKIN[2])
+    # The cigarette holder in the corner of his mouth, its tip glowing, smoke curling up.
+    c.line(18, 19, 24.5, 16, OUTLINE)
+    c.line(25, 15.8, 28, 14.4, WHITE[0])
+    c.dot(29, 14, FLAME[1])
+    for sx, sy in ((29, 12), (28, 11), (28, 10), (29, 9), (30, 8), (30, 7), (29, 6)):
+        c.dot(sx, sy, WHITE[2])
+
+
 def ability(c, name):
     if name == "rumble":
         rumble(c)
@@ -820,12 +881,21 @@ ABILITIES = [
     "parry", "guard", "high_alert", "bull_rush",
 ]
 
+PORTRAITS = ["geraint"]
+
 BACKS = ["head", "body", "main_hand", "off_hand", "feet", "accessory", "belt", "bag"]
 
 
 def draw_ability(name):
     c = Canvas()
     ability(c, name)
+    c.outline()
+    return c.pixels()
+
+
+def draw_portrait(name):
+    c = Canvas()
+    {"geraint": geraint}[name](c)
     c.outline()
     return c.pixels()
 
@@ -1038,10 +1108,13 @@ def build_cards(out_dir, write_png):
     for name in SPELLS:
         write_png(Path(out_dir) / f"spell_{name}.png", draw_spell(name))
 
+    for name in PORTRAITS:
+        write_png(Path(out_dir) / f"portrait_{name}.png", draw_portrait(name))
+
 
 def contact_sheet(path, write_png, scale=3, columns=11, background="#2a2338"):
     """Every picture on a card-colored panel, enlarged, to look them over."""
-    pictures = [draw(item) for item in ITEMS] + [draw_ability(name) for name in ABILITIES] + [draw_back(slot) for slot in BACKS] + [draw_spell(name) for name in SPELLS]
+    pictures = [draw(item) for item in ITEMS] + [draw_ability(name) for name in ABILITIES] + [draw_back(slot) for slot in BACKS] + [draw_spell(name) for name in SPELLS] + [draw_portrait(name) for name in PORTRAITS]
     cell = SIZE * scale + 8
     rows = (len(pictures) + columns - 1) // columns
     bg = rgba(background)
