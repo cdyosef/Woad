@@ -51,7 +51,7 @@ public partial class GameScreen
 
     /// <summary>
     /// Which roll to ask "Try your Luck?" on, if any: a waiting roll the hero's Luck menu asks on (about to
-    /// fail, or a search) or any roll while the clover glows; a fresh Wend roll while Wend is switched on
+    /// fail; a search or feeling around, which can't, only while the clover glows) or any roll while the clover glows; a fresh Wend roll while Wend is switched on
     /// (or the clover glows). A waiting roll that isn't asked on is let stand at once. Also whether it's
     /// about to fail (5 seconds to decide, rather than 3).
     /// </summary>
@@ -77,7 +77,7 @@ public partial class GameScreen
         if (pending && turn.PendingRoll is { } roll)
         {
             bool failing = _session.PendingRollFails;
-            bool ask = primed || (_session.PendingLuckKind is { } kind && hero.LuckAsks.HasFlag(kind) && (failing || kind == LuckRoll.Search));
+            bool ask = primed || (_session.PendingLuckKind is { } kind && hero.LuckAsks.HasFlag(kind) && failing);
             if (ask)
             {
                 return (roll, failing);

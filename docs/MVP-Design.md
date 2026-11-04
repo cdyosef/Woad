@@ -383,10 +383,11 @@ the next room.
     (monsters against attacks and shoves, the mark of a steal: that defense stands whatever the Luck
     does), and the **Luck menu** decides whether it's asked.
   - **The Luck menu:** hold the **Luck clover** (the Luck line on the sheet) for a switch per kind of roll:
-    Rumble attacks, Shove, Pick Lock, Disarm, Steal, Search, Aid, Learn and Wend, all on to start and
+    Rumble attacks, Shove, Pick Lock, Disarm, Steal, Aid, Learn and Wend, all on to start and
     saved with the character. On, Luck is asked whenever that roll is **about to fail** (an Od Hand check
     short of its number, a rouse with no mark of life, an attack, shove or steal the other side holds
-    off), with **5 seconds**; Search and Wend, which can't fail, ask every roll, with **3 seconds**. Off, it
+    off), with **5 seconds**; Wend, which can't fail, asks every roll, with **3 seconds**, and Search (and
+    feeling around) only while the clover glows. Off, it
     isn't asked and the roll stands at once. After each try that still falls short, it asks again.
   - **Lucky Clovers:** about one room in eight has one lying in plain sight, and a 6 on a room's first
     Search (the Explorer roll) turns one up. Picked up, a clover is a **Clover Luck** point straight away

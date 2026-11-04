@@ -89,7 +89,8 @@ public partial class LuckClover : Control
 
 /// <summary>
 /// The Luck menu: a switch for each kind of roll. On, Luck is asked whenever that roll is about to fail
-/// (Wend and Search, which can't, every roll); off, it isn't, unless the clover is glowing.
+/// (Wend, which can't, every roll); off, it isn't, unless the clover is glowing. A search can't fail, so it's
+/// asked only while the clover glows.
 /// </summary>
 public partial class LuckMenu : Panel
 {
@@ -100,7 +101,6 @@ public partial class LuckMenu : Panel
         (LuckRoll.PickLock, "Pick Lock"),
         (LuckRoll.Disarm, "Disarm"),
         (LuckRoll.Steal, "Steal"),
-        (LuckRoll.Search, "Search (every roll)"),
         (LuckRoll.Aid, "Aid"),
         (LuckRoll.Learn, "Learn"),
         (LuckRoll.Wend, "Wend (every roll)"),
