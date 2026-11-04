@@ -1284,7 +1284,7 @@ OBJECTS["chest_grand"] = sprite([
     "................",
 ], {"o": "#2a1a10", "y": "#f0c94a", "Y": "#b08020", "p": "#6a2a8a", "r": "#e0304a", "g": "#b08020", "k": "#1a1410"})
 
-# ---- Damage dice symbols (7x7) ---------------------------------------------------------------
+# ---- Damage dice symbols (7x7, or 9x9 for more detail) ---------------------------------------------------------------
 # What a typed die shows on its 6 in place of the pips: white, tinted dark or light to suit the die.
 
 DIE_SYMBOLS = {
@@ -1297,14 +1297,16 @@ DIE_SYMBOLS = {
         "www.www",
         ".wwwww.",
     ],
-    "poison": [  # a drop
-        "...w...",
-        "...w...",
-        "..www..",
-        ".wwwww.",
-        ".wwwww.",
-        ".wwwww.",
-        "..www..",
+    "poison": [  # a drop with a skull face, over crossed bones (9x9: drawn in the same space)
+        "ww..w..ww",
+        "ww.www.ww",
+        "..wwwww..",
+        "..w.w.w..",
+        "..wwwww..",
+        "...w.w...",
+        "..w...w..",
+        "ww.....ww",
+        "ww.....ww",
     ],
     "ice": [  # a snowflake
         "w..w..w",
