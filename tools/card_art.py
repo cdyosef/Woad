@@ -647,9 +647,37 @@ def boot(c):
     c.rect(2, 28, 28, 1, GREEN[2])
 
 
+def hamsa(c):
+    """A blue hamsa: an open hand, fingers up and a thumb turned out to each side, an eye in its palm. Od Hand's."""
+    # The three fingers, rounded at the tips, the middle one tallest.
+    for x, top in ((10, 6), (14, 4), (18, 6)):
+        c.rect(x, top + 2, 4, 14 - top, BLUE[1])
+        c.rect(x + 1, top + 1, 2, 1, BLUE[1])
+        c.rect(x, top + 2, 1, 14 - top, BLUE[0])
+    for x in (13, 17):
+        c.rect(x, 8, 1, 6, BLUE[2])
+    # The thumbs, curling out and up at either side.
+    c.poly([(10, 23), (10, 15), (7, 11.5), (4.5, 12), (4.5, 15), (7, 21)], BLUE[1])
+    c.poly([(22, 23), (22, 15), (25, 11.5), (27.5, 12), (27.5, 15), (25, 21)], BLUE[1])
+    c.line(5, 12.5, 6.5, 18, BLUE[0])
+    c.line(26.5, 13, 25, 19, BLUE[2])
+    # The palm, rounding to the wrist.
+    c.rect(10, 14, 12, 11, BLUE[1])
+    c.poly([(10, 24), (22, 24), (19, 28), (13, 28)], BLUE[1])
+    c.rect(10, 14, 1, 11, BLUE[0])
+    c.rect(13, 27, 6, 1, BLUE[2])
+    # The eye in the palm.
+    c.poly([(11.5, 20), (14, 17.8), (18, 17.8), (20.5, 20), (18, 22.2), (14, 22.2)], WHITE[0])
+    c.circle(16, 20, 2.1, BLUE[2])
+    c.rect(15, 19, 2, 2, OUTLINE)
+    c.dot(15, 19, WHITE[0])
+
+
 def ability(c, name):
     if name == "rumble":
         rumble(c)
+    elif name == "od_hand":
+        hamsa(c)
     elif name == "shove":
         fist(c, 4, 6)
         fist(c, 4, 17)
@@ -815,7 +843,7 @@ def back(c, slot):
 
 
 ABILITIES = [
-    "rumble", "shove", "wend", "leap", "prone", "search", "steal", "pick_lock", "disarm", "rouse",
+    "rumble", "shove", "wend", "od_hand", "leap", "prone", "search", "steal", "pick_lock", "disarm", "rouse",
     "retreat", "learn", "dig_out", "drop_roll", "cast", "jackalope_foot", "shield_cufflinks", "icarus_wings",
     "parry", "guard", "high_alert", "bull_rush",
 ]

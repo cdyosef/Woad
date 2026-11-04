@@ -398,7 +398,7 @@ public partial class GameScreen
         else if (hand == _odHand)
         {
             // The off hand's square: what's in it (unless it's a weapon, which goes with Rumble), the tools, and the Od Hand card with its dice.
-            stack.Add(new(HandView.DiceKey, "search", "Od Hand", mine && _session.OdHandDiceLeft == 0, Dice: mine ? SelectedOdHandDice : 0, Border: Palette.DieOdHand));
+            stack.Add(new(HandView.DiceKey, "od_hand", "Od Hand", mine && _session.OdHandDiceLeft == 0, Dice: mine ? SelectedOdHandDice : 0, Border: Palette.DieOdHand));
             List<CardInstance> tools = [.. hero.EquippedCards.Concat(hero.BeltTools).Where(card => card.Definition.Tool is not null).DistinctBy(card => card.Definition.Id)];
             if (off is not null && off != main && !GameSession.HandWeapons(hero).Contains(off) && !tools.Contains(off))
             {
