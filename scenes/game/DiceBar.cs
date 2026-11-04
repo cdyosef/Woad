@@ -428,9 +428,10 @@ public partial class DiceBar : Control
         row.Rects[i] = rect;
         float scale = 1 + 0.35f * row.Pop[i];
         DrawSetTransform(rect.GetCenter() + row.Offset[i], row.Angle[i], new Vector2(scale, scale));
-        Color fill = i < row.Types.Length && row.Types[i] != DieType.Plain ? DieTypes.Tint(row.Types[i])
+        DieType type = i < row.Types.Length ? row.Types[i] : DieType.Plain;
+        Color fill = type != DieType.Plain ? DieTypes.Tint(type)
             : i >= row.PowerFrom ? Palette.Power : i >= row.ToolFrom ? Palette.DieTool : DieColor(row.Kind);
-        DrawDie(row.Shown[i], rect.Size.X, row.Won, clickable, fill);
+        DrawDie(row.Shown[i], rect.Size.X, row.Won, clickable, fill, type);
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
     }
 
@@ -663,7 +664,8 @@ public partial class DiceBar : Control
     };
 
     /// <summary>Draws a die of <paramref name="size"/> centered on the current transform's origin; a winning one glows gold.</summary>
-    private void DrawDie(int face, float size, bool success, bool clickable, Color fill)
+    /// <param name="type">What the die is made of: a damage die's 6 shows its symbol (a flame on fire) in place of the pips.</param>
+    private void DrawDie(int face, float size, bool success, bool clickable, Color fill, DieType type = DieType.Plain)
     {
         var rect = new Rect2(-size / 2, -size / 2, size, size);
         if (success)
@@ -674,6 +676,14 @@ public partial class DiceBar : Control
         DrawRect(rect, fill);
         DrawRect(new Rect2(rect.Position.X, rect.End.Y - 2, rect.Size.X, 2), fill.Darkened(0.35f));
         DrawRect(rect, clickable ? Palette.Heal : success ? Palette.TrimBright : Palette.Ink, filled: false, width: clickable || success ? 1.5f : 1);
+        if (face == 6 && DieTypes.Symbol(type) is { } symbol)
+        {
+            // Dark on a light die, light on a dark one.
+            Color ink = fill.Luminance < 0.4f ? Palette.Text : Palette.Ink;
+            DrawTextureRect(symbol, rect.Grow(-size * 0.14f), tile: false, modulate: ink);
+            return;
+        }
+
         float pip = Math.Max(0.8f, size / 10);
         foreach (Vector2 spot in Pips[Math.Clamp(face, 0, 6)])
         {

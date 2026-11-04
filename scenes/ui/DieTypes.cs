@@ -20,6 +20,14 @@ public static class DieTypes
         _ => "Snowshoes",
     };
 
+    /// <summary>
+    /// The symbol a damage die shows on its 6 in place of the pips (assets/dice), or null: plain dice, Star
+    /// (Power Surge) and Cursed dice keep their pips.
+    /// </summary>
+    public static Texture2D? Symbol(DieType type) => type is DieType.Plain or DieType.Star or DieType.Cursed
+        ? null
+        : GameArt.Texture($"res://assets/dice/{type.ToString().ToLowerInvariant()}.png");
+
     /// <summary>A typed die's color in the dice bar.</summary>
     public static Color Tint(DieType type) => type switch
     {

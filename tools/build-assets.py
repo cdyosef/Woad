@@ -1284,6 +1284,120 @@ OBJECTS["chest_grand"] = sprite([
     "................",
 ], {"o": "#2a1a10", "y": "#f0c94a", "Y": "#b08020", "p": "#6a2a8a", "r": "#e0304a", "g": "#b08020", "k": "#1a1410"})
 
+# ---- Damage dice symbols (7x7) ---------------------------------------------------------------
+# What a typed die shows on its 6 in place of the pips: white, tinted dark or light to suit the die.
+
+DIE_SYMBOLS = {
+    "fire": [  # a flame
+        "..w....",
+        "..ww...",
+        ".wwww..",
+        ".wwww.w",
+        "wwwwwww",
+        "www.www",
+        ".wwwww.",
+    ],
+    "poison": [  # a drop
+        "...w...",
+        "...w...",
+        "..www..",
+        ".wwwww.",
+        ".wwwww.",
+        ".wwwww.",
+        "..www..",
+    ],
+    "ice": [  # a snowflake
+        "w..w..w",
+        ".w.w.w.",
+        "..www..",
+        "wwwwwww",
+        "..www..",
+        ".w.w.w.",
+        "w..w..w",
+    ],
+    "acid": [  # a drop bubbling
+        "w....w.",
+        "...w...",
+        "w.www..",
+        ".wwwww.",
+        "ww.wwww",
+        "wwww.ww",
+        ".wwwww.",
+    ],
+    "necro": [  # a skull
+        ".wwwww.",
+        "wwwwwww",
+        "w..w..w",
+        "w..w..w",
+        "wwwwwww",
+        ".wwwww.",
+        ".w.w.w.",
+    ],
+    "squall": [  # a whirlwind
+        "wwwwwww",
+        ".......",
+        ".wwwww.",
+        ".......",
+        "..www..",
+        ".......",
+        "...w...",
+    ],
+    "radiate": [  # a sun
+        "w..w..w",
+        ".......",
+        "..www..",
+        "w.www.w",
+        "..www..",
+        ".......",
+        "w..w..w",
+    ],
+    "life": [  # a heart
+        ".......",
+        ".ww.ww.",
+        "wwwwwww",
+        "wwwwwww",
+        ".wwwww.",
+        "..www..",
+        "...w...",
+    ],
+    "earth": [  # a boulder
+        ".......",
+        "..www..",
+        ".wwwww.",
+        "wwww.ww",
+        "ww.wwww",
+        ".wwwww.",
+        ".......",
+    ],
+    "elektrik": [  # a bolt
+        "....ww.",
+        "...ww..",
+        "..ww...",
+        ".wwwww.",
+        "...ww..",
+        "..ww...",
+        ".ww....",
+    ],
+    "psycho": [  # an eye
+        ".......",
+        "..www..",
+        ".w...w.",
+        "w..w..w",
+        ".w...w.",
+        "..www..",
+        ".......",
+    ],
+    "shadow": [  # a crescent moon
+        "..www..",
+        ".ww....",
+        "ww.....",
+        "ww.....",
+        "ww.....",
+        ".ww....",
+        "..www..",
+    ],
+}
+
 # ---- Stat and key icons (12x12) -------------------------------------------------------------
 
 ICONS = {
@@ -2709,6 +2823,11 @@ def main():
     write_png(ui / "heart_empty.png", sprite(HEART_ROWS, {"o": "#2a0a10", "r": "#3a2a30", "l": "#4a3a40"}))
     for name, pixels in ICONS.items():
         write_png(ui / f"{name}.png", pixels)
+
+    dice = ASSETS / "dice"
+    dice.mkdir(parents=True, exist_ok=True)
+    for name, rows in DIE_SYMBOLS.items():
+        write_png(dice / f"{name}.png", sprite(rows, {"w": "#ffffff"}))
 
     build_woarld(ASSETS / "woarld")
     build_tavern(ASSETS / "tavern")
