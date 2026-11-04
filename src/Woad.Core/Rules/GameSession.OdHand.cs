@@ -31,8 +31,14 @@ public sealed partial class GameSession
     /// <summary>Why the active hero can't try to steal from anyone now (dice or a tool to steal with, and not yet this turn), or null.</summary>
     public string? CheckStealStart() => CheckOdHandStart(Skill.Steal) ?? (Turn.HasStolen ? "You've already tried to steal this turn." : null);
 
-    /// <summary>Why the active hero can't search the room now, or null.</summary>
-    public string? CheckSearch() => CheckOdHandStart(Skill.Search);
+    /// <summary>Why the active hero can't search the room (or, with no way to Search, feel around them) now, or null.</summary>
+    public string? CheckSearch() => Searches ? CheckOdHandStart(Skill.Search) : CheckOdHandStart();
+
+    /// <summary>
+    /// The active hero can Search: they know it, or a lit torch (or Shining Light, or High Alert's dice) does it
+    /// for them. Otherwise the Od Hand card only feels around them (see <see cref="OdHandCheckKind.Feel"/>).
+    /// </summary>
+    public bool Searches => State.Turn is not null && (ActiveHero.Knows(Skill.Search) || ToolStandsIn(Skill.Search) || Alerted(Skill.Search));
 
     /// <summary>Why the active hero can't disarm a trap on the tile (their own doorway, or an adjacent tile or chest), or null.</summary>
     public string? CheckDisarm(GridPosition target) => CheckOdHandStart(Skill.Disarm) ?? FindTrapToDisarm(target, out _);
@@ -119,6 +125,18 @@ public sealed partial class GameSession
 
     private string? Handle(Search command, List<GameEvent> events)
     {
+        // With no way to Search, the Od Hand dice only feel around the tiles next to the hero.
+        if (!Searches)
+        {
+            if (CheckOdHandCommand(command, Skill.None, out int feel) is { } cannot)
+            {
+                return cannot;
+            }
+
+            RollOdHand(command, feel, new OdHandCheck(OdHandCheckKind.Feel, 0, ActiveHero.Position), events);
+            return null;
+        }
+
         if (CheckOdHandCommand(command, Skill.Search, out int dice) is { } error)
         {
             return error;
@@ -195,13 +213,13 @@ public sealed partial class GameSession
         return CheckBankedPowerDice(ActiveHero, command.PowerDice);
     }
 
-    /// <summary>The lock on the hero's own doorway, or on an adjacent unopened chest.</summary>
+    /// <summary>The lock on a door the hero is at (beside it or in it), or on an adjacent unopened chest.</summary>
     private string? FindLock(GridPosition target, out OdHandCheck? check)
     {
         check = null;
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
-        if (target == hero.Position && DoorAt(room, target) is { } passage)
+        if (DoorAt(room, target) is { } passage && hero.Position.ChebyshevDistanceTo(target) <= 1)
         {
             if (!passage.IsLocked)
             {
@@ -286,11 +304,10 @@ public sealed partial class GameSession
             return null;
         }
 
-        Trap? trap = target == hero.Position
-            ? DoorAt(room, target)?.Trap
-            : hero.Position.ManhattanDistanceTo(target) == 1
-                ? room.TrapAt(target) ?? room.ChestTrapAt(target)
-                : null;
+        // A door's darts from beside it (or in it); a trap on a tile or chest next to you.
+        Trap? trap = DoorAt(room, target) is { Trap: { } darts } && hero.Position.ChebyshevDistanceTo(target) <= 1 ? darts
+            : target != hero.Position && hero.Position.ManhattanDistanceTo(target) == 1 ? room.TrapAt(target) ?? room.ChestTrapAt(target)
+            : null;
         if (trap is not { Revealed: true })
         {
             return "There's no trap you know of there. Search to find traps, then disarm one next to you.";
@@ -381,7 +398,7 @@ public sealed partial class GameSession
         (bool bag, int aidDice) = AidKit(hero, command, check, events);
         bool free = check.Kind is OdHandCheckKind.Learn or OdHandCheckKind.Retreat;
         int bonus = toolBonus + (bag ? 1 : 0) - RollPenalty(hero.Conditions) + (check.Kind == OdHandCheckKind.Learn ? hero.Focus : 0)
-            + (check.Kind == OdHandCheckKind.Search ? LightBonus(hero) : 0) - Curse(hero, events);
+            + (check.Kind is OdHandCheckKind.Search or OdHandCheckKind.Feel ? LightBonus(hero) : 0) - Curse(hero, events);
         // Tools' own dice (Lockpicks on a lock); held torches' on a search; a Medicine Bag's, Bandages' and
         // a Shovel's on Aid; High Alert's Rumble dice on a search; and the free die that starts learning a
         // spell or running from a fight.
@@ -523,7 +540,7 @@ public sealed partial class GameSession
                 break;
 
             case OdHandCheckKind.Disarm when success:
-                if (check.Target == hero.Position && DoorAt(room, check.Target) is { } trapped)
+                if (DoorAt(room, check.Target) is { Trap: not null } trapped)
                 {
                     trapped.Trap = null;
                 }
@@ -547,9 +564,9 @@ public sealed partial class GameSession
                 break;
 
             case OdHandCheckKind.Disarm:
-                // Botched, the trap goes off on whoever tried: darts in their doorway, spikes or needles beside them.
+                // Botched, the trap goes off on whoever tried: a door's darts at them before it, spikes or needles beside them.
                 events.Add(new CheckFailed(hero.Id, check.Kind));
-                if (check.Target == hero.Position && DoorAt(room, check.Target) is { Trap: { } darts } door)
+                if (DoorAt(room, check.Target) is { Trap: { } darts } door)
                 {
                     door.Trap = null;
                     SpringTrap(hero, room, darts, check.Target, events);
@@ -568,7 +585,11 @@ public sealed partial class GameSession
 
             case OdHandCheckKind.Search:
                 Explore(hero, room, roll.Roll, total, events);
-                Reveal(hero, room, total, events);
+                Reveal(hero, room, total, GameRules.SearchRange, events);
+                break;
+
+            case OdHandCheckKind.Feel:
+                Reveal(hero, room, total, 1, events);
                 break;
 
             case OdHandCheckKind.Rouse:
@@ -629,20 +650,30 @@ public sealed partial class GameSession
         GrantXp(hero, GameRules.ExplorerXp, events);
     }
 
-    /// <summary>A search finds every secret in the room whose difficulty the total reaches.</summary>
-    private void Reveal(Hero hero, Room room, int total, List<GameEvent> events)
+    /// <summary>
+    /// A search finds every secret within <paramref name="reach"/> tiles of the hero whose difficulty the total
+    /// reaches; on the tiles next to them (and their own) the Focus Bonus adds to it.
+    /// </summary>
+    private void Reveal(Hero hero, Room room, int total, int reach, List<GameEvent> events)
     {
+        bool Finds(GridPosition tile, int difficulty) => tile.ChebyshevDistanceTo(hero.Position) switch
+        {
+            <= 1 => total + hero.Focus >= difficulty,
+            int away when away <= reach => total >= difficulty,
+            _ => false,
+        };
+
         var doors = new List<Direction>();
         var traps = new List<GridPosition>();
         foreach ((Direction side, Passage passage) in room.Passages)
         {
-            if (passage.IsHidden && passage.Difficulty <= total)
+            if (passage.IsHidden && Finds(room.DoorTile(side), passage.Difficulty))
             {
                 passage.IsHidden = false;
                 doors.Add(side);
             }
 
-            if (!passage.IsHidden && passage.Trap is { Revealed: false } darts && darts.Difficulty <= total)
+            if (!passage.IsHidden && passage.Trap is { Revealed: false } darts && Finds(room.DoorTile(side), darts.Difficulty))
             {
                 darts.Revealed = true;
                 traps.Add(room.DoorTile(side));
@@ -653,20 +684,20 @@ public sealed partial class GameSession
                      .Where(chest => room.ChestTrapAt(chest) is not null)
                      .Select(chest => new KeyValuePair<GridPosition, Trap>(chest, room.ChestTrapAt(chest)!))))
         {
-            if (!trap.Revealed && trap.Difficulty <= total)
+            if (!trap.Revealed && Finds(tile, trap.Difficulty))
             {
                 trap.Revealed = true;
                 traps.Add(tile);
             }
         }
 
-        List<GridPosition> gates = room.HiddenGates.Where(gate => gate.Value <= total).Select(gate => gate.Key).ToList();
+        List<GridPosition> gates = room.HiddenGates.Where(gate => Finds(gate.Key, gate.Value)).Select(gate => gate.Key).ToList();
         foreach (GridPosition gate in gates)
         {
             room.OpenGate(gate);
         }
 
-        List<KeyValuePair<GridPosition, Cache>> stashes = room.Caches.Where(cache => !cache.Value.BehindWall && cache.Value.Difficulty <= total).ToList();
+        List<KeyValuePair<GridPosition, Cache>> stashes = room.Caches.Where(cache => !cache.Value.BehindWall && Finds(cache.Key, cache.Value.Difficulty)).ToList();
         events.Add(new SecretsFound(hero.Id, room.Id, doors, traps, stashes.Select(stash => stash.Key).ToList(), gates));
         foreach ((GridPosition tile, Cache cache) in stashes)
         {
@@ -674,7 +705,7 @@ public sealed partial class GameSession
         }
 
         // A sharp eye sees the teeth: the mimic gives up its disguise without getting a bite in.
-        foreach (GridPosition mimic in room.Mimics.Where(mimic => mimic.Value <= total).Select(mimic => mimic.Key).ToList())
+        foreach (GridPosition mimic in room.Mimics.Where(mimic => Finds(mimic.Key, mimic.Value)).Select(mimic => mimic.Key).ToList())
         {
             WakeMimic(room, mimic, null, events);
         }

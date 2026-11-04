@@ -1,4 +1,5 @@
 using Woad.Core.Commands;
+using Woad.Core.Content;
 using Woad.Core.Events;
 using Woad.Core.Grid;
 using Woad.Core.Model;
@@ -238,7 +239,7 @@ public class MovementTests
     [Fact]
     public void LuckRerollsAMovementDieBeforeTheFirstStep()
     {
-        GameSession session = TestRun.Start(Open, new ScriptedDice(1, 5), stats: GameRules.HeroBaseStats with { Luck = 2 });
+        GameSession session = TestRun.Start(Open, new ScriptedDice(1, 5), stats: GameRules.HeroBaseStats with { Luck = 2, Speed = 2 });
         Hero hero = session.HeroInSeat();
         session.Do(new RollMovement(hero.Id));
 
@@ -253,22 +254,23 @@ public class MovementTests
     }
 
     [Fact]
-    public void DoorsLeadToTheFacingDoorOfTheNextRoom()
+    public void DoorsLeadFreeFromBesideThemToJustInsideTheNextRoom()
     {
         GameSession session = TestRun.Start(TwoRooms(EmptyRoom), new ScriptedDice(1));
         Hero hero = session.HeroInSeat();
         session.Do(new RollMovement(hero.Id));
-
-        Assert.Contains("doorway", session.Refuse(new GoThroughDoor(hero.Id, Direction.East)));
-        session.Do(new MoveHero(hero.Id, Direction.East.DoorTile()));
+        hero.Position = new GridPosition(5, 4);
+        Assert.Contains("up to the door", session.Refuse(new GoThroughDoor(hero.Id, Direction.East)));
+        hero.Position = new GridPosition(7, 4);
         Assert.Equal([Direction.East], session.GetUsableDoors());
+        int steps = session.State.Turn!.MovementPoints;
 
         var entered = session.Do(new GoThroughDoor(hero.Id, Direction.East)).SingleOf<HeroEnteredRoom>();
 
-        Assert.Equal(new HeroEnteredRoom(hero.Id, "A", "B", new GridPosition(0, 4), FirstVisit: true), entered);
+        Assert.Equal(new HeroEnteredRoom(hero.Id, "A", "B", new GridPosition(1, 4), FirstVisit: true), entered);
         Assert.Equal("B", hero.RoomId);
-        Assert.Equal(new GridPosition(0, 4), hero.Position);
-        Assert.Equal(1, session.State.Turn!.MovementPoints);
+        Assert.Equal(new GridPosition(1, 4), hero.Position);
+        Assert.Equal(steps, session.State.Turn!.MovementPoints);
         Assert.True(session.RoomById("B").Explored);
     }
 
@@ -293,9 +295,9 @@ public class MovementTests
         Assert.Equal([Direction.East], session.GetUsableDoors());
         var entered = session.Do(new GoThroughDoor(hero.Id, Direction.East)).SingleOf<HeroEnteredRoom>();
 
-        // The dummy stands in the west doorway (0,4); the nearest free tiles are (0,3), (1,4) and (0,5).
-        Assert.Equal(new GridPosition(0, 3), entered.Position);
-        Assert.Equal(new GridPosition(0, 3), hero.Position);
+        // The dummy stands in the west doorway (0,4); the nearest free tile straight inside is (1,4).
+        Assert.Equal(new GridPosition(1, 4), entered.Position);
+        Assert.Equal(new GridPosition(1, 4), hero.Position);
     }
 
     [Fact]
@@ -307,6 +309,65 @@ public class MovementTests
         session.Do(new MoveHero(hero.Id, Direction.North.DoorTile()));
 
         Assert.Contains("no door", session.Refuse(new GoThroughDoor(hero.Id, Direction.North)));
+    }
+
+    [Fact]
+    public void AnAllyStandingInADoorwayCanBePushedThroughItFree()
+    {
+        GameSession session = TestRun.Start(TwoRooms(EmptyRoom), new ScriptedDice(), heroes: 2);
+        Hero hero = session.HeroInSeat();
+        Hero ally = session.State.Heroes.Single(other => other != hero);
+        hero.Position = new GridPosition(7, 4);
+        ally.Position = Direction.East.DoorTile();
+
+        var entered = session.Do(new PushThroughDoor(hero.Id, ally.Id)).SingleOf<HeroEnteredRoom>();
+
+        Assert.Equal((ally.Id, "B", new GridPosition(1, 4)), (entered.HeroId, entered.RoomId, entered.Position));
+        Assert.Equal("B", ally.RoomId);
+        Assert.Contains("nobody here", session.Refuse(new PushThroughDoor(hero.Id, ally.Id)));
+    }
+
+    [Fact]
+    public void AnAllyResistingIsShovedThroughADoorwayOnlyByBeatingTheirDefense()
+    {
+        // A 2 against their defense die's 4: they hold; then a 6 and a 5 against a 1: through.
+        GameSession session = TestRun.Start(TwoRooms(EmptyRoom), new ScriptedDice(2, 4, 5, 1), heroes: 2, skills: Skill.Shove,
+            stats: TestRun.HeroStats with { AttackDice = 2 });
+        Hero hero = session.HeroInSeat();
+        Hero ally = session.State.Heroes.Single(other => other != hero);
+        hero.Position = new GridPosition(7, 4);
+        ally.Position = Direction.East.DoorTile();
+
+        Assert.Contains(session.Do(new Shove(hero.Id, ally.Id, Dice: 1)), gameEvent => gameEvent is ShoveResisted);
+        Assert.Equal("A", ally.RoomId);
+        session.Do(new Shove(hero.Id, ally.Id, Dice: 1));
+
+        Assert.Equal("B", ally.RoomId);
+    }
+
+    [Fact]
+    public void WithoutShoveAResistingAllyDoesntBudge()
+    {
+        GameSession session = TestRun.Start(TwoRooms(EmptyRoom), new ScriptedDice(), heroes: 2, skills: Skill.None);
+        Hero hero = session.HeroInSeat();
+        Hero ally = session.State.Heroes.Single(other => other != hero);
+        hero.Position = new GridPosition(7, 4);
+        ally.Position = Direction.East.DoorTile();
+
+        Assert.Equal($"{ally.Name} doesn't budge.", session.CheckShove(ally.Id));
+    }
+
+    [Fact]
+    public void ADoorsDartsAreDisarmedFromBesideIt()
+    {
+        GameSession session = TestRun.Start(TwoRooms(EmptyRoom), new ScriptedDice(5), passages: [new PassageSetup("A", Direction.East, PassageKind.Open, 0, new TrapSetup(TrapKind.Darts, 4))]);
+        Hero hero = session.HeroInSeat();
+        hero.Position = new GridPosition(7, 4);
+        session.RoomById().PassageOn(Direction.East)!.Trap!.Revealed = true;
+
+        session.Do(new Disarm(hero.Id, Direction.East.DoorTile(), Dice: 1));
+
+        Assert.Null(session.RoomById().PassageOn(Direction.East)!.Trap);
     }
 
     private static RoomSetup[] TwoRooms(string roomB) =>

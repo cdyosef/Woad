@@ -670,6 +670,9 @@ public sealed record OdHandDieAdded(int HeroId, IReadOnlyList<int> Faces, int To
 /// <summary>A 1 in a torch-lit attack burned the torch out: it's gone.</summary>
 public sealed record TorchBurnedOut(int HeroId, int CardId) : GameEvent;
 
+/// <summary>A Stick held to a fire: the hero holds a Lit Stick (<paramref name="CardId"/>) now.</summary>
+public sealed record StickLit(int HeroId, int CardId) : GameEvent;
+
 /// <summary>A monster's chain shackled a hero: no moving until the lock (<paramref name="Lock"/>+) is picked or a key frees them.</summary>
 public sealed record HeroShackled(int MonsterId, int HeroId, int Lock) : GameEvent;
 

@@ -308,6 +308,10 @@ public partial class BoardView : Control
         return Enumerable.Range(top, Math.Max(0, bottom - top + 1)).SelectMany(y => Enumerable.Range(left, Math.Max(0, right - left + 1)).Select(x => new GridPosition(x, y)));
     }
 
+    /// <summary>A white pulse out from <paramref name="tile"/> to <paramref name="reach"/> tiles round it (a search).</summary>
+    public void Pulse(GridPosition tile, int reach) =>
+        AddChild(new SearchPulse { Position = TileOrigin(tile) + new Vector2(TileSize / 2f, TileSize / 2f), Reach = reach * TileSize + TileSize / 2f });
+
     /// <summary>Shakes the view, harder for bigger blows.</summary>
     public void Shake(float strength) => _shake = Math.Max(_shake, strength);
 

@@ -457,6 +457,7 @@ public partial class GameScreen : Control
         {
             case TurnStarted turn:
                 _board.ZoomOut();
+                _rumbleBonusHeld = false;
                 _viewedHeroId = null;
                 _selectedCardId = null;
                 _showingOrders = false;
@@ -919,6 +920,12 @@ public partial class GameScreen : Control
 
             case OdHandRolled rolled:
                 _trayShowsMovement = false;
+                // A search sends a pulse out to as far as it reaches; feeling around, to the tiles next door.
+                if (rolled.Kind is OdHandCheckKind.Search or OdHandCheckKind.Feel && _figures.TryGetValue(rolled.HeroId, out Figure? searcher) && searcher.RoomId == _shownRoomId)
+                {
+                    _board.Pulse(searcher.Position, rolled.Kind == OdHandCheckKind.Search ? GameRules.SearchRange : 1);
+                }
+
                 string goal = rolled.Difficulty > 0 ? $" ({rolled.Difficulty}+)" : "";
                 await _dice.ShowRoll($"{NameOf(rolled.HeroId)} {OdHandCaption(rolled.Kind)}{goal}", rolled.Roll, rolled.Bonus, newGroup: true, rolled.PowerDice, DiceKind.OdHand, rolled.ToolDice, cards: OdHandTray(rolled));
                 break;
@@ -1647,6 +1654,7 @@ public partial class GameScreen : Control
     {
         OdHandCheckKind.PickDoor or OdHandCheckKind.PickChest or OdHandCheckKind.PickGate or OdHandCheckKind.PickChains or OdHandCheckKind.PickShackles => "picks the lock",
         OdHandCheckKind.Search => "searches",
+        OdHandCheckKind.Feel => "feels around",
         OdHandCheckKind.Disarm => "disarms",
         OdHandCheckKind.Rouse => "aids a fallen ally",
         OdHandCheckKind.DefuseBomb => "defuses",

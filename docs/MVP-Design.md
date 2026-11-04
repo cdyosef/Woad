@@ -51,9 +51,9 @@ Stats are expressed directly as dice and points. Gear cards add to them.
 | --- | --- | --- | --- |
 | Hearts | Maximum HP | 3 | 1 per heart |
 | Wend (boot) | d6 for moving each turn; each move uses one or more | 1 | 3, 3, 3, then 4, 5, 6 per die |
-| Wend bonus | Tiles added to one move per turn (shown as the "+2" in "Wend 1d6+2"; the editor calls it Wend) | 2 | 2 per point |
-| Rumble (fist) | d6 for attacking each turn; each attack uses one or more | 1 | 3, 3, 3, then 4, 5, 6 per die; the first brings Shove free (or Bull Rush, if you know Shove) |
-| Od Hand (hamsa) | d6 each turn for the Od Hand skills you've learned (see [Skills](#skills)) | 0 | 1, 2, 2, 3, 4, 5 per die; the first brings an Od Hand skill of your choice free |
+| Wend bonus | Tiles added to one move per turn (shown as the "+1" in "Wend 1d6+1"; the editor calls it Wend +) | 0 | 2 per +1 |
+| Rumble (fist) | d6 for attacking each turn; each attack uses one or more. Each Rumble die bought is also +1 **Rumble Bonus**: added to one Rumble attack (or Shove, or Bull Rush) a turn, the first unless you hold it back (click the bonus on the Rumble card: it shows in brackets), and then to the attack that rolls your last Rumble dice. The Wend bonus on the Wend card holds back the same way | 1 | 3, 3, 3, then 4, 5, 6 per die; the first brings Shove free (or Bull Rush, if you know Shove) |
+| Od Hand (hamsa) | d6 each turn for the Od Hand skills you've learned (see [Skills](#skills)), for feeling around and for off-hand attacks | 1 | 1, 2, 2, 3, 4, 5 per die; the first brings an Od Hand skill of your choice free |
 | Tools | Fixed value and dice added to one roll a turn of the skills they serve | 0 | Gear only (Lockpicks: +1 and 1d6) |
 | Defense | The first d6 (the base die) rolled against every attack; the rest are extra dice, rolled in one at a time only while a defense is losing, then spent until your next turn | 1 | 3, 3, 3, then 4, 5, 6 per die |
 | Weapon | Fixed value added to one attack per turn | 0 | Gear only (weapons) |
@@ -151,7 +151,7 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 
 | Type | Usage | Examples (placeholder names) |
 | --- | --- | --- |
-| Weapon | Persistent | Club (weapon 1; any 1 in an attack with it breaks it, as a torch burns out; every new character starts with one), Stick and Rock (found lying about; weapon 1, and they break with the blow; a Rock goes in either hand and can be thrown at range 2, landing whole at the target's feet on a 6; both stack, up to 10), Sling (weapon 1, +1 for the Rock it slings at range 4; the Rock comes from the off hand, or from the belt with a Rock Bag, and lands whole on a 6; no Rock, no shot), Wooden Sword (weapon 1), Knight's Sword (weapon 2), Longsword (weapon 1 + 1d6, versatile +1), Short Bow (weapon 1, ranged 6), Longbow (weapon 1 + 1d6, ranged 10; floor 3), Spear (weapon 2, reach 2 in a straight line), Dagger (either hand, stacks: +1 on an attack of its own from the off hand, doubled on a stunned or prone monster; thrown at range 3 it lands at the target's feet; one in each hand +1 each; the Waylay Inn sells them), War Hammer (weapon 2; crushes: hits flip shelled monsters, broken bones stay broken; floor 2), Rapier (weapon 2, Block 1; two strikes a turn with an empty or light off hand; floor 2), Maul (two-handed, weapon 3; any 6 shoves the target a tile, hit or miss; floor 2), Crossbow (two-handed, weapon 3 every loaded shot, range 8; reload with an Od Hand or Rumble die; floor 2), Great Axe (two-handed, weapon 2 + 1d6; each 6 cleaves into another monster beside you; floor 3), Heavy Crossbow (two-handed, weapon 4 every loaded shot, range 9; reload with an Od Hand or Rumble die and a Wend die; floor 3). A weapon's dice always go with its bonus on one attack. Crossbows are loaded on each new floor; reload one with **Use** |
+| Weapon | Persistent | Club (weapon 1; any 1 in an attack with it breaks it, as a torch burns out; every new character starts with one), Stick and Rock (found lying about; weapon 1, and they break with the blow; both go in either hand and can be thrown, a Rock at range 3 and a Stick at range 2, landing whole at the target's feet on a 6; both stack, up to 10. A Stick in hand held to a fire, one beside you (a lit brazier, burning floor, a burning creature, a hero with a light) or in your hands, lights with the **Light** card in the Od Hand fan: a **Lit Stick**, a torch in every way, which burns out after 5 rounds, held or not; the rest of the stack goes to your bag), Sling (weapon 1, +1 for the Rock it slings at range 4; the Rock comes from the off hand, or from the belt with a Rock Bag, and lands whole on a 6; no Rock, no shot), Wooden Sword (weapon 1), Knight's Sword (weapon 2), Longsword (weapon 1 + 1d6, versatile +1), Short Bow (weapon 1, ranged 6), Longbow (weapon 1 + 1d6, ranged 10; floor 3), Spear (weapon 2, reach 2 in a straight line), Dagger (either hand, stacks: +1 on an attack of its own from the off hand, doubled on a stunned or prone monster; thrown at range 3 it lands at the target's feet; one in each hand +1 each; the Waylay Inn sells them), War Hammer (weapon 2; crushes: hits flip shelled monsters, broken bones stay broken; floor 2), Rapier (weapon 2, Block 1; two strikes a turn with an empty or light off hand; floor 2), Maul (two-handed, weapon 3; any 6 shoves the target a tile, hit or miss; floor 2), Crossbow (two-handed, weapon 3 every loaded shot, range 8; reload with an Od Hand or Rumble die; floor 2), Great Axe (two-handed, weapon 2 + 1d6; each 6 cleaves into another monster beside you; floor 3), Heavy Crossbow (two-handed, weapon 4 every loaded shot, range 9; reload with an Od Hand or Rumble die and a Wend die; floor 3). A weapon's dice always go with its bonus on one attack. Crossbows are loaded on each new floor; reload one with **Use** |
 | Shield | Persistent | Buckler (armor 1, Block 1), Tower Shield (armor 3, Block 3, −1 Wend), Knight's Shield (armor 2, an extra Defense die; floor 2+). **Knight's set:** worn with the Knight's Sword, the sword gains +1 Weapon and Block 1, and the shield a Guard Die |
 | Armor | Persistent | Head: Leather Cap (+1 Heart), Lucky Helmet (armor 1; when you'd be hit anyway it rolls one more die in, last of all, then breaks), Diving Helm (Temple). Body: Leather Armor (armor 1), Studded Armor (armor 2, floor 2+), Chain Mail (armor 3, floor 3), Warden's Plate (armor 3 and an extra Defense die: the Iron Warden drops it one time in four) |
 | Boots | Persistent | Dash Boots (+1 Move die) |
@@ -333,8 +333,9 @@ throwing comes later). The rules check each like the card buttons do.
 their head and what's in each hand at their sides (a torch shows its own flame), each unless hidden in the
 buckle's menu. A character's looks (belt art, what's hidden) are saved with them.
 
-**Doors** sit at the middle tile of each room edge. Stepping through costs 1 step and places you at the
-facing door of the next room.
+**Doors** sit at the middle tile of each room edge. Clicking one walks you up to it, stopping beside the
+doorway so you don't block it; clicking it again from there takes you through, free, to a tile just inside
+the next room.
 
 ## Combat
 
@@ -629,7 +630,8 @@ total reaches its number:
 | Check | How | Number *(tunable)* |
 | --- | --- | --- |
 | **Pick a lock** | Stand in a locked doorway (or next to a locked chest) without a key and click it | Doors 4 + floor (at most 6); chests 5 + floor |
-| **Search** | **Search** button: reveals everything in the room your total reaches; **+1 for each light** whose glow you stand in (each torch held, a flame, a lit brazier, burning floor, Shining Light...), stacking | Secret doors 4 + floor; traps 3 + floor; stashes 5 + floor |
+| **Search** | **Search** button (or the Od Hand card): reveals everything within **8 tiles** (diagonals counting one: all of a standard room) that your total reaches, and on the tiles next to you your **Focus Bonus** adds to it; **+1 for each light** whose glow you stand in (each torch held, a flame, a lit brazier, burning floor, Shining Light...), stacking. Without Search (no skill, no lit torch), the Od Hand card **feels around**: your Od Hand dice and Focus Bonus on the tiles next to you only, with no Explorer bonus and no first-Search find. A white pulse spreads out from you as far as the search reaches | Secret doors 4 + floor; traps 3 + floor; stashes 5 + floor |
+| **Off-hand attack** | The Od Hand card with a weapon or a torch in your off hand (a Stick, a Rock, a Dagger...): a **follow-up** once you've made a Rumble attack this turn (a Shove or a Bull Rush counts), on any monster in the item's reach; click the monster. Once a turn: **one Od Hand die**, your **Od Hand Bonus** (+1 for each Od Hand rank bought; Magic ranks don't count) and the item's own value (a Dagger's doubled on a stunned or prone monster, and its strike spent). It reaches as the item does (a Rock or a Dagger thrown), breaks or lands as it would; a torch's die is a fire die (a 6 sets the target alight, a 1 burns it out). Click yourself instead to search | Hit as any attack |
 | **Disarm** | Click a trap you've found: on a tile or chest next to you, or your own doorway | 3 + floor |
 | **Steal** | **Steal** button, then an adjacent monster or hero; once a turn | Beat their roll: a monster's defense dice, a hero's Od Hand dice and tools |
 | **Aid** | The **Aid** card, then yourself or an ally beside you (diagonals too); clicking an ally Keeling Over aids them straight away | On someone Keeling Over (a Rouse): every 6 of the total is a mark of life; every die showing 1 is a Doom Die on their next Keel roll (see [Keeling Over](#loot-keeling-over-and-winning)). Otherwise it takes one stack of one ailment off, chosen when there are several: 10 (Nekrot 14). A Shovel in hand digs two stacks of Buried off |
@@ -974,8 +976,15 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   by the room's open floor against a standard room's (about 70 tiles), so big rooms hold more;
   treasure rooms 1; arrival rooms 0; the boss room the boss plus party-size worth of guards.
 - **Doors** are gold bars on the room's edges, anywhere along them (the middle is most likely), on floor
-  with open floor inside. Stand in the doorway and click it again to go through
-  (1 step). If someone is standing in the far doorway, you land on the nearest free tile. Locked doors are
+  with open floor inside. Click a door to walk up beside it (heroes stop short of doorways and stairs, out
+  of the way), and click it again to go through, free: you land on the nearest free tile just inside the
+  next room, never in the doorway. Locks are worked and darts disarmed from beside the door too, and a
+  door's darts hit whoever goes through (or botches the disarm), wherever they stand. Standing in a doorway
+  is allowed (click the door again to go through), but an ally left there can be pushed through it by
+  clicking the door from beside them: they choose to let you (free, no roll) or resist, and then only a
+  Shove moves them (your Rumble dice against their defense; no friendly fire needed): without the Shove
+  skill they don't budge. A companion
+  always lets you. Locked doors are
   dark with a key mark, the Boss Door red, and walled-up doorways grey. See
   [Keys, locks and secrets](#keys-locks-and-secrets).
 - **Secrets:** some doors are locked or trapped; some extra links between rooms are secret doors or
@@ -986,9 +995,9 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
 - **Trap rooms** (one per floor from floor 2): nobody can leave through the doors while monsters
   remain. Heroes outside can still come in to help.
 - **Clearing a room** restores 1 heart *(tunable)* to every hero in it.
-- **Stairs:** stand on them and click again to go down (1 step). You arrive in the next floor's
-  arrival room. Reaching a floor for the first time restores your Luck and recharges wands. Below the
-  first floor, the arrival room has **stairs up** that lead back to the stairs room above (1 step).
+- **Stairs:** click them to walk up beside them, and click them again to go down, free. You arrive in the
+  next floor's arrival room, off the stairs. Reaching a floor for the first time restores your Luck and recharges wands. Below the
+  first floor, the arrival room has **stairs up** that lead back to the stairs room above (free, the same way).
 - **Exit:** sealed until the boss in its room is defeated. Stand on it and click again to escape. Your
   turn ends, and you're out of the run with your treasure.
 - **Splitting up:** heroes can be on different rooms and floors. During the monsters' phase the view

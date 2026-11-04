@@ -83,6 +83,9 @@ public partial class GameScreen
     private int _moveDiceHeld;
     private bool _weaponHeld;
     private bool _speedHeld;
+
+    /// <summary>The Rumble Bonus held back from the next attacks this turn (see <see cref="ToggleBonus"/>).</summary>
+    private bool _rumbleBonusHeld;
     private int _powerDiceSelected;
     private bool _toolsHeld;
 
@@ -98,6 +101,12 @@ public partial class GameScreen
 
     /// <summary>Hold Fire's card played: the next click on a monster in reach hurls the flame at it.</summary>
     private bool _hurling;
+
+    /// <summary>The Od Hand card played with something in the off hand: the next click on a monster in its reach attacks with it.</summary>
+    private bool _offHanding;
+
+    /// <summary>The Light card: holds a Stick in hand to a fire beside the hero, lighting it.</summary>
+    private Button _lightStick = null!;
 
     private Button _holdFire = null!;
 
@@ -165,7 +174,7 @@ public partial class GameScreen
         }
         bool held = hero is not null && _session.HeldBy(hero) is not null;
         _roll.Disabled = !(idle && !pending && _session.MoveDiceLeft > 0) || held;
-        string? searchBlocked = _session.CheckSearch();
+        string? searchBlocked = _session.State.Turn is not null && _session.CheckOffHandAttack() is null ? null : _session.CheckSearch();
         _search.Disabled = !(idle && !pending) || searchBlocked is not null;
         _search.TooltipText = _session.State.Turn is null ? "" : searchBlocked ?? "Search the room with your selected Od Hand dice: finds secret doors, traps and stashes your total reaches.";
         // Out on the Woarld Map, Retreat waits up in the top strip, well away from the other actions.
@@ -351,6 +360,12 @@ public partial class GameScreen
         if (_hurling)
         {
             _board.SetHighlights([], [], _session.GetHeldFireTargets(), []);
+            return;
+        }
+
+        if (_offHanding)
+        {
+            _board.SetHighlights([], [], [.. _session.GetOffHandTargets().Select(monster => monster.Position)], []);
             return;
         }
 
@@ -931,7 +946,25 @@ public partial class GameScreen
         right.AddChild(_leap);
 
         _search = UiTheme.Accent(UiTheme.CompactButton(new Vector2(88, 303), new Vector2(40, 20), "Search"), Palette.DieOdHand);
-        _search.Pressed += () => ExecuteOdHand((heroId, dice, tools, power) => new Search(heroId, dice, tools, power));
+        _search.Pressed += () =>
+        {
+            // With something in the off hand and a monster in its reach, the Od Hand card attacks with it; otherwise it searches (or feels around).
+            if (_session.State.Turn is not null && _session.CheckOffHandAttack() is null)
+            {
+                bool aiming = !_offHanding;
+                CancelSelection();
+                _offHanding = aiming;
+                if (aiming)
+                {
+                    Log("Od Hand: click a monster in reach (orange) to follow up your Rumble attack with what's in your off hand; click yourself to search instead. Right-click to cancel.", Palette.DieOdHand);
+                }
+
+                RefreshPanels();
+                return;
+            }
+
+            ExecuteOdHand((heroId, dice, tools, power) => new Search(heroId, dice, tools, power));
+        };
         right.AddChild(_search);
 
         _steal = UiTheme.Accent(UiTheme.CompactButton(new Vector2(130, 303), new Vector2(38, 20), "Steal"), Palette.DieOdHand);

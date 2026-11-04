@@ -109,6 +109,9 @@ public partial class GameScreen
             RefreshPanels();
         };
         hidden.AddChild(_holdFire);
+        _lightStick = new Button { Text = "Light" };
+        _lightStick.Pressed += () => Execute(new LightStick(ActiveHero!.Id));
+        hidden.AddChild(_lightStick);
         _highAlert = new Button { Text = "High Alert" };
         _highAlert.Pressed += () => Execute(new HighAlert(ActiveHero!.Id));
         hidden.AddChild(_highAlert);
@@ -144,6 +147,7 @@ public partial class GameScreen
             new("rouse", "Aid", _aid, () => _session.GetAidTargets().Count > 0, () => HasMeans(Skill.Aid)),
             new("parry", "Parry", _parry, Threatened, () => Knows(Skill.Parry)),
             new("spell_hurl_fire", "Hold Fire", _holdFire, () => _session.GetHeldFireTargets().Count > 0, () => ActiveHero?.Flame == true),
+            new("lit_stick", "Light", _lightStick, () => true, () => ActiveHero is { } holder && GameSession.StickInHand(holder) is not null),
             new("learn", "Learn", _learn, () => true),
         ]);
         _odHand.Slot = EquipSlot.OffHand;
@@ -200,6 +204,7 @@ public partial class GameScreen
         };
         hand.DieToCard += _ => MoveDie(hand, onto: true);
         hand.DieToPool += _ => MoveDie(hand, onto: false);
+        hand.BonusClicked += ToggleBonus;
         hand.CardUsed += (_, card) => UseStackCard(hand, card);
         hand.Opened += opened =>
         {
@@ -256,6 +261,35 @@ public partial class GameScreen
         new(ItemPrefix + item.Id, item.Definition.Id, item.Definition.Name, tapped, bonus, dice, PoolColor(item.Definition), item.Id, item.Count);
 
     private static string Plus(int value) => value > 0 ? $"+{value}" : value < 0 ? value.ToString() : "";
+
+    /// <summary>A bonus on a dice card, in brackets while it's held back for a later roll.</summary>
+    private static string HeldPlus(int value, bool held) => held && value > 0 ? $"({Plus(value)})" : Plus(value);
+
+    /// <summary>
+    /// A dice card's bonus clicked: the Rumble Bonus held back from the next attacks (it still goes on the one
+    /// that rolls the last Rumble dice), or put back on the next; the Wend bonus held off the next move, or put back.
+    /// </summary>
+    private void ToggleBonus(HandView hand)
+    {
+        if (Locked || ActiveHero is null)
+        {
+            return;
+        }
+
+        if (hand == _rumbleHand && _session.RumbleBonusLeft > 0)
+        {
+            _rumbleBonusHeld = !_rumbleBonusHeld;
+            Log(_rumbleBonusHeld
+                ? $"Rumble Bonus held back: +{_session.RumbleBonusLeft} goes on the attack that rolls your last Rumble dice (or click it again)."
+                : $"Rumble Bonus: +{_session.RumbleBonusLeft} on your next attack.", Palette.DieRumble);
+        }
+        else if (hand == _wendHand && _session.SpeedBonusLeft > 0)
+        {
+            _speedHeld = !_speedHeld;
+        }
+
+        RefreshPanels();
+    }
 
     private static TrayCard Tray(CardDefinition card, int dice = 0, string bonus = "") =>
         new(GameArt.Texture($"res://assets/cards/{card.Id}.png"), card.Name, dice, bonus, PoolColor(card));
@@ -377,7 +411,7 @@ public partial class GameScreen
         if (hand == _rumbleHand)
         {
             // The main hand's square: what's in it, any weapon in the off hand, and the Rumble card with its dice.
-            stack.Add(new(HandView.DiceKey, "rumble", "Rumble", mine && _session.AttackDiceLeft == 0, Dice: mine ? SelectedAttackDice : 0, Border: Palette.DieRumble));
+            stack.Add(new(HandView.DiceKey, "rumble", "Rumble", mine && _session.AttackDiceLeft == 0, mine ? HeldPlus(_session.RumbleBonusLeft, _rumbleBonusHeld) : "", mine ? SelectedAttackDice : 0, Palette.DieRumble));
             IReadOnlyList<CardInstance> weapons = GameSession.HandWeapons(hero);
             foreach (CardInstance item in new[] { main }.Concat(weapons).OfType<CardInstance>().Distinct())
             {
@@ -389,7 +423,7 @@ public partial class GameScreen
         else if (hand == _wendHand)
         {
             // The feet's square: the boots, and the Wend card with its dice and the Wend bonus.
-            stack.Add(new(HandView.DiceKey, "wend", "Wend", mine && _session.MoveDiceLeft == 0 && turn!.MovementPoints == 0, Plus(_session.SpeedBonusLeft), mine ? SelectedMoveDice : 0, Palette.DieWend));
+            stack.Add(new(HandView.DiceKey, "wend", "Wend", mine && _session.MoveDiceLeft == 0 && turn!.MovementPoints == 0, mine ? HeldPlus(_session.SpeedBonusLeft, _speedHeld && _session.SpeedBonusLeft > 0) : Plus(_session.SpeedBonusLeft), mine ? SelectedMoveDice : 0, Palette.DieWend));
             if (hero.Equipment.GetValueOrDefault(EquipSlot.Feet) is { } boots)
             {
                 stack.Add(ItemCard(boots, tapped: false));
@@ -398,7 +432,7 @@ public partial class GameScreen
         else if (hand == _odHand)
         {
             // The off hand's square: what's in it (unless it's a weapon, which goes with Rumble), the tools, and the Od Hand card with its dice.
-            stack.Add(new(HandView.DiceKey, "search", "Od Hand", mine && _session.OdHandDiceLeft == 0, Dice: mine ? SelectedOdHandDice : 0, Border: Palette.DieOdHand));
+            stack.Add(new(HandView.DiceKey, "od_hand", "Od Hand", mine && _session.OdHandDiceLeft == 0, Dice: mine ? SelectedOdHandDice : 0, Border: Palette.DieOdHand));
             List<CardInstance> tools = [.. hero.EquippedCards.Concat(hero.BeltTools).Where(card => card.Definition.Tool is not null).DistinctBy(card => card.Definition.Id)];
             if (off is not null && off != main && !GameSession.HandWeapons(hero).Contains(off) && !tools.Contains(off))
             {
@@ -552,7 +586,9 @@ public partial class GameScreen
         Hold(_highAlert, ready, turn ? _session.CheckHighAlert() : "");
         Hold(_bullRush, ready, turn ? _session.CheckBullRush() : "");
         Hold(_holdFire, ready, turn ? _session.CheckHurlHeldFire() : "");
+        Hold(_lightStick, ready, turn ? _session.CheckLightStick() : "");
         _hurling &= !_holdFire.Disabled;
+        _offHanding &= _session.State.Turn is not null && _session.CheckOffHandAttack() is null;
         _rushing &= !_bullRush.Disabled;
 
         Hero? hero = ActiveHero;

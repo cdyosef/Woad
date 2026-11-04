@@ -58,14 +58,15 @@ public class FloorTests
         Hero hero = session.HeroInSeat();
         session.Do(new RollMovement(hero.Id));
 
-        Assert.Contains("on the stairs", session.Refuse(new TakeStairs(hero.Id)));
-        session.Do(new MoveHero(hero.Id, new GridPosition(4, 4)));
+        int steps = session.State.Turn!.MovementPoints;
+
+        // From beside the stairs, and free.
         var descended = session.Do(new TakeStairs(hero.Id)).SingleOf<HeroDescended>();
 
         Assert.Equal(new HeroDescended(hero.Id, "up", "down", 2, new GridPosition(2, 3), FirstTimeOnFloor: true), descended);
         Assert.Equal("down", hero.RoomId);
         Assert.True(session.RoomById("down").Explored);
-        Assert.Equal(3, session.State.Turn!.MovementPoints);
+        Assert.Equal(steps, session.State.Turn!.MovementPoints);
     }
 
     [Fact]
@@ -209,11 +210,13 @@ public class FloorTests
         hero.DeepestFloor = 2;
         hero.Position = new GridPosition(4, 4);
         session.Do(new RollMovement(hero.Id));
+        int steps = session.State.Turn!.MovementPoints;
 
         var climbed = session.Do(new TakeStairs(hero.Id)).SingleOf<HeroAscended>();
 
-        Assert.Equal(new HeroAscended(hero.Id, "bottom", "top", 1, new GridPosition(4, 4)), climbed);
+        // Beside the stairs down, not on them; and free.
+        Assert.Equal(new HeroAscended(hero.Id, "bottom", "top", 1, new GridPosition(4, 3)), climbed);
         Assert.Equal(("top", 2), (hero.RoomId, hero.DeepestFloor));
-        Assert.Equal(4, session.State.Turn!.MovementPoints);
+        Assert.Equal(steps, session.State.Turn!.MovementPoints);
     }
 }

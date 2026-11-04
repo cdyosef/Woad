@@ -89,6 +89,9 @@ public partial class HandView : Control
     /// <summary>A die on the dice card was clicked: it goes back to the pool.</summary>
     public event Action<HandView>? DieToPool;
 
+    /// <summary>The dice card's bonus was clicked (to hold it back for a later roll, or put it in again).</summary>
+    public event Action<HandView>? BonusClicked;
+
     public void ShowStack(IReadOnlyList<StackCard> stack, string front, int poolDice, bool diceEnabled, string note = "")
     {
         Stack = stack;
@@ -286,6 +289,13 @@ public partial class HandView : Control
         return rects;
     }
 
+    /// <summary>Where the dice card's bonus is drawn, if it has one, for a click on it.</summary>
+    private Rect2? CardBonus() =>
+        Placed().FirstOrDefault(placed => placed.Card?.Key == DiceKey) is { Card.Bonus.Length: > 0 } dice ? CardFace.BonusRect(dice.Rect) : null;
+
+    /// <summary>Where the dice card's bonus is, to click it.</summary>
+    public Vector2? CardBonusPoint => CardBonus()?.GetCenter();
+
     /// <summary>Where the dice card's first die is, to click it.</summary>
     public Vector2? CardDiePoint => CardDice() is [var first, ..] ? first.GetCenter() : null;
 
@@ -319,6 +329,13 @@ public partial class HandView : Control
         {
             Sfx.Play("click");
             DieToPool?.Invoke(this);
+            return;
+        }
+
+        if (_diceEnabled && CardBonus() is { } bonus && bonus.Grow(0.5f).HasPoint(click.Position))
+        {
+            Sfx.Play("click");
+            BonusClicked?.Invoke(this);
             return;
         }
 

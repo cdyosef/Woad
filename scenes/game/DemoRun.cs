@@ -22,7 +22,7 @@ public static class DemoRun
 
     /// <summary>Aria (with a bomb and Luck) and Bran (with a boomerang).</summary>
     /// <summary>The debug heroes' stats: a new hero's, with the Od Hand die every hero used to start with.</summary>
-    public static Stats DebugStats { get; } = GameRules.HeroBaseStats with { OdHandDice = 1 };
+    public static Stats DebugStats { get; } = GameRules.HeroBaseStats with { OdHandDice = 1, Speed = 2 };
 
     /// <summary>What a demo hero wears before their own cards: the Basic Belt and Basic Buckle.</summary>
     private static readonly string[] Belted = ["basic_belt", "basic_buckle"];

@@ -52,8 +52,11 @@ public enum OdHandCheckKind
     /// <summary>Pick the lock of an adjacent gate in a wall dividing the room.</summary>
     PickGate,
 
-    /// <summary>Search the whole room for secrets.</summary>
+    /// <summary>Search the room for secrets, as far as <see cref="Rules.GameRules.SearchRange"/>.</summary>
     Search,
+
+    /// <summary>Feel around: a search of the tiles next to the hero only, by one who can't Search (no skill, no light in hand).</summary>
+    Feel,
 
     /// <summary>Disarm a revealed trap on an adjacent tile, an adjacent chest or the door the hero stands in.</summary>
     Disarm,
@@ -192,6 +195,15 @@ public sealed class TurnState
 
     /// <summary>An off-hand Dagger has added its value to an attack this turn.</summary>
     public bool OffHandStrikeUsed { get; internal set; }
+
+    /// <summary>The hero has attacked with what's in their off hand, by the Od Hand card, this turn.</summary>
+    public bool OffHandAttacked { get; internal set; }
+
+    /// <summary>The hero has made a Rumble attack (a Shove or a Bull Rush too) this turn: the off hand can follow up.</summary>
+    public bool Rumbled { get; internal set; }
+
+    /// <summary>The Rumble Bonus has gone on an attack this turn.</summary>
+    public bool RumbleBonusUsed { get; internal set; }
 
     public int MoveDiceUsed { get; internal set; }
 

@@ -149,6 +149,16 @@ public sealed partial class GameSession
             {
                 events.Add(new BoonEnded(hero.Id, Boon.Shadowbound));
             }
+
+            // A Lit Stick burns down, held or not.
+            foreach (CardInstance burning in hero.AllCards.Where(card => card.Definition.BurnsFor > 0).ToList())
+            {
+                if (--burning.RoundsLeft <= 0)
+                {
+                    hero.Remove(burning);
+                    events.Add(new TorchBurnedOut(hero.Id, burning.Id));
+                }
+            }
         }
     }
 

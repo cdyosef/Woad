@@ -23,7 +23,7 @@ internal static class TestRun
     /// <summary>What every test hero wears to begin with: a belt of 4 and its buckle.</summary>
     public static string[] Belted { get; } = ["belt", "buckle"];
 
-    public static Stats HeroStats { get; } = GameRules.HeroBaseStats with { Hearts = 4, OdHandDice = 1 };
+    public static Stats HeroStats { get; } = GameRules.HeroBaseStats with { Hearts = 4, OdHandDice = 1, Speed = 2 };
 
     /// <summary>A begun run in a single room "A".</summary>
     /// <param name="owners">Per seat: null for a player, or the seat of the player a companion belongs to.</param>

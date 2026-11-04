@@ -180,9 +180,10 @@ public sealed partial class GameSession
     /// or a Rock thrown, leaves the hand to land or break as the dice fall; a Stick or a Rock swung breaks
     /// now; a Club waits on the dice. Returns what's settled when they land (see <see cref="SpendWeapon"/>).
     /// </summary>
-    private WeaponSpent? UseWeapon(Hero hero, Room room, Wielding wielding, bool armed, GridPosition target, List<GameEvent> events)
+    /// <param name="strike">The attack spends one of the hand's strikes (not an off-hand attack by the Od Hand card).</param>
+    private WeaponSpent? UseWeapon(Hero hero, Room room, Wielding wielding, bool armed, GridPosition target, List<GameEvent> events, bool strike = true)
     {
-        if (armed && wielding.HasStrike && wielding.Weapon?.Reload is null)
+        if (strike && armed && wielding.HasStrike && wielding.Weapon?.Reload is null)
         {
             if (wielding.OffHand)
             {

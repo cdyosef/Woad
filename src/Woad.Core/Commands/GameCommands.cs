@@ -24,6 +24,9 @@ public sealed record MoveHero(int HeroId, GridPosition Destination) : GameComman
 /// <summary>Step through the door on the given side (costs 1 movement); you must be standing in the doorway.</summary>
 public sealed record GoThroughDoor(int HeroId, Direction Door) : GameCommand(HeroId);
 
+/// <summary>Pushes an ally standing in a doorway beside the hero through the door: free, and no roll.</summary>
+public sealed record PushThroughDoor(int HeroId, int AllyId) : GameCommand(HeroId);
+
 /// <summary>
 /// Attack with <paramref name="Dice"/> of this turn's unused Attack dice (null for all of them),
 /// plus the weapon's value if <paramref name="UseWeapon"/> and it isn't used yet this turn. The
@@ -31,7 +34,7 @@ public sealed record GoThroughDoor(int HeroId, Direction Door) : GameCommand(Her
 /// <paramref name="PowerDice"/> banked Power Dice are rolled in too (RollMovement takes them the same way).
 /// <paramref name="WeaponId"/> picks which weapon in hand to attack with (null: the main hand if it reaches, else the off hand).
 /// </summary>
-public sealed record AttackMonster(int HeroId, int MonsterId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0, int? WeaponId = null) : GameCommand(HeroId);
+public sealed record AttackMonster(int HeroId, int MonsterId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0, int? WeaponId = null, bool HoldRumbleBonus = false) : GameCommand(HeroId);
 
 /// <summary>
 /// Cast a spell the hero knows at <paramref name="Target"/> (nothing to aim for one that hits all around,
@@ -227,6 +230,15 @@ public sealed record OrderCompanion(int HeroId, int CompanionId, CompanionOrder 
 /// the hero's Focus, with an Od Hand die if they add one (<paramref name="Dice"/>); no Power, and the flame is gone.
 /// At an unlit brazier, it lights it.
 /// </summary>
+/// <summary>
+/// The Od Hand card with something in the off hand: attack a monster with it (a torch, a Stick, a Rock, a
+/// Dagger...), one Od Hand die, the Focus Bonus and the item's own value, on top of the Rumble attack. Once a turn.
+/// </summary>
+/// <summary>Holds a Stick in hand to a fire beside the hero (or one they hold): it becomes a Lit Stick.</summary>
+public sealed record LightStick(int HeroId) : GameCommand(HeroId);
+
+public sealed record OffHandAttack(int HeroId, int MonsterId, int PowerDice = 0) : GameCommand(HeroId);
+
 public sealed record HurlHeldFire(int HeroId, GridPosition Target, int Dice = 0, int PowerDice = 0) : GameCommand(HeroId);
 
 /// <summary>Adds one of the hero's unspent Od Hand dice (exploding) to their save after a fall, or with <paramref name="Power"/> one of their banked Power Dice. Their turn or not.</summary>
@@ -285,14 +297,14 @@ public sealed record OutfitCompanion(int HeroId, int CompanionId, int CardId, Ou
 /// onto a trap or into a pit. Bosses can't be shoved, and the tile behind must be open floor, a trap
 /// or a pit; a monster shoved into deep water loses a heart and scrambles out.
 /// </summary>
-public sealed record Shove(int HeroId, int TargetId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0) : GameCommand(HeroId);
+public sealed record Shove(int HeroId, int TargetId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0, bool HoldRumbleBonus = false) : GameCommand(HeroId);
 
 /// <summary>
 /// Bull Rush: charge in a straight line (diagonals too) toward <paramref name="Toward"/>, as far as a
 /// Wend die (a 6 rolls another) and the Wend bonus carry you, and strike the first monster in the way
 /// with <paramref name="Dice"/> Rumble dice, the weapon, and the tiles left over.
 /// </summary>
-public sealed record BullRush(int HeroId, GridPosition Toward, int? Dice = null, bool UseWeapon = true, int PowerDice = 0) : GameCommand(HeroId);
+public sealed record BullRush(int HeroId, GridPosition Toward, int? Dice = null, bool UseWeapon = true, int PowerDice = 0, bool HoldRumbleBonus = false) : GameCommand(HeroId);
 
 /// <summary>Parry: roll an Od Hand die and hold it for your next defense before your next turn.</summary>
 public sealed record Parry(int HeroId) : GameCommand(HeroId);
@@ -315,7 +327,7 @@ public sealed record Leap(int HeroId, GridPosition Target) : GameCommand(HeroId)
 /// With friendly fire on: attack another hero or companion in reach, exactly as you would a monster
 /// (Rumble dice and the weapon against their defense).
 /// </summary>
-public sealed record AttackAlly(int HeroId, int TargetId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0, int? WeaponId = null) : GameCommand(HeroId);
+public sealed record AttackAlly(int HeroId, int TargetId, int? Dice = null, bool UseWeapon = true, int PowerDice = 0, int? WeaponId = null, bool HoldRumbleBonus = false) : GameCommand(HeroId);
 
 /// <summary>Open the locked gate next to you (up, down, left or right) with a key. Free, like unlocking a door.</summary>
 public sealed record OpenGate(int HeroId, GridPosition Gate) : GameCommand(HeroId);

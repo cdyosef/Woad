@@ -29,11 +29,11 @@ public partial class GameScreen
 
         if (room.MonsterAt(tile) is { } monster)
         {
-            Execute(new AttackMonster(hero.Id, monster.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice, ReadiedWeaponId));
+            Execute(new AttackMonster(hero.Id, monster.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice, ReadiedWeaponId, _rumbleBonusHeld));
         }
         else if (_session.GetAttackableAllies().FirstOrDefault(ally => ally.Position == tile) is { } ally)
         {
-            Execute(new AttackAlly(hero.Id, ally.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice, ReadiedWeaponId));
+            Execute(new AttackAlly(hero.Id, ally.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice, ReadiedWeaponId, _rumbleBonusHeld));
         }
         else if (room.BombAt(tile) is { } bomb)
         {
@@ -254,7 +254,7 @@ public partial class GameScreen
             }
             else
             {
-                Execute(new BullRush(hero.Id, tile, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
+                Execute(new BullRush(hero.Id, tile, SelectedAttackDice, !_weaponHeld, SelectedPowerDice, _rumbleBonusHeld));
             }
 
             return;
@@ -269,6 +269,25 @@ public partial class GameScreen
             else
             {
                 _leaping = _rushing = false;
+                RefreshPanels();
+            }
+
+            return;
+        }
+
+        if (_offHanding)
+        {
+            _offHanding = false;
+            if (room.MonsterAt(tile) is { } struck && _session.CheckOffHandAttack(struck.Id) is null)
+            {
+                Execute(new OffHandAttack(hero.Id, struck.Id, SelectedPowerDice));
+            }
+            else if (tile == hero.Position && _session.CheckSearch() is null)
+            {
+                ExecuteOdHand((heroId, dice, tools, power) => new Search(heroId, dice, tools, power));
+            }
+            else
+            {
                 RefreshPanels();
             }
 
@@ -303,7 +322,7 @@ public partial class GameScreen
                     return;
                 }
 
-                Execute(new Shove(hero.Id, targetId, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
+                Execute(new Shove(hero.Id, targetId, SelectedAttackDice, !_weaponHeld, SelectedPowerDice, _rumbleBonusHeld));
             }
             else
             {
@@ -422,6 +441,10 @@ public partial class GameScreen
         else if (room.Layout[tile] == TileKind.Pot)
         {
             Execute(new SmashPot(hero.Id, tile));
+        }
+        else if (tile != hero.Position && (DoorAt(room, tile) is not null || room.Layout[tile] is TileKind.StairsDown or TileKind.StairsUp))
+        {
+            ApproachPassage(hero, room, tile, turn);
         }
         else if (tile == hero.Position)
         {
@@ -545,28 +568,121 @@ public partial class GameScreen
         }
         else if (DoorAt(room, hero.Position) is { } side)
         {
-            Passage? passage = room.PassageOn(side);
-            if (passage?.Trap is { Revealed: true } && passage is not { IsLocked: true })
+            UseDoor(hero, room, side);
+        }
+    }
+
+    /// <summary>
+    /// A door: disarm its trap (or go through it anyway), unlock it (a key, or the Boss Key), pick its lock,
+    /// or go through, from beside it.
+    /// </summary>
+    private void UseDoor(Hero hero, Room room, Direction side)
+    {
+        Passage? passage = room.PassageOn(side);
+        GridPosition doorway = room.DoorTile(side);
+        if (passage?.Trap is { Revealed: true } && passage is not { IsLocked: true })
+        {
+            AskTrap("Darts are set in this doorway.", "Go through", () => Execute(new GoThroughDoor(hero.Id, side)),
+                () => ExecuteOdHand((heroId, dice, tools, power) => new Disarm(heroId, doorway, dice, tools, power)));
+        }
+        else if (passage?.Trap is { Revealed: true })
+        {
+            ExecuteOdHand((heroId, dice, tools, power) => new Disarm(heroId, doorway, dice, tools, power));
+        }
+        else if (passage is { IsLocked: true } && (passage.NeedsBossKey || hero.Keys > 0))
+        {
+            Execute(new UnlockDoor(hero.Id, side));
+        }
+        else if (passage is { IsLocked: true })
+        {
+            ExecuteOdHand((heroId, dice, tools, power) => new PickLock(heroId, doorway, dice, tools, power));
+        }
+        else
+        {
+            Execute(new GoThroughDoor(hero.Id, side));
+        }
+    }
+
+    /// <summary>
+    /// Pushing an ally out of a doorway, through it: they let them (free, no roll), or resist, and then it's
+    /// a Shove against their defense. A companion always lets them.
+    /// </summary>
+    private void AskToPushThrough(Hero hero, Hero blocker)
+    {
+        if (_session.CheckPushThrough(blocker.Id) is { } cannot)
+        {
+            Log(cannot, Palette.TextDim);
+            return;
+        }
+
+        if (blocker.IsCompanion)
+        {
+            Execute(new PushThroughDoor(hero.Id, blocker.Id));
+            return;
+        }
+
+        _selectedCardId = null;
+        RefreshPanels();
+        _inventory.AskChoice(null, $"{blocker.Name}: let {hero.Name} push you through the door?",
+        [
+            ("Let them", () => Execute(new PushThroughDoor(hero.Id, blocker.Id))),
+            ("Resist", () =>
             {
-                AskTrap("Darts are set in this doorway.", "Go through", () => Execute(new GoThroughDoor(hero.Id, side)),
-                    () => ExecuteOdHand((heroId, dice, tools, power) => new Disarm(heroId, hero.Position, dice, tools, power)));
-            }
-            else if (passage?.Trap is { Revealed: true })
+                // Resisted, only a Shove moves them.
+                if (_session.CheckShove(blocker.Id) is { } stands)
+                {
+                    Log(stands, Palette.TextDim);
+                    RefreshPanels();
+                }
+                else
+                {
+                    Execute(new Shove(hero.Id, blocker.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice, _rumbleBonusHeld));
+                }
+            }),
+        ]);
+    }
+
+    /// <summary>
+    /// A door or stairs clicked: from beside them, through (or down), for free, and an ally standing in the
+    /// doorway is pushed through first; from further off, walk up to them, stopping short so as not to block the way.
+    /// </summary>
+    private void ApproachPassage(Hero hero, Room room, GridPosition tile, TurnState turn)
+    {
+        if (hero.Position.ChebyshevDistanceTo(tile) <= 1)
+        {
+            if (DoorAt(room, tile) is { } side)
             {
-                ExecuteOdHand((heroId, dice, tools, power) => new Disarm(heroId, hero.Position, dice, tools, power));
-            }
-            else if (passage is { IsLocked: true } && (passage.NeedsBossKey || hero.Keys > 0))
-            {
-                Execute(new UnlockDoor(hero.Id, side));
-            }
-            else if (passage is { IsLocked: true })
-            {
-                ExecuteOdHand((heroId, dice, tools, power) => new PickLock(heroId, hero.Position, dice, tools, power));
+                if (_session.State.ActiveHeroesIn(room).FirstOrDefault(other => other != hero && other.Position == tile) is { } blocker)
+                {
+                    AskToPushThrough(hero, blocker);
+                }
+                else
+                {
+                    UseDoor(hero, room, side);
+                }
             }
             else
             {
-                Execute(new GoThroughDoor(hero.Id, side));
+                Execute(new TakeStairs(hero.Id));
             }
+
+            return;
+        }
+
+        IReadOnlyDictionary<GridPosition, int> reachable = _session.GetReachableTiles();
+        GridPosition? spot = reachable.Keys
+            .Where(near => near.ChebyshevDistanceTo(tile) <= 1 && !GameSession.IsPassageTile(room, near))
+            .OrderBy(near => reachable[near])
+            .ThenBy(near => near.ManhattanDistanceTo(tile))
+            .Select(near => (GridPosition?)near)
+            .FirstOrDefault();
+        if (spot is { } to)
+        {
+            Execute(new MoveHero(hero.Id, to));
+        }
+        else
+        {
+            Log(turn.MovementPoints == 0 && _session.MoveDiceLeft > 0 ? "Roll to move first." : "Out of reach this turn: click somewhere closer.", Palette.TextDim);
         }
     }
 
@@ -659,6 +775,11 @@ public partial class GameScreen
         if (_shoving)
         {
             return "Shove: click a monster next to you (orange) to push it a tile. Right-click to cancel.";
+        }
+
+        if (_offHanding)
+        {
+            return "Od Hand: click a monster in reach (orange) to follow up your Rumble attack with what's in your off hand: one Od Hand die, your Od Hand Bonus and its value. Click yourself to search instead. Right-click to cancel.";
         }
 
         if (_hurling)
@@ -795,8 +916,8 @@ public partial class GameScreen
             TileKind.Pit when room.BelowRoomId is not null =>
                 "A pit: the room below shows far down. Fall in (or be shoved) and you drop to it, losing a heart. Leap over it with a Wend die.",
             TileKind.Pit => "A bottomless pit. Fall in and you lose a heart climbing out; a monster shoved in is gone. Leap over it with a Wend die.",
-            TileKind.StairsDown => $"Stairs down to floor {room.Floor + 1}. Stand on them and click again to descend (1 step).",
-            TileKind.StairsUp => $"Stairs up to floor {room.Floor - 1}. Stand on them and click again to climb (1 step).",
+            TileKind.StairsDown => $"Stairs down to floor {room.Floor + 1}. Click to walk up to them, then click them to go down (free).",
+            TileKind.StairsUp => $"Stairs up to floor {room.Floor - 1}. Click to walk up to them, then click them to climb (free).",
             TileKind.Rubble => "Rough ground: rubble. Each step onto it costs 2.",
             TileKind.Gate => $"A locked gate. Next to it: click it to open it with a key, or to pick the lock with Od Hand ({room.Gates.GetValueOrDefault(tile)}+).",
             _ when room.Breaches.ContainsKey(tile) => "A breach into the room next door: stand here and click again to go through (1 step).",
@@ -1100,7 +1221,7 @@ public partial class GameScreen
         _stealing = false;
         _shoving = false;
         _leaping = _rushing = false;
-        _rumbling = false;
+        _rumbling = _offHanding = false;
         _selectedCardId = null;
         _targeting = false;
         StopCasting();
