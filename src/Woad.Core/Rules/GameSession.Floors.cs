@@ -10,19 +10,20 @@ public sealed partial class GameSession
 {
     private string? Handle(TakeStairs command, List<GameEvent> events)
     {
+        // From beside the stairs (or on them), and free: no steps.
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
-        if (room.Layout[hero.Position] is not (TileKind.StairsDown or TileKind.StairsUp))
+        if (StairsAt(room, hero.Position) is not { } stairs)
         {
-            return "Stand on the stairs first.";
+            return "Go up to the stairs first.";
         }
 
-        if (CheckCanMove(Crawl) is { } error)
+        if (CheckHeld(hero) is { } error)
         {
             return error;
         }
 
-        if (room.Layout[hero.Position] == TileKind.StairsUp)
+        if (room.Layout[stairs] == TileKind.StairsUp)
         {
             return ClimbStairs(hero, room, events);
         }
@@ -40,8 +41,6 @@ public sealed partial class GameSession
 
         hero.RoomId = arrival.Id;
         hero.Position = landing;
-        Turn.MovementPoints -= Crawl;
-        Turn.HasMoved = true;
         arrival.Explored = true;
 
         bool firstTime = arrival.Floor > hero.DeepestFloor;
@@ -54,7 +53,14 @@ public sealed partial class GameSession
         return null;
     }
 
-    /// <summary>Back up the stairs to the floor above: onto (or beside) the stairs down there. Costs 1 movement.</summary>
+    /// <summary>The stairs (up or down) a hero at <paramref name="at"/> stands on or beside, or null.</summary>
+    public static GridPosition? StairsAt(Room room, GridPosition at) =>
+        room.Positions.Where(tile => room.Layout[tile] is TileKind.StairsDown or TileKind.StairsUp && tile.ChebyshevDistanceTo(at) <= 1)
+            .OrderBy(tile => tile.ChebyshevDistanceTo(at))
+            .Select(tile => (GridPosition?)tile)
+            .FirstOrDefault();
+
+    /// <summary>Back up the stairs to the floor above: beside the stairs down there. Free.</summary>
     private string? ClimbStairs(Hero hero, Room room, List<GameEvent> events)
     {
         Room? above = State.Rooms.Values
@@ -68,8 +74,6 @@ public sealed partial class GameSession
 
         hero.RoomId = above.Id;
         hero.Position = landing;
-        Turn.MovementPoints -= Crawl;
-        Turn.HasMoved = true;
         events.Add(new HeroAscended(hero.Id, room.Id, above.Id, above.Floor, landing));
         return null;
     }
@@ -137,7 +141,7 @@ public sealed partial class GameSession
         GridPosition center = room.Layout.Center;
         return room.ArrivalTiles
             .Concat(room.Positions.OrderBy(tile => tile.ManhattanDistanceTo(center)))
-            .Where(tile => room.Layout[tile] == TileKind.Floor && !IsOccupied(room, tile))
+            .Where(tile => room.Layout[tile] == TileKind.Floor && !IsOccupied(room, tile) && !IsPassageTile(room, tile))
             .Select(tile => (GridPosition?)tile)
             .FirstOrDefault();
     }

@@ -213,13 +213,13 @@ public sealed partial class GameSession
         return CheckBankedPowerDice(ActiveHero, command.PowerDice);
     }
 
-    /// <summary>The lock on the hero's own doorway, or on an adjacent unopened chest.</summary>
+    /// <summary>The lock on a door the hero is at (beside it or in it), or on an adjacent unopened chest.</summary>
     private string? FindLock(GridPosition target, out OdHandCheck? check)
     {
         check = null;
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
-        if (target == hero.Position && DoorAt(room, target) is { } passage)
+        if (DoorAt(room, target) is { } passage && hero.Position.ChebyshevDistanceTo(target) <= 1)
         {
             if (!passage.IsLocked)
             {
@@ -304,11 +304,10 @@ public sealed partial class GameSession
             return null;
         }
 
-        Trap? trap = target == hero.Position
-            ? DoorAt(room, target)?.Trap
-            : hero.Position.ManhattanDistanceTo(target) == 1
-                ? room.TrapAt(target) ?? room.ChestTrapAt(target)
-                : null;
+        // A door's darts from beside it (or in it); a trap on a tile or chest next to you.
+        Trap? trap = DoorAt(room, target) is { Trap: { } darts } && hero.Position.ChebyshevDistanceTo(target) <= 1 ? darts
+            : target != hero.Position && hero.Position.ManhattanDistanceTo(target) == 1 ? room.TrapAt(target) ?? room.ChestTrapAt(target)
+            : null;
         if (trap is not { Revealed: true })
         {
             return "There's no trap you know of there. Search to find traps, then disarm one next to you.";
@@ -541,7 +540,7 @@ public sealed partial class GameSession
                 break;
 
             case OdHandCheckKind.Disarm when success:
-                if (check.Target == hero.Position && DoorAt(room, check.Target) is { } trapped)
+                if (DoorAt(room, check.Target) is { Trap: not null } trapped)
                 {
                     trapped.Trap = null;
                 }
@@ -565,9 +564,9 @@ public sealed partial class GameSession
                 break;
 
             case OdHandCheckKind.Disarm:
-                // Botched, the trap goes off on whoever tried: darts in their doorway, spikes or needles beside them.
+                // Botched, the trap goes off on whoever tried: a door's darts at them before it, spikes or needles beside them.
                 events.Add(new CheckFailed(hero.Id, check.Kind));
-                if (check.Target == hero.Position && DoorAt(room, check.Target) is { Trap: { } darts } door)
+                if (DoorAt(room, check.Target) is { Trap: { } darts } door)
                 {
                     door.Trap = null;
                     SpringTrap(hero, room, darts, check.Target, events);

@@ -225,16 +225,14 @@ public partial class GameScreen
             await WaitUntilIdle();
             await ClickTile(aria.Position);
             await WaitUntilIdle();
-            Check(aria.RoomId == "b" && aria.Position == new GridPosition(0, 4), "clicking your own doorway tile goes through the door");
+            Check(aria.RoomId == "b" && aria.Position.ChebyshevDistanceTo(new GridPosition(0, 4)) == 1 && aria.Position != new GridPosition(1, 4),
+                "clicking your own doorway tile goes through the door, to a tile just inside (not the doorway, nor the stairs)");
             Check(_shownRoomId == "b", "the view follows the hero into the next room");
             Check(_session.State.Rooms["b"].Explored, "the new room is explored and shows on the minimap");
 
             await ClickTile(new GridPosition(1, 4));
             await WaitUntilIdle();
-            Check(aria.Position == new GridPosition(1, 4), "the hero walks onto the stairs");
-            await ClickTile(aria.Position);
-            await WaitUntilIdle();
-            Check(aria.RoomId == "c" && aria.DeepestFloor == 2, "clicking the stairs you stand on goes down a floor");
+            Check(aria.RoomId == "c" && aria.DeepestFloor == 2, "clicking the stairs beside you goes down a floor");
             Check(_shownRoomId == "c", "the view follows the hero to the next floor");
 
             await Click(this, _endTurn);

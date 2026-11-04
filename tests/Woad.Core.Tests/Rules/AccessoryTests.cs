@@ -91,7 +91,7 @@ public class AccessoryTests
 
         Assert.Equal("B", hero.RoomId);
         Assert.True(hero.Aloft);
-        Assert.Equal(left - 1, session.State.Turn!.FlightPoints);
+        Assert.Equal(left, session.State.Turn!.FlightPoints);
     }
 
     [Fact]

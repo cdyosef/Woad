@@ -24,6 +24,9 @@ public sealed record MoveHero(int HeroId, GridPosition Destination) : GameComman
 /// <summary>Step through the door on the given side (costs 1 movement); you must be standing in the doorway.</summary>
 public sealed record GoThroughDoor(int HeroId, Direction Door) : GameCommand(HeroId);
 
+/// <summary>Pushes an ally standing in a doorway beside the hero through the door: free, and no roll.</summary>
+public sealed record PushThroughDoor(int HeroId, int AllyId) : GameCommand(HeroId);
+
 /// <summary>
 /// Attack with <paramref name="Dice"/> of this turn's unused Attack dice (null for all of them),
 /// plus the weapon's value if <paramref name="UseWeapon"/> and it isn't used yet this turn. The

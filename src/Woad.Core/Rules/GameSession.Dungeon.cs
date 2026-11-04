@@ -23,9 +23,9 @@ public sealed partial class GameSession
             return "There's no door on that side.";
         }
 
-        if (hero.Position != room.DoorTile(command.Door))
+        if (!AtDoor(room, command.Door, hero.Position))
         {
-            return "Stand in the doorway first.";
+            return "Go up to the door first.";
         }
 
         if (!passage.IsLocked)

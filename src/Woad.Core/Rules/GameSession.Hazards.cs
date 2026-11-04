@@ -17,13 +17,21 @@ public sealed partial class GameSession
 {
     /// <summary>
     /// Why the active hero can't shove this monster now (or, with friendly fire on, this hero or
-    /// companion), or null if they can.
+    /// companion; or anyone standing in a doorway, resisting a push through it), or null if they can.
     /// </summary>
     public string? CheckShove(int targetId)
     {
         if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
         {
             return "Finish the roll first.";
+        }
+
+        // Shoving someone resisting out of a doorway, through it, takes Shove, but no friendly fire.
+        if (State.ActiveHeroesIn(ActiveRoom).FirstOrDefault(ally => ally.Id == targetId && ally != ActiveHero && DoorwayAt(ActiveRoom, ally.Position) is not null) is { } blocker)
+        {
+            return !ActiveHero.Knows(Skill.Shove) ? $"{blocker.Name} doesn't budge."
+                : AttackDiceLeft < 1 ? NoRumbleDice
+                : CheckPushThrough(targetId);
         }
 
         if (!ActiveHero.Knows(Skill.Shove))
@@ -301,7 +309,7 @@ public sealed partial class GameSession
     /// <summary>The free tile nearest <paramref name="near"/> (it first) to land or climb out on: walkable, empty and without a trap.</summary>
     private GridPosition? LandingNear(Room room, GridPosition near) =>
         room.Positions
-            .Where(tile => room.Layout[tile].IsWalkable() && !IsOccupied(room, tile) && room.TrapAt(tile) is null)
+            .Where(tile => room.Layout[tile].IsWalkable() && !IsOccupied(room, tile) && room.TrapAt(tile) is null && !IsPassageTile(room, tile))
             .OrderBy(tile => tile.ManhattanDistanceTo(near))
             .ThenBy(tile => tile.Y)
             .ThenBy(tile => tile.X)
@@ -448,13 +456,21 @@ public sealed partial class GameSession
     {
         total += ally.Stun.AttackBonus;
         int defense = HeroDefense(ally, total, events);
-        if (total <= defense || ShoveDestination(room, hero, ally.Position, flying: false) is not { } to)
+        bool doorway = DoorwayAt(room, ally.Position) is not null;
+        if (total <= defense || (!doorway && ShoveDestination(room, hero, ally.Position, flying: false) is null))
         {
             events.Add(new ShoveResisted(hero.Id, ally.Id));
             return;
         }
 
-        PushHero(hero, room, ally, to, events);
+        // Out of a doorway, through it.
+        if (doorway)
+        {
+            PushThrough(room, ally, events);
+            return;
+        }
+
+        PushHero(hero, room, ally, ShoveDestination(room, hero, ally.Position, flying: false)!.Value, events);
     }
 
     /// <summary>Moves a hero (a shove, a blast or a pull); then a pit or a trap there takes them.</summary>

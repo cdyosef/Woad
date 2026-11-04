@@ -188,6 +188,7 @@ public sealed partial class GameSession
             AddOdHandDie c => Handle(c, events),
             HurlHeldFire c => Handle(c, events),
             OffHandAttack c => Handle(c, events),
+            PushThroughDoor c => Handle(c, events),
             LightStick c => Handle(c, events),
             Shove c => Handle(c, events),
             AttackAlly c => Handle(c, events),

@@ -235,7 +235,8 @@ public class MonsterTests
         session.Do(new GoThroughDoor(hero.Id, Direction.East));
         IReadOnlyList<GameEvent> events = session.EndRound();
 
-        Assert.Equal([new GridPosition(1, 4)], events.SingleOf<MonsterMoved>().Path);
+        // Through the door, just inside, right beside it: it wakes and attacks.
+        Assert.Equal(new GridPosition(1, 4), hero.Position);
         Assert.Single(events.OfType<AttackRolled>());
     }
 

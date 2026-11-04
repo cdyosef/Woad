@@ -29,6 +29,6 @@ public class RoomSizeTests
         session.Do(new MoveHero(hero.Id, new GridPosition(12, 1)));
         var entered = session.Do(new GoThroughDoor(hero.Id, Direction.East)).SingleOf<HeroEnteredRoom>();
 
-        Assert.Equal(("closet", new GridPosition(0, 3)), (entered.RoomId, entered.Position));
+        Assert.Equal(("closet", new GridPosition(1, 3)), (entered.RoomId, entered.Position));
     }
 }

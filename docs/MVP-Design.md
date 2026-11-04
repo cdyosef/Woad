@@ -333,8 +333,9 @@ throwing comes later). The rules check each like the card buttons do.
 their head and what's in each hand at their sides (a torch shows its own flame), each unless hidden in the
 buckle's menu. A character's looks (belt art, what's hidden) are saved with them.
 
-**Doors** sit at the middle tile of each room edge. Stepping through costs 1 step and places you at the
-facing door of the next room.
+**Doors** sit at the middle tile of each room edge. Clicking one walks you up to it, stopping beside the
+doorway so you don't block it; clicking it again from there takes you through, free, to a tile just inside
+the next room.
 
 ## Combat
 
@@ -975,8 +976,15 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   by the room's open floor against a standard room's (about 70 tiles), so big rooms hold more;
   treasure rooms 1; arrival rooms 0; the boss room the boss plus party-size worth of guards.
 - **Doors** are gold bars on the room's edges, anywhere along them (the middle is most likely), on floor
-  with open floor inside. Stand in the doorway and click it again to go through
-  (1 step). If someone is standing in the far doorway, you land on the nearest free tile. Locked doors are
+  with open floor inside. Click a door to walk up beside it (heroes stop short of doorways and stairs, out
+  of the way), and click it again to go through, free: you land on the nearest free tile just inside the
+  next room, never in the doorway. Locks are worked and darts disarmed from beside the door too, and a
+  door's darts hit whoever goes through (or botches the disarm), wherever they stand. Standing in a doorway
+  is allowed (click the door again to go through), but an ally left there can be pushed through it by
+  clicking the door from beside them: they choose to let you (free, no roll) or resist, and then only a
+  Shove moves them (your Rumble dice against their defense; no friendly fire needed): without the Shove
+  skill they don't budge. A companion
+  always lets you. Locked doors are
   dark with a key mark, the Boss Door red, and walled-up doorways grey. See
   [Keys, locks and secrets](#keys-locks-and-secrets).
 - **Secrets:** some doors are locked or trapped; some extra links between rooms are secret doors or
@@ -987,9 +995,9 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
 - **Trap rooms** (one per floor from floor 2): nobody can leave through the doors while monsters
   remain. Heroes outside can still come in to help.
 - **Clearing a room** restores 1 heart *(tunable)* to every hero in it.
-- **Stairs:** stand on them and click again to go down (1 step). You arrive in the next floor's
-  arrival room. Reaching a floor for the first time restores your Luck and recharges wands. Below the
-  first floor, the arrival room has **stairs up** that lead back to the stairs room above (1 step).
+- **Stairs:** click them to walk up beside them, and click them again to go down, free. You arrive in the
+  next floor's arrival room, off the stairs. Reaching a floor for the first time restores your Luck and recharges wands. Below the
+  first floor, the arrival room has **stairs up** that lead back to the stairs room above (free, the same way).
 - **Exit:** sealed until the boss in its room is defeated. Stand on it and click again to escape. Your
   turn ends, and you're out of the run with your treasure.
 - **Splitting up:** heroes can be on different rooms and floors. During the monsters' phase the view
