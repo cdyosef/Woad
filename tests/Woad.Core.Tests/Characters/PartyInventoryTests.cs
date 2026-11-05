@@ -2,6 +2,8 @@ using Woad.Core.Characters;
 using Woad.Core.Content;
 using Woad.Core.Model;
 using Woad.Core.Saves;
+using Woad.Core.Tavern;
+using Woad.Core.Woarld;
 
 namespace Woad.Core.Tests.Characters;
 
@@ -96,6 +98,52 @@ public class PartyInventoryTests
         Assert.Empty(chest.Cards);
         Assert.Equal(Money.Gold(2), pip.Coins);
         Assert.Equal(2, pip.Equipped.Count(key => key == "club") + pip.Backpack.Count(key => key == "club") + pip.Belt.Count(key => key == "club"));
+    }
+
+    [Fact]
+    public void ThePartyChestBuysIntoItselfSellsFromItselfAndPaysForMending()
+    {
+        RaidWorld world = RaidWorld.Begin(WoarldMap.LoadDefault());
+        TavernDefinition inn = TavernDefinition.LoadDefault();
+        Character morgan = Morgan();
+        var chest = new PartyChest();
+        chest.Earn(Money.Gold(10));
+        var shopper = new Shopper(chest, 0, key => chest.Cards.Add(key));
+
+        ServiceResult bought = TavernServices.Buy(world, inn, Content, shopper, "bomb");
+
+        Assert.True(bought.Done, bought.Message);
+        Assert.StartsWith("The Party Chest buys", bought.Message);
+        Assert.Equal(["bomb"], chest.Cards);
+        Assert.Equal(Money.Gold(10) - TavernServices.BuyPrice(Content.GetCard("bomb")), chest.Coins);
+
+        int before = chest.Coins;
+        Assert.True(TavernServices.Sell(world, inn, Content, chest, "bomb", () => chest.Cards.Remove("bomb")).Done);
+        Assert.Empty(chest.Cards);
+        Assert.Equal(before + TavernServices.SellPrice(Content.GetCard("bomb")), chest.Coins);
+
+        morgan.GiveCard("chain_mail~2", Content);
+        before = chest.Coins;
+        Assert.True(Smithy.Repair(Content, morgan, "chain_mail~2", chest).Done);
+        Assert.Equal(before - Smithy.RepairPrice("chain_mail~2"), chest.Coins);
+        Assert.Empty(morgan.WornGear);
+    }
+
+    [Fact]
+    public void ThePartyChestPaysAtTheInn()
+    {
+        RaidWorld world = RaidWorld.Begin(WoarldMap.LoadDefault());
+        TavernDefinition inn = TavernDefinition.LoadDefault();
+        Character morgan = Morgan();
+        var chest = new PartyChest();
+        chest.Earn(Money.Gold(3));
+
+        Assert.True(TavernServices.Eat(world, morgan, inn.Menu[0], chest).Done);
+        Assert.True(TavernServices.RoundForTheBar(world, inn, chest).Done);
+
+        Assert.Equal(0, morgan.Coins);
+        Assert.Equal(Money.Gold(1) - inn.Menu[0].Price, chest.Coins);
+        Assert.False(world.Fed(morgan.Id).IsNone);
     }
 
     [Fact]

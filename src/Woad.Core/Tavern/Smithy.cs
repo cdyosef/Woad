@@ -18,7 +18,10 @@ public static class Smithy
     public static int RepairPrice(string key) => Money.Gold(GoldPerWear * CardKey.Wear(key));
 
     /// <summary>Mends one of the hero's worn cards whole, for gold.</summary>
-    public static ServiceResult Repair(ContentCatalog content, Character hero, string key)
+    public static ServiceResult Repair(ContentCatalog content, Character hero, string key) => Repair(content, hero, key, hero);
+
+    /// <summary>Mends one of the hero's worn cards whole, paid from <paramref name="purse"/> (theirs, or the Party Chest).</summary>
+    public static ServiceResult Repair(ContentCatalog content, Character hero, string key, IPurse purse)
     {
         if (CardKey.Wear(key) == 0 || !hero.WornGear.Contains(key))
         {
@@ -26,9 +29,9 @@ public static class Smithy
         }
 
         int price = RepairPrice(key);
-        if (!hero.Spend(price))
+        if (!purse.Spend(price))
         {
-            return ServiceResult.Refused($"Mending that costs {Money.Long(price)}; {hero.Name} has {Money.Long(hero.Coins)}.");
+            return ServiceResult.Refused($"Mending that costs {Money.Long(price)}; {purse.Name} has {Money.Long(purse.Coins)}.");
         }
 
         hero.Mend(key);
@@ -36,20 +39,25 @@ public static class Smithy
     }
 
     /// <summary>Buys one of the forge's wares (it never runs out), at the merchants' price for the hero's Guild standing.</summary>
-    public static ServiceResult Buy(WoarldPlace smithy, ContentCatalog content, Character buyer, string cardId)
+    public static ServiceResult Buy(WoarldPlace smithy, ContentCatalog content, Character buyer, string cardId) =>
+        Buy(smithy, content, Shopper.Of(buyer, content), cardId);
+
+    public static ServiceResult Buy(WoarldPlace smithy, ContentCatalog content, Shopper buyer, string cardId)
     {
         if (!smithy.Stock.Contains(cardId) || content.FindCard(cardId) is not { } card)
         {
             return ServiceResult.Refused("The smith doesn't make those.");
         }
 
-        int price = TavernServices.BuyPrice(card, buyer.GuildStanding);
-        if (!buyer.Spend(price))
+        int price = TavernServices.BuyPrice(card, buyer.Standing);
+        if (!buyer.Purse.Spend(price))
         {
-            return ServiceResult.Refused($"That costs {Money.Long(price)}; {buyer.Name} has {Money.Long(buyer.Coins)}.");
+            return ServiceResult.Refused($"That costs {Money.Long(price)}; {buyer.Purse.Name} has {Money.Long(buyer.Purse.Coins)}.");
         }
 
-        buyer.GiveCard(card, content);
-        return new ServiceResult(true, $"{buyer.Name} buys {("AEIOU".Contains(card.Name[0]) ? "an" : "a")} {card.Name} from the smith for {Money.Long(price)}.");
+        buyer.Receive(card.Id);
+        return new ServiceResult(true, $"{Capital(buyer.Purse.Name)} buys {("AEIOU".Contains(card.Name[0]) ? "an" : "a")} {card.Name} from the smith for {Money.Long(price)}.");
     }
+
+    private static string Capital(string name) => name.Length > 0 ? char.ToUpperInvariant(name[0]) + name[1..] : name;
 }

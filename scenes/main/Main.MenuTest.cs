@@ -384,8 +384,13 @@ public partial class Main
         await Click(this, inn.ByeButton);
 
         await TalkTo(Npc(NpcRole.Merchant));
-        await Click(this, inn.BuyButton("Bomb")!);
+        Check(inn.PartyMenu.Shop is not null, "talking to the merchant opens his wares beside the party's things");
+        inn.PartyMenu.Find("Ware_bomb");
+        await NextFrame(this);
+        await Click(this, inn.PartyMenu.Find("Ware_bomb")!);
+        await Click(this, inn.PartyMenu.Find("BuyForWren")!);
         Check(wren.Coins == Money.Gold(56) - 20 && wren.Belt.Contains("bomb"), "the merchant sells Wren a bomb, his cheapest ware");
+        await Click(this, inn.PartyMenu.Find("Close")!);
         await Click(this, inn.ByeButton);
 
         await TalkTo(Npc(NpcRole.Gambler));
@@ -393,6 +398,8 @@ public partial class Main
         await Click(this, inn.PayerButton);
         Check(inn.Payer.Name == "Pip" && inn.ListButton("1 gold")!.Disabled && inn.ListButton("1 gold")!.TooltipText == "Pip has no coin.", "Pip has no gold, so the bets are greyed out, saying why");
         await Click(this, inn.PayerButton);
+        await Click(this, inn.PayerButton);
+        Check(inn.PayerButton.Text.StartsWith("Paying: Party Chest") && inn.ListButton("1 gold")!.Disabled, "after everyone, the Party Chest can pay (empty now, so no bets)");
         await Click(this, inn.PayerButton);
         await Click(this, inn.ListButton("1 gold")!);
         Check(inn.IsRolling && inn.BonesDice.Visible && inn.ListButton("20 gold")!.Disabled, "the Bones dice tumble as in a fight, bets held back meanwhile");

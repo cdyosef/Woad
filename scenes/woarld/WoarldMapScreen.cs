@@ -75,16 +75,6 @@ public partial class WoarldMapScreen : Control
 
     public ContentCatalog Content { get; init; } = ContentCatalog.LoadDefault();
 
-    /// <summary>A hero bought or sold something from a wandering merchant: save them and the Woarld.</summary>
-    public event Action<Character>? Traded;
-
-    private WandererPanel _wandererPanel = null!;
-    private SmithyPanel _smithyPanel = null!;
-
-    internal SmithyPanel SmithyPanel => _smithyPanel;
-
-    internal WandererPanel WandererPanel => _wandererPanel;
-
     private static readonly string[] WandererLooks = ["noble", "bard", "sultan", "halfling", "dwarf", "monk"];
 
     /// <summary>The party's pace: Wend dice to spare take a step off every tile.</summary>
@@ -164,27 +154,6 @@ public partial class WoarldMapScreen : Control
         EnterButton = AddButton(new Vector2(382, ButtonsTop), 188, "", "");
         EnterButton.Pressed += Enter;
 
-        _wandererPanel = new WandererPanel { Position = new Vector2(Size.X / 2 - 150, BarHeight + 12) };
-        _wandererPanel.Traded += result =>
-        {
-            Say(result.Message);
-            if (result.Done)
-            {
-                Traded?.Invoke(Party[Leader]);
-            }
-        };
-        AddChild(_wandererPanel);
-
-        _smithyPanel = new SmithyPanel { Position = new Vector2(Size.X / 2 - 150, BarHeight + 12) };
-        _smithyPanel.Traded += (result, trader) =>
-        {
-            Say(result.Message);
-            if (trader is not null)
-            {
-                Traded?.Invoke(trader);
-            }
-        };
-        AddChild(_smithyPanel);
 
         PartyButton = AddButton(new Vector2(576, ButtonsTop), 56, "Party", "The Party: everyone's gear, belts and packs, the Party Chest, and levelling up. Hand things around, and set how companions manage their things.");
         PartyButton.Pressed += () => PartyMenu.Open();
@@ -376,7 +345,7 @@ public partial class WoarldMapScreen : Control
         if (WandererHere is { } wanderer && Journey.PlaceHere is null)
         {
             _path.Clear();
-            _wandererPanel.Open(World!, wanderer, Party[Leader], Content);
+            PartyMenu.OpenShop(WandererShop(wanderer));
             return;
         }
 
@@ -393,7 +362,7 @@ public partial class WoarldMapScreen : Control
                 Say($"{place.Name} is sealed. Beat {waitsOn} to open it.");
                 break;
             case PlaceKind.Smithy:
-                _smithyPanel.Open(place, Party, Party[Leader], Content);
+                PartyMenu.OpenShop(SmithyShop(place));
                 break;
             case PlaceKind.Dungeon:
                 BeginRaid.Ask($"{place.Name}, with {UiTheme.Count(Party.Count, "hero", "heroes")}. A raid takes the rest of the day." + (ReplacesSavedRun ? " This replaces your saved run." : ""));
@@ -411,6 +380,30 @@ public partial class WoarldMapScreen : Control
                 break;
         }
     }
+
+    /// <summary>A wandering merchant as a shop: kinder prices for those who helped them, and the business raises the Guild.</summary>
+    private ShopFront WandererShop(WanderingMerchant wanderer) => new()
+    {
+        Name = $"{wanderer.Name}, {(World!.Remembers(wanderer) ? "rescued by the party" : "a wandering merchant")}",
+        Note = $"Merchant Guild level {World.GuildLevel}.{(World.Remembers(wanderer) ? " Something off for old friends." : "")}",
+        Wares = () => wanderer.Stock,
+        Price = (id, shopper) => TavernServices.WandererPrice(World, wanderer, Content.GetCard(id), shopper),
+        Buy = (id, shopper) => TavernServices.BuyFromWanderer(World, wanderer, Content, shopper, id),
+        Pays = key => Content.GetCard(key).Quest ? null : TavernServices.SellPrice(Content.GetCard(key)),
+        Sell = (key, seller, take) => TavernServices.SellToWanderer(wanderer, Content, seller, key, take),
+    };
+
+    /// <summary>The Blacksmith as a shop: the forge's wares, and mending worn gear (whoever owns it pays, or the chest).</summary>
+    private ShopFront SmithyShop(WoarldPlace smithy) => new()
+    {
+        Name = smithy.Name,
+        Note = $"Mending: {Smithy.GoldPerWear} gold a point of wear. Pick something worn to mend it.",
+        Wares = () => smithy.Stock,
+        Price = (id, shopper) => TavernServices.BuyPrice(Content.GetCard(id), shopper.Standing),
+        Buy = (id, shopper) => Smithy.Buy(smithy, Content, shopper, id),
+        MendPrice = Smithy.RepairPrice,
+        Mend = (owner, key, purse) => Smithy.Repair(Content, owner, key, purse),
+    };
 
     internal void Refresh()
     {
@@ -434,17 +427,12 @@ public partial class WoarldMapScreen : Control
         else if (wanderer is not null)
         {
             EnterButton.Text = $"Trade with {wanderer.Name}";
-            EnterButton.TooltipText = "Buy and sell with the leader's gold. Good standing with the Merchant Guild means better prices.";
+            EnterButton.TooltipText = "Buy and sell: anyone in the party, or the Party Chest. Good standing with the Merchant Guild means better prices.";
         }
 
-        if (wanderer is null)
+        if (PartyMenu.Shop is not null && wanderer is null && here is not { Kind: PlaceKind.Smithy })
         {
-            _wandererPanel.Visible = false;
-        }
-
-        if (here is not { Kind: PlaceKind.Smithy })
-        {
-            _smithyPanel.Visible = false;
+            PartyMenu.Hide();
         }
 
         if (World is not null)

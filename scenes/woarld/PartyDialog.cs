@@ -5,6 +5,7 @@ using Woad.Core.Model;
 using Woad.Core.Randomness;
 using Woad.Core.Rules;
 using Woad.Core.Saves;
+using Woad.Core.Tavern;
 using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Woarld;
@@ -15,12 +16,15 @@ namespace Woad.Scenes.Woarld;
 /// (see <see cref="PartyMemberCard"/>; click it for their sheet), then their purse, what they wear, what's
 /// on their belt and in their pack. Click any card, purse, or the chest's coins, and what can be done
 /// with it comes up along the bottom: wear it, take it off, belt it, pack it, put it in the chest, give it
-/// to someone, study a scroll; coins go to the chest or to someone, a gold or all of it.
+/// to someone, study a scroll; coins go to the chest or to someone, a gold or all of it. Opened on a shop
+/// (see <see cref="ShopFront"/>), its wares come first: pick one, then who buys it (anyone, or the chest);
+/// cards picked can be sold there, and worn gear mended.
 /// </summary>
 public partial class PartyDialog : Control
 {
     private const float Column = PartyMemberCard.Width;
 
+    private Label _title = null!;
     private ScrollContainer _scroll = null!;
     private HBoxContainer _columns = null!;
     private Label _giving = null!;
@@ -31,6 +35,10 @@ public partial class PartyDialog : Control
 
     /// <summary>The purse picked (a member's, or the chest's), when it's coins being moved.</summary>
     private IPurse? _purse;
+
+    /// <summary>The shop the menu's open on, if any, and the ware picked there.</summary>
+    private ShopFront? _shop;
+    private string? _ware;
 
     /// <summary>A character's sheet, open over the menu, and whose it is.</summary>
     private Control _sheetView = null!;
@@ -85,7 +93,8 @@ public partial class PartyDialog : Control
         AddChild(new ColorRect { Color = new Color(Palette.Background, 0.85f), Size = Size });
         var panel = new Panel { Position = new Vector2(20, 8), Size = new Vector2(600, 344) };
         AddChild(panel);
-        panel.AddChild(UiTheme.Heading(UiTheme.Label(new Vector2(10, 6), new Vector2(300, 18), "THE PARTY", 16, Palette.Trim), 2));
+        _title = UiTheme.Heading(UiTheme.Label(new Vector2(10, 6), new Vector2(500, 18), "THE PARTY", 16, Palette.Trim), 2);
+        panel.AddChild(_title);
         Button close = UiTheme.Button(new Vector2(540, 6), new Vector2(52, 18), "Close");
         close.Name = "Close";
         close.Pressed += Hide;
@@ -122,7 +131,7 @@ public partial class PartyDialog : Control
             if (_sheetOf is { } owner && _sheetKeys.TryGetValue(cardId, out string? key) && PlaceOf(owner, key) is { } place)
             {
                 CloseSheet();
-                Pick((owner, key, place), null);
+                Pick((owner, key, place), null, null);
             }
         };
         _sheetView.AddChild(_sheet);
@@ -153,28 +162,51 @@ public partial class PartyDialog : Control
     }
 
     /// <summary>Opens the menu on the party as it is now.</summary>
-    public void Open()
+    public void Open() => Open(null);
+
+    /// <summary>Opens the menu on a shop: its wares beside the party's things.</summary>
+    public void OpenShop(ShopFront shop) => Open(shop);
+
+    /// <summary>The shop the menu's open on (for the click tests).</summary>
+    internal ShopFront? Shop => Visible ? _shop : null;
+
+    private void Open(ShopFront? shop)
     {
+        _shop = shop;
+        _title.Text = shop is null ? "THE PARTY" : shop.Name.ToUpperInvariant();
         _selected = null;
         _purse = null;
+        _ware = null;
         _news = null;
+        _scroll.ScrollHorizontal = 0;
+        _scroll.ScrollVertical = 0;
         Refresh();
         Show();
     }
 
-    /// <summary>Picks a card or a purse (or, picked again, puts it down).</summary>
-    private void Pick((Character? From, string Key, CardPlace Place)? card, IPurse? purse)
+    /// <summary>Picks a card, a purse or a ware (or, picked again, puts it down).</summary>
+    private void Pick((Character? From, string Key, CardPlace Place)? card, IPurse? purse, string? ware)
     {
-        bool again = (card is not null && _selected == card) || (purse is not null && _purse == purse);
+        bool again = (card is not null && _selected == card) || (purse is not null && _purse == purse) || (ware is not null && _ware == ware);
         _selected = again ? null : card;
         _purse = again ? null : purse;
+        _ware = again ? null : ware;
         _news = null;
         Refresh();
     }
 
+    /// <summary>The chest as a shopper: it pays, takes what's bought, and bargains with the best standing in the party.</summary>
+    private Shopper ChestShopper(PartyChest chest) =>
+        new(chest, Party.Count > 0 ? Party.Max(member => member.GuildStanding) : 0, key => chest.Cards.Add(key));
+
     private void Refresh()
     {
         Clear(_columns);
+        if (_shop is not null)
+        {
+            _columns.AddChild(ShopColumn(_shop));
+        }
+
         for (int i = 0; i < Party.Count; i++)
         {
             _columns.AddChild(MemberColumn(Party[i], i));
@@ -212,7 +244,7 @@ public partial class PartyDialog : Control
         purse.ToggleMode = true;
         purse.SetPressedNoSignal(_purse == character);
         purse.TooltipText = $"{character.Name}'s coins: pick them to put in the chest or hand to someone.";
-        purse.Pressed += () => Pick(null, character);
+        purse.Pressed += () => Pick(null, character, null);
 
         Section(column, "Worn", character, CardPlace.Worn, index);
         int capacity = character.BeltCapacity(Content);
@@ -270,8 +302,43 @@ public partial class PartyDialog : Control
             card.TooltipText = $"{Content.GetCard(key).Name}: {Content.GetCard(key).Text}";
             card.ToggleMode = true;
             card.SetPressedNoSignal(_selected == mine);
-            card.Pressed += () => Pick(mine, null);
+            card.Pressed += () => Pick(mine, null, null);
         }
+    }
+
+    /// <summary>The shop's column: its name, and a button for each of its wares with what it asks.</summary>
+    private VBoxContainer ShopColumn(ShopFront shop)
+    {
+        VBoxContainer column = NewColumn("ShopColumn");
+        var header = new Panel { CustomMinimumSize = new Vector2(Column, PartyMemberCard.Height) };
+        var name = UiTheme.Label(new Vector2(4, 4), new Vector2(Column - 8, 28), shop.Name.ToUpperInvariant(), color: Palette.TrimBright);
+        name.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        header.AddChild(name);
+        var note = UiTheme.Label(new Vector2(4, 34), new Vector2(Column - 8, 60), shop.Note, color: Palette.TextDim);
+        note.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        header.AddChild(note);
+        column.AddChild(header);
+
+        Heading(column, "For sale");
+        IReadOnlyList<string> wares = shop.Wares();
+        if (wares.Count == 0)
+        {
+            column.AddChild(UiTheme.Label(Vector2.Zero, new Vector2(Column, 12), "  sold out", color: Palette.TextDim));
+        }
+
+        Shopper standard = Party.Count > 0 ? Shopper.Of(Party[0], Content) : new Shopper(new PartyChest(), 0, _ => { });
+        foreach (IGrouping<string, string> ware in wares.GroupBy(id => id).OrderBy(group => Content.GetCard(group.Key).Name))
+        {
+            string id = ware.Key;
+            Button button = Wide(column, $"{Content.GetCard(id).Name}{(ware.Count() > 1 ? $" x{ware.Count()}" : "")} {Money.Short(shop.Price(id, standard))}", $"Ware_{id}");
+            UiTheme.Accent(button, Palette.Trim);
+            button.TooltipText = $"{Content.GetCard(id).Name}: {Content.GetCard(id).Text}";
+            button.ToggleMode = true;
+            button.SetPressedNoSignal(_ware == id);
+            button.Pressed += () => Pick(null, null, id);
+        }
+
+        return column;
     }
 
     /// <summary>The chest's column: its coins and its cards.</summary>
@@ -295,7 +362,7 @@ public partial class PartyDialog : Control
         coins.ToggleMode = true;
         coins.SetPressedNoSignal(_purse == chest);
         coins.TooltipText = "The chest's coins: pick them to hand out.";
-        coins.Pressed += () => Pick(null, chest);
+        coins.Pressed += () => Pick(null, chest, null);
 
         Heading(column, "Cards");
         if (chest.Cards.Count == 0)
@@ -311,7 +378,7 @@ public partial class PartyDialog : Control
             card.TooltipText = $"{Content.GetCard(key).Name}: {Content.GetCard(key).Text}";
             card.ToggleMode = true;
             card.SetPressedNoSignal(_selected == mine);
-            card.Pressed += () => Pick(mine, null);
+            card.Pressed += () => Pick(mine, null, null);
         }
 
         return column;
@@ -327,9 +394,17 @@ public partial class PartyDialog : Control
             return;
         }
 
+        if (_ware is { } ware && _shop is { } shop)
+        {
+            BuyActions(shop, ware);
+            return;
+        }
+
         if (_selected is not { } selected)
         {
-            _giving.Text = _news ?? "Click a card, a purse or the chest's coins for what to do with it. Click someone's picture for their sheet.";
+            _giving.Text = _news ?? (_shop is not null
+                ? "Click a ware to buy it, or anyone's card to sell it. Click a purse to move coins, someone's picture for their sheet."
+                : "Click a card, a purse or the chest's coins for what to do with it. Click someone's picture for their sheet.");
             return;
         }
 
@@ -343,6 +418,7 @@ public partial class PartyDialog : Control
                 AddAction(member.Name, $"TakeOutTo{member.Name}", null, () => Done(Chest!.Take(member, selected.Key, Content), $"{member.Name} takes the {name} out of the chest."));
             }
 
+            ShopActions(Chest!, selected.Key, () => Chest!.Cards.Remove(selected.Key), null);
             return;
         }
 
@@ -381,6 +457,71 @@ public partial class PartyDialog : Control
         {
             AddAction($"To {other.Name}", $"GiveTo{other.Name}", null, () => Give(owner, selected, other));
         }
+
+        ShopActions(owner, selected.Key, () => owner.TakeFrom(selected.Place, selected.Key, Content) is not null,
+            selected.Place == CardPlace.Worn && Content.GetCard(selected.Key).Slot == EquipSlot.Belt ? "Take the belt off first (it comes off with all it holds)."
+            : CardKey.Unpack(selected.Key) is not null ? "Unpack the belt first: wear it, then take its cards off." : null, owner);
+    }
+
+    /// <summary>In a shop, what can be done with a card picked: sell it (to the purse of whoever has it), or have it mended.</summary>
+    private void ShopActions(IPurse seller, string key, Func<bool> take, string? cannotSell, Character? owner = null)
+    {
+        if (_shop is not { } shop)
+        {
+            return;
+        }
+
+        string name = Content.GetCard(key).Name;
+        if (shop.Sell is { } sell && shop.Pays?.Invoke(key) is { } pays)
+        {
+            AddAction($"Sell {Money.Short(pays)}", "Sell", cannotSell, () => Traded(sell(key, seller, take)), Palette.Loot);
+        }
+
+        if (owner is not null && shop.Mend is { } mend && shop.MendPrice is { } mendPrice && CardKey.Wear(key) > 0)
+        {
+            int price = mendPrice(key);
+            AddAction($"Mend {Money.Short(price)}", "Mend", owner.Coins < price ? $"{owner.Name} has {Money.Long(owner.Coins)}." : null, () => Traded(mend(owner, key, owner)));
+            if (Chest is not null)
+            {
+                AddAction("Mend, chest pays", "MendFromChest", Chest.Coins < price ? $"The chest has {Money.Long(Chest.Coins)}." : null, () => Traded(mend(owner, key, Chest)), Palette.Loot);
+            }
+        }
+    }
+
+    /// <summary>A ware picked: who buys it, each at what the shop asks them.</summary>
+    private void BuyActions(ShopFront shop, string ware)
+    {
+        string name = Content.GetCard(ware).Name;
+        _giving.Text = _news ?? $"Buy the {name}: who pays (and takes it)?";
+        foreach (Character member in Party)
+        {
+            Shopper shopper = Shopper.Of(member, Content);
+            int price = shop.Price(ware, shopper);
+            AddAction($"{member.Name} {Money.Short(price)}", $"BuyFor{member.Name}", member.Coins < price ? $"{member.Name} has {Money.Long(member.Coins)}." : null,
+                () => Traded(shop.Buy(ware, shopper)));
+        }
+
+        if (Chest is not null)
+        {
+            Shopper shopper = ChestShopper(Chest);
+            int price = shop.Price(ware, shopper);
+            AddAction($"Chest {Money.Short(price)}", "BuyForChest", Chest.Coins < price ? $"The chest has {Money.Long(Chest.Coins)}." : null,
+                () => Traded(shop.Buy(ware, shopper)), Palette.Loot);
+        }
+    }
+
+    /// <summary>After a trade: what the shop said, everything put down, and the party (and the shop) saved.</summary>
+    private void Traded(ServiceResult result)
+    {
+        _news = result.Message;
+        _selected = null;
+        _ware = null;
+        if (result.Done)
+        {
+            Changed?.Invoke(Party);
+        }
+
+        Refresh();
     }
 
     /// <summary>Coins picked: a gold, or all of it, to the chest or to someone.</summary>

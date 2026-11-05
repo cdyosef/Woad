@@ -718,18 +718,6 @@ public partial class Main : Control
 				}
 			}
 		};
-		screen.Traded += async trader =>
-		{
-			SaveRaidWorld();
-			try
-			{
-				await _characters.SaveAsync(trader);
-			}
-			catch (IOException exception)
-			{
-				GD.PushWarning($"Couldn't save {trader.Name}: {exception.Message}");
-			}
-		};
 		_woarldNews = "";
 		SaveRaid(RaidLocation.Map);
 		screen.BackRequested += () =>
