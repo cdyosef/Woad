@@ -1461,7 +1461,7 @@ ICONS = {
         "o.obbbbbbo.o",
         "obobbbbbbobo",
         "obbbbwwbbbbo",
-        ".obbwkkwbbo.",
+        ".obowkkwobo.",
         ".obbbwwbbbo.",
         "..obbbbbbo..",
         "...obbbbo...",
