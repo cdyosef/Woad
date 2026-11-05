@@ -22,7 +22,9 @@ public sealed record AbilityCard(string Picture, string Name, Button Action, Fun
 /// static bonus (shown in its bottom-left corner) and the dice on it, and is tapped once it can't be used
 /// again this turn. Its border is its own pool's color (a shield's blue in the off hand's square).
 /// </summary>
-public sealed record StackCard(string Key, string Picture, string Name, bool Tapped, string Bonus = "", int Dice = 0, Color? Border = null, int? CardId = null, int Count = 1);
+/// <param name="Pools">The symbols of the dice pools an item's card can add to, for its top right corner.</param>
+public sealed record StackCard(string Key, string Picture, string Name, bool Tapped, string Bonus = "", int Dice = 0, Color? Border = null, int? CardId = null, int Count = 1,
+    IReadOnlyList<Texture2D>? Pools = null);
 
 /// <summary>
 /// A pool's hand of cards. With a dice action (Rumble, Wend, Od Hand) it fills an equipment square on the
@@ -405,7 +407,8 @@ public partial class HandView : Control
             var marks = new CardFace.Marks(
                 Count: card.Count,
                 Bonuses: card.Bonus.Length > 0 ? [(card.Bonus, border)] : null,
-                Dice: [.. Enumerable.Repeat(card.Key == DiceKey ? DiceColor : Palette.DieTool, card.Dice)]);
+                Dice: [.. Enumerable.Repeat(card.Key == DiceKey ? DiceColor : Palette.DieTool, card.Dice)],
+                Pools: card.Pools);
             CardFace.DrawFront(this, rect, Picture(card), card.Name, marks, dim: !lit, border: lit ? border : border.Darkened(0.4f));
         }
     }

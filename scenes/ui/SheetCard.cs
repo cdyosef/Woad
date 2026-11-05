@@ -87,6 +87,7 @@ public partial class SheetCard : CardSlot
         var marks = new CardFace.Marks(
             Bonuses: bonuses,
             Dice: dice,
+            Pools: CardFace.Pools(card.Definition),
             Count: card.Count,
             Ammo: card.Definition.Ammo is { } ammo ? GameArt.Texture($"res://assets/cards/{ammo}.png") : null,
             AmmoCount: _ammo?.Count ?? 0,

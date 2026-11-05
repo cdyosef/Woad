@@ -9,7 +9,8 @@ namespace Woad.Scenes.Ui;
 /// its name in ink along the bottom; a weapon that shoots shows its ammo top right, with how many are to
 /// hand. Face down (an empty slot, or a card tapped for the turn): woad blue, a diamond lattice in a cream
 /// frame, the slot's mark faint in the middle and its name under it. What a card adds is on its face too:
-/// its dice down its left edge and its bonuses in the bottom right corner, each in its pool's color.
+/// its dice down its left edge and its bonuses in the bottom right corner, each in its pool's color, and
+/// the symbols of the dice pools it can add to (Rumble, Od Hand, Wend) along its top right.
 /// </summary>
 public static class CardFace
 {
@@ -27,7 +28,34 @@ public static class CardFace
 
     /// <summary>What's written on a face besides its name: the count in the corner index, ammo top right, and a note (charges, "!" unloaded, "-1" worn).</summary>
     public readonly record struct Marks(int Count = 1, Texture2D? Ammo = null, int AmmoCount = 0, string Note = "", bool NoteIsBad = false,
-        IReadOnlyList<(string Text, Color Color)>? Bonuses = null, IReadOnlyList<Color>? Dice = null);
+        IReadOnlyList<(string Text, Color Color)>? Bonuses = null, IReadOnlyList<Color>? Dice = null, IReadOnlyList<Texture2D>? Pools = null);
+
+    /// <summary>
+    /// The dice pools a card can add to, as their symbols for its top right corner: Rumble (weapons, torches,
+    /// gear adding Rumble), Od Hand (tools, torches, and weapons that go in the off hand) and Wend (boots, gear adding Wend).
+    /// </summary>
+    public static IReadOnlyList<Texture2D> Pools(CardDefinition card)
+    {
+        Stats stats = card.Modifiers;
+        var icons = new List<string>();
+        if (card.Type == CardType.Weapon || card.Torch || stats.AttackDice > 0 || stats.WeaponDice > 0 || card.RumbleType is not null)
+        {
+            icons.Add("icon_rumble");
+        }
+
+        if (card.Tool is not null || card.Torch || stats.OdHandDice > 0 || stats.Tools > 0 || stats.ToolDice > 0
+            || (card.Type == CardType.Weapon && (card.Slot == EquipSlot.OffHand || card.AltSlot == EquipSlot.OffHand)))
+        {
+            icons.Add("icon_odhand");
+        }
+
+        if (stats.MoveDice > 0 || stats.Speed > 0)
+        {
+            icons.Add("icon_wend");
+        }
+
+        return [.. icons.Select(icon => GameArt.Texture($"res://assets/ui/{icon}.png")).OfType<Texture2D>()];
+    }
 
     /// <summary>
     /// What a card adds, as its face shows it: bonuses (Rumble red for a weapon's, Defense blue for armor and
@@ -124,12 +152,27 @@ public static class CardFace
         }
 
         // Ammo it shoots, top right, and how many are to hand.
+        float poolsEnd = rect.End.X - 2;
         if (marks.Ammo is { } ammo)
         {
             var corner = new Rect2(rect.End.X - Index - 2, rect.Position.Y + 2, Index, Index);
             canvas.DrawTextureRect(ammo, corner, tile: false, modulate: shade);
             canvas.DrawString(font, new Vector2(corner.Position.X - 4, corner.End.Y + 8), marks.AmmoCount.ToString(), HorizontalAlignment.Center, Index + 8, UiTheme.FontSize,
                 marks.AmmoCount == 0 ? Palette.Danger : ink);
+            poolsEnd = corner.Position.X - 1;
+        }
+
+        // The pools it can add to, right to left along the top (left of any ammo).
+        if (!small)
+        {
+            const float pool = 6;
+            float x = poolsEnd;
+            foreach (Texture2D icon in marks.Pools ?? [])
+            {
+                x -= pool;
+                canvas.DrawTextureRect(icon, new Rect2(x, rect.Position.Y + 2, pool, pool), tile: false, modulate: shade);
+                x -= 1;
+            }
         }
 
         if (!small)
