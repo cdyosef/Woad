@@ -161,6 +161,7 @@ public partial class TavernScreen : Control
     public override void _Ready()
     {
         Size = new Vector2(MenuScreen.Width, MenuScreen.Height);
+        Music.Play("inn");
         _payer = _leader;
         _visit = new TavernVisit(Tavern, Party.Count);
         AddChild(new ColorRect { Color = Palette.Background, Size = Size, MouseFilter = MouseFilterEnum.Ignore });

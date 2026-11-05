@@ -2799,6 +2799,119 @@ def defeat_tune():
     return song.samples
 
 
+# A jig's bars, as eighth notes (six to a bar of 6/8): the A part twice, the B part twice.
+INN_JIG = [
+    # A
+    ("D", "D5/2 E5/1 F#5/2 D5/1"), ("A", "E5/1 F#5/1 G5/1 A5/2 F#5/1"), ("Bm", "B5/2 A5/1 F#5/2 D5/1"), ("A", "E5/3 E5/2 F#5/1"),
+    ("D", "D5/2 E5/1 F#5/2 D5/1"), ("G", "G5/1 F#5/1 E5/1 A5/2 G5/1"), ("A", "F#5/1 E5/1 D5/1 E5/2 C#5/1"), ("D", "D5/3 D5/2 A4/1"),
+    # A again, its last bar leading up into the B part
+    ("D", "D5/2 E5/1 F#5/2 D5/1"), ("A", "E5/1 F#5/1 G5/1 A5/2 F#5/1"), ("Bm", "B5/2 A5/1 F#5/2 D5/1"), ("A", "E5/3 E5/2 F#5/1"),
+    ("D", "D5/2 E5/1 F#5/2 D5/1"), ("G", "G5/1 F#5/1 E5/1 A5/2 G5/1"), ("A", "F#5/1 E5/1 D5/1 E5/2 C#5/1"), ("D", "D5/3 D5/1 E5/1 F#5/1"),
+    # B: up high
+    ("D", "F#5/1 A5/1 A5/1 B5/1 A5/1 F#5/1"), ("G", "G5/1 B5/1 B5/1 A5/2 G5/1"), ("D", "F#5/1 A5/1 A5/1 D6/2 A5/1"), ("G", "B5/1 A5/1 G5/1 F#5/2 E5/1"),
+    ("D", "F#5/1 A5/1 A5/1 B5/1 A5/1 F#5/1"), ("Em", "G5/2 F#5/1 E5/2 D5/1"), ("A", "E5/1 F#5/1 G5/1 A5/2 C#5/1"), ("D", "D5/3 D5/1 E5/1 F#5/1"),
+    # B again, and home, picking up into the top
+    ("D", "F#5/1 A5/1 A5/1 B5/1 A5/1 F#5/1"), ("G", "G5/1 B5/1 B5/1 A5/2 G5/1"), ("D", "F#5/1 A5/1 A5/1 D6/2 A5/1"), ("G", "B5/1 A5/1 G5/1 F#5/2 E5/1"),
+    ("D", "F#5/1 A5/1 A5/1 B5/1 A5/1 F#5/1"), ("Em", "G5/2 F#5/1 E5/2 D5/1"), ("A", "E5/1 F#5/1 G5/1 A5/2 C#5/1"), ("D", "D5/3 D5/2 A4/1"),
+]
+
+
+def inn_theme():
+    """
+    The Waylay Inn: a jaunty jig in D, 6/8. A fiddle-like pulse plays the tune (a harmony a third under
+    it the second time through each part), a squeezebox chops the chords on the off-beats, the bass goes
+    oom-pah, and a bodhran thumps along.
+    """
+    song = Song(bpm=336, beats=6 * len(INN_JIG))  # beats are eighth notes, at 112 to the dotted quarter
+    thump = tone(lambda t: 95 - 120 * t, 0.16, sine, 1.0, release=0.1)
+    tap = noise(0.05, 1.0, decay=70, seed=83, lowpass=0.6)
+    for bar, (chord, tune) in enumerate(INN_JIG):
+        start = bar * 6
+        second_time = (bar // 8) % 2 == 1
+        beat = start
+        for note, beats in parse_score(tune):
+            if note is not None:
+                song.note(beat, note, beats, pulse(0.25), 0.085, gate=0.85, vibrato=beats >= 2)
+                if second_time:
+                    # A harmony under the tune: a third down, in the key (a sixth's worth an octave below sounds as thirds).
+                    song.note(beat, note - (3 if (note % 12) in (2, 4, 9, 11) else 4), beats, pulse(0.5), 0.03, gate=0.8)
+            beat += beats
+
+        tones = chord_tones(chord)
+        # Oom-pah: the root on the beat, the fifth on the second; the squeezebox on the off-beats.
+        song.note(start, tones[0] - 12, 2, triangle, 0.2, gate=0.8)
+        song.note(start + 3, tones[2] - 12, 2, triangle, 0.17, gate=0.8)
+        for off in (1, 2, 4, 5):
+            for pitch in tones:
+                song.note(start + off, pitch + 12, 1, pulse(0.125), 0.016, gate=0.55, decay=8)
+
+        # The bodhran: a deep thump on each beat, light taps between, a roll into every fourth bar.
+        song.place(start, [value * 0.22 for value in thump])
+        song.place(start + 3, [value * 0.15 for value in thump])
+        for off in ((1, 2, 4, 5) if bar % 4 == 3 else (2, 5)):
+            song.place(start + off, [value * 0.05 for value in tap])
+    return song.samples
+
+
+# The Woarld Map's tune, a bar a line: (chord, melody in quarter notes).
+WOARLD_TUNE = [
+    # A: setting out
+    ("G", "D5/2 B4/1 D5/1"), ("D", "A4/3 D5/1"), ("Em", "E5/2 G5/1 E5/1"), ("C", "D5/2 C5/1 B4/1"),
+    ("G", "B4/1 D5/1 G5/1.5 F#5/0.5"), ("D", "E5/1 D5/1 A4/2"), ("C", "C5/1 E5/1 D5/1 C5/1"), ("D", "B4/2 A4/2"),
+    # B: over the hills
+    ("Em", "B5/2 G5/1 E5/1"), ("C", "E5/1 G5/1 C6/2"), ("G", "B5/1.5 A5/0.5 G5/1 D5/1"), ("D", "A5/3 F#5/1"),
+    ("Em", "G5/2 B5/1 G5/1"), ("C", "E5/2 C5/1 E5/1"), ("Am", "A5/1 G5/1 E5/1 C5/1"), ("D", "D5/2 F#5/1 A5/1"),
+    # A again, coming home to G
+    ("G", "D5/2 B4/1 D5/1"), ("D", "A4/3 D5/1"), ("Em", "E5/2 G5/1 E5/1"), ("C", "D5/2 C5/1 B4/1"),
+    ("G", "B4/1 D5/1 G5/1.5 F#5/0.5"), ("D", "E5/1 D5/1 A4/2"), ("Am", "C5/1 B4/1 A4/1 C5/1"), ("D", "B4/1 A4/1 F#4/1 A4/1"),
+    # C: a quiet stretch of road, the tune low, then the climb back to the start
+    ("G", "G4/4"), ("C", "E4/2 G4/2"), ("Am", "A4/2 C5/1 E5/1"), ("D", "D5/3 -/1"),
+    ("Em", "E5/2 D5/1 B4/1"), ("C", "C5/2 E5/2"), ("Am", "A4/1 B4/1 C5/1 E5/1"), ("D", "D5/2 F#5/1 A5/1"),
+]
+
+
+def woarld_theme(night=False):
+    """
+    The Woarld Map by day: an open, unhurried G, a long singing tune over a walking bass and brushed
+    drums, A B A C. By night: the same tune slower and softer in G minor, the drums all but gone.
+    """
+    bars = WOARLD_TUNE[:24] if night else WOARLD_TUNE
+    if night:
+        # Into G minor: the major third, sixth and seventh fall a semitone; the chords follow.
+        minor_notes = {"B": "Bb", "E": "Eb", "F#": "F"}
+        minor_chords = {"G": "Gm", "D": "Dm", "Em": "Eb", "C": "Cm", "Am": "F"}
+
+        def to_minor(score):
+            out = []
+            for token in score.split():
+                name, beats = token.split("/")
+                if name != "-":
+                    pitch, octave = name[:-1], name[-1]
+                    name = minor_notes.get(pitch, pitch) + octave
+                out.append(f"{name}/{beats}")
+            return " ".join(out)
+
+        bars = [(minor_chords[chord], to_minor(tune)) for chord, tune in bars]
+
+    song = Song(bpm=72 if night else 92, beats=4 * len(bars))
+    song.voice(" | ".join(tune for _, tune in bars), sine if night else pulse(0.5), 0.12 if night else 0.085, vibrato=True, gate=0.95)
+    if not night:
+        # Its echo an octave down in the second half, to fill the road out.
+        song.voice("-/64 " + " | ".join(tune for _, tune in bars[16:]), pulse(0.25), 0.03, transpose=-12, gate=0.9)
+    chords = [chord for chord, _ in bars]
+    if night:
+        song.arpeggio(chords, [0, 1, 2, 1], sine, 0.045, step=1)
+        song.bass(chords, [(0, 4)], 0.16)
+        for bar in range(0, len(bars), 2):
+            song.drum_bar(bar, "k...............", 0.04)
+    else:
+        song.arpeggio(chords, [0, 1, 2, 1] * 2, pulse(0.125), 0.035)
+        song.bass(chords, [(0, 1), (7, 1), (12, 1), (7, 1)], 0.17)
+        for bar in range(len(bars)):
+            song.drum_bar(bar, "k...h...k.h.h..." if bar < 24 else "k.......h.......", 0.06)
+    return song.samples
+
+
 def build_music(directory):
     songs = {
         "title": title_theme(),
@@ -2808,6 +2921,9 @@ def build_music(directory):
         "ogre": ogre_theme(),
         "graves": graves_theme(),
         "icarus": icarus_theme(),
+        "inn": inn_theme(),
+        "woarld": woarld_theme(),
+        "woarld_night": woarld_theme(night=True),
         "victory": victory_tune(),
         "defeat": defeat_tune(),
     }
