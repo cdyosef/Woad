@@ -57,6 +57,9 @@ public partial class GameScreen
     private Button _confirm = null!;
     private Button _addPower = null!;
     private Button _bankPower = null!;
+
+    /// <summary>"Power!" over the dice tray after a 6: Roll or Bank.</summary>
+    private Panel _powerPrompt = null!;
     private Button _land = null!;
     private Button _flyOn = null!;
     private Button _retreat = null!;
@@ -211,9 +214,10 @@ public partial class GameScreen
             : "";
         _confirm.Visible = turn?.PendingRoll is not null && !choosingPower;
         _confirm.Disabled = Locked;
-        _addPower.Visible = _bankPower.Visible = choosingPower;
+        _powerPrompt.Visible = _addPower.Visible = _bankPower.Visible = choosingPower;
         _addPower.Disabled = _bankPower.Disabled = Locked;
-        _bankPower.Text = hero is null ? "Bank it" : $"Bank it ({hero.Power.Banked}/{hero.Power.Capacity})";
+        _bankPower.TooltipText = hero is null ? "Keep it for later." : $"Keep it for later: {hero.Power.Banked} of {hero.Power.Capacity} banked now.";
+        PlaceBubbles();
 
         // Where Confirm and the Power Die buttons go, while there's no roll to settle: lie down or get up, and stop, drop and roll.
         bool lying = hero?.Prone == true;
@@ -835,7 +839,7 @@ public partial class GameScreen
                 ExecuteForActiveHero(heroId => new RerollDie(heroId, index));
             }
         };
-        _luckPrompt = new LuckPrompt { Position = _dice.Position + new Vector2((_dice.Size.X - 264) / 2, -21) };
+        _luckPrompt = new LuckPrompt { Position = _dice.Position + new Vector2((_dice.Size.X - LuckPrompt.Width) / 2, -37) };
         AddChild(_luckPrompt);
         _luckMenu = new LuckMenu { Position = BoardOrigin + new Vector2((BoardView.Pixels - 214) / 2, 60) };
         _luckMenu.Changed += asks => ExecuteForActiveHero(heroId => new SetLuckAsks(heroId, asks));
@@ -897,13 +901,20 @@ public partial class GameScreen
         _confirm.Pressed += () => ExecuteForActiveHero(heroId => new ConfirmAttack(heroId));
         right.AddChild(_confirm);
 
-        // After a 6: roll the Power Die into this roll, or keep it for later.
-        _addPower = UiTheme.Accent(UiTheme.Button(new Vector2(8, 336), new Vector2(78, 18), "Add Power Die"), Palette.Power);
+        // After a 6: "Power!" over the dice tray, to roll the Power Die into this roll or bank it for later.
+        _powerPrompt = new Panel { Size = new Vector2(84, 36), Visible = false, ZIndex = 5, Name = "PowerPrompt" };
+        Label power = UiTheme.Label(new Vector2(4, 2), new Vector2(76, 14), "Power!", color: Palette.Power);
+        power.HorizontalAlignment = HorizontalAlignment.Center;
+        _powerPrompt.AddChild(power);
+        _addPower = UiTheme.Accent(UiTheme.CompactButton(new Vector2(4, 18), new Vector2(37, 15), "Roll"), Palette.Power);
+        _addPower.TooltipText = "Roll the Power Die into this roll.";
         _addPower.Pressed += () => ExecuteForActiveHero(heroId => new AddPowerDie(heroId));
-        right.AddChild(_addPower);
-        _bankPower = UiTheme.Accent(UiTheme.Button(new Vector2(90, 336), new Vector2(78, 18), "Bank it"), Palette.Power);
+        _powerPrompt.AddChild(_addPower);
+        _bankPower = UiTheme.Accent(UiTheme.CompactButton(new Vector2(43, 18), new Vector2(37, 15), "Bank"), Palette.Power);
         _bankPower.Pressed += () => ExecuteForActiveHero(heroId => new BankPowerDie(heroId));
-        right.AddChild(_bankPower);
+        _powerPrompt.AddChild(_bankPower);
+        AddChild(_powerPrompt);
+        _luckPrompt.VisibilityChanged += PlaceBubbles;
         _land = UiTheme.Accent(UiTheme.Button(new Vector2(8, 336), new Vector2(78, 18), "Land."), Palette.DieWend);
         _land.TooltipText = "Come down where you are. Over a pit, there's nothing to land on.";
         _land.Pressed += () =>
@@ -1049,5 +1060,19 @@ public partial class GameScreen
         };
         AddChild(label);
         return label;
+    }
+
+    /// <summary>The bubbles over the dice tray (Power! and Try your Luck?): side by side and centered, just above it.</summary>
+    private void PlaceBubbles()
+    {
+        List<Control> up = [.. new Control[] { _powerPrompt, _luckPrompt }.Where(bubble => bubble.Visible)];
+        float width = up.Sum(bubble => bubble.Size.X) + 6 * Math.Max(0, up.Count - 1);
+        float x = _dice.Position.X + (_dice.Size.X - width) / 2;
+        foreach (Control bubble in up)
+        {
+            bubble.Position = new Vector2(x, _dice.Position.Y - bubble.Size.Y - 1);
+            bubble.MoveToFront();
+            x += bubble.Size.X + 6;
+        }
     }
 }

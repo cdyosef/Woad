@@ -446,8 +446,8 @@ the next room.
   it earns another.
 - **The bank:** each hero and monster can bank up to **3** *(tunable)*, kept until used (across turns
   and floors). A 6 rolled with a full bank is rolled into that roll straight away instead.
-- **Your attacks, moves and Od Hand rolls:** after a 6 you choose **Add Power Die** (roll it in now) or
-  **Bank it**. Nothing else can happen until you choose. Banked dice show in the dice pool's POWER row,
+- **Your attacks, moves and Od Hand rolls:** after a 6, **Power!** pops up just over the dice tray: **Roll** (roll it in now) or
+  **Bank** (keep it for later). Nothing else can happen until you choose. Banked dice show in the dice pool's POWER row,
   unselected; select them to roll them into your next attack or move.
 - **Star dice** are a damage type of their own (below): a **6** on one **surges**, with no choice to make:
   one Power Die rolls straight into that roll, and another goes into the bank, or with the bank full,

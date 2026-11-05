@@ -4,9 +4,9 @@ using Woad.Scenes.Ui;
 namespace Woad.Scenes.Game;
 
 /// <summary>
-/// "Try your Luck?" over the dice tray, while a roll could use it: the dice below are outlined green to
-/// click, and a countdown runs (5 seconds on a roll that would fail, 3 on a Wend roll). No, or the time
-/// running out, lets the roll stand.
+/// "Try your Luck?" in a small bubble over the dice tray (beside the Power! bubble, when that's up too),
+/// while a roll could use it: the dice below are outlined green to click, and a countdown runs (5 seconds
+/// on a roll that would fail, 3 on a Wend roll). No, or the time running out, lets the roll stand.
 /// </summary>
 public partial class LuckPrompt : Panel
 {
@@ -16,6 +16,9 @@ public partial class LuckPrompt : Panel
     private Action? _add;
     private Action? _power;
     private string _asked = "Try your Luck?";
+
+    /// <summary>How wide the bubble is.</summary>
+    public const float Width = 128;
 
     internal Button NoButton { get; private set; } = null!;
 
@@ -32,21 +35,32 @@ public partial class LuckPrompt : Panel
     {
         Visible = false;
         ZIndex = 5;
-        Size = new Vector2(264, 20);
-        _question = UiTheme.Label(new Vector2(6, 3), new Vector2(124, 14), "", color: Palette.Heal);
+        Size = new Vector2(Width, 36);
+
+        // The question and its countdown on top, the buttons under it.
+        _question = UiTheme.Label(new Vector2(6, 2), new Vector2(Width - 12, 14), "", color: Palette.Heal);
+        _question.HorizontalAlignment = HorizontalAlignment.Center;
         AddChild(_question);
-        AddButton = UiTheme.CompactButton(new Vector2(132, 2), new Vector2(46, 16), "+Od Hand");
+        var buttons = new HBoxContainer { Position = new Vector2(4, 18), Size = new Vector2(Width - 8, 15), Alignment = BoxContainer.AlignmentMode.Center };
+        buttons.AddThemeConstantOverride("separation", 3);
+        AddChild(buttons);
+        Button Small(string text, float width)
+        {
+            Button button = UiTheme.CompactButton(Vector2.Zero, new Vector2(width, 15), text);
+            button.CustomMinimumSize = new Vector2(width, 15);
+            buttons.AddChild(button);
+            return button;
+        }
+
+        AddButton = Small("+Od Hand", 44);
         AddButton.TooltipText = "Add one of your unspent Od Hand dice to the roll.";
         AddButton.Pressed += () => _add?.Invoke();
-        AddChild(AddButton);
-        PowerButton = UiTheme.CompactButton(new Vector2(180, 2), new Vector2(42, 16), "+Power");
+        PowerButton = Small("+Power", 38);
         PowerButton.TooltipText = "Add one of your banked Power Dice to the roll.";
         PowerButton.Pressed += () => _power?.Invoke();
-        AddChild(PowerButton);
-        NoButton = UiTheme.CompactButton(new Vector2(224, 2), new Vector2(36, 16), "No");
+        NoButton = Small("No", 30);
         NoButton.TooltipText = "Let the roll stand.";
         NoButton.Pressed += () => Expire();
-        AddChild(NoButton);
     }
 
     /// <summary>
