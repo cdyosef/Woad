@@ -655,28 +655,33 @@ def boot(c):
     c.rect(2, 28, 28, 1, GREEN[2])
 
 
+# The Od Hand dice's yellow, light to dark, and the blue of the hamsa's eye.
+ODHAND = ("#fff0a0", "#f0d060", "#a8862a")
+IRIS = "#24508a"
+
+
 def hamsa(c):
-    """A blue hamsa: an open hand, fingers up and a thumb turned out to each side, an eye in its palm. Od Hand's."""
+    """A yellow hamsa, the Od Hand dice's color: an open hand, fingers up and a thumb turned out to each side, an eye in its palm. Od Hand's."""
     # The three fingers, rounded at the tips, the middle one tallest.
     for x, top in ((10, 6), (14, 4), (18, 6)):
-        c.rect(x, top + 2, 4, 14 - top, BLUE[1])
-        c.rect(x + 1, top + 1, 2, 1, BLUE[1])
-        c.rect(x, top + 2, 1, 14 - top, BLUE[0])
+        c.rect(x, top + 2, 4, 14 - top, ODHAND[1])
+        c.rect(x + 1, top + 1, 2, 1, ODHAND[1])
+        c.rect(x, top + 2, 1, 14 - top, ODHAND[0])
     for x in (13, 17):
-        c.rect(x, 8, 1, 6, BLUE[2])
+        c.rect(x, 8, 1, 6, ODHAND[2])
     # The thumbs, curling out and up at either side.
-    c.poly([(10, 23), (10, 15), (7, 11.5), (4.5, 12), (4.5, 15), (7, 21)], BLUE[1])
-    c.poly([(22, 23), (22, 15), (25, 11.5), (27.5, 12), (27.5, 15), (25, 21)], BLUE[1])
-    c.line(5, 12.5, 6.5, 18, BLUE[0])
-    c.line(26.5, 13, 25, 19, BLUE[2])
+    c.poly([(10, 23), (10, 15), (7, 11.5), (4.5, 12), (4.5, 15), (7, 21)], ODHAND[1])
+    c.poly([(22, 23), (22, 15), (25, 11.5), (27.5, 12), (27.5, 15), (25, 21)], ODHAND[1])
+    c.line(5, 12.5, 6.5, 18, ODHAND[0])
+    c.line(26.5, 13, 25, 19, ODHAND[2])
     # The palm, rounding to the wrist.
-    c.rect(10, 14, 12, 11, BLUE[1])
-    c.poly([(10, 24), (22, 24), (19, 28), (13, 28)], BLUE[1])
-    c.rect(10, 14, 1, 11, BLUE[0])
-    c.rect(13, 27, 6, 1, BLUE[2])
+    c.rect(10, 14, 12, 11, ODHAND[1])
+    c.poly([(10, 24), (22, 24), (19, 28), (13, 28)], ODHAND[1])
+    c.rect(10, 14, 1, 11, ODHAND[0])
+    c.rect(13, 27, 6, 1, ODHAND[2])
     # The eye in the palm.
     c.poly([(11.5, 20), (14, 17.8), (18, 17.8), (20.5, 20), (18, 22.2), (14, 22.2)], WHITE[0])
-    c.circle(16, 20, 2.1, BLUE[2])
+    c.circle(16, 20, 2.1, IRIS)
     c.rect(15, 19, 2, 2, OUTLINE)
     c.dot(15, 19, WHITE[0])
 
