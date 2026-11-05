@@ -123,8 +123,9 @@ public partial class GameScreen
             _heroPanel.Pool.EmitSwap();
             Check(ReadiedWeapon is null, "then back to letting the rules pick");
             CancelSelection();
-            await ClickAt(this, _rumbleHand.GetGlobalRect().Position + _rumbleHand.CardPoint("item:" + boomerang.Id));
-            Check(ReadiedWeapon == boomerang && _rumbleHand.Front == "item:" + boomerang.Id, "clicking the Boomerang's card in the main hand's square readies it, and brings it to the front");
+            await ClickAt(this, _odHand.GetGlobalRect().Position + _odHand.CardPoint("item:" + boomerang.Id));
+            Check(_odHand.Front == "item:" + boomerang.Id && !_rumbleHand.Stack.Any(card => card.Key == "item:" + boomerang.Id),
+                "the off hand's Boomerang sits in the off hand's square (not the main hand's), and a click brings it to the front");
             CancelSelection();
 
             // The bag opens into its cards, face up, to pick from.

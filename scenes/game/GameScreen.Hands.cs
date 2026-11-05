@@ -258,7 +258,7 @@ public partial class GameScreen
 
     /// <summary>An item's card in a square: its weapon or tool bonus and dice when it adds to the pool's roll.</summary>
     private StackCard ItemCard(CardInstance item, bool tapped, string bonus = "", int dice = 0) =>
-        new(ItemPrefix + item.Id, item.Definition.Id, item.Definition.Name, tapped, bonus, dice, PoolColor(item.Definition), item.Id, item.Count);
+        new(ItemPrefix + item.Id, item.Definition.Id, item.Definition.Name, tapped, bonus, dice, PoolColor(item.Definition), item.Id, item.Count, CardFace.Pools(item.Definition));
 
     private static string Plus(int value) => value > 0 ? $"+{value}" : value < 0 ? value.ToString() : "";
 
@@ -412,10 +412,11 @@ public partial class GameScreen
         CardInstance? off = hero.Equipment.GetValueOrDefault(EquipSlot.OffHand);
         if (hand == _rumbleHand)
         {
-            // The main hand's square: what's in it, any weapon in the off hand, and the Rumble card with its dice.
+            // The main hand's square: what's in it, and the Rumble card with its dice (the off hand's weapon sits in its own square,
+            // and Rumble still swings it when readied, or when the main hand doesn't reach).
             stack.Add(new(HandView.DiceKey, "rumble", "Rumble", mine && _session.AttackDiceLeft == 0, mine ? HeldPlus(_session.RumbleBonusLeft, _rumbleBonusHeld) : "", mine ? SelectedAttackDice : 0, Palette.DieRumble));
             IReadOnlyList<CardInstance> weapons = GameSession.HandWeapons(hero);
-            foreach (CardInstance item in new[] { main }.Concat(weapons).OfType<CardInstance>().Distinct())
+            foreach (CardInstance item in new[] { main }.OfType<CardInstance>())
             {
                 bool weapon = weapons.Contains(item);
                 stack.Add(ItemCard(item, weapon && mine && _session.WeaponBonusLeft(item.Id) == 0 && _session.WeaponDiceLeft(item.Id) == 0,
@@ -433,12 +434,13 @@ public partial class GameScreen
         }
         else if (hand == _odHand)
         {
-            // The off hand's square: what's in it (unless it's a weapon, which goes with Rumble), the tools, and the Od Hand card with its dice.
+            // The off hand's square: what's in it (a weapon or torch there attacks by the Od Hand card), the tools, and the Od Hand card with its dice.
             stack.Add(new(HandView.DiceKey, "od_hand", "Od Hand", mine && _session.OdHandDiceLeft == 0, Dice: mine ? SelectedOdHandDice : 0, Border: Palette.DieOdHand));
             List<CardInstance> tools = [.. hero.EquippedCards.Concat(hero.BeltTools).Where(card => card.Definition.Tool is not null).DistinctBy(card => card.Definition.Id)];
-            if (off is not null && off != main && !GameSession.HandWeapons(hero).Contains(off) && !tools.Contains(off))
+            if (off is not null && off != main && !tools.Contains(off))
             {
-                stack.Add(ItemCard(off, tapped: false));
+                int value = GameSession.OffHandItem(hero) == off ? off.Definition.AttackBonus + off.Definition.Modifiers.Weapon : 0;
+                stack.Add(ItemCard(off, mine && turn!.OffHandAttacked, value > 0 ? Plus(value) : ""));
             }
 
             stack.AddRange(tools.Select(tool => ItemCard(tool, mine && turn!.ToolsUsed, Plus(tool.Definition.Tool!.Bonus), mine && !turn!.ToolsUsed ? tool.Definition.Tool.Dice : 0)));
@@ -467,11 +469,14 @@ public partial class GameScreen
             return;
         }
 
+        // The off hand's weapon, readied, swings from its own square: the Rumble stack's top doesn't hold it back.
         string rumble = FrontOf(_rumbleHand, StackOf(_rumbleHand, hero));
-        _weaponHeld = !rumble.StartsWith(ItemPrefix, StringComparison.Ordinal);
+        bool offHandReadied = ReadiedWeapon is { } readied && readied != hero.MainWeapon;
+        _weaponHeld = !rumble.StartsWith(ItemPrefix, StringComparison.Ordinal) && !offHandReadied;
 
         // A weapon put on top by choice is the one readied; left to the default, the rules pick.
-        if (!_weaponHeld && _fronts.ContainsKey((hero.Id, _rumbleHand.Title)) && int.TryParse(rumble[ItemPrefix.Length..], out int weaponId) && GameSession.HandWeapons(hero).Count > 1)
+        if (!_weaponHeld && _fronts.TryGetValue((hero.Id, _rumbleHand.Title), out string? chosen) && chosen == rumble
+            && int.TryParse(rumble[ItemPrefix.Length..], out int weaponId) && GameSession.HandWeapons(hero).Count > 1)
         {
             _readied[hero.Id] = weaponId;
         }
