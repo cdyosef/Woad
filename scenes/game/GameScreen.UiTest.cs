@@ -619,6 +619,16 @@ public partial class GameScreen
             await WaitFor(this, () => _luckPrompt.Visible, "the Wend roll to ask: Try your Luck?");
             Check(!_heroPanel.LuckClover.Glowing, "with the clover glowing, the Wend roll asks, and asking uses the glow up");
             await SaveShot("luck_prompt_wend");
+            if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is not null)
+            {
+                // Both bubbles up at once, for the picture: Power! beside Try your Luck?.
+                _powerPrompt.Visible = _addPower.Visible = _bankPower.Visible = true;
+                PlaceBubbles();
+                await SaveShot("bubbles");
+                _powerPrompt.Visible = false;
+                PlaceBubbles();
+            }
+
             await Click(this, _luckPrompt.NoButton);
             Check(!_luckPrompt.Visible, "No puts the question away");
             await WaitUntilIdle();
@@ -1577,12 +1587,22 @@ public partial class GameScreen
     }
 
     /// <summary>Waits for event playback to finish, adding any Power Dice a 6 earned.</summary>
+    /// <summary>The Power! prompt has had its picture taken (once a run, with WOAD_SHOTS).</summary>
+    private bool _powerShot;
+
     internal async Task WaitUntilIdle()
     {
         await WaitFor(this, () => !_busy, "event playback to finish");
         while (_session.State.Turn?.UnsettledPowerDice > 0)
         {
-            Check(_addPower.Visible, "a 6 offers to add or bank a Power Die");
+            Check(_powerPrompt.Visible && _addPower.IsVisibleInTree(), "a 6 puts up Power! over the dice tray, to Roll or Bank the Power Die");
+            if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } shots && !_powerShot)
+            {
+                _powerShot = true;
+                await NextFrame(this);
+                GetViewport().GetTexture().GetImage().SavePng($"{shots}/power_prompt.png");
+            }
+
             await Click(this, _addPower);
             await WaitFor(this, () => !_busy, "the Power Die to roll");
         }
