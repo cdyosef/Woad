@@ -1284,6 +1284,145 @@ OBJECTS["chest_grand"] = sprite([
     "................",
 ], {"o": "#2a1a10", "y": "#f0c94a", "Y": "#b08020", "p": "#6a2a8a", "r": "#e0304a", "g": "#b08020", "k": "#1a1410"})
 
+# ---- Damage dice symbols (7x7, or 9x9 for more detail) ---------------------------------------------------------------
+# What a typed die shows on its 6 in place of the pips: in its own colors (a plain list is dark ink).
+
+DIE_SYMBOLS = {
+    "fire": ([  # a flame: a yellow core, orange, a yellow edge
+        "....y....",
+        "...yoy...",
+        "...yoy...",
+        "..yoooy..",
+        ".yooyooy.",
+        ".yoyyyoy.",
+        "yooyyyooy",
+        ".yooyooy.",
+        "..yyyyy..",
+    ], {"y": "#ffe040", "o": "#e8501a"}),
+    "poison": ([  # a drop with a skull face, over crossed bones, light green
+        "g.g...g.g",
+        ".g.....g.",
+        "..g.g.g..",
+        "...ggg...",
+        "..ggggg..",
+        "..gkgkg..",
+        "..ggggg..",
+        ".g.gkg.g.",
+        "g.g...g.g",
+    ], {"g": "#d4ffbc", "k": "#15121d"}),
+    "ice": ([  # a snowflake, white
+        "w..w..w",
+        ".w.w.w.",
+        "..www..",
+        "wwwwwww",
+        "..www..",
+        ".w.w.w.",
+        "w..w..w",
+    ], {"w": "#ffffff"}),
+    "acid": [  # a drop bubbling
+        "w....w.",
+        "...w...",
+        "w.www..",
+        ".wwwww.",
+        "ww.wwww",
+        "wwww.ww",
+        ".wwwww.",
+    ],
+    "necro": ([  # a white skull, black eyes with green irises
+        "..wwwww..",
+        ".wwwwwww.",
+        "wwwwwwwww",
+        "wkkwwwkkw",
+        "wknwwwnkw",
+        "wwwwkwwww",
+        ".wwwwwww.",
+        "..wwwww..",
+        "..w.w.w..",
+    ], {"w": "#ffffff", "k": "#15121d", "n": "#60ff80"}),
+    "squall": ([  # a whirlwind, light blue
+        "wwwwwww",
+        ".......",
+        ".wwwww.",
+        ".......",
+        "..www..",
+        ".......",
+        "...w...",
+    ], {"w": "#dcf4ff"}),
+    "radiate": ([  # a round yellow sun, rays all round
+        "....o....",
+        ".o.....o.",
+        "...ooo...",
+        "..oyyyo..",
+        "o.oyyyo.o",
+        "..oyyyo..",
+        "...ooo...",
+        ".o.....o.",
+        "....o....",
+    ], {"y": "#ffd83a", "o": "#f08a1a"}),
+    "life": ([  # a tree
+        "...lll...",
+        ".lllllll.",
+        "lllllllll",
+        "lllllllll",
+        ".lllllll.",
+        "....t....",
+        "....t....",
+        "...ttt...",
+        ".........",
+    ], {"l": "#17602c", "t": "#6a4424"}),
+    "earth": ([  # a grey mountain, its peaks white
+        ".........",
+        "...w.....",
+        "..www.w..",
+        "..rrrwww.",
+        ".rrrrrrrr",
+        ".rrrrrrrr",
+        "rrrrrrrrr",
+        "rrrrrrrrr",
+        ".........",
+    ], {"w": "#ffffff", "r": "#8a8a94"}),
+    "elektrik": ([  # a light blue bolt
+        ".ww....",
+        "..ww...",
+        "...ww..",
+        ".wwwww.",
+        "..ww...",
+        "...ww..",
+        "....ww.",
+    ], {"w": "#a8dcff"}),
+    "psycho": ([  # an eye: white, a magenta iris
+        ".........",
+        "...kkk...",
+        ".kkwwwkk.",
+        "kwwmmmwwk",
+        "kwwmkmwwk",
+        "kwwmmmwwk",
+        ".kkwwwkk.",
+        "...kkk...",
+        ".........",
+    ], {"w": "#ffffff", "m": "#b02cc8", "k": "#15121d"}),
+    "star": ([  # a yellow five-pointed star (Power Surge)
+        "....y....",
+        "....y....",
+        "...yyy...",
+        "yyyyyyyyy",
+        ".yyyyyyy.",
+        "..yyyyy..",
+        "..yyyyy..",
+        ".yyy.yyy.",
+        ".yy...yy.",
+    ], {"y": "#ffd83a"}),
+    "shadow": ([  # a crescent moon, pale
+        "..www..",
+        ".ww....",
+        "ww.....",
+        "ww.....",
+        "ww.....",
+        ".ww....",
+        "..www..",
+    ], {"w": "#e8e0c8"}),
+}
+
 # ---- Stat and key icons (12x12) -------------------------------------------------------------
 
 ICONS = {
@@ -2709,6 +2848,12 @@ def main():
     write_png(ui / "heart_empty.png", sprite(HEART_ROWS, {"o": "#2a0a10", "r": "#3a2a30", "l": "#4a3a40"}))
     for name, pixels in ICONS.items():
         write_png(ui / f"{name}.png", pixels)
+
+    dice = ASSETS / "dice"
+    dice.mkdir(parents=True, exist_ok=True)
+    for name, symbol in DIE_SYMBOLS.items():
+        rows, palette = symbol if isinstance(symbol, tuple) else (symbol, {"w": "#15121d"})
+        write_png(dice / f"{name}.png", sprite(rows, palette))
 
     build_woarld(ASSETS / "woarld")
     build_tavern(ASSETS / "tavern")

@@ -95,7 +95,7 @@ public sealed partial class GameSession
         SpendBankedPowerDice(hero, command.PowerDice, events);
         bool torch = weapon.Torch;
         RollHeroAttack(hero, torch ? 0 : 1, bonus, [monster.Id], DamageSource.Weapon, events, command.PowerDice,
-            stunOnSix: weapon.StunOnSix, weapon: weapon, typed: torch ? [(DieType.Fire, 1)] : null, torches: torch ? 1 : 0, spent: spent);
+            stunOnSix: weapon.StunOnSix, weapon: weapon, typed: torch ? [(DieType.Fire, 1)] : null, torches: torch ? 1 : 0, spent: spent, offHand: true);
         return null;
     }
 
