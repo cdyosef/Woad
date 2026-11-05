@@ -1454,7 +1454,7 @@ ICONS = {
         "...ooooooo..",
         "............",
     ], {"o": OUTLINE, "l": "#a8eca0", "g": "#4cc85a", "d": "#1e7a3a"}),
-    "icon_odhand": sprite([  # a hamsa, yellow like the Od Hand dice, its eye blue
+    "icon_odhand": sprite([  # a hamsa, yellow like the Od Hand dice, edged and its eye blue
         "...o.oo.o...",
         "..obobbobo..",
         "..obobbobo..",
@@ -1467,7 +1467,7 @@ ICONS = {
         "...obbbbo...",
         "....oooo....",
         "............",
-    ], {"o": OUTLINE, "b": "#f0d060", "w": "#f8f4e8", "k": "#24508a"}),
+    ], {"o": "#24508a", "b": "#f0d060", "w": "#f8f4e8", "k": "#24508a"}),
     "icon_power": sprite([  # the Violet crest's four-pointed star, for Power Dice
         ".....o......",
         "....olo.....",

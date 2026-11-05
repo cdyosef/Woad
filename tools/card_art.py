@@ -674,16 +674,27 @@ def hamsa(c):
     c.poly([(22, 23), (22, 15), (25, 11.5), (27.5, 12), (27.5, 15), (25, 21)], ODHAND[1])
     c.line(5, 12.5, 6.5, 18, ODHAND[0])
     c.line(26.5, 13, 25, 19, ODHAND[2])
-    # The palm, rounding to the wrist.
-    c.rect(10, 14, 12, 11, ODHAND[1])
-    c.poly([(10, 24), (22, 24), (19, 28), (13, 28)], ODHAND[1])
-    c.rect(10, 14, 1, 11, ODHAND[0])
-    c.rect(13, 27, 6, 1, ODHAND[2])
+    # The palm, its bottom rounded.
+    c.rect(10, 14, 12, 9, ODHAND[1])
+    c.circle(16, 22, 6, ODHAND[1])
+    c.rect(10, 14, 1, 9, ODHAND[0])
     # The eye in the palm.
     c.poly([(11.5, 20), (14, 17.8), (18, 17.8), (20.5, 20), (18, 22.2), (14, 22.2)], WHITE[0])
     c.circle(16, 20, 2.1, IRIS)
     c.rect(15, 19, 2, 2, OUTLINE)
     c.dot(15, 19, WHITE[0])
+    # A thin blue line round the yellow, inside its outline.
+    edge(c, IRIS)
+
+
+def edge(c, color):
+    """Every filled pixel on the picture's edge (beside an empty one, not diagonally) in <color>."""
+    filled = [[pixel is not None for pixel in row] for row in c.px]
+    for y in range(SIZE):
+        for x in range(SIZE):
+            if filled[y][x] and any(not (0 <= x + dx < SIZE and 0 <= y + dy < SIZE) or not filled[y + dy][x + dx]
+                                    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+                c.px[y][x] = color
 
 
 def ability(c, name):
