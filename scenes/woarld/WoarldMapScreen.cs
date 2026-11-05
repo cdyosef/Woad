@@ -70,6 +70,9 @@ public partial class WoarldMapScreen : Control
     /// <summary>The Raiding Party's Woarld, whose wandering merchants are out on the map; null for none.</summary>
     public RaidWorld? World { get; init; }
 
+    /// <summary>The Raiding Party's chest, for the Party menu; null for a Dungeon Run's map.</summary>
+    public Woad.Core.Saves.PartyChest? Chest { get; init; }
+
     public ContentCatalog Content { get; init; } = ContentCatalog.LoadDefault();
 
     /// <summary>A hero bought or sold something from a wandering merchant: save them and the Woarld.</summary>
@@ -183,7 +186,7 @@ public partial class WoarldMapScreen : Control
         };
         AddChild(_smithyPanel);
 
-        PartyButton = AddButton(new Vector2(576, ButtonsTop), 56, "Party", "The Party: everyone's level, hearts and gear. Hand things around, level up, and set how companions manage their things.");
+        PartyButton = AddButton(new Vector2(576, ButtonsTop), 56, "Party", "The Party: everyone's gear, belts and packs, the Party Chest, and levelling up. Hand things around, and set how companions manage their things.");
         PartyButton.Pressed += () => PartyMenu.Open();
 
         BuildEncounters();
@@ -197,7 +200,7 @@ public partial class WoarldMapScreen : Control
         };
         AddChild(BeginRaid);
 
-        PartyMenu = new PartyDialog { Party = Party, Content = Content, Hearts = Hearts, Wound = Wound, Random = _random };
+        PartyMenu = new PartyDialog { Party = Party, Content = Content, Chest = Chest, Hearts = Hearts, Wound = Wound, Random = _random };
         PartyMenu.Changed += heroes => CharactersChanged?.Invoke(heroes);
         PartyMenu.LevelUpRequested += character => LevelUpRequested?.Invoke(character);
         AddChild(PartyMenu);

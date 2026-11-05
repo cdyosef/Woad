@@ -10,6 +10,7 @@ using Woad.Core.Tavern;
 using Woad.Core.Woarld;
 using Woad.Scenes.Game;
 using Woad.Scenes.Ui;
+using Woad.Scenes.Woarld;
 
 namespace Woad.Scenes.Tavern;
 
@@ -98,6 +99,13 @@ public partial class TavernScreen : Control
     /// <summary>A new companion was hired: save them and add them to the roster.</summary>
     public event Action<Character>? RecruitHired;
 
+    /// <summary>A character with points to spend, from the Party menu: open their points.</summary>
+    public event Action<Character>? LevelUpRequested;
+
+    internal Button PartyButton { get; private set; } = null!;
+
+    internal PartyDialog PartyMenu { get; private set; } = null!;
+
     internal Button LeaderButton { get; private set; } = null!;
 
     internal Button TalkButton { get; private set; } = null!;
@@ -182,7 +190,9 @@ public partial class TavernScreen : Control
         };
         LeaderButton = AddButton(new Vector2(154, ButtonsTop), 150, "", "Who walks at the head of the line. Click for the next player.");
         LeaderButton.Pressed += NextLeader;
-        TalkButton = AddButton(new Vector2(310, ButtonsTop), 322, "", "");
+        TalkButton = AddButton(new Vector2(310, ButtonsTop), 260, "", "");
+        PartyButton = AddButton(new Vector2(576, ButtonsTop), 56, "Party", "The Party: everyone's gear, belts and packs, the Party Chest, and levelling up.");
+        PartyButton.Pressed += () => PartyMenu.Open();
         TalkButton.Pressed += () =>
         {
             if (_visit.NpcInReach is { } npc)
@@ -192,12 +202,40 @@ public partial class TavernScreen : Control
         };
 
         BuildDialog();
+
+        int Max(Character character) => character.MaxHearts(Content);
+        PartyMenu = new PartyDialog
+        {
+            Party = Party,
+            Content = Content,
+            Chest = Raid.Chest,
+            Hearts = character => (Raid.HeartsOf(character.Id, Max(character)), Max(character)),
+            Wound = character => Raid.SetHearts(character.Id, Math.Max(1, Raid.HeartsOf(character.Id, Max(character)) - 1), Max(character)),
+            Random = _random,
+        };
+        PartyMenu.Changed += heroes =>
+        {
+            foreach (Character hero in heroes)
+            {
+                CharacterChanged?.Invoke(hero);
+            }
+
+            PartyChanged?.Invoke();
+            Refresh();
+        };
+        PartyMenu.LevelUpRequested += character => LevelUpRequested?.Invoke(character);
+        AddChild(PartyMenu);
         Refresh();
     }
 
     public override void _Process(double delta)
     {
         _stepCooldown -= delta;
+        if (PartyMenu.Visible)
+        {
+            return;
+        }
+
         if (_stepCooldown > 0 || _dialog.Visible)
         {
             return;

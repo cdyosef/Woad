@@ -686,6 +686,7 @@ public partial class Main : Control
 			Hearts = _raid is null || world is null ? null : RaidHearts,
 			Wound = _raid is null || world is null ? null : WoundOnMap,
 			World = world,
+			Chest = world is null ? null : _raid?.Chest,
 			Content = _content,
 		};
 		screen.LevelUpRequested += character =>
@@ -704,6 +705,7 @@ public partial class Main : Control
 		screen.CharactersChanged += async heroes =>
 		{
 			SaveRaidWorld();
+			SaveRaid();
 			foreach (Character hero in heroes)
 			{
 				try
@@ -821,6 +823,12 @@ public partial class Main : Control
 		};
 		screen.CharacterChanged += SaveCharacter;
 		screen.RecruitHired += SaveCharacter;
+		screen.LevelUpRequested += character =>
+		{
+			_woarldLeader = screen.Leader;
+			SaveRaid();
+			ShowEditor(character, ShowTavern);
+		};
 		ShowMenu(screen);
 	}
 

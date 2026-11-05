@@ -426,6 +426,40 @@ public partial class Main
         Check(inn.Party.Count == 4 && inn.Party[3].Name == "Morgan" && _raid.Sty.Count == 0, "and Morgan comes in from the sty");
         await Click(this, inn.ByeButton);
 
+        // The Party menu: everyone's things on one page, and the Party Chest.
+        async Task PartyClick(string name)
+        {
+            Button button = inn.PartyMenu.Find(name)!;
+            await NextFrame(this);
+            await Click(this, inn.PartyMenu.Find(name)!);
+        }
+
+        await Click(this, inn.PartyButton);
+        Check(inn.PartyMenu.Visible && inn.PartyMenu.Find("ChestCoins") is not null && inn.PartyMenu.Find("Sheet3") is not null,
+            "the Party button in the inn puts everyone, and the Party Chest, on one page");
+        int purse = wren.Coins;
+        await PartyClick("Purse0");
+        await PartyClick("GoldChest");
+        Check(_raid.Chest.Coins == Money.Gold(1) && wren.Coins == purse - Money.Gold(1), "a gold goes from Wren's purse into the Party Chest");
+        await PartyClick("Card0_club");
+        await PartyClick("ToChest");
+        Check(_raid.Chest.Cards.SequenceEqual(["club"]) && !wren.Equipped.Contains("club"), "Wren's club goes into the chest");
+        if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } partyShots)
+        {
+            await PartyClick("Chest_club");
+            await NextFrame(this);
+            GetViewport().GetTexture().GetImage().SavePng($"{partyShots}/inn_party.png");
+            await PartyClick("Chest_club");
+        }
+
+        Character morgan = inn.Party[3];
+        int clubs = morgan.Equipped.Concat(morgan.Belt).Concat(morgan.Backpack).Count(key => key == "club");
+        await PartyClick("Chest_club");
+        await PartyClick("TakeOutToMorgan");
+        Check(_raid.Chest.Cards.Count == 0 && morgan.Equipped.Concat(morgan.Belt).Concat(morgan.Backpack).Count(key => key == "club") == clubs + 1,
+            "and Morgan takes it out");
+        await Click(this, inn.PartyMenu.Find("Close")!);
+
         await Click(this, inn.DoorButton);
         WoarldMapScreen map = await Screen<WoarldMapScreen>();
         Check(map.Journey.PlaceHere?.Id == "waylay_inn" && map.Party.Count == 4, "the door leads out onto the Woarld Map, at the inn");
