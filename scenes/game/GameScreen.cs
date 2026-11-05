@@ -475,6 +475,19 @@ public partial class GameScreen : Control
                 await _banner.Flash($"{hero.Name}'s turn", Palette.Seat(hero.Seat));
                 break;
 
+            case MagicCharged charged:
+                // The empty Magic Energy slots roll at the start of the turn: each 6 fills one.
+                int sixes = charged.Faces.Count(face => face == 6);
+                await _dice.ShowRoll($"{NameOf(charged.HeroId)}'s Magic {(sixes > 0 ? "charges!" : "stirs")}", new DiceRoll(charged.Faces), 0, newGroup: true);
+                if (sixes > 0)
+                {
+                    FloatOver(charged.HeroId, $"+{sixes} Magic", new Color("ffd83a"));
+                    Sfx.Play("coin", 1.6f);
+                }
+
+                RefreshPanels();
+                break;
+
             case EnemyPhaseStarted phase:
                 _playingFaction = phase.Faction;
                 ShowTurnOf(null);

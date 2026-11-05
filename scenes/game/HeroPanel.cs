@@ -372,6 +372,7 @@ public partial class HeroPanel : Panel
         }
 
         Pool.ShowArmor(hero.ArmorTotal, hero.ArmorBoost, hero.ArmorWear);
+        Pool.ShowMagic(hero.MagicSlots, hero.MagicCharged, 0);
         if (turn is null)
         {
             // Not their turn (out on the Woarld Map, or looked over): all their dice, to read, not to pick.

@@ -489,6 +489,7 @@ public partial class GameScreen
         pool.ShowPool(DicePool.Wend, _session.MoveDiceLeft, SelectedMoveDice, speed, speed < 0 || (speed > 0 && !_speedHeld), steps);
         pool.ShowPool(DicePool.OdHand, _session.OdHandDiceLeft, SelectedOdHandDice, tools, tools > 0 && !_toolsHeld, bonusDice: _session.ToolDiceLeft);
         pool.ShowPool(DicePool.Power, ActiveHero?.Power.Banked ?? 0, SelectedPowerDice, 0, false);
+        pool.ShowMagic(ActiveHero?.MagicSlots ?? 0, ActiveHero?.MagicCharged ?? 0, SelectedMagicDice);
         ShowDefense(pool);
     }
 
@@ -507,6 +508,11 @@ public partial class GameScreen
 
     /// <summary>Banked Power Dice start unselected: they're only spent when the player picks them.</summary>
     private int SelectedPowerDice => Math.Clamp(_powerDiceSelected, 0, ActiveHero?.Power.Banked ?? 0);
+
+    /// <summary>Charged Magic Energy slots picked, to put into a spell on top of its cost (like Power Dice).</summary>
+    private int _magicDiceSelected;
+
+    private int SelectedMagicDice => Math.Clamp(_magicDiceSelected, 0, ActiveHero?.MagicCharged ?? 0);
 
     /// <summary>
     /// Rumble and Od Hand roll the number of dice each hero last chose (1 to begin with), or as many as are
@@ -574,7 +580,7 @@ public partial class GameScreen
     /// <summary>Selects all the Wend dice and bonuses again (Rumble and Od Hand keep each hero's choice), after each command and at the start of a turn.</summary>
     private void ResetPool()
     {
-        _moveDiceHeld = _powerDiceSelected = 0;
+        _moveDiceHeld = _powerDiceSelected = _magicDiceSelected = 0;
         _weaponHeld = _speedHeld = _toolsHeld = _stealing = _shoving = _leaping = _rushing = _rumbling = false;
     }
 
@@ -715,6 +721,14 @@ public partial class GameScreen
             RefreshPanels();
         };
         _heroPanel.Pool.TokenClicked += OnPoolTokenClicked;
+        _heroPanel.Pool.MagicClicked += index =>
+        {
+            if (!Locked)
+            {
+                _magicDiceSelected += index < SelectedMagicDice ? -1 : 1;
+                RefreshPanels();
+            }
+        };
         _heroPanel.Pool.SwapClicked += _ => SwapWeapon();
         AddChild(_heroPanel);
         _minimap = new MinimapView { Position = new Vector2(SideWidth + BoardView.Pixels + 8, 20), Size = new Vector2(160, 76) };

@@ -91,8 +91,7 @@ public sealed partial class GameSession
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
         int power = spell.Cost + command.ExtraPower;
-        hero.Power.Banked -= power;
-        events.Add(new PowerDiceSpent(hero.Id, power, hero.Power.Banked));
+        PaySpell(hero, power, events);
         int rumble = AttackDiceLeft;
         Turn.AttackDiceUsed += rumble;
 
@@ -281,9 +280,44 @@ public sealed partial class GameSession
         }
 
         int power = spell.Cost + extraPower;
-        return hero.Power.Banked < power
-            ? $"{spell.Name} takes {power} Power; you have {hero.Power.Banked} banked."
+        return hero.SpellPower < power
+            ? $"{spell.Name} takes {power} Power; you have {(hero.MagicSlots > 0 ? $"{hero.MagicCharged} Magic and " : "")}{hero.Power.Banked} banked."
             : null;
+    }
+
+    /// <summary>A spell's Power: Magic Dice first, then banked Power Dice.</summary>
+    private static void PaySpell(Hero hero, int power, List<GameEvent> events)
+    {
+        int magic = Math.Min(hero.MagicCharged, power);
+        if (magic > 0)
+        {
+            hero.MagicCharged -= magic;
+            events.Add(new MagicDiceSpent(hero.Id, magic, hero.MagicCharged));
+        }
+
+        if (power - magic > 0)
+        {
+            hero.Power.Banked -= power - magic;
+            events.Add(new PowerDiceSpent(hero.Id, power - magic, hero.Power.Banked));
+        }
+    }
+
+    /// <summary>
+    /// The start of a hero's turn: a d6 for each empty Magic Energy slot, and each 6 charges one. The dice
+    /// come from the run's seed, the hero and the round, apart from the run's own, so saved runs replay the same.
+    /// </summary>
+    private void ChargeMagic(Hero hero, List<GameEvent> events)
+    {
+        int empty = hero.MagicSlots - hero.MagicCharged;
+        if (empty <= 0 || hero.IsKeelingOver)
+        {
+            return;
+        }
+
+        var random = new Pcg32(State.Seed ^ ((ulong)(uint)hero.Id << 20) ^ (ulong)(uint)State.Round, sequence: 0x3A61C);
+        List<int> faces = [.. Enumerable.Range(0, empty).Select(_ => random.NextInt(1, 7))];
+        hero.MagicCharged += faces.Count(face => face == 6);
+        events.Add(new MagicCharged(hero.Id, faces, hero.MagicCharged, hero.MagicSlots));
     }
 
     /// <summary>Who the spell would hit (or bless), aimed at <paramref name="target"/>, and how; or why it can't be aimed there.</summary>

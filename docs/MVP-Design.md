@@ -60,7 +60,7 @@ Stats are expressed directly as dice and points. Gear cards add to them.
 | Armor | Fixed value added to every defense | 0 | Gear only (shields, armor) |
 | Block | Added, all of it, to the first defense that's losing (before extra dice), then spent until your next turn | 0 | Gear only (shields) |
 | Luck | Rerolls of a single die, per floor | 0 | 1 per reroll |
-| Magic (pentacle) | A Power Dice bank slot and a basic spell per rank, and its rank added to spells cast (see [Magic](#magic)) | 0 | 2 per rank |
+| Magic (pentacle) | A Power Dice bank slot, a Magic Energy slot and a basic spell per rank, and its rank added to spells cast (see [Magic](#magic)) | 0 | 2 per rank |
 
 At level 1 a character may buy at most **2** extra Rumble, Wend, Defense and Od Hand dice each. The
 editor shows what each stat's next step costs.
@@ -565,11 +565,18 @@ Magic is dangerous in this world, and people don't like it, for good reason.
   the list below (up to rank 13, one for each). Raising Magic in the character editor, or with a level's
   points from the Party menu in a run, asks which.
 - Companions can take Magic too, and cast their spells under the **Fight** order.
+- Each rank is also a **Magic Energy slot**, a pentagram after the Power bank in the dice pool. At the
+  start of each of your turns, a d6 is rolled for each empty slot (shown in the dice tray, "Magic stirs"),
+  and each **6** fills one with a **Magic Die**: its star turns yellow. A Magic Die works just like a banked
+  Power Die for spells, in its place: it pays a spell's cost and upcasts it, and a cast spends Magic Dice
+  first. Pick charged slots in the dice pool to upcast, like Power Dice. The rolls earn no Power, and
+  every slot starts empty in each dungeon or fight. (The dice come from the run's seed, so saved runs
+  replay the same.)
 
 ### Casting
 
-- A spell costs **banked Power Dice**: 1 for a basic spell, 3 for one learned from a scroll. The Power is
-  spent, not rolled in.
+- A spell costs **banked Power Dice** (or Magic Dice, spent first): 1 for a basic spell, 3 for one learned
+  from a scroll. The Power is spent, not rolled in.
 - **Upcasting:** each extra Power spent adds one more die of the spell's type, up to your Magic rank in
   extra dice. At Magic 2, Hurl Fire is 1 to 3 Fire dice.
 - The attack is the spell's dice **plus your Focus Bonus**, and **one Od Hand die** if you've one selected

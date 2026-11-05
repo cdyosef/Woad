@@ -59,6 +59,57 @@ public class MagicTests
     }
 
     [Fact]
+    public void EachRankOfMagicIsAMagicEnergySlotThatA6ChargesAtTheStartOfATurn()
+    {
+        GameSession session = TestRun.Start(Range);
+        Hero hero = Mage(session, magic: 3, power: 0);
+        Assert.Equal((3, 0), (hero.MagicSlots, hero.MagicCharged));
+
+        int charged = 0;
+        for (int turn = 0; turn < 60 && charged < 3; turn++)
+        {
+            MagicCharged stirred = session.Do(new EndTurn(hero.Id)).SingleOf<MagicCharged>();
+
+            // A die for each empty slot, and each 6 fills one.
+            Assert.Equal(3 - charged, stirred.Faces.Count);
+            Assert.Equal(charged + stirred.Faces.Count(face => face == 6), stirred.Charged);
+            charged = stirred.Charged;
+            Assert.Equal(charged, hero.MagicCharged);
+        }
+
+        Assert.Equal(3, charged);
+        Assert.DoesNotContain(session.Do(new EndTurn(hero.Id)), gameEvent => gameEvent is MagicCharged);
+    }
+
+    [Fact]
+    public void ASpellSpendsMagicDiceFirstThenPower()
+    {
+        GameSession session = TestRun.Start(Range, new ScriptedDice(4, 4));
+        Hero hero = Mage(session, magic: 2, power: 2, "hurl_fire");
+        hero.MagicCharged = 1;
+
+        IReadOnlyList<GameEvent> events = session.Do(new CastSpell(hero.Id, "hurl_fire", session.OnlyMonster().Position, ExtraPower: 1));
+
+        Assert.Equal(new MagicDiceSpent(hero.Id, 1, 0), events.SingleOf<MagicDiceSpent>());
+        Assert.Equal(new PowerDiceSpent(hero.Id, 1, 1), events.SingleOf<PowerDiceSpent>());
+    }
+
+    [Fact]
+    public void MagicDiceAlonePayForASpellAndUpcastIt()
+    {
+        GameSession session = TestRun.Start(Range, new ScriptedDice(4, 4));
+        Hero hero = Mage(session, magic: 2, power: 0, "hurl_fire");
+        Assert.NotNull(session.CheckCastSpell("hurl_fire"));
+        hero.MagicCharged = 2;
+
+        IReadOnlyList<GameEvent> events = session.Do(new CastSpell(hero.Id, "hurl_fire", session.OnlyMonster().Position, ExtraPower: 1));
+
+        Assert.Equal(2, events.SingleOf<SpellCast>().Power);
+        Assert.Equal(0, hero.MagicCharged);
+        Assert.Empty(events.OfType<PowerDiceSpent>());
+    }
+
+    [Fact]
     public void ThePowerBankHoldsAnotherDieForEachRankOfMagic()
     {
         GameSession session = TestRun.Start(Range);

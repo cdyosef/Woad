@@ -1542,6 +1542,23 @@ ICONS["icon_magic"] = sprite([  # a pentacle: a star in a ring
     "..ooo..ooo..",
     "....oooo....",
 ], {"o": "#8f78b0", "s": "#e8d8ff"})
+# A Magic Energy slot: the pentacle, its star dim while empty, filled in yellow once a 6 charges it.
+PENTACLE = [
+    "....oooo....",
+    "..ooossooo..",
+    ".oo..ss..oo.",
+    ".o...ss...o.",
+    "osssssssssso",
+    "o.sss..sss.o",
+    "o..ss..ss..o",
+    "oo.ssssss.oo",
+    ".o.ssssss.o.",
+    ".ooss..ssoo.",
+    "..ooo..ooo..",
+    "....oooo....",
+]
+ICONS["icon_magic_slot"] = sprite(PENTACLE, {"o": "#8f78b0", "s": "#4e3d6c"})
+ICONS["icon_magic_full"] = sprite(PENTACLE, {"o": "#8f78b0", "s": "#ffd83a"})
 ICONS["icon_luck"] = sprite([  # a four-leaf clover
     ".ooo.ooo....",
     "olggolggo...",

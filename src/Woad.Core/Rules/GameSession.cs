@@ -393,6 +393,7 @@ public sealed partial class GameSession
         hero.OdHandSpent = 0;
         State.Turn = new TurnState(hero.Id) { KeelingOver = hero.IsKeelingOver };
         events.Add(new TurnStarted(hero.Id));
+        ChargeMagic(hero, events);
         RechargeDefense(hero);
         DropHeldDefense(hero);
         ApplyStun(hero);

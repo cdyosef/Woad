@@ -120,6 +120,22 @@ public partial class DicePoolView : Control
 
     /// <summary>The Defense row: the base die, the extra dice (the first <paramref name="ready"/> of them ready, the rest spent), armor and Block.</summary>
     /// <param name="guard">Guard Dice for allies beside you (the Knight's set), the first <paramref name="guardReady"/> ready.</param>
+    /// <summary>A charged Magic Energy slot was clicked (by its place among the charged ones).</summary>
+    public event Action<int>? MagicClicked;
+
+    /// <summary>
+    /// The Magic Energy slots, after the Power bank: a pentagram each, its star filled yellow once a 6
+    /// charges it with a Magic Die; the first <paramref name="selected"/> charged ones picked.
+    /// </summary>
+    public void ShowMagic(int slots, int charged, int selected)
+    {
+        Row row = _rows[(int)DicePool.Power];
+        row.MagicSlots = Math.Max(0, slots);
+        row.MagicCharged = Math.Clamp(charged, 0, row.MagicSlots);
+        row.MagicSelected = Math.Clamp(selected, 0, row.MagicCharged);
+        QueueRedraw();
+    }
+
     /// <summary>The ranks bought in each ability, after its symbol (on a character's sheet).</summary>
     public void ShowRanks(int rumble, int odHand, int wend, int defense)
     {
@@ -194,6 +210,7 @@ public partial class DicePoolView : Control
         foreach (Row row in _rows)
         {
             row.Tokens.Clear();
+            row.MagicTokens.Clear();
             row.BonusRect = row.SwapRect = default;
             if (row.Hidden)
             {
@@ -241,7 +258,27 @@ public partial class DicePoolView : Control
                     DrawRect(rect, Palette.TrimDim, filled: false, width: 1);
                 }
 
-                if (row.Capacity == 0 && row.Dice == 0)
+                // The Magic Energy slots: a pentagram each, the star yellow once charged; picked ones framed.
+                for (int i = 0; i < row.MagicSlots; i++)
+                {
+                    Rect2 rect = cursor.Next(Token);
+                    bool full = i < row.MagicCharged;
+                    if (GameArt.Ui(full ? "icon_magic_full" : "icon_magic_slot") is { } pentagram)
+                    {
+                        DrawTextureRect(pentagram, rect, tile: false);
+                    }
+
+                    if (full)
+                    {
+                        row.MagicTokens.Add(rect);
+                        if (_enabled && i < row.MagicSelected)
+                        {
+                            DrawRect(rect.Grow(1), Palette.TrimBright, filled: false, width: 1);
+                        }
+                    }
+                }
+
+                if (row.Capacity == 0 && row.Dice == 0 && row.MagicSlots == 0)
                 {
                     DrawString(font, cursor.Text(), "roll a 6 to earn one", fontSize: UiTheme.FontSize, modulate: Palette.TextDim);
                 }
@@ -304,6 +341,17 @@ public partial class DicePoolView : Control
                 if (row.Tokens[i].Grow(1).HasPoint(click.Position))
                 {
                     Pick((DicePool)r, i);
+                    return;
+                }
+            }
+
+            for (int i = 0; i < row.MagicTokens.Count; i++)
+            {
+                if (row.MagicTokens[i].Grow(1).HasPoint(click.Position))
+                {
+                    Sfx.Play("click");
+                    MagicClicked?.Invoke(i);
+                    AcceptEvent();
                     return;
                 }
             }
@@ -489,6 +537,16 @@ public partial class DicePoolView : Control
         public int Guard { get; set; }
 
         public int GuardReady { get; set; }
+
+        /// <summary>Power: the Magic Energy slots after the bank, how many hold a Magic Die, and how many of those are picked.</summary>
+        public int MagicSlots { get; set; }
+
+        public int MagicCharged { get; set; }
+
+        public int MagicSelected { get; set; }
+
+        /// <summary>Power: where each charged Magic Energy slot was drawn, to click.</summary>
+        public List<Rect2> MagicTokens { get; } = [];
 
         /// <summary>The ranks bought in it, shown after its symbol (null: not shown).</summary>
         public int? Rank { get; set; }
