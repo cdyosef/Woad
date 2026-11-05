@@ -196,11 +196,11 @@ public sealed partial class GameSession
 
         GridPosition spot = SafeTile(room, hero.Position);
         room.AddLoot(spot, dropped);
-        if (hero.Gold > 0)
+        if (hero.Coins > 0)
         {
-            room.AddGold(spot, hero.Gold);
-            events.Add(new GoldAppeared(room.Id, spot, hero.Gold));
-            hero.Gold = 0;
+            room.AddCoins(spot, hero.Coins);
+            events.Add(new GoldAppeared(room.Id, spot, hero.Coins));
+            hero.Coins = 0;
         }
 
         var tombstone = new Tombstone(spot, hero.Id, hero.Name, hero.Bane ?? "Lost in the dungeon", HereLies: _random.Behavior.CoinFlip());

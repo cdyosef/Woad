@@ -444,7 +444,7 @@ public static class CompanionBot
                     .Concat(room.TilesOfKind(TileKind.Chest).Where(chest => !room.IsChestOpened(chest)).SelectMany(chest => chest.OrthogonalNeighbors()))
                     .Concat(room.Gates.Keys.SelectMany(gate => gate.OrthogonalNeighbors())),
             CompanionOrder.Loot =>
-                room.LootPositions.Concat(room.Gold.Keys).Concat(room.Keys.Keys)
+                room.LootPositions.Concat(room.Coins.Keys).Concat(room.Keys.Keys)
                     .Where(tile => WorthTaking(room, hero, tile))
                     .SelectMany(tile => new[] { tile }.Concat(tile.SurroundingTiles()))
                     .Concat(room.TilesOfKind(TileKind.Chest).Where(chest => !room.IsChestOpened(chest) && room.ChestLockAt(chest) is null).SelectMany(chest => chest.OrthogonalNeighbors()))
@@ -457,7 +457,7 @@ public static class CompanionBot
 
     /// <summary>Loot worth a looter's while: gold, keys, or a card it can carry.</summary>
     private static bool WorthTaking(Room room, Hero hero, GridPosition tile) =>
-        room.GoldAt(tile) > 0 || room.KeysAt(tile) > 0 || room.BossKeyAt == tile || room.LootAt(tile).Any(card => hero.CanCarry(card.Definition));
+        room.CoinsAt(tile) > 0 || room.KeysAt(tile) > 0 || room.BossKeyAt == tile || room.LootAt(tile).Any(card => hero.CanCarry(card.Definition));
 
     private static IEnumerable<GridPosition> Beside(Room room, GridPosition at, TileKind kind) =>
         at.OrthogonalNeighbors().Where(tile => room.Layout.Contains(tile) && room.Layout[tile] == kind);

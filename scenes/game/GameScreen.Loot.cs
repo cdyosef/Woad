@@ -44,7 +44,7 @@ public partial class GameScreen
     /// <summary>Everything on a tile, counting each copy in a stack, and gold, keys and an unlit bomb as one thing each.</summary>
     private static int ThingsAt(Room room, GridPosition tile) =>
         room.LootAt(tile).Sum(card => card.Count)
-        + (room.GoldAt(tile) > 0 ? 1 : 0) + room.KeysAt(tile) + (room.BossKeyAt == tile ? 1 : 0)
+        + (room.CoinsAt(tile) > 0 ? 1 : 0) + room.KeysAt(tile) + (room.BossKeyAt == tile ? 1 : 0)
         + (room.BombAt(tile) is { Lit: false } ? 1 : 0);
 
     /// <summary>Loot on or beside the hero: a single thing is taken at once; a bag or a chest opens to rummage through.</summary>

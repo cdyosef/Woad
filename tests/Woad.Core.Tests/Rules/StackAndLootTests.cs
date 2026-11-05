@@ -66,7 +66,7 @@ public class StackAndLootTests
 
         Assert.Equal(1, coins.Count);
         Assert.Equal(2, Assert.Single(session.RoomById().LootAt(hero.Position)).Count);
-        Assert.Equal(5, hero.TreasureValue);
+        Assert.Equal(Money.Gold(5), hero.TreasureValue);
     }
 
     [Fact]
@@ -74,7 +74,7 @@ public class StackAndLootTests
     {
         GameSession session = TestRun.Start(Open, cards: ["gem", "gem", "coin"]);
 
-        Assert.Equal(2 * 15 + 5, session.HeroInSeat().TreasureValue);
+        Assert.Equal(Money.Gold(2 * 15 + 5), session.HeroInSeat().TreasureValue);
     }
 
     [Fact]

@@ -25,7 +25,7 @@ public sealed partial class GameSession
 
     /// <summary>Whether a monster could steal anything from the hero.</summary>
     private static bool WorthStealing(Monster monster, Hero hero) =>
-        hero.Gold > 0 || (!monster.Definition.GoldOnly && hero.Backpack.Count > 0);
+        hero.Coins > 0 || (!monster.Definition.GoldOnly && hero.Backpack.Count > 0);
 
     /// <summary>A monster's Od Hand action: steal from the richest hero beside it, if any. True if it tried.</summary>
     private bool TrySteal(Room room, Monster monster, IEnumerable<Hero> heroes, List<GameEvent> events)
@@ -37,7 +37,7 @@ public sealed partial class GameSession
 
         Hero? mark = heroes
             .Where(hero => hero.Position.ManhattanDistanceTo(monster.NearestTile(hero.Position)) == 1 && WorthStealing(monster, hero))
-            .OrderByDescending(hero => hero.Gold)
+            .OrderByDescending(hero => hero.Coins)
             .ThenBy(hero => hero.Seat)
             .FirstOrDefault();
         if (mark is null)
@@ -63,12 +63,12 @@ public sealed partial class GameSession
                 continue;
             }
 
-            int purse = Math.Min(GoldPerTheft, mark.Gold);
-            mark.Gold -= purse;
+            int purse = Math.Min(Money.Gold(GoldPerTheft), mark.Coins);
+            mark.Coins -= purse;
             gold += purse;
         }
 
-        monster.StolenGold += gold;
+        monster.StolenCoins += gold;
         events.Add(new MonsterStole(monster.Id, mark.Id, hits, gold, taken?.Id));
         return true;
     }
@@ -76,11 +76,11 @@ public sealed partial class GameSession
     /// <summary>A mugger's hit takes gold too.</summary>
     private static void Mug(Monster monster, Hero hero, List<GameEvent> events)
     {
-        int gold = Math.Min(GoldPerMugging, hero.Gold);
+        int gold = Math.Min(Money.Gold(GoldPerMugging), hero.Coins);
         if (gold > 0)
         {
-            hero.Gold -= gold;
-            monster.StolenGold += gold;
+            hero.Coins -= gold;
+            monster.StolenCoins += gold;
             events.Add(new Mugged(monster.Id, hero.Id, gold));
         }
     }
@@ -101,11 +101,11 @@ public sealed partial class GameSession
     /// <summary>A monster that falls drops everything it stole, gold and cards, where it fell.</summary>
     private static void DropStolen(Room room, Monster monster, GridPosition at, List<GameEvent> events)
     {
-        if (monster.StolenGold > 0)
+        if (monster.StolenCoins > 0)
         {
-            room.AddGold(at, monster.StolenGold);
-            events.Add(new GoldAppeared(room.Id, at, monster.StolenGold));
-            monster.StolenGold = 0;
+            room.AddCoins(at, monster.StolenCoins);
+            events.Add(new GoldAppeared(room.Id, at, monster.StolenCoins));
+            monster.StolenCoins = 0;
         }
 
         foreach (CardInstance card in monster.StolenCards)

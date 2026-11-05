@@ -82,14 +82,14 @@ public partial class RummagePanel : Panel
             y += Line;
         }
 
-        int gold = room.GoldAt(tile), keys = room.KeysAt(tile);
+        int gold = room.CoinsAt(tile), keys = room.KeysAt(tile);
         bool bossKey = room.BossKeyAt == tile;
         if (gold > 0 || keys > 0 || bossKey)
         {
             var parts = new List<string>();
             if (gold > 0)
             {
-                parts.Add($"{gold} gold");
+                parts.Add(Money.Short(gold));
             }
 
             if (keys > 0)

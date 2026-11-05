@@ -55,7 +55,7 @@ public sealed class Character
         _belt = [.. belt];
         _backpack = [.. backpack];
         _carried = [.. carried ?? []];
-        Gold = gold;
+        Coins = gold;
         RunsPlayed = runsPlayed;
         Wins = wins;
         IsCompanion = isCompanion;
@@ -111,7 +111,8 @@ public sealed class Character
     /// <summary>Ids of the spells they know: a basic one for each rank of Magic, and any learned from scrolls.</summary>
     public IReadOnlyList<string> Spells => _spells;
 
-    public int Gold { get; private set; }
+    /// <summary>The purse, in copper (see <see cref="Model.Money"/>).</summary>
+    public int Coins { get; private set; }
 
     public int RunsPlayed { get; private set; }
 
@@ -321,23 +322,24 @@ public sealed class Character
         return gained;
     }
 
-    /// <summary>Pays gold. False (and nothing paid) if the character hasn't that much.</summary>
-    public bool SpendGold(int amount)
+    /// <summary>Pays <paramref name="amount"/> copper. False (and nothing paid) if the character hasn't that much.</summary>
+    public bool Spend(int amount)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(amount);
-        if (amount > Gold)
+        if (amount > Coins)
         {
             return false;
         }
 
-        Gold -= amount;
+        Coins -= amount;
         return true;
     }
 
-    public void EarnGold(int amount)
+    /// <summary>Takes <paramref name="amount"/> copper into the purse.</summary>
+    public void Earn(int amount)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(amount);
-        Gold += amount;
+        Coins += amount;
     }
 
     /// <summary>Gives the character a card (bought, won or handed over): equipped if its slot is free, else belted or packed.</summary>
@@ -390,7 +392,7 @@ public sealed class Character
             _lingering[condition] = stacks;
         }
 
-        Gold += result.Gold;
+        Coins += result.Coins;
         GuildStanding += result.GuildStandingChange;
         LawStanding += result.LawStandingChange;
         PowerDice = Math.Clamp(result.PowerDice, 0, GameRules.MaxBankedPowerDice + Allocation.Magic);

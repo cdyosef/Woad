@@ -325,13 +325,19 @@ public sealed record CardDefinition
 
     public CardEffect? Effect { get; init; }
 
-    /// <summary>Treasure only: coins go straight into the finder's purse as gold instead of taking a backpack slot.</summary>
+    /// <summary>Treasure only: coins go straight into the finder's purse instead of taking a backpack slot.</summary>
     public bool Coins { get; init; }
+
+    /// <summary>Coins only: d6s of silver on top of the gold (<see cref="Value"/>).</summary>
+    public int SilverDice { get; init; }
+
+    /// <summary>Coins only: d6s of copper on top.</summary>
+    public int CopperDice { get; init; }
 
     /// <summary>A Lucky Clover: picked up, it's a Clover Luck point straight away (see <c>Hero.CloverLuck</c>), never a card carried.</summary>
     public bool Clover { get; init; }
 
-    /// <summary>Gold value. Treasure cards count toward the run's score.</summary>
+    /// <summary>Value in whole gold. Treasure cards count toward the run's score.</summary>
     public int Value { get; init; }
 
     /// <summary>Rules text shown on the card.</summary>

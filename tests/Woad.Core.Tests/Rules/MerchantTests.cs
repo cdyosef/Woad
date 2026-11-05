@@ -77,17 +77,17 @@ public sealed class MerchantTests
         GameSession session = Dungeon(Hall);
         Hero hero = session.HeroInSeat();
         hero.Keys = 1;
-        hero.Gold = 5;
+        hero.Coins = Money.Gold(5);
         session.Do(new FreeMerchant(hero.Id, Silas(session).Id));
 
         session.Do(new BuyFromMerchant(hero.Id, Silas(session).Id, "sword"));
         CardInstance sword = hero.Card("sword");
-        Assert.Equal(4, hero.Gold);
+        Assert.Equal(Money.Gold(4), hero.Coins);
         Assert.Empty(Silas(session).Stock);
 
         session.Do(new SellToMerchant(hero.Id, Silas(session).Id, sword.Id));
         Assert.Equal(["sword"], Silas(session).Stock);
-        Assert.Equal(5, hero.Gold);
+        Assert.Equal(Money.Gold(5), hero.Coins);
     }
 
     [Fact]

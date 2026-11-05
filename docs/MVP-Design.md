@@ -160,7 +160,7 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
 | Tool | Persistent | Torch (stacks in one slot, one to a hand; see below), Grapple Hook (pull yourself up to 4 tiles in a line; not built yet) |
 | Bomb | Single-use | Bomb (thrown up to 3 tiles, lit: a 4-dice blast over a 3×3 area at the end of your next turn; see [Bombs](#bombs)) |
 | Potion | Single-use | Health Potion (restore 3 hearts) |
-| Treasure | Kept for score | Emerald (15g), Golden Idol (40g). Coins (Loose Coins 2g, Coin Pouch 5g) aren't cards: they go straight into your purse as gold |
+| Treasure | Kept for score | Emerald (15g), Golden Idol (40g). Coins aren't cards: they go straight into your purse (Loose Coins: 3 gold, a d6 of silver and 2d6 copper; Coin Pouch: 8 gold and 2d6 silver) |
 
 - **Starter kit** (new characters): a Basic Belt and Basic Buckle, a Club (in hand), and a Torch (unlit), a Health Potion and Lockpicks on the belt. No shield.
 - **Equipping, belting or stowing gear** is free out of combat, as often as you like. **In combat** (an
@@ -484,6 +484,16 @@ of their own on top (a Flame Scroll aimed at bare floor sets it burning).
   **Autosmith Hammer** does. On a monster, its armor is eaten for the rest of the fight. With no armor
   left, an Acid token instead, which attacks them with an Acid die at the end of their next turn and is
   used up.
+- **The Waylay Inn:** the Raiding Party's home. The bar serves food and drink for the next Rest roll
+  (Woad Ale 5 copper, Honey Mead 1 silver, Hearth Stew 1 silver 5 copper, Hunter's Pie 2 silver,
+  Dragon's Breath 3 silver), eaten now or packed To-Go; a round for the party is 5 silver (it grows
+  bonds), a round for the whole bar 2 gold (it raises the party's name). Hollis the innkeeper runs the
+  party: **Sleep the night** is 1 gold for everyone, a day passes, and each heals a heart and makes a
+  Rest roll (eating what they've had, or one meal To-Go). Someone leaving the party waits in a **room**
+  upstairs (1 copper, paid once; each night a heart and a Rest roll) or in the **pig sty** out back
+  (free; each night a Rest roll and nothing more). Their nights are counted when the party comes back
+  to the inn, or when they rejoin. A recruit costs 10 gold (more for better ones), and Bones is played
+  for 1 to 20 gold.
 - **The Blacksmith** (a shack on the road south of The Waylay Inn): mends worn gear for **2 gold a point**
   of wear, paid by whoever owns it, and sells arms, armor and **Autosmith Hammers** from the forge, which
   never runs out. An Autosmith Hammer (single use, stacks; in the loot decks too) mends its user's most
@@ -734,7 +744,7 @@ total reaches its number:
   that is its only way in, and over a room on floor 2 when the map allows. Pits ring the walls; a one-tile
   bridge leads from the door to a platform where the Ogre Champ waits, and a second bridge on the far side
   leads to a little platform with a **grand chest** (gilded and jeweled, its lock 2 harder than the floor's
-  other locks): three cards dealt as if from two floors deeper, and 10 gold. The Champ roars with laughter
+  other locks): three cards dealt as if from two floors deeper, 15 gold and a d6 of silver. The Champ roars with laughter
   ("HAR HAR HAR!") when heroes first walk in, and its own pounding song plays while anyone is in there.
 - **Chained merchants (about one run in three):** a traveling merchant chained to the wall of an ordinary
   room on a random floor. A key frees them, or pick the lock of their chains with Od Hand (like a chest's).
@@ -1013,13 +1023,18 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
 - **Monster drops:** each monster has a drop chance *(tunable)*: slimes 10%, bats 15%, guards 25%,
   skeletons 30%. The Iron Warden always drops 3 cards. Drops land as a loot pile where the monster fell.
 - **Pots** block movement until a hero beside them smashes one (uses the action). In the Emerald Keep:
-  35% Loose Coins (2 gold), 25% a heart, otherwise nothing *(tunable)*.
+  35% Loose Coins, 25% a heart, otherwise a d6 of copper (nothing on a 1) *(tunable)*.
 - **Found items:** cards found during a run are tagged as found.
-- **Gold:** coins (Loose Coins, Coin Pouches) never take a backpack slot: whoever finds them, in a
-  chest, a pot or a steal, pockets the gold at once (shown beside Kills on the hero panel). Coins a
-  monster drops or a stash holds lie on the floor as gold, picked up like any loot. Gold counts as
-  treasure for the winner and becomes the character's gold on escape; someone who dies drops theirs
-  on their tombstone, and companions left behind lose it.
+- **Coins:** gold, silver and copper: 10 copper make a silver, 10 silver a gold. A purse is written
+  short, "2g 3s 5c". Prices, treasure and rewards are mostly in whole gold; food, drink and rooms at the
+  inn cost silver and copper. Coins (Loose Coins, Coin Pouches) never take a backpack slot: whoever
+  finds them, in a chest, a pot or a steal, pockets them at once (shown beside Kills on the hero panel).
+  The silver and copper dice on a coin card are rolled from the run's seed and the card, not the run's
+  dice, so a saved run replays the same. Coins a monster drops or a stash holds lie on the floor, picked
+  up like any loot. They count as treasure for the winner and go into the character's purse on escape;
+  someone who dies drops theirs on their tombstone, and companions left behind lose them. Handing coins
+  to an ally goes in whole gold; handing over all of it takes the change too. Saves from before silver
+  and copper read their gold as copper, 100 to the gold.
 - **XP** *(tunable)*: each monster's XP goes to whoever defeats it (slime 2, guards 4, skeleton 5, Iron
   Warden 25). Reaching a floor for the first time gives 5, and escaping gives 10. The first Search in
   each room is worth 1 (an **Explorer bonus**), and on a dungeon run someone escapes from, whoever has the
@@ -1052,7 +1067,7 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
 - **Rewards:** everyone keeps their XP. Escaped players keep everything they carried out, and treasure
   becomes the character's gold. Players who died keep only the gear they brought in that they still hold.
   Dying only loses the run: the character lives on in the roster.
-  Single-use cards used up during the run are gone. Spending gold comes after the MVP.
+  Single-use cards used up during the run are gone.
 - **Results screen:** when a run ends, results are saved automatically and the game moves to a results
   screen. It shows the winner(s), and for each hero how the run ended, kills, XP and any level-up, and
   the cards found and lost; **Done** goes back to the map (or the party screen). Abandoning a run

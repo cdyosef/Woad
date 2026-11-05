@@ -14,8 +14,9 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
     /// <summary>
     /// 2: skills, and no free Od Hand die. A version 1 file is brought up to date as it loads: it gets
     /// the Od Hand die every hero used to start with, every Od Hand skill and Shove, so nobody loses anything.
+    /// 4: the purse in copper (Coins); older files kept whole gold, worth 100 copper apiece.
     /// </summary>
-    public const int SchemaVersion = 3;
+    public const int SchemaVersion = 4;
 
     private static readonly JsonSerializerOptions Options = new()
     {
@@ -91,7 +92,7 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
         Belt = [.. character.Belt],
         Backpack = [.. character.Backpack],
         Carried = [.. character.Carried],
-        Gold = character.Gold,
+        Coins = character.Coins,
         RunsPlayed = character.RunsPlayed,
         Wins = character.Wins,
         IsCompanion = character.IsCompanion,
@@ -140,7 +141,7 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
         var character = new Character(
             file.Id, file.Name, file.Portrait, file.CreatedUtc, Math.Max(0, file.Xp), allocation,
             Math.Max(0, file.UnspentPoints), Known(file.Equipped), Known(file.Belt), Known(file.Backpack),
-            Math.Max(0, file.Gold), Math.Max(0, file.RunsPlayed), Math.Max(0, file.Wins), file.IsCompanion, file.Appearance, file.GuildStanding, file.LawStanding, file.CowardStanding, file.HasCowardsCloak, file.PowerDice, file.Policy,
+            Math.Max(0, file.SchemaVersion < 4 ? file.Gold * Money.CopperPerGold : file.Coins), Math.Max(0, file.RunsPlayed), Math.Max(0, file.Wins), file.IsCompanion, file.Appearance, file.GuildStanding, file.LawStanding, file.CowardStanding, file.HasCowardsCloak, file.PowerDice, file.Policy,
             KnownSpells(file.Spells), file.Lingering, Known(file.Carried));
         character.SetLuckAsks(file.LuckAsks ?? LuckRoll.All);
         character.SetCloverLuck(file.CloverLuck);
@@ -200,7 +201,11 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
         /// <summary>Missing in files saved before carrying: nothing carried.</summary>
         public List<string> Carried { get; init; } = [];
 
+        /// <summary>Files before schema 4 kept whole gold here; read as copper (times 100).</summary>
         public int Gold { get; init; }
+
+        /// <summary>The purse, in copper: 10 copper a silver, 10 silver a gold.</summary>
+        public int Coins { get; init; }
 
         public int RunsPlayed { get; init; }
 

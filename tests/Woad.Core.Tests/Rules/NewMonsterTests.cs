@@ -174,7 +174,7 @@ public sealed class NewMonsterTests
         IReadOnlyList<GameEvent> events = session.Do(new OpenChest(hero.Id, Chest));
 
         Assert.Equal(3, events.SingleOf<ChestOpened>().CardIds.Count);
-        Assert.Equal(GameRules.GrandChestGold, hero.Gold);
+        Assert.InRange(hero.Coins, Money.Gold(GameRules.GrandChestGold) + Money.Silver(1), Money.Gold(GameRules.GrandChestGold) + Money.Silver(6));
     }
 
     [Fact]
@@ -335,13 +335,13 @@ public sealed class NewMonsterTests
         Room room = session.RoomById();
         var gem = new CardInstance(session.State.NextId(), TestContent.Catalog.GetCard("gem"), broughtInByHeroId: null);
         room.AddLoot(new GridPosition(5, 4), [gem]);
-        room.AddGold(new GridPosition(5, 4), 4);
+        room.AddCoins(new GridPosition(5, 4), 4);
         Monster blob = session.OnlyMonster();
 
         IReadOnlyList<GameEvent> events = session.Do(new EndTurn(hero.Id));
 
         Engulfed engulfed = events.SingleOf<Engulfed>();
-        Assert.Equal((new GridPosition(5, 4), 4), (engulfed.Tile, engulfed.Gold));
+        Assert.Equal((new GridPosition(5, 4), 4), (engulfed.Tile, engulfed.Coins));
         Assert.Equal([gem.Id], engulfed.CardIds);
         Assert.False(room.HasLootAt(new GridPosition(5, 4)));
 

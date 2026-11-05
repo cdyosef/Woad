@@ -705,13 +705,13 @@ public partial class GameScreen
             int wares = silas.Stock.Count;
             await Click(this, _merchantPanel.GetChildren().OfType<Button>().First(button => button.Text == "Sell"));
             await WaitUntilIdle();
-            Check(aria.Gold > 0 && silas.Stock.Count == wares + 1, "Sell sells him something for gold");
-            int gold = aria.Gold;
+            Check(aria.Coins > 0 && silas.Stock.Count == wares + 1, "Sell sells him something for gold");
+            int gold = aria.Coins;
             if (_merchantPanel.GetChildren().OfType<Button>().FirstOrDefault(button => button.Text == "Buy" && !button.Disabled) is { } buy)
             {
                 await Click(this, buy);
                 await WaitUntilIdle();
-                Check(aria.Gold < gold, "Buy buys what she can afford");
+                Check(aria.Coins < gold, "Buy buys what she can afford");
             }
 
             await Click(this, _merchantPanel.GetChildren().OfType<Button>().First(button => button.Text == "Close"));

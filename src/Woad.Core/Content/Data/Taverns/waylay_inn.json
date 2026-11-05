@@ -94,14 +94,15 @@
       ]
     }
   ],
+  // Prices in copper: 10 copper a silver, 10 silver a gold.
   "menu": [
-    { "id": "woad_ale", "name": "Woad Ale", "kind": "drink", "price": 1, "restBonus": 2, "text": "+2 to your next Rest roll." },
-    { "id": "honey_mead", "name": "Honey Mead", "kind": "drink", "price": 2, "restBonus": 4, "text": "+4 to your next Rest roll." },
-    { "id": "hearth_stew", "name": "Hearth Stew", "kind": "food", "price": 3, "restDice": 1, "text": "An extra die on your next Rest roll." },
-    { "id": "hunters_pie", "name": "Hunter's Pie", "kind": "food", "price": 4, "restDice": 1, "restBonus": 2, "text": "An extra die and +2 on your next Rest roll." },
-    { "id": "dragons_breath", "name": "Dragon's Breath", "kind": "drink", "price": 5, "restDice": 2, "text": "Two extra dice on your next Rest roll." }
+    { "id": "woad_ale", "name": "Woad Ale", "kind": "drink", "price": 5, "restBonus": 2, "text": "+2 to your next Rest roll." },
+    { "id": "honey_mead", "name": "Honey Mead", "kind": "drink", "price": 10, "restBonus": 4, "text": "+4 to your next Rest roll." },
+    { "id": "hearth_stew", "name": "Hearth Stew", "kind": "food", "price": 15, "restDice": 1, "text": "An extra die on your next Rest roll." },
+    { "id": "hunters_pie", "name": "Hunter's Pie", "kind": "food", "price": 20, "restDice": 1, "restBonus": 2, "text": "An extra die and +2 on your next Rest roll." },
+    { "id": "dragons_breath", "name": "Dragon's Breath", "kind": "drink", "price": 30, "restDice": 2, "text": "Two extra dice on your next Rest roll." }
   ],
-  "roundForTheBar": 10,
+  "roundForTheBar": 200,
   "stock": ["health_potion", "health_potion", "bomb", "bomb", "leather_cap", "buckler", "lockpicks", "cutpurse_knife", "sticky_gloves", "torch", "torch", "sling", "rock_bag", "short_bow", "chain_mail", "dagger", "dagger", "dagger", "eye_drops", "antidote", "strong_base", "smelling_salts", "bandages", "bandages", "medicine_bag", "modern_medicine", "modern_medicine", "shovel", "holy_water", "frost_scroll", "spark_scroll", "gale_scroll"],
   "recruitNames": ["Ailsa", "Brodie", "Cait", "Dougal", "Effie", "Fergus", "Greer", "Hamish", "Isla", "Lachlan", "Morven", "Rory", "Seona", "Tam"]
 }

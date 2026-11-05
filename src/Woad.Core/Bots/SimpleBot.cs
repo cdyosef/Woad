@@ -187,7 +187,7 @@ public static class SimpleBot
             return new RollMovement(hero.Id);
         }
 
-        IEnumerable<GridPosition> lootTiles = room.LootPositions.Where(tile => backpackHasRoom && room.Layout[tile].IsWalkable()).Concat(room.Keys.Keys).Concat(room.Gold.Keys)
+        IEnumerable<GridPosition> lootTiles = room.LootPositions.Where(tile => backpackHasRoom && room.Layout[tile].IsWalkable()).Concat(room.Keys.Keys).Concat(room.Coins.Keys)
             .Concat(room.Bombs.Where(bomb => !bomb.Lit && backpackHasRoom).Select(bomb => bomb.Position));
         if (room.BossKeyAt is { } bossKey)
         {
@@ -438,7 +438,7 @@ public static class SimpleBot
             .ToList();
 
     private static bool WorthPickingUp(Room room, Hero hero) =>
-        room.KeysAt(hero.Position) > 0 || room.GoldAt(hero.Position) > 0 || room.BossKeyAt == hero.Position
+        room.KeysAt(hero.Position) > 0 || room.CoinsAt(hero.Position) > 0 || room.BossKeyAt == hero.Position
         || (room.LootAt(hero.Position).Count > 0 && hero.Backpack.Count < GameRules.BackpackCapacity);
 
     private static GridPosition? Beside(Room room, Hero hero, TileKind kind) =>

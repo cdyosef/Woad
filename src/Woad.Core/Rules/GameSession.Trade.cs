@@ -105,13 +105,13 @@ public sealed partial class GameSession
 
     private static string? PassGold(Hero from, Hero to, int amount, List<GameEvent> events)
     {
-        if (amount < 1 || amount > from.Gold)
+        if (amount < 1 || amount > from.Coins)
         {
-            return from.Gold == 0 ? $"{from.Name} has no gold." : $"Choose 1 to {from.Gold} gold.";
+            return from.Coins == 0 ? $"{from.Name} has no coin." : $"Choose up to {Money.Long(from.Coins)}.";
         }
 
-        from.Gold -= amount;
-        to.Gold += amount;
+        from.Coins -= amount;
+        to.Coins += amount;
         events.Add(new GoldTraded(from.Id, to.Id, amount));
         return null;
     }

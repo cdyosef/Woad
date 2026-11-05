@@ -356,7 +356,7 @@ public partial class Main
         Character wren = inn.Party[0];
         Check(wren.Name == "Wren" && inn.LeaderButton.Text == "Leader: Wren" && inn.Visit.Leader == inn.Tavern.Start, "the party comes in at the inn's door, Wren leading");
         Check(_raid?.Name == "Wren's Raid" && _raidStore.LoadAll().Raids.Count == 1, "the raid is saved as Wren's Raid");
-        wren.EarnGold(60);
+        wren.Earn(Money.Gold(60));
         int full = wren.MaxHearts(_content);
         _raid.SetHearts(wren.Id, 1, full);
 
@@ -374,57 +374,64 @@ public partial class Main
         await WaitFor(this, () => inn.TalkingTo == bartender, "the walk to the bar");
         Check(inn.Visit.NpcInReach == bartender, "clicking the bartender walks the party up to the bar to talk");
         await Click(this, inn.ListButton("Drink", 0)!);
-        Check(wren.Gold == 59 && inn.World.Fed(wren.Id).Bonus == 2, "a Woad Ale costs 1 gold and boosts Wren's next Rest");
+        Check(wren.Coins == Money.Gold(60) - 5 && inn.World.Fed(wren.Id).Bonus == 2, "a Woad Ale costs 5 copper and boosts Wren's next Rest");
         await Click(this, inn.ListButton("To-Go", 2)!);
         Check(inn.World.Provisions(wren.Id).SequenceEqual(["hearth_stew"]), "a Hearth Stew is packed To-Go");
         await Click(this, inn.ListButton("Buy", 6)!);
-        Check(inn.World.Reputation(inn.Tavern.Id) == 1 && wren.Gold == 46, "a round for the whole bar raises the inn's reputation");
+        Check(inn.World.Reputation(inn.Tavern.Id) == 1 && wren.Coins == Money.Gold(58) - 20, "a round for the whole bar (2 gold) raises the inn's reputation");
         await Click(this, inn.RumorButton);
         Check(inn.World.Journey.IsRevealed(new GridPosition(33, 26)), "the bartender's rumor marks the Sunken Temple on the map");
         await Click(this, inn.ByeButton);
 
         await TalkTo(Npc(NpcRole.Merchant));
         await Click(this, inn.BuyButton("Bomb")!);
-        Check(wren.Gold == 44 && wren.Belt.Contains("bomb"), "the merchant sells Wren a bomb, his cheapest ware");
+        Check(wren.Coins == Money.Gold(56) - 20 && wren.Belt.Contains("bomb"), "the merchant sells Wren a bomb, his cheapest ware");
         await Click(this, inn.ByeButton);
 
         await TalkTo(Npc(NpcRole.Gambler));
         Check(inn.ListRows.First().StartsWith("Bones: two dice each") && !inn.ListButton("20 gold")!.Disabled, "the Bones rules get a line of their own, and Wren can bet 20");
         await Click(this, inn.PayerButton);
-        Check(inn.Payer.Name == "Pip" && inn.ListButton("1 gold")!.Disabled && inn.ListButton("1 gold")!.TooltipText == "Pip has 0 gold.", "Pip has no gold, so the bets are greyed out, saying why");
+        Check(inn.Payer.Name == "Pip" && inn.ListButton("1 gold")!.Disabled && inn.ListButton("1 gold")!.TooltipText == "Pip has no coin.", "Pip has no gold, so the bets are greyed out, saying why");
         await Click(this, inn.PayerButton);
         await Click(this, inn.PayerButton);
         await Click(this, inn.ListButton("1 gold")!);
         Check(inn.IsRolling && inn.BonesDice.Visible && inn.ListButton("20 gold")!.Disabled, "the Bones dice tumble as in a fight, bets held back meanwhile");
         await WaitFor(this, () => !inn.IsRolling, "the Bones dice to land");
-        Check(wren.Gold is 43 or 44 or 45 && (inn.DialogText.Contains("rolls") || inn.DialogText.Contains("tie")), "a game of Bones for 1 gold");
-        int gold = wren.Gold;
+        Check(wren.Coins - (Money.Gold(56) - 20) is -100 or 0 or 100 && (inn.DialogText.Contains("rolls") || inn.DialogText.Contains("tie")), "a game of Bones for 1 gold");
+        int gold = wren.Coins;
         await Click(this, inn.ByeButton);
 
         await TalkTo(Npc(NpcRole.Recruiter));
         await Click(this, inn.ListButton("Hire")!);
-        Check(inn.Party.Count == 4 && inn.Party[2].IsCompanion && inn.Party[3].Name == "Morgan" && wren.Gold == gold - 10,
+        Check(inn.Party.Count == 4 && inn.Party[2].IsCompanion && inn.Party[3].Name == "Morgan" && wren.Coins == gold - Money.Gold(10),
             "hiring a recruit for 10 gold seats them as Wren's companion, after Pip");
         await Click(this, inn.ByeButton);
 
         await TalkTo(Npc(NpcRole.Innkeeper));
-        gold = wren.Gold;
+        gold = wren.Coins;
         await Click(this, inn.ListButton("Sleep the night")!);
-        Check(inn.World.Journey.Day == 2 && _raid.HeartsOf(wren.Id, full) == 2 && wren.Gold == gold - 8,
-            "sleeping the night costs a room each, passes a day, and heals Wren a heart");
+        Check(inn.World.Journey.Day == 2 && _raid.HeartsOf(wren.Id, full) >= 2 && wren.Coins == gold - Money.Gold(1) && inn.World.Provisions(wren.Id).Count == 0
+            && inn.DialogText.Contains("Wren rolls"),
+            "sleeping the night costs a gold for the party, passes a day, and heals Wren a heart and a Rest roll (eating the stew)");
         await Click(this, inn.ListButton("Room", 5)!);
-        Check(inn.Party.Count == 3 && inn.Party.All(member => member.Name != "Morgan") && _raid.Rooms.Count == 1 && wren.Gold == gold - 10,
-            "a room upstairs for Morgan costs 2 gold");
+        Check(inn.Party.Count == 3 && inn.Party.All(member => member.Name != "Morgan") && _raid.Rooms.Count == 1 && wren.Coins == gold - Money.Gold(1) - 1,
+            "a room upstairs for Morgan costs a copper");
         await Click(this, inn.ListButton("Join", 6)!);
         Check(inn.Party.Count == 4 && inn.Party[3].Name == "Morgan", "and Morgan comes back down to join");
+        await Click(this, inn.ListButton("Pig sty", 5)!);
+        Check(inn.Party.Count == 3 && _raid.Sty.ContainsKey(inn.Roster.First(member => member.Name == "Morgan").Id) && wren.Coins == gold - Money.Gold(1) - 1
+            && inn.ListRows.Any(row => row.Contains("in the pig sty")),
+            "the pig sty out back is free");
+        await Click(this, inn.ListButton("Join", 6)!);
+        Check(inn.Party.Count == 4 && inn.Party[3].Name == "Morgan" && _raid.Sty.Count == 0, "and Morgan comes in from the sty");
         await Click(this, inn.ByeButton);
 
         await Click(this, inn.DoorButton);
         WoarldMapScreen map = await Screen<WoarldMapScreen>();
         Check(map.Journey.PlaceHere?.Id == "waylay_inn" && map.Party.Count == 4, "the door leads out onto the Woarld Map, at the inn");
         await Click(this, map.RestButton);
-        Check(map.Message.StartsWith("Rested: Wren") && map.Message.Contains("+2") && _raidWorld!.Provisions(wren.Id).Count == 0 && _raidWorld.Fed(wren.Id).IsNone,
-            "resting eats Wren's stew and drinks the ale's +2");
+        Check(map.Message.StartsWith("Rested: Wren") && !map.Message.Contains("+2") && _raidWorld!.Provisions(wren.Id).Count == 0 && _raidWorld.Fed(wren.Id).IsNone,
+            "the night at the inn ate Wren's stew and ale, so resting on the road has nothing to add");
         await Click(this, map.EnterButton);
         inn = await Screen<TavernScreen>();
         Check(inn.Party.Count == 4, "the inn on the map leads back inside");

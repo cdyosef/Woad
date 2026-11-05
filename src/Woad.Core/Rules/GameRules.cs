@@ -35,8 +35,8 @@ public static class GameRules
     /// <summary>A grand chest's lock: harder than any other on its floor.</summary>
     public static int GrandChestLockDifficulty(int floor) => ChestLockDifficulty(floor) + 2;
 
-    /// <summary>Gold in a grand chest, besides its cards.</summary>
-    public const int GrandChestGold = 10;
+    /// <summary>Gold in a grand chest, besides its cards (and a d6 of silver).</summary>
+    public const int GrandChestGold = 15;
 
     /// <summary>Search total to find a secret door.</summary>
     public static int SecretDifficulty(int floor) => 4 + floor;

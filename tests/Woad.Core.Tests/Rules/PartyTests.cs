@@ -92,7 +92,7 @@ public class PartyTests
             Won = true,
             Kills = 0,
             Xp = 10,
-            Gold = 0,
+            Coins = 0,
             DeepestFloor = 1,
             Equipped = [],
             Belt = [],

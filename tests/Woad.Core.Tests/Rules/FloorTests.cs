@@ -110,7 +110,7 @@ public class FloorTests
         session.RoomById().RemoveMonster(session.OnlyMonster());
         IReadOnlyList<GameEvent> events = session.Do(new Escape(hero.Id));
 
-        Assert.Equal(new HeroEscaped(hero.Id, 5), events[0]);
+        Assert.Equal(new HeroEscaped(hero.Id, Money.Gold(5)), events[0]);
         Assert.Equal(HeroStatus.Escaped, hero.Status);
         Assert.Equal([hero.Id], Assert.IsType<RunEnded>(events[^1]).WinnerHeroIds);
         Assert.Equal([hero.Id], session.State.WinnerIds);

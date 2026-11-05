@@ -160,8 +160,8 @@ public sealed class Hero
 
     private PowerBank? _power;
 
-    /// <summary>Gold in the purse, from coins found this run. It doesn't take backpack space and counts as treasure.</summary>
-    public int Gold { get; internal set; }
+    /// <summary>The purse, in copper (see <see cref="Money"/>): coins found this run. It doesn't take backpack space and counts as treasure.</summary>
+    public int Coins { get; internal set; }
 
     /// <summary>Small keys carried: each opens one locked door or chest. They don't take backpack space.</summary>
     public int Keys { get; internal set; }
@@ -421,9 +421,9 @@ public sealed class Hero
     /// <summary>Wearing gear that swims (the Diving Helm): water is no harder than floor, and deep water needs no effort to stay afloat.</summary>
     public bool Swims => _equipment.Values.Any(card => card.Definition.Swims);
 
-    /// <summary>Gold value of the treasure carried; decides the winner.</summary>
+    /// <summary>Value of the coins and treasure carried, in copper; decides the winner.</summary>
     public int TreasureValue =>
-        Gold + AllCards.Where(card => card.Definition.Type == CardType.Treasure).Sum(card => card.Definition.Value * card.Count);
+        Coins + AllCards.Where(card => card.Definition.Type == CardType.Treasure).Sum(card => Money.Gold(card.Definition.Value) * card.Count);
 
     /// <summary>The stack this hero already holds of a stackable card (anywhere), which more copies join.</summary>
     public CardInstance? StackOf(CardDefinition definition) =>
@@ -650,7 +650,7 @@ public sealed class Hero
         var hero = new Hero(0, 0, character.Name, character.BaseStats, "", default, character.Id, character.Portrait, character.Appearance)
         {
             StartXp = character.Xp,
-            Gold = character.Gold,
+            Coins = character.Coins,
             Skills = character.Allocation.Skills,
         };
         var keys = new Dictionary<int, string>();

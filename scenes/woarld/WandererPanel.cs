@@ -1,6 +1,7 @@
 using Godot;
 using Woad.Core.Characters;
 using Woad.Core.Content;
+using Woad.Core.Model;
 using Woad.Core.Tavern;
 using Woad.Scenes.Ui;
 
@@ -59,13 +60,13 @@ public partial class WandererPanel : Panel
         bool remembers = _world.GratitudeOf(_wanderer, _trader.Id) > 0;
         _title.Text = _wanderer.Name.ToUpperInvariant() + (_world.Remembers(_wanderer) ? ", RESCUED BY THE PARTY" : ", A WANDERING MERCHANT");
         _note.Text = (remembers ? $"\"{_trader.Name}! I'd not be here but for you. Something off, for an old friend.\" " : "") +
-                     $"{_trader.Name}: {_trader.Gold} gold, Guild standing {_trader.GuildStanding}. Guild level {_world.GuildLevel}.";
+                     $"{_trader.Name}: {Money.Short(_trader.Coins)}, Guild standing {_trader.GuildStanding}. Guild level {_world.GuildLevel}.";
         float y = 54;
         foreach (IGrouping<string, string> ware in _wanderer.Stock.GroupBy(id => id).OrderBy(group => _content.GetCard(group.Key).Name).ToList())
         {
             CardDefinition card = _content.GetCard(ware.Key);
             int price = TavernServices.WandererPrice(_world, _wanderer, card, _trader);
-            AddLine(y, $"{card.Name}{(ware.Count() > 1 ? $" x{ware.Count()}" : "")}: {price} gold", card.Text, "Buy", _trader.Gold >= price,
+            AddLine(y, $"{card.Name}{(ware.Count() > 1 ? $" x{ware.Count()}" : "")}: {Money.Short(price)}", card.Text, "Buy", _trader.Coins >= price,
                 () => Trade(TavernServices.BuyFromWanderer(_world, _wanderer, _content, _trader, card.Id)));
             y += Line;
         }
@@ -77,7 +78,7 @@ public partial class WandererPanel : Panel
         foreach (string id in _trader.Backpack.Concat(_trader.Belt).Distinct().ToList())
         {
             CardDefinition card = _content.GetCard(id);
-            AddLine(y, $"{card.Name}: {TavernServices.SellPrice(card)} gold", card.Text, "Sell", true,
+            AddLine(y, $"{card.Name}: {Money.Short(TavernServices.SellPrice(card))}", card.Text, "Sell", true,
                 () => Trade(TavernServices.SellToWanderer(_wanderer, _content, _trader, id)));
             y += Line;
         }

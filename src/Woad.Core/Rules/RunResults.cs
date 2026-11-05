@@ -39,7 +39,7 @@ public sealed record HeroRunResult
     public bool ExplorerAward { get; init; }
 
     /// <summary>Treasure turned into gold; 0 for heroes who didn't escape.</summary>
-    public required int Gold { get; init; }
+    public required int Coins { get; init; }
 
     public required int DeepestFloor { get; init; }
 
@@ -133,7 +133,7 @@ public static class RunResults
             Xp = hero.Xp + (Explorer(hero) ? GameRules.ExplorerAwardXp : 0),
             ExplorerBonus = hero.ExplorerBonus,
             ExplorerAward = Explorer(hero),
-            Gold = hero.Status == HeroStatus.Escaped ? hero.TreasureValue : 0,
+            Coins = hero.Status == HeroStatus.Escaped ? hero.TreasureValue : 0,
             DeepestFloor = hero.DeepestFloor,
             Hearts = hero.Hearts,
             PowerDice = hero.Power.Banked,

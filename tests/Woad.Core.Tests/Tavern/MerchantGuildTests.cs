@@ -1,6 +1,7 @@
 using Woad.Core.Characters;
 using Woad.Core.Content;
 using Woad.Core.Grid;
+using Woad.Core.Model;
 using Woad.Core.Tavern;
 using Woad.Core.Woarld;
 
@@ -13,10 +14,10 @@ public class MerchantGuildTests
     private static readonly TavernDefinition Inn = TavernDefinition.LoadDefault();
     private static readonly WoarldMap Map = WoarldMap.LoadDefault();
 
-    private static Character Hero(string name, int gold)
+    private static Character Hero(string name, int coins)
     {
         Character hero = Character.Create(name, "moss", StatAllocation.None, Content, DateTimeOffset.UnixEpoch, false);
-        hero.EarnGold(gold);
+        hero.Earn(coins);
         return hero;
     }
 
@@ -62,7 +63,7 @@ public class MerchantGuildTests
     public void ARescuedMerchantComesBackAndGivesTheirHelpersBetterPrices()
     {
         RaidWorld world = RaidWorld.Begin(Map);
-        Character helper = Hero("Aria", 100), stranger = Hero("Bran", 100);
+        Character helper = Hero("Aria", Money.Gold(100)), stranger = Hero("Bran", Money.Gold(100));
         world.RescueMerchants([new RememberedMerchant("Silas", helper.Id, [helper.Id], 1)], Content);
         world.Journey.PassDay();
 

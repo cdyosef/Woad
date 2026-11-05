@@ -793,7 +793,7 @@ public sealed partial class GameSession
             return "There's nothing here to pick up.";
         }
 
-        bool onlyCards = room.KeysAt(at) == 0 && room.GoldAt(at) == 0 && room.BossKeyAt != at && room.BombAt(at) is null;
+        bool onlyCards = room.KeysAt(at) == 0 && room.CoinsAt(at) == 0 && room.BossKeyAt != at && room.BombAt(at) is null;
         if (onlyCards && !room.LootAt(at).Any(card => hero.CanCarry(card.Definition)))
         {
             // A full stack (ten Rocks) is said so; otherwise there's no room in the bag.
@@ -895,13 +895,13 @@ public sealed partial class GameSession
             .ToList();
         if (grand)
         {
-            GiveGold(hero, GameRules.GrandChestGold, events);
+            GiveCoins(hero, Money.Gold(GameRules.GrandChestGold) + Money.Silver(Tally(command.Chest.X * 31 + command.Chest.Y, 1)), events);
         }
 
         // Coins go straight into the purse; the rest stay in the chest to take or leave.
         foreach (CardInstance coins in cards.Where(card => card.Definition.Coins))
         {
-            GiveGold(hero, coins.Definition.Value, events);
+            GiveCoins(hero, CoinsIn(coins), events);
         }
 
         room.AddLoot(command.Chest, cards.Where(card => !card.Definition.Coins));
@@ -920,14 +920,14 @@ public sealed partial class GameSession
     /// Puts cards in the backpack while there's room; the rest go on the hero's tile. Coins go straight
     /// into the purse. True if all fit.
     /// </summary>
-    private static bool GiveCards(Hero hero, Room room, IReadOnlyList<CardInstance> cards, List<GameEvent> events)
+    private bool GiveCards(Hero hero, Room room, IReadOnlyList<CardInstance> cards, List<GameEvent> events)
     {
         bool allFit = true;
         foreach (CardInstance card in cards)
         {
             if (card.Definition.Coins)
             {
-                GiveGold(hero, card.Definition.Value, events);
+                GiveCoins(hero, CoinsIn(card), events);
             }
             else if (hero.CanCarry(card.Definition))
             {
@@ -986,7 +986,7 @@ public sealed partial class GameSession
             addedToBackpack = card.Definition.Coins || hero.CanCarry(card.Definition);
             if (card.Definition.Coins)
             {
-                coins = card.Definition.Value;
+                coins = CoinsIn(card);
             }
             else if (addedToBackpack)
             {
@@ -1003,8 +1003,15 @@ public sealed partial class GameSession
             hero.Hearts += hearts;
         }
 
-        events.Add(new PotSmashed(hero.Id, command.Pot, cardId, addedToBackpack, hearts));
-        GiveGold(hero, coins, events);
+        // Nothing else in it: a few copper rattle out, as often as not.
+        else
+        {
+            int rattle = Tally(command.Pot.X * 31 + command.Pot.Y + 7919 * room.Floor, 1);
+            coins = rattle > 1 ? rattle : 0;
+        }
+
+        events.Add(new PotSmashed(hero.Id, command.Pot, cardId, addedToBackpack, hearts, cardId is null ? coins : 0));
+        GiveCoins(hero, coins, events);
         return null;
     }
 
@@ -1052,22 +1059,38 @@ public sealed partial class GameSession
         return null;
     }
 
-    private static void GiveGold(Hero hero, int amount, List<GameEvent> events)
+    /// <summary>
+    /// What a coin card holds, in copper: its gold, and its silver and copper dice. Those dice are rolled
+    /// from the card itself (the run's seed and the card's id), not the run's dice, so the same card
+    /// always holds the same and saved runs replay as they were.
+    /// </summary>
+    private int CoinsIn(CardInstance card) =>
+        Money.Gold(card.Definition.Value) + Money.Silver(Tally(card.Id, card.Definition.SilverDice, salt: 1)) + Tally(card.Id, card.Definition.CopperDice, salt: 2);
+
+    /// <summary>A roll of d6s fixed by the run's seed and <paramref name="key"/>, apart from the run's own dice.</summary>
+    private int Tally(int key, int dice, int salt = 0)
+    {
+        var random = new Randomness.Pcg32(State.Seed ^ ((ulong)(uint)key << 8 | (uint)salt), sequence: 0xC015);
+        return Enumerable.Range(0, Math.Max(0, dice)).Sum(_ => random.NextInt(1, 7));
+    }
+
+    private static void GiveCoins(Hero hero, int amount, List<GameEvent> events)
     {
         if (amount > 0)
         {
-            hero.Gold += amount;
-            events.Add(new GoldFound(hero.Id, amount, hero.Gold));
+            hero.Coins += amount;
+            events.Add(new GoldFound(hero.Id, amount, hero.Coins));
         }
     }
 
-    /// <summary>A card turning up on the floor (a monster's drop, a stash): coins lie there as gold.</summary>
-    private static void DropLoot(Room room, GridPosition tile, CardInstance card, List<GameEvent> events)
+    /// <summary>A card turning up on the floor (a monster's drop, a stash): coins lie there loose.</summary>
+    private void DropLoot(Room room, GridPosition tile, CardInstance card, List<GameEvent> events)
     {
         if (card.Definition.Coins)
         {
-            room.AddGold(tile, card.Definition.Value);
-            events.Add(new GoldAppeared(room.Id, tile, card.Definition.Value));
+            int coins = CoinsIn(card);
+            room.AddCoins(tile, coins);
+            events.Add(new GoldAppeared(room.Id, tile, coins));
             return;
         }
 

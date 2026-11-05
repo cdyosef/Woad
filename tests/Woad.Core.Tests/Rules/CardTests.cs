@@ -47,7 +47,7 @@ public class CardTests
         Assert.Equal(["potion", "coin"], hero.Backpack.Select(card => card.Definition.Id));
         Assert.Equal((1, 1), (hero.EffectiveStats.AttackDice, hero.EffectiveStats.Weapon));
         Assert.Equal((1, 1), (hero.EffectiveStats.DefenseDice, hero.EffectiveStats.Armor));
-        Assert.Equal(5, hero.TreasureValue);
+        Assert.Equal(Money.Gold(5), hero.TreasureValue);
     }
 
     [Fact]

@@ -1,6 +1,7 @@
 using Godot;
 using Woad.Core.Characters;
 using Woad.Core.Grid;
+using Woad.Core.Model;
 using Woad.Core.Tavern;
 using Woad.Core.Woarld;
 using Woad.Scenes.Ui;
@@ -90,10 +91,10 @@ public partial class WoarldMapScreen
     private void AskToll(Encounter met)
     {
         TollPost toll = met.Toll!;
-        int due = WoarldDangers.TollPerHero * Party.Count;
+        int due = Money.Gold(WoarldDangers.TollPerHero) * Party.Count;
         var choices = new List<(string, string, Action)>
         {
-            ($"Pay {due}", $"{WoarldDangers.TollPerHero} gold a head, and you pass.", () => PayToll(met, due)),
+            ($"Pay {Money.Short(due)}", $"{WoarldDangers.TollPerHero} gold a head, and you pass.", () => PayToll(met, due)),
             ("Turn back", "Back the way you came. Cowards will hear of it.", TurnBack),
             ("Fight", toll.ShowsAsBandits ? "Clear the bandits off the road: the Law will thank you." : "Fight the guards. If they're real, the Law won't forget it.", () => Fight(met with { Monsters = WoarldDangers.TollCompany(toll) }, monstersFirst: false)),
         };
@@ -117,35 +118,35 @@ public partial class WoarldMapScreen
 
     private void PayToll(Encounter met, int toll)
     {
-        if (Party.Sum(hero => hero.Gold) < toll)
+        if (Party.Sum(hero => hero.Coins) < toll)
         {
-            Say($"The party hasn't got {toll} gold between them.");
+            Say($"The party hasn't got {Money.Long(toll)} between them.");
             AskToll(met);
             return;
         }
 
         // Each pays their share if they can; the richest make up the rest.
         int owed = toll;
-        foreach (Character hero in Party.OrderBy(hero => hero.Gold).ToList())
+        foreach (Character hero in Party.OrderBy(hero => hero.Coins).ToList())
         {
-            int share = Math.Min(owed, Math.Min(WoarldDangers.TollPerHero, hero.Gold));
-            if (hero.SpendGold(share))
+            int share = Math.Min(owed, Math.Min(Money.Gold(WoarldDangers.TollPerHero), hero.Coins));
+            if (hero.Spend(share))
             {
                 owed -= share;
             }
         }
 
-        foreach (Character hero in Party.OrderByDescending(hero => hero.Gold).ToList())
+        foreach (Character hero in Party.OrderByDescending(hero => hero.Coins).ToList())
         {
-            int more = Math.Min(owed, hero.Gold);
-            if (more > 0 && hero.SpendGold(more))
+            int more = Math.Min(owed, hero.Coins);
+            if (more > 0 && hero.Spend(more))
             {
                 owed -= more;
             }
         }
 
         CharactersChanged?.Invoke(Party);
-        Say(met.Toll!.ShowsAsBandits ? $"You pay the bandits {toll} gold. They wave you on, grinning." : $"You pay the toll, {toll} gold, and pass.");
+        Say(met.Toll!.ShowsAsBandits ? $"You pay the bandits {Money.Long(toll)}. They wave you on, grinning." : $"You pay the toll, {Money.Long(toll)}, and pass.");
         Refresh();
     }
 

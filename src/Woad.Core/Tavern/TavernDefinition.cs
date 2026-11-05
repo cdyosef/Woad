@@ -99,6 +99,7 @@ public sealed record MenuItem
     /// <summary>"food" or "drink".</summary>
     public string Kind { get; init; } = "food";
 
+    /// <summary>In copper.</summary>
     public int Price { get; init; }
 
     /// <summary>Extra dice on the next Rest roll.</summary>
@@ -146,8 +147,8 @@ public sealed record TavernDefinition
 
     public IReadOnlyList<MenuItem> Menu { get; init; } = [];
 
-    /// <summary>The price of a round for everyone in the bar.</summary>
-    public int RoundForTheBar { get; init; } = 10;
+    /// <summary>The price of a round for everyone in the bar, in copper.</summary>
+    public int RoundForTheBar { get; init; } = 200;
 
     /// <summary>The merchant's stock before anyone sells them anything.</summary>
     public IReadOnlyList<string> Stock { get; init; } = [];

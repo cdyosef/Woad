@@ -52,14 +52,14 @@ public partial class MerchantPanel : Panel
         int standing = GameSession.GuildStandingOf(hero);
         _title.Text = merchant.Name.ToUpperInvariant();
         float y = 24;
-        AddNote(y, $"{hero.Name}: {hero.Gold} gold, Guild standing {standing}.");
+        AddNote(y, $"{hero.Name}: {Money.Short(hero.Coins)}, Guild standing {standing}.");
         y += Line;
         foreach (IGrouping<string, string> ware in merchant.Stock.GroupBy(id => id).OrderBy(group => content.GetCard(group.Key).Name))
         {
             CardDefinition card = content.GetCard(ware.Key);
-            int price = GameSession.MerchantPrice(card, standing);
-            string text = $"{card.Name}{(ware.Count() > 1 ? $" x{ware.Count()}" : "")}: {price} gold";
-            AddLine(y, text, card.Text, "Buy", hero.Gold >= price && hero.CanCarry(card), () => BuyRequested?.Invoke(card.Id));
+            int price = Money.Gold(GameSession.MerchantPrice(card, standing));
+            string text = $"{card.Name}{(ware.Count() > 1 ? $" x{ware.Count()}" : "")}: {Money.Short(price)}";
+            AddLine(y, text, card.Text, "Buy", hero.Coins >= price && hero.CanCarry(card), () => BuyRequested?.Invoke(card.Id));
             y += Line;
         }
 
@@ -73,7 +73,7 @@ public partial class MerchantPanel : Panel
         y += Line;
         foreach (CardInstance card in hero.Belt.Concat(hero.Backpack))
         {
-            AddLine(y, $"{CardSlot.Title(card)}: {GameSession.MerchantPays(card.Definition)} gold", card.Definition.Text, "Sell", true, () => SellRequested?.Invoke(card.Id));
+            AddLine(y, $"{CardSlot.Title(card)}: {GameSession.MerchantPays(card.Definition)}g", card.Definition.Text, "Sell", true, () => SellRequested?.Invoke(card.Id));
             y += Line;
         }
 
