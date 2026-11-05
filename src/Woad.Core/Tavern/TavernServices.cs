@@ -17,6 +17,17 @@ public sealed record ServiceResult(bool Done, string Message)
 /// <param name="Winnings">Copper the player gained (negative: lost; 0: a tie, wagers back).</param>
 public sealed record BonesResult(IReadOnlyList<int> Yours, IReadOnlyList<int> Theirs, int Winnings, string Message);
 
+/// <summary>
+/// Who's buying in a shop: the purse that pays, the Guild standing the price goes by, and where what's
+/// bought goes (a character's things, or the Party Chest).
+/// </summary>
+public sealed record Shopper(IPurse Purse, int Standing, Action<string> Receive, Guid? Id = null)
+{
+    /// <summary>A character shopping for themself.</summary>
+    public static Shopper Of(Character character, ContentCatalog content) =>
+        new(character, character.GuildStanding, key => character.GiveCard(key, content), character.Id);
+}
+
 /// <summary>Someone the recruiter can introduce: a companion to hire, already outfitted, for <c>Price</c> copper.</summary>
 public sealed record RecruitOffer(string Name, Appearance Appearance, string Portrait, StatAllocation Allocation, IReadOnlyList<string> Gear, int Level, int Price);
 
@@ -43,12 +54,13 @@ public static class TavernServices
     private static readonly string[] Skins = ["fair", "pale", "tan", "olive", "brown", "deep"];
     private static readonly string[] Hair = ["brown", "black", "blonde", "ginger", "auburn", "white", "grey"];
 
-    /// <summary>Eats or drinks at the bar: paid now, it boosts the hero's next Rest.</summary>
-    public static ServiceResult Eat(RaidWorld world, Character buyer, MenuItem item)
+    /// <summary>Eats or drinks at the bar: paid now (by them, or from <paramref name="purse"/>), it boosts the hero's next Rest.</summary>
+    public static ServiceResult Eat(RaidWorld world, Character buyer, MenuItem item, IPurse? purse = null)
     {
-        if (!buyer.Spend(item.Price))
+        purse ??= buyer;
+        if (!purse.Spend(item.Price))
         {
-            return NotEnough(buyer, item.Price);
+            return NotEnough(purse, item.Price);
         }
 
         world.Feed(buyer.Id, item.Boost);
@@ -56,16 +68,17 @@ public static class TavernServices
     }
 
     /// <summary>Wraps a meal To-Go: carried until a Rest, where it's eaten.</summary>
-    public static ServiceResult BuyToGo(RaidWorld world, Character buyer, MenuItem item)
+    public static ServiceResult BuyToGo(RaidWorld world, Character buyer, MenuItem item, IPurse? purse = null)
     {
+        purse ??= buyer;
         if (world.Provisions(buyer.Id).Count >= RaidWorld.MaxProvisions)
         {
             return ServiceResult.Refused($"{buyer.Name} can't carry more than {RaidWorld.MaxProvisions} meals To-Go.");
         }
 
-        if (!buyer.Spend(item.Price))
+        if (!purse.Spend(item.Price))
         {
-            return NotEnough(buyer, item.Price);
+            return NotEnough(purse, item.Price);
         }
 
         world.Pack(buyer.Id, item.Id);
@@ -76,8 +89,9 @@ public static class TavernServices
     /// A round of the cheapest drink for everyone else in the party: each gets its boost, and the
     /// buyer's bond with each of them grows.
     /// </summary>
-    public static ServiceResult RoundForTheParty(RaidWorld world, TavernDefinition tavern, Character buyer, IReadOnlyList<Character> party)
+    public static ServiceResult RoundForTheParty(RaidWorld world, TavernDefinition tavern, Character buyer, IReadOnlyList<Character> party, IPurse? purse = null)
     {
+        purse ??= buyer;
         List<Character> others = [.. party.Where(member => member.Id != buyer.Id)];
         MenuItem? drink = tavern.Menu.Where(item => item.Kind == "drink").MinBy(item => item.Price);
         if (others.Count == 0 || drink is null)
@@ -86,9 +100,9 @@ public static class TavernServices
         }
 
         int price = RoundForThePartyPrice;
-        if (!buyer.Spend(price))
+        if (!purse.Spend(price))
         {
-            return NotEnough(buyer, price);
+            return NotEnough(purse, price);
         }
 
         foreach (Character other in others)
@@ -101,7 +115,7 @@ public static class TavernServices
     }
 
     /// <summary>A round for everyone in the bar: the party's name in the tavern grows.</summary>
-    public static ServiceResult RoundForTheBar(RaidWorld world, TavernDefinition tavern, Character buyer)
+    public static ServiceResult RoundForTheBar(RaidWorld world, TavernDefinition tavern, IPurse buyer)
     {
         if (!buyer.Spend(tavern.RoundForTheBar))
         {
@@ -109,7 +123,7 @@ public static class TavernServices
         }
 
         world.RaiseReputation(tavern.Id);
-        return new ServiceResult(true, $"{buyer.Name} buys the whole bar a round! Cheers go up. Reputation in {tavern.Name}: {world.Reputation(tavern.Id)}.");
+        return new ServiceResult(true, $"{Capital(buyer.Name)} buys the whole bar a round! Cheers go up. Reputation in {tavern.Name}: {world.Reputation(tavern.Id)}.");
     }
 
     /// <summary>What the merchant asks a hero for a card, in copper: twice its worth, less for good standing with the Merchant Guild (more for bad).</summary>
@@ -118,7 +132,11 @@ public static class TavernServices
     /// <summary>What the merchant pays for a card, in copper: its worth.</summary>
     public static int SellPrice(CardDefinition card) => Money.Gold(Math.Max(1, card.Value));
 
-    public static ServiceResult Buy(RaidWorld world, TavernDefinition tavern, ContentCatalog content, Character buyer, string cardId)
+    public static ServiceResult Buy(RaidWorld world, TavernDefinition tavern, ContentCatalog content, Character buyer, string cardId) =>
+        Buy(world, tavern, content, Shopper.Of(buyer, content), cardId);
+
+    /// <summary>Buys a card from the inn's merchant: paid from the shopper's purse, at their standing, and handed to them.</summary>
+    public static ServiceResult Buy(RaidWorld world, TavernDefinition tavern, ContentCatalog content, Shopper buyer, string cardId)
     {
         List<string> stock = world.Stock(tavern);
         if (!stock.Contains(cardId) || content.FindCard(cardId) is not { } card)
@@ -126,84 +144,99 @@ public static class TavernServices
             return ServiceResult.Refused("The merchant hasn't got one of those.");
         }
 
-        if (buyer.GuildStanding <= Rules.GameSession.ShunnedStanding)
+        if (buyer.Standing <= Rules.GameSession.ShunnedStanding)
         {
-            return ServiceResult.Refused($"The merchant won't deal with {buyer.Name}: the Guild knows that name.");
+            return ServiceResult.Refused($"The merchant won't deal with {buyer.Purse.Name}: the Guild knows that name.");
         }
 
-        int price = BuyPrice(card, buyer.GuildStanding);
-        if (!buyer.Spend(price))
+        int price = BuyPrice(card, buyer.Standing);
+        if (!buyer.Purse.Spend(price))
         {
-            return NotEnough(buyer, price);
+            return NotEnough(buyer.Purse, price);
         }
 
         stock.Remove(cardId);
-        buyer.GiveCard(card, content);
+        buyer.Receive(card.Id);
         IReadOnlyList<string> newWares = world.SpendWithMerchants(price / Money.CopperPerGold, content);
         string news = newWares.Count == 0 ? ""
             : $" The Merchant Guild rises to level {world.GuildLevel}: new wares ({string.Join(", ", newWares.Select(ware => content.GetCard(ware).Name))})!";
-        return new ServiceResult(true, $"{buyer.Name} buys the {card.Name} for {Money.Long(price)}.{news}");
+        return new ServiceResult(true, $"{Capital(buyer.Purse.Name)} buys the {card.Name} for {Money.Long(price)}.{news}");
     }
 
     /// <summary>What a wandering merchant asks a hero: their price by the hero's Guild standing, kinder still if they remember the hero's help.</summary>
     public static int WandererPrice(RaidWorld world, WanderingMerchant wanderer, CardDefinition card, Character buyer) =>
         BuyPrice(card, buyer.GuildStanding + world.GratitudeOf(wanderer, buyer.Id));
 
+    /// <summary>What a wandering merchant asks a shopper: by their standing, kinder still if they remember a character's help.</summary>
+    public static int WandererPrice(RaidWorld world, WanderingMerchant wanderer, CardDefinition card, Shopper buyer) =>
+        BuyPrice(card, buyer.Standing + (buyer.Id is { } id ? world.GratitudeOf(wanderer, id) : 0));
+
     /// <summary>Buys a card from a wandering merchant on the Woarld Map; the business raises the Guild too.</summary>
-    public static ServiceResult BuyFromWanderer(RaidWorld world, WanderingMerchant wanderer, ContentCatalog content, Character buyer, string cardId)
+    public static ServiceResult BuyFromWanderer(RaidWorld world, WanderingMerchant wanderer, ContentCatalog content, Character buyer, string cardId) =>
+        BuyFromWanderer(world, wanderer, content, Shopper.Of(buyer, content), cardId);
+
+    public static ServiceResult BuyFromWanderer(RaidWorld world, WanderingMerchant wanderer, ContentCatalog content, Shopper buyer, string cardId)
     {
         if (!wanderer.Stock.Contains(cardId) || content.FindCard(cardId) is not { } card)
         {
             return ServiceResult.Refused($"{wanderer.Name} hasn't got one of those.");
         }
 
-        if (buyer.GuildStanding <= Rules.GameSession.ShunnedStanding && world.GratitudeOf(wanderer, buyer.Id) == 0)
+        if (buyer.Standing <= Rules.GameSession.ShunnedStanding && (buyer.Id is not { } id || world.GratitudeOf(wanderer, id) == 0))
         {
-            return ServiceResult.Refused($"{wanderer.Name} won't deal with {buyer.Name}: the Guild knows that name.");
+            return ServiceResult.Refused($"{wanderer.Name} won't deal with {buyer.Purse.Name}: the Guild knows that name.");
         }
 
         int price = WandererPrice(world, wanderer, card, buyer);
-        if (!buyer.Spend(price))
+        if (!buyer.Purse.Spend(price))
         {
-            return NotEnough(buyer, price);
+            return NotEnough(buyer.Purse, price);
         }
 
         wanderer.Stock.Remove(cardId);
-        buyer.GiveCard(card, content);
+        buyer.Receive(card.Id);
         IReadOnlyList<string> newWares = world.SpendWithMerchants(price / Money.CopperPerGold, content);
         string news = newWares.Count == 0 ? "" : $" The Merchant Guild rises to level {world.GuildLevel}!";
-        return new ServiceResult(true, $"{buyer.Name} buys the {card.Name} from {wanderer.Name} for {Money.Long(price)}.{news}");
+        return new ServiceResult(true, $"{Capital(buyer.Purse.Name)} buys the {card.Name} from {wanderer.Name} for {Money.Long(price)}.{news}");
     }
 
     /// <summary>Sells a card the hero owns to a wandering merchant, who carries it on.</summary>
-    public static ServiceResult SellToWanderer(WanderingMerchant wanderer, ContentCatalog content, Character seller, string cardId)
+    public static ServiceResult SellToWanderer(WanderingMerchant wanderer, ContentCatalog content, Character seller, string cardId) =>
+        SellToWanderer(wanderer, content, seller, cardId, () => seller.TakeCard(cardId));
+
+    /// <summary>Sells a card to a wandering merchant: <paramref name="take"/> takes it from whoever has it, and their purse is paid.</summary>
+    public static ServiceResult SellToWanderer(WanderingMerchant wanderer, ContentCatalog content, IPurse seller, string cardId, Func<bool> take)
     {
-        if (content.FindCard(cardId) is not { } card || !seller.TakeCard(cardId))
+        if (content.FindCard(cardId) is not { } card || !take())
         {
-            return ServiceResult.Refused($"{seller.Name} hasn't got one to sell.");
+            return ServiceResult.Refused($"{Capital(seller.Name)} hasn't got one to sell.");
         }
 
         seller.Earn(SellPrice(card));
         wanderer.Stock.Add(cardId);
-        return new ServiceResult(true, $"{seller.Name} sells {wanderer.Name} the {card.Name} for {Money.Long(SellPrice(card))}.");
+        return new ServiceResult(true, $"{Capital(seller.Name)} sells {wanderer.Name} the {card.Name} for {Money.Long(SellPrice(card))}.");
     }
 
     /// <summary>Sells a card the hero owns (from the backpack first); the merchant keeps it for sale.</summary>
-    public static ServiceResult Sell(RaidWorld world, TavernDefinition tavern, ContentCatalog content, Character seller, string cardId)
+    public static ServiceResult Sell(RaidWorld world, TavernDefinition tavern, ContentCatalog content, Character seller, string cardId) =>
+        Sell(world, tavern, content, seller, cardId, () => seller.TakeCard(cardId));
+
+    /// <summary>Sells a card to the inn's merchant: <paramref name="take"/> takes it from whoever has it, and their purse is paid.</summary>
+    public static ServiceResult Sell(RaidWorld world, TavernDefinition tavern, ContentCatalog content, IPurse seller, string cardId, Func<bool> take)
     {
         if (content.FindCard(cardId) is { Quest: true } quest)
         {
             return ServiceResult.Refused($"Nobody here would buy the {quest.Name}. Someone wants it, though.");
         }
 
-        if (content.FindCard(cardId) is not { } card || !seller.TakeCard(cardId))
+        if (content.FindCard(cardId) is not { } card || !take())
         {
-            return ServiceResult.Refused($"{seller.Name} hasn't got one to sell.");
+            return ServiceResult.Refused($"{Capital(seller.Name)} hasn't got one to sell.");
         }
 
         seller.Earn(SellPrice(card));
         world.Stock(tavern).Add(cardId);
-        return new ServiceResult(true, $"{seller.Name} sells the {card.Name} for {Money.Long(SellPrice(card))}.");
+        return new ServiceResult(true, $"{Capital(seller.Name)} sells the {card.Name} for {Money.Long(SellPrice(card))}.");
     }
 
     /// <summary>What Father Ambrose gives for the relic: gold, and Holy Water.</summary>
@@ -309,17 +342,19 @@ public static class TavernServices
     }
 
     /// <summary>A game of Bones for <paramref name="wager"/> gold: two dice each, high total wins; a tie hands the wagers back.</summary>
-    public static BonesResult Bones(IRandomSource random, Character player, int wager)
+    /// <param name="purse">Who stakes the wager, if not the player (the Party Chest).</param>
+    public static BonesResult Bones(IRandomSource random, Character player, int wager, IPurse? purse = null)
     {
+        purse ??= player;
         if (wager < 1 || wager > MaxWager)
         {
             return new BonesResult([], [], 0, $"Wagers run from 1 to {MaxWager} gold.");
         }
 
         int stake = Money.Gold(wager);
-        if (player.Coins < stake)
+        if (purse.Coins < stake)
         {
-            return new BonesResult([], [], 0, NotEnough(player, stake).Message);
+            return new BonesResult([], [], 0, NotEnough(purse, stake).Message);
         }
 
         int[] yours = [random.NextInt(1, 7), random.NextInt(1, 7)];
@@ -327,13 +362,13 @@ public static class TavernServices
         int difference = yours.Sum() - theirs.Sum();
         if (difference > 0)
         {
-            player.Earn(stake);
+            purse.Earn(stake);
             return new BonesResult(yours, theirs, stake, $"{player.Name} rolls {yours[0]} + {yours[1]} against {theirs[0]} + {theirs[1]}, and wins {Money.Long(stake)}!");
         }
 
         if (difference < 0)
         {
-            player.Spend(stake);
+            purse.Spend(stake);
             return new BonesResult(yours, theirs, -stake, $"{player.Name} rolls {yours[0]} + {yours[1]} against {theirs[0]} + {theirs[1]}, and loses {Money.Long(stake)}.");
         }
 
@@ -371,11 +406,13 @@ public static class TavernServices
     }
 
     /// <summary>Hires a recruit: paid by <paramref name="buyer"/>, they become a companion character.</summary>
-    public static (ServiceResult Result, Character? Recruit) Hire(Character buyer, RecruitOffer offer, ContentCatalog content, DateTimeOffset now)
+    /// <param name="purse">Who pays, if not the buyer (the Party Chest).</param>
+    public static (ServiceResult Result, Character? Recruit) Hire(Character buyer, RecruitOffer offer, ContentCatalog content, DateTimeOffset now, IPurse? purse = null)
     {
-        if (!buyer.Spend(offer.Price))
+        purse ??= buyer;
+        if (!purse.Spend(offer.Price))
         {
-            return (NotEnough(buyer, offer.Price), null);
+            return (NotEnough(purse, offer.Price), null);
         }
 
         Character recruit = Character.Create(offer.Name, offer.Portrait, offer.Allocation, content, now, isCompanion: true, offer.Appearance);
@@ -399,7 +436,7 @@ public static class TavernServices
     /// Rents a room for someone leaving the party to wait upstairs: each night there they heal a heart
     /// and make a Rest roll.
     /// </summary>
-    public static ServiceResult RentRoom(RaidSave raid, int day, Character payer, Character guest)
+    public static ServiceResult RentRoom(RaidSave raid, int day, IPurse payer, Character guest)
     {
         if (!payer.Spend(RoomPrice))
         {
@@ -407,7 +444,7 @@ public static class TavernServices
         }
 
         raid.RentRoom(guest.Id, day);
-        return new ServiceResult(true, $"{payer.Name} rents {guest.Name} a room for {Money.Long(RoomPrice)}. {guest.Name} will heal a heart a night up there, and rest.");
+        return new ServiceResult(true, $"{Capital(payer.Name)} rents {guest.Name} a room for {Money.Long(RoomPrice)}. {guest.Name} will heal a heart a night up there, and rest.");
     }
 
     /// <summary>Someone leaving the party sleeps in the pig sty out back: free, and a Rest roll a night, no more.</summary>
@@ -423,7 +460,7 @@ public static class TavernServices
     /// index); those waiting upstairs or in the sty get their night too. <paramref name="maxHearts"/> gives
     /// any character's full health.
     /// </summary>
-    public static ServiceResult SleepTheNight(RaidSave raid, WoarldJourney journey, IRandomSource random, Character payer, IReadOnlyList<Character> party,
+    public static ServiceResult SleepTheNight(RaidSave raid, WoarldJourney journey, IRandomSource random, IPurse payer, IReadOnlyList<Character> party,
         Func<Guid, int> maxHearts, IReadOnlyList<RestBoost>? boosts = null)
     {
         if (!payer.Spend(NightPrice))
@@ -444,7 +481,7 @@ public static class TavernServices
             rests.Add($"{member.Name} rolls {string.Join(", ", roll.Dice)}{(roll.Bonus > 0 ? $" +{roll.Bonus}" : "")}");
         }
 
-        return new ServiceResult(true, $"{payer.Name} pays {Money.Long(NightPrice)} for rooms. Everyone sleeps soundly: day {journey.Day} dawns. {string.Join("; ", rests)}. {UiCount(healed, "heart is", "hearts are")} healed.");
+        return new ServiceResult(true, $"{Capital(payer.Name)} pays {Money.Long(NightPrice)} for rooms. Everyone sleeps soundly: day {journey.Day} dawns. {string.Join("; ", rests)}. {UiCount(healed, "heart is", "hearts are")} healed.");
     }
 
     /// <summary>The next rumor an NPC tells: one that marks the map clears the clouds there.</summary>
@@ -476,6 +513,8 @@ public static class TavernServices
 
     private static string UiCount(int amount, string singular, string plural) => $"{amount} {(amount == 1 ? singular : plural)}";
 
-    private static ServiceResult NotEnough(Character who, int price) =>
-        ServiceResult.Refused($"{who.Name} has {Money.Long(who.Coins)}; that costs {Money.Long(price)}.");
+    private static ServiceResult NotEnough(IPurse who, int price) =>
+        ServiceResult.Refused($"{Capital(who.Name)} has {Money.Long(who.Coins)}; that costs {Money.Long(price)}.");
+
+    private static string Capital(string name) => name.Length > 0 ? char.ToUpperInvariant(name[0]) + name[1..] : name;
 }

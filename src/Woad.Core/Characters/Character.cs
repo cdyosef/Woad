@@ -8,7 +8,7 @@ namespace Woad.Core.Characters;
 /// A saved player character: who they are, how they've grown and the cards they own between runs.
 /// A run turns it into a <see cref="HeroSetup"/>.
 /// </summary>
-public sealed class Character
+public sealed partial class Character : IPurse
 {
     public const int MaxNameLength = 16;
 

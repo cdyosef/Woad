@@ -10,6 +10,7 @@ using Woad.Core.Tavern;
 using Woad.Core.Woarld;
 using Woad.Scenes.Game;
 using Woad.Scenes.Ui;
+using Woad.Scenes.Woarld;
 
 namespace Woad.Scenes.Tavern;
 
@@ -98,6 +99,13 @@ public partial class TavernScreen : Control
     /// <summary>A new companion was hired: save them and add them to the roster.</summary>
     public event Action<Character>? RecruitHired;
 
+    /// <summary>A character with points to spend, from the Party menu: open their points.</summary>
+    public event Action<Character>? LevelUpRequested;
+
+    internal Button PartyButton { get; private set; } = null!;
+
+    internal PartyDialog PartyMenu { get; private set; } = null!;
+
     internal Button LeaderButton { get; private set; } = null!;
 
     internal Button TalkButton { get; private set; } = null!;
@@ -130,15 +138,15 @@ public partial class TavernScreen : Control
 
     internal Character Payer => _payer;
 
-    /// <summary>A button in the talk panel's list, by its text (the first that starts with it).</summary>
-    /// <summary>The Buy button on the merchant's row for a ware, by its name.</summary>
-    internal Button? BuyButton(string ware) =>
-        _list.GetChildren().OfType<HBoxContainer>()
-            .Where(line => line.GetChildren().OfType<Label>().FirstOrDefault()?.Text.StartsWith($"{ware},", StringComparison.Ordinal) == true
-                || line.GetChildren().OfType<Label>().FirstOrDefault()?.Text.StartsWith($"{ware} x", StringComparison.Ordinal) == true)
-            .SelectMany(line => line.GetChildren().OfType<Button>())
-            .FirstOrDefault(button => button.Text == "Buy");
+    /// <summary>The Party Chest pays (and the leader eats, drinks, bets and hires), instead of someone's own purse.</summary>
+    private bool _chestPays;
 
+    /// <summary>Whose coins pay: the payer's, or the Party Chest's.</summary>
+    private IPurse Purse => _chestPays ? Raid.Chest : _payer;
+
+    private string PurseName => _chestPays ? "The Party Chest" : _payer.Name;
+
+    /// <summary>A button in the talk panel's list, by its text (the first that starts with it).</summary>
     internal Button? ListButton(string text, int row = -1) =>
         _list.GetChildren().OfType<HBoxContainer>()
             .Where((_, index) => row < 0 || index == row)
@@ -182,7 +190,9 @@ public partial class TavernScreen : Control
         };
         LeaderButton = AddButton(new Vector2(154, ButtonsTop), 150, "", "Who walks at the head of the line. Click for the next player.");
         LeaderButton.Pressed += NextLeader;
-        TalkButton = AddButton(new Vector2(310, ButtonsTop), 322, "", "");
+        TalkButton = AddButton(new Vector2(310, ButtonsTop), 260, "", "");
+        PartyButton = AddButton(new Vector2(576, ButtonsTop), 56, "Party", "The Party: everyone's gear, belts and packs, the Party Chest, and levelling up.");
+        PartyButton.Pressed += () => PartyMenu.Open();
         TalkButton.Pressed += () =>
         {
             if (_visit.NpcInReach is { } npc)
@@ -192,12 +202,41 @@ public partial class TavernScreen : Control
         };
 
         BuildDialog();
+
+        int Max(Character character) => character.MaxHearts(Content);
+        PartyMenu = new PartyDialog
+        {
+            Party = Party,
+            Content = Content,
+            Chest = Raid.Chest,
+            Hearts = character => (Raid.HeartsOf(character.Id, Max(character)), Max(character)),
+            Wound = character => Raid.SetHearts(character.Id, Math.Max(1, Raid.HeartsOf(character.Id, Max(character)) - 1), Max(character)),
+            Random = _random,
+        };
+        PartyMenu.Changed += heroes =>
+        {
+            foreach (Character hero in heroes)
+            {
+                CharacterChanged?.Invoke(hero);
+            }
+
+            PartyChanged?.Invoke();
+            WorldChanged?.Invoke();
+            Refresh();
+        };
+        PartyMenu.LevelUpRequested += character => LevelUpRequested?.Invoke(character);
+        AddChild(PartyMenu);
         Refresh();
     }
 
     public override void _Process(double delta)
     {
         _stepCooldown -= delta;
+        if (PartyMenu.Visible)
+        {
+            return;
+        }
+
         if (_stepCooldown > 0 || _dialog.Visible)
         {
             return;
@@ -372,10 +411,24 @@ public partial class TavernScreen : Control
         _dialogTitle = UiTheme.Heading(UiTheme.Label(new Vector2(14, 8), new Vector2(340, 20), "", 16, Palette.TrimBright), 2);
         panel.AddChild(_dialogTitle);
         PayerButton = UiTheme.Button(new Vector2(362, 10), new Vector2(200, 20), "");
-        PayerButton.TooltipText = "Who's paying (and buying, selling or betting). Click for the next in the party.";
+        PayerButton.TooltipText = "Who's paying (and eating, betting or hiring): everyone in turn, then the Party Chest. Click for the next.";
         PayerButton.Pressed += () =>
         {
-            _payer = Party[(Party.IndexOf(_payer) + 1) % Party.Count];
+            // Everyone in turn, then the Party Chest (with the leader acting for it), then round again.
+            if (_chestPays)
+            {
+                _chestPays = false;
+                _payer = Party[0];
+            }
+            else if (Party.IndexOf(_payer) == Party.Count - 1)
+            {
+                _chestPays = true;
+                _payer = _leader;
+            }
+            else
+            {
+                _payer = Party[Party.IndexOf(_payer) + 1];
+            }
             ShowTalk();
         };
         panel.AddChild(PayerButton);
@@ -450,7 +503,7 @@ public partial class TavernScreen : Control
         }
 
         _dialogTitle.Text = $"{npc.Name.ToUpperInvariant()}";
-        PayerButton.Text = $"Paying: {_payer.Name} ({Money.Short(_payer.Coins)})";
+        PayerButton.Text = _chestPays ? $"Paying: Party Chest ({Money.Short(Raid.Chest.Coins)})" : $"Paying: {_payer.Name} ({Money.Short(_payer.Coins)})";
         _bones.Visible = npc.Role == NpcRole.Gambler;
         RumorButton.Visible = npc.Rumors.Count > 0;
         foreach (Node child in _list.GetChildren())
@@ -492,43 +545,39 @@ public partial class TavernScreen : Control
         foreach (MenuItem item in Tavern.Menu)
         {
             HBoxContainer row = Row($"{item.Name}, {Money.Short(item.Price)}: {item.Text}", 380);
-            RowButton(row, item.Kind == "drink" ? "Drink" : "Eat", 60, () => Done(TavernServices.Eat(World, _payer, item), _payer));
-            RowButton(row, "To-Go", 60, () => Done(TavernServices.BuyToGo(World, _payer, item), _payer));
+            RowButton(row, item.Kind == "drink" ? "Drink" : "Eat", 60, () => Done(TavernServices.Eat(World, _payer, item, Purse), _payer));
+            RowButton(row, "To-Go", 60, () => Done(TavernServices.BuyToGo(World, _payer, item, Purse), _payer));
         }
 
         int others = Party.Count - 1;
         Button party = RowButton(Row($"A round for the party ({Money.Short(TavernServices.RoundForThePartyPrice)}): everyone else drinks, and grows closer to {_payer.Name}.", 380), "Buy", 124,
-            () => Done(TavernServices.RoundForTheParty(World, Tavern, _payer, Party), _payer));
+            () => Done(TavernServices.RoundForTheParty(World, Tavern, _payer, Party, Purse), _payer));
         party.Disabled = others == 0;
         RowButton(Row($"A round for the whole bar ({Money.Short(Tavern.RoundForTheBar)}): raises your name here (now {World.Reputation(Tavern.Id)}).", 380), "Buy", 124,
-            () => Done(TavernServices.RoundForTheBar(World, Tavern, _payer), _payer));
+            () => Done(TavernServices.RoundForTheBar(World, Tavern, Purse), _payer));
         Row($"{_payer.Name} carries To-Go: {(World.Provisions(_payer.Id).Count == 0 ? "nothing" : string.Join(", ", World.Provisions(_payer.Id).Select(id => Tavern.Menu.FirstOrDefault(item => item.Id == id)?.Name ?? id)))}.", 536);
     }
 
+    /// <summary>The merchant's wares, on the Party menu's shop page: anyone in the party (or the chest) buys and sells.</summary>
     private void ShowMerchant()
     {
-        int standing = _payer.GuildStanding;
-        string prices = standing > 0 ? $"{Math.Min(standing, 10) * 5}% off for {_payer.Name}" : standing < 0 ? $"{Math.Min(-standing, 10) * 5}% more for {_payer.Name}" : "full price";
-        Row($"Merchant Guild level {World.GuildLevel}. {_payer.Name}'s standing with the Guild: {standing} ({prices}). The Law: {_payer.LawStanding}.", 536);
-        Row("FOR SALE", 536).GetChild<Label>(0).AddThemeColorOverride("font_color", Palette.Trim);
-        foreach (IGrouping<string, string> group in World.Stock(Tavern).GroupBy(id => id).OrderBy(group => Content.GetCard(group.Key).Name))
-        {
-            CardDefinition card = Content.GetCard(group.Key);
-            HBoxContainer row = Row($"{card.Name}{(group.Count() > 1 ? $" x{group.Count()}" : "")}, {Money.Short(TavernServices.BuyPrice(card, standing))}: {card.Text}", 456);
-            RowButton(row, "Buy", 76, () => Done(TavernServices.Buy(World, Tavern, Content, _payer, card.Id), _payer));
-        }
-
-        Row($"{_payer.Name.ToUpperInvariant()}'S THINGS", 536).GetChild<Label>(0).AddThemeColorOverride("font_color", Palette.Trim);
-        IEnumerable<(string Id, string Where)> owned = _payer.Backpack.Select(id => (id, "pack"))
-            .Concat(_payer.Belt.Select(id => (id, "belt")))
-            .Concat(_payer.Equipped.Select(id => (id, "worn")));
-        foreach ((string id, string where) in owned.Distinct())
-        {
-            CardDefinition card = Content.GetCard(id);
-            RowButton(Row($"{card.Name} ({where}), {Money.Short(TavernServices.SellPrice(card))}", 456), "Sell", 76,
-                () => Done(TavernServices.Sell(World, Tavern, Content, _payer, id), _payer));
-        }
+        Row($"Merchant Guild level {World.GuildLevel}. Anyone in the party can buy or sell, or the Party Chest can.", 436);
+        Button trade = RowButton(Row("Oswin's wares, beside everyone's things.", 436), "Trade", 96, () => PartyMenu.OpenShop(InnShop()));
+        trade.Name = "Trade";
+        PartyMenu.OpenShop(InnShop());
     }
+
+    /// <summary>The inn's merchant as a shop: prices by the shopper's Guild standing; buys anything but quest things.</summary>
+    internal ShopFront InnShop() => new()
+    {
+        Name = $"{_talkingTo?.Name ?? "The merchant"}'s wares",
+        Note = $"Merchant Guild level {World.GuildLevel}. Better standing, better prices.",
+        Wares = () => World.Stock(Tavern),
+        Price = (id, shopper) => TavernServices.BuyPrice(Content.GetCard(id), shopper.Standing),
+        Buy = (id, shopper) => TavernServices.Buy(World, Tavern, Content, shopper, id),
+        Pays = key => Content.GetCard(key).Quest ? null : TavernServices.SellPrice(Content.GetCard(key)),
+        Sell = (key, seller, take) => TavernServices.Sell(World, Tavern, Content, seller, key, take),
+    };
 
     private void ShowCraven()
     {
@@ -602,7 +651,7 @@ public partial class TavernScreen : Control
 
     private void Hire(RecruitOffer offer)
     {
-        (ServiceResult result, Character? recruit) = TavernServices.Hire(_payer, offer, Content, DateTimeOffset.UtcNow);
+        (ServiceResult result, Character? recruit) = TavernServices.Hire(_payer, offer, Content, DateTimeOffset.UtcNow, Purse);
         if (recruit is not null)
         {
             Roster.Add(recruit);
@@ -675,14 +724,14 @@ public partial class TavernScreen : Control
     /// </summary>
     private void SleepTheNight()
     {
-        if (_payer.Coins < TavernServices.NightPrice)
+        if (Purse.Coins < TavernServices.NightPrice)
         {
-            Done(ServiceResult.Refused($"{_payer.Name} has {Money.Long(_payer.Coins)}; rooms cost {Money.Long(TavernServices.NightPrice)}."), null);
+            Done(ServiceResult.Refused($"{PurseName} has {Money.Long(Purse.Coins)}; rooms cost {Money.Long(TavernServices.NightPrice)}."), null);
             return;
         }
 
         IReadOnlyList<RestBoost> boosts = World.TakeRestBoosts([.. Party.Select(member => member.Id)], Tavern);
-        Done(TavernServices.SleepTheNight(Raid, World.Journey, _random, _payer, Party, MaxHeartsOf, boosts), _payer);
+        Done(TavernServices.SleepTheNight(Raid, World.Journey, _random, Purse, Party, MaxHeartsOf, boosts), _payer);
     }
 
     /// <summary>Sends someone (and their companions) off to wait: rooms upstairs, paid, or the pig sty out back, free.</summary>
@@ -690,9 +739,9 @@ public partial class TavernScreen : Control
     {
         List<Character> leaving = Leaving(member);
         int price = sty ? 0 : TavernServices.RoomPrice * leaving.Count;
-        if (_payer.Coins < price)
+        if (Purse.Coins < price)
         {
-            Done(ServiceResult.Refused($"{_payer.Name} has {Money.Long(_payer.Coins)}; rooms cost {Money.Long(price)}."), null);
+            Done(ServiceResult.Refused($"{PurseName} has {Money.Long(Purse.Coins)}; rooms cost {Money.Long(price)}."), null);
             return;
         }
 
@@ -704,14 +753,14 @@ public partial class TavernScreen : Control
             }
             else
             {
-                TavernServices.RentRoom(Raid, World.Journey.Day, _payer, guest);
+                TavernServices.RentRoom(Raid, World.Journey.Day, Purse, guest);
             }
         }
 
         Unseat(member);
         Done(new ServiceResult(true, sty
             ? $"{string.Join(" and ", leaving.Select(guest => guest.Name))} bed{(leaving.Count == 1 ? "s" : "")} down in the pig sty out back. {DialogText}"
-            : $"{_payer.Name} pays {Money.Long(price)} for rooms. {DialogText}"), _payer);
+            : $"{PurseName} pays {Money.Long(price)} for rooms. {DialogText}"), _payer);
     }
 
     /// <summary>Brings someone back down (or in from the sty), healed for the nights they rested.</summary>
@@ -732,12 +781,12 @@ public partial class TavernScreen : Control
     private void ShowBones()
     {
         Row("Bones: two dice each, high total takes the pot; a tie hands the wagers back.", 536);
-        HBoxContainer row = Row($"{_payer.Name} bets:", 300);
+        HBoxContainer row = Row(_chestPays ? $"{_payer.Name} bets the chest's coins:" : $"{_payer.Name} bets:", 300);
         foreach (int wager in new[] { 1, 5, 10, TavernServices.MaxWager })
         {
             Button bet = RowButton(row, $"{wager} gold", 54, () => PlayBones(wager));
-            bet.Disabled = _payer.Coins < Money.Gold(wager) || _rolling;
-            bet.TooltipText = bet.Disabled ? $"{_payer.Name} has {Money.Long(_payer.Coins)}." : $"Bet {wager} gold on a game of Bones.";
+            bet.Disabled = Purse.Coins < Money.Gold(wager) || _rolling;
+            bet.TooltipText = bet.Disabled ? $"{PurseName} has {Money.Long(Purse.Coins)}." : $"Bet {wager} gold on a game of Bones.";
         }
     }
 
@@ -753,7 +802,7 @@ public partial class TavernScreen : Control
         }
 
         Character player = _payer;
-        BonesResult game = TavernServices.Bones(_random, player, wager);
+        BonesResult game = TavernServices.Bones(_random, player, wager, Purse);
         if (game.Yours.Count == 0)
         {
             Done(new ServiceResult(false, game.Message), null);

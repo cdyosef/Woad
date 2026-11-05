@@ -387,6 +387,15 @@ public sealed class Hero
     public Stats EffectiveStats => EquippedCards.Concat(_mods).Concat(BeltTools).Aggregate(BaseStats, (stats, card) =>
         stats + card.Modifiers + (HasSetBonus(card.Definition) ? card.Definition.Set!.Modifiers : Stats.None));
 
+    /// <summary>Armor lost to wear (acid, until mended) on what's worn.</summary>
+    public int ArmorWear => EquippedCards.Concat(_mods).Sum(card => Math.Max(0, card.Definition.Modifiers.Armor - card.Modifiers.Armor));
+
+    /// <summary>Armor a temporary effect adds for now (Shining Light).</summary>
+    public int ArmorBoost => ShiningRounds > 0 ? ShiningDefense : 0;
+
+    /// <summary>All the armor in effect: worn gear (less its wear), mods, set bonuses, and anything temporary.</summary>
+    public int ArmorTotal => Math.Max(0, EffectiveStats.Armor) + ArmorBoost;
+
     /// <summary>Tools on the belt that work from there (Lockpicks): their bonuses count as if in hand.</summary>
     public IEnumerable<CardInstance> BeltTools => _belt.Where(card => card.Definition.BeltsFirst);
 
@@ -652,6 +661,7 @@ public sealed class Hero
             StartXp = character.Xp,
             Coins = character.Coins,
             Skills = character.Allocation.Skills,
+            Allocation = character.Allocation,
         };
         var keys = new Dictionary<int, string>();
         int nextId = 1;

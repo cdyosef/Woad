@@ -15,7 +15,7 @@ public static class CardKey
     private const char Comma = ',';
 
     /// <summary>The key without what a packed belt carries.</summary>
-    private static string Bare(string key) => key.IndexOf(Open) is var at and >= 0 ? key[..at] : key;
+    public static string Bare(string key) => key.IndexOf(Open) is var at and >= 0 ? key[..at] : key;
 
     /// <summary>The card's id, without its wear.</summary>
     public static string Id(string key) => Bare(key) is var bare && bare.IndexOf(Mark) is var at and >= 0 ? bare[..at] : Bare(key);

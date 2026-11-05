@@ -15,8 +15,8 @@ public enum RaidLocation
 
 /// <summary>
 /// One Raiding Party, saved as "[leader]'s Raid": who's in it and who leads, everyone's hearts
-/// (they carry from one dungeon to the next), who rests in a room at the inn, and where and when
-/// the party is on the shared Woarld. Characters' gold and gear are saved with the characters.
+/// (they carry from one dungeon to the next), who rests in a room at the inn, the Party Chest, and where
+/// and when the party is on the shared Woarld. Characters' own coins and gear are saved with the characters.
 /// </summary>
 public sealed class RaidSave
 {
@@ -56,6 +56,9 @@ public sealed class RaidSave
 
     /// <summary>Characters bedded down free in the pig sty out back, and the day their rest was last counted.</summary>
     public Dictionary<Guid, int> Sty { get; init; } = [];
+
+    /// <summary>The cards and coins the whole party shares (missing in raids saved before it: empty).</summary>
+    public PartyChest Chest { get; init; } = new();
 
     public RaidLocation Location { get; set; } = RaidLocation.Inn;
 

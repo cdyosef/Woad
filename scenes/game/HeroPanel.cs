@@ -366,6 +366,12 @@ public partial class HeroPanel : Panel
 
         Pool.Visible = true;
         Pool.ShowCapacity(hero.Power.Capacity);
+        if (hero.Allocation is { } bought)
+        {
+            Pool.ShowRanks(bought.AttackDice, bought.OdHandDice, bought.MoveDice, bought.DefenseDice);
+        }
+
+        Pool.ShowArmor(hero.ArmorTotal, hero.ArmorBoost, hero.ArmorWear);
         if (turn is null)
         {
             // Not their turn (out on the Woarld Map, or looked over): all their dice, to read, not to pick.

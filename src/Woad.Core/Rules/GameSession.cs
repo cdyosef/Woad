@@ -152,6 +152,7 @@ public sealed partial class GameSession
             FreeMerchant c => Handle(c, events),
             Unshackle c => Handle(c, events),
             Retreat c => Handle(c, events),
+            MoveOn c => Handle(c, events),
             SpendPoint c => Handle(c, events),
             SetCompanionPolicy c => Handle(c, events),
             BuyFromMerchant c => Handle(c, events),

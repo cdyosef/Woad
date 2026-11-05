@@ -281,6 +281,12 @@ with how many are to hand (the Sling's Rocks). Hovering shows its name and rules
 diamond lattice in a cream frame. Each square on the sheet is a **slot**: face down with the slot's mark and
 name while it's empty (it can't be picked up), the card sitting on it once there is one.
 
+**Ranks and armor on the sheet:** after each pool's symbol (Rumble, Od Hand, Wend, Defense) is the number
+of ranks bought in it. Under the body slot, beside Block and Guard Dice, **Armor** is the total in effect from
+every source (worn gear, less its wear; mods; set bonuses; Shining Light). It's green while something
+temporary boosts it, red while something brings it down (wear counts); with both, it's the color of the
+way it's gone overall, the other beside it in brackets: green "Armor 4 (-1)", red "Armor 1 (+2)".
+
 **Attacks zoom in:** every attack (a hero's or a monster's, in the room on show) zooms the view in on the
 attacker and its targets while it plays out, and back out after.
 
@@ -493,9 +499,27 @@ of their own on top (a Flame Scroll aimed at bare floor sets it burning).
   upstairs (1 copper, paid once; each night a heart and a Rest roll) or in the **pig sty** out back
   (free; each night a Rest roll and nothing more). Their nights are counted when the party comes back
   to the inn, or when they rejoin. A recruit costs 10 gold (more for better ones), and Bones is played
-  for 1 to 20 gold.
+  for 1 to 20 gold. The **Paying** button runs through everyone in the party, then the **Party Chest**
+  (the leader eating, betting or hiring for it). Talking to Oswin the merchant opens his wares on the
+  shop page (below).
+- **The Party menu and the Party Chest (Raiding Party):** **Party**, on the Woarld Map and in the inn,
+  puts everyone on one page: a column each, headed by their card at a glance (figure and crest, level and
+  points to spend, purse, hearts, belt and bag slots used, a little sheet of which slots hold gear, and
+  their Rumble, Od Hand, Wend and Defense dice with what's added to each; click it for their sheet),
+  then their purse, what they wear, what's on their belt and what's in their pack. The last column is
+  the **Party Chest**: cards and coins the whole raid shares, saved with the raid, reachable anywhere
+  out of a dungeon, never taken into one. Click any card for what can be done with it: **Wear** (pushing
+  out what fills the slot), **Take off**, **Belt**, **Pack**, **To the chest**, to someone else, or
+  **Learn** a scroll; a chest card goes out to whoever's picked. Taking a belt off packs it whole, with
+  its buckle, mods and cards, and wearing it buckles it all back on. Click a purse (or the chest's coins)
+  to move a gold, or all of it, to the chest or to someone.
+- **Shops** (Oswin at the inn, the wandering merchants, the Blacksmith) open the same page with the
+  shop's wares in a column first. Click a ware, then who buys it: anyone in the party, each at their own
+  Guild standing, or the Party Chest (at the best standing in the party; what it buys goes into it).
+  Any card picked, worn or not (but a worn belt), or one in the chest, can be **Sold** there; the
+  Blacksmith **Mends** worn gear, paid by its owner or the chest. Nobody has to change leader to shop.
 - **The Blacksmith** (a shack on the road south of The Waylay Inn): mends worn gear for **2 gold a point**
-  of wear, paid by whoever owns it, and sells arms, armor and **Autosmith Hammers** from the forge, which
+  of wear, paid by whoever owns it (or the Party Chest), and sells arms, armor and **Autosmith Hammers** from the forge, which
   never runs out. An Autosmith Hammer (single use, stacks; in the loot decks too) mends its user's most
   worn card whole, anywhere. Weapons can be mended too, for whatever wears them later.
 - **Necro (Necrosis):** a Black Heart: one of the hearts the hit took can't be healed until cured (Holy
@@ -767,7 +791,7 @@ total reaches its number:
 - **Wandering merchants (Raiding Party):** each day the Guild sends merchants out onto the Woarld Map: one,
   plus one for every three Guild levels (at most three), waiting on open ground 4 to 12 tiles from where
   the party greeted the day, and gone at its end. Merchants the party rescued are the first to come.
-  Walk onto one and **Trade** with the leader's gold: four wares as good as the Guild's level, and three
+  Walk onto one and **Trade** (anyone in the party, or the Party Chest, buys and sells): four wares as good as the Guild's level, and three
   times in ten one from deeper down. A rescued merchant prices kindly for the heroes who helped them
   (2 more standing), and buying from any wandering merchant counts toward the Guild's level.
 - **Travel on the Woarld Map:** a day is 1,000 steps of time (500 of daylight). A tile of road takes 5,
@@ -803,6 +827,9 @@ total reaches its number:
   still standing has got away, the party is back on the tile it came from, and the band (or the Bridge
   Troll, on its bridge) is still there (Cowards +1). Fail, and you bolt in a panic as far from the monsters
   as your Wend dice take you, and fall flat.
+- **Winning a fight on the map** doesn't end it: the party can gather up what fell. The Retreat button
+  becomes **Move on**, and one click walks the whole party on (asking first if loot is still lying about,
+  which is left behind).
 - **Cowards:** fleeing a band or turning back from a toll raises each character's standing with Cowards.
   At 10, **Craven the Cowherder** in the Waylay Inn gives them the **Coward's Cloak** (once): worn on the
   head, used once and gone, it makes the monsters beside you move at half speed on their next turn and
@@ -1090,10 +1117,11 @@ them up there like any character.
   companion, with its own companions going along, and the game plays it from then on (the rest of the
   turn too). Never mid-roll, never the last hero in the run, and the dead raised as companions stay
   companions. It lasts for the run; the characters are saved as they were.
-- **The Party menu** (**Party**, beside Menu in a dungeon and beside Enter on the Woarld Map) shows
-  everyone's level, hearts and gear. On your turn you spend the points a level brings, yours and your
-  companions', without waiting for the run to end (they're kept); on the map, **Level up** opens a
-  character's points, and clicking a card then a name hands it to them. Each companion has three
+- **The Party menu** (**Party**, beside Menu in a dungeon, and beside Enter on the Woarld Map and in
+  the inn) shows everyone's level, hearts and gear. On your turn you spend the points a level brings,
+  yours and your companions', without waiting for the run to end (they're kept); out of a dungeon it's
+  the one-page Party menu with the Party Chest (see the Waylay Inn), where **Level up** opens a
+  character's points. Each companion has three
   switches for its own things, whatever its order: **drinks potions** when badly hurt (on by default),
   **picks up loot** within reach when there's no fight, and **wears better gear** it carries (worth more
   than what it has on).

@@ -61,8 +61,23 @@ public partial class Main
             Check(dangers.ScoutedDay == world.Journey.Day, "Scout scouts");
 
             wren.GiveCard("flame_scroll", _content);
+            if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is not null)
+            {
+                // Worn chain mail, for the sheet's armor in red.
+                wren.GiveCard("chain_mail~1", _content);
+            }
+
             await Click(this, screen.PartyButton);
             Check(screen.PartyMenu.Visible, "the Party button opens the Party menu on the map");
+            if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } partyShots)
+            {
+                await Click(this, screen.PartyMenu.Find("Card0_club")!);
+                await NextFrame(this);
+                await NextFrame(this);
+                GetViewport().GetTexture().GetImage().SavePng($"{partyShots}/woarld_party.png");
+                await Click(this, screen.PartyMenu.Find("Card0_club")!);
+            }
+
             await Click(this, screen.PartyMenu.Find("Sheet0")!);
             Check(screen.PartyMenu.SheetOf == wren, "clicking a party member puts up their character sheet");
             if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } shots)
@@ -74,8 +89,10 @@ public partial class Main
 
             await ClickAt(this, new Vector2(20, 300));
             Check(screen.PartyMenu.SheetOf is null, "clicking off the sheet puts it away");
-            await Click(this, screen.PartyMenu.Find("Card0_flame_scroll")!);
-            Check(screen.PartyMenu.Find("Learn") is { Disabled: false }, "a scroll with a spell on it can be studied from the Party menu");
+            Button scroll = screen.PartyMenu.Find("Card0_flame_scroll")!;
+            await NextFrame(this);
+            await Click(this, scroll);
+            Check(screen.PartyMenu.Find("Learn") is { Disabled: false }, $"a scroll with a spell on it can be studied from the Party menu ({screen.PartyMenu.Note})");
             await Click(this, screen.PartyMenu.Find("Learn")!);
             Check(!wren.Backpack.Concat(wren.Belt).Contains("flame_scroll"), "studying it uses the scroll up");
             Check(wren.Spells.Contains("flame_blast") ? screen.PartyMenu.Note.Contains("learns Flame Blast") : screen.PartyMenu.Note.Contains("goes off"),
