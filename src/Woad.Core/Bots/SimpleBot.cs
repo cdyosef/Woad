@@ -159,6 +159,12 @@ public static class SimpleBot
             return new Escape(hero.Id);
         }
 
+        // A fight on the Woarld Map won: walk on.
+        if (session.CheckMoveOn() is null)
+        {
+            return new MoveOn(hero.Id);
+        }
+
         bool canStep = turn.MovementPoints > 0;
         Direction? door = fighting ? null : NextDoor(state, room, hero);
         if (door is { } lockedSide && hero.Position == room.DoorTile(lockedSide) && room.PassageOn(lockedSide) is { IsLocked: true } locked)

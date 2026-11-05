@@ -281,6 +281,12 @@ with how many are to hand (the Sling's Rocks). Hovering shows its name and rules
 diamond lattice in a cream frame. Each square on the sheet is a **slot**: face down with the slot's mark and
 name while it's empty (it can't be picked up), the card sitting on it once there is one.
 
+**Ranks and armor on the sheet:** after each pool's symbol (Rumble, Od Hand, Wend, Defense) is the number
+of ranks bought in it. Under the body slot, beside Block and Guard Dice, **Armor** is the total in effect from
+every source (worn gear, less its wear; mods; set bonuses; Shining Light). It's green while something
+temporary boosts it, red while something brings it down (wear counts); with both, it's the color of the
+way it's gone overall, the other beside it in brackets: green "Armor 4 (-1)", red "Armor 1 (+2)".
+
 **Attacks zoom in:** every attack (a hero's or a monster's, in the room on show) zooms the view in on the
 attacker and its targets while it plays out, and back out after.
 
@@ -821,6 +827,9 @@ total reaches its number:
   still standing has got away, the party is back on the tile it came from, and the band (or the Bridge
   Troll, on its bridge) is still there (Cowards +1). Fail, and you bolt in a panic as far from the monsters
   as your Wend dice take you, and fall flat.
+- **Winning a fight on the map** doesn't end it: the party can gather up what fell. The Retreat button
+  becomes **Move on**, and one click walks the whole party on (asking first if loot is still lying about,
+  which is left behind).
 - **Cowards:** fleeing a band or turning back from a toll raises each character's standing with Cowards.
   At 10, **Craven the Cowherder** in the Waylay Inn gives them the **Coward's Cloak** (once): worn on the
   head, used once and gone, it makes the monsters beside you move at half speed on their next turn and

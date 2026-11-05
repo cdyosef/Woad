@@ -177,13 +177,18 @@ public partial class GameScreen
         string? searchBlocked = _session.State.Turn is not null && _session.CheckOffHandAttack() is null ? null : _session.CheckSearch();
         _search.Disabled = !(idle && !pending) || searchBlocked is not null;
         _search.TooltipText = _session.State.Turn is null ? "" : searchBlocked ?? "Search the room with your selected Od Hand dice: finds secret doors, traps and stashes your total reaches.";
-        // Out on the Woarld Map, Retreat waits up in the top strip, well away from the other actions.
+        // Out on the Woarld Map, Retreat waits up in the top strip, well away from the other actions; once
+        // the fight's won, it's Move On.
         _retreat.Visible = _session.State.Skirmish;
-        string? retreatBlocked = _session.CheckRetreat();
+        bool won = _session.CheckMoveOn() is null;
+        string? retreatBlocked = won ? null : _session.CheckRetreat();
         _retreat.Disabled = !(idle && !pending) || retreatBlocked is not null;
-        _confirmingRetreat &= !_retreat.Disabled;
-        _retreat.Text = _confirmingRetreat ? "Retreat?" : "Retreat";
-        _retreat.TooltipText = _session.State.Turn is null ? "" : retreatBlocked
+        _confirmingRetreat &= !_retreat.Disabled && !won;
+        _retreat.Text = won ? "Move on" : _confirmingRetreat ? "Retreat?" : "Retreat";
+        _retreat.Modulate = won ? Palette.Heal.Lightened(0.3f) : Colors.White;
+        _retreat.TooltipText = _session.State.Turn is null ? "" : won
+            ? "The fight's won: gather up what fell, then Move on, the whole party together. Anything left lying here stays behind."
+            : retreatBlocked
             ?? $"Retreat: your selected Od Hand dice look for a way out, against the monsters' chase (a die more than there are of them, +{GameSession.RetreatChaseBonus}). Get away and you're off the field, the monsters left where they are; fail and you bolt in a panic and fall flat.";
         _partyButton.Position = new Vector2(SideWidth + BoardView.Pixels + (_retreat.Visible ? 30 : 82), 3);
         _steal.Disabled = !(idle && !pending) || _session.CheckStealStart() is not null;
@@ -729,6 +734,22 @@ public partial class GameScreen
         // Retreat asks first: a click makes it "Retreat?", and a second click runs for it.
         _retreat.Pressed += () =>
         {
+            // The fight's won: walk on, asking first if there's loot still lying about.
+            if (_session.CheckMoveOn() is null)
+            {
+                if (_session.LootLeftBehind)
+                {
+                    _inventory.AskChoice(null, "There's loot still lying about. Leave it behind and move on?",
+                        [("Move on", () => ExecuteForActiveHero(heroId => new MoveOn(heroId))), ("Stay", RefreshPanels)]);
+                }
+                else
+                {
+                    ExecuteForActiveHero(heroId => new MoveOn(heroId));
+                }
+
+                return;
+            }
+
             if (!_confirmingRetreat)
             {
                 _confirmingRetreat = true;

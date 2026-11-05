@@ -19,6 +19,44 @@ public sealed partial class GameSession
     /// <summary>What the monsters' chase adds on top of its dice: retreating is harder than fleeing.</summary>
     public const int RetreatChaseBonus = 3;
 
+    /// <summary>Why the party can't move on from the fight now (it isn't won yet), or null.</summary>
+    public string? CheckMoveOn()
+    {
+        if (!State.Skirmish)
+        {
+            return "There's no walking off in a dungeon: find the way out.";
+        }
+
+        if (State.Turn is null)
+        {
+            return "It isn't anyone's turn.";
+        }
+
+        return ActiveRoom.Monsters.Count > 0 ? "The fight isn't won yet: Retreat, or finish it." : null;
+    }
+
+    /// <summary>Whether a won fight still has loot lying about (cards, coins, keys) to leave behind.</summary>
+    public bool LootLeftBehind =>
+        State.Rooms.Values.Any(room => room.LootPositions.Any() || room.Coins.Count > 0 || room.Keys.Count > 0);
+
+    /// <summary>The fight's won: everyone still standing walks on, and the fight is over.</summary>
+    private string? Handle(MoveOn command, List<GameEvent> events)
+    {
+        if (CheckMoveOn() is { } error)
+        {
+            return error;
+        }
+
+        foreach (Hero hero in State.Heroes.Where(hero => hero.IsInPlay))
+        {
+            hero.Status = HeroStatus.Escaped;
+            events.Add(new HeroEscaped(hero.Id, hero.TreasureValue));
+        }
+
+        EndRunIfOver(events);
+        return null;
+    }
+
     /// <summary>Why the active hero can't retreat now, or null.</summary>
     public string? CheckRetreat()
     {

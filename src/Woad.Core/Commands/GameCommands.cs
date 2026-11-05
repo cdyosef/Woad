@@ -166,6 +166,12 @@ public abstract record OdHandCommand(int HeroId, int? Dice, bool UseTools, int P
 public sealed record PickLock(int HeroId, GridPosition Target, int? Dice = null, bool UseTools = true, int PowerDice = 0)
     : OdHandCommand(HeroId, Dice, UseTools, PowerDice);
 
+/// <summary>
+/// Leave a won fight out on the Woarld Map: the whole party walks on (anything still lying about is
+/// left behind).
+/// </summary>
+public sealed record MoveOn(int HeroId) : GameCommand(HeroId);
+
 /// <summary>Retreat from a fight out on the Woarld Map: an Od Hand roll against the monsters' chase.</summary>
 public sealed record Retreat(int HeroId, int? Dice = null, bool UseTools = false, int PowerDice = 0)
     : OdHandCommand(HeroId, Dice, UseTools, PowerDice);

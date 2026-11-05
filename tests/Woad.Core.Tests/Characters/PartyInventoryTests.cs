@@ -147,6 +147,20 @@ public class PartyInventoryTests
     }
 
     [Fact]
+    public void TheSheetsArmorCountsWearAgainstItAndShiningLightForIt()
+    {
+        Character morgan = Morgan();
+        morgan.GiveCard("chain_mail~1", Content);
+        Hero hero = Hero.Preview(morgan, Content, null, out _);
+
+        Assert.Equal((2, 0, 1), (hero.ArmorTotal, hero.ArmorBoost, hero.ArmorWear));
+        hero.ShiningRounds = 3;
+        hero.ShiningDefense = 2;
+        Assert.Equal((4, 2, 1), (hero.ArmorTotal, hero.ArmorBoost, hero.ArmorWear));
+        Assert.Same(morgan.Allocation, hero.Allocation);
+    }
+
+    [Fact]
     public void ThePartyChestIsSavedWithTheRaid()
     {
         var raid = new RaidSave { Name = "Morgan's Raid", Party = [Guid.NewGuid()] };

@@ -604,17 +604,10 @@ public sealed partial class GameSession
             return;
         }
 
-        // Out on the Woarld Map, the fight's won: the party gathers itself and walks on.
+        // Out on the Woarld Map, the fight's won: the party can gather up what fell, then Move On.
         if (State.Skirmish)
         {
             events.Add(new RoomCleared(room.Id));
-            foreach (Hero hero in State.Heroes.Where(hero => hero.IsInPlay))
-            {
-                hero.Status = HeroStatus.Escaped;
-                events.Add(new HeroEscaped(hero.Id, hero.TreasureValue));
-            }
-
-            EndRunIfOver(events);
             return;
         }
 

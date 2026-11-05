@@ -30,15 +30,25 @@ public class WoarldDangerTests
     }
 
     [Fact]
-    public void BeatingTheBandEndsTheFightAndThePartyWalksOn()
+    public void BeatingTheBandLeavesThePartyFreeToGatherWhatFellThenMoveOn()
     {
         GameSession session = Fight(["dire_wolf"], dice: new ScriptedDice(5, 1));
         Hero hero = session.State.Heroes[0];
         Monster wolf = session.State.Rooms[Skirmish.RoomId].Monsters.Single();
         wolf.Hearts = 1;
         hero.Position = wolf.Position with { X = wolf.Position.X - 1 };
+        Assert.Contains("isn't won", session.CheckMoveOn());
 
         session.Execute(new AttackMonster(hero.Id, wolf.Id, UseWeapon: false));
+
+        // Won, but nobody's gone: there may be loot to pick up.
+        Assert.Equal(RunPhase.InProgress, session.State.Phase);
+        Assert.Equal(HeroStatus.Active, hero.Status);
+        Assert.Null(session.CheckMoveOn());
+        session.State.Rooms[Skirmish.RoomId].AddCoins(hero.Position, 5);
+        Assert.True(session.LootLeftBehind);
+
+        Assert.True(session.Execute(new MoveOn(hero.Id)).IsAccepted);
 
         Assert.Equal(RunPhase.Ended, session.State.Phase);
         Assert.Equal(HeroStatus.Escaped, hero.Status);

@@ -120,6 +120,30 @@ public partial class DicePoolView : Control
 
     /// <summary>The Defense row: the base die, the extra dice (the first <paramref name="ready"/> of them ready, the rest spent), armor and Block.</summary>
     /// <param name="guard">Guard Dice for allies beside you (the Knight's set), the first <paramref name="guardReady"/> ready.</param>
+    /// <summary>The ranks bought in each ability, after its symbol (on a character's sheet).</summary>
+    public void ShowRanks(int rumble, int odHand, int wend, int defense)
+    {
+        foreach ((DicePool pool, int rank) in new[] { (DicePool.Rumble, rumble), (DicePool.OdHand, odHand), (DicePool.Wend, wend), (DicePool.Defense, defense) })
+        {
+            Row row = _rows[(int)pool];
+            row.Rank = rank;
+            row.Reserve = Math.Max(row.Reserve, Icon + 7);
+        }
+
+        QueueRedraw();
+    }
+
+    /// <summary>
+    /// The armor in effect on the Defense row's second line: green while something temporary boosts it,
+    /// red while wear (or anything else) brings it down; with both, the way it's gone overall, and the
+    /// other beside it in brackets.
+    /// </summary>
+    public void ShowArmor(int total, int boost, int drop)
+    {
+        _rows[(int)DicePool.Defense].Armor = (total, boost, drop);
+        QueueRedraw();
+    }
+
     public void ShowDefense(int baseDice, int extraDice, int ready, int armor, int block, bool blockReady, int guard = 0, int guardReady = 0)
     {
         Row row = _rows[(int)DicePool.Defense];
@@ -180,6 +204,10 @@ public partial class DicePoolView : Control
             if (!row.Covered && GameArt.Ui(row.Icon) is { } icon)
             {
                 DrawTextureRect(icon, new Rect2(row.Origin, new Vector2(Icon, Icon)), tile: false);
+                if (row.Rank is { } rank)
+                {
+                    DrawString(font, row.Origin + new Vector2(Icon + 1, 9), rank.ToString(), fontSize: UiTheme.FontSize, modulate: row.Color);
+                }
             }
 
             if (row.IsDefense)
@@ -326,7 +354,28 @@ public partial class DicePoolView : Control
         }
 
         cursor.NewLine();
-        if (row.Bonus != 0)
+        if (row.Armor is { } armor)
+        {
+            // "Armor 3", green or red by what's acting on it, the lesser pull beside it.
+            (string main, Color color, string extra, Color extraColor) = armor switch
+            {
+                { Boost: > 0, Drop: 0 } => ($"Armor {armor.Total}", Palette.Heal, "", Palette.Text),
+                { Boost: 0, Drop: > 0 } => ($"Armor {armor.Total}", Palette.Danger, "", Palette.Text),
+                { Boost: > 0, Drop: > 0 } when armor.Boost >= armor.Drop => ($"Armor {armor.Total}", Palette.Heal, $" (-{armor.Drop})", Palette.Danger),
+                { Boost: > 0, Drop: > 0 } => ($"Armor {armor.Total}", Palette.Danger, $" (+{armor.Boost})", Palette.Heal),
+                _ => ($"Armor {armor.Total}", Palette.Text, "", Palette.Text),
+            };
+            float mainWidth = font.GetStringSize(main, fontSize: UiTheme.FontSize).X;
+            Rect2 rect = cursor.Next(mainWidth + font.GetStringSize(extra, fontSize: UiTheme.FontSize).X + 5);
+            DrawRect(rect, Palette.PanelDark);
+            DrawRect(rect, Palette.TrimDim, filled: false, width: 1);
+            DrawString(font, rect.Position + new Vector2(2, 8), main, fontSize: UiTheme.FontSize, modulate: color);
+            if (extra.Length > 0)
+            {
+                DrawString(font, rect.Position + new Vector2(2 + mainWidth, 8), extra, fontSize: UiTheme.FontSize, modulate: extraColor);
+            }
+        }
+        else if (row.Bonus != 0)
         {
             Rect2 rect = cursor.Next(16);
             DrawRect(rect, Palette.PanelDark);
@@ -440,6 +489,12 @@ public partial class DicePoolView : Control
         public int Guard { get; set; }
 
         public int GuardReady { get; set; }
+
+        /// <summary>The ranks bought in it, shown after its symbol (null: not shown).</summary>
+        public int? Rank { get; set; }
+
+        /// <summary>Defense: the armor in effect, what's boosting it for now, and what's bringing it down (null: the plain bonus).</summary>
+        public (int Total, int Boost, int Drop)? Armor { get; set; }
 
         /// <summary>The pool's dice color, matching its dice in the dice bar and its cards.</summary>
         public Color Color { get; init; } = Palette.Text;

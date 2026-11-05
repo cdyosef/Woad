@@ -61,6 +61,12 @@ public partial class Main
             Check(dangers.ScoutedDay == world.Journey.Day, "Scout scouts");
 
             wren.GiveCard("flame_scroll", _content);
+            if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is not null)
+            {
+                // Worn chain mail, for the sheet's armor in red.
+                wren.GiveCard("chain_mail~1", _content);
+            }
+
             await Click(this, screen.PartyButton);
             Check(screen.PartyMenu.Visible, "the Party button opens the Party menu on the map");
             if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } partyShots)
