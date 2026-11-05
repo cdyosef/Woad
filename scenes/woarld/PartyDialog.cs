@@ -191,7 +191,7 @@ public partial class PartyDialog : Control
         (int now, int max) = Hearts?.Invoke(character) ?? (character.MaxHearts(Content), character.MaxHearts(Content));
         string role = character.IsCompanion ? "  (companion)" : "";
         // Their name and level: click it for their character sheet.
-        Button header = UiTheme.CompactButton(new Vector2(0, 0), new Vector2(400, 15), $"{character.Name}   Level {character.Level}   {now}/{max} hearts   {character.Gold} gold{role}");
+        Button header = UiTheme.CompactButton(new Vector2(0, 0), new Vector2(400, 15), $"{character.Name}   Level {character.Level}   {now}/{max} hearts   {Money.Short(character.Coins)}{role}");
         header.Name = $"Sheet{index}";
         header.Flat = true;
         header.Alignment = HorizontalAlignment.Left;

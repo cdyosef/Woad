@@ -74,7 +74,7 @@ public class GearWearTests
         Character hero = Character.Create("Morgan", "ember", StatAllocation.None, content, DateTimeOffset.UnixEpoch);
         hero.TakeCard("buckler");
         hero.GiveCard("chain_mail~2", content);
-        hero.EarnGold(5);
+        hero.Earn(Money.Gold(5));
         Assert.Equal(1, hero.Stats(content).Armor);
 
         RunSetup setup = DungeonGenerator.CreateRun(content, "emerald_keep", [hero.ToHeroSetup()], 1);
@@ -82,9 +82,9 @@ public class GearWearTests
         session.Begin();
         Assert.Equal(2, session.HeroInSeat().Card("chain_mail").Wear);
 
-        Assert.Equal(4, Smithy.RepairPrice("chain_mail~2"));
+        Assert.Equal(Money.Gold(4), Smithy.RepairPrice("chain_mail~2"));
         Assert.True(Smithy.Repair(content, hero, "chain_mail~2").Done);
-        Assert.Equal((1, 3), (hero.Gold, hero.Stats(content).Armor));
+        Assert.Equal((Money.Gold(1), 3), (hero.Coins, hero.Stats(content).Armor));
         Assert.Contains("chain_mail", hero.Equipped);
     }
 }

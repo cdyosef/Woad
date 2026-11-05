@@ -38,7 +38,7 @@ public sealed class JsonCharacterRepositoryTests : IDisposable
             Won = false,
             Kills = 0,
             Xp = 0,
-            Gold = 0,
+            Coins = 0,
             DeepestFloor = 1,
             Equipped = [.. character.Equipped],
             Belt = [.. character.Belt],
@@ -164,6 +164,26 @@ public sealed class JsonCharacterRepositoryTests : IDisposable
 
         Assert.Equal(character.Allocation.OdHandDice + 1, loaded.Allocation.OdHandDice);
         Assert.Equal(Skills.OdHand | Skill.Shove, loaded.Allocation.Skills);
+    }
+
+    [Fact]
+    public async Task GoldSavedBeforeSilverAndCopperBecomesCopper()
+    {
+        Character character = NewCharacter("Morgan");
+        character.Earn(7);
+        await Repository().SaveAsync(character);
+        string path = Path.Combine(_folder, $"{character.Id:N}.json");
+        string json = (await File.ReadAllTextAsync(path))
+            .Replace($"\"schemaVersion\": {JsonCharacterRepository.SchemaVersion}", "\"schemaVersion\": 3")
+            .Replace("\"coins\": 7", "\"coins\": 0")
+            .Replace("\"gold\": 0", "\"gold\": 7");
+        await File.WriteAllTextAsync(path, json);
+
+        Character loaded = Assert.Single((await Repository().LoadAllAsync()).Characters);
+
+        Assert.Equal(Money.Gold(7), loaded.Coins);
+        await Repository().SaveAsync(loaded);
+        Assert.Equal(Money.Gold(7), Assert.Single((await Repository().LoadAllAsync()).Characters).Coins);
     }
 
     [Fact]

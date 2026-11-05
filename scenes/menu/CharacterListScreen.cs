@@ -1,6 +1,7 @@
 using Godot;
 using Woad.Core.Characters;
 using Woad.Core.Content;
+using Woad.Core.Model;
 using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Menu;
@@ -161,7 +162,7 @@ public partial class CharacterListScreen : MenuScreen
                $"Equipped: {CardNames(character.Equipped)}\n" +
                $"Belt: {CardNames(character.Belt)}\n" +
                $"Backpack: {CardNames(character.Backpack)}\n\n" +
-               $"Gold {character.Gold}   Runs {character.RunsPlayed}   Wins {character.Wins}" + Afflictions(character);
+               $"Purse {Money.Short(character.Coins)}   Runs {character.RunsPlayed}   Wins {character.Wins}" + Afflictions(character);
     }
 
     /// <summary>What they carry from run to run until it's cured: Black Hearts and disease.</summary>

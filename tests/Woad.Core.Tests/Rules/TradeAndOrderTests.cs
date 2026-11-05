@@ -65,7 +65,7 @@ public class TradeAndOrderTests
     {
         GameSession session = WithCompanion();
         Hero you = session.HeroInSeat(0), pal = session.HeroInSeat(1);
-        pal.Gold = 10;
+        pal.Coins = 10;
         pal.HasBossKey = true;
         you.Keys = 2;
 
@@ -73,7 +73,7 @@ public class TradeAndOrderTests
         session.Do(new TakeKey(you.Id, pal.Id, BossKey: true));
         session.Do(new GiveKey(you.Id, pal.Id));
 
-        Assert.Equal((4, 6), (you.Gold, pal.Gold));
+        Assert.Equal((4, 6), (you.Coins, pal.Coins));
         Assert.True(you.HasBossKey);
         Assert.Equal((1, 1), (you.Keys, pal.Keys));
     }

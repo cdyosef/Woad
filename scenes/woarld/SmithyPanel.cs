@@ -1,6 +1,7 @@
 using Godot;
 using Woad.Core.Characters;
 using Woad.Core.Content;
+using Woad.Core.Model;
 using Woad.Core.Tavern;
 using Woad.Core.Woarld;
 using Woad.Scenes.Ui;
@@ -57,7 +58,7 @@ public partial class SmithyPanel : Panel
 
         _lines.Clear();
         _title.Text = _smithy.Name.ToUpperInvariant();
-        _note.Text = $"Mending costs {Smithy.GoldPerWear} gold a point of wear, paid by whoever owns it. {_leader.Name} buys with {_leader.Gold} gold.";
+        _note.Text = $"Mending costs {Smithy.GoldPerWear} gold a point of wear, paid by whoever owns it. {_leader.Name} buys with {Money.Short(_leader.Coins)}.";
         float y = 54;
         Heading(ref y, "MEND");
         bool any = false;
@@ -67,7 +68,7 @@ public partial class SmithyPanel : Panel
             {
                 CardDefinition card = _content.GetCard(key);
                 int price = Smithy.RepairPrice(key);
-                AddLine(y, $"{owner.Name}'s {card.Name} (worn -{CardKey.Wear(key)}): {price} gold", card.Text, "Mend", owner.Gold >= price,
+                AddLine(y, $"{owner.Name}'s {card.Name} (worn -{CardKey.Wear(key)}): {Money.Short(price)}", card.Text, "Mend", owner.Coins >= price,
                     () => Trade(Smithy.Repair(_content, owner, key), owner));
                 y += Line;
                 any = true;
@@ -87,7 +88,7 @@ public partial class SmithyPanel : Panel
         {
             CardDefinition card = _content.GetCard(id);
             int price = TavernServices.BuyPrice(card, _leader.GuildStanding);
-            AddLine(y, $"{card.Name}: {price} gold", card.Text, "Buy", _leader.Gold >= price,
+            AddLine(y, $"{card.Name}: {Money.Short(price)}", card.Text, "Buy", _leader.Coins >= price,
                 () => Trade(Smithy.Buy(_smithy, _content, _leader, id), _leader));
             y += Line;
         }

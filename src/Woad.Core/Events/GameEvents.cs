@@ -420,8 +420,8 @@ public sealed record Routed(int HeroId, DiceRoll Roll, int Steps) : GameEvent;
 /// <summary>The last monster in a room was defeated. A trap room's doors open again.</summary>
 public sealed record RoomCleared(string RoomId) : GameEvent;
 
-/// <summary>A pot broke. It held a card (<paramref name="CardId"/>), a heart (<paramref name="HeartsRestored"/>), or nothing.</summary>
-public sealed record PotSmashed(int HeroId, GridPosition Pot, int? CardId, bool AddedToBackpack, int HeartsRestored) : GameEvent;
+/// <summary>A pot broke. It held a card (<paramref name="CardId"/>), a heart (<paramref name="HeartsRestored"/>), a few copper (<paramref name="Coins"/>, with nothing else), or nothing.</summary>
+public sealed record PotSmashed(int HeroId, GridPosition Pot, int? CardId, bool AddedToBackpack, int HeartsRestored, int Coins = 0) : GameEvent;
 
 /// <summary>A defeated monster left a card on the floor where it fell.</summary>
 public sealed record LootDropped(string RoomId, GridPosition Position, int CardId) : GameEvent;
@@ -540,10 +540,10 @@ public sealed record WingsBroke(int HeroId, GridPosition Position) : GameEvent;
 /// <summary>A prone hero or monster got back on its feet.</summary>
 public sealed record GotUp(int EntityId) : GameEvent;
 
-/// <summary>Coins went into a hero's purse: <paramref name="Amount"/> gold, <paramref name="Total"/> now carried.</summary>
+/// <summary>Coins went into a hero's purse: <paramref name="Amount"/> copper, <paramref name="Total"/> now carried.</summary>
 public sealed record GoldFound(int HeroId, int Amount, int Total) : GameEvent;
 
-/// <summary>Gold landed on the floor: coins a monster dropped or a stash held, or the purse of someone who died.</summary>
+/// <summary>Coins (<paramref name="Amount"/> copper) landed on the floor: coins a monster dropped or a stash held, or the purse of someone who died.</summary>
 public sealed record GoldAppeared(string RoomId, GridPosition Position, int Amount) : GameEvent;
 
 /// <summary>A hero or monster was stunned: its Stun and Powerful Stun stacks now (see <see cref="StunState"/>).</summary>
@@ -593,12 +593,12 @@ public sealed record BombFell(string RoomId, int BombId, string? ToRoomId) : Gam
 
 /// <summary>
 /// A monster tried to steal from a hero: <paramref name="Hits"/> of its Od Hand dice beat the hero's own
-/// roll, taking <paramref name="Gold"/> gold and perhaps a card (0 hits: caught empty-handed).
+/// roll, taking <paramref name="Coins"/> copper and perhaps a card (0 hits: caught empty-handed).
 /// </summary>
-public sealed record MonsterStole(int MonsterId, int HeroId, int Hits, int Gold, int? CardId) : GameEvent;
+public sealed record MonsterStole(int MonsterId, int HeroId, int Hits, int Coins, int? CardId) : GameEvent;
 
 /// <summary>A mugging monster's hit took gold from a hero.</summary>
-public sealed record Mugged(int MonsterId, int HeroId, int Gold) : GameEvent;
+public sealed record Mugged(int MonsterId, int HeroId, int Coins) : GameEvent;
 
 /// <summary>A chest was a mimic: it woke (opened, picked or found out by a search) and the chest is gone. Its <see cref="MonsterSpawned"/> comes just before.</summary>
 /// <param name="HeroId">Who woke it by trying the chest (they're bitten), or 0 when a search found it out.</param>
@@ -614,7 +614,7 @@ public sealed record KnockedBack(int MonsterId, int HeroId, GridPosition From, G
 public sealed record Hexed(int MonsterId, int HeroId, bool Drained, int LuckLeft) : GameEvent;
 
 /// <summary>A monster swallowed the loot on a tile it crawled over; it drops it where it falls.</summary>
-public sealed record Engulfed(int MonsterId, GridPosition Tile, IReadOnlyList<int> CardIds, int Gold) : GameEvent;
+public sealed record Engulfed(int MonsterId, GridPosition Tile, IReadOnlyList<int> CardIds, int Coins) : GameEvent;
 
 /// <summary>A monster raised another from the dead beside it (just after its <see cref="MonsterSpawned"/>).</summary>
 public sealed record MonsterRaised(int RaiserId, int MonsterId) : GameEvent;
@@ -692,7 +692,7 @@ public sealed record MerchantMoved(int MerchantId, IReadOnlyList<GridPosition> P
 public sealed record MerchantFollowed(int MerchantId, string FromRoomId, string RoomId, GridPosition Position) : GameEvent;
 
 /// <summary>A hero bought from (or sold to) a merchant for <paramref name="Gold"/>.</summary>
-public sealed record MerchantTraded(int HeroId, int MerchantId, int CardId, int Gold, bool Bought) : GameEvent;
+public sealed record MerchantTraded(int HeroId, int MerchantId, int CardId, int Coins, bool Bought) : GameEvent;
 
 /// <summary>A hero stole from a merchant (<paramref name="CardId"/>), or was caught trying (null); what it cost them with the Guild and the Law.</summary>
 public sealed record MerchantRobbed(int HeroId, int MerchantId, string? CardId, bool Caught, int GuildLost, int LawLost) : GameEvent;

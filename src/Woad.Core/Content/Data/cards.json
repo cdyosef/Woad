@@ -99,8 +99,8 @@
 
   // Treasure
   { "id": "lucky_clover", "name": "Lucky Clover", "type": "treasure", "clover": true, "value": 1, "text": "Picked up, a Clover Luck point: kept until used, after your Luck runs out, by anyone (up to 7). A lucky 6 doesn't use it up." },
-  { "id": "loose_coins", "name": "Loose Coins", "type": "treasure", "coins": true, "value": 2, "text": "2 gold, straight into your purse. Found in pots." },
-  { "id": "coin_pouch", "name": "Coin Pouch", "type": "treasure", "coins": true, "value": 5, "text": "5 gold, straight into your purse." },
+  { "id": "loose_coins", "name": "Loose Coins", "type": "treasure", "coins": true, "value": 3, "silverDice": 1, "copperDice": 2, "text": "3 gold, a d6 of silver and 2d6 copper, straight into your purse. Found in pots." },
+  { "id": "coin_pouch", "name": "Coin Pouch", "type": "treasure", "coins": true, "value": 8, "silverDice": 2, "text": "8 gold and 2d6 silver, straight into your purse." },
   { "id": "emerald", "name": "Emerald", "type": "treasure", "value": 15, "text": "Worth 15 gold." },
   { "id": "pearl", "name": "Pearl", "type": "treasure", "value": 20, "text": "Worth 20 gold." },
   { "id": "golden_idol", "name": "Golden Idol", "type": "treasure", "value": 40, "text": "Worth 40 gold." }

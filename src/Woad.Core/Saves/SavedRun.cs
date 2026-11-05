@@ -15,8 +15,11 @@ namespace Woad.Core.Saves;
 /// </summary>
 public sealed class SavedRun
 {
-    /// <summary>The save format. A save from another version isn't loaded.</summary>
-    public const int CurrentVersion = 1;
+    /// <summary>
+    /// The save format. A save from another version isn't loaded, but for version 1, whose purses were in
+    /// whole gold: its gold passed between heroes is read as copper (times 100).
+    /// </summary>
+    public const int CurrentVersion = 2;
 
     private static readonly JsonSerializerOptions Options = new()
     {
@@ -24,7 +27,7 @@ public sealed class SavedRun
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase), new CommandConverter() },
     };
 
-    public int Version { get; init; } = CurrentVersion;
+    public int Version { get; set; } = CurrentVersion;
 
     public required string ThemeId { get; init; }
 
@@ -109,9 +112,24 @@ public sealed class SavedRun
             throw new InvalidDataException($"The save is damaged: {exception.Message}", exception);
         }
 
-        if (run is null || run.Version != CurrentVersion)
+        if (run is null || run.Version is < 1 or > CurrentVersion)
         {
             throw new InvalidDataException("The save is from another version of the game.");
+        }
+
+        if (run.Version == 1)
+        {
+            for (int i = 0; i < run.Commands.Count; i++)
+            {
+                run.Commands[i] = run.Commands[i] switch
+                {
+                    GiveGold give => give with { Amount = give.Amount * Model.Money.CopperPerGold },
+                    TakeGold take => take with { Amount = take.Amount * Model.Money.CopperPerGold },
+                    var command => command,
+                };
+            }
+
+            run.Version = CurrentVersion;
         }
 
         return run;

@@ -181,16 +181,16 @@ public sealed class Room
     public int KeysAt(GridPosition position) => _keys.GetValueOrDefault(position);
 
     /// <summary>Gold lying on the floor, by tile: coins that fell, and the purses of the dead.</summary>
-    public IReadOnlyDictionary<GridPosition, int> Gold => _gold;
+    public IReadOnlyDictionary<GridPosition, int> Coins => _gold;
 
-    public int GoldAt(GridPosition position) => _gold.GetValueOrDefault(position);
+    public int CoinsAt(GridPosition position) => _gold.GetValueOrDefault(position);
 
     /// <summary>Where the Boss Key lies on the floor, if it does.</summary>
     public GridPosition? BossKeyAt { get; internal set; }
 
     /// <summary>Anything on the tile to pick up: cards, gold, keys, the Boss Key or an unlit bomb.</summary>
     public bool HasLootAt(GridPosition position) =>
-        LootAt(position).Count > 0 || GoldAt(position) > 0 || KeysAt(position) > 0 || BossKeyAt == position || BombAt(position) is { Lit: false };
+        LootAt(position).Count > 0 || CoinsAt(position) > 0 || KeysAt(position) > 0 || BossKeyAt == position || BombAt(position) is { Lit: false };
 
     /// <summary>Plants Life dice grew, and whose side they're on (true for the heroes'): rough going for that side's enemies, cover for its own.</summary>
     public IReadOnlyDictionary<GridPosition, bool> Plants => _plants;
@@ -420,18 +420,18 @@ public sealed class Room
         }
     }
 
-    internal void AddGold(GridPosition position, int amount)
+    internal void AddCoins(GridPosition position, int amount)
     {
         if (amount > 0)
         {
-            _gold[position] = GoldAt(position) + amount;
+            _gold[position] = CoinsAt(position) + amount;
         }
     }
 
     /// <summary>Takes all the gold on the tile.</summary>
-    internal int TakeGold(GridPosition position)
+    internal int TakeCoins(GridPosition position)
     {
-        int amount = GoldAt(position);
+        int amount = CoinsAt(position);
         _gold.Remove(position);
         return amount;
     }

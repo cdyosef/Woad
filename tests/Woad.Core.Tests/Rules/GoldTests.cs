@@ -9,6 +9,19 @@ namespace Woad.Core.Tests.Rules;
 
 public class GoldTests
 {
+    [Theory]
+    [InlineData(0, "0g", "no coin")]
+    [InlineData(5, "5c", "5 copper")]
+    [InlineData(40, "4s", "4 silver")]
+    [InlineData(235, "2g 3s 5c", "2 gold, 3 silver and 5 copper")]
+    [InlineData(1203, "12g 3c", "12 gold and 3 copper")]
+    public void CoinsAreWrittenInGoldSilverAndCopper(int copper, string shortly, string longly)
+    {
+        Assert.Equal(shortly, Money.Short(copper));
+        Assert.Equal(longly, Money.Long(copper));
+        Assert.Equal(copper, Money.Gold(copper / 100) + Money.Silver(copper / 10 % 10) + copper % 10);
+    }
+
     private const string Open = """
         .........
         .........
@@ -31,12 +44,12 @@ public class GoldTests
             hero.AddToBackpack(new CardInstance(session.State.NextId(), TestContent.Catalog.GetCard("potion"), broughtInByHeroId: null));
         }
 
-        session.RoomById().AddGold(hero.Position, 7);
+        session.RoomById().AddCoins(hero.Position, 7);
 
         IReadOnlyList<GameEvent> events = session.Do(new PickUpLoot(hero.Id));
 
         Assert.Equal(new GoldFound(hero.Id, 7, 7), events.SingleOf<GoldFound>());
-        Assert.Equal(0, session.RoomById().GoldAt(hero.Position));
+        Assert.Equal(0, session.RoomById().CoinsAt(hero.Position));
     }
 
     [Fact]
@@ -54,14 +67,14 @@ public class GoldTests
             .........
             """, new ScriptedDice(3), cards: ["coin"]);
         Hero hero = session.HeroInSeat();
-        hero.Gold = 4;
-        Assert.Equal(9, hero.TreasureValue);
+        hero.Coins = 4;
+        Assert.Equal(Money.Gold(5) + 4, hero.TreasureValue);
         session.Do(new RollMovement(hero.Id));
         session.Do(new MoveHero(hero.Id, new GridPosition(4, 4)));
 
         session.Do(new Escape(hero.Id));
 
-        Assert.Equal(9, RunResults.For(session.State).Single().Gold);
+        Assert.Equal(Money.Gold(5) + 4, RunResults.For(session.State).Single().Coins);
     }
 
     [Fact]
@@ -71,13 +84,13 @@ public class GoldTests
         Hero fallen = session.HeroInSeat(1);
         fallen.Status = HeroStatus.KeelingOver;
         fallen.DeathMarks = 1;
-        fallen.Gold = 6;
+        fallen.Coins = 6;
         session.Do(new EndTurn(session.HeroInSeat(0).Id));
 
         IReadOnlyList<GameEvent> events = session.Do(new RollKeel(fallen.Id));
 
         GridPosition grave = events.SingleOf<HeroDied>().Tombstone.Position;
         Assert.Equal(new GoldAppeared("A", grave, 6), events.SingleOf<GoldAppeared>());
-        Assert.Equal((0, 6), (fallen.Gold, session.RoomById().GoldAt(grave)));
+        Assert.Equal((0, 6), (fallen.Coins, session.RoomById().CoinsAt(grave)));
     }
 }

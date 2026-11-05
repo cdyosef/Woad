@@ -1,4 +1,5 @@
 using Godot;
+using Woad.Core.Model;
 
 namespace Woad.Scenes.Ui;
 
@@ -180,8 +181,8 @@ public static class UiTheme
         return ResourceLoader.Exists(path) ? $"[img=11x11]{path}[/img]" : fallback;
     }
 
-    /// <summary>Gold for a <see cref="RichLabel"/>: a coin and the amount in gold, easy to spot.</summary>
-    public static string Gold(int amount) => $"{Icon("icon_gold", "")} [color={Palette.Hex(Palette.Loot)}]{amount} gold[/color]";
+    /// <summary>A purse for a <see cref="RichLabel"/>: a coin and the amount (copper, written "2g 3s 5c"), easy to spot.</summary>
+    public static string Coins(int copper) => $"{Icon("icon_gold", "")} [color={Palette.Hex(Palette.Loot)}]{Money.Short(copper)}[/color]";
 
     /// <summary>Hearts for a <see cref="RichLabel"/>: a heart and how many are left of how many.</summary>
     public static string Hearts(int now, int max)

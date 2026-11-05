@@ -3,9 +3,11 @@ using Woad.Core.Characters;
 using Woad.Core.Content;
 using Woad.Core.Dice;
 using Woad.Core.Grid;
+using Woad.Core.Model;
 using Woad.Core.Randomness;
 using Woad.Core.Saves;
 using Woad.Core.Tavern;
+using Woad.Core.Woarld;
 using Woad.Scenes.Game;
 using Woad.Scenes.Ui;
 
@@ -336,7 +338,7 @@ public partial class TavernScreen : Control
 
         _visit.SetPartySize(Party.Count);
         _status.Text = $"[color={Palette.Hex(Palette.TrimBright)}]{Tavern.Name.ToUpperInvariant()}[/color]  Day {World.Journey.Day}  Reputation {World.Reputation(Tavern.Id)}   " +
-                       string.Join("    ", Party.Select(member => $"{member.Name} {UiTheme.Hearts(HeartsOf(member), member.MaxHearts(Content))} {UiTheme.Gold(member.Gold)}"));
+                       string.Join("    ", Party.Select(member => $"{member.Name} {UiTheme.Hearts(HeartsOf(member), member.MaxHearts(Content))} {UiTheme.Coins(member.Coins)}"));
         LeaderButton.Text = $"Leader: {_leader.Name}";
         LeaderButton.Disabled = Party.Count(member => !member.IsCompanion) < 2;
         TavernNpc? near = _visit.NpcInReach;
@@ -448,7 +450,7 @@ public partial class TavernScreen : Control
         }
 
         _dialogTitle.Text = $"{npc.Name.ToUpperInvariant()}";
-        PayerButton.Text = $"Paying: {_payer.Name} ({_payer.Gold} gold)";
+        PayerButton.Text = $"Paying: {_payer.Name} ({Money.Short(_payer.Coins)})";
         _bones.Visible = npc.Role == NpcRole.Gambler;
         RumorButton.Visible = npc.Rumors.Count > 0;
         foreach (Node child in _list.GetChildren())
@@ -489,17 +491,16 @@ public partial class TavernScreen : Control
     {
         foreach (MenuItem item in Tavern.Menu)
         {
-            HBoxContainer row = Row($"{item.Name}, {item.Price} gold: {item.Text}", 380);
+            HBoxContainer row = Row($"{item.Name}, {Money.Short(item.Price)}: {item.Text}", 380);
             RowButton(row, item.Kind == "drink" ? "Drink" : "Eat", 60, () => Done(TavernServices.Eat(World, _payer, item), _payer));
             RowButton(row, "To-Go", 60, () => Done(TavernServices.BuyToGo(World, _payer, item), _payer));
         }
 
         int others = Party.Count - 1;
-        int drink = Tavern.Menu.Where(item => item.Kind == "drink").Select(item => item.Price).DefaultIfEmpty(0).Min();
-        Button party = RowButton(Row($"A round for the party ({drink * others} gold): everyone else drinks, and grows closer to {_payer.Name}.", 380), "Buy", 124,
+        Button party = RowButton(Row($"A round for the party ({Money.Short(TavernServices.RoundForThePartyPrice)}): everyone else drinks, and grows closer to {_payer.Name}.", 380), "Buy", 124,
             () => Done(TavernServices.RoundForTheParty(World, Tavern, _payer, Party), _payer));
         party.Disabled = others == 0;
-        RowButton(Row($"A round for the whole bar ({Tavern.RoundForTheBar} gold): raises your name here (now {World.Reputation(Tavern.Id)}).", 380), "Buy", 124,
+        RowButton(Row($"A round for the whole bar ({Money.Short(Tavern.RoundForTheBar)}): raises your name here (now {World.Reputation(Tavern.Id)}).", 380), "Buy", 124,
             () => Done(TavernServices.RoundForTheBar(World, Tavern, _payer), _payer));
         Row($"{_payer.Name} carries To-Go: {(World.Provisions(_payer.Id).Count == 0 ? "nothing" : string.Join(", ", World.Provisions(_payer.Id).Select(id => Tavern.Menu.FirstOrDefault(item => item.Id == id)?.Name ?? id)))}.", 536);
     }
@@ -513,7 +514,7 @@ public partial class TavernScreen : Control
         foreach (IGrouping<string, string> group in World.Stock(Tavern).GroupBy(id => id).OrderBy(group => Content.GetCard(group.Key).Name))
         {
             CardDefinition card = Content.GetCard(group.Key);
-            HBoxContainer row = Row($"{card.Name}{(group.Count() > 1 ? $" x{group.Count()}" : "")}, {TavernServices.BuyPrice(card, standing)} gold: {card.Text}", 456);
+            HBoxContainer row = Row($"{card.Name}{(group.Count() > 1 ? $" x{group.Count()}" : "")}, {Money.Short(TavernServices.BuyPrice(card, standing))}: {card.Text}", 456);
             RowButton(row, "Buy", 76, () => Done(TavernServices.Buy(World, Tavern, Content, _payer, card.Id), _payer));
         }
 
@@ -524,7 +525,7 @@ public partial class TavernScreen : Control
         foreach ((string id, string where) in owned.Distinct())
         {
             CardDefinition card = Content.GetCard(id);
-            RowButton(Row($"{card.Name} ({where}), {TavernServices.SellPrice(card)} gold", 456), "Sell", 76,
+            RowButton(Row($"{card.Name} ({where}), {Money.Short(TavernServices.SellPrice(card))}", 456), "Sell", 76,
                 () => Done(TavernServices.Sell(World, Tavern, Content, _payer, id), _payer));
         }
     }
@@ -594,7 +595,7 @@ public partial class TavernScreen : Control
                 .Concat(Skills.In(offer.Allocation.Skills).Select(skill => skill.Name())));
             string gear = offer.Gear.Count > 0 ? $"; brings {string.Join(", ", offer.Gear.Select(id => Content.GetCard(id).Name))}" : "";
             HBoxContainer row = Row($"{offer.Name}, level {offer.Level}: {stats}{gear}", 436);
-            Button hire = RowButton(row, hired ? "Hired" : $"Hire, {offer.Price} gold", 96, () => Hire(offer));
+            Button hire = RowButton(row, hired ? "Hired" : $"Hire, {Money.Short(offer.Price)}", 96, () => Hire(offer));
             hire.Disabled = hired;
         }
     }
@@ -621,25 +622,30 @@ public partial class TavernScreen : Control
 
     private void ShowRooms()
     {
-        RowButton(Row($"Rooms for the whole party tonight ({TavernServices.RoomPrice * Party.Count} gold): a day passes, and everyone heals a heart.", 436),
-            "Sleep the night", 96, () => Done(TavernServices.SleepTheNight(Raid, World.Journey, _payer, Party, MaxHeartsOf), _payer));
+        RowButton(Row($"Rooms for the whole party tonight ({Money.Short(TavernServices.NightPrice)}): a day passes, and everyone heals a heart and makes a Rest roll.", 436),
+            "Sleep the night", 96, SleepTheNight);
         Row("IN THE PARTY", 536).GetChild<Label>(0).AddThemeColorOverride("font_color", Palette.Trim);
         foreach (Character member in Party.ToList())
         {
             string owner = member.IsCompanion && OwnerOf(member) is { } player ? $", {player.Name}'s companion" : "";
             int leaving = Leaving(member).Count;
-            Button leave = RowButton(Row($"{member.Name}, level {member.Level}, {HeartsOf(member)}/{member.MaxHearts(Content)} hearts{owner}", 436),
-                $"Room, {TavernServices.RoomPrice * leaving} gold", 96, () => GoUpstairs(member));
-            leave.Disabled = member == _leader;
+            HBoxContainer row = Row($"{member.Name}, level {member.Level}, {HeartsOf(member)}/{member.MaxHearts(Content)} hearts{owner}", 376);
+            string who = leaving > 1 ? $"{member.Name} and their companions" : member.Name;
+            Button leave = RowButton(row, $"Room, {Money.Short(TavernServices.RoomPrice * leaving)}", 96, () => GoUpstairs(member, sty: false));
+            Button sty = RowButton(row, "Pig sty", 56, () => GoUpstairs(member, sty: true));
+            leave.Disabled = sty.Disabled = member == _leader;
             leave.TooltipText = member == _leader
                 ? "The leader can't leave. Pass the lead first."
-                : $"A room upstairs for {(leaving > 1 ? $"{member.Name} and their companions" : member.Name)}, healing a heart a day until they rejoin.";
+                : $"A room upstairs for {who}: each night a heart healed and a Rest roll, until they rejoin.";
+            sty.TooltipText = member == _leader
+                ? "The leader can't leave. Pass the lead first."
+                : $"The pig sty out back for {who}, free: a Rest roll each night, and nothing more.";
         }
 
         Row("WAITING UPSTAIRS", 536).GetChild<Label>(0).AddThemeColorOverride("font_color", Palette.Trim);
         foreach (Character waiting in Roster.Where(character => !Party.Contains(character)))
         {
-            string room = Raid.Rooms.ContainsKey(waiting.Id) ? ", resting in a room" : "";
+            string room = Raid.Rooms.ContainsKey(waiting.Id) ? ", resting in a room" : Raid.Sty.ContainsKey(waiting.Id) ? ", in the pig sty" : "";
             Button join = RowButton(Row($"{waiting.Name}, level {waiting.Level}, {HeartsOf(waiting)}/{waiting.MaxHearts(Content)} hearts{room}{(waiting.IsCompanion ? $", companion: joins {SeatOwner().Name}" : "")}", 436),
                 "Join", 96, () => Rejoin(waiting));
             join.Disabled = Party.Count >= Woad.Core.Rules.GameRules.MaxHeroes;
@@ -663,27 +669,52 @@ public partial class TavernScreen : Control
         return Party.GetRange(index, count);
     }
 
-    /// <summary>Rents rooms for someone (and their companions) and sends them up to rest.</summary>
-    private void GoUpstairs(Character member)
+    /// <summary>
+    /// Rooms for the whole party tonight: paid first, then everyone's Rest roll eats what they've had
+    /// (or carry To-Go).
+    /// </summary>
+    private void SleepTheNight()
+    {
+        if (_payer.Coins < TavernServices.NightPrice)
+        {
+            Done(ServiceResult.Refused($"{_payer.Name} has {Money.Long(_payer.Coins)}; rooms cost {Money.Long(TavernServices.NightPrice)}."), null);
+            return;
+        }
+
+        IReadOnlyList<RestBoost> boosts = World.TakeRestBoosts([.. Party.Select(member => member.Id)], Tavern);
+        Done(TavernServices.SleepTheNight(Raid, World.Journey, _random, _payer, Party, MaxHeartsOf, boosts), _payer);
+    }
+
+    /// <summary>Sends someone (and their companions) off to wait: rooms upstairs, paid, or the pig sty out back, free.</summary>
+    private void GoUpstairs(Character member, bool sty)
     {
         List<Character> leaving = Leaving(member);
-        int price = TavernServices.RoomPrice * leaving.Count;
-        if (_payer.Gold < price)
+        int price = sty ? 0 : TavernServices.RoomPrice * leaving.Count;
+        if (_payer.Coins < price)
         {
-            Done(ServiceResult.Refused($"{_payer.Name} has {_payer.Gold} gold; rooms cost {price}."), null);
+            Done(ServiceResult.Refused($"{_payer.Name} has {Money.Long(_payer.Coins)}; rooms cost {Money.Long(price)}."), null);
             return;
         }
 
         foreach (Character guest in leaving)
         {
-            TavernServices.RentRoom(Raid, World.Journey.Day, _payer, guest);
+            if (sty)
+            {
+                TavernServices.SleepInSty(Raid, World.Journey.Day, guest);
+            }
+            else
+            {
+                TavernServices.RentRoom(Raid, World.Journey.Day, _payer, guest);
+            }
         }
 
         Unseat(member);
-        Done(new ServiceResult(true, $"{_payer.Name} pays {price} gold for rooms. {DialogText}"), _payer);
+        Done(new ServiceResult(true, sty
+            ? $"{string.Join(" and ", leaving.Select(guest => guest.Name))} bed{(leaving.Count == 1 ? "s" : "")} down in the pig sty out back. {DialogText}"
+            : $"{_payer.Name} pays {Money.Long(price)} for rooms. {DialogText}"), _payer);
     }
 
-    /// <summary>Brings someone back down, healed for the days they rested in their room.</summary>
+    /// <summary>Brings someone back down (or in from the sty), healed for the nights they rested.</summary>
     private void Rejoin(Character waiting)
     {
         int before = HeartsOf(waiting);
@@ -705,8 +736,8 @@ public partial class TavernScreen : Control
         foreach (int wager in new[] { 1, 5, 10, TavernServices.MaxWager })
         {
             Button bet = RowButton(row, $"{wager} gold", 54, () => PlayBones(wager));
-            bet.Disabled = _payer.Gold < wager || _rolling;
-            bet.TooltipText = bet.Disabled ? $"{_payer.Name} has {_payer.Gold} gold." : $"Bet {wager} gold on a game of Bones.";
+            bet.Disabled = _payer.Coins < Money.Gold(wager) || _rolling;
+            bet.TooltipText = bet.Disabled ? $"{_payer.Name} has {Money.Long(_payer.Coins)}." : $"Bet {wager} gold on a game of Bones.";
         }
     }
 
@@ -735,7 +766,7 @@ public partial class TavernScreen : Control
             bet.Disabled = true;
         }
 
-        _dialogText.Text = $"{player.Name} bets {wager} gold. The dice fly...";
+        _dialogText.Text = $"{player.Name} bets {Money.Long(Money.Gold(wager))}. The dice fly...";
         Sfx.Play("dice");
         await _bones.ShowRoll($"{player.Name} rolls", new DiceRoll(game.Yours), 0, newGroup: true);
         await _bones.ShowRoll($"{gambler.Name} rolls", new DiceRoll(game.Theirs), 0, newGroup: false);

@@ -1,5 +1,6 @@
 using Woad.Core.Characters;
 using Woad.Core.Content;
+using Woad.Core.Model;
 using Woad.Core.Woarld;
 
 namespace Woad.Core.Tavern;
@@ -13,8 +14,8 @@ public static class Smithy
     /// <summary>What mending costs for each point of wear.</summary>
     public const int GoldPerWear = 2;
 
-    /// <summary>What mending a worn card (by its key) whole costs.</summary>
-    public static int RepairPrice(string key) => GoldPerWear * CardKey.Wear(key);
+    /// <summary>What mending a worn card (by its key) whole costs, in copper.</summary>
+    public static int RepairPrice(string key) => Money.Gold(GoldPerWear * CardKey.Wear(key));
 
     /// <summary>Mends one of the hero's worn cards whole, for gold.</summary>
     public static ServiceResult Repair(ContentCatalog content, Character hero, string key)
@@ -25,13 +26,13 @@ public static class Smithy
         }
 
         int price = RepairPrice(key);
-        if (!hero.SpendGold(price))
+        if (!hero.Spend(price))
         {
-            return ServiceResult.Refused($"Mending that costs {price} gold; {hero.Name} has {hero.Gold}.");
+            return ServiceResult.Refused($"Mending that costs {Money.Long(price)}; {hero.Name} has {Money.Long(hero.Coins)}.");
         }
 
         hero.Mend(key);
-        return new ServiceResult(true, $"The smith mends {hero.Name}'s {content.GetCard(key).Name} good as new for {price} gold.");
+        return new ServiceResult(true, $"The smith mends {hero.Name}'s {content.GetCard(key).Name} good as new for {Money.Long(price)}.");
     }
 
     /// <summary>Buys one of the forge's wares (it never runs out), at the merchants' price for the hero's Guild standing.</summary>
@@ -43,12 +44,12 @@ public static class Smithy
         }
 
         int price = TavernServices.BuyPrice(card, buyer.GuildStanding);
-        if (!buyer.SpendGold(price))
+        if (!buyer.Spend(price))
         {
-            return ServiceResult.Refused($"That costs {price} gold; {buyer.Name} has {buyer.Gold}.");
+            return ServiceResult.Refused($"That costs {Money.Long(price)}; {buyer.Name} has {Money.Long(buyer.Coins)}.");
         }
 
         buyer.GiveCard(card, content);
-        return new ServiceResult(true, $"{buyer.Name} buys {("AEIOU".Contains(card.Name[0]) ? "an" : "a")} {card.Name} from the smith for {price} gold.");
+        return new ServiceResult(true, $"{buyer.Name} buys {("AEIOU".Contains(card.Name[0]) ? "an" : "a")} {card.Name} from the smith for {Money.Long(price)}.");
     }
 }

@@ -120,6 +120,20 @@ public class SavedRunTests
         }
     }
 
+    [Fact]
+    public void GoldPassedInASaveFromBeforeCopperIsReadAsCopper()
+    {
+        SavedRun save = NewSave("emerald_keep", 9);
+        save.Commands.Add(new GiveGold(1, 2, 3));
+        string json = save.ToJson().Replace($"\"version\":{SavedRun.CurrentVersion}", "\"version\":1");
+
+        SavedRun loaded = SavedRun.FromJson(json);
+
+        Assert.Equal(new GiveGold(1, 2, 300), Assert.Single(loaded.Commands));
+        Assert.Equal(SavedRun.CurrentVersion, loaded.Version);
+        Assert.Equal(new GiveGold(1, 2, 300), Assert.Single(SavedRun.FromJson(loaded.ToJson()).Commands));
+    }
+
     /// <summary>Two players, the first with a companion, as the party screen seats them.</summary>
     private static SavedRun NewSave(string themeId, ulong seed) => new()
     {
@@ -155,7 +169,7 @@ public class SavedRunTests
     {
         GameState state = session.State;
         IEnumerable<string> heroes = state.Heroes.Select(hero =>
-            $"{hero.Name} {hero.Status} {hero.RoomId}@{hero.Position} {hero.Hearts}/{hero.MaxHearts} gold {hero.Gold} cards {string.Join(",", hero.AllCards.Select(card => card.Definition.Id))}");
+            $"{hero.Name} {hero.Status} {hero.RoomId}@{hero.Position} {hero.Hearts}/{hero.MaxHearts} gold {hero.Coins} cards {string.Join(",", hero.AllCards.Select(card => card.Definition.Id))}");
         IEnumerable<string> monsters = state.Rooms.Values.SelectMany(room => room.Monsters.Select(monster => $"{monster.Id} {monster.Definition.Id} {room.Id}@{monster.Position} {monster.Hearts}"));
         return $"{state.Phase} round {state.Round} active {state.ActiveHero?.Id}\n{string.Join("\n", heroes)}\n{string.Join("\n", monsters)}";
     }

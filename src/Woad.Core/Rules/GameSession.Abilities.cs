@@ -215,14 +215,14 @@ public sealed partial class GameSession
         foreach (GridPosition tile in path)
         {
             IReadOnlyList<CardInstance> cards = room.TakeLoot(tile, int.MaxValue);
-            int gold = room.TakeGold(tile);
+            int gold = room.TakeCoins(tile);
             if (cards.Count == 0 && gold == 0)
             {
                 continue;
             }
 
             monster.StolenCards.AddRange(cards);
-            monster.StolenGold += gold;
+            monster.StolenCoins += gold;
             events.Add(new Engulfed(monster.Id, tile, cards.Select(card => card.Id).ToList(), gold));
         }
     }

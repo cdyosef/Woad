@@ -54,7 +54,7 @@ public class LootAndXpTests
     }
 
     [Fact]
-    public void SomePotsAreEmpty()
+    public void APotWithoutCoinsOrAHeartHoldsAFewCopperOrNothing()
     {
         GameSession session = TestRun.Start(PotBeside, loot: new ScriptedDice(90));
         Hero hero = session.HeroInSeat();
@@ -63,6 +63,8 @@ public class LootAndXpTests
 
         Assert.Equal((null, 0), (smashed.CardId, smashed.HeartsRestored));
         Assert.Empty(hero.Backpack);
+        Assert.True(smashed.Coins is 0 or (>= 2 and <= 6), $"{smashed.Coins} copper");
+        Assert.Equal(smashed.Coins, hero.Coins);
     }
 
     [Fact]

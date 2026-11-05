@@ -1,5 +1,6 @@
 using Godot;
 using Woad.Core.Characters;
+using Woad.Core.Model;
 using Woad.Core.Tavern;
 using Woad.Core.Woarld;
 using Woad.Scenes.Ui;
@@ -21,7 +22,7 @@ public partial class Main
         {
             RaidWorld world = RaidWorld.Begin(WoarldMap.LoadDefault());
             Character wren = Character.Create("Wren", "frost", StatAllocation.None, _content, DateTimeOffset.UtcNow);
-            wren.EarnGold(500);
+            wren.Earn(Money.Gold(500));
             var screen = new WoarldMapScreen { Journey = world.Journey, Party = [wren], World = world, Content = _content };
             int trades = 0;
             screen.Traded += _ => trades++;
@@ -39,7 +40,7 @@ public partial class Main
             int wares = wanderer.Stock.Count;
             Button buy = screen.WandererPanel.GetChildren().OfType<Button>().First(button => button.Text == "Buy" && !button.Disabled);
             await Click(this, buy);
-            Check(wanderer.Stock.Count == wares - 1 && wren.Gold < 500 && trades == 1, "Buy buys one with Wren's gold");
+            Check(wanderer.Stock.Count == wares - 1 && wren.Coins < Money.Gold(500) && trades == 1, "Buy buys one with Wren's gold");
 
             wren.GiveCard("chain_mail~2", _content);
             WoarldPlace smithy = world.Journey.Map.Places.Single(place => place.Kind == PlaceKind.Smithy);
@@ -48,11 +49,11 @@ public partial class Main
             Check(screen.EnterButton.Visible && screen.EnterButton.Text == $"Enter {smithy.Name}", "at the shack, the button offers to go in");
             await Click(this, screen.EnterButton);
             Check(screen.SmithyPanel.Visible, "Enter opens the Blacksmith");
-            int gold = wren.Gold;
+            int gold = wren.Coins;
             await Click(this, screen.SmithyPanel.GetChildren().OfType<Button>().First(button => button.Text == "Mend" && !button.Disabled));
-            Check(!wren.WornGear.Any() && wren.Gold == gold - 4, "Mend mends the chain mail for 4 gold");
+            Check(!wren.WornGear.Any() && wren.Coins == gold - Money.Gold(4), "Mend mends the chain mail for 4 gold");
             await Click(this, screen.SmithyPanel.GetChildren().OfType<Button>().First(button => button.Text == "Buy" && !button.Disabled));
-            Check(trades == 3 && wren.Gold < gold - 4, "Buy buys from the forge");
+            Check(trades == 3 && wren.Coins < gold - Money.Gold(4), "Buy buys from the forge");
 
             GD.Print("Wanderer test passed.");
             Sfx.QuitGame(this);

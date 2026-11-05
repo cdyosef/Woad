@@ -91,7 +91,7 @@ public class WoarldDangerTests
     public void AHiredCompanionGoesAfterTheBridgeTroll()
     {
         Character owner = Character.Create("Owner", "frost", StatAllocation.None, Content, DateTimeOffset.UtcNow);
-        owner.EarnGold(10);
+        owner.Earn(10);
         var offer = new RecruitOffer("Hired", new Appearance("knight"), "blood", new StatAllocation { Hearts = 4, Luck = 2 }, [], Level: 1, Price: 10);
         Character recruit = TavernServices.Hire(owner, offer, Content, DateTimeOffset.UtcNow).Recruit!;
         RunSetup setup = Skirmish.CreateRun(Content, new SkirmishSpec("emerald_keep", Terrain.Bridge, ["bridge_troll"], false, "Test"),

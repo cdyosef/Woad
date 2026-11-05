@@ -86,10 +86,13 @@ public partial class TradePanel : Panel
         string verb = giving ? "Give" : "Take";
         int ownerId = owner.Id, otherId = other.Id;
 
-        if (owner.Gold > 0)
+        if (owner.Coins > 0)
         {
-            Row(x, y, $"{owner.Gold} gold", Palette.Loot, (verb, $"{verb}Gold", () => CountRequested?.Invoke($"{verb} how much gold?", owner.Gold,
-                amount => CommandRequested?.Invoke(heroId => giving ? (GameCommand)new GiveGold(heroId, otherId, amount) : new TakeGold(heroId, ownerId, amount)))));
+            // Whole gold at a time; all of it takes the silver and copper along.
+            int purse = owner.Coins, gold = purse / Money.CopperPerGold;
+            int Amount(int count) => count >= gold ? purse : Money.Gold(count);
+            Row(x, y, Money.Short(purse), Palette.Loot, (verb, $"{verb}Gold", () => CountRequested?.Invoke($"{verb} how much gold? (All of it takes the change too.)", Math.Max(1, gold),
+                count => CommandRequested?.Invoke(heroId => giving ? (GameCommand)new GiveGold(heroId, otherId, Amount(count)) : new TakeGold(heroId, ownerId, Amount(count))))));
             y += Line;
         }
 
@@ -138,7 +141,7 @@ public partial class TradePanel : Panel
             y += Line;
         }
 
-        if (owner.AllCards.Count() == 0 && owner.Gold == 0 && owner.Keys == 0 && !owner.HasBossKey)
+        if (owner.AllCards.Count() == 0 && owner.Coins == 0 && owner.Keys == 0 && !owner.HasBossKey)
         {
             Add(UiTheme.Label(new Vector2(x + 4, y + 2), new Vector2(Column - 8, 12), "Nothing.", color: Palette.TextDim));
             y += Line;

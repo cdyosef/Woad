@@ -60,7 +60,7 @@ public sealed partial class GameSession
 
         if (command.CardId is not int cardId)
         {
-            if (room.GoldAt(command.Tile) == 0 && room.KeysAt(command.Tile) == 0 && room.BossKeyAt != command.Tile)
+            if (room.CoinsAt(command.Tile) == 0 && room.KeysAt(command.Tile) == 0 && room.BossKeyAt != command.Tile)
             {
                 return "There's no gold or key there.";
             }
@@ -132,7 +132,7 @@ public sealed partial class GameSession
     /// <summary>The gold, keys and Boss Key on a tile, into the hero's purse.</summary>
     private void TakeValuables(Hero hero, Room room, GridPosition tile, List<GameEvent> events)
     {
-        GiveGold(hero, room.TakeGold(tile), events);
+        GiveCoins(hero, room.TakeCoins(tile), events);
         GiveKeys(hero, room.TakeKeys(tile), events);
         if (room.BossKeyAt == tile)
         {

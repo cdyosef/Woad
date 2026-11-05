@@ -71,7 +71,7 @@ public partial class ResultsScreen : MenuScreen
         string outcome = result.Status switch
         {
             HeroStatus.Escaped when result.Retreated => "Got away",
-            HeroStatus.Escaped => $"Escaped with {result.Gold} gold",
+            HeroStatus.Escaped => $"Escaped with {Money.Long(result.Coins)}",
             HeroStatus.Dead => $"Died on floor {result.DeepestFloor}{(result.Epitaph is { } epitaph ? $": {epitaph}" : "")}",
             HeroStatus.Active or HeroStatus.KeelingOver => $"Left behind on floor {result.DeepestFloor}",
             _ => "Left the run",

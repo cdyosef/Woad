@@ -422,7 +422,7 @@ public sealed partial class GameSession
         {
             TakeFound(companion);
 
-            companion.Gold = 0;
+            companion.Coins = 0;
         }
 
         List<Hero> escaped = State.Heroes.Where(hero => hero.Status == HeroStatus.Escaped && !hero.IsCompanion && !State.RetreatedIds.Contains(hero.Id)).ToList();

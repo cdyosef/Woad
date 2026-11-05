@@ -35,7 +35,7 @@ public class RunResultsTests
 
         Assert.Equal(HeroStatus.Escaped, result.Status);
         Assert.True(result.Won);
-        Assert.Equal(5, result.Gold);
+        Assert.Equal(Money.Gold(5), result.Coins);
         Assert.Equal(GameRules.XpForEscaping, result.Xp);
         Assert.Equal(["sword", "shield", "belt", "buckle"], result.Equipped);
         Assert.Equal(["potion"], result.Belt);
@@ -67,7 +67,7 @@ public class RunResultsTests
 
         Assert.Equal(HeroStatus.Dead, result.Status);
         Assert.False(result.Won);
-        Assert.Equal(0, result.Gold);
+        Assert.Equal(0, result.Coins);
         Assert.Equal(["sword", "belt", "buckle"], result.Equipped);
         Assert.Empty(result.Backpack);
     }
@@ -96,7 +96,7 @@ public class RunResultsTests
             Won = true,
             Kills = 9,
             Xp = 34,
-            Gold = 27,
+            Coins = 27,
             DeepestFloor = 3,
             Equipped = ["knights_sword", "buckler"],
             Belt = ["bomb"],
@@ -108,7 +108,7 @@ public class RunResultsTests
         Assert.Equal(3, character.Level);
         Assert.Equal(2, reward.LevelsGained);
         Assert.Equal(6 + 2, character.UnspentPoints);
-        Assert.Equal(27, character.Gold);
+        Assert.Equal(27, character.Coins);
         Assert.Equal((1, 1), (character.RunsPlayed, character.Wins));
         Assert.Equal(["knights_sword", "buckler"], character.Equipped);
         Assert.Equal(["bomb"], character.Belt);
@@ -125,7 +125,7 @@ public class RunResultsTests
         var stranger = new HeroRunResult
         {
             HeroId = 1, CharacterId = Guid.NewGuid(), Name = "Wren", Seat = 0, Portrait = "", Status = HeroStatus.Dead, Won = false,
-            Kills = 0, Xp = 0, Gold = 0, DeepestFloor = 1, Equipped = [], Belt = [], Backpack = [],
+            Kills = 0, Xp = 0, Coins = 0, DeepestFloor = 1, Equipped = [], Belt = [], Backpack = [],
         };
 
         Assert.Throws<ArgumentException>(() => character.ApplyRunResult(stranger));

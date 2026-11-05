@@ -294,20 +294,20 @@ public partial class HeroPanel : Panel
         _xp.Show(total - Progression.XpForLevel(hero.Level), Progression.XpForLevel(hero.Level + 1) - Progression.XpForLevel(hero.Level));
 
         Stats stats = hero.EffectiveStats;
-        int treasure = hero.TreasureValue - hero.Gold;
+        int treasure = hero.TreasureValue - hero.Coins;
         int torches = hero.AllCards.Where(card => card.Definition.Torch).Sum(card => card.Count);
-        _gold.Text = UiTheme.Gold(hero.Gold).Replace(" gold", "")
+        _gold.Text = UiTheme.Coins(hero.Coins)
                      + (hero.Keys > 0 || hero.HasBossKey ? $"  {UiTheme.Icon("icon_key", "Keys")} {hero.Keys}{(hero.HasBossKey ? " " + UiTheme.Icon("icon_boss_key", "Boss Key") : "")}" : "")
                      + (torches > 0 ? $"  [color={Palette.Hex(Palette.Fire)}]Torch {torches}[/color]" : "")
-                     + $"  [color={Palette.Hex(Palette.Loot)}]Worth {hero.TreasureValue}[/color]"
+                     + $"  [color={Palette.Hex(Palette.Loot)}]Worth {Money.Short(hero.TreasureValue)}[/color]"
                      + (treasure > 0 ? $" [color={dim}]({treasure} in loot)[/color]" : "");
-        if (_goldHeroId == hero.Id && hero.Gold != _goldShown)
+        if (_goldHeroId == hero.Id && hero.Coins != _goldShown)
         {
-            PopGold(hero.Gold > _goldShown ? Palette.Heal : Palette.Danger);
+            PopGold(hero.Coins > _goldShown ? Palette.Heal : Palette.Danger);
         }
 
         _goldHeroId = hero.Id;
-        _goldShown = hero.Gold;
+        _goldShown = hero.Coins;
 
         foreach ((EquipSlot slot, SheetCard card) in _slots)
         {

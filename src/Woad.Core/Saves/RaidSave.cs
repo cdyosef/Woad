@@ -54,6 +54,9 @@ public sealed class RaidSave
     /// <summary>Characters resting in a room at the inn, and the day their healing was last counted.</summary>
     public Dictionary<Guid, int> Rooms { get; init; } = [];
 
+    /// <summary>Characters bedded down free in the pig sty out back, and the day their rest was last counted.</summary>
+    public Dictionary<Guid, int> Sty { get; init; } = [];
+
     public RaidLocation Location { get; set; } = RaidLocation.Inn;
 
     /// <summary>Where and when the party is on the Woarld Map; null until they first step out.</summary>
@@ -96,28 +99,62 @@ public sealed class RaidSave
         }
     }
 
-    /// <summary>A character goes up to a room: they heal a heart for each day they rest there.</summary>
-    public void RentRoom(Guid character, int day) => Rooms[character] = day;
+    /// <summary>A character goes up to a room: each night there they heal a heart, and make a Rest roll.</summary>
+    public void RentRoom(Guid character, int day)
+    {
+        Sty.Remove(character);
+        Rooms[character] = day;
+    }
 
-    /// <summary>Counts the days that have passed for everyone in a room: a heart a day.</summary>
+    /// <summary>A character beds down in the pig sty: each night there, a Rest roll and nothing more.</summary>
+    public void SleepInSty(Guid character, int day)
+    {
+        Rooms.Remove(character);
+        Sty[character] = day;
+    }
+
+    /// <summary>Counts the nights that have passed for everyone in a room or the sty.</summary>
     public void HealRooms(int day, Func<Guid, int> maxHearts)
     {
         foreach ((Guid character, int since) in Rooms.ToList())
         {
-            if (day > since)
-            {
-                Heal(character, day - since, maxHearts(character));
-                Rooms[character] = day;
-            }
+            Rest(character, since, day, room: true, maxHearts(character));
+            Rooms[character] = Math.Max(since, day);
+        }
+
+        foreach ((Guid character, int since) in Sty.ToList())
+        {
+            Rest(character, since, day, room: false, maxHearts(character));
+            Sty[character] = Math.Max(since, day);
         }
     }
 
-    /// <summary>A character leaves their room (to rejoin the party), healed for the days they rested.</summary>
+    /// <summary>A character leaves their room or the sty (to rejoin the party), healed for the nights they rested.</summary>
     public void LeaveRoom(Guid character, int day, int maxHearts)
     {
-        if (Rooms.Remove(character, out int since) && day > since)
+        if (Rooms.Remove(character, out int since))
         {
-            Heal(character, day - since, maxHearts);
+            Rest(character, since, day, room: true, maxHearts);
+        }
+
+        if (Sty.Remove(character, out int sinceSty))
+        {
+            Rest(character, sinceSty, day, room: false, maxHearts);
+        }
+    }
+
+    /// <summary>
+    /// The nights from <paramref name="since"/> to <paramref name="day"/>: each a Rest roll, and in a room a
+    /// heart besides. The rolls are fixed by who rests and the night, so counting them again changes nothing.
+    /// </summary>
+    private void Rest(Guid character, int since, int day, bool room, int maxHearts)
+    {
+        byte[] bytes = character.ToByteArray();
+        ulong who = BitConverter.ToUInt64(bytes, 0) ^ BitConverter.ToUInt64(bytes, 8);
+        for (int night = since + 1; night <= day; night++)
+        {
+            RestRoll roll = RestRoll.Roll(new Randomness.Pcg32(who ^ ((ulong)night * 0x9E3779B97F4A7C15UL), sequence: 21));
+            Heal(character, (room ? 1 : 0) + roll.Hearts, maxHearts);
         }
     }
 

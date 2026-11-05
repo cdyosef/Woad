@@ -871,7 +871,7 @@ public partial class GameScreen
                    + $"Next to it: click to defuse it (Od Hand {GameRules.DefuseDifficulty}+, or it goes off), Shove it away, or strike it ({GameRules.BombChancePerDie}% a Rumble die to set it off). Fire sets it off.";
         }
 
-        if (room.BombAt(tile) is { Lit: false } && room.LootAt(tile).Count == 0 && room.GoldAt(tile) == 0)
+        if (room.BombAt(tile) is { Lit: false } && room.LootAt(tile).Count == 0 && room.CoinsAt(tile) == 0)
         {
             return "An unlit bomb. Stand on it and click to pick it up as a Bomb card. Fire or a blow could still set it off.";
         }
@@ -880,9 +880,9 @@ public partial class GameScreen
         if (room.HasLootAt(tile))
         {
             IEnumerable<string> things = room.LootAt(tile).Select(card => card.Definition.Name);
-            if (room.GoldAt(tile) > 0)
+            if (room.CoinsAt(tile) > 0)
             {
-                things = things.Prepend($"{room.GoldAt(tile)} gold");
+                things = things.Prepend(Money.Long(room.CoinsAt(tile)));
             }
 
             if (room.KeysAt(tile) > 0)
@@ -964,7 +964,7 @@ public partial class GameScreen
 
         if (room.IsGrandChest(chest) && room.ChestLockAt(chest) is int grandLock)
         {
-            return $"A grand chest, gilded and jeweled: three treasures from deep below, and gold. Open it with a key, or pick the lock with Od Hand ({grandLock}+).";
+            return $"A grand chest, gilded and jeweled: three treasures from deep below, and coin. Open it with a key, or pick the lock with Od Hand ({grandLock}+).";
         }
 
         if (room.RelicChest == chest)
@@ -1031,7 +1031,7 @@ public partial class GameScreen
 
         if (monster.HasLoot)
         {
-            traits.Add($"carrying {monster.StolenGold} gold{(monster.StolenCards.Count > 0 ? $" and {UiTheme.Count(monster.StolenCards.Count, "card", "cards")}" : "")}");
+            traits.Add($"carrying {Money.Long(monster.StolenCoins)}{(monster.StolenCards.Count > 0 ? $" and {UiTheme.Count(monster.StolenCards.Count, "card", "cards")}" : "")}");
         }
 
         if (definition.DieType is { } type)

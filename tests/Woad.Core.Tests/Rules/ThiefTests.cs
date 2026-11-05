@@ -27,15 +27,15 @@ public class ThiefTests
         // 5, 5, 5 against the hero's 2: three hits, for 2 gold, a card and 2 more gold. Then it fights no more.
         GameSession session = TestRun.Start(Beside, new ScriptedDice(5, 5, 5, 2));
         Hero hero = session.HeroInSeat();
-        hero.Gold = 10;
+        hero.Coins = Money.Gold(10);
         var gem = new CardInstance(session.State.NextId(), TestContent.Catalog.GetCard("gem"), broughtInByHeroId: null);
         hero.AddToBackpack(gem);
         Monster thief = session.OnlyMonster();
 
         IReadOnlyList<GameEvent> events = session.Do(new EndTurn(hero.Id));
 
-        Assert.Equal(new MonsterStole(thief.Id, hero.Id, 3, 4, gem.Id), events.SingleOf<MonsterStole>());
-        Assert.Equal((6, 4), (hero.Gold, thief.StolenGold));
+        Assert.Equal(new MonsterStole(thief.Id, hero.Id, 3, Money.Gold(4), gem.Id), events.SingleOf<MonsterStole>());
+        Assert.Equal((Money.Gold(6), Money.Gold(4)), (hero.Coins, thief.StolenCoins));
         Assert.Empty(hero.Backpack);
         Assert.Empty(events.OfType<Damaged>());
     }
@@ -45,7 +45,7 @@ public class ThiefTests
     {
         GameSession session = TestRun.Start(Beside);
         Monster thief = session.OnlyMonster();
-        thief.StolenGold = 2;
+        thief.StolenCoins = 2;
 
         IReadOnlyList<GameEvent> events = session.Do(new EndTurn(session.HeroInSeat().Id));
 
@@ -59,14 +59,14 @@ public class ThiefTests
         // No Od Hand action: it attacks instead (1 against the hero's 6).
         GameSession session = TestRun.Start(Beside, new ScriptedDice(1, 6));
         Hero hero = session.HeroInSeat();
-        hero.Gold = 10;
+        hero.Coins = Money.Gold(10);
         Monster thief = session.OnlyMonster();
         thief.Stun.Add(powerful: false);
 
         IReadOnlyList<GameEvent> events = session.Do(new EndTurn(hero.Id));
 
         Assert.Empty(events.OfType<MonsterStole>());
-        Assert.Equal(10, hero.Gold);
+        Assert.Equal(Money.Gold(10), hero.Coins);
     }
 
     [Fact]
@@ -76,14 +76,14 @@ public class ThiefTests
         Hero hero = session.HeroInSeat();
         Monster thief = session.OnlyMonster();
         thief.Hearts = 1;
-        thief.StolenGold = 4;
+        thief.StolenCoins = 4;
         var gem = new CardInstance(session.State.NextId(), TestContent.Catalog.GetCard("gem"), broughtInByHeroId: null);
         thief.StolenCards.Add(gem);
 
         IReadOnlyList<GameEvent> events = session.Do(new AttackMonster(hero.Id, thief.Id, UseWeapon: false));
 
         GridPosition spot = events.SingleOf<GoldAppeared>().Position;
-        Assert.Equal(4, session.RoomById().GoldAt(spot));
+        Assert.Equal(4, session.RoomById().CoinsAt(spot));
         Assert.Equal([gem], session.RoomById().LootAt(spot));
     }
 
@@ -103,13 +103,13 @@ public class ThiefTests
             .........
             """, new ScriptedDice(1, 5, 5, 1, 5, 1));
         Hero hero = session.HeroInSeat();
-        hero.Gold = 5;
+        hero.Coins = Money.Gold(5);
 
         IReadOnlyList<GameEvent> events = session.Do(new EndTurn(hero.Id));
 
         Assert.Equal(0, events.SingleOf<MonsterStole>().Hits);
         Assert.Equal(2, events.OfType<Mugged>().Count());
-        Assert.Equal((3, 2), (hero.Gold, hero.Hearts));
+        Assert.Equal((Money.Gold(3), 2), (hero.Coins, hero.Hearts));
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public class ThiefTests
             """, new ScriptedDice(1, 6, 5, 1, 5, 1), heroes: 2);
         Hero poor = session.HeroInSeat(0);
         Hero rich = session.HeroInSeat(1);
-        rich.Gold = 9;
+        rich.Coins = 9;
         session.Do(new EndTurn(poor.Id));
 
         IReadOnlyList<GameEvent> events = session.Do(new EndTurn(rich.Id));

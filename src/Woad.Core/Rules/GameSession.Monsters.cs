@@ -404,7 +404,7 @@ public sealed partial class GameSession
             // Someone diving in deep water can only be reached up close.
             .Where(hero => !Diving(room, hero) || FootprintAt(monster, from).Any(tile => hero.Position.ChebyshevDistanceTo(tile) <= 1))
             // A mugger goes for the gold.
-            .OrderByDescending(hero => monster.Definition.Mugger ? hero.Gold : 0)
+            .OrderByDescending(hero => monster.Definition.Mugger ? hero.Coins : 0)
             .ThenBy(hero => hero.Hearts)
             .ThenBy(hero => hero.Seat)
             .FirstOrDefault();

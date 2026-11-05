@@ -1,6 +1,7 @@
 using Woad.Core.Characters;
 using Woad.Core.Content;
 using Woad.Core.Grid;
+using Woad.Core.Model;
 using Woad.Core.Tavern;
 using Woad.Core.Tests.Support;
 using Woad.Core.Woarld;
@@ -13,10 +14,11 @@ public class TavernTests
     private static readonly TavernDefinition Inn = TavernDefinition.LoadDefault();
     private static readonly WoarldMap Map = WoarldMap.LoadDefault();
 
-    private static Character Hero(string name, int gold, bool companion = false)
+    /// <summary>A character with a purse of <paramref name="coins"/> copper (see <see cref="Money"/>).</summary>
+    private static Character Hero(string name, int coins, bool companion = false)
     {
         Character hero = Character.Create(name, "moss", StatAllocation.None, Content, DateTimeOffset.UnixEpoch, companion);
-        hero.EarnGold(gold);
+        hero.Earn(coins);
         return hero;
     }
 
@@ -51,7 +53,7 @@ public class TavernTests
 
         Assert.Equal(QuestStage.Done, world.Quest(Quests.Relic));
         Assert.DoesNotContain("saints_relic", bo.Backpack.Concat(bo.Belt).Concat(bo.Carried));
-        Assert.Equal(TavernServices.RelicGold, ana.Gold);
+        Assert.Equal(Money.Gold(TavernServices.RelicGold), ana.Coins);
         Assert.Equal(TavernServices.RelicHolyWater, ana.Backpack.Concat(ana.Belt).Count(id => id == "holy_water"));
         Assert.Equal(reputation + 2, world.Reputation(Inn.Id));
         Assert.Equal(QuestStage.Done, RaidWorld.FromJson(world.ToJson(), Map).Quest(Quests.Relic));
@@ -71,7 +73,7 @@ public class TavernTests
         world.SettleRitual(stopped: true, opened: false);
         Assert.Equal(QuestStage.Achieved, world.Quest(Quests.Ritual));
         Assert.True(TavernServices.Ritual(world, Inn, Content, ana).Done);
-        Assert.Equal((QuestStage.Done, TavernServices.RitualGold), (world.Quest(Quests.Ritual), ana.Gold));
+        Assert.Equal((QuestStage.Done, Money.Gold(TavernServices.RitualGold)), (world.Quest(Quests.Ritual), ana.Coins));
         Assert.Equal((0, false), world.GraveyardOmens());
     }
 
@@ -138,26 +140,27 @@ public class TavernTests
     }
 
     [Fact]
-    public void EatingCostsGoldAndBoostsTheNextRest()
+    public void EatingCostsCoinAndBoostsTheNextRest()
     {
         RaidWorld world = RaidWorld.Begin(Map);
-        Character ash = Hero("Ash", 5);
+        Character ash = Hero("Ash", Money.Silver(2) + 5);
 
+        // A stew is a silver and a half, an ale five copper.
         Assert.True(TavernServices.Eat(world, ash, Item("hearth_stew")).Done);
         Assert.True(TavernServices.Eat(world, ash, Item("woad_ale")).Done);
-        Assert.Equal(1, ash.Gold);
+        Assert.Equal(5, ash.Coins);
         Assert.Equal(new RestBoost(1, 2), world.Fed(ash.Id));
 
         ServiceResult broke = TavernServices.Eat(world, ash, Item("hunters_pie"));
         Assert.False(broke.Done);
-        Assert.Equal(1, ash.Gold);
+        Assert.Equal(5, ash.Coins);
     }
 
     [Fact]
     public void ToGoMealsAreEatenOneAtEachRest()
     {
         RaidWorld world = RaidWorld.Begin(Map);
-        Character ash = Hero("Ash", 20);
+        Character ash = Hero("Ash", Money.Gold(2));
         TavernServices.Eat(world, ash, Item("woad_ale"));
         TavernServices.BuyToGo(world, ash, Item("hearth_stew"));
         TavernServices.BuyToGo(world, ash, Item("dragons_breath"));
@@ -171,26 +174,26 @@ public class TavernTests
     public void AHeroCarriesAtMostThreeMealsToGo()
     {
         RaidWorld world = RaidWorld.Begin(Map);
-        Character ash = Hero("Ash", 20);
+        Character ash = Hero("Ash", Money.Gold(2));
         for (int i = 0; i < RaidWorld.MaxProvisions; i++)
         {
             Assert.True(TavernServices.BuyToGo(world, ash, Item("woad_ale")).Done);
         }
 
         Assert.False(TavernServices.BuyToGo(world, ash, Item("woad_ale")).Done);
-        Assert.Equal(20 - RaidWorld.MaxProvisions, ash.Gold);
+        Assert.Equal(Money.Gold(2) - RaidWorld.MaxProvisions * Item("woad_ale").Price, ash.Coins);
     }
 
     [Fact]
     public void ARoundForThePartyBuildsBonds()
     {
         RaidWorld world = RaidWorld.Begin(Map);
-        Character ash = Hero("Ash", 10), bram = Hero("Bram", 0), cole = Hero("Cole", 0);
+        Character ash = Hero("Ash", Money.Gold(1)), bram = Hero("Bram", 0), cole = Hero("Cole", 0);
 
         ServiceResult round = TavernServices.RoundForTheParty(world, Inn, ash, [ash, bram, cole]);
 
         Assert.True(round.Done, round.Message);
-        Assert.Equal(8, ash.Gold);
+        Assert.Equal(Money.Silver(5), ash.Coins);
         Assert.Equal(1, world.Bond(ash.Id, bram.Id));
         Assert.Equal(1, world.Bond(cole.Id, ash.Id));
         Assert.Equal(0, world.Bond(bram.Id, cole.Id));
@@ -202,13 +205,13 @@ public class TavernTests
     public void ARoundForTheBarRaisesReputation()
     {
         RaidWorld world = RaidWorld.Begin(Map);
-        Character ash = Hero("Ash", 25);
+        Character ash = Hero("Ash", Money.Gold(5));
 
         TavernServices.RoundForTheBar(world, Inn, ash);
         TavernServices.RoundForTheBar(world, Inn, ash);
 
         Assert.Equal(2, world.Reputation(Inn.Id));
-        Assert.Equal(5, ash.Gold);
+        Assert.Equal(Money.Gold(1), ash.Coins);
         Assert.False(TavernServices.RoundForTheBar(world, Inn, ash).Done);
     }
 
@@ -216,17 +219,17 @@ public class TavernTests
     public void TheMerchantSellsAtTwiceTheWorthAndKeepsWhatHeBuys()
     {
         RaidWorld world = RaidWorld.Begin(Map);
-        Character ash = Hero("Ash", 20);
+        Character ash = Hero("Ash", Money.Gold(20));
         int potions = world.Stock(Inn).Count(card => card == "health_potion");
 
         Assert.True(TavernServices.Buy(world, Inn, Content, ash, "health_potion").Done);
-        Assert.Equal(16, ash.Gold);
+        Assert.Equal(Money.Gold(16), ash.Coins);
         Assert.Equal(potions - 1, world.Stock(Inn).Count(card => card == "health_potion"));
         Assert.Equal(2, ash.Belt.Count(card => card == "health_potion"));
 
         ash.GiveCard("wooden_sword", Content);
         Assert.True(TavernServices.Sell(world, Inn, Content, ash, "wooden_sword").Done);
-        Assert.Equal(18, ash.Gold);
+        Assert.Equal(Money.Gold(18), ash.Coins);
         Assert.DoesNotContain("wooden_sword", ash.Equipped);
         Assert.Contains("wooden_sword", world.Stock(Inn));
 
@@ -237,13 +240,13 @@ public class TavernTests
     [Fact]
     public void BonesPaysTheHighRoll()
     {
-        Character ash = Hero("Ash", 10);
+        Character ash = Hero("Ash", Money.Gold(10));
 
-        Assert.Equal(5, TavernServices.Bones(new ScriptedDice(6, 5, 2, 2), ash, 5).Winnings);
-        Assert.Equal(15, ash.Gold);
-        Assert.Equal(-5, TavernServices.Bones(new ScriptedDice(1, 1, 3, 3), ash, 5).Winnings);
+        Assert.Equal(Money.Gold(5), TavernServices.Bones(new ScriptedDice(6, 5, 2, 2), ash, 5).Winnings);
+        Assert.Equal(Money.Gold(15), ash.Coins);
+        Assert.Equal(-Money.Gold(5), TavernServices.Bones(new ScriptedDice(1, 1, 3, 3), ash, 5).Winnings);
         Assert.Equal(0, TavernServices.Bones(new ScriptedDice(4, 3, 5, 2), ash, 5).Winnings);
-        Assert.Equal(10, ash.Gold);
+        Assert.Equal(Money.Gold(10), ash.Coins);
         Assert.Equal(0, TavernServices.Bones(new ScriptedDice(), ash, 11).Winnings);
         Assert.Equal(0, TavernServices.Bones(new ScriptedDice(), ash, TavernServices.MaxWager + 1).Winnings);
     }
@@ -254,7 +257,7 @@ public class TavernTests
         RaidWorld world = RaidWorld.Begin(Map);
         IReadOnlyList<RecruitOffer> plain = TavernServices.Recruits(world, Inn);
         Assert.Equal(TavernServices.RecruitsOffered, plain.Count);
-        Assert.All(plain, offer => Assert.Equal((1, 10), (offer.Level, offer.Price)));
+        Assert.All(plain, offer => Assert.Equal((1, Money.Gold(10)), (offer.Level, offer.Price)));
         Assert.Equal(plain, TavernServices.Recruits(world, Inn));
 
         world.RaiseReputation(Inn.Id, 6);
@@ -268,13 +271,13 @@ public class TavernTests
     {
         RaidWorld world = RaidWorld.Begin(Map);
         world.RaiseReputation(Inn.Id, 6);
-        Character ash = Hero("Ash", 40);
+        Character ash = Hero("Ash", Money.Gold(40));
         RecruitOffer offer = TavernServices.Recruits(world, Inn)[0];
 
         (ServiceResult result, Character? recruit) = TavernServices.Hire(ash, offer, Content, DateTimeOffset.UnixEpoch);
 
         Assert.True(result.Done, result.Message);
-        Assert.Equal(40 - offer.Price, ash.Gold);
+        Assert.Equal(Money.Gold(40) - offer.Price, ash.Coins);
         Assert.True(recruit!.IsCompanion);
         Assert.Equal(3, recruit.Level);
         Assert.Contains("knights_sword", recruit.Equipped);
@@ -304,7 +307,7 @@ public class TavernTests
     public void TheWorldSavesAndLoads()
     {
         RaidWorld world = RaidWorld.Begin(Map);
-        Character ash = Hero("Ash", 50), bram = Hero("Bram", 0);
+        Character ash = Hero("Ash", Money.Gold(50)), bram = Hero("Bram", 0);
         TavernServices.RoundForTheParty(world, Inn, ash, [ash, bram]);
         TavernServices.RoundForTheBar(world, Inn, ash);
         TavernServices.BuyToGo(world, ash, Item("hunters_pie"));

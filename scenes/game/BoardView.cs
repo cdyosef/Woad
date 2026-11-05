@@ -811,7 +811,7 @@ public partial class BoardView : Control
 
         _loot.QueueRedraw();
 
-        foreach ((GridPosition tile, int amount) in _room.Gold)
+        foreach ((GridPosition tile, int amount) in _room.Coins)
         {
             DrawGold(tile, amount);
         }

@@ -269,10 +269,10 @@ public sealed record GiveCard(int HeroId, int ToHeroId, int CardId, int? Count =
 /// <summary>Take a card (or <paramref name="Count"/> of a stack) from an ally beside you. Free.</summary>
 public sealed record TakeCard(int HeroId, int FromHeroId, int CardId, int? Count = null) : GameCommand(HeroId);
 
-/// <summary>Give gold to an ally beside you. Free.</summary>
+/// <summary>Give coins (<paramref name="Amount"/> in copper) to an ally beside you. Free.</summary>
 public sealed record GiveGold(int HeroId, int ToHeroId, int Amount) : GameCommand(HeroId);
 
-/// <summary>Take gold from an ally beside you. Free.</summary>
+/// <summary>Take coins (<paramref name="Amount"/> in copper) from an ally beside you. Free.</summary>
 public sealed record TakeGold(int HeroId, int FromHeroId, int Amount) : GameCommand(HeroId);
 
 /// <summary>Give a key (or the Boss Key) to an ally beside you. Free.</summary>

@@ -185,10 +185,10 @@ public sealed partial class GameSession
         }
 
         CardDefinition card = Content.GetCard(command.CardId);
-        int price = MerchantPrice(card, GuildStandingOf(hero));
-        if (hero.Gold < price)
+        int price = Money.Gold(MerchantPrice(card, GuildStandingOf(hero)));
+        if (hero.Coins < price)
         {
-            return $"The {card.Name} costs {price} gold, and you have {hero.Gold}.";
+            return $"The {card.Name} costs {Money.Long(price)}, and you have {Money.Long(hero.Coins)}.";
         }
 
         if (!hero.CanCarry(card))
@@ -197,7 +197,7 @@ public sealed partial class GameSession
         }
 
         merchant.RemoveStock(command.CardId);
-        hero.Gold -= price;
+        hero.Coins -= price;
         var bought = new CardInstance(State.NextId(), card, broughtInByHeroId: null);
         GiveCards(hero, ActiveRoom, [bought], events);
         events.Add(new MerchantTraded(hero.Id, merchant.Id, bought.Id, price, Bought: true));
@@ -218,10 +218,10 @@ public sealed partial class GameSession
             return "You haven't got that.";
         }
 
-        int pays = MerchantPays(card.Definition);
+        int pays = Money.Gold(MerchantPays(card.Definition));
         CardInstance sold = TakeFromHero(hero, card, 1);
         merchant.AddStock(sold.Definition.Id);
-        GiveGold(hero, pays, events);
+        GiveCoins(hero, pays, events);
         events.Add(new MerchantTraded(hero.Id, merchant.Id, sold.Id, pays, Bought: false));
         return null;
     }

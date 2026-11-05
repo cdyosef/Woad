@@ -6,6 +6,7 @@ using Woad.Core.Model;
 using Woad.Core.Rules;
 using Woad.Core.Saves;
 using Woad.Core.Tavern;
+using Woad.Core.Tests.Support;
 using Woad.Core.Woarld;
 
 namespace Woad.Core.Tests.Saves;
@@ -15,10 +16,10 @@ public class RaidSaveTests
     private static readonly ContentCatalog Content = ContentCatalog.LoadDefault();
     private static readonly WoarldMap Map = WoarldMap.LoadDefault();
 
-    private static Character Hero(string name, int gold = 0)
+    private static Character Hero(string name, int coins = 0)
     {
         Character hero = Character.Create(name, "moss", new StatAllocation { Hearts = 2 }, Content, DateTimeOffset.UnixEpoch);
-        hero.EarnGold(gold);
+        hero.Earn(coins);
         return hero;
     }
 
@@ -52,7 +53,7 @@ public class RaidSaveTests
         var raid = new RaidSave { Name = "Ash's Raid", Party = [Guid.NewGuid(), Guid.NewGuid()] };
         HeroRunResult Result(Guid id, HeroStatus status, int hearts) => new()
         {
-            HeroId = 1, CharacterId = id, Name = "x", Seat = 0, Portrait = "", Status = status, Won = false, Kills = 0, Xp = 0, Gold = 0,
+            HeroId = 1, CharacterId = id, Name = "x", Seat = 0, Portrait = "", Status = status, Won = false, Kills = 0, Xp = 0, Coins = 0,
             DeepestFloor = 1, Hearts = hearts, Equipped = [], Belt = [], Backpack = [],
         };
 
@@ -63,36 +64,62 @@ public class RaidSaveTests
     }
 
     [Fact]
-    public void ARoomHealsAHeartADay()
+    public void ARoomHealsAHeartANightAndARestRoll()
     {
         var raid = new RaidSave { Name = "Ash's Raid", Party = [Guid.NewGuid()] };
         Guid ash = raid.Party[0];
-        raid.SetHearts(ash, 1, 5);
+        raid.SetHearts(ash, 1, 50);
         raid.RentRoom(ash, day: 2);
 
-        raid.HealRooms(4, _ => 5);
-        Assert.Equal(3, raid.HeartsOf(ash, 5));
-        raid.LeaveRoom(ash, day: 5, maxHearts: 5);
-        Assert.Equal(4, raid.HeartsOf(ash, 5));
+        raid.HealRooms(4, _ => 50);
+        int twoNights = raid.HeartsOf(ash, 50);
+        Assert.InRange(twoNights, 3, 50);
+        raid.HealRooms(4, _ => 50);
+        Assert.Equal(twoNights, raid.HeartsOf(ash, 50));
+        raid.LeaveRoom(ash, day: 5, maxHearts: 50);
+        Assert.True(raid.HeartsOf(ash, 50) > twoNights);
         Assert.Empty(raid.Rooms);
     }
 
     [Fact]
-    public void RentingARoomCostsTwoGold()
+    public void ThePigStyGivesOnlyARestRollANight()
     {
-        var raid = new RaidSave { Name = "Ash's Raid", Party = [Guid.NewGuid()] };
-        Character ash = Hero("Ash", 3), bram = Hero("Bram");
+        var raid = new RaidSave { Name = "Ash's Raid", Party = [new Guid("a5a5a5a5-0000-0000-0000-000000000001"), new Guid("b7b7b7b7-0000-0000-0000-000000000002")] };
+        Guid ash = raid.Party[0], bram = raid.Party[1];
+        raid.SetHearts(ash, 1, 50);
+        raid.SetHearts(bram, 1, 50);
+        raid.SleepInSty(ash, day: 1);
+        raid.RentRoom(bram, day: 1);
 
-        Assert.True(TavernServices.RentRoom(raid, 1, ash, bram).Done);
-        Assert.Equal(1, ash.Gold);
-        Assert.Equal(1, raid.Rooms[bram.Id]);
-        Assert.False(TavernServices.RentRoom(raid, 1, ash, ash).Done);
+        raid.HealRooms(11, _ => 50);
+        raid.LeaveRoom(ash, day: 11, maxHearts: 50);
+        raid.LeaveRoom(bram, day: 11, maxHearts: 50);
+
+        // Ten Rest rolls: some hearts, but fewer than ten nights in a room (a heart each, and a roll).
+        Assert.InRange(raid.HeartsOf(ash, 50), 1, raid.HeartsOf(bram, 50) - 1);
+        Assert.True(raid.HeartsOf(bram, 50) >= 11);
+        Assert.Empty(raid.Sty);
+        Assert.Empty(raid.Rooms);
     }
 
     [Fact]
-    public void SleepingTheNightPassesADayAndHealsEveryone()
+    public void ARoomCostsACopperAndTheStyNothing()
     {
-        Character ash = Hero("Ash", 10), bram = Hero("Bram"), upstairs = Hero("Cole");
+        var raid = new RaidSave { Name = "Ash's Raid", Party = [Guid.NewGuid()] };
+        Character ash = Hero("Ash", 1), bram = Hero("Bram"), cole = Hero("Cole");
+
+        Assert.True(TavernServices.RentRoom(raid, 1, ash, bram).Done);
+        Assert.Equal(0, ash.Coins);
+        Assert.Equal(1, raid.Rooms[bram.Id]);
+        Assert.False(TavernServices.RentRoom(raid, 1, ash, ash).Done);
+        Assert.True(TavernServices.SleepInSty(raid, 1, cole).Done);
+        Assert.Equal(1, raid.Sty[cole.Id]);
+    }
+
+    [Fact]
+    public void SleepingTheNightCostsAGoldPassesADayAndHealsEveryoneAHeartAndARestRoll()
+    {
+        Character ash = Hero("Ash", Money.Gold(10)), bram = Hero("Bram"), upstairs = Hero("Cole");
         var raid = new RaidSave { Name = "Ash's Raid", Party = [ash.Id, bram.Id] };
         int full = ash.MaxHearts(Content);
         raid.SetHearts(ash.Id, 2, full);
@@ -100,14 +127,15 @@ public class RaidSaveTests
         raid.RentRoom(upstairs.Id, 1);
         WoarldJourney journey = WoarldJourney.Begin(Map, 2);
 
-        ServiceResult night = TavernServices.SleepTheNight(raid, journey, ash, [ash, bram], _ => full);
+        // Ash rolls a 1 and Bram a 6 and then a 4: no heart from Ash's roll, one from Bram's.
+        ServiceResult night = TavernServices.SleepTheNight(raid, journey, new ScriptedDice(1, 6, 4), ash, [ash, bram], _ => full);
 
         Assert.True(night.Done, night.Message);
-        Assert.Equal(6, ash.Gold);
+        Assert.Equal(Money.Gold(9), ash.Coins);
         Assert.Equal(2, journey.Day);
         Assert.Equal(3, raid.HeartsOf(ash.Id, full));
         Assert.Equal(full, raid.HeartsOf(bram.Id, full));
-        Assert.Equal(3, raid.HeartsOf(upstairs.Id, full));
+        Assert.True(raid.HeartsOf(upstairs.Id, full) >= 3);
     }
 
     [Fact]

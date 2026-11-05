@@ -963,14 +963,14 @@ public partial class GameScreen : Control
                 break;
 
             case GoldFound found:
-                FloatOver(found.HeroId, $"+{found.Amount} gold", Palette.Loot);
+                FloatOver(found.HeroId, $"+{Money.Short(found.Amount)}", Palette.Loot);
                 _board.QueueRedraw();
                 await Pause(0.2);
                 break;
 
             case GoldAppeared appeared when appeared.RoomId == _shownRoomId:
                 _board.QueueRedraw();
-                _board.FloatText(appeared.Position, $"{appeared.Amount} gold", Palette.Loot);
+                _board.FloatText(appeared.Position, Money.Short(appeared.Amount), Palette.Loot);
                 await Pause(0.15);
                 break;
 
@@ -1142,11 +1142,11 @@ public partial class GameScreen : Control
 
             case MonsterStole stole:
                 FloatOver(stole.HeroId, stole.Hits > 0 ? "robbed!" : "nothing taken", stole.Hits > 0 ? Palette.Danger : Palette.TextDim);
-                await UpdateFigure(stole.MonsterId, figure => figure.CarriesLoot |= stole.Gold > 0 || stole.CardId is not null, 0.3);
+                await UpdateFigure(stole.MonsterId, figure => figure.CarriesLoot |= stole.Coins > 0 || stole.CardId is not null, 0.3);
                 break;
 
             case Mugged mugged:
-                FloatOver(mugged.HeroId, $"-{mugged.Gold} gold", Palette.Loot);
+                FloatOver(mugged.HeroId, $"-{Money.Short(mugged.Coins)}", Palette.Loot);
                 await UpdateFigure(mugged.MonsterId, figure => figure.CarriesLoot = true, 0.15);
                 break;
 
@@ -1298,7 +1298,8 @@ public partial class GameScreen : Control
                 }
                 else
                 {
-                    _board.FloatText(smashed.Pot, smashed.CardId is null ? "empty" : "coins!", smashed.CardId is null ? Palette.TextDim : Palette.Loot);
+                    bool empty = smashed.CardId is null && smashed.Coins == 0;
+                    _board.FloatText(smashed.Pot, empty ? "empty" : "coins!", empty ? Palette.TextDim : Palette.Loot);
                 }
 
                 await Pause(0.3);
