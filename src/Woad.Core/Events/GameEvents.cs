@@ -75,6 +75,15 @@ public sealed record PowerDiceBanked(int OwnerId, int Count, int Banked) : GameE
 /// <summary>Banked Power Dice were rolled into an attack, move or defense; the bank now holds <paramref name="Banked"/>.</summary>
 public sealed record PowerDiceSpent(int OwnerId, int Count, int Banked) : GameEvent;
 
+/// <summary>
+/// The start of a hero's turn: a d6 for each empty Magic Energy slot (<paramref name="Faces"/>); each 6 charges
+/// one with a Magic Die, <paramref name="Charged"/> of them now.
+/// </summary>
+public sealed record MagicCharged(int HeroId, IReadOnlyList<int> Faces, int Charged, int Slots) : GameEvent;
+
+/// <summary>Magic Dice spent on a spell, in place of Power: <paramref name="Count"/> of them, <paramref name="Charged"/> left.</summary>
+public sealed record MagicDiceSpent(int HeroId, int Count, int Charged) : GameEvent;
+
 /// <summary>A Luck reroll. <paramref name="MovementPoints"/> is the new total when it was a movement die.</summary>
 /// <summary>A cursed hero's Cursed dice: their <paramref name="Faces"/> (a 6 rolled another), <paramref name="Total"/> off the roll, and <paramref name="Lifted"/> curses the 1s lifted.</summary>
 public sealed record CursedDiceRolled(int HeroId, IReadOnlyList<int> Faces, int Total, int Lifted) : GameEvent;

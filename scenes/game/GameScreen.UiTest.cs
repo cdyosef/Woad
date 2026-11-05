@@ -848,6 +848,8 @@ public partial class GameScreen
                 GetViewport().GetTexture().GetImage().SavePng($"{shots}/magic_hand.png");
             }
 
+            // What she can pay with: banked Power, and any Magic Die her slot charged at the turn's start (spent first).
+            int power = aria.Power.Banked, magic = aria.MagicCharged;
             await Click(this, SpellCard("hurl_fire")!);
             Check(_casting == "hurl_fire", "picking Hurl Fire aims it");
             Monster slime = ShownRoom.MonsterAt(new GridPosition(3, 3))!;
@@ -855,14 +857,15 @@ public partial class GameScreen
             await ClickTile(slime.Position);
             await WaitUntilIdle();
             await ConfirmIfHeld();
-            Check(aria.Power.Banked == 3 && _session.AttackDiceLeft == 0, "casting spends a Power Die and her Rumble dice");
+            Check((magic > 0 ? aria.MagicCharged == magic - 1 && aria.Power.Banked == power : aria.Power.Banked == power - 1) && _session.AttackDiceLeft == 0,
+                "casting spends a Magic Die (or, with none charged, a Power Die) and her Rumble dice");
             Check(_cast.Disabled, "with her Rumble dice spent there's no more casting this turn");
 
             await Click(this, _endTurn);
             await WaitFor(this, () => !_busy && ActiveHero == aria && _session.State.Turn is { PendingRoll: null }, "Aria's next turn");
             Monster ogre = ShownRoom.MonsterAt(new GridPosition(3, 4)) ?? ShownRoom.Monsters.First(monster => monster.Definition.Id == "ogre");
             // Her defense against the monsters may have banked more Power: count from here.
-            int banked = aria.Power.Banked;
+            int banked = aria.Power.Banked, charged = aria.MagicCharged;
             OnPoolTokenClicked(DicePool.Power, 0);
             Check(SelectedPowerDice == 1, "a banked Power Die selected");
             await Click(this, _heroPanel.MagicCard);
@@ -874,7 +877,8 @@ public partial class GameScreen
             await ClickTile(to);
             await WaitUntilIdle();
             await ConfirmIfHeld();
-            Check(aria.Power.Banked == banked - 2, $"the selected Power Die went in on top of the spell's cost ({banked} banked, {aria.Power.Banked} left)");
+            Check(banked - aria.Power.Banked + (charged - aria.MagicCharged) == 2,
+                $"the selected Power Die went in on top of the spell's cost, Magic Dice paying first ({banked} banked and {charged} Magic, {aria.Power.Banked} and {aria.MagicCharged} left)");
             Check(_messages.Any(message => message.Contains("casts Swirly Eyes")), "the log says what she cast");
 
             // Her Od Hand die is still hers: she studies the Flame Scroll, whatever comes of it.

@@ -117,7 +117,7 @@ public partial class GameScreen
 
     /// <summary>The Power Dice selected, to go in on top of the spell's cost: a die each, up to the Magic rank and what's banked besides the cost.</summary>
     private int ExtraPower(SpellDefinition spell) =>
-        Math.Clamp(SelectedPowerDice, 0, Math.Max(0, Math.Min(ActiveHero?.EffectiveStats.Magic ?? 0, (ActiveHero?.Power.Banked ?? 0) - spell.Cost)));
+        Math.Clamp(SelectedPowerDice + SelectedMagicDice, 0, Math.Max(0, Math.Min(ActiveHero?.EffectiveStats.Magic ?? 0, (ActiveHero?.SpellPower ?? 0) - spell.Cost)));
 
     /// <summary>A click while aiming a spell: at a target it casts (Swirly Eyes first asks where to move it); anywhere else it stops aiming.</summary>
     private void CastAt(Hero hero, GridPosition tile)

@@ -195,7 +195,7 @@ public static class CompanionBot
         bool weaponReaches = session.GetAttackableMonsters().Count > 0;
         foreach (SpellDefinition spell in hero.Spells.OrderByDescending(spell => spell.Dice))
         {
-            if (session.CheckCastSpell(spell.Id) is not null || (weaponReaches && hero.Power.Banked <= spell.Cost))
+            if (session.CheckCastSpell(spell.Id) is not null || (weaponReaches && hero.SpellPower <= spell.Cost))
             {
                 continue;
             }

@@ -387,6 +387,24 @@ public sealed class Hero
     public Stats EffectiveStats => EquippedCards.Concat(_mods).Concat(BeltTools).Aggregate(BaseStats, (stats, card) =>
         stats + card.Modifiers + (HasSetBonus(card.Definition) ? card.Definition.Set!.Modifiers : Stats.None));
 
+    /// <summary>Magic Energy slots: one for each rank of Magic.</summary>
+    public int MagicSlots => Math.Max(0, EffectiveStats.Magic);
+
+    /// <summary>
+    /// Magic Dice: the Magic Energy slots charged (a 6 on a slot's die at the start of a turn), each paying
+    /// for a spell in place of a Power Die, and spent first. They start empty each dungeon or fight.
+    /// </summary>
+    public int MagicCharged
+    {
+        get => Math.Min(_magicCharged, MagicSlots);
+        internal set => _magicCharged = Math.Max(0, value);
+    }
+
+    private int _magicCharged;
+
+    /// <summary>What a spell can be paid with: Magic Dice, then banked Power Dice.</summary>
+    public int SpellPower => MagicCharged + Power.Banked;
+
     /// <summary>Armor lost to wear (acid, until mended) on what's worn.</summary>
     public int ArmorWear => EquippedCards.Concat(_mods).Sum(card => Math.Max(0, card.Definition.Modifiers.Armor - card.Modifiers.Armor));
 
