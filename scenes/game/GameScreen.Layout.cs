@@ -200,7 +200,10 @@ public partial class GameScreen
         _rumble.Disabled = !(idle && !pending) || _session.AttackDiceLeft < 1;
         _rumbling &= !_rumble.Disabled;
         _rumble.Text = _rumbling ? "Cancel" : "Rumble";
-        _shove.Disabled = !(idle && !pending) || _session.AttackDiceLeft < 1;
+        // Shove: Rumble dice for a shove, or an ally beside you to push (if they let you).
+        bool nudge = _session.State.Turn is not null && ActiveHero is { } nudger
+            && _session.State.ActiveHeroesIn(_session.State.RoomOf(nudger)).Any(ally => ally != nudger && _session.CheckNudgeAlly(ally.Id) is null);
+        _shove.Disabled = !(idle && !pending) || (_session.AttackDiceLeft < 1 && !nudge);
         _leap.Disabled = !(idle && !pending) || _session.MoveDiceLeft < 1 || held;
         _leaping &= !_leap.Disabled;
         _leap.Text = _leaping ? "Cancel" : "Leap";

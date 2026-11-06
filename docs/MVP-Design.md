@@ -848,6 +848,10 @@ total reaches its number:
   be shoved (nor the Key Warden), and the tile behind must be free floor, a trap, water or a pit. Flyers
   don't fall; a monster shoved into deep water loses a heart and scrambles out. Monsters
   don't shove yet.
+- **Pushing an ally:** with **Shove** picked, click an ally beside you. They choose: **Let them** (pushed a
+  tile straight away from you, or through the doorway they stand in; free, no roll, no Shove skill or
+  friendly fire needed), or **Resist**, and then only a Shove moves them (with the Shove skill, friendly
+  fire on and a Rumble die); otherwise they don't budge. A companion always lets you.
 - **Friendly fire** (a switch on the party screen, off by default): blasts also
   catch heroes and companions in range, the thrower included, and you can attack and shove other
   heroes and companions in reach just like monsters (click them; Shove works on them too). Each

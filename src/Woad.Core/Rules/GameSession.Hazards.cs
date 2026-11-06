@@ -85,8 +85,57 @@ public sealed partial class GameSession
         Room room = ActiveRoom;
         return room.Monsters.Where(monster => CheckShove(monster.Id) is null).Select(monster => monster.Position)
             .Concat(room.Bombs.Where(bomb => CheckShove(bomb.Id) is null).Select(bomb => bomb.Position))
-            .Concat(State.ActiveHeroesIn(room).Where(ally => CheckShove(ally.Id) is null).Select(ally => ally.Position))
+            .Concat(State.ActiveHeroesIn(room).Where(ally => CheckShove(ally.Id) is null || CheckNudgeAlly(ally.Id) is null).Select(ally => ally.Position))
             .ToList();
+    }
+
+    /// <summary>Why the active hero can't push this ally, were they to let them, or null.</summary>
+    public string? CheckNudgeAlly(int allyId)
+    {
+        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
+        {
+            return "Finish the roll first.";
+        }
+
+        Hero hero = ActiveHero;
+        Room room = ActiveRoom;
+        if (State.ActiveHeroesIn(room).FirstOrDefault(other => other.Id == allyId && other != hero) is not { } ally)
+        {
+            return "There's nobody here to push.";
+        }
+
+        if (DoorwayAt(room, ally.Position) is not null)
+        {
+            return CheckPushThrough(allyId);
+        }
+
+        if (hero.Position.ChebyshevDistanceTo(ally.Position) != 1)
+        {
+            return "Stand next to them to push them.";
+        }
+
+        return ShoveDestination(room, hero, ally.Position, flying: false) is null ? "There's nowhere to push them: something is in the way." : null;
+    }
+
+    /// <summary>An ally lets the hero push them: a tile away (or through the doorway they stand in). Free, no roll.</summary>
+    private string? Handle(NudgeAlly command, List<GameEvent> events)
+    {
+        if (CheckNudgeAlly(command.AllyId) is { } error)
+        {
+            return error;
+        }
+
+        Hero hero = ActiveHero;
+        Room room = ActiveRoom;
+        Hero ally = State.GetHero(command.AllyId);
+        if (DoorwayAt(room, ally.Position) is not null)
+        {
+            PushThrough(room, ally, events);
+            return null;
+        }
+
+        PushHero(hero, room, ally, ShoveDestination(room, hero, ally.Position, flying: false)!.Value, events);
+        return null;
     }
 
     /// <summary>Tiles the active hero could aim a leap at right now (see <see cref="Leap"/>).</summary>

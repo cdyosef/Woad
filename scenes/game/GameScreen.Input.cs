@@ -312,8 +312,14 @@ public partial class GameScreen
 
         if (_shoving)
         {
-            int? shovedId = room.MonsterAt(tile)?.Id ?? room.Bombs.FirstOrDefault(bomb => bomb.Position == tile)?.Id
-                ?? _session.State.ActiveHeroesIn(room).FirstOrDefault(other => other.Position == tile && other != hero)?.Id;
+            // An ally: they choose to let themselves be pushed, or to resist.
+            if (_session.State.ActiveHeroesIn(room).FirstOrDefault(other => other.Position == tile && other != hero) is { } pushed)
+            {
+                AskToNudge(hero, pushed);
+                return;
+            }
+
+            int? shovedId = room.MonsterAt(tile)?.Id ?? room.Bombs.FirstOrDefault(bomb => bomb.Position == tile)?.Id;
             if (shovedId is int targetId)
             {
                 if (_session.AttackDiceLeft > 0 && SelectedAttackDice < 1)
@@ -642,6 +648,44 @@ public partial class GameScreen
                 else
                 {
                     Execute(new Shove(hero.Id, blocker.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice, _rumbleBonusHeld));
+                }
+            }),
+        ]);
+    }
+
+    /// <summary>
+    /// Pushing an ally: they let you (a tile away, free, no roll) or resist, and then only a Shove moves them
+    /// (with the Shove skill and friendly fire on). A companion always lets you.
+    /// </summary>
+    private void AskToNudge(Hero hero, Hero ally)
+    {
+        if (_session.CheckNudgeAlly(ally.Id) is { } cannot)
+        {
+            Log(cannot, Palette.TextDim);
+            return;
+        }
+
+        if (ally.IsCompanion)
+        {
+            Execute(new NudgeAlly(hero.Id, ally.Id));
+            return;
+        }
+
+        _selectedCardId = null;
+        RefreshPanels();
+        _inventory.AskChoice(null, $"{ally.Name}: let {hero.Name} push you?",
+        [
+            ("Let them", () => Execute(new NudgeAlly(hero.Id, ally.Id))),
+            ("Resist", () =>
+            {
+                if (_session.CheckShove(ally.Id) is not null || _session.AttackDiceLeft < 1)
+                {
+                    Log($"{ally.Name} doesn't budge.", Palette.TextDim);
+                    RefreshPanels();
+                }
+                else
+                {
+                    Execute(new Shove(hero.Id, ally.Id, Math.Max(1, SelectedAttackDice), !_weaponHeld, SelectedPowerDice, _rumbleBonusHeld));
                 }
             }),
         ]);

@@ -172,6 +172,12 @@ public sealed record PickLock(int HeroId, GridPosition Target, int? Dice = null,
 /// </summary>
 public sealed record MoveOn(int HeroId) : GameCommand(HeroId);
 
+/// <summary>
+/// Push an ally beside you who lets you: a tile straight away from you (or, from a doorway, through it).
+/// Free: no roll, no Rumble dice, no Shove skill or friendly fire needed.
+/// </summary>
+public sealed record NudgeAlly(int HeroId, int AllyId) : GameCommand(HeroId);
+
 /// <summary>Retreat from a fight out on the Woarld Map: an Od Hand roll against the monsters' chase.</summary>
 public sealed record Retreat(int HeroId, int? Dice = null, bool UseTools = false, int PowerDice = 0)
     : OdHandCommand(HeroId, Dice, UseTools, PowerDice);
