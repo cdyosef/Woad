@@ -332,8 +332,12 @@ public partial class GameScreen
             await Click(this, _carryTab.PutDownButton);
             await WaitUntilIdle();
             Check(aria.CarriedAlly is null && bran.Carrier is null && bran.Position.ChebyshevDistanceTo(aria.Position) == 1, $"Put down sets him down beside her ({aria.CarriedAlly?.Name}, {bran.Position} by {aria.Position}: {string.Join(" / ", _messages.TakeLast(2))})");
+            // The Medicine Bag on her belt, double-clicked: Aid aims (no search), and a click on Bran aids him.
+            CardInstance bag = aria.Belt.FirstOrDefault(card => card.Definition.MedicineBag) ?? throw new InvalidOperationException($"no Medicine Bag on the belt: {aria.FindCard(aria.AllCards.Single(card => card.Definition.MedicineBag).Id)?.Item2}");
+            await DoubleClickAt(this, _heroPanel.BeltPoint(aria.Belt.ToList().IndexOf(bag)));
+            await WaitUntilIdle();
+            Check(_odAim == OdAim.Aid && _session.State.Turn!.OdHandDiceUsed == 0, $"double-clicking the Medicine Bag aims Aid, not a search ({_odAim}: {string.Join(" / ", _messages.TakeLast(2))})");
             await ClickTile(bran.Position);
-            await Click(this, _inventory.HandButton(0));
             await ConfirmIfHeld();
             Check(_session.State.Turn!.OdHandDiceUsed == 1 && !_session.State.Turn.HasActed, "rousing uses Aria's Od Hand die, not her action");
             Check(_messages.Any(message => message.Contains("aids Bran")), "the log tells how the rousing went");

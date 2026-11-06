@@ -26,6 +26,14 @@ public partial class GameScreen
             bool InSquare(HandView hand, CardInstance card) => StackOf(hand, aria).Any(stacked => stacked.CardId == card.Id);
 
             Check(InSquare(_odHand, dagger) && !InSquare(_rumbleHand, dagger), "the Dagger starts in the Od Hand square");
+
+            // Sticky Gloves (an accessory, not a tool card) still go into the Od Hand's rolls: on top of its square, not held back.
+            CardInstance gloves = aria.EquippedCards.Single(card => card.Definition.Id == "sticky_gloves");
+            Check(_odHand.Front == "item:" + gloves.Id && !_toolsHeld && _session.ToolsBonusLeft == 1 && _session.ToolDiceLeft == 1, $"the Sticky Gloves sit on top of the Od Hand square and go into its rolls ({_odHand.Front}, held {_toolsHeld})");
+            await ClickAt(this, _odHand.GetGlobalRect().Position + _odHand.CardPoint(HandView.DiceKey));
+            Check(_toolsHeld, "putting the Od Hand card on top keeps them out");
+            await ClickAt(this, _odHand.GetGlobalRect().Position + _odHand.CardPoint("item:" + gloves.Id));
+            Check(!_toolsHeld && _odHand.Front == "item:" + gloves.Id, "and the gloves on top put them back in");
             Check(_session.WeaponAgainst(slime, ReadiedWeaponId)?.Weapon == sword, "left alone, Rumble swings the sword");
 
             // Clicking the Dagger picks it for Rumble: it moves to the Rumble square, the Od Hand card not lit with it.

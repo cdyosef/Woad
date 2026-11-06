@@ -1423,6 +1423,13 @@ public partial class GameScreen
             return;
         }
 
+        // A Medicine Bag on the belt works from there: Aid aims, for a click on who to rouse or cure.
+        if (card.Definition.MedicineBag && !_aid.Disabled)
+        {
+            PlayAbility(new AbilityCard(card.Definition.Id, card.Definition.Name, _aid, () => true));
+            return;
+        }
+
         _selectedCardId = cardId;
         CardActions actions = AvailableCardActions(hero, _session.State.Turn);
         bool use = actions.Allows(CardAction.Use);

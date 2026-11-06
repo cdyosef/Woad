@@ -399,11 +399,15 @@ public partial class GameScreen
     /// <summary>The card on top of each hero's stack in each pool (by hero and hand), by key; none stored means the default.</summary>
     private readonly Dictionary<(int HeroId, string Hand), string> _fronts = [];
 
-    /// <summary>The key of the card on top of a hand's stack for the active hero: the one chosen, else a weapon or tool if there is one, else the dice.</summary>
+    /// <summary>
+    /// The key of the card on top of a hand's stack for the active hero: the one chosen, else (in the Od Hand square)
+    /// a tool, whatever kind of item it is (Sticky Gloves, a Cutpurse Knife), else an item of the pool's own color, else the dice.
+    /// </summary>
     private string FrontOf(HandView hand, IReadOnlyList<StackCard> stack) =>
         ActiveHero is { } hero && _fronts.TryGetValue((hero.Id, hand.Title), out string? chosen) && stack.Any(card => card.Key == chosen)
             ? chosen
-            : stack.FirstOrDefault(card => card.Key.StartsWith(ItemPrefix, StringComparison.Ordinal) && card.Border == hand.Color)?.Key ?? HandView.DiceKey;
+            : (hand == _odHand ? stack.FirstOrDefault(card => card.CardId is int id && ActiveHero?.FindCard(id) is { Card.Definition.Tool: not null })?.Key : null)
+              ?? stack.FirstOrDefault(card => card.Key.StartsWith(ItemPrefix, StringComparison.Ordinal) && card.Border == hand.Color)?.Key ?? HandView.DiceKey;
 
     private const string ItemPrefix = "item:";
 
@@ -486,7 +490,8 @@ public partial class GameScreen
             _readied[hero.Id] = weaponId;
         }
 
-        _toolsHeld = FrontOf(_odHand, StackOf(_odHand, hero)) == HandView.DiceKey;
+        // The tools go into every roll they're for, unless the Od Hand card itself is put on top (by a click) to keep them back.
+        _toolsHeld = _fronts.TryGetValue((hero.Id, _odHand.Title), out string? odFront) && odFront == HandView.DiceKey;
     }
 
     /// <summary>
@@ -563,6 +568,13 @@ public partial class GameScreen
             // A tool goes to work on what it's for.
             Button action = tool.For.HasFlag(Skill.PickLock) ? _pickLock : tool.For.HasFlag(Skill.Steal) ? _steal : _search;
             PlayAbility(new AbilityCard(card.Picture, card.Name, action, () => true));
+            return;
+        }
+
+        // A Medicine Bag (or Bandages) in the Od Hand square: Aid aims, for a click on who to rouse or cure.
+        if (hand == _odHand && card.CardId is int kitId && ActiveHero?.FindCard(kitId) is { Card.Definition: { MedicineBag: true } or { Bandage: true } })
+        {
+            PlayAbility(new AbilityCard(card.Picture, card.Name, _aid, () => true));
             return;
         }
 

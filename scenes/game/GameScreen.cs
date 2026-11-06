@@ -460,6 +460,12 @@ public partial class GameScreen : Control
         switch (gameEvent)
         {
             case TurnStarted turn:
+                // Tools kept out of the Od Hand's rolls (the Od Hand card put on top) were for that turn only.
+                if (_fronts.TryGetValue((turn.HeroId, _odHand.Title), out string? odFront) && odFront == HandView.DiceKey)
+                {
+                    _fronts.Remove((turn.HeroId, _odHand.Title));
+                }
+
                 // The off hand's weapon, picked for Rumble, was for that turn only: the main hand again.
                 if (_readied.TryGetValue(turn.HeroId, out int readiedId) && _session.State.GetHero(turn.HeroId).MainWeapon?.Id != readiedId)
                 {
