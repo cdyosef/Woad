@@ -488,7 +488,7 @@ public sealed partial class GameSession
         attackTotal = AgainstMonster(room, monster, attackTotal);
         int damage = DamageFor(attackTotal, defended ?? DefendMonster(room, monster, attackTotal, ranged, events));
         Wake(monster, events);
-        monster.Hearts = Math.Max(0, monster.Hearts - damage);
+        Wound(monster, attacker, damage);
         events.Add(new Damaged(monster.Id, damage, monster.Hearts));
         if (damage > 0)
         {
@@ -563,10 +563,7 @@ public sealed partial class GameSession
             return;
         }
 
-        if (killer is not null)
-        {
-            GrantXp(killer, definition.Xp, events);
-        }
+        ShareKillXp(killer, monster, events);
 
         if (definition.SplitsInto is { } splitId)
         {

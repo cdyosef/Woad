@@ -113,10 +113,11 @@ public class LootAndXpTests
 
         IReadOnlyList<GameEvent> events = session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id));
 
-        Assert.Equal(new XpGained(hero.Id, 7, 7), events.SingleOf<XpGained>());
+        // Its 7 XP and the killing blow's 2.
+        Assert.Equal(new XpGained(hero.Id, 7 + GameRules.KillingBlowXp, 7 + GameRules.KillingBlowXp), events.SingleOf<XpGained>());
         Assert.Equal(2, events.OfType<LootDropped>().Count());
         Assert.Equal(2, session.RoomById().LootAt(new GridPosition(4, 3)).Sum(card => card.Count));
-        Assert.Equal(7, hero.Xp);
+        Assert.Equal(7 + GameRules.KillingBlowXp, hero.Xp);
     }
 
     [Fact]

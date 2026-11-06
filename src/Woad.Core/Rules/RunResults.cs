@@ -29,7 +29,7 @@ public sealed record HeroRunResult
 
     public required int Kills { get; init; }
 
-    /// <summary>XP earned, the Explorer Award's included.</summary>
+    /// <summary>XP earned, the Explorer Award's and the other awards' included.</summary>
     public required int Xp { get; init; }
 
     /// <summary>Rooms they searched first.</summary>
@@ -37,6 +37,9 @@ public sealed record HeroRunResult
 
     /// <summary>The most Explorer bonuses on a dungeon run that's won (shared on a tie): <see cref="GameRules.ExplorerAwardXp"/> more XP.</summary>
     public bool ExplorerAward { get; init; }
+
+    /// <summary>The end-of-run awards won (Keymaster, Slayer...), each with its XP (counted in <see cref="Xp"/>).</summary>
+    public IReadOnlyList<RunAward> Awards { get; init; } = [];
 
     /// <summary>Treasure turned into gold; 0 for heroes who didn't escape.</summary>
     public required int Coins { get; init; }
@@ -99,8 +102,61 @@ public sealed record HeroRunResult
     public IReadOnlyList<(string Name, bool FreedByThisHero)> MerchantsRescued { get; init; } = [];
 }
 
+/// <summary>An end-of-run award: its name and the XP it's worth.</summary>
+public sealed record RunAward(string Name, int Xp);
+
 public static class RunResults
 {
+    /// <summary>
+    /// The end-of-run awards, on a completed run (a dungeon whose boss is beaten, someone getting out): for the
+    /// most keys used, doors unlocked, traps disarmed, traps set off, kills and damage. Anyone in the party can
+    /// win one, the dead too, and a tie shares it. Each is worth <see cref="GameRules.AwardXpPerFloor"/> for every
+    /// floor of the dungeon; "Check for what?!" (the most traps set off) half that, rounded up.
+    /// </summary>
+    public static IReadOnlyList<(string Name, Func<Hero, int> Tally, bool Half)> Awards { get; } =
+    [
+        ("Keymaster", hero => hero.KeysUsed, false),
+        ("Lockbreaker", hero => hero.DoorsUnlocked, false),
+        ("Trapsmith", hero => hero.TrapsDisarmed, false),
+        ("Check for what?!", hero => hero.TrapsSprung, true),
+        ("Slayer", hero => hero.Kills, false),
+        ("Heavy Hitter", hero => hero.DamageDealt, false),
+    ];
+
+    /// <summary>Whether a finished run counts as completed: a dungeon (not a fight on the Woarld Map) whose boss is beaten, and someone got out.</summary>
+    public static bool Completed(GameState state) =>
+        !state.Skirmish
+        && state.Heroes.Any(hero => !hero.Summoned && hero.Status == HeroStatus.Escaped && !state.RetreatedIds.Contains(hero.Id))
+        && !state.Rooms.Values.Any(room => room.Monsters.Any(monster => monster.Definition.Boss));
+
+    /// <summary>The awards each hero in <paramref name="party"/> wins on this run (none if it isn't completed).</summary>
+    private static Dictionary<Hero, List<RunAward>> AwardsFor(GameState state, IReadOnlyList<Hero> party)
+    {
+        var won = party.ToDictionary(hero => hero, _ => new List<RunAward>());
+        if (!Completed(state) || party.Count == 0)
+        {
+            return won;
+        }
+
+        int floors = Math.Max(1, state.Rooms.Values.Where(room => room.Level == 0).Max(room => room.Floor));
+        foreach ((string name, Func<Hero, int> tally, bool half) in Awards)
+        {
+            int most = party.Max(tally);
+            if (most < 1)
+            {
+                continue;
+            }
+
+            int xp = GameRules.AwardXpPerFloor * floors;
+            foreach (Hero hero in party.Where(hero => tally(hero) == most))
+            {
+                won[hero].Add(new RunAward(name, half ? (xp + 1) / 2 : xp));
+            }
+        }
+
+        return won;
+    }
+
     /// <exception cref="InvalidOperationException">The run hasn't ended yet.</exception>
     public static IReadOnlyList<HeroRunResult> For(GameState state)
     {
@@ -113,7 +169,8 @@ public static class RunResults
             cards.Where(card => card.Definition.Type != CardType.Treasure && !card.Definition.GateKey).SelectMany(card => Enumerable.Repeat(card.Key, card.Count)).ToList();
 
         // The Explorer Award: a dungeon run someone got out of, to whoever searched the most rooms first.
-        IEnumerable<Hero> party = state.Heroes.Where(hero => !hero.Summoned);
+        List<Hero> party = [.. state.Heroes.Where(hero => !hero.Summoned)];
+        Dictionary<Hero, List<RunAward>> awards = AwardsFor(state, party);
         int mostExplored = !state.Skirmish && party.Any(hero => hero.Status == HeroStatus.Escaped && !state.RetreatedIds.Contains(hero.Id))
             ? party.Max(hero => hero.ExplorerBonus)
             : 0;
@@ -130,9 +187,10 @@ public static class RunResults
             Status = hero.Status,
             Won = state.WinnerIds.Contains(hero.Id),
             Kills = hero.Kills,
-            Xp = hero.Xp + (Explorer(hero) ? GameRules.ExplorerAwardXp : 0),
+            Xp = hero.Xp + (Explorer(hero) ? GameRules.ExplorerAwardXp : 0) + awards[hero].Sum(award => award.Xp),
             ExplorerBonus = hero.ExplorerBonus,
             ExplorerAward = Explorer(hero),
+            Awards = awards[hero],
             Coins = hero.Status == HeroStatus.Escaped ? hero.TreasureValue : 0,
             DeepestFloor = hero.DeepestFloor,
             Hearts = hero.Hearts,

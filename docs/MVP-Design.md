@@ -1118,10 +1118,21 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   someone who dies drops theirs on their tombstone, and companions left behind lose them. Handing coins
   to an ally goes in whole gold; handing over all of it takes the change too. Saves from before silver
   and copper read their gold as copper, 100 to the gold.
-- **XP** *(tunable)*: each monster's XP goes to whoever defeats it (slime 2, guards 4, skeleton 5, Iron
-  Warden 25). Reaching a floor for the first time gives 5, and escaping gives 10. The first Search in
-  each room is worth 1 (an **Explorer bonus**), and on a dungeon run someone escapes from, whoever has the
-  most Explorer bonuses takes the **Explorer Award**, 5 more, shown on the results screen (shared on a tie).
+- **XP** *(tunable)*: each monster's XP (slime 2, guards 4, skeleton 5, Iron Warden 25) is **shared by the
+  damage done to it**: each hero who took hearts off it gets their share of its XP (overkill doesn't count),
+  the odd points to whoever did the most. Only those still in the run share: Keeling Over will do, but a
+  dead hero's share goes to the rest. The **killing blow** earns 2 more, or a quarter of the monster's XP if
+  that's more (rounded up); a monster killed without a scratch (shoved into the dark) is all the killer's.
+  Disarming a trap is worth 3, picking a lock (a door, a gate or a chest) 3, and using a key 2 (a small key,
+  the Boss Key, a gate's key). Reaching a floor for the first time gives 5, and escaping gives 10. The first
+  Search in each room is worth 1 (an **Explorer bonus**), and on a dungeon run someone escapes from, whoever
+  has the most Explorer bonuses takes the **Explorer Award**, 5 more (shared on a tie).
+- **End-of-run awards:** on a **completed** run (the dungeon's boss beaten, and someone got out), whoever
+  did the most of each wins an award, worth 5 XP for every floor of the dungeon (15 in a three-floor one):
+  **Keymaster** (keys used), **Lockbreaker** (doors and gates unlocked, by key or by picking), **Trapsmith**
+  (traps disarmed), **Slayer** (kills) and **Heavy Hitter** (damage done); and **"Check for what?!"** (traps
+  set off), worth half. Anyone in the party can win, the dead too; a tie shares it. The results screen
+  shows each hero's awards (hover for their XP).
 - **Keeling Over:** a hero or companion reduced to 0 hearts falls where they stand (X's for eyes) and
   is **Keeling Over**. They keep everything they carry and still take their turns, but all they can do
   is roll the **Keel Die** (the End turn button becomes **Roll Keel Die**):

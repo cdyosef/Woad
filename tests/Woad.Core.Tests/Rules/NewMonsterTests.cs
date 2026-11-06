@@ -313,7 +313,8 @@ public sealed class NewMonsterTests
         IReadOnlyList<GameEvent> slain = session.Do(new AttackMonster(hero.Id, raiser.Id, UseWeapon: false));
         Assert.Equal(2, slain.OfType<Crumbled>().Count());
         Assert.Empty(session.RoomById().Monsters);
-        Assert.Equal(xp + 5, hero.Xp);
+        // Its 5 XP, all the hero's (the only one who hurt it), and the killing blow's 2.
+        Assert.Equal(xp + 5 + GameRules.KillingBlowXp, hero.Xp);
     }
 
     [Fact]

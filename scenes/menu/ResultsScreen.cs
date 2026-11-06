@@ -64,9 +64,15 @@ public partial class ResultsScreen : MenuScreen
         Put(new FigureView { Position = new Vector2(8, top + 9), Size = new Vector2(32, 32) }).Colors = Looks.Resolve(result.Appearance, result.Portrait);
 
         Put(UiTheme.Label(new Vector2(50, top + 5), new Vector2(200, 18), result.Name, 14, Palette.Seat(result.Seat)));
-        if (result.ExplorerAward)
+        // The awards won: their names (all of them, with their XP, on hover).
+        List<RunAward> awards = [.. result.ExplorerAward ? [new RunAward("Explorer", GameRules.ExplorerAwardXp)] : Array.Empty<RunAward>(), .. result.Awards];
+        if (awards.Count > 0)
         {
-            Put(UiTheme.Label(new Vector2(170, top + 8), new Vector2(124, 12), $"Explorer Award +{GameRules.ExplorerAwardXp} XP", color: Palette.TrimBright));
+            string names = string.Join(", ", awards.Select(award => award.Name));
+            Label won = Put(UiTheme.Label(new Vector2(170, top + 8), new Vector2(124, 12), awards.Count > 2 ? $"{awards.Count} awards!" : names, color: Palette.TrimBright));
+            won.ClipText = true;
+            won.MouseFilter = MouseFilterEnum.Stop;
+            won.TooltipText = string.Join("\n", awards.Select(award => $"{award.Name}: +{award.Xp} XP"));
         }
         string outcome = result.Status switch
         {

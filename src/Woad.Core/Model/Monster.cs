@@ -22,6 +22,9 @@ public sealed class Monster
 
     public int Hearts { get; internal set; }
 
+    /// <summary>Hearts each hero (by id) has taken off it: how its XP is shared when it falls.</summary>
+    public Dictionary<int, int> DamageBy { get; } = [];
+
     /// <summary>Luck it has to try (a Hexer's own, and what it steals), tried when its attack or defense is about to fail.</summary>
     public int Luck { get; internal set; }
 

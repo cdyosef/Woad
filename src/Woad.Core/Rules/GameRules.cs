@@ -92,6 +92,23 @@ public static class GameRules
     /// <summary>XP for the Explorer Award: the most Explorer bonuses on a dungeon run that's won.</summary>
     public const int ExplorerAwardXp = 5;
 
+    /// <summary>XP for disarming a trap (on a door, a chest or the floor).</summary>
+    public const int DisarmXp = 3;
+
+    /// <summary>XP for picking a lock (a door, a gate or a chest).</summary>
+    public const int PickLockXp = 3;
+
+    /// <summary>XP for using a key: a small key, the Boss Key, a gate's key.</summary>
+    public const int KeyXp = 2;
+
+    /// <summary>The killing blow's bonus XP: this, or <see cref="KillingBlowPercent"/> of the monster's XP if that's more (rounded up).</summary>
+    public const int KillingBlowXp = 2;
+
+    public const int KillingBlowPercent = 25;
+
+    /// <summary>An end-of-run award (Keymaster, Slayer...) is worth this for each floor of the dungeon.</summary>
+    public const int AwardXpPerFloor = 5;
+
     /// <summary>Search total to find a hidden stash of keys or loot.</summary>
     public static int StashDifficulty(int floor) => 5 + floor;
 
