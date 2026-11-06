@@ -963,6 +963,48 @@ MONSTERS = {
     ], {"o": "#120e14", "h": "#5a5f6a", "v": "#1a1a20", "r": "#ff4040", "p": "#9aa0aa",
         "a": "#4a4f5a", "c": "#a83a46", "b": "#3a2a20", "k": "#2a2a30"}, mirror=True)),
 
+    # The Emerald Keep's gate: its knight in emerald plate with a green plume, a cut emerald on his chest.
+    "emerald_knight": (sprite([
+        ".......l",
+        ".....ool",
+        "....oggg",
+        "....ogvv",
+        "....ogvr",
+        "....oggg",
+        "..oooaaa",
+        ".oppoccc",
+        ".oppoccy",
+        "..ooocyy",
+        "...oaccc",
+        "...obbbb",
+        "...oaaoa",
+        "...oaao.",
+        "..okkko.",
+        "..ooooo.",
+    ], {"o": "#0e140f", "l": "#7dff9e", "g": "#2fa060", "v": "#0e1a12", "r": "#a0ffb0", "a": "#1f6a40", "p": "#5fd08a",
+        "c": "#14532f", "y": "#7dff9e", "b": "#3a2a20", "k": "#1a2a20"}, mirror=True)),
+
+    # The keep's guards: an open steel helm with a green crest, a green tabard over mail.
+    "emerald_guard": (sprite([
+        "........",
+        ".......y",
+        ".....ooo",
+        "....ohhh",
+        "....ohff",
+        "....offe",
+        "...oohhh",
+        "..oommmm",
+        "..omtttt",
+        "...otttt",
+        "...ottty",
+        "...obbbb",
+        "...ommom",
+        "...ommo.",
+        "..okkko.",
+        "..ooooo.",
+    ], {"o": "#0e140f", "s": "#d8e0dc", "w": "#7a5a3a", "h": "#8a9a90", "f": "#e0b090", "e": "#1a1a1a", "m": "#5a6a62",
+        "t": "#2f8a4a", "y": "#7dff9e", "b": "#3a2a20", "k": "#1a2a20"}, mirror=True)),
+
     # The vault's guardian: a gilded knight in crimson, a key emblem on its chest.
     "key_warden": (sprite([
         "........",
@@ -991,7 +1033,7 @@ WOOD = {"o": "#2a1a10", "w": "#b07840", "d": "#8a5a2b", "g": "#e2c47a", "y": "#3
 
 # The Sunken Temple's own monsters (its other monsters borrow the Emerald Keep's sprites).
 # Monsters only the Emerald Keep has.
-KEEP_ONLY = {"ogre", "ogre_champ", "necromancer", "hexer", "gelatinous_cube", "mimic"}
+KEEP_ONLY = {"ogre", "ogre_champ", "necromancer", "hexer", "gelatinous_cube", "mimic", "emerald_knight", "emerald_guard"}
 
 TEMPLE_MONSTERS = {
     "snapper_eel": sprite([

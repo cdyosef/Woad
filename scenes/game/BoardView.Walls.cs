@@ -129,6 +129,24 @@ public partial class BoardView
 
         switch (passage)
         {
+            case { IsLocked: true, NeedsGateKey: true }:
+                // The keep's gate: a portcullis of green iron over the dark, an emerald set in it.
+                DrawRect(opening, new Color("0a0c10"));
+                Color portcullis = new("2f7a4e"), portcullisDark = new("174a2c");
+                for (float x = 2; x < opening.Size.X; x += 3)
+                {
+                    DrawLine(opening.Position + new Vector2(x, 0), opening.Position + new Vector2(x, opening.Size.Y), portcullis, 1);
+                }
+
+                for (float y = 3; y < opening.Size.Y; y += 4)
+                {
+                    DrawLine(opening.Position + new Vector2(0, y), opening.Position + new Vector2(opening.Size.X, y), portcullisDark, 1);
+                }
+
+                DrawCircle(opening.GetCenter(), 2.2f, new Color("1a5a34"));
+                DrawCircle(opening.GetCenter(), 1.5f, new Color("5dff9a"));
+                break;
+
             case { IsBlocked: true }:
                 // Walled up: rough stone with cracks, until a bomb breaks it.
                 DrawRect(opening, stone.Darkened(0.15f));

@@ -422,6 +422,15 @@ def draw(item):
         c.circle(15, 19, 3, GOLD[1])
         c.dot(14, 18, GOLD[0])
         c.line(11, 28, 11, 30, GREEN[0], 1)
+    elif i == "emerald_key":
+        # A heavy green-iron key, its bow set with a cut emerald.
+        c.ring(10, 10, 6, "#2f7a4e", 2)
+        c.circle(10, 10, 3, "#5dff9a")
+        c.dot(9, 9, "#d8ffe6")
+        c.line(14, 14, 27, 27, "#2f7a4e", 2)
+        c.rect(21, 23, 3, 4, "#2f7a4e")
+        c.rect(25, 19, 3, 4, "#2f7a4e")
+        c.line(15, 13, 26, 24, "#7fd8a2", 1)
     elif i == "holy_key":
         # A silver key, its bow a cross in a ring.
         c.ring(10, 10, 6, STEEL[1], 2)
@@ -1073,7 +1082,7 @@ ITEMS = [
     "flame_scroll", "frost_scroll", "venom_scroll", "acid_scroll", "grave_scroll", "gale_scroll", "sun_scroll",
     "bloom_scroll", "quake_scroll", "spark_scroll", "mind_scroll", "shadow_scroll", "frost_wand", "boomerang",
     "club", "stick", "lit_stick", "rock", "sling", "rock_bag", "lucky_clover",
-    "torch", "lockpicks", "holy_key", "saints_relic", "modern_medicine", "thieves_oil", "burgling_tools", "cutpurse_knife", "sticky_gloves", "bomb", "autosmith_hammer", "eye_drops", "holy_water", "health_potion",
+    "torch", "lockpicks", "emerald_key", "holy_key", "saints_relic", "modern_medicine", "thieves_oil", "burgling_tools", "cutpurse_knife", "sticky_gloves", "bomb", "autosmith_hammer", "eye_drops", "holy_water", "health_potion",
     "antidote", "strong_base", "smelling_salts", "bandages", "medicine_bag", "shovel", "sineater_doll",
     "loose_coins", "coin_pouch", "emerald", "pearl", "golden_idol",
 ]

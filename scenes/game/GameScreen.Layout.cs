@@ -447,7 +447,8 @@ public partial class GameScreen
         bool canStep = turn.MovementPoints > 0;
         if (DoorAt(room, hero.Position) is { } side && room.PassageOn(side) is { IsLocked: true } locked)
         {
-            return locked.NeedsBossKey ? hero.HasBossKey : hero.Keys > 0 || _session.CheckPickLock(hero.Position) is null;
+            return locked.NeedsGateKey ? GameSession.HasGateKey(hero)
+                : locked.NeedsBossKey ? hero.HasBossKey : hero.Keys > 0 || _session.CheckPickLock(hero.Position) is null;
         }
 
         return room.Layout[hero.Position] switch

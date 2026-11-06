@@ -624,6 +624,17 @@ public partial class GameScreen
         {
             ExecuteOdHand((heroId, dice, tools, power) => new Disarm(heroId, doorway, dice, tools, power));
         }
+        else if (passage is { IsLocked: true, NeedsGateKey: true })
+        {
+            if (GameSession.HasGateKey(hero))
+            {
+                Execute(new UnlockDoor(hero.Id, side));
+            }
+            else
+            {
+                Log(GameSession.GateLockedText, Palette.TextDim);
+            }
+        }
         else if (passage is { IsLocked: true } && (passage.NeedsBossKey || hero.Keys > 0))
         {
             Execute(new UnlockDoor(hero.Id, side));
@@ -1067,6 +1078,11 @@ public partial class GameScreen
         if (passage is { IsLocked: true, NeedsBossKey: true })
         {
             return "The Boss Door. Only the Boss Key opens it: find it somewhere on this floor.";
+        }
+
+        if (passage is { IsLocked: true, NeedsGateKey: true })
+        {
+            return "The keep's gate, barred by an emerald portcullis. Only the Emerald Key opens it: the Emerald Knight carries it.";
         }
 
         if (passage is { IsLocked: true })

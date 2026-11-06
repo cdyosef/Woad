@@ -132,6 +132,7 @@ public partial class MinimapView : Control
                 Color color = room.PassageOn(side) switch
                 {
                     { IsLocked: true, NeedsBossKey: true } => Palette.Heart,
+                    { IsLocked: true, NeedsGateKey: true } => new Color("3fd07a"),
                     { IsLocked: true } => Palette.Loot.Darkened(0.4f),
                     { IsBlocked: true } => Palette.WallTop,
                     _ => Palette.TrimDim,
