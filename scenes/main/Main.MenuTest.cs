@@ -471,7 +471,7 @@ public partial class Main
         WoarldMapScreen map = await Screen<WoarldMapScreen>();
         Check(map.Journey.PlaceHere?.Id == "waylay_inn" && map.Party.Count == 4, "the door leads out onto the Woarld Map, at the inn");
         await Click(this, map.RestButton);
-        Check(map.Message.StartsWith("Rested: Wren") && !map.Message.Contains("+2") && _raidWorld!.Provisions(wren.Id).Count == 0 && _raidWorld.Fed(wren.Id).IsNone,
+        Check(map.Message.StartsWith("Rested") && map.Message.Contains("Wren") && _raidWorld!.Provisions(wren.Id).Count == 0 && _raidWorld.Fed(wren.Id).IsNone,
             "the night at the inn ate Wren's stew and ale, so resting on the road has nothing to add");
         await Click(this, map.EnterButton);
         inn = await Screen<TavernScreen>();

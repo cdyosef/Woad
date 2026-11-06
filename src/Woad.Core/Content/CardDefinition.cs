@@ -250,6 +250,9 @@ public sealed record CardDefinition
     /// <summary>The Holy Key: the only key to a holy lock (the relic chest in the Unhallowed Graves), used up opening it.</summary>
     public bool HolyKey { get; init; }
 
+    /// <summary>A gate's key (the Emerald Key): the only thing that opens a dungeon's gate. It stays in the dungeon.</summary>
+    public bool GateKey { get; init; }
+
     /// <summary>Bandages: carried, one is used up on each Rouse for +1d6 (a 6 rolls another).</summary>
     public bool Bandage { get; init; }
 

@@ -154,7 +154,8 @@ public static class SimpleBot
             }
         }
 
-        if (standingOn == TileKind.Exit && !room.Monsters.Any(monster => monster.Definition.Boss))
+        // Out by the boss's exit (never the gateway it came in by: it's here to clear the dungeon).
+        if (standingOn == TileKind.Exit && !room.Monsters.Any(monster => monster.Definition.Boss) && !(room.Floor == 1 && room.Role == RoomRole.Arrival))
         {
             return new Escape(hero.Id);
         }
@@ -169,7 +170,7 @@ public static class SimpleBot
         Direction? door = fighting ? null : NextDoor(state, room, hero);
         if (door is { } lockedSide && hero.Position == room.DoorTile(lockedSide) && room.PassageOn(lockedSide) is { IsLocked: true } locked)
         {
-            if (locked.NeedsBossKey || hero.Keys > 0)
+            if (locked.NeedsGateKey ? GameSession.HasGateKey(hero) : locked.NeedsBossKey || hero.Keys > 0)
             {
                 return new UnlockDoor(hero.Id, lockedSide);
             }
@@ -534,7 +535,7 @@ public static class SimpleBot
             {
                 // Secret doors and cracked walls are out of the bot's reach; the Boss Door needs the Boss Key.
                 if (room.PassageOn(side) is { } passage
-                    && (passage.IsHidden || passage.IsBlocked || (passage.IsLocked && passage.NeedsBossKey && !hero.HasBossKey)))
+                    && (passage.IsHidden || passage.IsBlocked || (passage.IsLocked && passage.NeedsBossKey && !hero.HasBossKey) || (passage.IsLocked && passage.NeedsGateKey && !GameSession.HasGateKey(hero))))
                 {
                     continue;
                 }

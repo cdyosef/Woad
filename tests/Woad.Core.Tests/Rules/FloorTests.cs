@@ -70,6 +70,28 @@ public class FloorTests
     }
 
     [Fact]
+    public void ThePartyComesInAtTheEntranceGatewayAndCanWalkOutAnyTimeForNoXp()
+    {
+        ContentCatalog content = ContentCatalog.LoadDefault();
+        HeroSetup[] heroes = [new("Ash", GameRules.HeroBaseStats, GameRules.StarterKit), new("Bram", GameRules.HeroBaseStats, GameRules.StarterKit)];
+        var session = new GameSession(content, Woad.Core.Dungeon.DungeonGenerator.CreateRun(content, "emerald_keep", heroes, seed: 5));
+        session.Begin();
+        Hero hero = session.HeroInSeat();
+        Room hall = session.State.RoomOf(hero);
+        List<GridPosition> gateway = [.. hall.TilesOfKind(TileKind.Exit)];
+
+        Assert.Equal(1, hall.Floor);
+        Assert.Equal(4, gateway.Count);
+        Assert.All(session.State.Heroes, other => Assert.Contains(gateway, gate => gate.ChebyshevDistanceTo(other.Position) <= 2));
+
+        hero.Position = gateway[0];
+        IReadOnlyList<GameEvent> events = session.Do(new Escape(hero.Id));
+
+        Assert.Equal(HeroStatus.Escaped, hero.Status);
+        Assert.DoesNotContain(events, gameEvent => gameEvent is XpGained);
+    }
+
+    [Fact]
     public void GoingDownComesOutOfTheStairsUpBelow()
     {
         RoomSetup[] floors =

@@ -131,7 +131,11 @@ public sealed partial class GameSession
             leaving.Status = HeroStatus.Escaped;
             events.Add(new HeroEscaped(leaving.Id, leaving.TreasureValue));
 
-            GrantXp(leaving, GameRules.XpForEscaping, events);
+            // Out by the gateway they came in by, there's no reward for getting away.
+            if (!(room.Floor == 1 && room.Role == RoomRole.Arrival))
+            {
+                GrantXp(leaving, GameRules.XpForEscaping, events);
+            }
         }
 
         EndRunIfOver(events);

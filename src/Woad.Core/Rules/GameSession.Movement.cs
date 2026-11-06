@@ -220,7 +220,8 @@ public sealed partial class GameSession
 
         if (room.PassageOn(command.Door) is { IsLocked: true } locked)
         {
-            return locked.NeedsBossKey
+            return locked.NeedsGateKey ? GateLockedText
+                : locked.NeedsBossKey
                 ? "The Boss Door opens only with the Boss Key."
                 : $"The door is locked: use a key, or pick the lock with Od Hand ({locked.Difficulty}+).";
         }

@@ -343,7 +343,7 @@ public static class CompanionBot
             case CompanionOrder.Burgle:
                 foreach ((Direction side, Passage passage) in room.Passages)
                 {
-                    if (passage is { IsLocked: true, NeedsBossKey: false, IsHidden: false } && hero.Position == room.DoorTile(side) && Unlock(session, hero, room, side) is { } unlock)
+                    if (passage is { IsLocked: true, NeedsSpecialKey: false, IsHidden: false } && hero.Position == room.DoorTile(side) && Unlock(session, hero, room, side) is { } unlock)
                     {
                         return unlock;
                     }
@@ -439,7 +439,7 @@ public static class CompanionBot
         IEnumerable<GridPosition> spots = hero.Order switch
         {
             CompanionOrder.Burgle =>
-                room.Passages.Where(door => door.Value is { IsLocked: true, NeedsBossKey: false, IsHidden: false } && (hero.Keys > 0 || hero.EffectiveStats.OdHandDice > 0))
+                room.Passages.Where(door => door.Value is { IsLocked: true, NeedsSpecialKey: false, IsHidden: false } && (hero.Keys > 0 || hero.EffectiveStats.OdHandDice > 0))
                     .Select(door => room.DoorTile(door.Key))
                     .Concat(room.TilesOfKind(TileKind.Chest).Where(chest => !room.IsChestOpened(chest)).SelectMany(chest => chest.OrthogonalNeighbors()))
                     .Concat(room.Gates.Keys.SelectMany(gate => gate.OrthogonalNeighbors())),
@@ -510,7 +510,7 @@ public static class CompanionBot
             foreach ((Direction side, string nextId) in room.Doors.OrderBy(door => door.Key))
             {
                 bool passable = room.PassageOn(side) is not { IsOpen: false } passage
-                    || (throughLocks && passage is { IsLocked: true, NeedsBossKey: false, IsHidden: false, IsBlocked: false });
+                    || (throughLocks && passage is { IsLocked: true, NeedsSpecialKey: false, IsHidden: false, IsBlocked: false });
                 if (passable && firstStep.TryAdd(nextId, firstStep[room.Id] ?? side))
                 {
                     frontier.Enqueue(state.Rooms[nextId]);

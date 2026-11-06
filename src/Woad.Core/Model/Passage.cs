@@ -17,6 +17,9 @@ public enum PassageKind
 
     /// <summary>A cracked wall in the doorway until a bomb's blast breaks it open.</summary>
     Cracked,
+
+    /// <summary>A dungeon's gate (the Emerald Keep's): only its key opens it, and it can't be picked.</summary>
+    Gate,
 }
 
 /// <summary>
@@ -34,7 +37,7 @@ public sealed class Passage
         Kind = kind;
         Difficulty = difficulty;
         Trap = trap;
-        IsLocked = kind is PassageKind.Locked or PassageKind.BossLocked;
+        IsLocked = kind is PassageKind.Locked or PassageKind.BossLocked or PassageKind.Gate;
         IsHidden = kind == PassageKind.Secret;
         IsBlocked = kind == PassageKind.Cracked;
     }
@@ -55,6 +58,12 @@ public sealed class Passage
     public bool IsLocked { get; internal set; }
 
     public bool NeedsBossKey => Kind == PassageKind.BossLocked;
+
+    /// <summary>A gate: only its key (a card) opens it.</summary>
+    public bool NeedsGateKey => Kind == PassageKind.Gate;
+
+    /// <summary>Locked so only a special key opens it (the Boss Key, a gate's key): no small key, no picking.</summary>
+    public bool NeedsSpecialKey => NeedsBossKey || NeedsGateKey;
 
     /// <summary>A secret door nobody has found yet: it doesn't show and can't be used.</summary>
     public bool IsHidden { get; internal set; }

@@ -1002,6 +1002,11 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   it as the hole was across its own room. A floor's Arrival
   room is under the stairs that lead to it. Above the last floor, rooms with nothing underneath get
   layouts without pits. A few extra doors between neighboring rooms add loops.
+- **The entrance:** floor 1's Arrival room is the **entrance hall**, a big room (13 by 11) with a
+  **gateway** four tiles wide in an outer wall (one with no door, south where it can be). The party comes
+  in from the Woarld Map there, starting in two rows just inside it, and can walk back out through it at
+  any time: stand in the gateway and click it (no XP for getting away that way, as there is by the
+  boss's exit).
 - **Room roles:** the walk's first room is the Arrival room, which has no monsters. The room farthest
   from it holds the Stairs down (floors 1–2) or the Boss and Exit (floor 3), behind the Boss Door. A dead
   end becomes the Treasure room (chests, one guard), on floor 3 another becomes the Vault (the Boss Key's

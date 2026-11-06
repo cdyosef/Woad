@@ -4,6 +4,7 @@
   "description": "Three floors of slimes, bats and thieves under a mossy keep. The Iron Warden guards the deepest hall.",
   "floors": 3,
   "boss": "iron_warden",
+  "gate": { "knight": "emerald_knight", "guard": "emerald_guard" },
   "miniboss": "key_warden",
 
   "roster": [

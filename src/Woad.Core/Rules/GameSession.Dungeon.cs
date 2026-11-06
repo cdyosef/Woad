@@ -14,6 +14,12 @@ namespace Woad.Core.Rules;
 /// </summary>
 public sealed partial class GameSession
 {
+    /// <summary>What a gate says to someone without its key.</summary>
+    public const string GateLockedText = "The gate is locked fast: only its key opens it. Its guardian carries it.";
+
+    /// <summary>Whether a hero holds a gate's key (the Emerald Key).</summary>
+    public static bool HasGateKey(Hero hero) => hero.AllCards.Any(card => card.Definition.GateKey);
+
     private string? Handle(UnlockDoor command, List<GameEvent> events)
     {
         Hero hero = ActiveHero;
@@ -33,7 +39,14 @@ public sealed partial class GameSession
             return "That door isn't locked.";
         }
 
-        if (passage.NeedsBossKey)
+        if (passage.NeedsGateKey)
+        {
+            if (!HasGateKey(hero))
+            {
+                return GateLockedText;
+            }
+        }
+        else if (passage.NeedsBossKey)
         {
             if (!hero.HasBossKey)
             {
