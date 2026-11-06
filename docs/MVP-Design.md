@@ -1032,6 +1032,12 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   on the last solid ground); and **Emerald Charge**: with no Bull Rush skill or Wend die, the Bull Rush
   card charges for a banked Power Die instead. A dungeon's unique is won **once a raid**: once someone gets
   out with it, the Baron drops the **Baron's Strongbox** (worth 120 gold) in its place for the rest of the raid.
+- **Portals:** every dungeon has three, rings of standing stone: one in the entrance, one in floor 1's
+  stairs room and one in the last floor's boss room (near its door, away from the boss). Each starts
+  **dark**. A hero beside one can **light** it, free, by channeling a Magic Die or a banked Power Die into
+  it; it stays lit. From beside a lit portal a hero steps through, free, to any **other lit portal**, coming
+  out beside it (reaching a deeper floor that way counts as reaching it). A portal blocks movement but not
+  sight. Click a portal to walk up to it, then click it again: dark, it asks which die; lit, where to.
 - **Room roles:** the walk's first room is the Arrival room, which has no monsters. The room farthest
   from it holds the Stairs down (floors 1–2) or the Boss and Exit (floor 3), behind the Boss Door. A dead
   end becomes the Treasure room (chests, one guard), on floor 3 another becomes the Vault (the Boss Key's

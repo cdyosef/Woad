@@ -119,6 +119,7 @@ public static partial class DungeonGenerator
             }
         }
 
+        PlacePortals(rooms, theme.Floors);
         if (theme.Tower)
         {
             BuildTower(theme, content, layouts, heroes, seed, rooms, passages);

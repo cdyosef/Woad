@@ -60,6 +60,8 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         MagicCharged { Faces: var faces } charged when faces.Contains(6) =>
             $"{nameOf(charged.HeroId)}'s Magic stirs ({string.Join(", ", faces)}): {charged.Charged} of {charged.Slots} Magic Energy charged.",
         MagicCharged charged => $"{nameOf(charged.HeroId)}'s Magic stirs ({string.Join(", ", charged.Faces)}): no 6.",
+        PortalLit lit => $"{nameOf(lit.HeroId)} channels a die into the portal: it flares green, and links to the other lit portals.",
+        PortalTaken taken => $"{nameOf(taken.HeroId)} steps through the portal.",
         AllyPickedUp picked => $"{nameOf(picked.HeroId)} picks up {nameOf(picked.AllyId)} to carry them.",
         AllySetDown set => $"{nameOf(set.HeroId)} sets {nameOf(set.AllyId)} down.",
         MagicDiceSpent spent => $"{nameOf(spent.HeroId)} spends {(spent.Count == 1 ? "a Magic Die" : $"{spent.Count} Magic Dice")}.",

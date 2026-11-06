@@ -184,6 +184,12 @@ public sealed record PickUpAlly(int HeroId, int AllyId) : GameCommand(HeroId);
 /// <summary>Set down the ally you carry, beside you. Free.</summary>
 public sealed record PutDownAlly(int HeroId) : GameCommand(HeroId);
 
+/// <summary>Light the portal beside you: channel a Magic Die into it, or else a banked Power Die. Free.</summary>
+public sealed record LightPortal(int HeroId, bool Magic = false) : GameCommand(HeroId);
+
+/// <summary>Step through the lit portal beside you to another lit portal (in <paramref name="ToRoomId"/>). Free.</summary>
+public sealed record TakePortal(int HeroId, string ToRoomId) : GameCommand(HeroId);
+
 /// <summary>Retreat from a fight out on the Woarld Map: an Od Hand roll against the monsters' chase.</summary>
 public sealed record Retreat(int HeroId, int? Dice = null, bool UseTools = false, int PowerDice = 0)
     : OdHandCommand(HeroId, Dice, UseTools, PowerDice);

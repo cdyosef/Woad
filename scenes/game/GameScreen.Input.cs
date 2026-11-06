@@ -478,7 +478,7 @@ public partial class GameScreen
         {
             Execute(new SmashPot(hero.Id, tile));
         }
-        else if (tile != hero.Position && (DoorAt(room, tile) is not null || room.Layout[tile] is TileKind.StairsDown or TileKind.StairsUp))
+        else if (tile != hero.Position && (DoorAt(room, tile) is not null || room.Layout[tile] is TileKind.StairsDown or TileKind.StairsUp or TileKind.Portal))
         {
             ApproachPassage(hero, room, tile, turn);
         }
@@ -735,7 +735,11 @@ public partial class GameScreen
     {
         if (hero.Position.ChebyshevDistanceTo(tile) <= 1)
         {
-            if (DoorAt(room, tile) is { } side)
+            if (room.Layout[tile] == TileKind.Portal)
+            {
+                UsePortal(hero, room);
+            }
+            else if (DoorAt(room, tile) is { } side)
             {
                 if (_session.State.ActiveHeroesIn(room).FirstOrDefault(other => other != hero && other.Position == tile) is { } blocker)
                 {
@@ -770,6 +774,58 @@ public partial class GameScreen
             Log(turn.MovementPoints == 0 && _session.MoveDiceLeft > 0 ? "Roll to move first." : "Out of reach this turn: click somewhere closer.", Palette.TextDim);
         }
     }
+
+    /// <summary>
+    /// The portal beside you: dark, channel a Magic Die or a banked Power Die into it to light it; lit, step
+    /// through to another lit portal (asked which, when there's more than one).
+    /// </summary>
+    private void UsePortal(Hero hero, Room room)
+    {
+        if (!room.PortalLit)
+        {
+            List<(string Text, Action Then)> dice = [];
+            if (_session.CheckLightPortal(magic: true) is null)
+            {
+                dice.Add(("Magic Die", () => Execute(new LightPortal(hero.Id, Magic: true))));
+            }
+
+            if (_session.CheckLightPortal(magic: false) is null)
+            {
+                dice.Add(("Power Die", () => Execute(new LightPortal(hero.Id))));
+            }
+
+            if (dice.Count == 0)
+            {
+                Log(_session.CheckLightPortal(magic: false) ?? "", Palette.TextDim);
+                return;
+            }
+
+            _selectedCardId = _targetId = null;
+            RefreshPanels();
+            _inventory.AskChoice(null, "Channel a die into the portal to light it?", [.. dice, ("Not now", () => { })]);
+            return;
+        }
+
+        IReadOnlyList<Room> destinations = _session.GetPortalDestinations();
+        if (destinations.Count == 0)
+        {
+            Log(_session.CheckTakePortal(null) ?? "", Palette.TextDim);
+            return;
+        }
+
+        _selectedCardId = _targetId = null;
+        RefreshPanels();
+        _inventory.AskChoice(null, "Step through the portal to...",
+            [.. destinations.Select(target => ($"{Capital(PortalName(target))}", (Action)(() => Execute(new TakePortal(hero.Id, target.Id))))), ("Stay", () => { })]);
+    }
+
+    /// <summary>Where a portal stands, to say: "the entrance", "the stairs on floor 1", "the boss's lair on floor 3".</summary>
+    internal static string PortalName(Room room) => room.Role switch
+    {
+        RoomRole.Arrival when room.Floor == 1 && room.Level == 0 => "the entrance",
+        RoomRole.Boss => $"the boss's lair, {room.PlaceName}",
+        _ => $"the stairs, {room.PlaceName}",
+    };
 
     /// <summary>The door whose doorway is this tile, unless it's a secret door nobody has found.</summary>
     private static Direction? DoorAt(Room room, GridPosition tile) =>
@@ -1003,6 +1059,8 @@ public partial class GameScreen
             TileKind.Pit => "A bottomless pit. Fall in and you lose a heart climbing out; a monster shoved in is gone. Leap over it with a Wend die.",
             TileKind.StairsDown => $"Stairs down to {(room.StairsDownTo is { } down ? _session.State.Rooms[down].PlaceName : $"floor {room.Floor + 1}")}. Click to walk up to them, then click them to go down (free).",
             TileKind.StairsUp => $"Stairs up to {(room.StairsUpTo is { } up ? _session.State.Rooms[up].PlaceName : $"floor {room.Floor - 1}")}. Click to walk up to them, then click them to climb (free).",
+            TileKind.Portal when room.PortalLit => "A lit portal. Click it to walk up to it, then click it to step through to another lit portal (free).",
+            TileKind.Portal => "A dark portal. Beside it, click it to channel a Magic Die or a banked Power Die into it and light it: lit portals link up.",
             TileKind.Rubble => "Rough ground: rubble. Each step onto it costs 2.",
             TileKind.Gate => $"A locked gate. Next to it: click it to open it with a key, or to pick the lock with Od Hand ({room.Gates.GetValueOrDefault(tile)}+).",
             _ when room.Breaches.ContainsKey(tile) => "A breach into the room next door: stand here and click again to go through (1 step).",

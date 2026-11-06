@@ -83,12 +83,13 @@ public sealed class RoomTemplate
                 ',' => TileKind.ShallowWater,
                 '=' or '%' => TileKind.DeepWater,
                 '*' => TileKind.Exit,
+                '@' => TileKind.Portal,
                 _ => TileKind.Floor,
             };
 
             switch (glyph)
             {
-                case '_' or '.' or '#' or 'X' or '~' or 'C' or 'P' or '>' or '<' or '*' or ':' or ',' or '=' or '^':
+                case '_' or '.' or '#' or 'X' or '~' or 'C' or 'P' or '>' or '<' or '*' or ':' or ',' or '=' or '^' or '@':
                     break;
                 case >= '1' and <= '4':
                     heroStarts[glyph - '1'] = position;

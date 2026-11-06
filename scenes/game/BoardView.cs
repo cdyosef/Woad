@@ -178,7 +178,7 @@ public partial class BoardView : Control
     public override void _Process(double delta)
     {
         // Lit fuses spark; the ritual circle and the portal swirl.
-        if (_room?.Bombs.Any(bomb => bomb.Lit) == true || _room?.Flames.Count > 0 || _room?.LitBraziers.Count > 0 || (_room?.RitualCircle is not null && (RitualUnderWay || _room.Cursed)))
+        if (_room?.Bombs.Any(bomb => bomb.Lit) == true || _room?.Flames.Count > 0 || _room?.LitBraziers.Count > 0 || _room?.PortalLit == true || (_room?.RitualCircle is not null && (RitualUnderWay || _room.Cursed)))
         {
             QueueRedraw();
         }
@@ -759,6 +759,11 @@ public partial class BoardView : Control
             DrawBrazier(brazier, _room.LitBraziers.Contains(brazier));
         }
 
+        foreach (GridPosition portal in _room.TilesOfKind(TileKind.Portal))
+        {
+            DrawPortal(portal, _room.PortalLit);
+        }
+
         foreach ((GridPosition tile, Trap trap) in _room.Traps)
         {
             if (trap.Revealed)
@@ -1130,6 +1135,40 @@ public partial class BoardView : Control
     }
 
     /// <summary>A brazier: a bowl of coals on three legs; lit, flames leap from it and it glows.</summary>
+    /// <summary>A portal: a ring of standing stone, dark, or lit with a swirl of green light.</summary>
+    private void DrawPortal(GridPosition tile, bool lit)
+    {
+        Rect2 rect = TileRect(tile);
+        Vector2 center = rect.GetCenter();
+        float time = Time.GetTicksMsec() / 1000f;
+        DrawCircle(center + new Vector2(0, 2), 14, Palette.Ink with { A = 0.35f }, antialiased: true);
+        if (lit)
+        {
+            DrawCircle(center, 12 + Mathf.Sin(time * 3) * 1.2f, PortalGlow with { A = 0.35f }, antialiased: true);
+            DrawCircle(center, 9, PortalGlow with { A = 0.75f }, antialiased: true);
+            for (int arm = 0; arm < 3; arm++)
+            {
+                float start = time * 2.5f + arm * Mathf.Tau / 3;
+                DrawArc(center, 6, start, start + 2.2f, 10, PortalCore, 2, antialiased: true);
+            }
+        }
+        else
+        {
+            DrawCircle(center, 10, Palette.Pit, antialiased: true);
+        }
+
+        DrawArc(center, 12, 0, Mathf.Tau, 28, Palette.Wall, 5, antialiased: true);
+        DrawArc(center, 12, 0, Mathf.Tau, 28, lit ? PortalCore : Palette.WallTop, 1.5f, antialiased: true);
+        for (int stone = 0; stone < 6; stone++)
+        {
+            float angle = stone * Mathf.Tau / 6 - Mathf.Pi / 2;
+            DrawCircle(center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * 12, 2.2f, lit ? PortalGlow : Palette.TextDim, antialiased: true);
+        }
+    }
+
+    private static readonly Color PortalGlow = new("3fd98a");
+    private static readonly Color PortalCore = new("d8ffe9");
+
     private void DrawBrazier(GridPosition tile, bool lit)
     {
         Rect2 rect = TileRect(tile);

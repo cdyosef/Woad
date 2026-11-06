@@ -38,6 +38,11 @@ public partial class Main
                 GetViewport().GetTexture().GetImage().SavePng($"{shots}/keep_courtyard.png");
             }
 
+            var portals = new GameScreen { Setup = DemoRun.Portals(11), Content = _content };
+            Show(portals);
+            await portals.WaitUntilIdle();
+            await portals.CheckPortals();
+
             // The roof, from the start: open stone, the crenellated edge, the stairs down in the middle.
             if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } roofShots)
             {

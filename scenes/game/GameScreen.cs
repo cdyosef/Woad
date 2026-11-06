@@ -758,8 +758,13 @@ public partial class GameScreen : Control
 
                 break;
 
-            case IceMelted or BrazierLit:
+            case IceMelted or BrazierLit or PortalLit:
                 _board.QueueRedraw();
+                break;
+
+            case PortalTaken stepped:
+                await ChangeRoom(stepped.HeroId, stepped.RoomId, stepped.Position);
+                await _banner.Flash($"Through the portal: {PortalName(_session.State.Rooms[stepped.RoomId])}", Palette.Heal, 0.5);
                 break;
 
             case Slid slid:
@@ -1447,6 +1452,12 @@ public partial class GameScreen : Control
                 break;
             case HeroDescended or HeroAscended:
                 Sfx.Play("stairs");
+                break;
+            case PortalLit:
+                Sfx.Play("heal", 0.8f);
+                break;
+            case PortalTaken:
+                Sfx.Play("heal", 1.3f);
                 break;
             case HeroKeeledOver:
                 Sfx.Play("downed");

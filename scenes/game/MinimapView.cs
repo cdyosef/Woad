@@ -77,6 +77,7 @@ public partial class MinimapView : Control
             Color color = room.Layout[tile] switch
             {
                 TileKind.Exit => Palette.Heal,
+                TileKind.Portal => Palette.Heal,
                 TileKind.CrackedWall => Palette.Loot,
                 TileKind.Wall or TileKind.Rock => Palette.WallTop,
                 TileKind.Chest => Palette.TextDim,

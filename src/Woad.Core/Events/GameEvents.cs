@@ -75,6 +75,12 @@ public sealed record PowerDiceBanked(int OwnerId, int Count, int Banked) : GameE
 /// <summary>Banked Power Dice were rolled into an attack, move or defense; the bank now holds <paramref name="Banked"/>.</summary>
 public sealed record PowerDiceSpent(int OwnerId, int Count, int Banked) : GameEvent;
 
+/// <summary>A hero channeled a die into a portal: it's lit, and links to the other lit portals.</summary>
+public sealed record PortalLit(int HeroId, string RoomId) : GameEvent;
+
+/// <summary>A hero stepped through a portal, out beside the one in <paramref name="RoomId"/>.</summary>
+public sealed record PortalTaken(int HeroId, string FromRoomId, string RoomId, GridPosition Position) : GameEvent;
+
 /// <summary>A hero picked up an ally Keeling Over, to carry them.</summary>
 public sealed record AllyPickedUp(int HeroId, int AllyId) : GameEvent;
 

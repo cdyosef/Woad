@@ -159,6 +159,8 @@ public sealed partial class GameSession
             MoveOn c => Handle(c, events),
             NudgeAlly c => Handle(c, events),
             PickUpAlly c => Handle(c, events),
+            LightPortal c => Handle(c, events),
+            TakePortal c => Handle(c, events),
             PutDownAlly c => Handle(c, events),
             SpendPoint c => Handle(c, events),
             SetCompanionPolicy c => Handle(c, events),

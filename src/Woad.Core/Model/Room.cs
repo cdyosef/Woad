@@ -70,6 +70,9 @@ public sealed class Room
     /// <summary>How high it is: floor 1 is 0, each floor below one less, each tower level one more.</summary>
     public int Storey => Level > 0 ? Level : 1 - Floor;
 
+    /// <summary>Its portal (if it has one) is lit: it links to every other lit portal.</summary>
+    public bool PortalLit { get; internal set; }
+
     /// <summary>Where its stairs up lead, where they aren't simply back up a floor (a tower's).</summary>
     public string? StairsUpTo { get; init; }
 
