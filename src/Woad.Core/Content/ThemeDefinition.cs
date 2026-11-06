@@ -96,6 +96,12 @@ public enum RoomRole
     /// the middle, and a grand chest beyond (see <see cref="ThemeDefinition.Den"/>).
     /// </summary>
     Den,
+
+    /// <summary>
+    /// A gated dungeon's entrance hall (the Emerald Keep's): the first room inside its great door, off the
+    /// courtyard. No monsters; its portal is the entrance's.
+    /// </summary>
+    Hall,
 }
 
 /// <summary>One floor always has a den: a big monster on a platform ringed by pits, guarding a grand chest.</summary>

@@ -249,7 +249,7 @@ public sealed partial class GameSession
             events.Add(new PoisonRolled(monster.Id, face, hurt, monster.Conditions[Condition.Poison]));
             if (hurt)
             {
-                monster.Hearts = Math.Max(0, monster.Hearts - 1);
+                Wound(monster, AfflictorOf(monster), 1);
                 events.Add(new Damaged(monster.Id, 1, monster.Hearts));
                 if (monster.Hearts == 0)
                 {

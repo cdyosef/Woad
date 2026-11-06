@@ -154,7 +154,8 @@ public class DungeonSecretsTests
 
         events = session.Do(new PickLock(hero.Id, hero.Position, Dice: 1));
 
-        Assert.Equal(new DoorUnlocked(hero.Id, "A", Direction.East, Picked: true, BossDoor: false), events[^1]);
+        Assert.Equal(new DoorUnlocked(hero.Id, "A", Direction.East, Picked: true, BossDoor: false), events.SingleOf<DoorUnlocked>());
+        Assert.Equal((GameRules.PickLockXp, 1), (events.SingleOf<XpGained>().Amount, hero.DoorsUnlocked));
         Assert.Equal(0, session.OdHandDiceLeft);
         Assert.False(session.State.Turn!.HasActed);
     }
@@ -185,7 +186,9 @@ public class DungeonSecretsTests
         hero.HasBossKey = true;
         IReadOnlyList<GameEvent> events = session.Do(new UnlockDoor(hero.Id, Direction.East));
 
-        Assert.Equal(new DoorUnlocked(hero.Id, "A", Direction.East, Picked: false, BossDoor: true), Assert.Single(events));
+        Assert.Equal(new DoorUnlocked(hero.Id, "A", Direction.East, Picked: false, BossDoor: true), events.SingleOf<DoorUnlocked>());
+        // The Boss Key is a key used.
+        Assert.Equal((GameRules.KeyXp, 1, 1), (events.SingleOf<XpGained>().Amount, hero.KeysUsed, hero.DoorsUnlocked));
         Assert.False(hero.HasBossKey);
         Assert.Equal(3, hero.Keys);
     }
@@ -320,7 +323,8 @@ public class DungeonSecretsTests
         session.Do(new Search(hero.Id, Dice: 1));
         IReadOnlyList<GameEvent> events = session.Do(new Disarm(hero.Id, new GridPosition(4, 3)));
 
-        Assert.Equal(new TrapDisarmed(hero.Id, new GridPosition(4, 3)), events[^1]);
+        Assert.Equal(new TrapDisarmed(hero.Id, new GridPosition(4, 3)), events.SingleOf<TrapDisarmed>());
+        Assert.Equal(GameRules.DisarmXp, events.SingleOf<XpGained>().Amount);
         Assert.Null(session.RoomById().TrapAt(new GridPosition(4, 3)));
     }
 
@@ -358,7 +362,9 @@ public class DungeonSecretsTests
         Hero hero = session.HeroInSeat();
         Assert.Contains("isn't locked", session.CheckPickLock(new GridPosition(3, 4)));
 
-        Assert.Equal(new ChestUnlocked(hero.Id, new GridPosition(4, 3), Picked: true), session.Do(new PickLock(hero.Id, new GridPosition(4, 3)))[^1]);
+        IReadOnlyList<GameEvent> picked = session.Do(new PickLock(hero.Id, new GridPosition(4, 3)));
+        Assert.Equal(new ChestUnlocked(hero.Id, new GridPosition(4, 3), Picked: true), picked.SingleOf<ChestUnlocked>());
+        Assert.Equal(GameRules.PickLockXp, picked.SingleOf<XpGained>().Amount);
         Assert.False(session.RoomById().IsChestOpened(new GridPosition(4, 3)));
 
         IReadOnlyList<GameEvent> events = session.Do(new OpenChest(hero.Id, new GridPosition(4, 3)));

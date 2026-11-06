@@ -213,11 +213,12 @@ public static partial class DungeonGenerator
         // seal off a corner between them.
         var walled = rooms.ToDictionary(room => room.Id, room => room.Template);
         // The boss room and a den keep their one way in.
-        foreach (RoomSetup room in rooms.Where(room => room.Role is not (RoomRole.Boss or RoomRole.Den)))
+        // Nor does the courtyard break through the keep's wall.
+        foreach (RoomSetup room in rooms.Where(room => room.Role is not (RoomRole.Boss or RoomRole.Den) && room.Id != KeepCourtyard.Id))
         {
             foreach (Direction side in new[] { Direction.East, Direction.South })
             {
-                RoomSetup? neighbor = rooms.FirstOrDefault(other => other.Floor == room.Floor && other.MapPosition == room.MapPosition.Step(side) && other.Role is not (RoomRole.Boss or RoomRole.Den));
+                RoomSetup? neighbor = rooms.FirstOrDefault(other => other.Floor == room.Floor && other.MapPosition == room.MapPosition.Step(side) && other.Role is not (RoomRole.Boss or RoomRole.Den) && other.Id != KeepCourtyard.Id);
                 if (neighbor is null || random.NextInt(0, 100) >= BreachChance)
                 {
                     continue;

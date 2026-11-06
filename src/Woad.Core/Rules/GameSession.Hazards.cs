@@ -568,7 +568,7 @@ public sealed partial class GameSession
         if (below is null || LandingNear(below, Beneath(room, hole, below)) is not { } landing)
         {
             monster.Position = edge;
-            monster.Hearts = 0;
+            Wound(monster, pusher, monster.Hearts);
             DefeatMonster(pusher, room, monster, DamageSource.Fall, events);
             return;
         }
@@ -584,7 +584,7 @@ public sealed partial class GameSession
     /// <summary>A fall or a trap costs a monster a heart; bones broken this way stay down.</summary>
     private void HurtMonster(Hero? pusher, Room room, Monster monster, List<GameEvent> events)
     {
-        monster.Hearts = Math.Max(0, monster.Hearts - GameRules.FallDamage);
+        Wound(monster, pusher, GameRules.FallDamage);
         events.Add(new Damaged(monster.Id, GameRules.FallDamage, monster.Hearts));
         if (monster.Hearts == 0)
         {

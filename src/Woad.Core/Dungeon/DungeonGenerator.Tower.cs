@@ -72,13 +72,13 @@ public static partial class DungeonGenerator
 
     /// <summary>
     /// Where the stairs up go in a floor-1 room: open floor near the middle that can be walked to from its
-    /// doors (not behind a dividing wall), clear of the doorways.
+    /// doors (not behind a dividing wall), clear of the doorways and of whatever's already there (a trap, a chest).
     /// </summary>
     private static GridPosition ReachableStairsSpot(RoomSetup room)
     {
         RoomTemplate template = room.Template;
         IReadOnlyDictionary<Direction, GridPosition> doors = room.DoorTiles ?? new Dictionary<Direction, GridPosition>();
-        HashSet<GridPosition> reserved = [.. DoorAreas(template, doors), .. template.SpawnPoints];
+        HashSet<GridPosition> reserved = [.. DoorAreas(template, doors), .. template.SpawnPoints, .. FixedTiles(template, room.Features ?? new RoomFeatures())];
         bool Open(GridPosition tile) => template.Layout.Contains(tile) && template.Layout[tile].IsWalkable();
         GridPosition from = doors.Values.Select(door => (GridPosition?)door).FirstOrDefault() ?? template.Layout.Center;
         IReadOnlyCollection<GridPosition> reached = PathSearch.Run(from, Open).Distances.Keys.ToList();

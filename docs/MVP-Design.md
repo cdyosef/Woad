@@ -1011,12 +1011,17 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   in from the Woarld Map there, starting in two rows just inside it, and can walk back out through it at
   any time: stand in the gateway and click it (no XP for getting away that way, as there is by the
   boss's exit).
-- **The Emerald Keep's gate:** its entrance is a **courtyard** (15 by 13) outside the keep: a **moat** (two
-  rows of deep water) across it, two steps in from the gateway, with a **bridge** as wide as the gateway.
-  Across it the **Emerald Knight** (6 hearts, 2 dice and weapon 2, defense 2 and armor 2; a miniboss) holds
-  the gate with **Emerald Guards** (green, spears reaching 2 in a line), two for every three heroes, rounded
-  up. Every door out of the courtyard is the **gate**, a green-iron portcullis: only the **Emerald Key**
-  opens it (no small key, no picking), and the knight carries it. The key stays in the keep when you leave.
+- **The Emerald Keep's gate:** its entrance is a **courtyard** outside the keep, the same every time (21 by
+  13): the foot of the keep's front wall along its top edge (the wall drawn rising above it, with towers,
+  battlements, banners and arched windows; the view pans up to see it), and in the middle the **great door**.
+  Before the wall, a stone apron; then the **moat**, two rows of deep water right across, with a **drawbridge**
+  four wide; then grass, trees and a dirt road down to the way out, four wide, at the bottom edge. On the
+  apron the **Emerald Knight** (6 hearts, 2 dice and weapon 2, defense 2 and armor 2; a miniboss) holds the
+  door with **Emerald Guards** (green, spears reaching 2 in a line), two for every three heroes, rounded up.
+  The great door is the **gate**: only the **Emerald Key** opens it (no small key, no picking), and the knight
+  carries it. Shut, it's iron-bound oak with an emerald; open, it stands back on the dark. It leads into the
+  **entrance hall**, the first room inside the keep (no monsters; the entrance's portal is here), and the
+  rest of floor 1 opens out from there. The key stays in the keep when you leave.
 - **The Emerald Keep's tower:** stairs up from an ordinary room on floor 1 climb to **Level 1**, a floor of
   rooms like those below (the room farthest from its arrival has the stairs on up), then **Level 2**, then
   **the Roof** (Level 3): one great open room, 31 by 31, its stairs down in the middle and its edge
@@ -1036,7 +1041,7 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   on the last solid ground); and **Emerald Charge**: with no Bull Rush skill or Wend die, the Bull Rush
   card charges for a banked Power Die instead. A dungeon's unique is won **once a raid**: once someone gets
   out with it, the Baron drops the **Baron's Strongbox** (worth 120 gold) in its place for the rest of the raid.
-- **Portals:** every dungeon has three, rings of standing stone: one in the entrance, one in floor 1's
+- **Portals:** every dungeon has three, rings of standing stone: one in the entrance (the Emerald Keep's entrance hall), one in floor 1's
   stairs room and one in the last floor's boss room (near its door, away from the boss). Each starts
   **dark**. A hero beside one can **light** it, free, by channeling a Magic Die or a banked Power Die into
   it; it stays lit. From beside a lit portal a hero steps through, free, to any **other lit portal**, coming
@@ -1113,10 +1118,21 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   someone who dies drops theirs on their tombstone, and companions left behind lose them. Handing coins
   to an ally goes in whole gold; handing over all of it takes the change too. Saves from before silver
   and copper read their gold as copper, 100 to the gold.
-- **XP** *(tunable)*: each monster's XP goes to whoever defeats it (slime 2, guards 4, skeleton 5, Iron
-  Warden 25). Reaching a floor for the first time gives 5, and escaping gives 10. The first Search in
-  each room is worth 1 (an **Explorer bonus**), and on a dungeon run someone escapes from, whoever has the
-  most Explorer bonuses takes the **Explorer Award**, 5 more, shown on the results screen (shared on a tie).
+- **XP** *(tunable)*: each monster's XP (slime 2, guards 4, skeleton 5, Iron Warden 25) is **shared by the
+  damage done to it**: each hero who took hearts off it gets their share of its XP (overkill doesn't count),
+  the odd points to whoever did the most. Only those still in the run share: Keeling Over will do, but a
+  dead hero's share goes to the rest. The **killing blow** earns 2 more, or a quarter of the monster's XP if
+  that's more (rounded up); a monster killed without a scratch (shoved into the dark) is all the killer's.
+  Disarming a trap is worth 3, picking a lock (a door, a gate or a chest) 3, and using a key 2 (a small key,
+  the Boss Key, a gate's key). Reaching a floor for the first time gives 5, and escaping gives 10. The first
+  Search in each room is worth 1 (an **Explorer bonus**), and on a dungeon run someone escapes from, whoever
+  has the most Explorer bonuses takes the **Explorer Award**, 5 more (shared on a tie).
+- **End-of-run awards:** on a **completed** run (the dungeon's boss beaten, and someone got out), whoever
+  did the most of each wins an award, worth 5 XP for every floor of the dungeon (15 in a three-floor one):
+  **Keymaster** (keys used), **Lockbreaker** (doors and gates unlocked, by key or by picking), **Trapsmith**
+  (traps disarmed), **Slayer** (kills) and **Heavy Hitter** (damage done); and **"Check for what?!"** (traps
+  set off), worth half. Anyone in the party can win, the dead too; a tie shares it. The results screen
+  shows each hero's awards (hover for their XP).
 - **Keeling Over:** a hero or companion reduced to 0 hearts falls where they stand (X's for eyes) and
   is **Keeling Over**. They keep everything they carry and still take their turns, but all they can do
   is roll the **Keel Die** (the End turn button becomes **Roll Keel Die**):

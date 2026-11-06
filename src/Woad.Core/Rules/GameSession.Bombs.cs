@@ -253,7 +253,7 @@ public sealed partial class GameSession
         DiceRoll defense = RollDefense(monster.Id, monster.Power, collapsed ? 0 : DefenseDiceOf(monster), armor, blast.Total, canSpend: !collapsed, events);
         int hits = Hits(blast, defense.Total + armor);
         events.Add(new BlastHit(monster.Id, hits));
-        monster.Hearts = Math.Max(0, monster.Hearts - (hits > 0 ? GameRules.DamagePerHit : 0));
+        Wound(monster, credit, hits > 0 ? GameRules.DamagePerHit : 0);
         events.Add(new Damaged(monster.Id, hits > 0 ? GameRules.DamagePerHit : 0, monster.Hearts));
         if (hits > 0 && monster.Hearts == 0)
         {

@@ -51,11 +51,11 @@ public static partial class DungeonGenerator
         IReadOnlyList<ThemeRoom> layouts = content.RoomsFor(themeId);
         foreach (RoomRole role in Enum.GetValues<RoomRole>())
         {
-            // Secret rooms borrow treasure layouts.
+            // Secret rooms borrow treasure layouts; dens and entrance halls are built.
             bool needed = role switch
             {
                 RoomRole.Stairs => theme.Floors > 1,
-                RoomRole.Secret or RoomRole.Den => false,
+                RoomRole.Secret or RoomRole.Den or RoomRole.Hall => false,
                 _ => true,
             };
             if (needed && !layouts.Any(layout => layout.Roles.Contains(role)))
@@ -77,12 +77,14 @@ public static partial class DungeonGenerator
         var plans = new List<FloorPlan>();
         for (int floor = 1; floor <= theme.Floors; floor++)
         {
-            plans.Add(PlanFloor(floor, floor == theme.Floors, plans.Count > 0 ? plans[^1].Farthest : null, random, passages));
+            plans.Add(PlanFloor(floor, floor == theme.Floors, plans.Count > 0 ? plans[^1].Farthest : null, random, passages, courtyard: floor == 1 && theme.Gate is not null));
         }
 
+        // A gated dungeon's courtyard lies outside, just south of its entrance hall.
+        GridPosition? courtyardCell = theme.Gate is null ? null : plans[0].Cells[0].Step(Direction.South);
         if (theme.Den is { } den)
         {
-            PlanDen(plans, den.Floor, random);
+            PlanDen(plans, den.Floor, random, courtyardCell);
         }
 
         foreach (FloorPlan plan in plans)
@@ -95,28 +97,11 @@ public static partial class DungeonGenerator
 
         if (theme.Gate is { } gate)
         {
-            int at = rooms.FindIndex(room => room.Floor == 1 && room.Role == RoomRole.Arrival);
-            RoomSetup courtyard = rooms[at];
-            rooms[at] = courtyard with { Template = GuardTheGate(courtyard.Template, gate, heroes.Count, content) };
-
-            // Each door out of the courtyard is the gate (a secret room's hidden way in stays hidden).
-            foreach ((Direction side, string neighbor) in courtyard.Doors)
-            {
-                if (rooms.First(room => room.Id == neighbor).Role is RoomRole.Secret or RoomRole.Den)
-                {
-                    continue;
-                }
-
-                int existing = passages.FindIndex(passage => (passage.RoomId == courtyard.Id && passage.Side == side) || (passage.RoomId == neighbor && passage.Side == side.Opposite()));
-                if (existing < 0)
-                {
-                    passages.Add(new PassageSetup(courtyard.Id, side, PassageKind.Gate));
-                }
-                else if (passages[existing].Kind is not (PassageKind.Secret or PassageKind.Cracked))
-                {
-                    passages[existing] = passages[existing] with { Kind = PassageKind.Gate, Difficulty = 0, Trap = null };
-                }
-            }
+            // The courtyard, the same every time, its great door (the gate) into the entrance hall.
+            RoomSetup hall = rooms.First(room => room.Floor == 1 && room.Role == RoomRole.Hall);
+            rooms.Add(new RoomSetup(KeepCourtyard.Id, KeepCourtyard.Template(gate, heroes.Count, content), new Dictionary<Direction, string> { [Direction.North] = hall.Id },
+                1, courtyardCell!.Value, RoomRole.Arrival, DoorTiles: new Dictionary<Direction, GridPosition> { [Direction.North] = KeepCourtyard.Door }));
+            passages.Add(new PassageSetup(KeepCourtyard.Id, Direction.North, PassageKind.Gate));
         }
 
         PlacePortals(rooms, theme.Floors);
@@ -149,7 +134,7 @@ public static partial class DungeonGenerator
         for (int i = 0; i < rooms.Count; i++)
         {
             RoomSetup room = rooms[i];
-            if (room.Role is RoomRole.Arrival or RoomRole.Boss || random.NextInt(0, 100) >= DarkChance)
+            if (room.Role is RoomRole.Arrival or RoomRole.Hall or RoomRole.Boss || random.NextInt(0, 100) >= DarkChance)
             {
                 continue;
             }
@@ -244,18 +229,20 @@ public static partial class DungeonGenerator
 
     /// <summary>Lays out a floor's rooms and plans its doors (added to <paramref name="passages"/>).</summary>
     /// <param name="underStairs">The arrival room's cell (under the stairs above), or null to pick one.</param>
-    private static FloorPlan PlanFloor(int floor, bool lastFloor, GridPosition? underStairs, IRandomSource random, List<PassageSetup> passages)
+    /// <param name="courtyard">The floor's entrance hall has the courtyard outside it, to the south: kept free.</param>
+    private static FloorPlan PlanFloor(int floor, bool lastFloor, GridPosition? underStairs, IRandomSource random, List<PassageSetup> passages, bool courtyard = false)
     {
         // Lay out cells with a random walk; every new cell is linked to the one it grew from.
         int roomCount = random.NextInt(MinRooms, MaxRooms + 1);
-        GridPosition start = underStairs ?? new GridPosition(random.NextInt(0, MapSize), random.NextInt(0, MapSize));
+        GridPosition start = underStairs ?? new GridPosition(random.NextInt(0, MapSize), random.NextInt(0, courtyard ? MapSize - 1 : MapSize));
+        GridPosition? outside = courtyard ? start.Step(Direction.South) : null;
         var cells = new List<GridPosition> { start };
         var links = new List<(GridPosition A, GridPosition B)>();
         while (cells.Count < roomCount)
         {
             GridPosition from = random.Pick(cells);
             GridPosition to = from.Step((Direction)random.NextInt(0, 4));
-            if (InMap(to) && !cells.Contains(to))
+            if (InMap(to) && !cells.Contains(to) && to != outside)
             {
                 cells.Add(to);
                 links.Add((from, to));
@@ -313,7 +300,7 @@ public static partial class DungeonGenerator
         {
             List<(GridPosition Host, GridPosition Cell)> spots = cells
                 .Where(host => roles[host] is RoomRole.Arrival or RoomRole.Combat or RoomRole.Treasure)
-                .SelectMany(host => host.OrthogonalNeighbors().Where(next => InMap(next) && !cells.Contains(next)).Select(next => (host, next)))
+                .SelectMany(host => host.OrthogonalNeighbors().Where(next => InMap(next) && !cells.Contains(next) && next != outside).Select(next => (host, next)))
                 .ToList();
             if (spots.Count > 0)
             {
@@ -370,8 +357,9 @@ public static partial class DungeonGenerator
 
             bool roomBelow = below.Contains(cell);
             bool entrance = role == RoomRole.Arrival && floor == 1;
+            bool hall = entrance && theme.Gate is not null;
             RoomTemplate template = entrance
-                ? RoomBuilder.Build(theme.Gate is null ? EntranceWidth : CourtyardWidth, theme.Gate is null ? EntranceHeight : CourtyardHeight, RoomShape.Plain, role, random)
+                ? RoomBuilder.Build(EntranceWidth, EntranceHeight, RoomShape.Plain, role, random)
                 : ChooseTemplate(role, lastFloor || roomBelow, layouts, random);
 
             var doors = new Dictionary<Direction, string>();
@@ -384,10 +372,15 @@ public static partial class DungeonGenerator
                 }
             }
 
-            (template, Dictionary<Direction, GridPosition> doorTiles) = PlaceDoors(template, doors.Keys, random);
-            if (entrance)
+            if (hall)
             {
-                template = Gateway(template, doorTiles, theme.Gate is not null);
+                doors[Direction.South] = KeepCourtyard.Id;
+            }
+
+            (template, Dictionary<Direction, GridPosition> doorTiles) = PlaceDoors(template, doors.Keys, random);
+            if (entrance && !hall)
+            {
+                template = Gateway(template, doorTiles);
             }
 
             if (role == RoomRole.Arrival && floor > 1)
@@ -423,7 +416,7 @@ public static partial class DungeonGenerator
                 }
             }
 
-            rooms.Add(new RoomSetup(RoomId(floor, cell), template, doors, floor, cell, role, isTrap, features, doorTiles));
+            rooms.Add(new RoomSetup(RoomId(floor, cell), template, doors, floor, cell, hall ? RoomRole.Hall : role, isTrap, features, doorTiles));
         }
     }
 
@@ -475,22 +468,12 @@ public static partial class DungeonGenerator
     /// <summary>How wide the entrance hall's gateway out is.</summary>
     public const int GatewayWidth = 4;
 
-    /// <summary>A gated dungeon's courtyard (the Emerald Keep's), bigger than an entrance hall.</summary>
-    public const int CourtyardWidth = 15;
-
-    public const int CourtyardHeight = 13;
-
-    /// <summary>How far in from the gateway the moat runs, and how wide it is.</summary>
-    private const int MoatDepth = 3;
-
-    private const int MoatWidth = 2;
-
     /// <summary>
     /// The entrance hall's gateway: four Exit tiles in an outer wall (one with no door, south if it can),
-    /// open from the start, the party starting in two rows just inside it. A courtyard also gets its moat,
-    /// two rows of deep water across it, with a bridge as wide as the gateway straight in from it.
+    /// open from the start, the party starting in two rows just inside it. (A gated dungeon has its courtyard
+    /// outside instead: see <see cref="KeepCourtyard"/>.)
     /// </summary>
-    private static RoomTemplate Gateway(RoomTemplate template, IReadOnlyDictionary<Direction, GridPosition> doorTiles, bool moat = false)
+    private static RoomTemplate Gateway(RoomTemplate template, IReadOnlyDictionary<Direction, GridPosition> doorTiles)
     {
         Direction side = new[] { Direction.South, Direction.West, Direction.East, Direction.North }.FirstOrDefault(side => !doorTiles.ContainsKey(side), Direction.South);
         RoomLayout layout = template.Layout;
@@ -514,58 +497,7 @@ public static partial class DungeonGenerator
             starts[GatewayWidth + i] = gate.Step(inward).Step(inward);
         }
 
-        if (moat)
-        {
-            // Clear of the doors: the tile inside each stays dry.
-            HashSet<GridPosition> keepDry = [.. doorTiles.Select(door => door.Value.Step(door.Key.Opposite()))];
-            for (int offset = 1; offset < length - 1; offset++)
-            {
-                GridPosition water = layout.EdgeTile(side, offset);
-                for (int depth = 1; depth < MoatDepth + MoatWidth; depth++)
-                {
-                    water = water.Step(inward);
-                    if (depth >= MoatDepth && !keepDry.Contains(water))
-                    {
-                        bool bridge = offset >= first && offset < first + GatewayWidth;
-                        template = template.WithTile(water, bridge ? TileKind.Floor : TileKind.DeepWater);
-                    }
-                }
-            }
-        }
-
         return template.WithHeroStarts(starts);
-    }
-
-    /// <summary>
-    /// The gate's guard, across the bridge from the party: the knight (with the gate's key) straight in
-    /// from it, and two guards for every three heroes (rounded up) around him.
-    /// </summary>
-    private static RoomTemplate GuardTheGate(RoomTemplate template, GateGuard gate, int heroes, ContentCatalog content)
-    {
-        RoomLayout layout = template.Layout;
-        List<GridPosition> gateway = [.. template.TilesOf(TileKind.Exit)];
-        GridPosition first = gateway[0];
-        Direction inward = Enum.GetValues<Direction>().First(direction => layout.Contains(first.Step(direction)) && layout[first.Step(direction)] == TileKind.Floor
-            && gateway.All(gate => layout.Contains(gate.Step(direction)) && layout[gate.Step(direction)] != TileKind.Exit));
-        GridPosition middle = gateway[gateway.Count / 2];
-        GridPosition knight = middle;
-        for (int depth = 0; depth < MoatDepth + MoatWidth + 2; depth++)
-        {
-            knight = knight.Step(inward);
-        }
-
-        int guards = 2 * ((heroes + 2) / 3);
-        HashSet<GridPosition> taken = [knight];
-        var spawns = new List<MonsterSpawn> { new(knight, content.GetMonster(gate.Knight)) };
-        IEnumerable<GridPosition> posts = layout.Positions
-            .Where(tile => layout[tile] == TileKind.Floor && tile.ManhattanDistanceTo(middle) >= MoatDepth + MoatWidth && tile.ChebyshevDistanceTo(knight) <= 3)
-            .OrderBy(tile => tile.ChebyshevDistanceTo(knight)).ThenBy(tile => tile.ManhattanDistanceTo(middle)).ThenBy(tile => tile.Y).ThenBy(tile => tile.X);
-        foreach (GridPosition post in posts.Where(tile => !taken.Contains(tile)).Take(guards))
-        {
-            spawns.Add(new MonsterSpawn(post, content.GetMonster(gate.Guard)));
-        }
-
-        return template.WithMonsters(template.Monsters.Concat(spawns));
     }
 
     /// <summary>The boss arena's width and height: bigger than any other room.</summary>

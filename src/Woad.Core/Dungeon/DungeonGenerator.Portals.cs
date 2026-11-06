@@ -15,7 +15,9 @@ public static partial class DungeonGenerator
     {
         RoomSetup?[] hosts =
         [
-            rooms.FirstOrDefault(room => room.Floor == 1 && room.Level == 0 && room.Role == RoomRole.Arrival),
+            // The entrance: a gated dungeon's entrance hall, inside its great door.
+            rooms.FirstOrDefault(room => room.Floor == 1 && room.Level == 0 && room.Role == RoomRole.Hall)
+                ?? rooms.FirstOrDefault(room => room.Floor == 1 && room.Level == 0 && room.Role == RoomRole.Arrival),
             rooms.FirstOrDefault(room => room.Floor == 1 && room.Level == 0 && room.Role == RoomRole.Stairs),
             rooms.FirstOrDefault(room => room.Floor == floors && room.Level == 0 && room.Role == RoomRole.Boss),
         ];

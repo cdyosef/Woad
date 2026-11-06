@@ -223,6 +223,8 @@ public sealed partial class GameSession
             return CommandResult.Reject(error);
         }
 
+        CreditDeeds(events);
+
         // A hero who keels over on their own turn (by a trap) hands the turn on.
         if (State.Phase == RunPhase.InProgress && State.Turn is { } turn && State.GetHero(turn.HeroId) is var current
             && (!current.IsInPlay || (current.IsKeelingOver && !turn.KeelingOver)))

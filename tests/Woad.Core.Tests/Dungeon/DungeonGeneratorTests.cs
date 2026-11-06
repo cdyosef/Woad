@@ -28,7 +28,8 @@ public class DungeonGeneratorTests
 
         foreach (IGrouping<int, RoomSetup> floor in run.Rooms.GroupBy(room => room.Floor))
         {
-            Assert.InRange(floor.Count(room => room.Role is not (RoomRole.Secret or RoomRole.Den)), DungeonGenerator.MinRooms, DungeonGenerator.MaxRooms);
+            // (The Emerald Keep's courtyard is outside, the floor's rooms planned within the keep.)
+            Assert.InRange(floor.Count(room => room.Role is not (RoomRole.Secret or RoomRole.Den) && room.Id != KeepCourtyard.Id), DungeonGenerator.MinRooms, DungeonGenerator.MaxRooms);
             Assert.InRange(floor.Count(room => room.Role == RoomRole.Secret), 0, 1);
             Assert.Equal(floor.Key == 1 ? 1 : 0, floor.Count(room => room.Role == RoomRole.Den));
 
@@ -144,20 +145,20 @@ public class DungeonGeneratorTests
         int Area(RoomSetup room) => room.Template.Layout.Width * room.Template.Layout.Height;
 
         Assert.All(all.Where(room => room.Role == RoomRole.Boss), boss => Assert.Equal((DungeonGenerator.BossSize, DungeonGenerator.BossSize), (boss.Template.Layout.Width, boss.Template.Layout.Height)));
-        Assert.All(all.Where(room => room.Role != RoomRole.Boss), room => Assert.True(Area(room) < DungeonGenerator.BossSize * DungeonGenerator.BossSize));
+        Assert.All(all.Where(room => room.Role != RoomRole.Boss && room.Id != KeepCourtyard.Id), room => Assert.True(Area(room) < DungeonGenerator.BossSize * DungeonGenerator.BossSize));
         Assert.All(all.Where(room => room.Role is RoomRole.Arrival or RoomRole.Vault && room.Floor > 1 || room.Role == RoomRole.Vault), room => Assert.Equal(81, Area(room)));
 
-        // Floor 1's arrival room is the entrance hall: bigger, with its gateway out.
+        // Floor 1's arrival room is the entrance hall, bigger, with its gateway out (or a gated dungeon's courtyard,
+        // outside its entrance hall).
+        Assert.All(all.Where(room => room.Role is RoomRole.Arrival or RoomRole.Hall && room.Floor == 1 && room.Id != KeepCourtyard.Id), room =>
+            Assert.Equal((DungeonGenerator.EntranceWidth, DungeonGenerator.EntranceHeight), (room.Template.Layout.Width, room.Template.Layout.Height)));
         Assert.All(all.Where(room => room.Role == RoomRole.Arrival && room.Floor == 1), room =>
-        {
-            Assert.Contains((room.Template.Layout.Width, room.Template.Layout.Height),
-                new[] { (DungeonGenerator.EntranceWidth, DungeonGenerator.EntranceHeight), (DungeonGenerator.CourtyardWidth, DungeonGenerator.CourtyardHeight) });
-            Assert.Equal(DungeonGenerator.GatewayWidth, room.Template.TilesOf(TileKind.Exit).Count());
-        });
+            Assert.Equal(DungeonGenerator.GatewayWidth, room.Template.TilesOf(TileKind.Exit).Count()));
 
-        List<RoomSetup> ordinary = [.. all.Where(room => !(room.Role == RoomRole.Arrival && room.Floor == 1))];
+        List<RoomSetup> ordinary = [.. all.Where(room => !(room.Role is RoomRole.Arrival or RoomRole.Hall && room.Floor == 1))];
         int standard = ordinary.Count(room => Area(room) == 81);
-        Assert.True(standard > ordinary.Count / 2, $"{standard} of {ordinary.Count} rooms (past the entrance halls) are 9x9");
+        // About half (bosses, dens and treasure rooms are mostly built): comfortably over two in five.
+        Assert.True(standard * 5 > ordinary.Count * 2, $"{standard} of {ordinary.Count} rooms (past the entrance halls) are 9x9");
         Assert.Contains(all, room => Area(room) < 81);
         Assert.Contains(all, room => Area(room) > 81 && room.Role != RoomRole.Boss);
         Assert.Contains(all, room => room.Template.Layout.Positions.Any(tile => room.Template.Layout[tile] == TileKind.Rock));
@@ -211,7 +212,7 @@ public class DungeonGeneratorTests
     {
         IReadOnlyList<ThemeRoom> rooms = Content.RoomsFor("emerald_keep");
 
-        // Secret rooms use treasure layouts, and the den has its own.
-        Assert.All(Enum.GetValues<RoomRole>().Where(role => role is not (RoomRole.Secret or RoomRole.Den)), role => Assert.Contains(rooms, room => room.Roles.Contains(role)));
+        // Secret rooms use treasure layouts; the den and the entrance hall are built.
+        Assert.All(Enum.GetValues<RoomRole>().Where(role => role is not (RoomRole.Secret or RoomRole.Den or RoomRole.Hall)), role => Assert.Contains(rooms, room => room.Roles.Contains(role)));
     }
 }

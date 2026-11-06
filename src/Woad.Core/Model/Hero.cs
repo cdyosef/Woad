@@ -202,6 +202,21 @@ public sealed class Hero
     /// <summary>Rooms they searched first (each an Explorer bonus): the most on a run wins the Explorer Award.</summary>
     public int ExplorerBonus { get; internal set; }
 
+    /// <summary>Keys used this run (small keys, the Boss Key, a gate's key): for the Keymaster award.</summary>
+    public int KeysUsed { get; internal set; }
+
+    /// <summary>Doors and gates unlocked this run, by key or by picking: for the Lockbreaker award.</summary>
+    public int DoorsUnlocked { get; internal set; }
+
+    /// <summary>Traps disarmed this run: for the Trapsmith award.</summary>
+    public int TrapsDisarmed { get; internal set; }
+
+    /// <summary>Traps set off this run: for the "Check for what?!" award.</summary>
+    public int TrapsSprung { get; internal set; }
+
+    /// <summary>Hearts taken off monsters this run (no overkill): for the Heavy Hitter award.</summary>
+    public int DamageDealt { get; internal set; }
+
     /// <summary>XP earned this run, added to the character when the run ends.</summary>
     public int Xp { get; internal set; }
 
