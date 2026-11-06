@@ -353,7 +353,7 @@ public partial class GameScreen
             Room crypt = _session.State.Rooms["crypt"];
             Check(bran.Status == HeroStatus.Dead
                     ? crypt.Tombstones.SingleOrDefault() is { } stone && stone.Inscription.Contains("Bran") && !_tokens.ContainsKey(bran.Id)
-                    : bran.IsActive && bran.Hearts == 1 && !_figures[bran.Id].Keeling,
+                    : bran.IsActive && bran.Hearts == 1 && !_figures[bran.Id].Keeling && !_figures[bran.Id].Prone,
                 "Bran either stands up with a heart or dies, leaving a tombstone");
 
             GD.Print($"Keel test passed ({(bran.IsActive ? "Bran stood up" : "Bran died")}).");
