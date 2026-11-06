@@ -1040,8 +1040,8 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
 - **Trap rooms** (one per floor from floor 2): nobody can leave through the doors while monsters
   remain. Heroes outside can still come in to help.
 - **Clearing a room** restores 1 heart *(tunable)* to every hero in it.
-- **Stairs:** click them to walk up beside them, and click them again to go down, free. You arrive in the
-  next floor's arrival room, off the stairs. Reaching a floor for the first time restores your Luck and recharges wands. Below the
+- **Stairs:** click them to walk up beside them, and click them again to go down, free. You come out of the
+  stairs up in the next floor's arrival room, beside them. Reaching a floor for the first time restores your Luck and recharges wands. Below the
   first floor, the arrival room has **stairs up** that lead back to the stairs room above (free, the same way).
 - **Exit:** sealed until the boss in its room is defeated. Stand on it and click again to escape. Your
   turn ends, and you're out of the run with your treasure.

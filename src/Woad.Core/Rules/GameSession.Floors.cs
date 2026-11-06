@@ -34,7 +34,11 @@ public sealed partial class GameSession
             return "These stairs lead nowhere.";
         }
 
-        if (Landing(arrival) is not { } landing)
+        // Out of the stairs up below: beside them (or, where there are none, the room's landing).
+        GridPosition? landingSpot = arrival.TilesOfKind(TileKind.StairsUp).FirstOrDefault() is var up && arrival.Layout[up] == TileKind.StairsUp
+            ? LandingNear(arrival, up)
+            : Landing(arrival);
+        if (landingSpot is not { } landing)
         {
             return "The way down is blocked.";
         }

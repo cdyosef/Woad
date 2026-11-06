@@ -70,6 +70,32 @@ public class FloorTests
     }
 
     [Fact]
+    public void GoingDownComesOutOfTheStairsUpBelow()
+    {
+        RoomSetup[] floors =
+        [
+            new RoomSetup("up", TestRun.Room(StairsBeside), Floor: 1, Role: RoomRole.Stairs),
+            new RoomSetup("down", TestRun.Room("""
+                .........
+                .........
+                .........
+                ..1...2..
+                .........
+                .........
+                ......<..
+                .........
+                .........
+                """), Floor: 2, Role: RoomRole.Arrival),
+        ];
+        GameSession session = TestRun.Start(floors, new ScriptedDice(3));
+        Hero hero = session.HeroInSeat();
+
+        var descended = session.Do(new TakeStairs(hero.Id)).SingleOf<HeroDescended>();
+
+        Assert.Equal(1, descended.Position.ChebyshevDistanceTo(new GridPosition(6, 6)));
+    }
+
+    [Fact]
     public void ReachingANewFloorRestoresLuckAndCharges()
     {
         GameSession session = TestRun.Start(TwoFloors(StairsBeside), new ScriptedDice(3), stats: GameRules.HeroBaseStats with { Luck = 2 }, cards: ["wand"]);
