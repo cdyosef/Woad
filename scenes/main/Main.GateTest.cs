@@ -36,6 +36,15 @@ public partial class Main
                 await NextFrame(this);
                 await NextFrame(this);
                 GetViewport().GetTexture().GetImage().SavePng($"{shots}/keep_courtyard.png");
+
+                // Zoomed out: the whole courtyard, and the keep rising over it.
+                game.Board.ZoomBy(0.4f);
+                for (int frame = 0; frame < 40; frame++)
+                {
+                    await NextFrame(this);
+                }
+
+                GetViewport().GetTexture().GetImage().SavePng($"{shots}/keep_courtyard_all.png");
             }
 
             var portals = new GameScreen { Setup = DemoRun.Portals(11), Content = _content };

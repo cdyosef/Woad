@@ -1,4 +1,5 @@
 using Godot;
+using Woad.Core.Dungeon;
 using Woad.Core.Grid;
 using Woad.Core.Model;
 using Woad.Scenes.Ui;
@@ -396,7 +397,7 @@ public partial class BoardView : Control
         Vector2 center = _follow is not null && IsInstanceValid(_follow) && _follow.GetParent() == this
             ? _follow.Position + new Vector2(TileSize / 2f, TileSize / 2f)
             : _lookAt is { } tile ? TileOrigin(tile) + new Vector2(TileSize / 2f, TileSize / 2f)
-            : RoomPixels / 2;
+            : RoomPixels / 2 - new Vector2(0, TopMargin / 2);
         return Clamp(center - new Vector2(ViewPixels / 2, ViewPixels / 2));
     }
 
@@ -409,19 +410,19 @@ public partial class BoardView : Control
         get
         {
             Vector2 room = RoomPixels;
-            return (_camera.X > 1, _camera.Y > 1, _camera.X + ViewPixels < room.X - 1, _camera.Y + ViewPixels < room.Y - 1);
+            return (_camera.X > 1, _camera.Y > 1 - TopMargin, _camera.X + ViewPixels < room.X - 1, _camera.Y + ViewPixels < room.Y - 1);
         }
     }
 
     private Vector2 RoomPixels => _room is null ? new Vector2(Pixels, Pixels) : new Vector2(_room.Layout.Width * TileSize, _room.Layout.Height * TileSize);
 
-    /// <summary>Inside the room; a room smaller than the view is centered in it.</summary>
+    /// <summary>Inside the room (and what shows above it: the keep's wall over its courtyard); a room smaller than the view is centered in it.</summary>
     private Vector2 Clamp(Vector2 camera)
     {
         Vector2 room = RoomPixels;
         float view = ViewPixels;
-        float Axis(float value, float size) => size <= view ? (size - view) / 2 : Mathf.Clamp(value, 0, size - view);
-        return new Vector2(Axis(camera.X, room.X), Axis(camera.Y, room.Y));
+        float Axis(float value, float from, float to) => to - from <= view ? (from + to - view) / 2 : Mathf.Clamp(value, from, to - view);
+        return new Vector2(Axis(camera.X, 0, room.X), Axis(camera.Y, -TopMargin, room.Y));
     }
 
     /// <summary>Moves the view by <paramref name="by"/> pixels, no further than keeps the anchor tile in view.</summary>
@@ -443,7 +444,7 @@ public partial class BoardView : Control
     }
 
     /// <summary>The least the player can zoom to here: out until the whole room fits, but no further than <see cref="MinUserZoom"/>, nor below 1.</summary>
-    private float LeastZoom => Mathf.Clamp(Pixels / Mathf.Max(RoomPixels.X, RoomPixels.Y), MinUserZoom, 1);
+    private float LeastZoom => Mathf.Clamp(Pixels / Mathf.Max(RoomPixels.X, RoomPixels.Y + TopMargin), MinUserZoom, 1);
 
     /// <summary>Zooms the player's view by <paramref name="factor"/>, keeping <paramref name="at"/> (a board pixel) where it is on screen.</summary>
     public void ZoomAt(Vector2 at, float factor)
@@ -749,9 +750,27 @@ public partial class BoardView : Control
         }
 
         _drawnAt = _camera;
+        bool courtyard = IsCourtyard;
+        if (courtyard)
+        {
+            DrawCourtyardSurrounds();
+        }
+
         foreach (GridPosition tile in ShownTiles())
         {
-            DrawTile(tile, _room.Layout[tile]);
+            if (courtyard)
+            {
+                DrawCourtyardTile(tile);
+            }
+            else
+            {
+                DrawTile(tile, _room.Layout[tile]);
+            }
+        }
+
+        if (courtyard)
+        {
+            DrawKeepFacade();
         }
 
         foreach (GridPosition brazier in _room.TilesOfKind(TileKind.Brazier))
@@ -772,8 +791,13 @@ public partial class BoardView : Control
             }
         }
 
-        DrawRim();
-        foreach ((Direction side, string _) in _room.Doors)
+        // Outdoors, no rim; the keep's great door is drawn with its wall.
+        if (!courtyard)
+        {
+            DrawRim();
+        }
+
+        foreach ((Direction side, string _) in courtyard ? new Dictionary<Direction, string>() : _room.Doors)
         {
             if (_room.PassageOn(side) is not { IsHidden: true })
             {
@@ -1426,6 +1450,12 @@ public partial class BoardView : Control
         if (!ViewRect.HasPoint(position))
         {
             return null;
+        }
+
+        // The keep's great door, up in its wall: its threshold.
+        if (IsCourtyard && GreatDoorRect.HasPoint(position))
+        {
+            return KeepCourtyard.Door;
         }
 
         var tile = new GridPosition(Mathf.FloorToInt(position.X / TileSize), Mathf.FloorToInt(position.Y / TileSize));

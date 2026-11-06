@@ -1011,12 +1011,17 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   in from the Woarld Map there, starting in two rows just inside it, and can walk back out through it at
   any time: stand in the gateway and click it (no XP for getting away that way, as there is by the
   boss's exit).
-- **The Emerald Keep's gate:** its entrance is a **courtyard** (15 by 13) outside the keep: a **moat** (two
-  rows of deep water) across it, two steps in from the gateway, with a **bridge** as wide as the gateway.
-  Across it the **Emerald Knight** (6 hearts, 2 dice and weapon 2, defense 2 and armor 2; a miniboss) holds
-  the gate with **Emerald Guards** (green, spears reaching 2 in a line), two for every three heroes, rounded
-  up. Every door out of the courtyard is the **gate**, a green-iron portcullis: only the **Emerald Key**
-  opens it (no small key, no picking), and the knight carries it. The key stays in the keep when you leave.
+- **The Emerald Keep's gate:** its entrance is a **courtyard** outside the keep, the same every time (21 by
+  13): the foot of the keep's front wall along its top edge (the wall drawn rising above it, with towers,
+  battlements, banners and arched windows; the view pans up to see it), and in the middle the **great door**.
+  Before the wall, a stone apron; then the **moat**, two rows of deep water right across, with a **drawbridge**
+  four wide; then grass, trees and a dirt road down to the way out, four wide, at the bottom edge. On the
+  apron the **Emerald Knight** (6 hearts, 2 dice and weapon 2, defense 2 and armor 2; a miniboss) holds the
+  door with **Emerald Guards** (green, spears reaching 2 in a line), two for every three heroes, rounded up.
+  The great door is the **gate**: only the **Emerald Key** opens it (no small key, no picking), and the knight
+  carries it. Shut, it's iron-bound oak with an emerald; open, it stands back on the dark. It leads into the
+  **entrance hall**, the first room inside the keep (no monsters; the entrance's portal is here), and the
+  rest of floor 1 opens out from there. The key stays in the keep when you leave.
 - **The Emerald Keep's tower:** stairs up from an ordinary room on floor 1 climb to **Level 1**, a floor of
   rooms like those below (the room farthest from its arrival has the stairs on up), then **Level 2**, then
   **the Roof** (Level 3): one great open room, 31 by 31, its stairs down in the middle and its edge
@@ -1036,7 +1041,7 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   on the last solid ground); and **Emerald Charge**: with no Bull Rush skill or Wend die, the Bull Rush
   card charges for a banked Power Die instead. A dungeon's unique is won **once a raid**: once someone gets
   out with it, the Baron drops the **Baron's Strongbox** (worth 120 gold) in its place for the rest of the raid.
-- **Portals:** every dungeon has three, rings of standing stone: one in the entrance, one in floor 1's
+- **Portals:** every dungeon has three, rings of standing stone: one in the entrance (the Emerald Keep's entrance hall), one in floor 1's
   stairs room and one in the last floor's boss room (near its door, away from the boss). Each starts
   **dark**. A hero beside one can **light** it, free, by channeling a Magic Die or a banked Power Die into
   it; it stays lit. From beside a lit portal a hero steps through, free, to any **other lit portal**, coming
