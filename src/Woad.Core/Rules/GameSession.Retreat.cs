@@ -47,8 +47,9 @@ public sealed partial class GameSession
             return error;
         }
 
-        foreach (Hero hero in State.Heroes.Where(hero => hero.IsInPlay))
+        foreach (Hero hero in State.Heroes.Where(hero => hero.IsInPlay).ToList())
         {
+            ReleaseCarry(hero);
             hero.Status = HeroStatus.Escaped;
             events.Add(new HeroEscaped(hero.Id, hero.TreasureValue));
         }
@@ -99,8 +100,10 @@ public sealed partial class GameSession
         if (total >= chase.Total + RetreatChaseBonus)
         {
             List<Hero> leaving = [.. State.ActiveHeroesIn(room).Where(other => other == hero || other.OwnerId == hero.Id)];
+            leaving.AddRange([.. leaving.Select(runner => runner.CarriedAlly).OfType<Hero>()]);
             foreach (Hero runner in leaving)
             {
+                ReleaseCarry(runner);
                 runner.Status = HeroStatus.Escaped;
                 State.RetreatedIds.Add(runner.Id);
                 events.Add(new HeroRetreated(runner.Id));

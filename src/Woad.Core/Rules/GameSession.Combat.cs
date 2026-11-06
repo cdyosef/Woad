@@ -83,7 +83,7 @@ public sealed partial class GameSession
         SpendBankedPowerDice(hero, powerDice, events);
         (int star, int weaponDice, IReadOnlyList<(DieType, int)> typed) = Arm(hero, dice + ProneBonus(monster, hero.Position), wielding.Weapon, armed ? wielding.Dice + earth : 0, hero.TorchesHeld);
         RollHeroAttack(hero, star, bonus, [monster.Id], DamageSource.Weapon, events, powerDice,
-            stunOnSix: wielding.Weapon?.StunOnSix ?? false, weaponDice: weaponDice, weapon: wielding.Weapon, typed: typed, torches: hero.TorchesHeld, bullRush: bullRush, spent: spent);
+            stunOnSix: wielding.Weapon?.StunOnSix ?? false, weaponDice: weaponDice + (bullRush ? hero.PushDice : 0), weapon: wielding.Weapon, typed: typed, torches: hero.TorchesHeld, bullRush: bullRush, spent: spent);
     }
 
     /// <summary>With friendly fire on, the other heroes and companions the active hero could attack right now.</summary>
@@ -584,7 +584,14 @@ public sealed partial class GameSession
 
         foreach (RareDrop carried in definition.Carries.Where(carried => _random.Loot.NextInt(0, 100) < carried.Chance))
         {
-            DropLoot(room, SafeTile(room, monster.Position), new CardInstance(State.NextId(), Content.GetCard(carried.Card), broughtInByHeroId: null), events);
+            // A unique already claimed this raid: what drops in its place.
+            CardDefinition card = Content.GetCard(carried.Card);
+            if (card is { Unique: true, UniqueElse: { } instead } && _uniquesClaimed.Contains(card.Id))
+            {
+                card = Content.GetCard(instead);
+            }
+
+            DropLoot(room, SafeTile(room, monster.Position), new CardInstance(State.NextId(), card, broughtInByHeroId: null), events);
         }
 
         if (definition.RareDrop is { } rare && _random.Loot.NextInt(0, 100) < rare.Chance)

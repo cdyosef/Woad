@@ -128,6 +128,12 @@ public sealed partial class GameSession
     /// <summary>A hero at 0 hearts falls where they are (or the nearest safe tile) and starts Keeling Over.</summary>
     private void KeelOver(Room room, Hero hero, string bane, List<GameEvent> events)
     {
+        // Whoever they carried is dropped beside them.
+        if (hero.CarriedAlly is not null)
+        {
+            SetDownAlly(hero, events);
+        }
+
         hero.Status = HeroStatus.KeelingOver;
         hero.LifeMarks = 0;
         hero.DeathMarks = 0;
@@ -142,8 +148,14 @@ public sealed partial class GameSession
         events.Add(new HeroKeeledOver(hero.Id, hero.Position, bane));
     }
 
-    private static void StandUp(Hero hero, List<GameEvent> events)
+    private void StandUp(Hero hero, List<GameEvent> events)
     {
+        // Back on their feet in someone's arms: set down beside them first.
+        if (hero.Carrier is { } carrier)
+        {
+            SetDownAlly(carrier, events);
+        }
+
         hero.Status = HeroStatus.Active;
         hero.Prone = false;
         hero.LifeMarks = 0;
@@ -189,6 +201,15 @@ public sealed partial class GameSession
     /// </summary>
     private void Die(Room room, Hero hero, List<GameEvent> events)
     {
+        if (hero.Carrier is { } carrier)
+        {
+            SetDownAlly(carrier, events);
+        }
+        else if (hero.CarriedAlly is not null)
+        {
+            SetDownAlly(hero, events);
+        }
+
         hero.Status = HeroStatus.Dead;
         hero.FireDice = 0;
         hero.Prone = false;

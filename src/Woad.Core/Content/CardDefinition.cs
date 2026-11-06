@@ -250,6 +250,27 @@ public sealed record CardDefinition
     /// <summary>The Holy Key: the only key to a holy lock (the relic chest in the Unhallowed Graves), used up opening it.</summary>
     public bool HolyKey { get; init; }
 
+    /// <summary>A gate's key (the Emerald Key): the only thing that opens a dungeon's gate. It stays in the dungeon.</summary>
+    public bool GateKey { get; init; }
+
+    /// <summary>A dungeon's unique treasure (the Emerald Baron Helm): won once a raid; after that, <see cref="UniqueElse"/> drops instead.</summary>
+    public bool Unique { get; init; }
+
+    /// <summary>What drops in place of a unique already claimed this raid.</summary>
+    public string? UniqueElse { get; init; }
+
+    /// <summary>Dice more on Shove and Bull Rush.</summary>
+    public int PushDice { get; init; }
+
+    /// <summary>Every push counts twice: twice as far, and a boss (or anything too big) can be shoved a tile.</summary>
+    public bool DoublePush { get; init; }
+
+    /// <summary>Bull Rush flies over open air (pits) and water.</summary>
+    public bool FlyingRush { get; init; }
+
+    /// <summary>Emerald Charge: a bull rush for a banked Power Die, with no Bull Rush skill or Wend die needed.</summary>
+    public bool EmeraldCharge { get; init; }
+
     /// <summary>Bandages: carried, one is used up on each Rouse for +1d6 (a 6 rolls another).</summary>
     public bool Bandage { get; init; }
 

@@ -117,6 +117,9 @@ public sealed record MonsterDefinition
     /// <summary>A hit grabs the hero: they can't move while it holds them, until it's hurt, shoved, stunned or frozen.</summary>
     public bool Grabs { get; init; }
 
+    /// <summary>A hit seizes the hero and carries them off toward the nearest open air, dropping them in if it gets there (Baron Herkullos's beetle).</summary>
+    public bool CarriesOff { get; init; }
+
     /// <summary>A hit knocks the hero a tile straight back, into a pit or onto a trap if one's there.</summary>
     public bool KnocksBack { get; init; }
 

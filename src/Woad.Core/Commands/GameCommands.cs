@@ -172,6 +172,24 @@ public sealed record PickLock(int HeroId, GridPosition Target, int? Dice = null,
 /// </summary>
 public sealed record MoveOn(int HeroId) : GameCommand(HeroId);
 
+/// <summary>
+/// Push an ally beside you who lets you: a tile straight away from you (or, from a doorway, through it).
+/// Free: no roll, no Rumble dice, no Shove skill or friendly fire needed.
+/// </summary>
+public sealed record NudgeAlly(int HeroId, int AllyId) : GameCommand(HeroId);
+
+/// <summary>Pick up an ally Keeling Over beside you, into both carry slots. Free.</summary>
+public sealed record PickUpAlly(int HeroId, int AllyId) : GameCommand(HeroId);
+
+/// <summary>Set down the ally you carry, beside you. Free.</summary>
+public sealed record PutDownAlly(int HeroId) : GameCommand(HeroId);
+
+/// <summary>Light the portal beside you: channel a Magic Die into it, or else a banked Power Die. Free.</summary>
+public sealed record LightPortal(int HeroId, bool Magic = false) : GameCommand(HeroId);
+
+/// <summary>Step through the lit portal beside you to another lit portal (in <paramref name="ToRoomId"/>). Free.</summary>
+public sealed record TakePortal(int HeroId, string ToRoomId) : GameCommand(HeroId);
+
 /// <summary>Retreat from a fight out on the Woarld Map: an Od Hand roll against the monsters' chase.</summary>
 public sealed record Retreat(int HeroId, int? Dice = null, bool UseTools = false, int PowerDice = 0)
     : OdHandCommand(HeroId, Dice, UseTools, PowerDice);
@@ -310,7 +328,8 @@ public sealed record Shove(int HeroId, int TargetId, int? Dice = null, bool UseW
 /// Wend die (a 6 rolls another) and the Wend bonus carry you, and strike the first monster in the way
 /// with <paramref name="Dice"/> Rumble dice, the weapon, and the tiles left over.
 /// </summary>
-public sealed record BullRush(int HeroId, GridPosition Toward, int? Dice = null, bool UseWeapon = true, int PowerDice = 0, bool HoldRumbleBonus = false) : GameCommand(HeroId);
+/// <param name="Charge">An Emerald Charge: paid with a banked Power Die in place of the Bull Rush skill and a Wend die.</param>
+public sealed record BullRush(int HeroId, GridPosition Toward, int? Dice = null, bool UseWeapon = true, int PowerDice = 0, bool HoldRumbleBonus = false, bool Charge = false) : GameCommand(HeroId);
 
 /// <summary>Parry: roll an Od Hand die and hold it for your next defense before your next turn.</summary>
 public sealed record Parry(int HeroId) : GameCommand(HeroId);

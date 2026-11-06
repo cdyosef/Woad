@@ -14,6 +14,12 @@ namespace Woad.Core.Rules;
 /// </summary>
 public sealed partial class GameSession
 {
+    /// <summary>What a gate says to someone without its key.</summary>
+    public const string GateLockedText = "The gate is locked fast: only its key opens it. Its guardian carries it.";
+
+    /// <summary>Whether a hero holds a gate's key (the Emerald Key).</summary>
+    public static bool HasGateKey(Hero hero) => hero.AllCards.Any(card => card.Definition.GateKey);
+
     private string? Handle(UnlockDoor command, List<GameEvent> events)
     {
         Hero hero = ActiveHero;
@@ -33,7 +39,14 @@ public sealed partial class GameSession
             return "That door isn't locked.";
         }
 
-        if (passage.NeedsBossKey)
+        if (passage.NeedsGateKey)
+        {
+            if (!HasGateKey(hero))
+            {
+                return GateLockedText;
+            }
+        }
+        else if (passage.NeedsBossKey)
         {
             if (!hero.HasBossKey)
             {
@@ -211,11 +224,11 @@ public sealed partial class GameSession
             target = _random.Behavior.Pick(candidates);
         }
 
-        int floors = fallen + Math.Max(0, target.Floor - from.Floor);
+        int floors = fallen + Math.Max(0, from.Storey - target.Storey);
         GridPosition under = Beneath(from, hole, target);
 
         // Landing on another pit, they fall on through it.
-        if (target.Layout[under] == TileKind.Pit && (target.BelowRoomId is not null || target.DeepHoles.ContainsKey(under)) && target.Floor > from.Floor)
+        if (target.Layout[under] == TileKind.Pit && (target.BelowRoomId is not null || target.DeepHoles.ContainsKey(under)) && target.Storey < from.Storey)
         {
             hero.RoomId = target.Id;
             hero.Position = under;
@@ -242,7 +255,7 @@ public sealed partial class GameSession
         hero.RoomId = target.Id;
         hero.Position = landing;
         // Falling to the floor below, their lights and spells need a save (the stairs don't).
-        if (target.Floor > from.Floor)
+        if (target.Storey < from.Storey)
         {
             StartFallSave(hero, floors, events);
         }

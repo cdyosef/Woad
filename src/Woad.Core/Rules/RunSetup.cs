@@ -54,7 +54,20 @@ public sealed record RoomSetup(
     bool Trap = false,
     RoomFeatures? Features = null,
     IReadOnlyDictionary<Direction, GridPosition>? DoorTiles = null,
-    bool Dark = false);
+    bool Dark = false)
+{
+    /// <summary>A tower level above floor 1 (the Emerald Keep's: 1, 2, and 3 the roof), or 0 in the dungeon below.</summary>
+    public int Level { get; init; }
+
+    /// <summary>Where this room's stairs up lead (a tower's), or null for the usual (back up a floor).</summary>
+    public string? StairsUpTo { get; init; }
+
+    /// <summary>Where this room's stairs down lead (a tower's), or null for the usual (down a floor).</summary>
+    public string? StairsDownTo { get; init; }
+
+    /// <summary>Where its pits (open air off a roof) drop to, past the usual room below.</summary>
+    public string? FallsTo { get; init; }
+}
 
 public sealed record TrapSetup(TrapKind Kind, int Difficulty);
 
@@ -162,6 +175,9 @@ public sealed record RunSetup
 
     /// <summary>The Merchant Guild's level: the better the guild, the better a dungeon merchant's wares.</summary>
     public int MerchantGuildLevel { get; init; } = 1;
+
+    /// <summary>Dungeon uniques (by card id) already claimed this raid: in their place, their <c>UniqueElse</c> drops.</summary>
+    public IReadOnlyList<string> UniquesClaimed { get; init; } = [];
 
     /// <summary>Doors that aren't plain open doors (each listed from one side only).</summary>
     public IReadOnlyList<PassageSetup> Passages { get; init; } = [];

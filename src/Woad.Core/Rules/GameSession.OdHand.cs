@@ -231,6 +231,11 @@ public sealed partial class GameSession
                 return "The Boss Door can't be picked: it opens only with the Boss Key.";
             }
 
+            if (passage.NeedsGateKey)
+            {
+                return "The gate can't be picked: " + GateLockedText;
+            }
+
             check = new OdHandCheck(OdHandCheckKind.PickDoor, passage.Difficulty, target);
             return null;
         }

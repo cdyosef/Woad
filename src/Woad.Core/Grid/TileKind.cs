@@ -57,6 +57,9 @@ public enum TileKind
     /// or any fire beside it, or fire aimed at it) it lights the dark around it.
     /// </summary>
     Brazier,
+
+    /// <summary>A portal: a standing ring of stone. Blocks movement (not sight); lit, it links to the dungeon's other lit portals.</summary>
+    Portal,
 }
 
 public static class TileKindExtensions

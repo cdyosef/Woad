@@ -25,7 +25,8 @@ public partial class GameScreen
     private void ReloadFigures()
     {
         _figures.Clear();
-        foreach (Hero hero in _session.State.Heroes.Where(hero => hero.IsInPlay))
+        // A hero being carried is in their carrier's arms, not on a tile of their own.
+        foreach (Hero hero in _session.State.Heroes.Where(hero => hero.IsInPlay && hero.Carrier is null))
         {
             _names[hero.Id] = hero.Name;
             _figures[hero.Id] = new Figure

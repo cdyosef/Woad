@@ -848,6 +848,10 @@ total reaches its number:
   be shoved (nor the Key Warden), and the tile behind must be free floor, a trap, water or a pit. Flyers
   don't fall; a monster shoved into deep water loses a heart and scrambles out. Monsters
   don't shove yet.
+- **Pushing an ally:** with **Shove** picked, click an ally beside you. They choose: **Let them** (pushed a
+  tile straight away from you, or through the doorway they stand in; free, no roll, no Shove skill or
+  friendly fire needed), or **Resist**, and then only a Shove moves them (with the Shove skill, friendly
+  fire on and a Rumble die); otherwise they don't budge. A companion always lets you.
 - **Friendly fire** (a switch on the party screen, off by default): blasts also
   catch heroes and companions in range, the thrower included, and you can attack and shove other
   heroes and companions in reach just like monsters (click them; Shove works on them too). Each
@@ -998,6 +1002,42 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   it as the hole was across its own room. A floor's Arrival
   room is under the stairs that lead to it. Above the last floor, rooms with nothing underneath get
   layouts without pits. A few extra doors between neighboring rooms add loops.
+- **The entrance:** floor 1's Arrival room is the **entrance hall**, a big room (13 by 11) with a
+  **gateway** four tiles wide in an outer wall (one with no door, south where it can be). The party comes
+  in from the Woarld Map there, starting in two rows just inside it, and can walk back out through it at
+  any time: stand in the gateway and click it (no XP for getting away that way, as there is by the
+  boss's exit).
+- **The Emerald Keep's gate:** its entrance is a **courtyard** (15 by 13) outside the keep: a **moat** (two
+  rows of deep water) across it, two steps in from the gateway, with a **bridge** as wide as the gateway.
+  Across it the **Emerald Knight** (6 hearts, 2 dice and weapon 2, defense 2 and armor 2; a miniboss) holds
+  the gate with **Emerald Guards** (green, spears reaching 2 in a line), two for every three heroes, rounded
+  up. Every door out of the courtyard is the **gate**, a green-iron portcullis: only the **Emerald Key**
+  opens it (no small key, no picking), and the knight carries it. The key stays in the keep when you leave.
+- **The Emerald Keep's tower:** stairs up from an ordinary room on floor 1 climb to **Level 1**, a floor of
+  rooms like those below (the room farthest from its arrival has the stairs on up), then **Level 2**, then
+  **the Roof** (Level 3): one great open room, 31 by 31, its stairs down in the middle and its edge
+  crenellated, a green stone pillar on every other tile with **open air** between. Anyone pushed or knocked
+  into the open air falls to the courtyard below: three storeys, three hearts. The tower's rooms have no
+  pits, and count as floors 4 to 6 for loot and monsters; the screen calls them Level 1, Level 2 and the
+  Roof. Going up comes out beside the stairs down above, and going down beside the stairs up below.
+- **The roof's challenge:** **Baron Herkullos** rides his great emerald Hercules beetle (14 hearts, two
+  tiles each way, flying; 3 dice and weapon 2, defense 2 and armor 2; a miniboss, to the boss music). His
+  hits knock heroes back, and every 6 a tile further; and a hero he hits is **seized** and carried up to 6
+  tiles toward the nearest open air, dropped in if the beetle gets there (and falling to the courtyard),
+  or short of it, set down where the flight ended. His **Grasshopper Knights** (two, and one more for every
+  two heroes) leap about (flying, erratic), reach 2 with their lances and knock heroes back.
+- **The Emerald Baron Helm:** the keep's **unique** treasure, the Baron's drop. Head, armor 2; a die more
+  on Shove and Bull Rush; every push counts twice (a shove drives a monster two tiles, a bull rush four,
+  and a boss or anything too big can be shoved a tile); Bull Rush flies over open air and water (coming down
+  on the last solid ground); and **Emerald Charge**: with no Bull Rush skill or Wend die, the Bull Rush
+  card charges for a banked Power Die instead. A dungeon's unique is won **once a raid**: once someone gets
+  out with it, the Baron drops the **Baron's Strongbox** (worth 120 gold) in its place for the rest of the raid.
+- **Portals:** every dungeon has three, rings of standing stone: one in the entrance, one in floor 1's
+  stairs room and one in the last floor's boss room (near its door, away from the boss). Each starts
+  **dark**. A hero beside one can **light** it, free, by channeling a Magic Die or a banked Power Die into
+  it; it stays lit. From beside a lit portal a hero steps through, free, to any **other lit portal**, coming
+  out beside it (reaching a deeper floor that way counts as reaching it). A portal blocks movement but not
+  sight. Click a portal to walk up to it, then click it again: dark, it asks which die; lit, where to.
 - **Room roles:** the walk's first room is the Arrival room, which has no monsters. The room farthest
   from it holds the Stairs down (floors 1–2) or the Boss and Exit (floor 3), behind the Boss Door. A dead
   end becomes the Treasure room (chests, one guard), on floor 3 another becomes the Vault (the Boss Key's
@@ -1040,8 +1080,8 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
 - **Trap rooms** (one per floor from floor 2): nobody can leave through the doors while monsters
   remain. Heroes outside can still come in to help.
 - **Clearing a room** restores 1 heart *(tunable)* to every hero in it.
-- **Stairs:** click them to walk up beside them, and click them again to go down, free. You arrive in the
-  next floor's arrival room, off the stairs. Reaching a floor for the first time restores your Luck and recharges wands. Below the
+- **Stairs:** click them to walk up beside them, and click them again to go down, free. You come out of the
+  stairs up in the next floor's arrival room, beside them. Reaching a floor for the first time restores your Luck and recharges wands. Below the
   first floor, the arrival room has **stairs up** that lead back to the stairs room above (free, the same way).
 - **Exit:** sealed until the boss in its room is defeated. Stand on it and click again to escape. Your
   turn ends, and you're out of the run with your treasure.
@@ -1087,7 +1127,13 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   - **Rousing:** a standing ally next to them (diagonals too) can click them to roll Od Hand dice for
     them, like a search: not the action. Every 6 of the total (tools and Power Dice included) is a mark
     of life, and every die showing 1 adds a Doom Die to their next Keel roll. Three marks stand them up
-    at once.
+    at once. Clicking them asks **Aid** or **Carry them**.
+  - **Carrying:** a hero with empty arms can pick up an ally Keeling Over beside them, free: they fill
+    both carry slots (so no Rumble or Od Hand), and every Wend roll gives half its steps, rounded up.
+    The ally goes wherever the carrier goes (through doors, down the stairs, out of the dungeon with
+    them) and takes up no tile, out of the monsters' reach; they keep rolling their Keel Die. **Put down**
+    (in the carry window) sets them beside you. Standing back up, or their carrier falling, sets them
+    down too.
   - **Monsters** go after heroes still standing. A monster with nobody standing in reach strikes at
     someone Keeling Over (one attack with all its dice, defended as usual); a hit is a mark of death.
   - **Death:** a hero who dies is out of the run. A **tombstone** marks the spot ("Here lies Bran" or

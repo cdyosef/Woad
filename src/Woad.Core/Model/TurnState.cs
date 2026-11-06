@@ -273,7 +273,11 @@ public sealed class TurnState
     /// <summary>Flight left from the Icarus Wings, apart from Wend.</summary>
     public int FlightPoints { get; internal set; }
 
-    internal void CountSteps() => MovementPoints = CarriedSteps + Math.Max(0, MovementRoll!.Total + MovementBonus);
+    /// <summary>Carrying a downed ally: each Wend roll gives half its steps (rounded up).</summary>
+    internal bool HalfSpeed { get; set; }
+
+    internal void CountSteps() =>
+        MovementPoints = CarriedSteps + (Math.Max(0, MovementRoll!.Total + MovementBonus) is var steps && HalfSpeed ? (steps + 1) / 2 : steps);
 
     /// <summary>Ends movement for the turn so far (a sprung trap or a fall); every unused step is lost.</summary>
     internal void EndMove()

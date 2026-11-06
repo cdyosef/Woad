@@ -124,7 +124,8 @@ public partial class GameScreen
         [
             attack,
             new("shove", "Shove", _shove, () => _session.GetShoveTargets().Count > 0, () => Knows(Skill.Shove)),
-            new("bull_rush", "Bull Rush", _bullRush, () => _session.GetBullRushTargets().Any(tile => ShownRoom.MonsterAt(tile) is not null), () => Knows(Skill.BullRush)),
+            new("bull_rush", "Bull Rush", _bullRush, () => _session.GetBullRushTargets().Any(tile => ShownRoom.MonsterAt(tile) is not null),
+                () => Knows(Skill.BullRush) || ActiveHero?.EmeraldCharge == true),
             new("guard", "Guard", _guard, Threatened, () => Knows(Skill.Guard)),
             new("high_alert", "High Alert", _highAlert, () => true, () => Knows(Skill.HighAlert)),
             new("dig_out", "Dig out", _digOut, () => true, () => ActiveHero?.Conditions.Has(Condition.Buried) == true),
@@ -591,7 +592,8 @@ public partial class GameScreen
         Hold(_parry, ready, turn ? _session.CheckParry() : "");
         Hold(_guard, ready, !turn ? "" : _session.GetGuardTargets().Count > 0 ? null : _session.CheckGuard(ActiveHero!.Id) ?? "");
         Hold(_highAlert, ready, turn ? _session.CheckHighAlert() : "");
-        Hold(_bullRush, ready, turn ? _session.CheckBullRush() : "");
+        // Bull Rush, or the helm's Emerald Charge (a Power Die for the skill and the Wend die).
+        Hold(_bullRush, ready, !turn ? "" : _session.CheckBullRush() is null || _session.CheckBullRush(charge: true) is null ? null : _session.CheckBullRush());
         Hold(_holdFire, ready, turn ? _session.CheckHurlHeldFire() : "");
         Hold(_lightStick, ready, turn ? _session.CheckLightStick() : "");
         _hurling &= !_holdFire.Disabled;

@@ -75,6 +75,18 @@ public sealed record PowerDiceBanked(int OwnerId, int Count, int Banked) : GameE
 /// <summary>Banked Power Dice were rolled into an attack, move or defense; the bank now holds <paramref name="Banked"/>.</summary>
 public sealed record PowerDiceSpent(int OwnerId, int Count, int Banked) : GameEvent;
 
+/// <summary>A hero channeled a die into a portal: it's lit, and links to the other lit portals.</summary>
+public sealed record PortalLit(int HeroId, string RoomId) : GameEvent;
+
+/// <summary>A hero stepped through a portal, out beside the one in <paramref name="RoomId"/>.</summary>
+public sealed record PortalTaken(int HeroId, string FromRoomId, string RoomId, GridPosition Position) : GameEvent;
+
+/// <summary>A hero picked up an ally Keeling Over, to carry them.</summary>
+public sealed record AllyPickedUp(int HeroId, int AllyId) : GameEvent;
+
+/// <summary>A hero set down the ally they carried (or dropped them, falling), at <paramref name="Position"/>.</summary>
+public sealed record AllySetDown(int HeroId, int AllyId, GridPosition Position) : GameEvent;
+
 /// <summary>
 /// The start of a hero's turn: a d6 for each empty Magic Energy slot (<paramref name="Faces"/>); each 6 charges
 /// one with a Magic Die, <paramref name="Charged"/> of them now.
@@ -615,6 +627,9 @@ public sealed record MimicWoke(int MonsterId, string RoomId, GridPosition Chest,
 
 /// <summary>A grabbing monster's hit took hold of a hero: they can't move until it lets go.</summary>
 public sealed record Grabbed(int MonsterId, int HeroId) : GameEvent;
+
+/// <summary>A monster seized a hero and carried them off toward open air, along <paramref name="Path"/> (Baron Herkullos's beetle).</summary>
+public sealed record CarriedOff(int MonsterId, int HeroId, IReadOnlyList<GridPosition> Path) : GameEvent;
 
 /// <summary>A heavy blow knocked a hero straight back (a tile, or more with a mighty blow's sixes).</summary>
 public sealed record KnockedBack(int MonsterId, int HeroId, GridPosition From, GridPosition To) : GameEvent;

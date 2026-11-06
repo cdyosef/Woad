@@ -61,6 +61,24 @@ public sealed class Room
 
     public int Floor { get; }
 
+    /// <summary>A tower level above floor 1 (1, 2, and 3 the roof), or 0 in the dungeon below.</summary>
+    public int Level { get; init; }
+
+    /// <summary>Where it is, to say: "Floor 2", "Level 1", or "the Roof" (a tower's top).</summary>
+    public string PlaceName => Level == 0 ? $"Floor {Floor}" : Level > 2 ? "the Roof" : $"Level {Level}";
+
+    /// <summary>How high it is: floor 1 is 0, each floor below one less, each tower level one more.</summary>
+    public int Storey => Level > 0 ? Level : 1 - Floor;
+
+    /// <summary>Its portal (if it has one) is lit: it links to every other lit portal.</summary>
+    public bool PortalLit { get; internal set; }
+
+    /// <summary>Where its stairs up lead, where they aren't simply back up a floor (a tower's).</summary>
+    public string? StairsUpTo { get; init; }
+
+    /// <summary>Where its stairs down lead, where they aren't simply down a floor (a tower's).</summary>
+    public string? StairsDownTo { get; init; }
+
     /// <summary>The room's cell on its floor's map, for drawing the minimap.</summary>
     public GridPosition MapPosition { get; }
 

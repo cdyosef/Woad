@@ -82,7 +82,7 @@ public partial class GameScreen : Control
             Engine.TimeScale = 8;
         }
 
-        _narrator = new EventNarrator(NameOf, CardNameOf, id => Content.FindSpell(id)?.Name ?? id);
+        _narrator = new EventNarrator(NameOf, CardNameOf, id => Content.FindSpell(id)?.Name ?? id, id => _session.State.Rooms.TryGetValue(id, out Room? room) ? room.PlaceName : "");
         BuildLayout();
         StartRun(Setup);
 
@@ -593,17 +593,18 @@ public partial class GameScreen : Control
 
             case HeroDescended descended:
                 await ChangeRoom(descended.HeroId, descended.RoomId, descended.Position);
-                await _banner.Flash($"Floor {descended.Floor}", Palette.TrimBright, 0.5);
+                await _banner.Flash(Capital(_session.State.Rooms[descended.RoomId].PlaceName), Palette.TrimBright, 0.5);
                 break;
 
             case HeroAscended ascended:
                 await ChangeRoom(ascended.HeroId, ascended.RoomId, ascended.Position);
-                await _banner.Flash($"Back to floor {ascended.Floor}", Palette.TrimBright, 0.5);
+                await _banner.Flash(_session.State.Rooms[ascended.RoomId] is { Level: > 0 } tower ? $"Up to {tower.PlaceName}" : $"Back to floor {ascended.Floor}", Palette.TrimBright, 0.5);
                 break;
 
             case HeroFell fell:
                 await ChangeRoom(fell.HeroId, fell.RoomId, fell.Position);
-                await _banner.Flash($"Fell to floor {fell.Floor}", Palette.Danger, 0.5);
+                await _banner.Flash(_session.State.Rooms[fell.FromRoomId].Level > 0
+                    ? $"Fell from {_session.State.Rooms[fell.FromRoomId].PlaceName}!" : $"Fell to floor {fell.Floor}", Palette.Danger, 0.5);
                 break;
 
             case FellIntoPit fell when fell.RoomId == _shownRoomId:
@@ -639,6 +640,14 @@ public partial class GameScreen : Control
             case Grabbed grabbed:
                 CalloutOver(grabbed.HeroId, "GRABBED!", Palette.Danger);
                 await Pause(0.3);
+                break;
+
+            case CarriedOff carried:
+                // Seized by the beetle and flown toward the edge: the figure goes along the flight.
+                CalloutOver(carried.HeroId, "SEIZED!", Palette.Danger);
+                Sfx.Play("flap");
+                await Pause(0.25);
+                await Walk(carried.HeroId, carried.Path);
                 break;
 
             case Hexed hexed:
@@ -749,8 +758,13 @@ public partial class GameScreen : Control
 
                 break;
 
-            case IceMelted or BrazierLit:
+            case IceMelted or BrazierLit or PortalLit:
                 _board.QueueRedraw();
+                break;
+
+            case PortalTaken stepped:
+                await ChangeRoom(stepped.HeroId, stepped.RoomId, stepped.Position);
+                await _banner.Flash($"Through the portal: {PortalName(_session.State.Rooms[stepped.RoomId])}", Palette.Heal, 0.5);
                 break;
 
             case Slid slid:
@@ -1439,6 +1453,12 @@ public partial class GameScreen : Control
             case HeroDescended or HeroAscended:
                 Sfx.Play("stairs");
                 break;
+            case PortalLit:
+                Sfx.Play("heal", 0.8f);
+                break;
+            case PortalTaken:
+                Sfx.Play("heal", 1.3f);
+                break;
             case HeroKeeledOver:
                 Sfx.Play("downed");
                 break;
@@ -1683,4 +1703,6 @@ public partial class GameScreen : Control
 
     private async Task Pause(double seconds) =>
         await ToSignal(GetTree().CreateTimer(seconds), SceneTreeTimer.SignalName.Timeout);
+
+    private static string Capital(string text) => text.Length > 0 ? char.ToUpperInvariant(text[0]) + text[1..] : text;
 }

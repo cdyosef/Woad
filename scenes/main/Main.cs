@@ -18,7 +18,7 @@ namespace Woad.Scenes;
 
 /// <summary>
 /// The app's root: owns the content and the character store, swaps between screens, and saves
-/// each character's results when a run ends. Debug flags: <c>--uitest</c>, <c>--floortest</c>, <c>--hazardtest</c>, <c>--keeltest</c>, <c>--firetest</c>, <c>--cameratest</c>, <c>--bombtest</c>, <c>--rumbletest</c>, <c>--clicktest</c>, <c>--loottest</c>, <c>--dietypetest</c>, <c>--tradetest</c>, <c>--monstertest</c>, <c>--dentest</c>, <c>--merchanttest</c>, <c>--wanderertest</c>, <c>--encountertest</c>, <c>--skirmishtest</c> and
+/// each character's results when a run ends. Debug flags: <c>--uitest</c>, <c>--floortest</c>, <c>--hazardtest</c>, <c>--keeltest</c>, <c>--firetest</c>, <c>--cameratest</c>, <c>--bombtest</c>, <c>--rumbletest</c>, <c>--clicktest</c>, <c>--loottest</c>, <c>--dietypetest</c>, <c>--tradetest</c>, <c>--monstertest</c>, <c>--dentest</c>, <c>--merchanttest</c>, <c>--wanderertest</c>, <c>--encountertest</c>, <c>--skirmishtest</c>, <c>--gatetest</c> and
 /// <c>--autoplay</c> jump straight into a run with the debug party (<c>--party N</c> heroes,
 /// <c>--theme id</c> for another dungeon); <c>--menutest</c> and
 /// <c>--resultstest</c> click through the menus using a throwaway save folder; <c>--tracker</c> opens the
@@ -193,6 +193,10 @@ public partial class Main : Control
 		else if (args.Contains("--skirmishtest"))
 		{
 			RunSkirmishTest(seed);
+		}
+		else if (args.Contains("--gatetest"))
+		{
+			RunGateTest();
 		}
 		else if (args.Contains("--wanderertest"))
 		{
@@ -567,7 +571,11 @@ public partial class Main : Control
 
 		// The Graves, raided: as Father Ambrose's quests have left them.
 		(int ritualRounds, bool cursed) = _raiding && skirmish is null && _content.GetTheme(themeId).Graveyard is not null ? LoadRaidWorld().GraveyardOmens() : (0, false);
-		var save = new SavedRun { ThemeId = themeId, Seed = seed, FriendlyFire = friendlyFire, Heroes = heroes, MerchantGuildLevel = LoadRaidWorld().GuildLevel, Skirmish = skirmish, RitualRounds = ritualRounds, Cursed = cursed };
+		var save = new SavedRun
+		{
+			ThemeId = themeId, Seed = seed, FriendlyFire = friendlyFire, Heroes = heroes, MerchantGuildLevel = LoadRaidWorld().GuildLevel, Skirmish = skirmish, RitualRounds = ritualRounds, Cursed = cursed,
+			UniquesClaimed = _raiding && _raid is not null ? [.. _raid.UniquesClaimed] : [],
+		};
 		WriteSave(save);
 		ShowGame(save.CreateSetup(_content), party, save);
 	}
@@ -1044,6 +1052,7 @@ public partial class Main : Control
 		if (_raiding && _raid is not null)
 		{
 			_raid.ApplyRun(results, id => party.FirstOrDefault(member => member.Id == id)?.MaxHearts(_content) ?? 1);
+			_raid.ClaimUniques(results, _content);
 			if (setup.RitualRounds > 0)
 			{
 				LoadRaidWorld().SettleRitual(results.Any(result => result.RitualStopped), results.Any(result => result.PortalOpened));

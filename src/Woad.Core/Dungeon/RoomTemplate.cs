@@ -83,12 +83,13 @@ public sealed class RoomTemplate
                 ',' => TileKind.ShallowWater,
                 '=' or '%' => TileKind.DeepWater,
                 '*' => TileKind.Exit,
+                '@' => TileKind.Portal,
                 _ => TileKind.Floor,
             };
 
             switch (glyph)
             {
-                case '_' or '.' or '#' or 'X' or '~' or 'C' or 'P' or '>' or '<' or '*' or ':' or ',' or '=' or '^':
+                case '_' or '.' or '#' or 'X' or '~' or 'C' or 'P' or '>' or '<' or '*' or ':' or ',' or '=' or '^' or '@':
                     break;
                 case >= '1' and <= '4':
                     heroStarts[glyph - '1'] = position;
@@ -153,6 +154,9 @@ public sealed class RoomTemplate
     }
 
     /// <summary>The same room with a different set of spots the generator may put monsters.</summary>
+    public RoomTemplate WithHeroStarts(IReadOnlyDictionary<int, GridPosition> heroStarts) =>
+        new(Layout, Monsters, heroStarts, SpawnPoints, BossSpawn);
+
     public RoomTemplate WithSpawnPoints(IEnumerable<GridPosition> spawnPoints) =>
         new(Layout, Monsters, HeroStarts, [.. spawnPoints], BossSpawn);
 

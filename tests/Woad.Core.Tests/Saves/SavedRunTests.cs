@@ -79,7 +79,7 @@ public class SavedRunTests
     public void AMoveTheGameNoLongerAllowsMakesTheSaveUnusable()
     {
         SavedRun save = NewSave("emerald_keep", 5);
-        save.Commands.Add(new EndTurn(99));
+        save.Commands.Add(new EndTurn(-1));
 
         InvalidDataException problem = Assert.Throws<InvalidDataException>(() => SavedRun.FromJson(save.ToJson()).Restore(Content));
         Assert.Contains("move 1 of 1", problem.Message);

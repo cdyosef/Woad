@@ -1,5 +1,6 @@
 using Woad.Core.Content;
 using Woad.Core.Dungeon;
+using Woad.Core.Grid;
 using Woad.Core.Rules;
 
 namespace Woad.Scenes.Game;
@@ -195,6 +196,22 @@ public static class DemoRun
         Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20 } }],
         Rooms = [new RoomSetup("yard", RoomTemplate.Parse(".........\n.........\n.........\n.........\n....1s...\n.........\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
         StartRoomId = "yard",
+    };
+
+    /// <summary>For --gatetest's portals: Aria beside a dark portal with a banked Power Die, a second portal in the hall next door.</summary>
+    public static RunSetup Portals(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20 }, PowerDice = 1 }],
+        Rooms =
+        [
+            new RoomSetup("near", RoomTemplate.Parse(".......\n.......\n.......\n..1@...\n.......\n.......\n.......", ContentCatalog.LoadDefault()),
+                new Dictionary<Direction, string> { [Direction.East] = "far" }),
+            new RoomSetup("far", RoomTemplate.Parse(".......\n.......\n.......\n...@...\n.......\n.......\n.......", ContentCatalog.LoadDefault()),
+                new Dictionary<Direction, string> { [Direction.West] = "near" }, MapPosition: new GridPosition(1, 0)),
+        ],
+        StartRoomId = "near",
     };
 
     /// <summary>For --spelltest: Aria with a Flame Scroll on her belt and a Frost Wand in her off hand, two slimes across the room.</summary>

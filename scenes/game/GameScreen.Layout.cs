@@ -23,6 +23,9 @@ public partial class GameScreen
     private readonly List<string> _messages = [];
 
     private BoardView _board = null!;
+
+    /// <summary>The board (for the click tests).</summary>
+    internal BoardView Board => _board;
     private HeroPanel _heroPanel = null!;
     private MinimapView _minimap = null!;
     private TurnFrame _turnFrame = null!;
@@ -200,7 +203,10 @@ public partial class GameScreen
         _rumble.Disabled = !(idle && !pending) || _session.AttackDiceLeft < 1;
         _rumbling &= !_rumble.Disabled;
         _rumble.Text = _rumbling ? "Cancel" : "Rumble";
-        _shove.Disabled = !(idle && !pending) || _session.AttackDiceLeft < 1;
+        // Shove: Rumble dice for a shove, or an ally beside you to push (if they let you).
+        bool nudge = _session.State.Turn is not null && ActiveHero is { } nudger
+            && _session.State.ActiveHeroesIn(_session.State.RoomOf(nudger)).Any(ally => ally != nudger && _session.CheckNudgeAlly(ally.Id) is null);
+        _shove.Disabled = !(idle && !pending) || (_session.AttackDiceLeft < 1 && !nudge);
         _leap.Disabled = !(idle && !pending) || _session.MoveDiceLeft < 1 || held;
         _leaping &= !_leap.Disabled;
         _leap.Text = _leaping ? "Cancel" : "Leap";
@@ -444,7 +450,8 @@ public partial class GameScreen
         bool canStep = turn.MovementPoints > 0;
         if (DoorAt(room, hero.Position) is { } side && room.PassageOn(side) is { IsLocked: true } locked)
         {
-            return locked.NeedsBossKey ? hero.HasBossKey : hero.Keys > 0 || _session.CheckPickLock(hero.Position) is null;
+            return locked.NeedsGateKey ? GameSession.HasGateKey(hero)
+                : locked.NeedsBossKey ? hero.HasBossKey : hero.Keys > 0 || _session.CheckPickLock(hero.Position) is null;
         }
 
         return room.Layout[hero.Position] switch
@@ -648,7 +655,7 @@ public partial class GameScreen
         string whose = _playingTurn is { Set: true, HeroId: null }
             ? _playingFaction == Faction.Undead ? $"[color={Palette.Hex(DieTypes.Nekrot)}]The undead's turn[/color]" : $"[color={Palette.Hex(Palette.Danger)}]The monsters' turn[/color]"
             : turn is null ? "" : $"[color={Palette.Hex(Palette.Seat(turn.Seat))}]{Escape(turn.Name)}'s turn[/color]";
-        string where = _shownRoomId.Length > 0 && ShownRoom.IsHuge ? "" : $"   FLOOR {floor}";
+        string where = _shownRoomId.Length > 0 && ShownRoom.IsHuge ? "" : $"   {(_shownRoomId.Length > 0 ? ShownRoom.PlaceName : $"Floor {floor}").ToUpperInvariant()}";
         if (state.RitualRoundsLeft > 0)
         {
             where += $"   [color=#a060ff]RITUAL: {state.RitualRoundsLeft}[/color]";
@@ -836,6 +843,7 @@ public partial class GameScreen
         // The carrying slots, sliding out from behind the sheet's edge over the board while there's something carried.
         _carryTab = new CarryTab { Position = new Vector2(SideWidth, StripHeight + 4), ZIndex = 2 };
         _carryTab.CardSelected += ClickCard;
+        _carryTab.PutDownRequested += () => ExecuteForActiveHero(heroId => new PutDownAlly(heroId));
         AddChild(_carryTab);
 
         // Under the board, the dice bar: who rolls on the left, VS, who answers on the right.

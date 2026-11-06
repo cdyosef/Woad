@@ -119,6 +119,7 @@ public sealed partial class GameSession
         Turn.MovementRoll = roll;
         Turn.MovementBonus = bonus - RollPenalty(hero.Conditions) - Curse(hero, events);
         Turn.HasMoved = false;
+        Turn.HalfSpeed = hero.CarriedAlly is not null;
         Turn.CountSteps();
         events.Add(new MovementRolled(command.HeroId, roll, bonus, Turn.MovementPoints, command.PowerDice));
         EarnPowerDice(hero, Sixes(roll.Faces), events);
@@ -219,7 +220,8 @@ public sealed partial class GameSession
 
         if (room.PassageOn(command.Door) is { IsLocked: true } locked)
         {
-            return locked.NeedsBossKey
+            return locked.NeedsGateKey ? GateLockedText
+                : locked.NeedsBossKey
                 ? "The Boss Door opens only with the Boss Key."
                 : $"The door is locked: use a key, or pick the lock with Od Hand ({locked.Difficulty}+).";
         }

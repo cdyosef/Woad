@@ -77,6 +77,7 @@ public partial class MinimapView : Control
             Color color = room.Layout[tile] switch
             {
                 TileKind.Exit => Palette.Heal,
+                TileKind.Portal => Palette.Heal,
                 TileKind.CrackedWall => Palette.Loot,
                 TileKind.Wall or TileKind.Rock => Palette.WallTop,
                 TileKind.Chest => Palette.TextDim,
@@ -96,7 +97,8 @@ public partial class MinimapView : Control
     {
         Font font = ThemeDB.FallbackFont;
         Room? huge = _state is not null && _state.Rooms.TryGetValue(_shownRoomId, out Room? shown) && shown.IsHuge ? shown : null;
-        string title = huge is not null ? "THE GRAVES" : $"FLOOR {_floor}";
+        string title = huge is not null && huge.Level == 0 ? "THE GRAVES"
+            : _state is not null && _state.Rooms.TryGetValue(_shownRoomId, out Room? here) ? here.PlaceName.ToUpperInvariant() : $"FLOOR {_floor}";
         if (GameArt.HeadingFont is { } heading)
         {
             DrawString(heading, new Vector2(0, 9), title, fontSize: UiTheme.HeadingPixelSize, modulate: Palette.Trim);
@@ -132,6 +134,7 @@ public partial class MinimapView : Control
                 Color color = room.PassageOn(side) switch
                 {
                     { IsLocked: true, NeedsBossKey: true } => Palette.Heart,
+                    { IsLocked: true, NeedsGateKey: true } => new Color("3fd07a"),
                     { IsLocked: true } => Palette.Loot.Darkened(0.4f),
                     { IsBlocked: true } => Palette.WallTop,
                     _ => Palette.TrimDim,

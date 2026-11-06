@@ -23,7 +23,14 @@ public sealed partial class GameSession
             return error;
         }
 
-        if (room.Layout[stairs] == TileKind.StairsUp)
+        // A tower's stairs lead where they're linked: up beside the stairs down above, down beside the stairs up below.
+        bool climbing = room.Layout[stairs] == TileKind.StairsUp;
+        if ((climbing ? room.StairsUpTo : room.StairsDownTo) is { } linked)
+        {
+            return TakeLinkedStairs(hero, room, State.Rooms[linked], climbing, events);
+        }
+
+        if (climbing)
         {
             return ClimbStairs(hero, room, events);
         }
@@ -34,7 +41,11 @@ public sealed partial class GameSession
             return "These stairs lead nowhere.";
         }
 
-        if (Landing(arrival) is not { } landing)
+        // Out of the stairs up below: beside them (or, where there are none, the room's landing).
+        GridPosition? landingSpot = arrival.TilesOfKind(TileKind.StairsUp).FirstOrDefault() is var up && arrival.Layout[up] == TileKind.StairsUp
+            ? LandingNear(arrival, up)
+            : Landing(arrival);
+        if (landingSpot is not { } landing)
         {
             return "The way down is blocked.";
         }
@@ -48,6 +59,37 @@ public sealed partial class GameSession
         if (firstTime)
         {
             ReachNewFloor(hero, arrival.Floor, events);
+        }
+
+        return null;
+    }
+
+    /// <summary>Stairs linked to a particular room (a tower's): out beside its stairs going the other way. Free.</summary>
+    private string? TakeLinkedStairs(Hero hero, Room room, Room target, bool up, List<GameEvent> events)
+    {
+        TileKind other = up ? TileKind.StairsDown : TileKind.StairsUp;
+        GridPosition near = target.TilesOfKind(other).Select(tile => (GridPosition?)tile).FirstOrDefault() ?? target.Layout.Center;
+        if (LandingNear(target, near) is not { } landing)
+        {
+            return up ? "The way up is blocked." : "The way down is blocked.";
+        }
+
+        hero.RoomId = target.Id;
+        hero.Position = landing;
+        target.Explored = true;
+        bool firstTime = target.Floor > hero.DeepestFloor;
+        if (up)
+        {
+            events.Add(new HeroAscended(hero.Id, room.Id, target.Id, target.Floor, landing));
+        }
+        else
+        {
+            events.Add(new HeroDescended(hero.Id, room.Id, target.Id, target.Floor, landing, firstTime));
+        }
+
+        if (firstTime)
+        {
+            ReachNewFloor(hero, target.Floor, events);
         }
 
         return null;
@@ -119,11 +161,19 @@ public sealed partial class GameSession
         // The hero's companions in the room leave with them, and the merchants following them.
         List<Hero> party = State.ActiveHeroesIn(room).Where(other => other == hero || other.OwnerId == hero.Id).ToList();
         RescueMerchants(party, room, events);
+        // ...and anyone they carry out.
+        party.AddRange([.. party.Select(leaving => leaving.CarriedAlly).OfType<Hero>()]);
         foreach (Hero leaving in party)
         {
+            ReleaseCarry(leaving);
             leaving.Status = HeroStatus.Escaped;
             events.Add(new HeroEscaped(leaving.Id, leaving.TreasureValue));
-            GrantXp(leaving, GameRules.XpForEscaping, events);
+
+            // Out by the gateway they came in by, there's no reward for getting away.
+            if (!(room.Floor == 1 && room.Role == RoomRole.Arrival))
+            {
+                GrantXp(leaving, GameRules.XpForEscaping, events);
+            }
         }
 
         EndRunIfOver(events);

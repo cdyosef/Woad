@@ -26,6 +26,12 @@ public partial class CarryTab : Control
     /// <summary>A carried card was clicked: it's selected, for its buttons.</summary>
     public event Action<int>? CardSelected;
 
+    /// <summary>"Put down" was clicked, for a carried ally.</summary>
+    public event Action? PutDownRequested;
+
+    private Button _ally = null!;
+    private Hero? _carried;
+
     /// <summary>Whether the window is out (or sliding out).</summary>
     internal bool IsOut => _out;
 
@@ -56,8 +62,24 @@ public partial class CarryTab : Control
             _cards[i] = card;
         }
 
+        // A downed ally carried: both arms, their figure, and a click sets them down.
+        _ally = UiTheme.CompactButton(new Vector2(5, 15), new Vector2(62, 40), "");
+        _ally.Name = "PutDown";
+        _ally.Visible = false;
+        _ally.Pressed += () => PutDownRequested?.Invoke();
+        _ally.Draw += () =>
+        {
+            if (_carried is { } ally)
+            {
+                Looks.Draw(_ally, new Rect2(19, 1, 24, 24), Looks.Resolve(ally.Appearance, ally.Portrait));
+            }
+        };
+        _window.AddChild(_ally);
         Visible = false;
     }
+
+    /// <summary>The Put down button, for a carried ally (for the click tests).</summary>
+    internal Button PutDownButton => _ally;
 
     private bool _carrying;
 
@@ -78,7 +100,23 @@ public partial class CarryTab : Control
     public void ShowHero(Hero? hero, int? selectedCardId)
     {
         IReadOnlyList<CardInstance> carried = hero?.Carried ?? [];
-        _carrying = carried.Count > 0;
+        _carried = hero?.CarriedAlly;
+        _carrying = carried.Count > 0 || _carried is not null;
+        _ally.Visible = _carried is not null;
+        if (_carried is { } ally)
+        {
+            _ally.Text = $"\n\nPut {ally.Name} down";
+            _ally.TooltipText = $"Carrying {ally.Name}: half speed, no Rumble or Od Hand. Click to set them down beside you.";
+            _ally.QueueRedraw();
+            foreach (SheetCard card in _cards)
+            {
+                card.Visible = false;
+            }
+
+            Slide(true);
+            return;
+        }
+
         bool both = carried.Count == 1 && carried[0].Definition.CarrySlots == GameRules.CarrySlots;
         for (int i = 0; i < _cards.Length; i++)
         {

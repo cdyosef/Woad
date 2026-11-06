@@ -12,8 +12,9 @@ public class DungeonGeneratorTests
     private static IReadOnlyList<HeroSetup> Party(int size) =>
         Enumerable.Range(1, size).Select(number => new HeroSetup($"Hero {number}", GameRules.HeroBaseStats, GameRules.StarterKit)).ToList();
 
+    /// <summary>The dungeon below (floors 1 to 3): the Emerald Keep's tower above has tests of its own.</summary>
     private static RunSetup Generate(ulong seed, int partySize = 2) =>
-        DungeonGenerator.CreateRun(Content, "emerald_keep", Party(partySize), seed);
+        DungeonGenerator.CreateRun(Content, "emerald_keep", Party(partySize), seed) is var run ? run with { Rooms = [.. run.Rooms.Where(room => room.Level == 0)] } : null!;
 
     private static readonly ulong[] SeedValues = [1, 2, 3, 42, 777, 2026, 31337, 90210];
 
@@ -107,7 +108,10 @@ public class DungeonGeneratorTests
     {
         RunSetup run = Generate(seed);
 
-        Assert.All(run.Rooms.Where(room => room.Role == RoomRole.Arrival), room => Assert.Empty(room.Template.Monsters));
+        // No monsters where you arrive, but at a gate: its knight and guards hold the Emerald Keep's courtyard.
+        Assert.All(run.Rooms.Where(room => room.Role == RoomRole.Arrival && room.Floor > 1), room => Assert.Empty(room.Template.Monsters));
+        Assert.All(run.Rooms.Where(room => room.Role == RoomRole.Arrival && room.Floor == 1).SelectMany(room => room.Template.Monsters),
+            spawn => Assert.Contains(spawn.Monster.Id, new[] { "emerald_knight", "emerald_guard" }));
         Assert.Single(run.Rooms.SelectMany(room => room.Template.Monsters), spawn => spawn.Monster.Boss);
         Assert.All(run.Rooms.SelectMany(room => room.Template.Monsters.Select(spawn => (room, spawn))),
             pair => Assert.True(pair.room.Template.Layout[pair.spawn.Position].IsWalkable()));
@@ -141,10 +145,19 @@ public class DungeonGeneratorTests
 
         Assert.All(all.Where(room => room.Role == RoomRole.Boss), boss => Assert.Equal((DungeonGenerator.BossSize, DungeonGenerator.BossSize), (boss.Template.Layout.Width, boss.Template.Layout.Height)));
         Assert.All(all.Where(room => room.Role != RoomRole.Boss), room => Assert.True(Area(room) < DungeonGenerator.BossSize * DungeonGenerator.BossSize));
-        Assert.All(all.Where(room => room.Role is RoomRole.Arrival or RoomRole.Vault), room => Assert.Equal(81, Area(room)));
+        Assert.All(all.Where(room => room.Role is RoomRole.Arrival or RoomRole.Vault && room.Floor > 1 || room.Role == RoomRole.Vault), room => Assert.Equal(81, Area(room)));
 
-        int standard = all.Count(room => Area(room) == 81);
-        Assert.True(standard > all.Count / 2, $"{standard} of {all.Count} rooms are 9x9");
+        // Floor 1's arrival room is the entrance hall: bigger, with its gateway out.
+        Assert.All(all.Where(room => room.Role == RoomRole.Arrival && room.Floor == 1), room =>
+        {
+            Assert.Contains((room.Template.Layout.Width, room.Template.Layout.Height),
+                new[] { (DungeonGenerator.EntranceWidth, DungeonGenerator.EntranceHeight), (DungeonGenerator.CourtyardWidth, DungeonGenerator.CourtyardHeight) });
+            Assert.Equal(DungeonGenerator.GatewayWidth, room.Template.TilesOf(TileKind.Exit).Count());
+        });
+
+        List<RoomSetup> ordinary = [.. all.Where(room => !(room.Role == RoomRole.Arrival && room.Floor == 1))];
+        int standard = ordinary.Count(room => Area(room) == 81);
+        Assert.True(standard > ordinary.Count / 2, $"{standard} of {ordinary.Count} rooms (past the entrance halls) are 9x9");
         Assert.Contains(all, room => Area(room) < 81);
         Assert.Contains(all, room => Area(room) > 81 && room.Role != RoomRole.Boss);
         Assert.Contains(all, room => room.Template.Layout.Positions.Any(tile => room.Template.Layout[tile] == TileKind.Rock));

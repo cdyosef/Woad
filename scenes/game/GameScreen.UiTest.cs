@@ -315,9 +315,21 @@ public partial class GameScreen
             Check(_tokens.ContainsKey(bran.Id) && _figures[bran.Id].Keeling, "Bran's figure stays on the board, lying down");
             Check(ActiveHero == aria, "the turn moves on to Aria");
 
-            // Clicking a fallen ally beside you rouses them with your Od Hand dice.
+            // Clicking a fallen ally beside you: aid them with your Od Hand dice, or carry them.
             Check(_session.GetRousableAllies().Contains(bran), "Aria can rouse Bran");
             await ClickTile(bran.Position);
+            Check(_inventory.IsChoosingHand && _inventory.HandButton(0).Text == "Aid (Od Hand)" && _inventory.HandButton(1).Text == "Carry them",
+                "clicking Bran, who's down, asks: Aid him or carry him");
+            await Click(this, _inventory.HandButton(1));
+            await WaitUntilIdle();
+            Check(aria.CarriedAlly == bran && _carryTab.IsOut && _carryTab.PutDownButton.Visible && _session.AttackDiceLeft == 0,
+                $"Carry them: Bran's in Aria's arms (the carry window shows him), and her arms are full ({aria.CarriedAlly?.Name}, {_carryTab.IsOut}, {_carryTab.PutDownButton.Visible}, {_session.AttackDiceLeft}, {_inventory.IsChoosingHand}: {string.Join(" / ", _messages.TakeLast(3))})");
+            await Pause(0.3);
+            await Click(this, _carryTab.PutDownButton);
+            await WaitUntilIdle();
+            Check(aria.CarriedAlly is null && bran.Carrier is null && bran.Position.ChebyshevDistanceTo(aria.Position) == 1, $"Put down sets him down beside her ({aria.CarriedAlly?.Name}, {bran.Position} by {aria.Position}: {string.Join(" / ", _messages.TakeLast(2))})");
+            await ClickTile(bran.Position);
+            await Click(this, _inventory.HandButton(0));
             await ConfirmIfHeld();
             Check(_session.State.Turn!.OdHandDiceUsed == 1 && !_session.State.Turn.HasActed, "rousing uses Aria's Od Hand die, not her action");
             Check(_messages.Any(message => message.Contains("aids Bran")), "the log tells how the rousing went");

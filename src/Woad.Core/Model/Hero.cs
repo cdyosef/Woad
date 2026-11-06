@@ -171,9 +171,28 @@ public sealed class Hero
 
     public HeroStatus Status { get; internal set; }
 
-    public string RoomId { get; internal set; }
+    /// <summary>The room they're in: a carried hero's is their carrier's.</summary>
+    public string RoomId
+    {
+        get => Carrier?.RoomId ?? _roomId;
+        internal set => _roomId = value;
+    }
 
-    public GridPosition Position { get; internal set; }
+    /// <summary>Where they stand: a carried hero is wherever their carrier is.</summary>
+    public GridPosition Position
+    {
+        get => Carrier?.Position ?? _position;
+        internal set => _position = value;
+    }
+
+    private string _roomId = "";
+    private GridPosition _position;
+
+    /// <summary>The hero carrying this one (Keeling Over, in their arms), or null.</summary>
+    public Hero? Carrier { get; internal set; }
+
+    /// <summary>The downed ally in this hero's arms (both carry slots), or null.</summary>
+    public Hero? CarriedAlly { get; internal set; }
 
     public int Kills { get; internal set; }
 
@@ -344,10 +363,10 @@ public sealed class Hero
     public int BeltCapacity => _equipment.GetValueOrDefault(EquipSlot.Belt)?.Definition.BeltSlots ?? 0;
 
     /// <summary>The carrying slots in use.</summary>
-    public int CarrySlotsUsed => _carried.Sum(card => card.Definition.CarrySlots);
+    public int CarrySlotsUsed => _carried.Sum(card => card.Definition.CarrySlots) + (CarriedAlly is null ? 0 : GameRules.CarrySlots);
 
     /// <summary>Arms full of something: no Rumble and no Od Hand until it's put down or away.</summary>
-    public bool IsCarrying => _carried.Count > 0;
+    public bool IsCarrying => _carried.Count > 0 || CarriedAlly is not null;
 
     /// <summary>Whether there's room in the hero's arms for this card (or a stack of it they carry already).</summary>
     public bool CanCarryInArms(CardDefinition definition) =>
@@ -386,6 +405,18 @@ public sealed class Hero
     /// <summary>Base stats plus the bonuses of everything equipped (mods on the belt and buckle too).</summary>
     public Stats EffectiveStats => EquippedCards.Concat(_mods).Concat(BeltTools).Aggregate(BaseStats, (stats, card) =>
         stats + card.Modifiers + (HasSetBonus(card.Definition) ? card.Definition.Set!.Modifiers : Stats.None));
+
+    /// <summary>Dice more on Shove and Bull Rush (the Emerald Baron Helm).</summary>
+    public int PushDice => EquippedCards.Sum(card => card.Definition.PushDice);
+
+    /// <summary>Every push counts twice: twice as far, and bosses can be shoved a tile (the Emerald Baron Helm).</summary>
+    public bool DoublePush => EquippedCards.Any(card => card.Definition.DoublePush);
+
+    /// <summary>Bull Rush flies over open air and water (the Emerald Baron Helm).</summary>
+    public bool FlyingRush => EquippedCards.Any(card => card.Definition.FlyingRush);
+
+    /// <summary>Emerald Charge: a bull rush for a Power Die, with no Bull Rush skill or Wend die (the Emerald Baron Helm).</summary>
+    public bool EmeraldCharge => EquippedCards.Any(card => card.Definition.EmeraldCharge);
 
     /// <summary>Magic Energy slots: one for each rank of Magic.</summary>
     public int MagicSlots => Math.Max(0, EffectiveStats.Magic);

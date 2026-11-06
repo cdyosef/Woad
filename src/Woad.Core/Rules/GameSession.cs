@@ -29,7 +29,11 @@ public sealed partial class GameSession
         _dice = new DiceRoller(_random.Dice);
         State = CreateState(content, setup, _random);
         _monstersFirst = setup.MonstersFirst;
+        _uniquesClaimed = [.. setup.UniquesClaimed];
     }
+
+    /// <summary>Dungeon uniques claimed this raid before the run: their <c>UniqueElse</c> drops in their place.</summary>
+    private readonly HashSet<string> _uniquesClaimed;
 
     /// <summary>The monsters take a turn before the heroes' first (see <see cref="RunSetup.MonstersFirst"/>).</summary>
     private readonly bool _monstersFirst;
@@ -153,6 +157,11 @@ public sealed partial class GameSession
             Unshackle c => Handle(c, events),
             Retreat c => Handle(c, events),
             MoveOn c => Handle(c, events),
+            NudgeAlly c => Handle(c, events),
+            PickUpAlly c => Handle(c, events),
+            LightPortal c => Handle(c, events),
+            TakePortal c => Handle(c, events),
+            PutDownAlly c => Handle(c, events),
             SpendPoint c => Handle(c, events),
             SetCompanionPolicy c => Handle(c, events),
             BuyFromMerchant c => Handle(c, events),
@@ -474,7 +483,13 @@ public sealed partial class GameSession
                 roomSetup.Role,
                 roomSetup.Trap,
                 roomSetup.Template.HeroStarts.OrderBy(start => start.Key).Select(start => start.Value).ToList(),
-                roomSetup.DoorTiles) { Dark = roomSetup.Dark };
+                roomSetup.DoorTiles)
+            {
+                Dark = roomSetup.Dark,
+                Level = roomSetup.Level,
+                StairsUpTo = roomSetup.StairsUpTo,
+                StairsDownTo = roomSetup.StairsDownTo,
+            };
             foreach (MonsterSpawn spawn in roomSetup.Template.Monsters)
             {
                 // A graveyard's dead lie still until a hero comes near.
@@ -498,14 +513,16 @@ public sealed partial class GameSession
         AddBreaches(state, setup.Breaches);
         foreach (Room room in state.Rooms.Values)
         {
-            room.BelowRoomId = state.Rooms.Values
-                .FirstOrDefault(below => below.Floor == room.Floor + 1 && below.MapPosition == room.MapPosition && below.Role is not (RoomRole.Boss or RoomRole.Secret))?.Id;
+            // A tower's rooms drop to nothing below (but where they fall somewhere of their own, a roof's open air).
+            room.BelowRoomId = setup.Rooms.First(other => other.Id == room.Id).FallsTo
+                ?? (room.Level > 0 ? null : state.Rooms.Values
+                    .FirstOrDefault(below => below.Level == 0 && below.Floor == room.Floor + 1 && below.MapPosition == room.MapPosition && below.Role is not (RoomRole.Boss or RoomRole.Secret))?.Id);
         }
 
         // Some holes go down deep: two floors, straight through the room underneath.
         foreach (Room room in state.Rooms.Values.OrderBy(room => room.Id, StringComparer.Ordinal))
         {
-            if (room.BelowRoomId is not { } belowId || state.Rooms[belowId].BelowRoomId is not { } deepId)
+            if (room.Level > 0 || room.BelowRoomId is not { } belowId || state.Rooms[belowId].BelowRoomId is not { } deepId)
             {
                 continue;
             }

@@ -21,8 +21,8 @@ public sealed partial class GameSession
     /// <summary>Tiles a bull rush shoves a monster it hits.</summary>
     public const int BullRushPush = 2;
 
-    /// <summary>Why the active hero can't bull rush now, or null.</summary>
-    public string? CheckBullRush()
+    /// <summary>Why the active hero can't bull rush now (or, with <paramref name="charge"/>, make an Emerald Charge), or null.</summary>
+    public string? CheckBullRush(bool charge = false)
     {
         if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
         {
@@ -30,12 +30,23 @@ public sealed partial class GameSession
         }
 
         Hero hero = ActiveHero;
-        if (!hero.Knows(Skill.BullRush))
+        if (charge)
+        {
+            if (!hero.EmeraldCharge)
+            {
+                return "Only the Emerald Baron Helm makes an Emerald Charge.";
+            }
+
+            if (hero.Power.Banked < 1)
+            {
+                return "An Emerald Charge takes a banked Power Die, and you've none.";
+            }
+        }
+        else if (!hero.Knows(Skill.BullRush))
         {
             return "You haven't learned to Bull Rush.";
         }
-
-        if (MoveDiceLeft < 1)
+        else if (MoveDiceLeft < 1)
         {
             return "A bull rush takes a Wend die, and you've none left this turn.";
         }
@@ -64,7 +75,7 @@ public sealed partial class GameSession
     /// </summary>
     public IReadOnlyList<GridPosition> GetBullRushTargets()
     {
-        if (State.Turn is null || CheckBullRush() is not null)
+        if (State.Turn is null || (CheckBullRush() is not null && CheckBullRush(charge: true) is not null))
         {
             return [];
         }
@@ -100,12 +111,12 @@ public sealed partial class GameSession
         return targets;
     }
 
-    /// <summary>A charge runs on over open ground nobody stands on (traps and all).</summary>
-    private bool CanCharge(Room room, GridPosition tile) => room.Layout[tile].IsWalkable() && !IsOccupied(room, tile);
+    /// <summary>A charge runs on over open ground nobody stands on (traps and all); a flying one over open air and water too.</summary>
+    private bool CanCharge(Room room, GridPosition tile) => room.Layout[tile].IsWalkable(flying: ActiveHero.FlyingRush) && !IsOccupied(room, tile);
 
     private string? Handle(BullRush command, List<GameEvent> events)
     {
-        if (CheckBullRush() is { } error)
+        if (CheckBullRush(command.Charge) is { } error)
         {
             return error;
         }
@@ -133,10 +144,18 @@ public sealed partial class GameSession
             return powerError;
         }
 
-        // The charge's length: a Wend die (a 6 rolls another) and the Wend bonus.
+        // The charge's length: a Wend die (a 6 rolls another) and the Wend bonus; an Emerald Charge pays a Power Die for its die instead.
         int speed = SpeedBonusLeft;
         Turn.SpeedUsed |= speed != 0;
-        Turn.MoveDiceUsed++;
+        if (command.Charge)
+        {
+            hero.Power.Banked--;
+            events.Add(new PowerDiceSpent(hero.Id, 1, hero.Power.Banked));
+        }
+        else
+        {
+            Turn.MoveDiceUsed++;
+        }
         (int[] faces, _) = RollBonusDice(1);
         int length = Math.Max(0, faces.Sum() + speed - RollPenalty(hero.Conditions));
 
@@ -167,6 +186,14 @@ public sealed partial class GameSession
                 sprung = trap;
                 break;
             }
+        }
+
+        // Flying over open air or water, the charge comes down on the last solid ground it crossed.
+        while (path.Count > 0 && !room.Layout[path[^1]].IsWalkable())
+        {
+            path.RemoveAt(path.Count - 1);
+            struck = null;
+            crashed = true;
         }
 
         // Just as far as the monster, with nothing to spare, still reaches it.
@@ -244,7 +271,7 @@ public sealed partial class GameSession
             return;
         }
 
-        for (int pushed = 0; pushed < BullRushPush; pushed++)
+        for (int pushed = 0; pushed < BullRushPush * (hero.DoublePush ? 2 : 1); pushed++)
         {
             GridPosition at = monster.Position;
             if (PushDestination(room, hero.Position, at, monster.Flies) is not { } to)

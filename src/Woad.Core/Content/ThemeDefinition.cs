@@ -198,11 +198,28 @@ public sealed record ThemeRoomDefinition
 }
 
 /// <summary>A dungeon's identity: its name, loot deck, monsters, boss and room layouts.</summary>
+/// <summary>
+/// A dungeon whose way in is a gate (the Emerald Keep): its entrance is a courtyard outside, a moat and a
+/// bridge before the gate, held by a knight who carries the gate's key and guards beside him.
+/// </summary>
+public sealed record GateGuard
+{
+    public required string Knight { get; init; }
+
+    public required string Guard { get; init; }
+}
+
 public sealed record ThemeDefinition
 {
     public required string Id { get; init; }
 
     public required string Name { get; init; }
+
+    /// <summary>A gate held against the party at the entrance (the Emerald Keep's), or null.</summary>
+    public GateGuard? Gate { get; init; }
+
+    /// <summary>A tower above floor 1 (the Emerald Keep's): two levels of rooms, then the roof.</summary>
+    public bool Tower { get; init; }
 
     /// <summary>A line about the dungeon for the Dungeon Run list.</summary>
     public string Description { get; init; } = "";
