@@ -216,11 +216,15 @@ stat/dice modifiers, effect, gold value and rarity. Each dungeon theme has its o
   stunned creature get **+1 per Stun and +3 per Powerful Stun**. Bosses can't be stunned.
 - **Boomerang:** a weapon for either hand. Thrown at a target within 4 (line of sight) with your Rumble
   dice +1 (in place of your main weapon's bonus); on a hit, every 6 rolled adds a Stun. In the off hand
-  it's used for targets your main weapon can't reach, unless you pick it.
-- **Two weapons in hand** (a Spear and a Boomerang): pick which one you attack with by clicking it in your
-  hands, or with the weapon toggle at the end of the Rumble row (**Auto**, then each weapon). Auto uses the
-  main hand when it reaches, else the off hand. The attack range shows the picked weapon's reach, and
-  hovering a monster says what you'd hit it with.
+  it's thrown with Rumble only when you pick it (or by the Od Hand card's follow-up).
+- **Which hand Rumble swings:** the **main hand** (bare-handed with nothing there), never the off hand's
+  weapon on its own. To swing that with Rumble's dice, click its card in the Od Hand square: it moves to the
+  Rumble square (its dice go on it from Rumble's) for the rest of the turn; double-click it to aim at what
+  it reaches. Click the main hand's weapon to go back to it (or use the weapon toggle at the end of the
+  Rumble row). Double-clicking the main weapon's card aims Rumble with it. The attack range shows the
+  picked weapon's reach, and hovering a monster says what you'd hit it with. Once you've made a Rumble
+  attack and the Od Hand can follow up, the off hand's weapon is back in the Od Hand square, joined to
+  the Od Hand card (before that, the two never light up together).
 - **Prone monsters** (knocked flat by a blast): melee on them rolls an extra die, ranged attacks face an
   extra defense die, and getting up costs them 2 of their moves.
 - **Monster movement** is Wend dice worth a fixed 2 moves each (the last one 1, for an odd move), so a
@@ -673,7 +677,7 @@ total reaches its number:
 | --- | --- | --- |
 | **Pick a lock** | Stand in a locked doorway (or next to a locked chest) without a key and click it | Doors 4 + floor (at most 6); chests 5 + floor |
 | **Search** | **Search** button (or the Od Hand card): reveals everything within **8 tiles** (diagonals counting one: all of a standard room) that your total reaches, and on the tiles next to you your **Focus Bonus** adds to it; **+1 for each light** whose glow you stand in (each torch held, a flame, a lit brazier, burning floor, Shining Light...), stacking. Without Search (no skill, no lit torch), the Od Hand card **feels around**: your Od Hand dice and Focus Bonus on the tiles next to you only, with no Explorer bonus and no first-Search find. A white pulse spreads out from you as far as the search reaches | Secret doors 4 + floor; traps 3 + floor; stashes 5 + floor |
-| **Off-hand attack** | The Od Hand card with a weapon or a torch in your off hand (a Stick, a Rock, a Dagger...): a **follow-up** once you've made a Rumble attack this turn (a Shove or a Bull Rush counts), on any monster in the item's reach; click the monster. Once a turn: **one Od Hand die**, your **Od Hand Bonus** (+1 for each Od Hand rank bought; Magic ranks don't count) and the item's own value (a Dagger's doubled on a stunned or prone monster, and its strike spent). It reaches as the item does (a Rock or a Dagger thrown), breaks or lands as it would; a torch's die is a fire die (a 6 sets the target alight, a 1 burns it out). The off hand's weapon or torch sits in the off hand's square (Rumble still swings it when readied with the weapon toggle, or when the main hand doesn't reach). Every item card shows, top right, the symbols of the dice pools it can add to: the Rumble fist, the Od Hand hamsa, the Wend boot. Click yourself instead to search. Once your Rumble dice are spent, a click on a monster in its reach follows up straight away. It shows in the dice bar as an Od Hand roll | Hit as any attack |
+| **Off-hand attack** | The Od Hand card with a weapon or a torch in your off hand (a Stick, a Rock, a Dagger...): a **follow-up** once you've made a Rumble attack this turn (a Shove or a Bull Rush counts), on any monster in the item's reach; click the monster. Once a turn: **one Od Hand die**, your **Od Hand Bonus** (+1 for each Od Hand rank bought; Magic ranks don't count) and the item's own value (a Dagger's doubled on a stunned or prone monster, and its strike spent). It reaches as the item does (a Rock or a Dagger thrown), breaks or lands as it would; a torch's die is a fire die (a 6 sets the target alight, a 1 burns it out). The off hand's weapon or torch sits in the off hand's square (Rumble swings the weapon only when you pick it: see Which hand Rumble swings). Double-clicking its card follows up (never a search); with Rumble spent, double-clicking a monster in its reach aims the follow-up, and one more click makes it (as Rumble's double-click aims). Every item card shows, top right, the symbols of the dice pools it can add to: the Rumble fist, the Od Hand hamsa, the Wend boot. Click yourself instead to search. It shows in the dice bar as an Od Hand roll | Hit as any attack |
 | **Disarm** | Click a trap you've found: on a tile or chest next to you, or your own doorway | 3 + floor |
 | **Steal** | **Steal** button, then an adjacent monster or hero; once a turn | Beat their roll: a monster's defense dice, a hero's Od Hand dice and tools |
 | **Aid** | The **Aid** card, then yourself or an ally beside you (diagonals too); clicking an ally Keeling Over aids them straight away | On someone Keeling Over (a Rouse): every 6 of the total is a mark of life; every die showing 1 is a Doom Die on their next Keel roll (see [Keeling Over](#loot-keeling-over-and-winning)). Otherwise it takes one stack of one ailment off, chosen when there are several: 10 (Nekrot 14). A Shovel in hand digs two stacks of Buried off |

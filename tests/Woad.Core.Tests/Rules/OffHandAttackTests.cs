@@ -50,6 +50,27 @@ public sealed class OffHandAttackTests
     }
 
     [Fact]
+    public void RumbleLeavesTheOffHandsDaggerForTheOdHandsFollowUpUnlessItsPicked()
+    {
+        // Only a Dagger, in the off hand, and the monster 3 away: Rumble alone can't reach it.
+        GameSession far = Duel(".1..d....", ["t_dagger"], new ScriptedDice(2, 2));
+        Hero thrower = far.HeroInSeat();
+        CardInstance dagger = thrower.Equipment[EquipSlot.OffHand];
+        Assert.Empty(far.GetAttackableMonsters());
+        Assert.Single(far.GetAttackableMonsters(dagger.Id));
+
+        // Beside it: Rumble swings bare-handed, the Dagger stays in hand, and the Od Hand die follows up with it.
+        GameSession near = Duel("....1d...", ["t_dagger"], new ScriptedDice(2, 2));
+        Hero hero = near.HeroInSeat();
+        int dummy = near.OnlyMonster().Id;
+        Assert.Equal(0, near.Do(new AttackMonster(hero.Id, dummy, Dice: 1)).SingleOf<AttackRolled>().Bonus);
+        Assert.NotNull(GameSession.OffHandItem(hero));
+
+        AttackRolled followUp = near.Do(new OffHandAttack(hero.Id, dummy)).SingleOf<AttackRolled>();
+        Assert.Equal((1, true, 1), (followUp.Bonus, followUp.OffHand, near.State.Turn!.OdHandDiceUsed));
+    }
+
+    [Fact]
     public void ATorchInTheOffHandAttacksWithAFireDie()
     {
         // The Rumble attack: a die and the torch's fire die; then the follow-up's fire die.
@@ -65,10 +86,10 @@ public sealed class OffHandAttackTests
     [Fact]
     public void AnOffHandRockIsThrownAndGoneUnlessItLandsOnASix()
     {
-        // The Rumble attack throws one Rock, the follow-up the other.
+        // The Rumble attack throws one Rock (picked), the follow-up the other.
         GameSession session = Duel(".1.d.....", ["t_rock", "t_rock"], new ScriptedDice(2, 2));
         Hero hero = session.HeroInSeat();
-        session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id, Dice: 1));
+        session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id, Dice: 1, WeaponId: hero.Card("t_rock").Id));
 
         IReadOnlyList<GameEvent> events = session.Do(new OffHandAttack(hero.Id, session.OnlyMonster().Id));
 
@@ -117,7 +138,7 @@ public sealed class OffHandAttackTests
     public void ARockIsThrownAtRangeThreeAndAStickAtTwo()
     {
         GameSession rock = Duel("1..d.....", ["t_rock", "t_rock"], new ScriptedDice(2, 2));
-        rock.Do(new AttackMonster(rock.HeroInSeat().Id, rock.OnlyMonster().Id, Dice: 1));
+        rock.Do(new AttackMonster(rock.HeroInSeat().Id, rock.OnlyMonster().Id, Dice: 1, WeaponId: rock.HeroInSeat().Card("t_rock").Id));
         Assert.Single(rock.Do(new OffHandAttack(rock.HeroInSeat().Id, rock.OnlyMonster().Id)).OfType<AttackRolled>());
 
         // A Stick in the off hand, the monster as good as attacked with Rumble already.

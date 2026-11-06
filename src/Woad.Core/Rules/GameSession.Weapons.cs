@@ -13,8 +13,9 @@ namespace Woad.Core.Rules;
 /// a monster right beside them; a weapon reaches further by its range: in sight (a bow), in a straight
 /// line (a Spear), or thrown (a Dagger, which leaves the hand). A crossbow strikes whenever it's loaded,
 /// and each shot unloads it; a Sling only with a Rock to hand, each shot using one up. Some weapons don't
-/// last: a Club breaks on a 1, a Stick or Rock with the blow (one thrown or slung lands whole on a 6). Holding two weapons (a Spear and a Boomerang), the hero can pick which one an
-/// attack is made with; otherwise it's the main hand if it reaches, else the off hand.
+/// last: a Club breaks on a 1, a Stick or Rock with the blow (one thrown or slung lands whole on a 6). A Rumble
+/// attack is made with the main hand (bare-handed with nothing there) unless the hero picks the off hand's weapon
+/// for it; otherwise the off hand's weapon attacks only as the Od Hand card's follow-up (see <c>GameSession.OffHand</c>).
 /// </summary>
 public sealed partial class GameSession
 {
@@ -27,15 +28,15 @@ public sealed partial class GameSession
     }
 
     /// <summary>
-    /// Whether a hero standing on <paramref name="from"/> could attack <paramref name="to"/> with anything
-    /// they hold: right beside them, or as far as a weapon reaches. For the screens' targeting too.
+    /// Whether a hero standing on <paramref name="from"/> could attack <paramref name="to"/> with the main hand:
+    /// right beside them, or as far as its weapon reaches. For the screens' targeting too.
     /// </summary>
     public static bool CanHeroReach(Hero hero, RoomLayout layout, GridPosition from, GridPosition to) =>
-        Reaches(hero, hero.MainWeapon, layout, from, to, out _) || Reaches(hero, OffHandWeapon(hero), layout, from, to, out _);
+        Reaches(hero, hero.MainWeapon, layout, from, to, out _);
 
     /// <summary>
     /// Whether a hero on <paramref name="from"/> could attack <paramref name="to"/> with <paramref name="weapon"/>
-    /// (one of their <see cref="HandWeapons"/>), or with anything they hold when it's null.
+    /// (one of their <see cref="HandWeapons"/>), or with the main hand when it's null.
     /// </summary>
     public static bool CanHeroReach(Hero hero, RoomLayout layout, GridPosition from, GridPosition to, CardInstance? weapon) =>
         weapon is null ? CanHeroReach(hero, layout, from, to) : Reaches(hero, weapon, layout, from, to, out _);
@@ -128,7 +129,8 @@ public sealed partial class GameSession
         bool mainStrikeLeft = turn.StrikesUsed < MainStrikes(hero);
         bool mainThrown = false, offThrown = false;
         bool mainReaches = (only is null || only == main) && Reaches(hero, main, room.Layout, hero.Position, target, out mainThrown);
-        bool offReaches = (only is null || only == off) && Reaches(hero, off, room.Layout, hero.Position, target, out offThrown);
+        // The off hand's weapon only when it's picked: left to the rules, it's the main hand.
+        bool offReaches = only is not null && only == off && Reaches(hero, off, room.Layout, hero.Position, target, out offThrown);
 
         int Ambush(CardDefinition weapon) =>
             weapon.Ambush && monster is not null && (monster.Stun.IsStunned || monster.Prone) ? weapon.AttackBonus + weapon.Modifiers.Weapon : 0;

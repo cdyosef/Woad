@@ -19,8 +19,12 @@ public sealed partial class GameSession
     /// <summary>Od Hand dice the active hero hasn't used this turn.</summary>
     public int OdHandDiceLeft => State.Turn is { } turn && !ActiveHero.IsCarrying ? Math.Max(0, ActiveHero.EffectiveStats.OdHandDice - turn.OdHandDiceUsed) : 0;
 
-    /// <summary>The tools' value the active hero can still add to a lock-picking roll this turn (0 once used).</summary>
-    public int ToolsBonusLeft => State.Turn is { ToolsUsed: false } ? ToolHelp(ActiveHero, Skill.PickLock).Bonus : 0;
+    /// <summary>The most the active hero's tools can still add to an Od Hand check this turn (0 once used), for the dice bar.</summary>
+    public int ToolsBonusLeft => State.Turn is { ToolsUsed: false } ? BestToolHelp(ActiveHero).Bonus : 0;
+
+    /// <summary>The most the hero's tools add to any one Od Hand check (Lockpicks to a lock, Sticky Gloves to a steal...), for the dice bar.</summary>
+    private static (int Bonus, int Dice) BestToolHelp(Hero hero) =>
+        new[] { Skill.PickLock, Skill.Disarm, Skill.Steal, Skill.Search, Skill.Aid }.Select(skill => ToolHelp(hero, skill)).MaxBy(help => (help.Bonus + help.Dice, help.Dice));
 
     /// <summary>Od Hand dice the active hero can roll on a check of <paramref name="skill"/>: all they have left if they know it (or it needs no skill), none if not.</summary>
     public int OdHandDiceFor(Skill skill) => skill == Skill.None || ActiveHero.Knows(skill) ? OdHandDiceLeft : 0;

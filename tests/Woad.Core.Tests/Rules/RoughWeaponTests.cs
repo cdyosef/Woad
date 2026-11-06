@@ -66,14 +66,14 @@ public sealed class RoughWeaponTests
         Monster dummy = session.OnlyMonster();
         CardInstance rocks = hero.Equipment[EquipSlot.OffHand];
 
-        IReadOnlyList<GameEvent> missed = session.Do(new AttackMonster(hero.Id, dummy.Id, Dice: 1));
+        IReadOnlyList<GameEvent> missed = session.Do(new AttackMonster(hero.Id, dummy.Id, Dice: 1, WeaponId: rocks.Id));
         Assert.Equal(1, missed.SingleOf<AttackRolled>().Bonus);
         Assert.Equal(rocks.Id, missed.SingleOf<WeaponBroke>().CardId);
         Assert.Empty(session.RoomById().LootAt(dummy.Position));
 
         session.State.Turn!.StrikesUsed = 0;
         // The 6 earns a Power Die: banked, the roll lands.
-        IReadOnlyList<GameEvent> landed = [.. session.Do(new AttackMonster(hero.Id, dummy.Id, Dice: 1)), .. session.Do(new BankPowerDie(hero.Id))];
+        IReadOnlyList<GameEvent> landed = [.. session.Do(new AttackMonster(hero.Id, dummy.Id, Dice: 1, WeaponId: hero.Equipment[EquipSlot.OffHand].Id)), .. session.Do(new BankPowerDie(hero.Id))];
         Assert.Equal(dummy.Position, landed.SingleOf<StoneLanded>().LandedAt);
         Assert.Single(session.RoomById().LootAt(dummy.Position), card => card.Definition.Id == "t_rock");
         Assert.Null(hero.FindCard(rocks.Id));

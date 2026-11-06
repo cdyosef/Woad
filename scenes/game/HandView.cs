@@ -82,6 +82,9 @@ public partial class HandView : Control
     /// <summary>A card was clicked (once): it's to be selected, and brought to the front.</summary>
     public event Action<HandView, StackCard>? CardSelected;
 
+    /// <summary>A double-click in the square that found no card there (one the first click moved away, say).</summary>
+    public event Action<HandView>? EmptyDoubleClicked;
+
     /// <summary>The front card was double-clicked: it's to be used.</summary>
     public event Action<HandView, StackCard>? CardUsed;
 
@@ -343,6 +346,11 @@ public partial class HandView : Control
 
         if (CardAt(click.Position) is not { } card)
         {
+            if (click.DoubleClick)
+            {
+                EmptyDoubleClicked?.Invoke(this);
+            }
+
             return;
         }
 

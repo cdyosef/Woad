@@ -124,7 +124,7 @@ public static class DemoRun
             ThemeId = "emerald_keep",
             Heroes =
             [
-                DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 9 } },
+                DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 9 }, CardIds = ["basic_belt", "basic_buckle", "wooden_sword", "buckler", "medicine_bag", "lockpicks"] },
                 DebugHeroes[1] with { BaseStats = DebugHeroes[1].BaseStats with { Hearts = 1 } },
             ],
             Rooms = [new RoomSetup("crypt", RoomTemplate.Parse(".........\n.........\n.........\n.........\n....1.2..\n.........\n.........\n.........\n.........", content),
@@ -212,6 +212,16 @@ public static class DemoRun
                 new Dictionary<Direction, string> { [Direction.West] = "near" }, MapPosition: new GridPosition(1, 0)),
         ],
         StartRoomId = "near",
+    };
+
+    /// <summary>For --offhandtest: Aria with a Wooden Sword, a Dagger in her off hand and Sticky Gloves on, an ogre beside her.</summary>
+    public static RunSetup OffHand(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20, AttackDice = 1, OdHandDice = 1 }, CardIds = [.. Belted, "wooden_sword", "dagger", "sticky_gloves"] }],
+        Rooms = [new RoomSetup("yard", RoomTemplate.Parse(".........\n.........\n.........\n.........\n....1o...\n.........\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
+        StartRoomId = "yard",
     };
 
     /// <summary>For --spelltest: Aria with a Flame Scroll on her belt and a Frost Wand in her off hand, two slimes across the room.</summary>

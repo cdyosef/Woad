@@ -57,8 +57,8 @@ public sealed partial class GameSession
     /// <summary>Move dice the active hero hasn't used this turn.</summary>
     public int MoveDiceLeft => State.Turn is { } turn && ActiveHero.Shackled is null && !ActiveHero.Conditions.Has(Condition.Buried) ? Math.Max(0, ActiveHero.EffectiveStats.MoveDice + turn.ExtraMoveDice - turn.MoveDiceUsed) : 0;
 
-    /// <summary>The tools' own dice the active hero can still add to a lock-picking roll this turn (a lockpick's d6).</summary>
-    public int ToolDiceLeft => State.Turn is { ToolsUsed: false } ? ToolHelp(ActiveHero, Skill.PickLock).Dice : 0;
+    /// <summary>The tools' own dice the active hero can still add to an Od Hand check this turn (a lockpick's d6), for the dice bar.</summary>
+    public int ToolDiceLeft => State.Turn is { ToolsUsed: false } ? BestToolHelp(ActiveHero).Dice : 0;
 
     /// <summary>A versatile main-hand weapon's extra, held in both hands (nothing in the off hand).</summary>
     private static int Versatile(Hero hero) =>
