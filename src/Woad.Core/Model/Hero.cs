@@ -171,9 +171,28 @@ public sealed class Hero
 
     public HeroStatus Status { get; internal set; }
 
-    public string RoomId { get; internal set; }
+    /// <summary>The room they're in: a carried hero's is their carrier's.</summary>
+    public string RoomId
+    {
+        get => Carrier?.RoomId ?? _roomId;
+        internal set => _roomId = value;
+    }
 
-    public GridPosition Position { get; internal set; }
+    /// <summary>Where they stand: a carried hero is wherever their carrier is.</summary>
+    public GridPosition Position
+    {
+        get => Carrier?.Position ?? _position;
+        internal set => _position = value;
+    }
+
+    private string _roomId = "";
+    private GridPosition _position;
+
+    /// <summary>The hero carrying this one (Keeling Over, in their arms), or null.</summary>
+    public Hero? Carrier { get; internal set; }
+
+    /// <summary>The downed ally in this hero's arms (both carry slots), or null.</summary>
+    public Hero? CarriedAlly { get; internal set; }
 
     public int Kills { get; internal set; }
 
@@ -344,10 +363,10 @@ public sealed class Hero
     public int BeltCapacity => _equipment.GetValueOrDefault(EquipSlot.Belt)?.Definition.BeltSlots ?? 0;
 
     /// <summary>The carrying slots in use.</summary>
-    public int CarrySlotsUsed => _carried.Sum(card => card.Definition.CarrySlots);
+    public int CarrySlotsUsed => _carried.Sum(card => card.Definition.CarrySlots) + (CarriedAlly is null ? 0 : GameRules.CarrySlots);
 
     /// <summary>Arms full of something: no Rumble and no Od Hand until it's put down or away.</summary>
-    public bool IsCarrying => _carried.Count > 0;
+    public bool IsCarrying => _carried.Count > 0 || CarriedAlly is not null;
 
     /// <summary>Whether there's room in the hero's arms for this card (or a stack of it they carry already).</summary>
     public bool CanCarryInArms(CardDefinition definition) =>

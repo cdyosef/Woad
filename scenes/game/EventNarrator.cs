@@ -59,6 +59,8 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         MagicCharged { Faces: var faces } charged when faces.Contains(6) =>
             $"{nameOf(charged.HeroId)}'s Magic stirs ({string.Join(", ", faces)}): {charged.Charged} of {charged.Slots} Magic Energy charged.",
         MagicCharged charged => $"{nameOf(charged.HeroId)}'s Magic stirs ({string.Join(", ", charged.Faces)}): no 6.",
+        AllyPickedUp picked => $"{nameOf(picked.HeroId)} picks up {nameOf(picked.AllyId)} to carry them.",
+        AllySetDown set => $"{nameOf(set.HeroId)} sets {nameOf(set.AllyId)} down.",
         MagicDiceSpent spent => $"{nameOf(spent.HeroId)} spends {(spent.Count == 1 ? "a Magic Die" : $"{spent.Count} Magic Dice")}.",
         MonsterSurged surged => $"{nameOf(surged.MonsterId)} surges forward: {string.Join(" + ", surged.Faces)} more moves ({surged.Moves} in all).",
         Damaged { Amount: 0 } damaged => $"Miss! {nameOf(damaged.TargetId)} blocks it.",

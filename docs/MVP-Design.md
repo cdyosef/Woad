@@ -1091,7 +1091,13 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   - **Rousing:** a standing ally next to them (diagonals too) can click them to roll Od Hand dice for
     them, like a search: not the action. Every 6 of the total (tools and Power Dice included) is a mark
     of life, and every die showing 1 adds a Doom Die to their next Keel roll. Three marks stand them up
-    at once.
+    at once. Clicking them asks **Aid** or **Carry them**.
+  - **Carrying:** a hero with empty arms can pick up an ally Keeling Over beside them, free: they fill
+    both carry slots (so no Rumble or Od Hand), and every Wend roll gives half its steps, rounded up.
+    The ally goes wherever the carrier goes (through doors, down the stairs, out of the dungeon with
+    them) and takes up no tile, out of the monsters' reach; they keep rolling their Keel Die. **Put down**
+    (in the carry window) sets them beside you. Standing back up, or their carrier falling, sets them
+    down too.
   - **Monsters** go after heroes still standing. A monster with nobody standing in reach strikes at
     someone Keeling Over (one attack with all its dice, defended as usual); a hit is a mark of death.
   - **Death:** a hero who dies is out of the run. A **tombstone** marks the spot ("Here lies Bran" or

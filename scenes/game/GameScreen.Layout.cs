@@ -839,6 +839,7 @@ public partial class GameScreen
         // The carrying slots, sliding out from behind the sheet's edge over the board while there's something carried.
         _carryTab = new CarryTab { Position = new Vector2(SideWidth, StripHeight + 4), ZIndex = 2 };
         _carryTab.CardSelected += ClickCard;
+        _carryTab.PutDownRequested += () => ExecuteForActiveHero(heroId => new PutDownAlly(heroId));
         AddChild(_carryTab);
 
         // Under the board, the dice bar: who rolls on the left, VS, who answers on the right.

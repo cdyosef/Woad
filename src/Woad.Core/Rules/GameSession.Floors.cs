@@ -123,10 +123,14 @@ public sealed partial class GameSession
         // The hero's companions in the room leave with them, and the merchants following them.
         List<Hero> party = State.ActiveHeroesIn(room).Where(other => other == hero || other.OwnerId == hero.Id).ToList();
         RescueMerchants(party, room, events);
+        // ...and anyone they carry out.
+        party.AddRange([.. party.Select(leaving => leaving.CarriedAlly).OfType<Hero>()]);
         foreach (Hero leaving in party)
         {
+            ReleaseCarry(leaving);
             leaving.Status = HeroStatus.Escaped;
             events.Add(new HeroEscaped(leaving.Id, leaving.TreasureValue));
+
             GrantXp(leaving, GameRules.XpForEscaping, events);
         }
 

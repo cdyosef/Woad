@@ -75,6 +75,12 @@ public sealed record PowerDiceBanked(int OwnerId, int Count, int Banked) : GameE
 /// <summary>Banked Power Dice were rolled into an attack, move or defense; the bank now holds <paramref name="Banked"/>.</summary>
 public sealed record PowerDiceSpent(int OwnerId, int Count, int Banked) : GameEvent;
 
+/// <summary>A hero picked up an ally Keeling Over, to carry them.</summary>
+public sealed record AllyPickedUp(int HeroId, int AllyId) : GameEvent;
+
+/// <summary>A hero set down the ally they carried (or dropped them, falling), at <paramref name="Position"/>.</summary>
+public sealed record AllySetDown(int HeroId, int AllyId, GridPosition Position) : GameEvent;
+
 /// <summary>
 /// The start of a hero's turn: a d6 for each empty Magic Energy slot (<paramref name="Faces"/>); each 6 charges
 /// one with a Magic Die, <paramref name="Charged"/> of them now.

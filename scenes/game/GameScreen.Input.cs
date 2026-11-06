@@ -362,10 +362,34 @@ public partial class GameScreen
             return;
         }
 
-        if (_session.GetRousableAllies().FirstOrDefault(fallen => fallen.Position == tile) is { } fallen)
+        // A downed ally beside you: aid them (Od Hand), or pick them up to carry.
+        if (_session.State.HeroesIn(room).FirstOrDefault(other => other.Position == tile && other.IsKeelingOver && other != hero) is { } down)
         {
-            ExecuteOdHand((heroId, dice, tools, power) => new Aid(heroId, fallen.Id, null, dice, tools, power));
-            return;
+            bool aid = _session.GetRousableAllies().Contains(down);
+            bool carry = _session.CheckPickUpAlly(down.Id) is null;
+            if (aid && carry)
+            {
+                _selectedCardId = _targetId = null;
+                RefreshPanels();
+                _inventory.AskChoice(null, $"{down.Name} is down.",
+                [
+                    ("Aid (Od Hand)", () => ExecuteOdHand((heroId, dice, tools, power) => new Aid(heroId, down.Id, null, dice, tools, power))),
+                    ("Carry them", () => Execute(new PickUpAlly(hero.Id, down.Id))),
+                ]);
+                return;
+            }
+
+            if (aid)
+            {
+                ExecuteOdHand((heroId, dice, tools, power) => new Aid(heroId, down.Id, null, dice, tools, power));
+                return;
+            }
+
+            if (carry)
+            {
+                Execute(new PickUpAlly(hero.Id, down.Id));
+                return;
+            }
         }
 
         if (_rumbling)
@@ -516,7 +540,7 @@ public partial class GameScreen
         IReadOnlyList<(string, Action)> choices = HasMeans(Skill.Disarm)
             ? [("Disarm it", disarm), ($"{goOn} (+1 defense)", go)]
             : [($"{goOn} (+1 defense)", go), ("Leave it", RefreshPanels)];
-        _selectedCardId = null;
+        _selectedCardId = _targetId = null;
         RefreshPanels();
         _inventory.AskChoice(null, what, choices);
     }
@@ -632,7 +656,7 @@ public partial class GameScreen
             return;
         }
 
-        _selectedCardId = null;
+        _selectedCardId = _targetId = null;
         RefreshPanels();
         _inventory.AskChoice(null, $"{blocker.Name}: let {hero.Name} push you through the door?",
         [
@@ -671,7 +695,7 @@ public partial class GameScreen
             return;
         }
 
-        _selectedCardId = null;
+        _selectedCardId = _targetId = null;
         RefreshPanels();
         _inventory.AskChoice(null, $"{ally.Name}: let {hero.Name} push you?",
         [

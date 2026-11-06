@@ -178,6 +178,12 @@ public sealed record MoveOn(int HeroId) : GameCommand(HeroId);
 /// </summary>
 public sealed record NudgeAlly(int HeroId, int AllyId) : GameCommand(HeroId);
 
+/// <summary>Pick up an ally Keeling Over beside you, into both carry slots. Free.</summary>
+public sealed record PickUpAlly(int HeroId, int AllyId) : GameCommand(HeroId);
+
+/// <summary>Set down the ally you carry, beside you. Free.</summary>
+public sealed record PutDownAlly(int HeroId) : GameCommand(HeroId);
+
 /// <summary>Retreat from a fight out on the Woarld Map: an Od Hand roll against the monsters' chase.</summary>
 public sealed record Retreat(int HeroId, int? Dice = null, bool UseTools = false, int PowerDice = 0)
     : OdHandCommand(HeroId, Dice, UseTools, PowerDice);
