@@ -17,7 +17,10 @@ public class PortalTests
     private static HeroSetup[] Party(int count) =>
         [.. Enumerable.Range(0, count).Select(i => new HeroSetup($"Hero{i}", GameRules.HeroBaseStats with { Hearts = 10, Magic = 1 }, GameRules.StarterKit))];
 
-    private static RoomSetup Host(RunSetup run, int floor, RoomRole role) => run.Rooms.Single(room => room.Floor == floor && room.Level == 0 && room.Role == role);
+    /// <summary>The room of that role (the entrance: a gated dungeon's entrance hall, inside its great door).</summary>
+    private static RoomSetup Host(RunSetup run, int floor, RoomRole role) =>
+        run.Rooms.SingleOrDefault(room => room.Floor == floor && room.Level == 0 && room.Role == (role == RoomRole.Arrival ? RoomRole.Hall : role))
+        ?? run.Rooms.Single(room => room.Floor == floor && room.Level == 0 && room.Role == role);
 
     [Theory]
     [InlineData("sunken_temple", 1UL)]

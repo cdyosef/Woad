@@ -833,6 +833,7 @@ public partial class GameScreen
     internal static string PortalName(Room room) => room.Role switch
     {
         RoomRole.Arrival when room.Floor == 1 && room.Level == 0 => "the entrance",
+        RoomRole.Hall => "the entrance hall",
         RoomRole.Boss => $"the boss's lair, {room.PlaceName}",
         _ => $"the stairs, {room.PlaceName}",
     };

@@ -29,9 +29,48 @@ public class GateTests
 
         Assert.Single(courtyard.Template.Monsters, spawn => spawn.Monster.Id == "emerald_knight");
         Assert.Equal(guards, courtyard.Template.Monsters.Count(spawn => spawn.Monster.Id == "emerald_guard"));
-        Assert.Equal((DungeonGenerator.CourtyardWidth, DungeonGenerator.CourtyardHeight), (courtyard.Template.Layout.Width, courtyard.Template.Layout.Height));
-        Assert.True(courtyard.Template.TilesOf(TileKind.DeepWater).Count() > 10, "a moat runs across the courtyard");
+        Assert.Equal((KeepCourtyard.Id, KeepCourtyard.Width, KeepCourtyard.Height), (courtyard.Id, courtyard.Template.Layout.Width, courtyard.Template.Layout.Height));
         Assert.Equal(4, courtyard.Template.TilesOf(TileKind.Exit).Count());
+        Assert.All(courtyard.Template.Monsters, spawn => Assert.True(spawn.Position.Y < 3, "the gate's guard stands on the apron, across the moat"));
+    }
+
+    [Fact]
+    public void TheMoatRunsRightAcrossWithADrawbridgeFourWide()
+    {
+        RoomLayout layout = Courtyard(DungeonGenerator.CreateRun(Content, "emerald_keep", Party(2), seed: 11)).Template.Layout;
+        List<int> moatRows = [.. Enumerable.Range(0, layout.Height).Where(y => layout[new GridPosition(0, y)] == TileKind.DeepWater)];
+
+        Assert.Equal(2, moatRows.Count);
+        foreach (int y in moatRows)
+        {
+            List<int> dry = [.. Enumerable.Range(0, layout.Width).Where(x => layout[new GridPosition(x, y)] != TileKind.DeepWater)];
+            Assert.Equal(4, dry.Count);
+            Assert.All(dry, x => Assert.Equal(TileKind.Floor, layout[new GridPosition(x, y)]));
+        }
+    }
+
+    [Theory]
+    [InlineData(1UL)]
+    [InlineData(11UL)]
+    [InlineData(42UL)]
+    [InlineData(2026UL)]
+    public void TheGreatDoorLeadsIntoAnEntranceHallWithThePortal(ulong seed)
+    {
+        RunSetup run = DungeonGenerator.CreateRun(Content, "emerald_keep", Party(3), seed);
+        RoomSetup courtyard = Courtyard(run);
+        RoomSetup hall = run.Rooms.Single(room => room.Role == RoomRole.Hall);
+
+        Assert.Equal(courtyard.Id, run.StartRoomId);
+        Assert.Equal(new Dictionary<Direction, string> { [Direction.North] = hall.Id }, courtyard.Doors);
+        Assert.Equal(KeepCourtyard.Door, courtyard.DoorTiles![Direction.North]);
+        Assert.Equal(courtyard.Id, hall.Doors![Direction.South]);
+        Assert.Equal(hall.MapPosition.Step(Direction.South), courtyard.MapPosition);
+        Assert.Single(run.Rooms, room => room.Floor == 1 && room.Level == 0 && room.MapPosition == courtyard.MapPosition);
+        Assert.Contains(run.Passages, passage => passage is { RoomId: KeepCourtyard.Id, Side: Direction.North, Kind: PassageKind.Gate });
+        Assert.Empty(hall.Template.Monsters);
+        Assert.Single(hall.Template.TilesOf(TileKind.Portal));
+        Assert.Empty(courtyard.Template.TilesOf(TileKind.Portal));
+        Assert.Empty(hall.Template.TilesOf(TileKind.Exit));
     }
 
     [Fact]

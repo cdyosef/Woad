@@ -53,7 +53,7 @@ public static partial class DungeonGenerator
     /// Adds the den to its floor: a free map cell beside one ordinary room, linked by a plain door and
     /// no other. It goes over a room on the floor below when it can, so its pits lead somewhere.
     /// </summary>
-    private static void PlanDen(List<FloorPlan> plans, int floor, IRandomSource random)
+    private static void PlanDen(List<FloorPlan> plans, int floor, IRandomSource random, GridPosition? courtyard = null)
     {
         if (floor > plans.Count)
         {
@@ -64,7 +64,7 @@ public static partial class DungeonGenerator
         FloorPlan? next = floor < plans.Count ? plans[floor] : null;
         List<(GridPosition Host, GridPosition Cell)> spots = plan.Cells
             .Where(host => plan.Roles[host] is RoomRole.Combat or RoomRole.Treasure or RoomRole.Stairs)
-            .SelectMany(host => host.OrthogonalNeighbors().Where(cell => InMap(cell) && !plan.Cells.Contains(cell)).Select(cell => (host, cell)))
+            .SelectMany(host => host.OrthogonalNeighbors().Where(cell => InMap(cell) && !plan.Cells.Contains(cell) && (floor != 1 || cell != courtyard)).Select(cell => (host, cell)))
             .ToList();
         List<(GridPosition Host, GridPosition Cell)> overRooms = spots
             .Where(spot => next is not null && next.Cells.Contains(spot.Cell) && next.Roles[spot.Cell] is not (RoomRole.Boss or RoomRole.Secret))
