@@ -1300,7 +1300,10 @@ them up there like any character.
   coins, chests, pots, doors, stairs, turns, the monsters' phase, keeling over, dying and victory.
 - **Music:** synthesized chiptune songs that crossfade with the action: a title theme for the menus,
   a dungeon theme during a run, a boss theme while a hero shares a room with a living boss, and a
-  short victory or defeat tune on the results screen. **Settings** on the main menu has music and
+  short victory or defeat tune on the results screen. The Waylay Inn plays a jaunty jig in D (6/8: a
+  fiddle-like tune, a squeezebox on the off-beats, oom-pah bass and a bodhran). The Woarld Map plays an
+  open, walking-pace theme in G by day, and the same tune slower and softer in G minor by night,
+  changing as the light does. **Settings** on the main menu has music and
   sound-effect volume sliders, saved between sessions.
 - **Where it comes from:** `tools/build-assets.py` generates all of it into `assets/` (see the
   README). Theme art lives under `assets/themes/<theme>/`, so a new dungeon is a new theme folder.

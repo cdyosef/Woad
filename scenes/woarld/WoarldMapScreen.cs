@@ -407,6 +407,8 @@ public partial class WoarldMapScreen : Control
 
     internal void Refresh()
     {
+        // The road's tune by day; by night, the same, slower and in the minor.
+        Music.Play(Journey.IsDay ? "woarld" : "woarld_night");
         Character leader = Party[Leader];
         string time = Journey.IsDay ? $"Daylight, {Journey.StepsUntilChange} steps to nightfall" : $"Night, {Journey.StepsUntilChange} steps to dawn";
         string pace = WendBonus > 0 ? $"  Pace +{WendBonus}" : "";

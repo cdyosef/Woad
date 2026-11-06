@@ -825,7 +825,7 @@ public partial class Main : Control
 			SaveRaid();
 			ShowEditor(character, ShowTavern);
 		};
-		ShowMenu(screen);
+		Show(screen);
 	}
 
 	private async void SaveCharacter(Character character)
