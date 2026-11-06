@@ -218,6 +218,9 @@ public sealed record ThemeDefinition
     /// <summary>A gate held against the party at the entrance (the Emerald Keep's), or null.</summary>
     public GateGuard? Gate { get; init; }
 
+    /// <summary>A tower above floor 1 (the Emerald Keep's): two levels of rooms, then the roof.</summary>
+    public bool Tower { get; init; }
+
     /// <summary>A line about the dungeon for the Dungeon Run list.</summary>
     public string Description { get; init; } = "";
 

@@ -6,7 +6,8 @@ using Woad.Scenes.Ui;
 namespace Woad.Scenes.Game;
 
 /// <summary>Turns game events into sentences for the message log. Returns null for events shown only visually.</summary>
-public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> cardNameOf, Func<string, string> spellNameOf)
+/// <param name="placeOf">A room's name for where it is ("Floor 2", "Level 1", "the Roof"), by its id.</param>
+public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> cardNameOf, Func<string, string> spellNameOf, Func<string, string>? placeOf = null)
 {
     public string? Describe(GameEvent gameEvent) => gameEvent switch
     {
@@ -89,6 +90,7 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         MimicWoke { HeroId: 0 } woke => $"A sharp eye spots the teeth: that chest is a {nameOf(woke.MonsterId)}!",
         MimicWoke woke => $"The chest {nameOf(woke.HeroId)} reaches for snaps open: it's a {nameOf(woke.MonsterId)}!",
         Grabbed grabbed => $"The {nameOf(grabbed.MonsterId)} clamps onto {nameOf(grabbed.HeroId)}: no moving until they break free!",
+        CarriedOff carried => $"{nameOf(carried.MonsterId)}'s beetle seizes {nameOf(carried.HeroId)} and carries them off toward the edge!",
         KnockedBack knocked => $"The {nameOf(knocked.MonsterId)}'s blow sends {nameOf(knocked.HeroId)} flying back!",
         Hexed { Drained: true } hexed => $"The {nameOf(hexed.MonsterId)}'s hex steals a point of Luck from {nameOf(hexed.HeroId)}.",
         BadLuckCursed cursed => $"The {nameOf(cursed.MonsterId)} lays a Bad Luck Curse on {nameOf(cursed.HeroId)} ({cursed.Stacks}).",
@@ -239,8 +241,8 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         TrapDisarmed disarmed => $"{nameOf(disarmed.HeroId)} disarms the trap.",
         TrapSprung { Kind: TrapKind.TrapDoor } sprung => $"The floor gives way under {nameOf(sprung.HeroId)}!",
         TrapSprung sprung => $"{nameOf(sprung.HeroId)} sets off a hidden {TrapName(sprung.Kind)}!",
-        HeroFell { Jumped: true } fell => $"{nameOf(fell.HeroId)} jumps down the trap door to floor {fell.Floor}.",
-        HeroFell fell => $"{nameOf(fell.HeroId)} tumbles down to floor {fell.Floor}.",
+        HeroFell { Jumped: true } fell => $"{nameOf(fell.HeroId)} jumps down the trap door to {Place(fell.RoomId, fell.Floor)}.",
+        HeroFell fell => $"{nameOf(fell.HeroId)} tumbles down to {Place(fell.RoomId, fell.Floor)}.",
         KeysAppeared keys => $"{(keys.Count == 1 ? "A key" : $"{keys.Count} keys")} lie on the floor.",
         GoldFound gold => $"{nameOf(gold.HeroId)} pockets {Money.Long(gold.Amount)} ({Money.Short(gold.Total)} in the purse).",
         GoldAppeared gold => $"{Money.Long(gold.Amount)} lies on the floor.",
@@ -263,9 +265,9 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         CompanionOutfitted outfit => $"{nameOf(outfit.OwnerId)} has {nameOf(outfit.CompanionId)} {outfit.Action switch { Woad.Core.Commands.OutfitAction.Equip => "equip", Woad.Core.Commands.OutfitAction.Belt => "belt", _ => "stow" }} the {cardNameOf(outfit.CardId)}.",
         LootPickedUp loot => $"{nameOf(loot.HeroId)} picks up {string.Join(", ", loot.CardIds.Select(cardNameOf))}.",
         HeroDescended { FirstTimeOnFloor: true } descended =>
-            $"{nameOf(descended.HeroId)} descends to floor {descended.Floor}. Luck and charges are restored.",
-        HeroDescended descended => $"{nameOf(descended.HeroId)} descends to floor {descended.Floor}.",
-        HeroAscended ascended => $"{nameOf(ascended.HeroId)} climbs back up to floor {ascended.Floor}.",
+            $"{nameOf(descended.HeroId)} descends to {Place(descended.RoomId, descended.Floor)}. Luck and charges are restored.",
+        HeroDescended descended => $"{nameOf(descended.HeroId)} descends to {Place(descended.RoomId, descended.Floor)}.",
+        HeroAscended ascended => $"{nameOf(ascended.HeroId)} climbs up to {Place(ascended.RoomId, ascended.Floor)}.",
         HeroEscaped escaped => $"{nameOf(escaped.HeroId)} escapes the dungeon with {escaped.TreasureValue}g of treasure!",
         HeroRetreated retreated => $"{nameOf(retreated.HeroId)} finds a way out and gets clear of the fight.",
         Routed routed => $"{nameOf(routed.HeroId)} can't find a way out, bolts {routed.Steps} steps in a panic and falls flat!",
@@ -352,4 +354,8 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
     private static string Marks(int life, int death) => $"life {life}/3, death {death}/3";
 
     private static string PowerDice(int amount) => $"{amount} Power {(amount == 1 ? "Die" : "Dice")}";
+
+    /// <summary>Where a room is, to say: by its own name where there's a way to look it up, else its floor.</summary>
+    private string Place(string roomId, int floor) =>
+        placeOf?.Invoke(roomId) is { Length: > 0 } name && !name.StartsWith("Floor", StringComparison.Ordinal) ? name : $"floor {floor}";
 }

@@ -23,6 +23,9 @@ public partial class GameScreen
     private readonly List<string> _messages = [];
 
     private BoardView _board = null!;
+
+    /// <summary>The board (for the click tests).</summary>
+    internal BoardView Board => _board;
     private HeroPanel _heroPanel = null!;
     private MinimapView _minimap = null!;
     private TurnFrame _turnFrame = null!;
@@ -652,7 +655,7 @@ public partial class GameScreen
         string whose = _playingTurn is { Set: true, HeroId: null }
             ? _playingFaction == Faction.Undead ? $"[color={Palette.Hex(DieTypes.Nekrot)}]The undead's turn[/color]" : $"[color={Palette.Hex(Palette.Danger)}]The monsters' turn[/color]"
             : turn is null ? "" : $"[color={Palette.Hex(Palette.Seat(turn.Seat))}]{Escape(turn.Name)}'s turn[/color]";
-        string where = _shownRoomId.Length > 0 && ShownRoom.IsHuge ? "" : $"   FLOOR {floor}";
+        string where = _shownRoomId.Length > 0 && ShownRoom.IsHuge ? "" : $"   {(_shownRoomId.Length > 0 ? ShownRoom.PlaceName : $"Floor {floor}").ToUpperInvariant()}";
         if (state.RitualRoundsLeft > 0)
         {
             where += $"   [color=#a060ff]RITUAL: {state.RitualRoundsLeft}[/color]";

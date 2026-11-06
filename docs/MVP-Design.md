@@ -1007,6 +1007,31 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   in from the Woarld Map there, starting in two rows just inside it, and can walk back out through it at
   any time: stand in the gateway and click it (no XP for getting away that way, as there is by the
   boss's exit).
+- **The Emerald Keep's gate:** its entrance is a **courtyard** (15 by 13) outside the keep: a **moat** (two
+  rows of deep water) across it, two steps in from the gateway, with a **bridge** as wide as the gateway.
+  Across it the **Emerald Knight** (6 hearts, 2 dice and weapon 2, defense 2 and armor 2; a miniboss) holds
+  the gate with **Emerald Guards** (green, spears reaching 2 in a line), two for every three heroes, rounded
+  up. Every door out of the courtyard is the **gate**, a green-iron portcullis: only the **Emerald Key**
+  opens it (no small key, no picking), and the knight carries it. The key stays in the keep when you leave.
+- **The Emerald Keep's tower:** stairs up from an ordinary room on floor 1 climb to **Level 1**, a floor of
+  rooms like those below (the room farthest from its arrival has the stairs on up), then **Level 2**, then
+  **the Roof** (Level 3): one great open room, 31 by 31, its stairs down in the middle and its edge
+  crenellated, a green stone pillar on every other tile with **open air** between. Anyone pushed or knocked
+  into the open air falls to the courtyard below: three storeys, three hearts. The tower's rooms have no
+  pits, and count as floors 4 to 6 for loot and monsters; the screen calls them Level 1, Level 2 and the
+  Roof. Going up comes out beside the stairs down above, and going down beside the stairs up below.
+- **The roof's challenge:** **Baron Herkullos** rides his great emerald Hercules beetle (14 hearts, two
+  tiles each way, flying; 3 dice and weapon 2, defense 2 and armor 2; a miniboss, to the boss music). His
+  hits knock heroes back, and every 6 a tile further; and a hero he hits is **seized** and carried up to 6
+  tiles toward the nearest open air, dropped in if the beetle gets there (and falling to the courtyard),
+  or short of it, set down where the flight ended. His **Grasshopper Knights** (two, and one more for every
+  two heroes) leap about (flying, erratic), reach 2 with their lances and knock heroes back.
+- **The Emerald Baron Helm:** the keep's **unique** treasure, the Baron's drop. Head, armor 2; a die more
+  on Shove and Bull Rush; every push counts twice (a shove drives a monster two tiles, a bull rush four,
+  and a boss or anything too big can be shoved a tile); Bull Rush flies over open air and water (coming down
+  on the last solid ground); and **Emerald Charge**: with no Bull Rush skill or Wend die, the Bull Rush
+  card charges for a banked Power Die instead. A dungeon's unique is won **once a raid**: once someone gets
+  out with it, the Baron drops the **Baron's Strongbox** (worth 120 gold) in its place for the rest of the raid.
 - **Room roles:** the walk's first room is the Arrival room, which has no monsters. The room farthest
   from it holds the Stairs down (floors 1–2) or the Boss and Exit (floor 3), behind the Boss Door. A dead
   end becomes the Treasure room (chests, one guard), on floor 3 another becomes the Vault (the Boss Key's

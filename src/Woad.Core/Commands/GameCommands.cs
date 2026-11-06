@@ -322,7 +322,8 @@ public sealed record Shove(int HeroId, int TargetId, int? Dice = null, bool UseW
 /// Wend die (a 6 rolls another) and the Wend bonus carry you, and strike the first monster in the way
 /// with <paramref name="Dice"/> Rumble dice, the weapon, and the tiles left over.
 /// </summary>
-public sealed record BullRush(int HeroId, GridPosition Toward, int? Dice = null, bool UseWeapon = true, int PowerDice = 0, bool HoldRumbleBonus = false) : GameCommand(HeroId);
+/// <param name="Charge">An Emerald Charge: paid with a banked Power Die in place of the Bull Rush skill and a Wend die.</param>
+public sealed record BullRush(int HeroId, GridPosition Toward, int? Dice = null, bool UseWeapon = true, int PowerDice = 0, bool HoldRumbleBonus = false, bool Charge = false) : GameCommand(HeroId);
 
 /// <summary>Parry: roll an Od Hand die and hold it for your next defense before your next turn.</summary>
 public sealed record Parry(int HeroId) : GameCommand(HeroId);

@@ -635,7 +635,7 @@ public class DungeonSecretsTests
         {
             RunSetup setup = DungeonGenerator.CreateRun(content, "emerald_keep", [new HeroSetup("Bot", GameRules.HeroBaseStats, GameRules.StarterKit)], seed);
             GameState state = new GameSession(content, setup).State;
-            foreach (IGrouping<int, Room> floor in state.Rooms.Values.GroupBy(room => room.Floor))
+            foreach (IGrouping<int, Room> floor in state.Rooms.Values.Where(room => room.Level == 0).GroupBy(room => room.Floor))
             {
                 Room arrival = floor.Single(room => room.Role == RoomRole.Arrival);
                 var reached = new HashSet<string> { arrival.Id };

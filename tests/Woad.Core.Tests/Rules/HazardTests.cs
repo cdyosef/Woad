@@ -357,7 +357,7 @@ public class HazardTests
         {
             RunSetup setup = DungeonGenerator.CreateRun(content, "emerald_keep", [new HeroSetup("Bot", GameRules.HeroBaseStats, GameRules.StarterKit)], seed);
             GameState state = new GameSession(content, setup).State;
-            foreach (Room room in state.Rooms.Values.Where(room => room.BelowRoomId is { } below))
+            foreach (Room room in state.Rooms.Values.Where(room => room.BelowRoomId is { } below && room.Level == 0))
             {
                 Room below = state.Rooms[room.BelowRoomId!];
                 Assert.Equal((room.Floor + 1, room.MapPosition), (below.Floor, below.MapPosition));

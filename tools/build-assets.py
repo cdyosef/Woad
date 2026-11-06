@@ -1005,6 +1005,47 @@ MONSTERS = {
     ], {"o": "#0e140f", "s": "#d8e0dc", "w": "#7a5a3a", "h": "#8a9a90", "f": "#e0b090", "e": "#1a1a1a", "m": "#5a6a62",
         "t": "#2f8a4a", "y": "#7dff9e", "b": "#3a2a20", "k": "#1a2a20"}, mirror=True)),
 
+    # The roof's challenge: Baron Herkullos in emerald plate, riding his great emerald Hercules beetle, its horn thrust forward.
+    "baron_herkullos": (sprite([
+        "......pp",
+        ".....ooo",
+        "....oggg",
+        "....ogvv",
+        "...oogaa",
+        "..oaaaac",
+        "..oaacyc",
+        ".oeeeeee",
+        "oeeEeeee",
+        "oeeEeeel",
+        "oeeeeehh",
+        ".oeeeohh",
+        "..oeeohh",
+        "..lo.ohh",
+        ".l...ohh",
+        "......hh",
+    ], {"o": "#0e140f", "p": "#7dff9e", "g": "#2fa060", "v": "#0e1a12", "a": "#1f6a40", "c": "#14532f", "y": "#ffd83a",
+        "e": "#1f9a5a", "E": "#7dffb0", "h": "#0e3a24", "l": "#0e140f"}, mirror=True)),
+
+    # His order: grasshopper knights, green and long-legged, their forelimbs like shields.
+    "grasshopper_knight": (sprite([
+        "..a.....",
+        "...a....",
+        "....aooo",
+        "....oggg",
+        "...ogkgg",
+        "...ogggg",
+        "....ommm",
+        "..oossss",
+        ".osssggg",
+        ".osssggg",
+        "..oossgg",
+        "....oggg",
+        "...ogg.g",
+        "..ogg..o",
+        ".ogg....",
+        "oo......",
+    ], {"a": "#3a6a2a", "o": "#0e140f", "g": "#6ad04a", "k": "#0e1a12", "m": "#4a8a3a", "s": "#b8f0a0"}, mirror=True)),
+
     # The vault's guardian: a gilded knight in crimson, a key emblem on its chest.
     "key_warden": (sprite([
         "........",
@@ -1033,7 +1074,7 @@ WOOD = {"o": "#2a1a10", "w": "#b07840", "d": "#8a5a2b", "g": "#e2c47a", "y": "#3
 
 # The Sunken Temple's own monsters (its other monsters borrow the Emerald Keep's sprites).
 # Monsters only the Emerald Keep has.
-KEEP_ONLY = {"ogre", "ogre_champ", "necromancer", "hexer", "gelatinous_cube", "mimic", "emerald_knight", "emerald_guard"}
+KEEP_ONLY = {"ogre", "ogre_champ", "necromancer", "hexer", "gelatinous_cube", "mimic", "emerald_knight", "emerald_guard", "baron_herkullos", "grasshopper_knight"}
 
 TEMPLE_MONSTERS = {
     "snapper_eel": sprite([

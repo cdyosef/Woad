@@ -279,6 +279,29 @@ def draw(item):
         c.rect(14, 6, 4, 17, GOLD[1])
         c.rect(9, 11, 14, 4, GOLD[1])
         c.line(7, 5, 7, 14, BLUE[0])
+    elif i == "emerald_baron_helm":
+        # A great helm of emerald plate, a beetle's horn sweeping up from the brow, a green plume behind.
+        c.poly([(8, 12), (24, 12), (25, 26), (7, 26)], "#1f8a50")
+        c.poly([(9, 13), (15, 13), (14, 25), (8, 25)], "#5fd08a")
+        c.rect(9, 18, 14, 2, "#0e1a12")
+        c.rect(15, 18, 2, 7, "#0e1a12")
+        c.poly([(14, 12), (18, 12), (19, 4), (16, 2), (15, 6)], "#0e3a24")
+        c.line(17, 3, 18, 10, "#2fa060", 1)
+        c.poly([(22, 10), (27, 4), (28, 9), (24, 13)], "#7dff9e")
+        c.dot(12, 23, "#ffd83a")
+        c.dot(20, 23, "#ffd83a")
+    elif i == "barons_strongbox":
+        # An iron-bound strongbox, emerald-trimmed, gold spilling from under the lid.
+        c.rect(6, 13, 20, 13, "#6a4424")
+        c.rect(6, 11, 20, 4, "#8a5a30")
+        c.rect(6, 13, 20, 2, "#1f8a50")
+        c.rect(6, 23, 20, 2, "#1f8a50")
+        c.rect(14, 16, 4, 5, "#2a2a30")
+        c.dot(16, 18, "#5dff9a")
+        c.circle(9, 10, 2, "#f0c94a")
+        c.circle(14, 9, 2, "#fff0a0")
+        c.circle(20, 10, 2, "#f0c94a")
+        c.circle(24, 9, 2, "#f0c94a")
     elif i == "leather_cap":
         c.circle(16, 18, 10, LEATHER[1])
         c.rect(5, 18, 23, 12, None)
@@ -1077,12 +1100,12 @@ def draw_spell(name):
 ITEMS = [
     "wooden_sword", "longsword", "knights_sword", "trident", "short_bow", "great_axe", "maul", "war_hammer",
     "spear", "dagger", "rapier", "crossbow", "heavy_crossbow", "frost_brand", "quake_hammer", "longbow",
-    "buckler", "tower_shield", "knights_shield", "leather_cap", "diving_helm", "lucky_helmet", "cowards_cloak",
+    "buckler", "tower_shield", "knights_shield", "emerald_baron_helm", "leather_cap", "diving_helm", "lucky_helmet", "cowards_cloak",
     "leather_armor", "studded_armor", "chain_mail", "wardens_plate", "storm_mail", "dash_boots",
     "flame_scroll", "frost_scroll", "venom_scroll", "acid_scroll", "grave_scroll", "gale_scroll", "sun_scroll",
     "bloom_scroll", "quake_scroll", "spark_scroll", "mind_scroll", "shadow_scroll", "frost_wand", "boomerang",
     "club", "stick", "lit_stick", "rock", "sling", "rock_bag", "lucky_clover",
-    "torch", "lockpicks", "emerald_key", "holy_key", "saints_relic", "modern_medicine", "thieves_oil", "burgling_tools", "cutpurse_knife", "sticky_gloves", "bomb", "autosmith_hammer", "eye_drops", "holy_water", "health_potion",
+    "torch", "lockpicks", "emerald_key", "barons_strongbox", "holy_key", "saints_relic", "modern_medicine", "thieves_oil", "burgling_tools", "cutpurse_knife", "sticky_gloves", "bomb", "autosmith_hammer", "eye_drops", "holy_water", "health_potion",
     "antidote", "strong_base", "smelling_salts", "bandages", "medicine_bag", "shovel", "sineater_doll",
     "loose_coins", "coin_pouch", "emerald", "pearl", "golden_idol",
 ]

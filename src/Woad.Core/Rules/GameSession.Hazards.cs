@@ -66,7 +66,7 @@ public sealed partial class GameSession
             return "Stand next to them to shove them.";
         }
 
-        if (monster is { Definition.Boss: true } or { Definition.Miniboss: true } or { Definition.Size: > 1 })
+        if (monster is { Definition.Boss: true } or { Definition.Miniboss: true } or { Definition.Size: > 1 } && !hero.DoublePush)
         {
             return $"The {monster.Definition.Name} is too mighty to shove.";
         }
@@ -315,7 +315,7 @@ public sealed partial class GameSession
         Turn.Rumbled = true;
         WeaponSpent? spent = UseWeapon(hero, ActiveRoom, wielding, armed, at, events);
         SpendBankedPowerDice(hero, command.PowerDice, events);
-        RollHeroAttack(hero, dice, bonus, [command.TargetId], DamageSource.Shove, events, command.PowerDice, spent: spent);
+        RollHeroAttack(hero, dice, bonus, [command.TargetId], DamageSource.Shove, events, command.PowerDice, weaponDice: hero.PushDice, spent: spent);
         return null;
     }
 
@@ -438,6 +438,14 @@ public sealed partial class GameSession
         }
 
         PushMonster(hero, room, monster, to, events);
+
+        // A push that counts twice drives it a second tile, but a boss or anything too big only the one.
+        bool mighty = monster.Definition is { Boss: true } or { Miniboss: true } || monster.Definition.Size > 1;
+        if (hero.DoublePush && !mighty && room.FindMonster(monster.Id) is not null && monster.Position == to
+            && ShoveDestination(room, hero, monster.Position, monster.Flies) is { } further)
+        {
+            PushMonster(hero, room, monster, further, events);
+        }
     }
 
     /// <summary>Moves a monster a tile (a shove or a blast); then deep water, a pit or a trap there takes it.</summary>

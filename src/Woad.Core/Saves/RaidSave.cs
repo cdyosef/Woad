@@ -60,6 +60,22 @@ public sealed class RaidSave
     /// <summary>The cards and coins the whole party shares (missing in raids saved before it: empty).</summary>
     public PartyChest Chest { get; init; } = new();
 
+    /// <summary>Dungeon uniques (by card id) this raid has carried out: each is won once a raid.</summary>
+    public List<string> UniquesClaimed { get; init; } = [];
+
+    /// <summary>Notes the uniques anyone got out of a dungeon with: they're claimed for the rest of the raid.</summary>
+    public void ClaimUniques(IEnumerable<Rules.HeroRunResult> results, Content.ContentCatalog content)
+    {
+        IEnumerable<string> carried = results.Where(result => result.Status == Model.HeroStatus.Escaped)
+            .SelectMany(result => result.Equipped.Concat(result.Belt).Concat(result.Backpack).Concat(result.Carried))
+            .Select(Content.CardKey.Id)
+            .Where(id => content.FindCard(id) is { Unique: true });
+        foreach (string id in carried.Distinct().Where(id => !UniquesClaimed.Contains(id)))
+        {
+            UniquesClaimed.Add(id);
+        }
+    }
+
     public RaidLocation Location { get; set; } = RaidLocation.Inn;
 
     /// <summary>Where and when the party is on the Woarld Map; null until they first step out.</summary>

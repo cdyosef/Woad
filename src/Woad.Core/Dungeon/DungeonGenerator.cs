@@ -119,6 +119,11 @@ public static partial class DungeonGenerator
             }
         }
 
+        if (theme.Tower)
+        {
+            BuildTower(theme, content, layouts, heroes, seed, rooms, passages);
+        }
+
         List<BreachSetup> breaches = PlanBreaches(rooms, random);
         PlaceMerchant(rooms, theme.Floors, random);
         Darken(rooms, new Pcg32(seed, DarkStream));

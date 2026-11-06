@@ -254,7 +254,8 @@ public partial class GameScreen
             }
             else
             {
-                Execute(new BullRush(hero.Id, tile, SelectedAttackDice, !_weaponHeld, SelectedPowerDice, _rumbleBonusHeld));
+                // No skill or Wend die for a bull rush, but the Emerald Baron Helm: an Emerald Charge, for a Power Die.
+                Execute(new BullRush(hero.Id, tile, SelectedAttackDice, !_weaponHeld, SelectedPowerDice, _rumbleBonusHeld, Charge: _session.CheckBullRush() is not null));
             }
 
             return;
@@ -1000,8 +1001,8 @@ public partial class GameScreen
             TileKind.Pit when room.BelowRoomId is not null =>
                 "A pit: the room below shows far down. Fall in (or be shoved) and you drop to it, losing a heart. Leap over it with a Wend die.",
             TileKind.Pit => "A bottomless pit. Fall in and you lose a heart climbing out; a monster shoved in is gone. Leap over it with a Wend die.",
-            TileKind.StairsDown => $"Stairs down to floor {room.Floor + 1}. Click to walk up to them, then click them to go down (free).",
-            TileKind.StairsUp => $"Stairs up to floor {room.Floor - 1}. Click to walk up to them, then click them to climb (free).",
+            TileKind.StairsDown => $"Stairs down to {(room.StairsDownTo is { } down ? _session.State.Rooms[down].PlaceName : $"floor {room.Floor + 1}")}. Click to walk up to them, then click them to go down (free).",
+            TileKind.StairsUp => $"Stairs up to {(room.StairsUpTo is { } up ? _session.State.Rooms[up].PlaceName : $"floor {room.Floor - 1}")}. Click to walk up to them, then click them to climb (free).",
             TileKind.Rubble => "Rough ground: rubble. Each step onto it costs 2.",
             TileKind.Gate => $"A locked gate. Next to it: click it to open it with a key, or to pick the lock with Od Hand ({room.Gates.GetValueOrDefault(tile)}+).",
             _ when room.Breaches.ContainsKey(tile) => "A breach into the room next door: stand here and click again to go through (1 step).",

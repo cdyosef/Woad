@@ -54,6 +54,52 @@ public sealed partial class GameSession
         {
             Hex(monster, hero, events);
         }
+
+        if (definition.CarriesOff && hero.IsActive && hero.Carrier is null)
+        {
+            CarryOff(room, monster, hero, events);
+        }
+    }
+
+    /// <summary>How far a monster that carries heroes off takes them toward open air.</summary>
+    public const int CarryOffReach = 6;
+
+    /// <summary>
+    /// Seized and carried off: the hero is taken up to <see cref="CarryOffReach"/> tiles toward the nearest
+    /// open air (a pit), over tiles nobody stands on, and dropped in if they get there; short of it, they're
+    /// set down where the flight ended. With no open air in the room, nothing happens.
+    /// </summary>
+    internal void CarryOff(Room room, Monster monster, Hero hero, List<GameEvent> events)
+    {
+        bool Open(GridPosition tile) => room.Layout.Contains(tile)
+            && (room.Layout[tile] == TileKind.Pit || (room.Layout[tile].IsWalkable(flying: true) && !IsOccupied(room, tile)));
+        PathSearch flight = PathSearch.Run(hero.Position, Open, canPass: tile => room.Layout[tile] != TileKind.Pit);
+        GridPosition? air = flight.Distances.Keys.Where(tile => room.Layout[tile] == TileKind.Pit)
+            .OrderBy(tile => flight.Distances[tile]).ThenBy(tile => tile.Y).ThenBy(tile => tile.X)
+            .Select(tile => (GridPosition?)tile).FirstOrDefault();
+        if (air is not { } edge)
+        {
+            return;
+        }
+
+        List<GridPosition> path = [.. flight.PathTo(edge).Take(CarryOffReach)];
+        if (path.Count == 0)
+        {
+            return;
+        }
+
+        events.Add(new CarriedOff(monster.Id, hero.Id, path));
+        GridPosition end = path[^1];
+        if (room.Layout[end] == TileKind.Pit)
+        {
+            hero.Position = path.Count > 1 ? path[^2] : hero.Position;
+            PushHero(null, room, hero, end, events, announce: false);
+            return;
+        }
+
+        // Short of the edge: dropped on the last open stone it reached.
+        GridPosition landing = path.LastOrDefault(tile => room.Layout[tile].IsWalkable() && !IsOccupied(room, tile), hero.Position);
+        hero.Position = landing;
     }
 
     /// <summary>A hex steals a point of Luck (their Luck first, then Clover Luck), the Hexer keeping it; with none left, it stuns.</summary>

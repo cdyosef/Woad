@@ -38,6 +38,26 @@ public partial class Main
                 GetViewport().GetTexture().GetImage().SavePng($"{shots}/keep_courtyard.png");
             }
 
+            // The roof, from the start: open stone, the crenellated edge, the stairs down in the middle.
+            if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } roofShots)
+            {
+                var roof = new GameScreen { Setup = setup with { StartRoomId = DungeonGenerator.RoofId }, Content = _content };
+                Show(roof);
+                await roof.WaitUntilIdle();
+                Room top = roof.Session.State.Rooms[DungeonGenerator.RoofId];
+                Check(top.PlaceName == "the Roof" && top.TilesOfKind(TileKind.Pit).Count() > 40, "the roof's edge is open air between pillars");
+                Check(top.Monsters.Any(monster => monster.Definition.Id == "baron_herkullos") && top.Monsters.Count(monster => monster.Definition.Id == "grasshopper_knight") == 3,
+                    "Baron Herkullos holds the roof, with his Grasshopper Knights");
+                roof.Board.ZoomBy(0.5f);
+                for (int frame = 0; frame < 30; frame++)
+                {
+                    await NextFrame(this);
+                }
+
+                await NextFrame(this);
+                GetViewport().GetTexture().GetImage().SavePng($"{roofShots}/keep_roof.png");
+            }
+
             GD.Print("Gate test passed.");
             Sfx.QuitGame(this);
         }

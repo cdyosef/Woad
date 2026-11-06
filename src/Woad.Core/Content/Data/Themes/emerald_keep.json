@@ -5,6 +5,7 @@
   "floors": 3,
   "boss": "iron_warden",
   "gate": { "knight": "emerald_knight", "guard": "emerald_guard" },
+  "tower": true,
   "miniboss": "key_warden",
 
   "roster": [

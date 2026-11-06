@@ -12,8 +12,9 @@ public class DungeonGeneratorTests
     private static IReadOnlyList<HeroSetup> Party(int size) =>
         Enumerable.Range(1, size).Select(number => new HeroSetup($"Hero {number}", GameRules.HeroBaseStats, GameRules.StarterKit)).ToList();
 
+    /// <summary>The dungeon below (floors 1 to 3): the Emerald Keep's tower above has tests of its own.</summary>
     private static RunSetup Generate(ulong seed, int partySize = 2) =>
-        DungeonGenerator.CreateRun(Content, "emerald_keep", Party(partySize), seed);
+        DungeonGenerator.CreateRun(Content, "emerald_keep", Party(partySize), seed) is var run ? run with { Rooms = [.. run.Rooms.Where(room => room.Level == 0)] } : null!;
 
     private static readonly ulong[] SeedValues = [1, 2, 3, 42, 777, 2026, 31337, 90210];
 

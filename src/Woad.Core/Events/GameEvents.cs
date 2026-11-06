@@ -622,6 +622,9 @@ public sealed record MimicWoke(int MonsterId, string RoomId, GridPosition Chest,
 /// <summary>A grabbing monster's hit took hold of a hero: they can't move until it lets go.</summary>
 public sealed record Grabbed(int MonsterId, int HeroId) : GameEvent;
 
+/// <summary>A monster seized a hero and carried them off toward open air, along <paramref name="Path"/> (Baron Herkullos's beetle).</summary>
+public sealed record CarriedOff(int MonsterId, int HeroId, IReadOnlyList<GridPosition> Path) : GameEvent;
+
 /// <summary>A heavy blow knocked a hero straight back (a tile, or more with a mighty blow's sixes).</summary>
 public sealed record KnockedBack(int MonsterId, int HeroId, GridPosition From, GridPosition To) : GameEvent;
 

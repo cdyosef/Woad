@@ -406,6 +406,18 @@ public sealed class Hero
     public Stats EffectiveStats => EquippedCards.Concat(_mods).Concat(BeltTools).Aggregate(BaseStats, (stats, card) =>
         stats + card.Modifiers + (HasSetBonus(card.Definition) ? card.Definition.Set!.Modifiers : Stats.None));
 
+    /// <summary>Dice more on Shove and Bull Rush (the Emerald Baron Helm).</summary>
+    public int PushDice => EquippedCards.Sum(card => card.Definition.PushDice);
+
+    /// <summary>Every push counts twice: twice as far, and bosses can be shoved a tile (the Emerald Baron Helm).</summary>
+    public bool DoublePush => EquippedCards.Any(card => card.Definition.DoublePush);
+
+    /// <summary>Bull Rush flies over open air and water (the Emerald Baron Helm).</summary>
+    public bool FlyingRush => EquippedCards.Any(card => card.Definition.FlyingRush);
+
+    /// <summary>Emerald Charge: a bull rush for a Power Die, with no Bull Rush skill or Wend die (the Emerald Baron Helm).</summary>
+    public bool EmeraldCharge => EquippedCards.Any(card => card.Definition.EmeraldCharge);
+
     /// <summary>Magic Energy slots: one for each rank of Magic.</summary>
     public int MagicSlots => Math.Max(0, EffectiveStats.Magic);
 

@@ -224,11 +224,11 @@ public sealed partial class GameSession
             target = _random.Behavior.Pick(candidates);
         }
 
-        int floors = fallen + Math.Max(0, target.Floor - from.Floor);
+        int floors = fallen + Math.Max(0, from.Storey - target.Storey);
         GridPosition under = Beneath(from, hole, target);
 
         // Landing on another pit, they fall on through it.
-        if (target.Layout[under] == TileKind.Pit && (target.BelowRoomId is not null || target.DeepHoles.ContainsKey(under)) && target.Floor > from.Floor)
+        if (target.Layout[under] == TileKind.Pit && (target.BelowRoomId is not null || target.DeepHoles.ContainsKey(under)) && target.Storey < from.Storey)
         {
             hero.RoomId = target.Id;
             hero.Position = under;
@@ -255,7 +255,7 @@ public sealed partial class GameSession
         hero.RoomId = target.Id;
         hero.Position = landing;
         // Falling to the floor below, their lights and spells need a save (the stairs don't).
-        if (target.Floor > from.Floor)
+        if (target.Storey < from.Storey)
         {
             StartFallSave(hero, floors, events);
         }

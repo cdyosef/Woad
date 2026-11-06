@@ -16,6 +16,7 @@ internal static class TestContent
           { "id": "big_sword", "name": "Big Sword", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 2 } },
           { "id": "bow", "name": "Bow", "type": "weapon", "slot": "mainHand", "twoHanded": true, "modifiers": { "weapon": 1 }, "attackRange": 4 },
           { "id": "shield", "name": "Shield", "type": "shield", "slot": "offHand", "modifiers": { "armor": 1 } },
+          { "id": "baron_helm", "name": "Baron Helm", "type": "armor", "slot": "head", "modifiers": { "armor": 2 }, "pushDice": 1, "doublePush": true, "flyingRush": true, "emeraldCharge": true },
           { "id": "ksword", "name": "K-Sword", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 2 }, "set": { "with": "kshield", "modifiers": { "weapon": 1, "block": 1 } } },
           { "id": "kshield", "name": "K-Shield", "type": "shield", "slot": "offHand", "modifiers": { "armor": 2, "defenseDice": 1 }, "set": { "with": "ksword", "modifiers": { "guardDice": 1 } } },
           { "id": "t_dagger", "name": "T-Dagger", "type": "weapon", "slot": "offHand", "altSlot": "mainHand", "stacks": true, "attackBonus": 1, "offHandStrike": true, "thrownRange": 3, "ambush": true, "light": true },
