@@ -118,6 +118,10 @@ public partial class GameScreen : Control
         {
             RunRumbleTest();
         }
+        else if (args.Contains("--offhandtest"))
+        {
+            RunOffHandTest();
+        }
         else if (args.Contains("--clicktest"))
         {
             RunClickTest();
@@ -456,6 +460,13 @@ public partial class GameScreen : Control
         switch (gameEvent)
         {
             case TurnStarted turn:
+                // The off hand's weapon, picked for Rumble, was for that turn only: the main hand again.
+                if (_readied.TryGetValue(turn.HeroId, out int readiedId) && _session.State.GetHero(turn.HeroId).MainWeapon?.Id != readiedId)
+                {
+                    _readied.Remove(turn.HeroId);
+                    _fronts.Remove((turn.HeroId, _rumbleHand.Title));
+                }
+
                 _board.ZoomOut();
                 _rumbleBonusHeld = false;
                 _viewedHeroId = null;

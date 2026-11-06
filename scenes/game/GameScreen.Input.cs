@@ -69,6 +69,16 @@ public partial class GameScreen
             return;
         }
 
+        // Rumble spent: the off hand follows up on it, with an Od Hand die.
+        if (room.MonsterAt(tile) is { } followed && _session.AttackDiceLeft == 0 && _session.CheckOffHandAttack(followed.Id) is null)
+        {
+            CancelSelection();
+            _offHanding = true;
+            Log($"Click the {followed.Definition.Name} again to follow up with your {GameSession.OffHandItem(hero)!.Definition.Name} (an Od Hand die). Right-click to cancel.", Palette.DieOdHand);
+            RefreshPanels();
+            return;
+        }
+
         bool enemy = room.MonsterAt(tile) is not null;
         if (!enemy && !(room.Layout[tile].IsWalkable() || room.Layout[tile] == TileKind.DeepWater))
         {
@@ -434,8 +444,8 @@ public partial class GameScreen
         }
         else if (room.MonsterAt(tile) is { } struck && _session.AttackDiceLeft == 0 && _session.CheckOffHandAttack(struck.Id) is null)
         {
-            // Rumble spent, and the off hand can follow up on it: it does.
-            Execute(new OffHandAttack(hero.Id, struck.Id, SelectedPowerDice));
+            // Rumble spent, and the off hand can follow up on it: a double-click aims it, as Rumble's does.
+            Log($"Double-click it to follow up with your {GameSession.OffHandItem(hero)!.Definition.Name} (an Od Hand die).", Palette.DieOdHand);
         }
         else if (room.MonsterAt(tile) is not null)
         {
@@ -1272,13 +1282,13 @@ public partial class GameScreen
     }
 
     /// <summary>
-    /// The weapon each hero holding two (a Spear and a Boomerang) has readied for their attacks, by a click on
-    /// it in hand or on the Rumble row's toggle. Not there: the rules pick (the main hand if it reaches, else the off hand).
+    /// The weapon each hero has readied for their Rumble attacks, by a click on it in hand or on the Rumble row's
+    /// toggle. Not there: the main hand. The off hand's weapon, readied, is only until the turn ends.
     /// </summary>
     private readonly Dictionary<int, int> _readied = [];
 
     private CardInstance? ReadiedWeapon =>
-        ActiveHero is { } hero && _readied.TryGetValue(hero.Id, out int id) && GameSession.HandWeapons(hero) is { Count: > 1 } weapons
+        ActiveHero is { } hero && _readied.TryGetValue(hero.Id, out int id) && GameSession.HandWeapons(hero) is { Count: > 0 } weapons
             ? weapons.FirstOrDefault(card => card.Id == id)
             : null;
 
@@ -1301,7 +1311,7 @@ public partial class GameScreen
         {
             _readied.Remove(hero.Id);
             _fronts.Remove((hero.Id, _rumbleHand.Title));
-            Log($"{hero.Name} attacks with whichever weapon reaches: the main hand first.", Palette.TrimBright);
+            Log($"{hero.Name} attacks with the main hand.", Palette.TrimBright);
         }
 
         RefreshPanels();
@@ -1309,9 +1319,13 @@ public partial class GameScreen
 
     private void ReadyWeapon(Hero hero, CardInstance weapon)
     {
+        bool already = _readied.TryGetValue(hero.Id, out int readied) && readied == weapon.Id;
         _readied[hero.Id] = weapon.Id;
         _fronts[(hero.Id, _rumbleHand.Title)] = ItemPrefix + weapon.Id;
-        Log($"{hero.Name} readies the {weapon.Definition.Name}: their attacks use it.", Palette.TrimBright);
+        if (!already)
+        {
+            Log($"{hero.Name} readies the {weapon.Definition.Name}: their attacks use it.", Palette.TrimBright);
+        }
     }
 
     /// <summary>For the hover text: what the active hero would hit the monster with from where they stand.</summary>

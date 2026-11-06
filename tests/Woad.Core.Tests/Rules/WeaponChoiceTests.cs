@@ -23,16 +23,19 @@ public class WeaponChoiceTests
         """;
 
     [Fact]
-    public void LeftToTheRulesTheSpearStrikesWhatItReachesAndTheBoomerangTheRest()
+    public void LeftToTheRulesTheSpearStrikesAndTheBoomerangOnlyWhenPicked()
     {
         GameSession session = TestRun.Start(Field, new ScriptedDice(2, 2), cards: ["spear", "boomerang"]);
         Hero hero = session.HeroInSeat();
         Monster dummy = session.OnlyMonster();
+        int boomerang = hero.Card("boomerang").Id;
 
         Assert.Equal(("spear", 2), (session.WeaponAgainst(dummy)!.Value.Weapon!.Definition.Id, session.WeaponAgainst(dummy)!.Value.Bonus));
         dummy.Position = new GridPosition(8, 4);
-        Assert.Equal(("boomerang", 1), (session.WeaponAgainst(dummy)!.Value.Weapon!.Definition.Id, session.WeaponAgainst(dummy)!.Value.Bonus));
-        Assert.Equal(1, session.Do(new AttackMonster(hero.Id, dummy.Id)).SingleOf<AttackRolled>().Bonus);
+        Assert.Null(session.WeaponAgainst(dummy));
+        Assert.DoesNotContain(dummy, session.GetAttackableMonsters());
+        Assert.Equal(("boomerang", 1), (session.WeaponAgainst(dummy, boomerang)!.Value.Weapon!.Definition.Id, session.WeaponAgainst(dummy, boomerang)!.Value.Bonus));
+        Assert.Equal(1, session.Do(new AttackMonster(hero.Id, dummy.Id, WeaponId: boomerang)).SingleOf<AttackRolled>().Bonus);
     }
 
     [Fact]

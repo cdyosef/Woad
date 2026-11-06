@@ -59,7 +59,7 @@ public class DieTypeTests
             """, new ScriptedDice(6, 1, 6), cards: ["boomerang"]);
         Hero hero = session.HeroInSeat();
 
-        session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id));
+        session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id, WeaponId: hero.Card("boomerang").Id));
         IReadOnlyList<GameEvent> events = session.Do(new AddPowerDie(hero.Id));
 
         Assert.Equal(0, events.SingleOf<Damaged>().Amount);

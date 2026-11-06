@@ -33,11 +33,12 @@ public sealed class WeaponTests
         Hero hero = session.HeroInSeat();
         int dummy = session.OnlyMonster().Id;
 
+        int dagger = hero.Equipment[EquipSlot.OffHand].Id;
         int[] bonuses = Enumerable.Range(0, 3)
-            .Select(_ => session.Do(new AttackMonster(hero.Id, dummy, Dice: 1)).SingleOf<AttackRolled>().Bonus)
+            .Select(i => session.Do(new AttackMonster(hero.Id, dummy, Dice: 1, WeaponId: i == 2 ? dagger : null)).SingleOf<AttackRolled>().Bonus)
             .ToArray();
 
-        // Two Rapier strikes, then the off-hand Dagger's own.
+        // Two Rapier strikes, then the off-hand Dagger's own, picked.
         Assert.Equal([2, 2, 1], bonuses);
 
         GameSession shielded = Duel("....1d...", ["t_rapier", "shield"], new ScriptedDice(1, 1), attackDice: 2);
@@ -65,7 +66,7 @@ public sealed class WeaponTests
         // Each Dagger: 1, +1 for the pair, and its 1 again on a stunned monster (a stun adds its own +1 to the total).
         IReadOnlyList<GameEvent> first = session.Do(new AttackMonster(hero.Id, dummy.Id, Dice: 1));
         Assert.Equal(3, first.SingleOf<AttackRolled>().Bonus);
-        IReadOnlyList<GameEvent> second = session.Do(new AttackMonster(hero.Id, dummy.Id, Dice: 1));
+        IReadOnlyList<GameEvent> second = session.Do(new AttackMonster(hero.Id, dummy.Id, Dice: 1, WeaponId: hero.Equipment[EquipSlot.OffHand].Id));
         Assert.Equal(3, second.SingleOf<AttackRolled>().Bonus);
     }
 
@@ -75,8 +76,9 @@ public sealed class WeaponTests
         GameSession session = Duel(".1..d....", ["t_dagger"], new ScriptedDice(1));
         Hero hero = session.HeroInSeat();
         Monster dummy = session.OnlyMonster();
+        Assert.Empty(session.GetAttackableMonsters());
 
-        IReadOnlyList<GameEvent> events = session.Do(new AttackMonster(hero.Id, dummy.Id));
+        IReadOnlyList<GameEvent> events = session.Do(new AttackMonster(hero.Id, dummy.Id, WeaponId: hero.Card("t_dagger").Id));
 
         Assert.Equal(1, events.SingleOf<AttackRolled>().Bonus);
         Assert.Equal(dummy.Position, events.SingleOf<DaggerThrown>().LandedAt);

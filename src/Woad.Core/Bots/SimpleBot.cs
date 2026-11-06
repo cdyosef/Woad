@@ -95,6 +95,17 @@ public static class SimpleBot
             return new AttackMonster(hero.Id, target.Id);
         }
 
+        if (GameSession.OffHandItem(hero) is { Definition.Type: CardType.Weapon } off && session.GetAttackableMonsters(off.Id).FirstOrDefault() is { } offTarget)
+        {
+            return new AttackMonster(hero.Id, offTarget.Id, WeaponId: off.Id);
+        }
+
+        // Then what's in the off hand follows up with an Od Hand die.
+        if (session.GetOffHandTargets().FirstOrDefault() is { } followed)
+        {
+            return new OffHandAttack(hero.Id, followed.Id);
+        }
+
         // Prone (after stopping, dropping and rolling): roll to move and get up.
         if (hero.Prone)
         {

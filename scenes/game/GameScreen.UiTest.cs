@@ -115,17 +115,21 @@ public partial class GameScreen
             Check(bran.Belt.Any(card => card.Definition.Id == "buckler"), "in combat, the old card goes on the belt");
 
             // Two weapons in hand: the Rumble row's toggle picks which one attacks, and so does a click on it in hand.
-            Check(ReadiedWeapon is null, "with two weapons in hand, the rules pick until the hero does");
+            Check(ReadiedWeapon is null, "with two weapons in hand, it's the main hand until the hero picks");
             _heroPanel.Pool.EmitSwap();
             Check(ReadiedWeapon?.Definition.Id == "wooden_sword", "the Rumble row's toggle readies the main hand first");
             _heroPanel.Pool.EmitSwap();
             Check(ReadiedWeapon == boomerang, "then the off hand");
             _heroPanel.Pool.EmitSwap();
-            Check(ReadiedWeapon is null, "then back to letting the rules pick");
+            Check(ReadiedWeapon is null, "then back to the main hand");
             CancelSelection();
+            Check(_odHand.Stack.Any(card => card.Key == "item:" + boomerang.Id) && !_rumbleHand.Stack.Any(card => card.Key == "item:" + boomerang.Id),
+                "the off hand's Boomerang sits in the off hand's square (not the main hand's)");
             await ClickAt(this, _odHand.GetGlobalRect().Position + _odHand.CardPoint("item:" + boomerang.Id));
-            Check(_odHand.Front == "item:" + boomerang.Id && !_rumbleHand.Stack.Any(card => card.Key == "item:" + boomerang.Id),
-                "the off hand's Boomerang sits in the off hand's square (not the main hand's), and a click brings it to the front");
+            Check(ReadiedWeapon == boomerang && _rumbleHand.Stack.Any(card => card.Key == "item:" + boomerang.Id) && !_odHand.Stack.Any(card => card.Key == "item:" + boomerang.Id),
+                "a click picks it for Rumble, moving it to the Rumble square");
+            _heroPanel.Pool.EmitSwap();
+            Check(ReadiedWeapon is null && _odHand.Stack.Any(card => card.Key == "item:" + boomerang.Id), "the toggle puts it back");
             CancelSelection();
 
             // The bag opens into its cards, face up, to pick from.

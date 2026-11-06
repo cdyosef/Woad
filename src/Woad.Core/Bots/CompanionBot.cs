@@ -112,6 +112,11 @@ public static class CompanionBot
             return new AttackMonster(hero.Id, target.Id);
         }
 
+        if (hero.Order != CompanionOrder.StayBack && session.GetOffHandTargets().FirstOrDefault() is { } followed)
+        {
+            return new OffHandAttack(hero.Id, followed.Id);
+        }
+
         if (hero.Prone)
         {
             if (session.CheckGetUp() is null)

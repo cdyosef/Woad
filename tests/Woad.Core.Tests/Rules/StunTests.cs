@@ -127,7 +127,7 @@ public class StunTests
     [Fact]
     public void AThrownBoomerangFromTheOffHandReachesFurtherAndItsSixesStun()
     {
-        // Sword in hand, Boomerang in the off hand: a target 3 away takes the Boomerang (+1), whose 6 stuns.
+        // Sword in hand, Boomerang in the off hand: a target 3 away takes the Boomerang (+1, picked), whose 6 stuns.
         GameSession session = TestRun.Start("""
             .........
             .........
@@ -143,7 +143,8 @@ public class StunTests
         Assert.Equal(EquipSlot.OffHand, hero.Equipment.Single(slot => slot.Value.Definition.Id == "boomerang").Key);
         Monster dummy = session.OnlyMonster();
 
-        Assert.Equal(1, session.Do(new AttackMonster(hero.Id, dummy.Id)).SingleOf<AttackRolled>().Bonus);
+        Assert.Empty(session.GetAttackableMonsters());
+        Assert.Equal(1, session.Do(new AttackMonster(hero.Id, dummy.Id, WeaponId: hero.Card("boomerang").Id)).SingleOf<AttackRolled>().Bonus);
         IReadOnlyList<GameEvent> events = session.Do(new AddPowerDie(hero.Id));
 
         Assert.Equal(new Stunned(dummy.Id, 1, 0, false), events.SingleOf<Stunned>());
@@ -168,7 +169,7 @@ public class StunTests
         flyer.Position = new GridPosition(5, 4);
         flyer.Hearts = 3;
 
-        session.Do(new AttackMonster(hero.Id, flyer.Id));
+        session.Do(new AttackMonster(hero.Id, flyer.Id, WeaponId: hero.Card("boomerang").Id));
         IReadOnlyList<GameEvent> events = session.Do(new AddPowerDie(hero.Id));
 
         Assert.Contains(events, e => e is MonsterDefeated or MonsterFell);

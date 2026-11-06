@@ -214,6 +214,16 @@ public static class DemoRun
         StartRoomId = "near",
     };
 
+    /// <summary>For --offhandtest: Aria with a Wooden Sword and a Dagger in her off hand, an ogre beside her.</summary>
+    public static RunSetup OffHand(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20, AttackDice = 1, OdHandDice = 1 }, CardIds = [.. Belted, "wooden_sword", "dagger"] }],
+        Rooms = [new RoomSetup("yard", RoomTemplate.Parse(".........\n.........\n.........\n.........\n....1o...\n.........\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
+        StartRoomId = "yard",
+    };
+
     /// <summary>For --spelltest: Aria with a Flame Scroll on her belt and a Frost Wand in her off hand, two slimes across the room.</summary>
     public static RunSetup Spells(ulong seed) => new()
     {

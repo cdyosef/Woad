@@ -491,8 +491,8 @@ public partial class GameScreen
 
         pool.ShowPool(DicePool.Rumble, _session.AttackDiceLeft, SelectedAttackDice, weapon, weapon > 0 && !_weaponHeld, bonusDice: _session.WeaponDiceLeft(ReadiedWeaponId));
         bool twoWeapons = ActiveHero is { } armed && turn is not null && GameSession.HandWeapons(armed).Count > 1;
-        pool.ShowSwap(DicePool.Rumble, twoWeapons ? ReadiedWeapon?.Definition.Name ?? "Auto" : null,
-            "Which weapon you attack with: click to swap (or click it in your hands). Auto uses your main hand when it reaches, else your off hand.");
+        pool.ShowSwap(DicePool.Rumble, twoWeapons ? (ReadiedWeapon ?? ActiveHero!.MainWeapon)?.Definition.Name ?? "Main" : null,
+            "Which weapon you attack with: click to swap (or click it in your hands). Rumble uses your main hand unless you pick your off hand's weapon; that lasts the turn.");
         pool.ShowPool(DicePool.Wend, _session.MoveDiceLeft, SelectedMoveDice, speed, speed < 0 || (speed > 0 && !_speedHeld), steps);
         pool.ShowPool(DicePool.OdHand, _session.OdHandDiceLeft, SelectedOdHandDice, tools, tools > 0 && !_toolsHeld, bonusDice: _session.ToolDiceLeft);
         pool.ShowPool(DicePool.Power, ActiveHero?.Power.Banked ?? 0, SelectedPowerDice, 0, false);

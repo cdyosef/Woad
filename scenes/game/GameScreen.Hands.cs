@@ -192,7 +192,10 @@ public partial class GameScreen
         {
             if (!Locked && ActiveHero is { } hero)
             {
-                _fronts[(hero.Id, hand.Title)] = card.Key;
+                if (!PickOffHandWeapon(hero, hand, card))
+                {
+                    _fronts[(hero.Id, hand.Title)] = card.Key;
+                }
 
                 // An item's card is picked up for its buttons too (Use, Equip, Belt...), as its slot's card was.
                 if (card.CardId is int cardId)
@@ -207,6 +210,7 @@ public partial class GameScreen
         hand.DieToPool += _ => MoveDie(hand, onto: false);
         hand.BonusClicked += ToggleBonus;
         hand.CardUsed += (_, card) => UseStackCard(hand, card);
+        hand.EmptyDoubleClicked += _ => AimMovedOffHand(hand);
         hand.Opened += opened =>
         {
             if (_spread.Hand == opened)
@@ -413,11 +417,11 @@ public partial class GameScreen
         CardInstance? off = hero.Equipment.GetValueOrDefault(EquipSlot.OffHand);
         if (hand == _rumbleHand)
         {
-            // The main hand's square: what's in it, and the Rumble card with its dice (the off hand's weapon sits in its own square,
-            // and Rumble still swings it when readied, or when the main hand doesn't reach).
+            // The main hand's square: what's in it, and the Rumble card with its dice. The off hand's weapon sits in its own
+            // square, and joins this one, for Rumble's dice, once it's picked for a Rumble attack.
             stack.Add(new(HandView.DiceKey, "rumble", "Rumble", mine && _session.AttackDiceLeft == 0, mine ? HeldPlus(_session.RumbleBonusLeft, _rumbleBonusHeld) : "", mine ? SelectedAttackDice : 0, Palette.DieRumble));
             IReadOnlyList<CardInstance> weapons = GameSession.HandWeapons(hero);
-            foreach (CardInstance item in new[] { main }.OfType<CardInstance>())
+            foreach (CardInstance item in new[] { main, OffHandForRumble(hero) ? off : null }.OfType<CardInstance>().Distinct())
             {
                 bool weapon = weapons.Contains(item);
                 stack.Add(ItemCard(item, weapon && mine && _session.WeaponBonusLeft(item.Id) == 0 && _session.WeaponDiceLeft(item.Id) == 0,
@@ -438,7 +442,7 @@ public partial class GameScreen
             // The off hand's square: what's in it (a weapon or torch there attacks by the Od Hand card), the tools, and the Od Hand card with its dice.
             stack.Add(new(HandView.DiceKey, "od_hand", "Od Hand", mine && _session.OdHandDiceLeft == 0, Dice: mine ? SelectedOdHandDice : 0, Border: Palette.DieOdHand));
             List<CardInstance> tools = [.. hero.EquippedCards.Concat(hero.BeltTools).Where(card => card.Definition.Tool is not null).DistinctBy(card => card.Definition.Id)];
-            if (off is not null && off != main && !tools.Contains(off))
+            if (off is not null && off != main && !tools.Contains(off) && !OffHandForRumble(hero))
             {
                 int value = GameSession.OffHandItem(hero) == off ? off.Definition.AttackBonus + off.Definition.Modifiers.Weapon : 0;
                 stack.Add(ItemCard(off, mine && turn!.OffHandAttacked, value > 0 ? Plus(value) : ""));
@@ -475,9 +479,9 @@ public partial class GameScreen
         bool offHandReadied = ReadiedWeapon is { } readied && readied != hero.MainWeapon;
         _weaponHeld = !rumble.StartsWith(ItemPrefix, StringComparison.Ordinal) && !offHandReadied;
 
-        // A weapon put on top by choice is the one readied; left to the default, the rules pick.
+        // A weapon put on top by choice is the one readied; left to the default, it's the main hand.
         if (!_weaponHeld && _fronts.TryGetValue((hero.Id, _rumbleHand.Title), out string? chosen) && chosen == rumble
-            && int.TryParse(rumble[ItemPrefix.Length..], out int weaponId) && GameSession.HandWeapons(hero).Count > 1)
+            && int.TryParse(rumble[ItemPrefix.Length..], out int weaponId) && GameSession.HandWeapons(hero).Count > 0)
         {
             _readied[hero.Id] = weaponId;
         }
@@ -485,10 +489,59 @@ public partial class GameScreen
         _toolsHeld = FrontOf(_odHand, StackOf(_odHand, hero)) == HandView.DiceKey;
     }
 
+    /// <summary>
+    /// The off hand's weapon, picked for a Rumble attack: it sits in the Rumble square, taking Rumble's dice, until
+    /// the Od Hand card can follow up with it (after a Rumble attack), when it goes back to the Od Hand square.
+    /// </summary>
+    private bool OffHandForRumble(Hero hero) =>
+        _readied.TryGetValue(hero.Id, out int id) && GameSession.OffHandItem(hero) is { } off && off.Id == id && off != hero.MainWeapon
+        && !(_session.State.Turn?.HeroId == hero.Id && _session.CheckOffHandAttack() is null);
+
+    /// <summary>When the off hand's weapon last left the Od Hand square for Rumble's, on a click: a double-click's second click lands there after it.</summary>
+    private ulong _offHandMovedAt;
+
+    /// <summary>
+    /// A click on the off hand's weapon in the Od Hand square: with a follow-up to make, it's the Od Hand card's to
+    /// swing (it comes to the front); otherwise it's picked for Rumble, moving to the Rumble square.
+    /// </summary>
+    private bool PickOffHandWeapon(Hero hero, HandView hand, StackCard card)
+    {
+        if (hand != _odHand || card.CardId is not int cardId || GameSession.OffHandItem(hero) is not { } off || off.Id != cardId
+            || !GameSession.HandWeapons(hero).Contains(off) || _session.State.Turn is null || _session.CheckOffHandAttack() is null)
+        {
+            return false;
+        }
+
+        ReadyWeapon(hero, off);
+        _offHandMovedAt = Time.GetTicksMsec();
+        return true;
+    }
+
+    /// <summary>
+    /// The second click of a double-click on the off hand's weapon, which the first moved from the Od Hand square to
+    /// Rumble's (landing on the Od Hand card behind it, or on nothing): Rumble aims with it. False for any other click.
+    /// </summary>
+    private bool AimMovedOffHand(HandView hand)
+    {
+        if (Locked || hand != _odHand || Time.GetTicksMsec() - _offHandMovedAt >= 600 || ActiveHero is not { } picker || !OffHandForRumble(picker))
+        {
+            return false;
+        }
+
+        _offHandMovedAt = 0;
+        AimRumble();
+        return true;
+    }
+
     /// <summary>The top card of a stack was double-clicked: its action, with the selected dice.</summary>
     private void UseStackCard(HandView hand, StackCard card)
     {
         if (Locked)
+        {
+            return;
+        }
+
+        if (card.Key == HandView.DiceKey && AimMovedOffHand(hand))
         {
             return;
         }
@@ -513,7 +566,38 @@ public partial class GameScreen
             return;
         }
 
+        // The off hand's weapon or torch in the Od Hand square: the follow-up, once there's one to make (never a search).
+        if (hand == _odHand && card.CardId is int offId && ActiveHero is { } holder && GameSession.OffHandItem(holder)?.Id == offId)
+        {
+            if (_session.CheckOffHandAttack() is { } why)
+            {
+                Log($"{card.Name}: {why}", Palette.TextDim);
+            }
+            else if (!_offHanding)
+            {
+                _search.EmitSignal(BaseButton.SignalName.Pressed);
+            }
+
+            return;
+        }
+
+        // A weapon in the Rumble square: Rumble aims with it.
+        if (hand == _rumbleHand && card.Key.StartsWith(ItemPrefix, StringComparison.Ordinal))
+        {
+            AimRumble();
+            return;
+        }
+
         PlayAbility(hand.Default!);
+    }
+
+    /// <summary>Rumble aims (if it isn't already): the targets show in red.</summary>
+    private void AimRumble()
+    {
+        if (!_rumbling)
+        {
+            PlayAbility(_rumbleHand.Default!);
+        }
     }
 
     private bool Knows(Skill skill) => ActiveHero?.Knows(skill) == true;
