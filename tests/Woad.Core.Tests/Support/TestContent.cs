@@ -87,6 +87,7 @@ internal static class TestContent
           { "id": "t_oil", "name": "T-Oil", "type": "potion", "usage": "singleUse", "stacks": true, "effect": { "kind": "thievesOil", "amount": 10 } },
           { "id": "t_handbag", "name": "T-Handbag", "type": "tool", "slot": "offHand", "medicineBag": true },
           { "id": "t_burgle", "name": "T-Burgle", "type": "tool", "slot": "offHand", "tool": { "for": "pickLock, disarm, steal", "bonus": 1, "dice": 1, "snaps": true } },
+          { "id": "t_gloves", "name": "T-Gloves", "type": "accessory", "slot": "accessory", "tool": { "for": "steal", "bonus": 1, "dice": 1 } },
           { "id": "t_bag", "name": "T-Bag", "type": "tool", "slot": "offHand", "stacks": true, "belts": true, "medicineBag": true },
           { "id": "t_bandage", "name": "T-Bandage", "type": "tool", "usage": "singleUse", "stacks": true, "bandage": true },
           { "id": "t_shovel", "name": "T-Shovel", "type": "weapon", "slot": "mainHand", "twoHanded": true, "shovel": true, "modifiers": { "weapon": 2 } },

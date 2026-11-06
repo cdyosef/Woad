@@ -109,6 +109,18 @@ public class SkillTests
     }
 
     [Fact]
+    public void StealingToolsStackOnTheOneStealATurn()
+    {
+        // The Od Hand die's 4, the tools' dice 2 and 3, and +1 each: 11.
+        GameSession session = TestRun.Start(Beside, new ScriptedDice(4, 2, 3), cards: ["t_burgle", "t_gloves"]);
+        Hero hero = session.HeroInSeat();
+
+        OdHandRolled rolled = session.Do(new Steal(hero.Id, session.OnlyMonster().Id, Dice: 1)).SingleOf<OdHandRolled>();
+
+        Assert.Equal((2, 2, 11), (rolled.Bonus, rolled.ToolDice, rolled.Total));
+    }
+
+    [Fact]
     public void TheThievesToolsServeTheirSkills()
     {
         ContentCatalog content = ContentCatalog.LoadDefault();
