@@ -211,12 +211,17 @@ public class CardTests
     }
 
     [Fact]
-    public void LockpicksRideOnTheBeltAndWorkFromThere()
+    public void LockpicksRideOnTheBeltPlayingAloneAndInHandGoWithTheOdHandDice()
     {
-        GameSession session = TestRun.Start(Open, cards: ["sword", "shield", "picks"]);
+        GameSession session = TestRun.Start(Open, cards: ["sword", "picks"]);
         Hero hero = session.HeroInSeat();
+        CardInstance picks = hero.Card("picks");
 
         Assert.Equal(["picks"], hero.Belt.Select(card => card.Definition.Id));
+        Assert.Equal((0, 0), (session.ToolsBonusLeft, session.ToolDiceLeft));
+        Assert.Null(session.CheckToolAlone(picks.Id, Skill.PickLock));
+
+        session.Do(new EquipCard(hero.Id, picks.Id, EquipSlot.OffHand));
         Assert.Equal((1, 1), (session.ToolsBonusLeft, session.ToolDiceLeft));
     }
 

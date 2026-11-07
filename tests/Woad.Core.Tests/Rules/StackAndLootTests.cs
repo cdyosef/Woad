@@ -1,6 +1,7 @@
 using Woad.Core.Commands;
 using Woad.Core.Dungeon;
 using Woad.Core.Events;
+using Woad.Core.Content;
 using Woad.Core.Grid;
 using Woad.Core.Model;
 using Woad.Core.Rules;
@@ -158,6 +159,7 @@ public class StackAndLootTests
         Hero hero = session.HeroInSeat();
         CardInstance picks = hero.Card("picks");
         Assert.Equal(2, picks.Count);
+        session.Do(new EquipCard(hero.Id, picks.Id, EquipSlot.OffHand));
 
         IReadOnlyList<GameEvent> events = session.Do(new PickLock(hero.Id, hero.Position));
 
@@ -181,6 +183,7 @@ public class StackAndLootTests
         // Od Hand 2, the pick's 6 and the extra 3, +1: 12, the extra die a Power Die.
         GameSession session = LockedDoor(new ScriptedDice(2, 6, 3), "picks");
         Hero hero = session.HeroInSeat();
+        session.Do(new EquipCard(hero.Id, hero.Card("picks").Id, EquipSlot.OffHand));
 
         IReadOnlyList<GameEvent> events = session.Do(new PickLock(hero.Id, hero.Position));
 

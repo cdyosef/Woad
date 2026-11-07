@@ -61,12 +61,40 @@ public sealed partial class GameSession
         _ => Skill.None,
     };
 
-    /// <summary>Tool cards to hand (held, or working from the belt) that help with <paramref name="skill"/>: their bonus and dice added up.</summary>
-    private static (int Bonus, int Dice) ToolHelp(Hero hero, Skill skill)
+    /// <summary>
+    /// Tool cards in the hero's hands that help with <paramref name="skill"/>: their bonus and dice added up. Only
+    /// what's in hand goes in with the Od Hand dice; a tool on the belt or in the accessory slot is played on its
+    /// own (<paramref name="alone"/>: that one tool, wherever it is, by itself).
+    /// </summary>
+    private static (int Bonus, int Dice) ToolHelp(Hero hero, Skill skill, int? alone = null)
     {
-        IEnumerable<ToolUse> tools = hero.EquippedCards.Concat(hero.BeltTools)
-            .Select(card => card.Definition.Tool).OfType<ToolUse>().Where(tool => skill != Skill.None && tool.For.HasFlag(skill));
+        IEnumerable<CardInstance> cards = alone is int id
+            ? ToolsAnywhere(hero).Where(card => card.Id == id)
+            : new[] { EquipSlot.MainHand, EquipSlot.OffHand }.Select(slot => hero.Equipment.GetValueOrDefault(slot)).OfType<CardInstance>().Distinct();
+        IEnumerable<ToolUse> tools = cards.Select(card => card.Definition.Tool).OfType<ToolUse>().Where(tool => skill != Skill.None && tool.For.HasFlag(skill));
         return (tools.Sum(tool => tool.Bonus), tools.Sum(tool => tool.Dice));
+    }
+
+    /// <summary>Every tool the hero could play: worn, held or on the belt.</summary>
+    public static IEnumerable<CardInstance> ToolsAnywhere(Hero hero) =>
+        hero.EquippedCards.Concat(hero.Belt).Where(card => card.Definition.Tool is not null).Distinct();
+
+    /// <summary>Why the active hero can't play the tool <paramref name="cardId"/> on its own for <paramref name="skill"/> now, or null.</summary>
+    public string? CheckToolAlone(int cardId, Skill skill)
+    {
+        if (State.Turn is not { PendingRoll: null, UnsettledPowerDice: 0 } turn)
+        {
+            return "Finish the roll first.";
+        }
+
+        if (ToolsAnywhere(ActiveHero).FirstOrDefault(card => card.Id == cardId) is not { Definition.Tool: { } tool } card)
+        {
+            return "You've no such tool to hand.";
+        }
+
+        return !tool.For.HasFlag(skill) || tool.Dice < 1 ? $"The {card.Definition.Name} can't do that on its own."
+            : turn.ToolsUsed ? "You've used your tools already this turn."
+            : null;
     }
 
     /// <summary>
@@ -91,7 +119,7 @@ public sealed partial class GameSession
         Skill.None or Skill.Parry => false,
         Skill.Search => hero.TorchesHeld > 0 || hero.ShiningRounds > 0 || hero.Knows(Skill.HighAlert),
         Skill.Aid => hero.MedicineBag is not null || hero.Bandages is not null,
-        _ => ToolHelp(hero, skill).Dice > 0,
+        _ => ToolsAnywhere(hero).Any(card => card.Definition.Tool!.For.HasFlag(skill) && card.Definition.Tool.Dice > 0),
     };
 
     /// <summary>A search with High Alert's Rumble dice waiting to roll in: they can make it alone.</summary>
@@ -200,6 +228,13 @@ public sealed partial class GameSession
     private string? CheckOdHandCommand(OdHandCommand command, Skill skill, out int dice, bool freeDie = false)
     {
         dice = 0;
+
+        // A tool played on its own: no Od Hand dice go in.
+        if (command.ToolId is int toolId)
+        {
+            return CheckToolAlone(toolId, skill) ?? CheckBankedPowerDice(ActiveHero, command.PowerDice);
+        }
+
         if (CheckOdHandStart(skill, freeDie) is { } error)
         {
             return error;
@@ -402,7 +437,7 @@ public sealed partial class GameSession
     {
         Hero hero = ActiveHero;
         Skill skill = SkillFor(check.Kind);
-        (int toolBonus, int lockDice) = command.UseTools && !Turn.ToolsUsed ? ToolHelp(hero, skill) : (0, 0);
+        (int toolBonus, int lockDice) = (command.UseTools || command.ToolId is not null) && !Turn.ToolsUsed ? ToolHelp(hero, skill, command.ToolId) : (0, 0);
         bool tools = toolBonus > 0 || lockDice > 0;
         (bool bag, int aidDice) = AidKit(hero, command, check, events);
         bool free = check.Kind is OdHandCheckKind.Learn or OdHandCheckKind.Retreat;

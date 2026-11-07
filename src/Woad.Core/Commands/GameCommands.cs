@@ -160,7 +160,14 @@ public sealed record UnlockDoor(int HeroId, Direction Door) : GameCommand(HeroId
 /// An Od Hand roll: <paramref name="Dice"/> of this turn's unused Od Hand dice (null for all), plus
 /// the tools' value if <paramref name="UseTools"/> and it isn't used yet, plus banked Power Dice.
 /// </summary>
-public abstract record OdHandCommand(int HeroId, int? Dice, bool UseTools, int PowerDice) : GameCommand(HeroId);
+public abstract record OdHandCommand(int HeroId, int? Dice, bool UseTools, int PowerDice) : GameCommand(HeroId)
+{
+    /// <summary>
+    /// A tool played on its own (from the belt, the accessory slot or a hand): its bonus and dice alone, with no
+    /// Od Hand dice and no other tools. Null for an ordinary roll: Od Hand dice and the tools in hand.
+    /// </summary>
+    public int? ToolId { get; init; }
+}
 
 /// <summary>Pick the lock of the door you stand in (<paramref name="Target"/> is your own tile) or of an adjacent chest.</summary>
 public sealed record PickLock(int HeroId, GridPosition Target, int? Dice = null, bool UseTools = true, int PowerDice = 0)

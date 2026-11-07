@@ -166,6 +166,7 @@ public class DungeonSecretsTests
         // The Od Hand die's 3, the pick's die's 2 and its +1: 6.
         GameSession session = DoorRun(PassageKind.Locked, difficulty: 5, dice: new ScriptedDice(3, 2), cards: ["picks"]);
         Hero hero = session.HeroInSeat();
+        session.Do(new EquipCard(hero.Id, hero.Card("picks").Id, EquipSlot.OffHand));
 
         var rolled = session.Do(new PickLock(hero.Id, hero.Position)).SingleOf<OdHandRolled>();
 
