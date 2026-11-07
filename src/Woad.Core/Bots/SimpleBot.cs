@@ -89,8 +89,8 @@ public static class SimpleBot
             return new UseCard(hero.Id, scroll.Id, aim);
         }
 
-        // One all-out attack: every Attack die left plus the weapon.
-        if (session.GetAttackableMonsters().FirstOrDefault() is { } target)
+        // One all-out attack: every Attack die left plus the weapon (what hits back, the Emerald Knight, last).
+        if (session.GetAttackableMonsters().OrderBy(monster => monster.Definition.Counter is null ? 0 : 1).FirstOrDefault() is { } target)
         {
             return new AttackMonster(hero.Id, target.Id);
         }

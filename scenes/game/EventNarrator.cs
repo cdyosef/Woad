@@ -52,6 +52,7 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         PoisonRolled poison => poison.LostHeart ? $"The poison bites {nameOf(poison.EntityId)} ({poison.Face}): a heart lost." : $"{nameOf(poison.EntityId)} fights the poison off ({poison.Face}){(poison.Face == 6 ? ", throwing off a token" : "")}.",
         AcidBurned acid => $"Acid eats at {nameOf(acid.EntityId)} ({acid.Roll.Total}).",
         FrozenSolid frozen => $"{nameOf(frozen.EntityId)} is frozen solid and can't move a muscle.",
+        Countered countered => $"{nameOf(countered.EntityId)} hits back at {nameOf(countered.TargetId)}!",
         Staggered staggered => $"{nameOf(staggered.EntityId)} is confused: lashing out and staggering about!",
         PlantsGrew grew => $"Plants spring up{(grew.ForHeroes ? " for the party" : " for the monsters")}.",
         HeroSummoned summoned => $"{summoned.Name} {(summoned.Guise == "sentient_shrub" ? "springs up" : "rises")} to follow {nameOf(summoned.OwnerId)}!",

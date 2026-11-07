@@ -202,6 +202,9 @@ public sealed class Hero
     /// <summary>Rooms they searched first (each an Explorer bonus): the most on a run wins the Explorer Award.</summary>
     public int ExplorerBonus { get; internal set; }
 
+    /// <summary>The round this hero last hit back (with the Emerald Axe): once a round.</summary>
+    public int CounteredRound { get; internal set; }
+
     /// <summary>Keys used this run (small keys, the Boss Key, a gate's key): for the Keymaster award.</summary>
     public int KeysUsed { get; internal set; }
 

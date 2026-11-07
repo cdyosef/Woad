@@ -225,6 +225,18 @@ def draw(item):
         c.poly([(14, 8), (24, 3), (28, 12), (20, 18)], STEEL[1])
         c.poly([(20, 14), (26, 7), (27, 12)], STEEL[0])
         c.poly([(16, 12), (10, 8), (12, 16)], STEEL[2])
+    elif i in ("emerald_axe", "emerald_axe_3"):
+        # A battleaxe: a broad green-steel head, an emerald set in it; the finer one gold-bound with a second gem.
+        haft(c, 6, 28, 22, 6)
+        c.poly([(13, 6), (25, 1), (30, 13), (21, 20)], "#3f8f62")
+        c.poly([(19, 13), (27, 5), (29, 12)], "#8fe0b0")
+        c.poly([(16, 11), (9, 6), (11, 16)], "#1f5a3a")
+        c.circle(20, 11, 2, "#3fd98a")
+        c.dot(19, 10, "#d8ffe9")
+        if i == "emerald_axe_3":
+            c.line(13, 6, 25, 1, "#e2c47a")
+            c.line(25, 1, 30, 13, "#e2c47a")
+            c.circle(25, 8, 1.5, "#3fd98a")
     elif i == "war_hammer":
         haft(c, 6, 28, 20, 10)
         c.poly([(15, 9), (21, 3), (28, 10), (22, 16)], IRON[1])
@@ -1112,7 +1124,7 @@ def draw_spell(name):
 
 
 ITEMS = [
-    "wooden_sword", "longsword", "knights_sword", "trident", "short_bow", "great_axe", "maul", "war_hammer",
+    "wooden_sword", "longsword", "knights_sword", "trident", "short_bow", "great_axe", "emerald_axe", "emerald_axe_3", "maul", "war_hammer",
     "spear", "dagger", "rapier", "crossbow", "heavy_crossbow", "frost_brand", "quake_hammer", "longbow",
     "buckler", "tower_shield", "knights_shield", "emerald_baron_helm", "leather_cap", "diving_helm", "lucky_helmet", "cowards_cloak",
     "leather_armor", "studded_armor", "chain_mail", "wardens_plate", "storm_mail", "dash_boots",

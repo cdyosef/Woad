@@ -170,6 +170,25 @@ public sealed partial class Character : IPurse
     /// <summary>Their worn gear (keys with wear), equipped first.</summary>
     public IEnumerable<string> WornGear => _equipped.Concat(_belt).Concat(_backpack).Concat(_carried).Where(key => CardKey.Wear(key) > 0);
 
+    /// <summary>How many of a card (by id, whole) they hold anywhere: in hand, on the belt, in the bag or carried.</summary>
+    public int CountOf(string cardId) => _equipped.Concat(_belt).Concat(_backpack).Concat(_carried).Count(key => key == cardId);
+
+    /// <summary>Swaps one of their cards (by its key) for another where it is (a weapon the smith made finer). False if they haven't got it.</summary>
+    public bool Replace(string key, string with)
+    {
+        foreach (List<string> place in new[] { _equipped, _belt, _backpack, _carried })
+        {
+            int at = place.IndexOf(key);
+            if (at >= 0)
+            {
+                place[at] = with;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /// <summary>Mends one worn card (by its key) where it is. False if they haven't got it.</summary>
     public bool Mend(string key)
     {

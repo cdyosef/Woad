@@ -69,6 +69,7 @@ public sealed partial class GameSession
                 }
 
                 TakeMonsterTurn(room, monster, events);
+                FlushCounters(events);
                 if (State.Phase != RunPhase.InProgress)
                 {
                     return;

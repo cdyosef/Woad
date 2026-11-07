@@ -1028,7 +1028,14 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   apron the **Emerald Knight** (6 hearts, 2 dice and weapon 2, defense 2 and armor 2; a miniboss) holds the
   door with **Emerald Guards** (green, spears reaching 2 in a line), two for every three heroes, rounded up.
   The great door is the **gate**: only the **Emerald Key** opens it (no small key, no picking), and the knight
-  carries it. Shut, it's iron-bound oak with an emerald; open, it stands back on the dark. It leads into the
+  carries it. The knight **hits back**: whenever a creature attacks him, hit or miss, he strikes it back with a
+  die, his weapon and his Emerald Axe's **Life die** (its 6 grows plants, on a hit or a miss), as long as it's
+  beside him, and not while he's stunned or frozen past half his Wend; confused, the blow lands on whatever's
+  beside him. Very rarely (1 in 20) he drops the **Emerald Axe**: two-handed, weapon 2 and a Life die whose 6
+  takes hold on a hit or a miss. Wielding it, once a round, a Power Die on your defense roll means you hit
+  back, those Power Dice rolled into the blow (the same limits as the knight's). The smith mends it only with
+  an **emerald** for each point of wear, and makes it the **Emerald Axe +3** (weapon 3, two Life dice) for 3
+  emeralds and 3 gold. Shut, it's iron-bound oak with an emerald; open, it stands back on the dark. It leads into the
   **entrance hall**, the first room inside the keep (no monsters; the entrance's portal is here), and the
   rest of floor 1 opens out from there. The key stays in the keep when you leave.
 - **The Emerald Keep's tower:** stairs up from an ordinary room on floor 1 climb to **Level 1**, a floor of

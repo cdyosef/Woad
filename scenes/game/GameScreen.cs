@@ -1178,6 +1178,11 @@ public partial class GameScreen : Control
                 await Pause(0.4);
                 break;
 
+            case Countered countered:
+                CalloutOver(countered.EntityId, "COUNTER!", DieTypes.Tint(DieType.Life));
+                await Pause(0.3);
+                break;
+
             case Staggered staggered:
                 CalloutOver(staggered.EntityId, "CONFUSED!", DieTypes.Tint(DieType.Psycho));
                 await Pause(0.3);

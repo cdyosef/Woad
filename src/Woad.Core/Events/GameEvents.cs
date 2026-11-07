@@ -763,6 +763,9 @@ public sealed record FrozenSolid(int EntityId) : GameEvent;
 /// <summary>A confused hero or monster lashed out at whoever was beside it and staggered off.</summary>
 public sealed record Staggered(int EntityId) : GameEvent;
 
+/// <summary>A counterattack: the Emerald Knight (or a hero with the Emerald Axe) hitting back at <paramref name="TargetId"/>.</summary>
+public sealed record Countered(int EntityId, int TargetId) : GameEvent;
+
 /// <summary>Plants grew on a tile (Life dice), for the heroes' side or the monsters'.</summary>
 public sealed record PlantsGrew(string RoomId, GridPosition Tile, bool ForHeroes) : GameEvent;
 

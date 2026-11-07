@@ -477,6 +477,20 @@ public partial class PartyDialog : Control
             AddAction($"Sell {Money.Short(pays)}", "Sell", cannotSell, () => Traded(sell(key, seller, take)), Palette.Loot);
         }
 
+        // Made finer (the Emerald Axe into the +3): its material from the owner, the gold from them or the chest.
+        if (owner is not null && shop.Improve is { } improve && shop.Improvement?.Invoke(key) is { } improvement)
+        {
+            AddAction("Improve", "Improve", null, () => Traded(improve(owner, key, owner)));
+            _giving.Text = _news ?? $"{name}: {improvement}.";
+        }
+
+        // Mended with something besides gold (emeralds for the Emerald Axe): no purse.
+        if (owner is not null && shop.Mend is { } mendWith && shop.MendWith?.Invoke(key) is { } material && CardKey.Wear(key) > 0)
+        {
+            AddAction($"Mend ({material})", "Mend", null, () => Traded(mendWith(owner, key, owner)));
+            return;
+        }
+
         if (owner is not null && shop.Mend is { } mend && shop.MendPrice is { } mendPrice && CardKey.Wear(key) > 0)
         {
             int price = mendPrice(key);

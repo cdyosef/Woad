@@ -35,4 +35,13 @@ public sealed class ShopFront
 
     /// <summary>Mends one of a character's worn cards, paid from a purse.</summary>
     public Func<Character, string, IPurse, ServiceResult>? Mend { get; init; }
+
+    /// <summary>What mending a card takes instead of gold ("2 Emeralds"), or null for gold.</summary>
+    public Func<string, string?>? MendWith { get; init; }
+
+    /// <summary>What making a card finer takes, said ("Make it the Emerald Axe +3: 3 Emeralds and 3g"), or null if it can't be.</summary>
+    public Func<string, string?>? Improvement { get; init; }
+
+    /// <summary>Makes one of a character's cards finer, the gold from a purse.</summary>
+    public Func<Character, string, IPurse, ServiceResult>? Improve { get; init; }
 }

@@ -223,6 +223,7 @@ public sealed partial class GameSession
             return CommandResult.Reject(error);
         }
 
+        FlushCounters(events);
         CreditDeeds(events);
 
         // A hero who keels over on their own turn (by a trap) hands the turn on.
