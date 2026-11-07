@@ -198,7 +198,7 @@ public partial class GameScreen
             ?? $"Retreat: your selected Od Hand dice look for a way out, against the monsters' chase (a die more than there are of them, +{GameSession.RetreatChaseBonus}). Get away and you're off the field, the monsters left where they are; fail and you bolt in a panic and fall flat.";
         _partyButton.Position = new Vector2(SideWidth + BoardView.Pixels + (_retreat.Visible ? 30 : 82), 3);
         _steal.Disabled = !(idle && !pending) || _session.CheckStealStart() is not null;
-        _stealing &= !_steal.Disabled;
+        _stealing &= !_steal.Disabled || _aloneTool is not null;
         _steal.Text = _stealing ? "Cancel" : "Steal";
         _rumble.Disabled = !(idle && !pending) || _session.AttackDiceLeft < 1;
         _rumbling &= !_rumble.Disabled;
@@ -719,6 +719,7 @@ public partial class GameScreen
         _heroPanel.CardSelected += ClickCard;
         _heroPanel.CardInspected += SelectCard;
         _heroPanel.BeltCardUsed += UseFromBelt;
+        _heroPanel.SlotDoubleClicked += OnSlotDoubleClicked;
         _heroPanel.BuckleClicked += () =>
         {
             // The buckle opens its menu over the board (the bag and belt views make way).

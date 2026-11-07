@@ -58,6 +58,9 @@ public partial class HeroPanel : Panel
 
     public event Action<int>? CardSelected;
 
+    /// <summary>An equipment slot's card double-clicked (or the ghost in an empty accessory slot).</summary>
+    public event Action<EquipSlot>? SlotDoubleClicked;
+
     /// <summary>A worn card was right-clicked: pick it up for its buttons, whatever a click on it would do.</summary>
     public event Action<int>? CardInspected;
 
@@ -141,6 +144,7 @@ public partial class HeroPanel : Panel
             card.Name = name.Replace(" ", "");
             _slots[slot] = card;
             card.DropsAs = new DropTarget(DropKind.Equip, slot);
+            card.DoubleClicked += () => SlotDoubleClicked?.Invoke(slot);
             card.SetMeta("empty", name);
         }
 
@@ -313,6 +317,15 @@ public partial class HeroPanel : Panel
         {
             CardInstance? held = hero.Equipment.GetValueOrDefault(slot);
             card.Show(held, (string)card.GetMeta("empty"), held is not null && held.Id == selectedCardId, hero);
+            if (slot == EquipSlot.Accessory && held is null && GameScreen.AccessoryGhost(hero) is { } ghost)
+            {
+                card.ShowGhost(ghost, $"{ghost.Definition.Name} (in your hand): double-click to put them back on. Drag them back in too.");
+            }
+            else if (held is { Definition.Tool: not null } && slot is not (EquipSlot.MainHand or EquipSlot.OffHand))
+            {
+                card.TooltipText += "\nDouble-click to use it on its own; drag it into your off hand to use it with your Od Hand dice.";
+            }
+
             if (held is { Definition.Wings: true })
             {
                 card.TooltipText += "\nClick for Land. or Fly! Right-click for the card's buttons.";

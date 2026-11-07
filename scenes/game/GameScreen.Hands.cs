@@ -445,7 +445,8 @@ public partial class GameScreen
         {
             // The off hand's square: what's in it (a weapon or torch there attacks by the Od Hand card), the tools, and the Od Hand card with its dice.
             stack.Add(new(HandView.DiceKey, "od_hand", "Od Hand", mine && _session.OdHandDiceLeft == 0, Dice: mine ? SelectedOdHandDice : 0, Border: Palette.DieOdHand));
-            List<CardInstance> tools = [.. hero.EquippedCards.Concat(hero.BeltTools).Where(card => card.Definition.Tool is not null).DistinctBy(card => card.Definition.Id)];
+            // Only tools in hand go in with the Od Hand dice (on the belt or worn, they're played on their own).
+            List<CardInstance> tools = [.. new[] { main, off }.OfType<CardInstance>().Where(card => card.Definition.Tool is not null).DistinctBy(card => card.Id)];
             if (off is not null && off != main && !tools.Contains(off) && !OffHandForRumble(hero))
             {
                 int value = GameSession.OffHandItem(hero) == off ? off.Definition.AttackBonus + off.Definition.Modifiers.Weapon : 0;
@@ -785,13 +786,13 @@ public partial class GameScreen
         _odAim = OdAim.None;
         switch (aim)
         {
-            case OdAim.PickLock when _session.CheckPickLock(tile) is { } error:
+            case OdAim.PickLock when _aloneTool is null && _session.CheckPickLock(tile) is { } error:
                 Log($"Pick lock: {error}", Palette.TextDim);
                 break;
             case OdAim.PickLock:
                 ExecuteOdHand((heroId, dice, tools, power) => new PickLock(heroId, tile, dice, tools, power));
                 break;
-            case OdAim.Disarm when _session.CheckDisarm(tile) is { } error:
+            case OdAim.Disarm when _aloneTool is null && _session.CheckDisarm(tile) is { } error:
                 Log($"Disarm: {error}", Palette.TextDim);
                 break;
             case OdAim.Disarm:

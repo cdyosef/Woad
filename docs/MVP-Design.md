@@ -85,6 +85,14 @@ the Party menu can spend points on them too.
   Burgling Tools on a lock, a lit torch in hand on a search, a Medicine Bag (or Bandages, to rouse) on
   Aid, Burgling Tools on a trap, and Burgling Tools, a Cutpurse Knife or Sticky Gloves on a steal. With
   the skill, the tool adds to your Od Hand dice.
+- **Where a tool is matters:** only tools **in a hand** (shown in the Od Hand square) go in with the Od Hand
+  dice, all of them together (Sticky Gloves, a Cutpurse Knife and the Steal card make one stack). A tool on the
+  **belt** or **worn** (Sticky Gloves in the accessory slot) is **played on its own**: double-click it to aim
+  its job (pick a lock, disarm a trap, steal), rolling just its bonus and dice, once a turn (asked which job,
+  or whether to draw it into a hand, for a belt tool). Lockpicks and Burgling Tools go in either hand, like
+  weapons; Sticky Gloves can be dragged from the accessory slot into the off hand and back, leaving their
+  **ghost** in the empty accessory slot (double-click it to put them back on). In a fight, moving gear takes
+  your action, as ever.
 - Learning a spell and running from a fight need no skill: a free die starts each roll (learning is 1d6
   plus Magic, with any Od Hand dice on top).
 - Characters made before skills existed keep their dice, with one more Od Hand die, and know every Od

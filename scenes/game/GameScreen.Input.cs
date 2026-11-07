@@ -564,13 +564,14 @@ public partial class GameScreen
             return;
         }
 
-        if (_session.OdHandDiceLeft > 0 && SelectedOdHandDice < 1 && !_toolsHeld)
+        // A tool played on its own needs no Od Hand dice.
+        if (_aloneTool is null && _session.OdHandDiceLeft > 0 && SelectedOdHandDice < 1 && !_toolsHeld)
         {
             Log("Select at least one Od Hand die.", Palette.TextDim);
             return;
         }
 
-        Execute(command(hero.Id, SelectedOdHandDice, !_toolsHeld, SelectedPowerDice));
+        Execute(WithAloneTool(command(hero.Id, SelectedOdHandDice, !_toolsHeld, SelectedPowerDice)));
     }
 
     /// <summary>Unlocks shackles (your own, or an ally's beside you): with a key if you have one, else by picking the lock.</summary>
@@ -1375,6 +1376,7 @@ public partial class GameScreen
     private void CancelSelection()
     {
         _odAim = OdAim.None;
+        _aloneTool = null;
         _confirmingRetreat = false;
         _wingsChoice = false;
         _heroPanel.CloseBag();
@@ -1429,6 +1431,35 @@ public partial class GameScreen
         {
             PlayAbility(new AbilityCard(card.Definition.Id, card.Definition.Name, _aid, () => true));
             return;
+        }
+
+        // A tool on the belt: played on its own from there, or drawn into a hand to go in with the Od Hand dice.
+        if (card.Definition.Tool is { } toolUse && _session.State.Turn is not null)
+        {
+            List<(string Text, Action Then)> choices = [.. ToolJobs.Where(job => toolUse.For.HasFlag(job.Skill) && _session.CheckToolAlone(card.Id, job.Skill) is null)
+                .Select(job => ($"{job.Verb} with it alone", (Action)(() => AimToolAlone(card, job.Skill))))];
+            if (_session.CheckEquip(card.Id) is null)
+            {
+                choices.Add(("Draw it into a hand", () =>
+                {
+                    if (card.Definition.AltSlot is not null)
+                    {
+                        AskHand(hero, card);
+                    }
+                    else
+                    {
+                        Execute(new EquipCard(hero.Id, card.Id));
+                    }
+                }));
+            }
+
+            if (choices.Count > 0)
+            {
+                _selectedCardId = cardId;
+                RefreshPanels();
+                _inventory.AskChoice(cardId, $"The {card.Definition.Name}:", choices);
+                return;
+            }
         }
 
         _selectedCardId = cardId;

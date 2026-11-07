@@ -122,6 +122,10 @@ public partial class GameScreen : Control
         {
             RunOffHandTest();
         }
+        else if (args.Contains("--toolstest"))
+        {
+            RunToolsTest();
+        }
         else if (args.Contains("--clicktest"))
         {
             RunClickTest();

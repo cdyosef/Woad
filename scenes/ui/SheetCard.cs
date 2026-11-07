@@ -22,6 +22,29 @@ public partial class SheetCard : CardSlot
     /// <summary>Drawn small (the belt's fan): picture only, no name.</summary>
     public bool Small { get; set; }
 
+    /// <summary>A card that's gone from this slot for now (Sticky Gloves into a hand): drawn faint in the empty slot.</summary>
+    public CardInstance? Ghost { get; private set; }
+
+    /// <summary>Double-clicked (on its card, or on the ghost of one).</summary>
+    public event Action? DoubleClicked;
+
+    public override void _GuiInput(InputEvent @event)
+    {
+        if (@event is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true, DoubleClick: true } && (Card is not null || Ghost is not null))
+        {
+            DoubleClicked?.Invoke();
+        }
+    }
+
+    /// <summary>Shows the ghost of a card that's gone from the empty slot, clickable, with a tooltip on what to do with it.</summary>
+    public void ShowGhost(CardInstance ghost, string tooltip)
+    {
+        Ghost = ghost;
+        Disabled = false;
+        TooltipText = tooltip;
+        QueueRedraw();
+    }
+
     public SheetCard()
     {
         Flat = true;
@@ -32,6 +55,7 @@ public partial class SheetCard : CardSlot
     public void Show(CardInstance? card, string emptyName, bool selected, Hero? owner = null)
     {
         ShowCard(card, emptyName, selected);
+        Ghost = null;
         _ammo = card is not null ? owner?.AmmoFor(card) : null;
         Text = "";
         _emptyName = emptyName;
@@ -59,8 +83,21 @@ public partial class SheetCard : CardSlot
         var rect = new Rect2(Vector2.Zero, Size);
         if (Card is null && _picture is null)
         {
-            // Face down: the slot it's for.
-            CardFace.DrawBack(this, rect, GameArt.Texture($"res://assets/cards/{Back}.png"), _emptyName, Small);
+            // Face down: the slot it's for; with the faint ghost of what's gone into a hand.
+            CardFace.DrawBack(this, rect, GameArt.Texture($"res://assets/cards/{Back}.png"), Ghost is null ? _emptyName : "", Small);
+            if (Ghost is { } ghost)
+            {
+                Rect2 face = Size.X > CardFace.Size.X + 4 ? new Rect2((Size - CardFace.Size) / 2, CardFace.Size) : rect;
+                CardFace.DrawFront(this, face, GameArt.Texture($"res://assets/cards/{ghost.Definition.Id}.png"), ghost.Definition.Name, selected: false, hover: IsHovered(), small: Small);
+                // Washed out, a dotted edge round it: it's only a ghost.
+                DrawRect(face, new Color(0.10f, 0.12f, 0.18f, IsHovered() ? 0.4f : 0.6f));
+                for (float x = face.Position.X; x < face.End.X; x += 4)
+                {
+                    DrawLine(new Vector2(x, face.Position.Y), new Vector2(x + 2, face.Position.Y), new Color(1, 1, 1, 0.6f), 1);
+                    DrawLine(new Vector2(x, face.End.Y - 1), new Vector2(x + 2, face.End.Y - 1), new Color(1, 1, 1, 0.6f), 1);
+                }
+            }
+
             return;
         }
 
