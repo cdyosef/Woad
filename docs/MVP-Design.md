@@ -1108,6 +1108,8 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
 - **Stairs:** click them to walk up beside them, and click them again to go down, free. You come out of the
   stairs up in the next floor's arrival room, beside them. Reaching a floor for the first time restores your Luck and recharges wands. Below the
   first floor, the arrival room has **stairs up** that lead back to the stairs room above (free, the same way).
+- **Sealed rooms:** the boss's room, and a den (the Ogre Champ's), shut behind you: no one leaves by its
+  doors while the boss (or the den's keeper) stands, as a trap room holds you till its last monster falls.
 - **Exit:** sealed until the boss in its room is defeated. Stand on it and click again to escape. Your
   turn ends, and you're out of the run with your treasure.
 - **Splitting up:** heroes can be on different rooms and floors. During the monsters' phase the view

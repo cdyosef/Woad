@@ -1136,7 +1136,7 @@ public partial class GameScreen
     {
         if (room.IsSealed)
         {
-            return "A sealed door. It opens when every monster here is defeated.";
+            return $"A sealed door. {room.SealedText}";
         }
 
         Passage? passage = room.PassageOn(side);

@@ -233,7 +233,7 @@ public sealed partial class GameSession
 
         if (room.IsSealed)
         {
-            return "The doors are sealed until every monster here is defeated.";
+            return room.SealedText;
         }
 
         if (CheckHeld(hero) is { } error)
@@ -285,7 +285,7 @@ public sealed partial class GameSession
 
         return hero.Position.ChebyshevDistanceTo(ally.Position) != 1 ? "Stand next to them to push them through."
             : room.PassageOn(door) is { IsOpen: false } ? "That door isn't open."
-            : room.IsSealed ? "The doors are sealed until every monster here is defeated."
+            : room.IsSealed ? room.SealedText
             : DoorLanding(State.Rooms[room.Doors[door]], door) is null ? "There's no room on the other side of the door."
             : null;
     }

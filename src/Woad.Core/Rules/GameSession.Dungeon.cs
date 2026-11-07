@@ -108,7 +108,7 @@ public sealed partial class GameSession
 
         if (room.IsSealed)
         {
-            return "The way out is sealed until every monster here is defeated.";
+            return room.SealedText.Replace("The doors are", "The way out is");
         }
 
         if (CheckCanMove(Crawl) is { } error)

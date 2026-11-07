@@ -106,8 +106,20 @@ public sealed class Room
     /// <summary>Where heroes appear when they come down the stairs into this room, in order of preference.</summary>
     public IReadOnlyList<GridPosition> ArrivalTiles { get; }
 
-    /// <summary>True while a trap room still holds monsters: nobody can leave through its doors.</summary>
-    public bool IsSealed => Trap && _monsters.Count > 0;
+    /// <summary>
+    /// Nobody can leave through its doors: a trap room while any monster is left in it, and the boss's room or a
+    /// den while its boss (or the den's keeper) stands.
+    /// </summary>
+    public bool IsSealed => Trap ? _monsters.Count > 0 : IsGuarded;
+
+    /// <summary>The boss's room with the boss still standing, or a den with its keeper: sealed shut till it falls.</summary>
+    public bool IsGuarded =>
+        Role == RoomRole.Den ? _monsters.Count > 0 : Role == RoomRole.Boss && _monsters.Any(monster => monster.Definition.Boss);
+
+    /// <summary>Why its doors won't open, said.</summary>
+    public string SealedText => IsGuarded && !Trap
+        ? $"The doors are sealed until {(Role == RoomRole.Den ? "the den's keeper" : "the boss")} here falls."
+        : "The doors are sealed until every monster here is defeated.";
 
     public RoomLayout Layout { get; }
 
