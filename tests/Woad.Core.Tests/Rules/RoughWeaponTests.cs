@@ -138,4 +138,32 @@ public sealed class RoughWeaponTests
         Assert.Equal(100, bagger.StackLimit(rock));
         Assert.Equal(90, bagger.RoomFor(rock));
     }
+
+    [Fact]
+    public void RocksPickedUpGoIntoTheRockBagAHandfulComesOutFreeAndAnEmptiedHandFillsAgain()
+    {
+        // The Rock in hand, thrown (a 2: it's gone); the hand fills again from the bag.
+        GameSession session = Duel(".1..d....", ["t_rockbag", "t_rock"], new ScriptedDice(2));
+        Hero hero = session.HeroInSeat();
+        CardDefinition rock = hero.Card("t_rock").Definition;
+        Room room = session.RoomById();
+
+        // Picked up, Rocks go straight into the bag on the belt, not the hand.
+        room.AddLoot(hero.Position, [new CardInstance(session.State.NextId(), rock, null, count: 14)]);
+        session.Do(new PickUpLoot(hero.Id));
+        CardInstance bag = hero.BagStack(rock)!;
+        Assert.Equal(14, bag.Count);
+
+        // A handful (ten at most) drawn into the main hand: free, even in a fight.
+        session.Do(new EquipCard(hero.Id, bag.Id, EquipSlot.MainHand));
+        Assert.Equal((10, 4, false), (hero.Equipment[EquipSlot.MainHand].Count, hero.BagStack(rock)!.Count, session.State.Turn!.HasActed));
+        Assert.True(session.State.Turn.BagDrawn);
+
+        // The hand of ten thrown down to its last, then that one thrown: the hand fills from the bag again.
+        CardInstance hand = hero.Equipment[EquipSlot.MainHand];
+        hand.Count = 1;
+        session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id, WeaponId: hand.Id));
+        Assert.Equal(4, hero.Equipment[EquipSlot.MainHand].Count);
+        Assert.Null(hero.BagStack(rock));
+    }
 }

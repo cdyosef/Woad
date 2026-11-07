@@ -142,8 +142,9 @@ the Party menu can spend points on them too.
   too small for what's on yours can't go on, and a belt comes off only empty. Characters saved before belts
   were cards were given a Basic Belt and Basic Buckle, with what was on their belt left there.
 - **Mods** go on the belt or the buckle and add their modifiers: Belt Studs (armor 1, on the belt), Buckle
-  Horns (+1 to Rumble rolls, on the buckle), the Rock Bag (on the belt: your Rocks stack to 100 in it, and a
-  Sling loads them from the belt). No two the same, unless a mod's card says otherwise; the belt
+  Horns (+1 to Rumble rolls, on the buckle), the Rock Bag (on the belt: Rocks you pick up go straight into it,
+  up to 100, and a Sling loads them from the belt; a handful, ten at most, comes out into a hand free once a
+  turn, and a hand emptied of Rocks fills again from it on its own). No two the same, unless a mod's card says otherwise; the belt
   or buckle comes off only once its mods are off.
 - **Carrying:** two slots in the hero's arms, for two cards or stacks. **While carrying anything, no Rumble
   and no Od Hand.** Carry-only cards go nowhere else: the Relic of Saint Wyn fills both slots. A card that
@@ -458,7 +459,7 @@ the next room.
   it earns another.
 - **The bank:** each hero and monster can bank up to **3** *(tunable)*, kept until used (across turns
   and floors). A 6 rolled with a full bank is rolled into that roll straight away instead.
-- **Your attacks, moves and Od Hand rolls:** after a 6, **Power!** pops up just over the dice tray: **Roll** (roll it in now) or
+- **Your attacks, moves and Od Hand rolls:** after a 6, **Power!** pops up just over the dice tray, at its left side: **Roll** (roll it in now) or
   **Bank** (keep it for later). Nothing else can happen until you choose. Banked dice show in the dice pool's POWER row,
   unselected; select them to roll them into your next attack or move.
 - **Star dice** are a damage type of their own (below): a **6** on one **surges**, with no choice to make:
@@ -1309,7 +1310,8 @@ them up there like any character.
   text: Rumble and Shove red, Wend and Leap green, Search and Steal yellow.
 - **Dice bar:** under the board, fighting-game style. Whoever rolls is on the left with their dice,
   bonus and total; whoever answers is on the right of a slanted VS (several defenders, as in a blast,
-  each get a smaller column). The winning side glows gold, and each defender is tagged HIT, MISS or
+  each get a smaller column). Against the hero whose turn it is (a trap they set off, a monster hitting
+  back), the sides swap: that hero is always on the left on their own turn. The winning side glows gold, and each defender is tagged HIT, MISS or
   BLOCKED. Dice jitter and spin as they tumble, then land with a small pop. With Luck, the roller's
   dice can be clicked to reroll them. Rolls with no opponent (moving, the Keel Die) show one side.
   A hero's roll shows the cards it was played with above their own dice: the pool's card (Rumble, Wend,

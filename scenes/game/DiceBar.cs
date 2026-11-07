@@ -54,6 +54,12 @@ public partial class DiceBar : Control
     private Row? _roller;
     private bool _rerollable;
 
+    /// <summary>
+    /// The roll is against the hero whose turn it is (a trap, a monster hitting back): they stay on the left,
+    /// their defense there, and what rolled against them goes on the right.
+    /// </summary>
+    private bool _rollerOnRight;
+
     public event Action<int>? DieClicked;
 
     /// <summary>Where the roller's die <paramref name="index"/> is on screen, to click it; null if there's no such die.</summary>
@@ -81,7 +87,8 @@ public partial class DiceBar : Control
     /// <param name="toolDice">How many faces, just before the Power Dice, are the tools' own dice (bronze).</param>
     /// <param name="types">What each face is made of, in order (Plain past its end).</param>
     /// <param name="cards">The cards played into the roll, each over its own dice, in order.</param>
-    public async Task ShowRoll(string caption, DiceRoll roll, int bonus, bool newGroup, int powerDice = 0, DiceKind kind = DiceKind.Plain, int toolDice = 0, IReadOnlyList<DieType>? types = null, IReadOnlyList<TrayCard>? cards = null)
+    /// <param name="rollerOnRight">A new roll against the hero whose turn it is: it goes on the right, their answer on the left.</param>
+    public async Task ShowRoll(string caption, DiceRoll roll, int bonus, bool newGroup, int powerDice = 0, DiceKind kind = DiceKind.Plain, int toolDice = 0, IReadOnlyList<DieType>? types = null, IReadOnlyList<TrayCard>? cards = null, bool rollerOnRight = false)
     {
         var row = new Row(caption, [.. roll.Faces], bonus, roll.Faces.Count - powerDice) { Kind = kind, ToolFrom = roll.Faces.Count - powerDice - toolDice, Types = [.. types ?? []], Cards = [.. cards ?? []] };
         ShowedTypedDice |= row.Types.Any(type => type != DieType.Plain);
@@ -89,6 +96,7 @@ public partial class DiceBar : Control
         {
             _roller = row;
             _defenders.Clear();
+            _rollerOnRight = rollerOnRight;
         }
         else
         {
@@ -351,6 +359,17 @@ public partial class DiceBar : Control
         }
 
         Font font = ThemeDB.FallbackFont;
+        if (_rollerOnRight && _defenders.Count == 1)
+        {
+            // The hero whose turn it is on the left, answering; what came at them on the right.
+            DrawSide(font, _defenders[0], new Rect2(0, 0, SideWidth, Size.Y), clickable: false, alignRight: false);
+            DrawSide(font, _roller, new Rect2(Size.X - SideWidth, 0, SideWidth, Size.Y), _rerollable, alignRight: true);
+            DrawLuck();
+            DrawConfetti();
+            DrawVs(font);
+            return;
+        }
+
         DrawSide(font, _roller, new Rect2(0, 0, SideWidth, Size.Y), _rerollable, alignRight: false);
         DrawLuck();
         DrawConfetti();
@@ -359,7 +378,20 @@ public partial class DiceBar : Control
             return;
         }
 
-        // VS in the middle, slanted, gold on a dark outline.
+        DrawVs(font);
+
+        // The defenders share the right side: one gets it all, several get a column each.
+        float left = Size.X - SideWidth;
+        float column = SideWidth / _defenders.Count;
+        for (int i = 0; i < _defenders.Count; i++)
+        {
+            DrawSide(font, _defenders[i], new Rect2(left + i * column, 0, column, Size.Y), clickable: false, alignRight: _defenders.Count == 1);
+        }
+    }
+
+    /// <summary>VS in the middle, slanted, gold on a dark outline.</summary>
+    private void DrawVs(Font font)
+    {
         Font vs = GameArt.HeadingFont ?? font;
         int vsSize = UiTheme.HeadingPixelSize * 2;
         Vector2 middle = new(Size.X / 2, Size.Y / 2 + 6);
@@ -372,14 +404,6 @@ public partial class DiceBar : Control
 
         DrawString(vs, new Vector2(-width / 2, 0), "VS", fontSize: vsSize, modulate: Palette.TrimBright);
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
-
-        // The defenders share the right side: one gets it all, several get a column each.
-        float left = Size.X - SideWidth;
-        float column = SideWidth / _defenders.Count;
-        for (int i = 0; i < _defenders.Count; i++)
-        {
-            DrawSide(font, _defenders[i], new Rect2(left + i * column, 0, column, Size.Y), clickable: false, alignRight: _defenders.Count == 1);
-        }
     }
 
     private static readonly Vector2[] Outline = [new(-1, 0), new(1, 0), new(0, -1), new(0, 1), new(-1, -1), new(1, 1), new(-1, 1), new(1, -1)];

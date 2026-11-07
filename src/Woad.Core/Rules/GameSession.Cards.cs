@@ -284,7 +284,7 @@ public sealed partial class GameSession
             return "There's no room in your backpack for what you'd take off.";
         }
 
-        return CheckGearAction();
+        return CheckGearAction(card);
     }
 
     /// <summary>Why the active hero can't move the card to their belt right now, or null if they can.</summary>
@@ -571,6 +571,10 @@ public sealed partial class GameSession
     private string? CheckGearAction() =>
         GearIsFree || !Turn.HasActed ? null : "Changing gear in a fight takes your action, which you've used.";
 
+    /// <summary>The gear action, unless it's the turn's free handful from the Rock Bag.</summary>
+    private string? CheckGearAction(CardInstance card) =>
+        ActiveHero.BagStack(card.Definition) == card && !Turn.BagDrawn ? null : CheckGearAction();
+
     /// <summary>Gear changes are free outside a fight; in one they take the action.</summary>
     private void SpendGearAction()
     {
@@ -630,9 +634,24 @@ public sealed partial class GameSession
             card = card.Split(State.NextId(), 1);
         }
 
+        // From the Rock Bag, a handful (a hand's stack at most) comes out; once a turn it's free.
+        bool fromBag = hero.BagStack(card.Definition) == card;
+        if (fromBag && card.Count > Math.Max(1, card.Definition.MaxStack))
+        {
+            card = card.Split(State.NextId(), Math.Max(1, card.Definition.MaxStack));
+        }
+
         IReadOnlyList<CardInstance> displaced = hero.CardsDisplacedBy(card.Definition, hand);
         bool combat = InCombat;
-        SpendGearAction();
+        if (fromBag && !Turn.BagDrawn)
+        {
+            Turn.BagDrawn = true;
+        }
+        else
+        {
+            SpendGearAction();
+        }
+
         if (hero.FindCard(card.Id) is not null)
         {
             hero.Remove(card);

@@ -1085,12 +1085,12 @@ public partial class GameScreen
         return label;
     }
 
-    /// <summary>The bubbles over the dice tray (Power! and Try your Luck?): side by side and centered, just above it.</summary>
+    /// <summary>The bubbles over the dice tray (Power! and Try your Luck?): side by side from its left side, just above it.</summary>
     private void PlaceBubbles()
     {
+        // From the tray's left side: Power! first, then Try your Luck?.
         List<Control> up = [.. new Control[] { _powerPrompt, _luckPrompt }.Where(bubble => bubble.Visible)];
-        float width = up.Sum(bubble => bubble.Size.X) + 6 * Math.Max(0, up.Count - 1);
-        float x = _dice.Position.X + (_dice.Size.X - width) / 2;
+        float x = _dice.Position.X + 4;
         foreach (Control bubble in up)
         {
             bubble.Position = new Vector2(x, _dice.Position.Y - bubble.Size.Y - 1);

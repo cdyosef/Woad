@@ -331,7 +331,7 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         return string.Join(" and ", parts);
     }
 
-    private static string TrapName(TrapKind kind) => kind switch
+    internal static string TrapName(TrapKind kind) => kind switch
     {
         TrapKind.Spikes => "spike trap",
         TrapKind.Needle => "needle in the lock",

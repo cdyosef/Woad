@@ -214,9 +214,12 @@ public sealed partial class GameSession
             return new WeaponSpent(TakeFromHero(hero, ammo, 1), ammo.Id, target, null);
         }
 
+        EquipSlot? heldIn = hero.SlotOf(card);
         if (wielding.Thrown && weapon.BreaksOnUse)
         {
-            return new WeaponSpent(TakeFromHero(hero, card, 1), card.Id, target, null);
+            var spent = new WeaponSpent(TakeFromHero(hero, card, 1), card.Id, target, null);
+            ReloadFromBag(hero, heldIn, weapon, events);
+            return spent;
         }
 
         if (wielding.Thrown)
@@ -225,6 +228,7 @@ public sealed partial class GameSession
             GridPosition spot = room.Layout[target].IsWalkable() ? target : SafeTile(room, target);
             room.AddLoot(spot, [thrown]);
             events.Add(new DaggerThrown(hero.Id, thrown.Id, room.Id, spot));
+            ReloadFromBag(hero, heldIn, weapon, events);
             return null;
         }
 
@@ -232,10 +236,33 @@ public sealed partial class GameSession
         {
             TakeFromHero(hero, card, 1);
             events.Add(new WeaponBroke(hero.Id, card.Id));
+            ReloadFromBag(hero, heldIn, weapon, events);
             return null;
         }
 
         return struck && weapon.BreaksOnOne ? new WeaponSpent(null, card.Id, target, card) : null;
+    }
+
+    /// <summary>
+    /// The last of a stack gone from a hand (a Rock thrown or broken): the hand fills again from the bag on the
+    /// belt that holds it (the Rock Bag), a handful, free.
+    /// </summary>
+    private void ReloadFromBag(Hero hero, EquipSlot? hand, CardDefinition definition, List<GameEvent> events)
+    {
+        if (hand is not { } slot || hero.Equipment.ContainsKey(slot) || hero.BagStack(definition) is not { } bagged)
+        {
+            return;
+        }
+
+        int handful = Math.Max(1, definition.MaxStack);
+        CardInstance drawn = bagged.Count > handful ? bagged.Split(State.NextId(), handful) : bagged;
+        if (drawn == bagged)
+        {
+            hero.Remove(bagged);
+        }
+
+        hero.Equip(drawn, slot);
+        events.Add(new CardEquipped(hero.Id, drawn.Id));
     }
 
     /// <summary>

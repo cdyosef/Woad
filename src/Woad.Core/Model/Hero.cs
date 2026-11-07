@@ -669,8 +669,28 @@ public sealed class Hero
     internal CardInstance AddLoot(CardInstance card) =>
         card.Definition.Clover ? TakeClover(card)
         : card.Definition.CarryOnly ? AddToCarried(card)
+        : IsBagged(card.Definition) ? AddToBag(card)
         : card.Definition.Belts && (_belt.Count < BeltCapacity || _belt.Any(held => held.Definition == card.Definition)) ? AddToBelt(card)
         : AddToBackpack(card);
+
+    /// <summary>A belt mod holds this card (the Rock Bag, Rocks).</summary>
+    public bool IsBagged(CardDefinition definition) => _mods.Any(mod => mod.Definition.Holds == definition.Id);
+
+    /// <summary>The stack of this card in the bag on the belt that holds it (the Rock Bag's Rocks), or null.</summary>
+    public CardInstance? BagStack(CardDefinition definition) =>
+        IsBagged(definition) ? _belt.FirstOrDefault(card => card.Definition == definition) : null;
+
+    /// <summary>A card the bag on the belt holds goes straight into it (Rocks into the Rock Bag), not into a hand's stack.</summary>
+    private CardInstance AddToBag(CardInstance card)
+    {
+        if (BagStack(card.Definition) is { } bagged && bagged != card)
+        {
+            bagged.Absorb(card);
+            return bagged;
+        }
+
+        return _belt.Count < BeltCapacity ? Add(_belt, card) : JoinStack(card) ?? AddToBackpack(card);
+    }
 
     /// <summary>A Lucky Clover picked up: its points, up to the most a hero can hold. The card itself goes nowhere.</summary>
     private CardInstance TakeClover(CardInstance card)

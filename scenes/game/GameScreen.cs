@@ -72,6 +72,9 @@ public partial class GameScreen : Control
 
     private Hero? ActiveHero => _session.State.ActiveHero;
 
+    /// <summary>Whose turn it was as the events on show happened (null between turns, while the monsters move).</summary>
+    private int? _turnHeroId;
+
     public override void _Ready()
     {
         Size = new Vector2(640, 360);
@@ -463,7 +466,12 @@ public partial class GameScreen : Control
         PlaySound(gameEvent);
         switch (gameEvent)
         {
+            case TurnEnded:
+                _turnHeroId = null;
+                break;
+
             case TurnStarted turn:
+                _turnHeroId = turn.HeroId;
                 // Tools kept out of the Od Hand's rolls (the Od Hand card put on top) were for that turn only.
                 if (_fronts.TryGetValue((turn.HeroId, _odHand.Title), out string? odFront) && odFront == HandView.DiceKey)
                 {
@@ -1039,7 +1047,9 @@ public partial class GameScreen : Control
                 // An off-hand follow-up is an Od Hand roll: its color, its card.
                 string doing = attack.OffHand ? $"follows up with the {(attack.WeaponId is { } offHandId ? Content.FindCard(offHandId)?.Name : null) ?? "off hand"}"
                     : attack.Shove ? "shoves" : attack.Chain ? "flings its chain" : "attacks";
-                await _dice.ShowRoll(_spellCaption ?? $"{NameOf(attack.AttackerId)} {doing}", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice, attack.OffHand ? DiceKind.OdHand : DiceKind.Rumble, types: attack.DieTypes, cards: AttackTray(attack));
+                // Against the hero whose turn it is (a monster hitting back), they stay on the left.
+                bool againstTurn = _turnHeroId is int turnHero && attack.AttackerId != turnHero && attack.TargetIds is [var only] && only == turnHero;
+                await _dice.ShowRoll(_spellCaption ?? $"{NameOf(attack.AttackerId)} {doing}", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice, attack.OffHand ? DiceKind.OdHand : DiceKind.Rumble, types: attack.DieTypes, cards: AttackTray(attack), rollerOnRight: againstTurn);
                 _spellCaption = null;
                 // A hero's sixes get their own events; a monster's roll straight in, so call them out here.
                 if (attack.PowerDice > 0 && !IsHero(attack.AttackerId))
@@ -1047,6 +1057,11 @@ public partial class GameScreen : Control
                     CalloutOver(attack.AttackerId, "6!", Palette.Power);
                 }
 
+                break;
+
+            case TrapAttacked trap:
+                // The trap the hero set off strikes: on the right, the hero (whose turn it is) defending on the left.
+                await _dice.ShowRoll($"The {EventNarrator.TrapName(trap.Kind)} strikes", trap.Roll, trap.Bonus, newGroup: true, rollerOnRight: true);
                 break;
 
             case DefenseRolled defense:

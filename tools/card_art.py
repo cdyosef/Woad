@@ -402,14 +402,28 @@ def draw(item):
         c.line(11, 19, 21, 19, LEATHER[0])
         c.line(26, 14, 24, 12, LEATHER[0])
     elif i == "lucky_clover":
-        # Four heart-shaped leaves round a stem.
-        c.line(17, 16, 22, 29, GREEN[2], 2)
-        for dx, dy in ((-6, -6), (6, -6), (-6, 6), (6, 6)):
-            c.circle(16 + dx, 14 + dy, 5, GREEN[1])
-            c.circle(16 + dx + (-1 if dx < 0 else 1), 14 + dy + (-1 if dy < 0 else 1), 2, GREEN[0])
-        # The veins between the leaves, and the heart's notch in each.
-        c.line(16, 3, 16, 25, GREEN[2])
-        c.line(5, 14, 27, 14, GREEN[2])
+        # The Luck clover itself (the sheet's icon), twice the size: four leaves and a curling stem.
+        rows = [
+            ".ooo.ooo....",
+            "olggolggo...",
+            "ogggogggo...",
+            "oggdoggdo...",
+            ".ooooooo....",
+            "olggolggo...",
+            "ogggogggo...",
+            "oggdoggdo...",
+            ".ooo.oooso..",
+            ".......oso..",
+            "........oso.",
+            ".........o..",
+        ]
+        colors = {"o": OUTLINE, "g": "#5cc86a", "l": "#a8eca0", "d": "#2e8a3e", "s": "#3a7a3a"}
+        for y, row in enumerate(rows):
+            for x, ch in enumerate(row):
+                if ch in colors:
+                    for dy in (0, 1):
+                        for dx in (0, 1):
+                            c.dot(5 + x * 2 + dx, 4 + y * 2 + dy, colors[ch])
         c.circle(16, 14, 1.6, GREEN[2])
     elif i == "torch":
         c.line(10, 28, 18, 14, WOOD[1], 3)
