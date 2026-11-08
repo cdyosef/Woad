@@ -104,14 +104,15 @@ the Party menu can spend points on them too.
   each kind *(tunable)*. Points already spent can't be refunded.
 - **Progression:** XP from monster kills and floors reached. Level 2 takes 10 XP, level 3 takes 30, then
   60, 100 and so on (10 × 1, 3, 6, 10…). Each level grants 1 point.
-- **Looks:** purely cosmetic; stats come only from point-buy. A character picks one of 69 figures
+- **Looks:** purely cosmetic; stats come only from point-buy. A character picks one of 76 figures
   (Wanderer, Knight, Ranger, Rogue, Mage, Wizard, Brute, Barbarian, Wild Woman, Shaka, Druid,
   Princess, Noble, Enchantress, Dancer, Sorceress, Street Rat, Sultan, Bard, Bunny Lady, Cat Lady,
   Monk, Priestess, Elf, She-Elf, Dark Elf, Spider Lover, Brave, Wolf Man, Birdman, Dwarf, Halfling,
   Lizard Man, Stone Man, Log Man, Devilman, Helling, Raider, Swashbuckler, Pirate, Tempest, Riverman,
   Alchemist, Artificer, Artifixer, Half-Orc, 3/4 Orc, Gnome, Fairy, Cook, Fat Man, Harpy Man, Frog Man,
   Turtle Reaper, Turtle Man, Fishman, Snakeman, Death Cultist, Snake Cultist, Veteran, Man-At-Arms, Spearman, Militia,
-  Skirmisher, Real Light, Wood Elf, Duergar, Genie, Egyptian) and its colors:
+  Skirmisher, Real Light, Wood Elf, Duergar, Genie, Egyptian, Huskarl, Samurai, Mangudai, Scout, Witch,
+  Joan of Arc, Squire) and its colors:
   - **Main and trim:** two of 12 colors (clothes, then belts, sashes, plumes and the like).
   - **Skin and hair:** from the figure's own sets: skin tones, orc, dark elf, duergar, genie or demon
     skin, frog or turtle skin, scales (lizard or fish), stone or wood; hair, fur, plumage, leaves or a turtle's shell. Some looks start on a fitting color (dark elves white-haired). Figures that don't show one (a Knight's helmet, a Monk's bald head) skip it.

@@ -388,6 +388,34 @@ LOOKS = [
     {"id": "egyptian", "name": "Egyptian", "skin": "human", "hair": None, "skinDefault": "tan", "rows": [
         "........", "......oo", ".....oTT", "....oRRR", "...oTTSS", "...oRSeS", "...oTSSS", "...oRggg",
         "..oSoSSS", "..oSoSSS", "...ooRRR", "....owww", "....oSSo", "....onno", "....oooo", "........"]},
+    {"id": "huskarl", "name": "Huskarl", "skin": "human", "hair": "hair", "hairDefault": "blonde", "rows": [
+        "........", "......oo", ".....omm", "....ommm", "....oMeM", "...oHSSS", "...oHHHH", "..oohHHH",
+        "..omotHH", "..oSotTT", "...oobbb", "...otTTT", "....onno", "....okko", "....oooo", "........"],
+     "extra": [(7, 1, 'R'), (7, 2, 'R'), (7, 3, 'R'), (8, 0, 'R'), (8, 1, 'T'), (8, 2, 'T'), (8, 3, 'T'), (8, 4, 'R'), (9, 0, 'R'), (9, 1, 'T'), (9, 2, 'g'), (9, 3, 'T'), (9, 4, 'R'), (10, 0, 'R'), (10, 1, 'T'), (10, 2, 'T'), (10, 3, 'T'), (10, 4, 'R'), (11, 1, 'R'), (11, 2, 'R'), (11, 3, 'R'), (5, 13, 'N'), (6, 13, 'N'), (7, 13, 'N'), (8, 13, 'N'), (5, 14, 'm'), (6, 14, 'm'), (6, 15, 'm'), (7, 14, 'm'), (7, 15, 'M'), (4, 14, 'M')]},
+    {"id": "samurai", "name": "Samurai", "skin": "human", "hair": None, "rows": [
+        "....g...", ".....goo", "....oTTT", "...oTTTT", "..oToSSS", "..oToSeS", "....oSkk", "..oRRtTT",
+        ".oRRotTT", "..oSotRT", "...oobbb", "...otRTT", "...otTTo", "....okko", "....oooo", "........"],
+     "extra": [(9, 11, 'N'), (10, 12, 'k'), (11, 13, 'k'), (12, 14, 'k')]},
+    {"id": "mangudai", "name": "Mangudai", "skin": "human", "hair": "hair", "hairDefault": "black", "rows": [
+        "........", "......oT", ".....oTT", "....onnn", "....oHSS", "....oSeS", "....oSSS", "...ootTT",
+        "..oSotTT", "..oSotRR", "...oRRRR", "...otTTT", "....okko", "....okko", "....oooo", "........"],
+     "extra": [(3, 13, 'n'), (4, 14, 'n'), (5, 14, 'n'), (6, 14, 'n'), (7, 14, 'n'), (8, 14, 'n'), (9, 13, 'n'), (6, 2, 'n'), (7, 2, 'n'), (5, 2, 'w'), (5, 1, 'w'), (4, 2, 'w')]},
+    {"id": "scout", "name": "Scout", "skin": "human", "hair": "hair", "rows": [
+        "........", "......oo", ".....oTT", "....oTTT", "....oTSS", "....oSeS", "....oRRR", "...otTTT",
+        "..oTotTT", "..oSotTT", "...oobbb", "....onnn", "....onno", "....okko", "....oooo", "........"],
+     "extra": [(8, 14, 'g'), (7, 14, 'g'), (7, 15, 'g'), (6, 15, 'M')]},
+    {"id": "witch", "name": "Witch", "skin": "human", "hair": "hair", "hairDefault": "black", "rows": [
+        ".......o", "......oT", ".....oTT", "....oTTT", ".otttttt", "...oHSeS", "...oHSSS", "...oHtTT",
+        "..oSHtTT", "..oSotTT", "...otRRR", "...otTTT", "...otTTT", "...otTTT", "...ooooo", "........"],
+     "extra": [(3, 14, 'N'), (4, 14, 'N'), (5, 14, 'N'), (6, 14, 'N'), (7, 14, 'N'), (8, 14, 'N'), (9, 14, 'N'), (10, 14, 'N'), (11, 14, 'N'), (12, 13, 'n'), (12, 14, 'n'), (12, 15, 'n'), (13, 13, 'n'), (13, 14, 'n'), (13, 15, 'n'), (14, 14, 'n')]},
+    {"id": "joan_of_arc", "name": "Joan of Arc", "skin": "human", "hair": "hair", "rows": [
+        "........", "......oo", ".....oHH", "....oHHH", "...oHHSS", "...oHSeS", "...oHSSS", "...ommTT",
+        "..omotTR", "..omotRR", "...oommm", "....omMm", "....omMo", "....oMMo", "....oooo", "........"],
+     "extra": [(1, 14, 'N'), (2, 14, 'N'), (3, 14, 'N'), (4, 14, 'N'), (5, 14, 'N'), (6, 14, 'N'), (7, 14, 'N'), (8, 14, 'N'), (9, 14, 'N'), (10, 14, 'N'), (11, 14, 'N'), (12, 14, 'N'), (13, 14, 'N'), (0, 14, 'g'), (0, 11, 'w'), (0, 12, 'w'), (0, 13, 'w'), (1, 11, 'w'), (1, 12, 'g'), (1, 13, 'w'), (2, 11, 'w'), (2, 12, 'w'), (2, 13, 'w'), (3, 12, 'w')]},
+    {"id": "squire", "name": "Squire", "skin": "human", "hair": "hair", "rows": [
+        "........", "......oo", ".....oHH", "....oHHH", "....oHSS", "....oSeS", "....oSSS", "...ootTT",
+        "..oSotTt", "..oSotTt", "...oobbR", "....oRRR", "....oRRo", "....okko", "....oooo", "........"],
+     "extra": [(7, 14, 'm'), (8, 13, 'm'), (8, 14, 'k'), (8, 15, 'm'), (9, 13, 'm'), (9, 14, 'M'), (9, 15, 'M'), (10, 2, 'g'), (11, 2, 'm'), (12, 2, 'm')]},
 ]
 
 

@@ -74,5 +74,12 @@ public static partial class Looks
         new("duergar", "Duergar", "duergar", "hair", [new(6, 5), new(9, 5)], null, "grey"),
         new("genie", "Genie", "genie", "hair", [new(6, 5), new(9, 5)], null, "black"),
         new("egyptian", "Egyptian", "human", null, [new(6, 5), new(9, 5)], "tan", null),
+        new("huskarl", "Huskarl", "human", "hair", [new(6, 4), new(9, 4)], null, "blonde"),
+        new("samurai", "Samurai", "human", null, [new(6, 5), new(9, 5)], null, null),
+        new("mangudai", "Mangudai", "human", "hair", [new(6, 5), new(9, 5)], null, "black"),
+        new("scout", "Scout", "human", "hair", [new(6, 5), new(9, 5)], null, null),
+        new("witch", "Witch", "human", "hair", [new(6, 5), new(9, 5)], null, "black"),
+        new("joan_of_arc", "Joan of Arc", "human", "hair", [new(6, 5), new(9, 5)], null, null),
+        new("squire", "Squire", "human", "hair", [new(6, 5), new(9, 5)], null, null),
     ];
 }
