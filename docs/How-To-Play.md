@@ -194,7 +194,7 @@ From **Characters**, create a hero:
 - **Crest:** your shield's field pattern, charge (a sun, a tower, an eagle...), and its colors. Left alone,
   it follows your character's colors.
 - **Points:** 6 to spend on Hearts, Wend, Rumble, Defense, Od Hand, Luck and Magic. Hover a stat to see
-  what it does. Your **first Od Hand die brings a free skill**, and your **first Rumble die brings Shove**.
+  what it does. Your **first Od Hand die brings a free Od Hand skill**, and **every Rumble die brings a free Rumble skill** of your choice.
 - **Skills:** 1 point each, from the **Skills...** window.
 
 Every hero starts with a Basic Belt and Buckle, a Club, a Torch, a Health Potion and Lockpicks.

@@ -52,7 +52,7 @@ Stats are expressed directly as dice and points. Gear cards add to them.
 | Hearts | Maximum HP | 3 | 1 per heart |
 | Wend (boot) | d6 for moving each turn; each move uses one or more | 1 | 3, 3, 3, then 4, 5, 6 per die |
 | Wend bonus | Tiles added to one move per turn (shown as the "+1" in "Wend 1d6+1"; the editor calls it Wend +) | 0 | 2 per +1 |
-| Rumble (fist) | d6 for attacking each turn; each attack uses one or more. Each Rumble die bought is also +1 **Rumble Bonus**: added to one Rumble attack (or Shove, or Bull Rush) a turn, the first unless you hold it back (click the bonus on the Rumble card: it shows in brackets), and then to the attack that rolls your last Rumble dice. The Wend bonus on the Wend card holds back the same way | 1 | 3, 3, 3, then 4, 5, 6 per die; the first brings Shove free (or Bull Rush, if you know Shove) |
+| Rumble (fist) | d6 for attacking each turn; each attack uses one or more. Each Rumble die bought is also +1 **Rumble Bonus**: added to one Rumble attack (or Shove, or Bull Rush) a turn, the first unless you hold it back (click the bonus on the Rumble card: it shows in brackets), and then to the attack that rolls your last Rumble dice. The Wend bonus on the Wend card holds back the same way | 1 | 3, 3, 3, then 4, 5, 6 per die; each brings a Rumble skill of your choice free (Bull Rush once you know Shove), picked in the Skills window that opens |
 | Od Hand (hamsa) | d6 each turn for the Od Hand skills you've learned (see [Skills](#skills)), for feeling around and for off-hand attacks | 1 | 1, 2, 2, 3, 4, 5 per die; the first brings an Od Hand skill of your choice free |
 | Tools | Fixed value and dice added to one roll a turn of the skills they serve | 0 | Gear only (Lockpicks: +1 and 1d6) |
 | Defense | The first d6 (the base die) rolled against every attack; the rest are extra dice, rolled in one at a time only while a defense is losing, then spent until your next turn | 1 | 3, 3, 3, then 4, 5, 6 per die |
@@ -81,6 +81,11 @@ the Party menu can spend points on them too.
 
 - An Od Hand die needs an Od Hand skill to be any use: the first one bought brings one free, and
   buying it opens the Skills window to pick it.
+- **Every Rumble die bought brings a Rumble skill of your choice free** (Shove, Guard, High Alert, Smashing, or
+  Bull Rush once you know Shove): buying one opens the Skills window, where the free pick shows as "Learn free".
+  A pick can wait; it stays free until taken. Taking the die back takes back the last Rumble skill learned with
+  it. Characters saved when only the first Rumble die brought a skill (Shove) got back the points they'd paid for
+  Rumble skills that are now free.
 - **Without the skill, a tool stands in**, once a turn, rolling only its own dice: Lockpicks or
   Burgling Tools on a lock, a lit torch in hand on a search, a Medicine Bag (or Bandages, to rouse) on
   Aid, Burgling Tools on a trap, and Burgling Tools, a Cutpurse Knife or Sticky Gloves on a steal. With

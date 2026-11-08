@@ -38,14 +38,26 @@ public static class PointBuy
 
     /// <summary>
     /// What the skills bought cost: a point each, but the first Od Hand die brings one Od Hand skill free,
-    /// and the first Rumble die bought brings Shove free (or Bull Rush, for a hero who has Shove already).
+    /// and every Rumble die bought brings a Rumble skill of your choice free.
     /// </summary>
     public static int SkillCost(StatAllocation allocation)
     {
         int odHand = Skills.Count(allocation.Skills & Skills.OdHand) - (allocation.OdHandDice >= 1 && (allocation.Skills & Skills.OdHand) != 0 ? 1 : 0);
-        int rumble = Skills.Count(allocation.Skills & Skills.Rumble) - (allocation.AttackDice >= 1 && (allocation.Skills & (Skill.Shove | Skill.BullRush)) != 0 ? 1 : 0);
-        return SkillPrice * (odHand + rumble);
+        return SkillPrice * (odHand + PaidRumbleSkills(allocation));
     }
+
+    /// <summary>The Rumble skills paid for: those beyond one free with each Rumble die bought.</summary>
+    public static int PaidRumbleSkills(StatAllocation allocation) => Math.Max(0, Skills.Count(allocation.Skills & Skills.Rumble) - allocation.AttackDice);
+
+    /// <summary>Free Rumble skills still to pick: a Rumble die bought with no skill taken for it yet.</summary>
+    public static int FreeRumbleSkillsLeft(StatAllocation allocation) => Math.Max(0, allocation.AttackDice - Skills.Count(allocation.Skills & Skills.Rumble));
+
+    /// <summary>
+    /// The Rumble skills paid for under the old rule, when only the first Rumble die brought one (Shove, or Bull Rush):
+    /// what a character saved then is refunded the difference of.
+    /// </summary>
+    public static int LegacyPaidRumbleSkills(StatAllocation allocation) =>
+        Skills.Count(allocation.Skills & Skills.Rumble) - (allocation.AttackDice >= 1 && (allocation.Skills & (Skill.Shove | Skill.BullRush)) != 0 ? 1 : 0);
 
     /// <summary>What one step of a stat adds to the hero's stats.</summary>
     public static Stats StepOf(StatKind stat) => stat switch
@@ -120,19 +132,10 @@ public static class PointBuy
         !allocation.Skills.HasFlag(skill) && Check(allocation.WithSkill(skill, true), level, budget) is null;
 
     /// <summary>
-    /// One more step of a stat, with what comes free with it: the first Rumble die bought brings Shove
-    /// (or Bull Rush, already knowing Shove).
+    /// One more step of a stat. A Rumble die brings a free Rumble skill, but it's the player's to choose: it isn't
+    /// learned here (see <see cref="FreeRumbleSkillsLeft"/>).
     /// </summary>
-    public static StatAllocation Raise(StatAllocation allocation, StatKind stat)
-    {
-        StatAllocation raised = allocation.With(stat, allocation[stat] + 1);
-        if (stat == StatKind.AttackDice && raised.AttackDice == 1)
-        {
-            raised = raised.WithSkill(allocation.Skills.HasFlag(Skill.Shove) ? Skill.BullRush : Skill.Shove, true);
-        }
-
-        return raised;
-    }
+    public static StatAllocation Raise(StatAllocation allocation, StatKind stat) => allocation.With(stat, allocation[stat] + 1);
 
     /// <summary>Whether one more step of <paramref name="stat"/> would still be allowed.</summary>
     public static bool CanRaise(StatAllocation allocation, StatKind stat, int level, int budget) =>

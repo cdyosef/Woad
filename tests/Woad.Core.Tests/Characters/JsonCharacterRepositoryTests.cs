@@ -167,6 +167,21 @@ public sealed class JsonCharacterRepositoryTests : IDisposable
     }
 
     [Fact]
+    public async Task CharactersSavedBeforeEveryRumbleDieBroughtASkillGetBackWhatTheyPaid()
+    {
+        // Two Rumble dice, Shove and Guard: under the old rule Guard cost a point; now it came free with the second die.
+        Character character = Character.Create("Morgan", "woad", new StatAllocation { AttackDice = 2, Skills = Skill.Shove | Skill.Guard }, Content, new DateTimeOffset(2026, 10, 10, 12, 0, 0, TimeSpan.Zero));
+        int unspent = character.UnspentPoints;
+        await Repository().SaveAsync(character);
+        string path = Path.Combine(_folder, $"{character.Id:N}.json");
+        await File.WriteAllTextAsync(path, (await File.ReadAllTextAsync(path)).Replace($"\"schemaVersion\": {JsonCharacterRepository.SchemaVersion}", "\"schemaVersion\": 4"));
+
+        Character loaded = Assert.Single((await Repository().LoadAllAsync()).Characters);
+
+        Assert.Equal(unspent + 1, loaded.UnspentPoints);
+    }
+
+    [Fact]
     public async Task GoldSavedBeforeSilverAndCopperBecomesCopper()
     {
         Character character = NewCharacter("Morgan");
