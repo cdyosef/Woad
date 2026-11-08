@@ -59,7 +59,7 @@ public partial class CharacterEditor : MenuScreen
         [StatKind.Hearts] = "HEARTS\nHow much punishment you can take: each hit that gets through costs one. With none left you Keel Over and roll the Keel Die each turn until you stand back up, or die. Each point buys another heart.",
         [StatKind.MoveDice] = "WEND DICE\nHow far you move. Each move rolls one or more Wend dice for that many steps. Each one bought costs more after the third: 3, 3, 3, then 4, 5, 6.",
         [StatKind.Speed] = "WEND BONUS\nAdded to one move a turn, on top of your Wend dice. Each point adds +1.",
-        [StatKind.AttackDice] = "RUMBLE\nYour attack dice. Each attack or shove uses one or more, and your weapon adds to one attack a turn. Beat the defender's roll to hit. Dice cost 3, 3, 3, then 4, 5, 6; the first brings Shove free (or Bull Rush, if you know Shove).",
+        [StatKind.AttackDice] = "RUMBLE\nYour attack dice. Each attack or shove uses one or more, and your weapon adds to one attack a turn. Beat the defender's roll to hit. Dice cost 3, 3, 3, then 4, 5, 6; each brings a Rumble skill of your choice free (Shove, Guard, High Alert, Smashing, or Bull Rush once you know Shove).",
         [StatKind.DefenseDice] = "DEFENSE\nYour base die and armor defend against every attack. Each die bought rolls in only when a defense is losing, then it's spent until your next turn. Dice cost 3, 3, 3, then 4, 5, 6.",
         [StatKind.OdHandDice] = "OD HAND\nDice for the Od Hand skills you know: Search, Steal, Pick Lock, Disarm, Aid, Parry. Without a skill, a tool can stand in, rolling only its own dice. The first die costs 1 and brings a skill free; then 2, 2, 3, 4, 5. More skills: 1 point each.",
         [StatKind.Luck] = "LUCK\nRerolls of a single die, refilled on each new floor: after any roll, click a die to roll it again. Each point buys another reroll.",
@@ -357,8 +357,9 @@ public partial class CharacterEditor : MenuScreen
             return;
         }
 
-        // The first Od Hand die brings a skill of your choice, free: the Skills window opens to pick it.
-        if (stat == StatKind.OdHandDice && delta > 0 && next.OdHandDice == 1 && (next.Skills & Skills.OdHand) == 0)
+        // The first Od Hand die, and every Rumble die, brings a skill of your choice, free: the Skills window opens to pick it.
+        if ((stat == StatKind.OdHandDice && delta > 0 && next.OdHandDice == 1 && (next.Skills & Skills.OdHand) == 0)
+            || (stat == StatKind.AttackDice && delta > 0 && PointBuy.FreeRumbleSkillsLeft(next) > 0 && Skills.Each.Any(skill => Skills.Rumble.HasFlag(skill) && PointBuy.CanLearn(next, skill, _level, _budget))))
         {
             _skillsPanel.Visible = true;
         }
@@ -381,15 +382,18 @@ public partial class CharacterEditor : MenuScreen
 
     /// <summary>
     /// One step less of a stat, taking back what came free with it: the last Rumble die bought takes its
-    /// free Shove (or Bull Rush) with it, and the last Od Hand die the Od Hand skills learned here.
+    /// free Rumble skill with it (the last learned here), and the last Od Hand die the Od Hand skills learned here.
     /// </summary>
     private StatAllocation Lower(StatAllocation allocation, StatKind stat)
     {
         StatAllocation lowered = allocation.With(stat, allocation[stat] - 1);
-        if (stat == StatKind.AttackDice && lowered.AttackDice == 0)
+
+        // The Rumble die takes back the skill that came free with it: the last one learned here (Bull Rush before Shove).
+        if (stat == StatKind.AttackDice && PointBuy.PaidRumbleSkills(lowered) > PointBuy.PaidRumbleSkills(allocation)
+            && new[] { Skill.BullRush, Skill.Smash, Skill.HighAlert, Skill.Guard, Skill.Shove }
+                .FirstOrDefault(skill => lowered.Skills.HasFlag(skill) && !_floor.Skills.HasFlag(skill) && (skill != Skill.Shove || !lowered.Skills.HasFlag(Skill.BullRush))) is var taken and not Skill.None)
         {
-            Skill free = lowered.Skills.HasFlag(Skill.BullRush) ? Skill.BullRush : Skill.Shove;
-            lowered = _floor.Skills.HasFlag(free) ? lowered : lowered.WithSkill(free, false);
+            lowered = lowered.WithSkill(taken, false);
         }
 
         if (stat == StatKind.OdHandDice && lowered.OdHandDice == 0)

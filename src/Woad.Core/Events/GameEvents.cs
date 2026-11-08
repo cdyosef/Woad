@@ -296,7 +296,20 @@ public sealed record KeelRolled(
     int DeathGained,
     int LifeMarks,
     int DeathMarks,
-    int CreepingDoom = 0) : GameEvent;
+    int CreepingDoom = 0) : GameEvent
+{
+    /// <summary>Power Dice waiting for the next Keel roll (a 5 earns one).</summary>
+    public int PowerNext { get; init; }
+
+    /// <summary>Power Dice won on sixes, kept for when they stand up.</summary>
+    public int PowerKept { get; init; }
+
+    /// <summary>Of the Power Dice rolled in, those a 5 earned on the roll before.</summary>
+    public int PowerRolledIn { get; init; }
+
+    /// <summary>Doom Dice added to the next Keel roll (a 2 adds one).</summary>
+    public int DoomNext { get; init; }
+}
 
 /// <summary>An ally's Od Hand roll roused a hero Keeling Over: marks of life earned, and Doom Dice added to their next Keel roll.</summary>
 public sealed record HeroRoused(int HeroId, int ByHeroId, int LifeGained, int DoomDiceAdded, int LifeMarks, int DoomDiceOwed) : GameEvent;

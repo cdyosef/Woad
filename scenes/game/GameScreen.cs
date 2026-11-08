@@ -1359,7 +1359,8 @@ public partial class GameScreen : Control
 
             case HeroStoodUp stood:
                 FloatOver(stood.HeroId, "stands up!", Palette.Heal);
-                await UpdateFigure(stood.HeroId, figure => { figure.Keeling = false; figure.Prone = figure.Diving = false; figure.Hearts = stood.Hearts; }, 0.4);
+                await UpdateFigure(stood.HeroId, figure => { figure.Keeling = false; figure.Prone = true; figure.Diving = false; figure.Hearts = stood.Hearts; }, 0.4);
+                RefreshPanels();
                 break;
 
             case HeroDied died:

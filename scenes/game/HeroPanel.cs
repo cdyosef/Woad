@@ -39,7 +39,8 @@ public partial class HeroPanel : Panel
     private BeltSquare _beltSquare = null!;
     private Panel _beltView = null!;
     private Label _beltTitle = null!;
-    private readonly SheetCard[] _beltCards = new SheetCard[GameRules.MaxBeltSlots];
+    // The belt's own places, and one for a Rock Bag.
+    private readonly SheetCard[] _beltCards = new SheetCard[GameRules.MaxBeltSlots + 1];
     private readonly CardSlot[] _backpack = new CardSlot[GameRules.BackpackCapacity];
     private Label _name = null!;
     private HeartsView _hearts = null!;
@@ -335,12 +336,13 @@ public partial class HeroPanel : Panel
         // The belt square, and the belt's full view: as many places as the belt worn holds.
         _beltSquare.ShowHero(hero, selectedCardId);
         CardInstance? belt = hero.Equipment.GetValueOrDefault(EquipSlot.Belt);
-        _beltTitle.Text = belt is null ? "BELTLESS" : $"THE {belt.Definition.Name.ToUpperInvariant()} {hero.Belt.Count}/{hero.BeltCapacity}";
-        _beltView.Size = new(280, hero.BeltCapacity > 5 ? 136 : 80);
+        _beltTitle.Text = belt is null ? "BELTLESS" : $"THE {belt.Definition.Name.ToUpperInvariant()} {hero.BeltUsed}/{hero.BeltCapacity}";
+        int beltRows = (hero.BeltPlaces + 4) / 5;
+        _beltView.Size = new(280, beltRows <= 1 ? 80 : 136 + (beltRows - 2) * 43);
         for (int i = 0; i < _beltCards.Length; i++)
         {
             CardInstance? card = i < hero.Belt.Count ? hero.Belt[i] : null;
-            _beltCards[i].Visible = i < hero.BeltCapacity;
+            _beltCards[i].Visible = i < hero.BeltPlaces;
             _beltCards[i].Show(card, "Free", card is not null && card.Id == selectedCardId, hero);
         }
 

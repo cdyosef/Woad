@@ -52,7 +52,7 @@ Stats are expressed directly as dice and points. Gear cards add to them.
 | Hearts | Maximum HP | 3 | 1 per heart |
 | Wend (boot) | d6 for moving each turn; each move uses one or more | 1 | 3, 3, 3, then 4, 5, 6 per die |
 | Wend bonus | Tiles added to one move per turn (shown as the "+1" in "Wend 1d6+1"; the editor calls it Wend +) | 0 | 2 per +1 |
-| Rumble (fist) | d6 for attacking each turn; each attack uses one or more. Each Rumble die bought is also +1 **Rumble Bonus**: added to one Rumble attack (or Shove, or Bull Rush) a turn, the first unless you hold it back (click the bonus on the Rumble card: it shows in brackets), and then to the attack that rolls your last Rumble dice. The Wend bonus on the Wend card holds back the same way | 1 | 3, 3, 3, then 4, 5, 6 per die; the first brings Shove free (or Bull Rush, if you know Shove) |
+| Rumble (fist) | d6 for attacking each turn; each attack uses one or more. Each Rumble die bought is also +1 **Rumble Bonus**: added to one Rumble attack (or Shove, or Bull Rush) a turn, the first unless you hold it back (click the bonus on the Rumble card: it shows in brackets), and then to the attack that rolls your last Rumble dice. The Wend bonus on the Wend card holds back the same way | 1 | 3, 3, 3, then 4, 5, 6 per die; each brings a Rumble skill of your choice free (Bull Rush once you know Shove), picked in the Skills window that opens |
 | Od Hand (hamsa) | d6 each turn for the Od Hand skills you've learned (see [Skills](#skills)), for feeling around and for off-hand attacks | 1 | 1, 2, 2, 3, 4, 5 per die; the first brings an Od Hand skill of your choice free |
 | Tools | Fixed value and dice added to one roll a turn of the skills they serve | 0 | Gear only (Lockpicks: +1 and 1d6) |
 | Defense | The first d6 (the base die) rolled against every attack; the rest are extra dice, rolled in one at a time only while a defense is losing, then spent until your next turn | 1 | 3, 3, 3, then 4, 5, 6 per die |
@@ -81,6 +81,11 @@ the Party menu can spend points on them too.
 
 - An Od Hand die needs an Od Hand skill to be any use: the first one bought brings one free, and
   buying it opens the Skills window to pick it.
+- **Every Rumble die bought brings a Rumble skill of your choice free** (Shove, Guard, High Alert, Smashing, or
+  Bull Rush once you know Shove): buying one opens the Skills window, where the free pick shows as "Learn free".
+  A pick can wait; it stays free until taken. Taking the die back takes back the last Rumble skill learned with
+  it. Characters saved when only the first Rumble die brought a skill (Shove) got back the points they'd paid for
+  Rumble skills that are now free.
 - **Without the skill, a tool stands in**, once a turn, rolling only its own dice: Lockpicks or
   Burgling Tools on a lock, a lit torch in hand on a search, a Medicine Bag (or Bandages, to rouse) on
   Aid, Burgling Tools on a trap, and Burgling Tools, a Cutpurse Knife or Sticky Gloves on a steal. With
@@ -149,16 +154,22 @@ the Party menu can spend points on them too.
 | Buckle | A buckle card, worn on the belt |
 
 - Two-handed items fill both the main hand and the off hand.
+- **Swapping hand gear:** whatever a weapon, shield or tool pushes out of a hand goes **on the belt** while it
+  has room (in a swap from the belt, into the place the new card left), so it's still to hand when a fight
+  starts; only with the belt full, and out of a fight, does it go in the bag. In a fight it must fit on the
+  belt, or the swap is refused. Armor and other worn gear taken off goes in the bag. In a fight a weapon,
+  shield or tool picked up goes on the belt too, while there's room (Rocks still go in a Rock Bag).
 - **Backpack:** 8 cards that are carried but not equipped *(tunable)*.
 - **Belts:** Basic Belt (4 cards, everyone starts with one, and a Basic Buckle), Good Belt (5), Better Belt
   (6), Grand Belt (7), Great Belt (8); legends speak of a Giant's Belt (9) and the Best Belt (10). A belt
   too small for what's on yours can't go on, and a belt comes off only empty. Characters saved before belts
   were cards were given a Basic Belt and Basic Buckle, with what was on their belt left there.
 - **Mods** go on the belt or the buckle and add their modifiers: Belt Studs (armor 1, on the belt), Buckle
-  Horns (+1 to Rumble rolls, on the buckle), the Rock Bag (on the belt: Rocks you pick up go straight into it,
-  up to 100, and a Sling loads them from the belt; a handful, ten at most, comes out into a hand free once a
+  Horns (+1 to Rumble rolls, on the buckle), the Rock Bag (on the belt, and a **place of its own** there, for Rocks
+  only: they take none of the belt's slots, and the belt square shows one more place for it; Rocks you pick up go
+  straight into it, up to 100, and a Sling loads them from the belt; a handful, ten at most, comes out into a hand free once a
   turn, and a hand emptied of Rocks fills again from it on its own). No two the same, unless a mod's card says otherwise; the belt
-  or buckle comes off only once its mods are off.
+  or buckle comes off only once its mods are off, and a Rock Bag with Rocks in it only while the belt has a slot for them.
 - **Carrying:** two slots in the hero's arms, for two cards or stacks. **While carrying anything, no Rumble
   and no Od Hand.** Carry-only cards go nowhere else: the Relic of Saint Wyn fills both slots. A card that
   finds no room anywhere else at the start of a run is carried. **Carry** takes a card into your arms (free
@@ -1221,13 +1232,17 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
 - **Keeling Over:** a hero or companion reduced to 0 hearts falls where they stand (X's for eyes) and
   is **Keeling Over**. They keep everything they carry and still take their turns, but all they can do
   is roll the **Keel Die** (the End turn button becomes **Roll Keel Die**):
-  - **6:** a mark of life, and a **Power Die** is rolled at once: another mark of life on a 6.
+  - **6:** a mark of life, and a **Power Die** won: kept, and banked when they stand back up (lost if they die).
+  - **5:** a **Power Die** rolls in with their next Keel roll (a mark of life on a 6).
+  - **3 and 4:** nothing.
+  - **2:** a **Doom Die** added to their next Keel roll (a mark of death on a 1).
   - **1:** a mark of death, and a **Doom Die** is rolled at once: another mark of death on a 1.
   - **Banked Power Dice** can be added to the roll (select them first). Their 6s are marks of life;
     their 1s do nothing.
-  - **Creeping doom:** every Keel roll after the first adds Doom Dice (1s are marks of death): 1 on the
-    second roll, 2 on the third, and so on, so nobody lingers for long. It starts over when they stand up.
-  - **Three marks of life:** they stand back up with 1 heart (and their turn ends). **Three marks of
+  - **Creeping doom:** from the **10th** Keel roll on, each adds Doom Dice (1s are marks of death): 1 on the
+    10th roll, 2 on the 11th, and so on, so nobody lingers for ever. It starts over when they stand up.
+  - **Three marks of life:** they come round with 1 heart, **prone**, and play the **whole of their turn** (getting
+    up costs its 2 steps as ever); the Power Dice their sixes won go into their bank. **Three marks of
     death:** they die. Reaching both at once, life wins. Marks start over each time someone keels over.
   - **Rousing:** a standing ally next to them (diagonals too) can click them to roll Od Hand dice for
     them, like a search: not the action. Every 6 of the total (tools and Power Dice included) is a mark

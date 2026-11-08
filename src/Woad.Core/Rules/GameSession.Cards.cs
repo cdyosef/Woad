@@ -253,9 +253,9 @@ public sealed partial class GameSession
                 : CheckGearAction();
         }
 
-        if (definition.Type == CardType.Belt && hero.Belt.Count > definition.BeltSlots)
+        if (definition.Type == CardType.Belt && hero.BeltUsed > definition.BeltSlots)
         {
-            return $"The {definition.Name} holds {definition.BeltSlots} cards, and you've {hero.Belt.Count} on your belt.";
+            return $"The {definition.Name} holds {definition.BeltSlots} cards, and you've {hero.BeltUsed} on your belt.";
         }
 
         if (definition.Type == CardType.Buckle && hero.BeltCapacity == 0)
@@ -276,24 +276,50 @@ public sealed partial class GameSession
             }
         }
 
-        // What comes off goes to the backpack; in combat, to the belt, as long as it's held gear and fits. A flame can't.
+        // What comes off: hand gear onto the belt while it has room (the place the new card left, in a swap), the rest
+        // into the backpack; in combat it all has to go on the belt. A flame can't come off.
         IReadOnlyList<CardInstance> displaced = hero.CardsDisplacedBy(definition, HandFor(hero, card, hand));
         if (displaced.FirstOrDefault(old => old.Definition.HeldFire) is { } held && held != card)
         {
             return "There's a flame of Hold Fire in that hand: hurl it, drop it or hand it on first.";
         }
-        if (combat && (displaced.Any(old => !HandHeld(old.Definition))
-            || hero.Belt.Count - (location == CardLocation.Belt ? 1 : 0) + displaced.Count > hero.BeltCapacity))
+
+        (int belted, int bagged) = WhereDisplacedGo(hero, displaced, location);
+        if (combat && (displaced.Any(old => !HandHeld(old.Definition)) || bagged > 0))
         {
             return "In combat what you'd take off has to go on your belt, and there's no room.";
         }
 
-        if (!combat && hero.Backpack.Count - (location == CardLocation.Backpack ? 1 : 0) + displaced.Count > GameRules.BackpackCapacity)
+        if (!combat && hero.Backpack.Count - (location == CardLocation.Backpack ? 1 : 0) + bagged > GameRules.BackpackCapacity)
         {
             return "There's no room in your backpack for what you'd take off.";
         }
 
         return CheckGearAction(card);
+    }
+
+    /// <summary>
+    /// Where what a card would push off goes: hand gear onto the belt while there's room (counting the place the new card
+    /// leaves, if it's coming off the belt), the rest into the backpack.
+    /// </summary>
+    private static (int Belted, int Bagged) WhereDisplacedGo(Hero hero, IReadOnlyList<CardInstance> displaced, CardLocation from)
+    {
+        int room = hero.BeltCapacity - hero.BeltUsed + (from == CardLocation.Belt ? 1 : 0);
+        int belted = 0, bagged = 0;
+        foreach (CardInstance old in displaced)
+        {
+            if (HandHeld(old.Definition) && room > 0)
+            {
+                room--;
+                belted++;
+            }
+            else
+            {
+                bagged++;
+            }
+        }
+
+        return (belted, bagged);
     }
 
     /// <summary>Why the active hero can't move the card to their belt right now, or null if they can.</summary>
@@ -329,7 +355,7 @@ public sealed partial class GameSession
             return "You're beltless: put on a belt first.";
         }
 
-        if (ActiveHero.Belt.Count >= ActiveHero.BeltCapacity)
+        if (ActiveHero.BeltUsed >= ActiveHero.BeltCapacity && !ActiveHero.IsBagged(card.Definition))
         {
             return $"Your belt is full ({ActiveHero.BeltCapacity} cards). Stow one to make room.";
         }
@@ -370,9 +396,17 @@ public sealed partial class GameSession
             return $"The {card.Definition.Name} won't go in a bag: it can only be carried.";
         }
 
-        if (InCombat)
+        // Rocks put back in a Rock Bag (on the belt, so even in a fight).
+        bool intoRockBag = ActiveHero.IsBagged(card.Definition) && ActiveHero.BeltCapacity > 0;
+        if (InCombat && !intoRockBag)
         {
             return BagInCombat;
+        }
+
+        // A bag full of Rocks off the belt: they'd need a place of the belt's own.
+        if (card.Definition.Holds is { } held && ActiveHero.Belt.Any(on => on.Definition.Id == held) && ActiveHero.BeltUsed >= ActiveHero.BeltCapacity)
+        {
+            return $"Your belt has no room for what's in the {card.Definition.Name}: make room on it, or empty the bag first.";
         }
 
         if (TakingOff(card) is { } stuck)
@@ -380,7 +414,7 @@ public sealed partial class GameSession
             return stuck;
         }
 
-        if (ActiveHero.Backpack.Count >= GameRules.BackpackCapacity)
+        if (!intoRockBag && ActiveHero.Backpack.Count >= GameRules.BackpackCapacity)
         {
             return "Your backpack is full.";
         }
@@ -681,13 +715,15 @@ public sealed partial class GameSession
             hero.Remove(card);
         }
 
-        // What comes off goes in the backpack, or, in combat, on the belt.
+        // What comes off: hand gear onto the belt while it has room (so it's to hand in a fight), the rest in the backpack.
+        int beltRoom = hero.BeltCapacity - hero.BeltUsed;
         foreach (CardInstance old in displaced)
         {
             hero.Remove(old);
-            if (combat)
+            if (HandHeld(old.Definition) && (beltRoom > 0 || hero.Belt.Any(on => on.Definition == old.Definition && on.Definition.IsStackable)))
             {
                 hero.AddToBelt(old);
+                beltRoom--;
                 events.Add(new CardBelted(hero.Id, old.Id));
             }
             else
@@ -753,7 +789,17 @@ public sealed partial class GameSession
         CardInstance card = hero.FindCard(command.CardId)!.Value.Card;
         SpendGearAction();
         hero.Remove(card);
-        hero.AddToBackpack(card);
+
+        // Rocks put away go back into a Rock Bag.
+        if (hero.IsBagged(card.Definition) && hero.BeltCapacity > 0)
+        {
+            hero.AddToBag(card);
+        }
+        else
+        {
+            hero.AddToBackpack(card);
+        }
+
         hero.ClampHearts();
         events.Add(new CardStowed(hero.Id, card.Id));
         return null;
@@ -1086,7 +1132,17 @@ public sealed partial class GameSession
             if (fits > 0)
             {
                 CardInstance picked = card.Count <= fits ? room.TakeCard(at, card.Id)! : card.Split(State.NextId(), fits);
-                hero.AddLoot(picked);
+
+                // In a fight, a weapon, shield or tool picked up goes on the belt while there's room: the bag can't be
+                // rummaged in till the fight's done.
+                if (InCombat && HandHeld(picked.Definition) && !picked.Definition.CarryOnly && !hero.IsBagged(picked.Definition) && hero.BeltCapacity > hero.BeltUsed)
+                {
+                    hero.AddToBelt(picked);
+                }
+                else
+                {
+                    hero.AddLoot(picked);
+                }
                 taken.Add(picked.Id);
             }
         }

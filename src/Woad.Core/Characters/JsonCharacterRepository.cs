@@ -16,7 +16,8 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
     /// the Od Hand die every hero used to start with, every Od Hand skill and Shove, so nobody loses anything.
     /// 4: the purse in copper (Coins); older files kept whole gold, worth 100 copper apiece.
     /// </summary>
-    public const int SchemaVersion = 4;
+    /// <summary>5: every Rumble die brings a free Rumble skill (characters saved before get back what they paid for them).</summary>
+    public const int SchemaVersion = 5;
 
     private static readonly JsonSerializerOptions Options = new()
     {
@@ -138,9 +139,11 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
         StatAllocation allocation = file.SchemaVersion == 1
             ? file.Allocation with { OdHandDice = file.Allocation.OdHandDice + 1, Skills = Skills.OdHand | Skill.Shove }
             : file.Allocation;
+        // Saved when only the first Rumble die brought a skill: the Rumble skills paid for since come back as points.
+        int refund = file.SchemaVersion < 5 ? Math.Max(0, PointBuy.LegacyPaidRumbleSkills(allocation) - PointBuy.PaidRumbleSkills(allocation)) : 0;
         var character = new Character(
             file.Id, file.Name, file.Portrait, file.CreatedUtc, Math.Max(0, file.Xp), allocation,
-            Math.Max(0, file.UnspentPoints), Known(file.Equipped), Known(file.Belt), Known(file.Backpack),
+            Math.Max(0, file.UnspentPoints) + refund, Known(file.Equipped), Known(file.Belt), Known(file.Backpack),
             Math.Max(0, file.SchemaVersion < 4 ? file.Gold * Money.CopperPerGold : file.Coins), Math.Max(0, file.RunsPlayed), Math.Max(0, file.Wins), file.IsCompanion, file.Appearance, file.GuildStanding, file.LawStanding, file.CowardStanding, file.HasCowardsCloak, file.PowerDice, file.Policy,
             KnownSpells(file.Spells), file.Lingering, Known(file.Carried));
         character.SetLuckAsks(file.LuckAsks ?? LuckRoll.All);

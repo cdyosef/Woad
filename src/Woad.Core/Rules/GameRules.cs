@@ -194,6 +194,15 @@ public static class GameRules
     /// <summary>Marks of life that stand a hero Keeling Over back up, and marks of death that kill them.</summary>
     public const int MarksToRise = 3;
 
+    /// <summary>The Keel roll that brings the first creeping Doom Die, and one more each roll after it.</summary>
+    public const int CreepingDoomFromRoll = 10;
+
+    /// <summary>A Keel Die showing this earns a Power Die for the next Keel roll.</summary>
+    public const int KeelPowerFace = 5;
+
+    /// <summary>A Keel Die showing this adds a Doom Die to the next Keel roll.</summary>
+    public const int KeelDoomFace = 2;
+
     public const int MarksToDie = 3;
 
     /// <summary>A Keel Die (or Doom Die) showing this earns a mark of death.</summary>

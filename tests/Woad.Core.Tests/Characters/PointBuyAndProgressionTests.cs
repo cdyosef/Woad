@@ -37,17 +37,33 @@ public class PointBuyAndProgressionTests
     }
 
     [Fact]
-    public void TheFirstRumbleDieBringsShoveOrBullRushIfYouKnowShoveAlready()
+    public void EveryRumbleDieBringsARumbleSkillOfYourChoiceFree()
     {
+        // A Rumble die learns nothing by itself: it leaves a free pick.
         StatAllocation raised = PointBuy.Raise(StatAllocation.None, StatKind.AttackDice);
-        Assert.Equal(Skill.Shove, raised.Skills);
-        Assert.Equal(3, PointBuy.Cost(raised));
+        Assert.Equal(Skill.None, raised.Skills);
+        Assert.Equal((3, 1), (PointBuy.Cost(raised), PointBuy.FreeRumbleSkillsLeft(raised)));
 
-        StatAllocation shover = new() { Skills = Skill.Shove };
-        Assert.Equal(1, PointBuy.Cost(shover));
-        StatAllocation rusher = PointBuy.Raise(shover, StatKind.AttackDice);
-        Assert.Equal(Skill.Shove | Skill.BullRush, rusher.Skills);
-        Assert.Equal(4, PointBuy.Cost(rusher));
+        // Any Rumble skill whose prerequisites are met: Guard costs nothing more.
+        Assert.Equal(3, PointBuy.Cost(raised.WithSkill(Skill.Guard, true)));
+
+        // Two dice, two free: Shove, then Bull Rush (which needs Shove).
+        StatAllocation two = PointBuy.Raise(raised, StatKind.AttackDice).WithSkill(Skill.Shove, true).WithSkill(Skill.BullRush, true);
+        Assert.Equal((6, 0), (PointBuy.Cost(two), PointBuy.FreeRumbleSkillsLeft(two)));
+
+        // A third skill is paid for.
+        Assert.Equal(7, PointBuy.Cost(two.WithSkill(Skill.Guard, true)));
+
+        // Without a Rumble die, a Rumble skill costs its point.
+        Assert.Equal(1, PointBuy.Cost(new StatAllocation { Skills = Skill.Shove }));
+    }
+
+    [Fact]
+    public void CharactersSavedUnderTheOldRuleGetBackWhatTheyPaidForRumbleSkills()
+    {
+        // Two Rumble dice with Shove (free then) and Guard (paid then): now both are free, a point back.
+        var allocation = new StatAllocation { AttackDice = 2, Skills = Skill.Shove | Skill.Guard };
+        Assert.Equal((1, 0), (PointBuy.LegacyPaidRumbleSkills(allocation), PointBuy.PaidRumbleSkills(allocation)));
     }
 
     [Fact]
