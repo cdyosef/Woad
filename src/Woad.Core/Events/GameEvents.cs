@@ -251,6 +251,9 @@ public sealed record MonsterWeaponBroke(int MonsterId, string CardId) : GameEven
 /// <summary>A hero painted their crest on the shield in their off hand.</summary>
 public sealed record ShieldPainted(int HeroId, int CardId) : GameEvent;
 
+/// <summary>A monster's tongue lashes out at a hero beyond its claws (Leviathan Jr.).</summary>
+public sealed record TongueLashed(int MonsterId, int TargetId) : GameEvent;
+
 /// <summary>An ogre punches with its off hand, a Rock or Boulder in it (<paramref name="With"/>) or bare-fisted.</summary>
 public sealed record MonsterPunched(int MonsterId, int TargetId, string? With) : GameEvent;
 

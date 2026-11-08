@@ -121,6 +121,7 @@ internal static class TestContent
           { "id": "boss", "name": "Boss", "glyph": "W", "hearts": 10, "move": 0, "attackDice": 1, "defenseDice": 0, "sweep": { "radius": 2, "every": 2 }, "stunImmune": true, "boss": true, "xp": 25 },
           { "id": "hoarder", "name": "Hoarder", "glyph": "h", "hearts": 1, "move": 0, "attackDice": 0, "defenseDice": 0, "dropChance": 100, "drops": 2, "xp": 7 },
           { "id": "riposter", "name": "Riposter", "glyph": "r", "hearts": 9, "move": 0, "attackDice": 0, "weapon": 2, "defenseDice": 0, "counter": { "dice": 1, "dieType": "life", "typedDice": 1 } },
+          { "id": "licker", "name": "Licker", "glyph": "?", "hearts": 9, "move": 0, "attackDice": 1, "weapon": 2, "defenseDice": 0, "tongue": 5 },
           { "id": "brawler", "name": "Brawler", "glyph": "e", "hearts": 9, "move": 0, "attackDice": 1, "defenseDice": 0, "fists": 2 },
           { "id": "charger", "name": "Charger", "glyph": "!", "hearts": 9, "move": 2, "attackDice": 1, "defenseDice": 0, "bullRushes": true },
           { "id": "lobber", "name": "Lobber", "glyph": "l", "hearts": 5, "move": 0, "attackDice": 1, "defenseDice": 0, "throws": [ { "card": "rock", "chance": 50, "min": 2, "max": 3 } ], "throwsFar": true },

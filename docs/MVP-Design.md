@@ -937,7 +937,7 @@ file under `Themes/`.
 Picked with the Dungeon button on the party screen. Three flooded floors of sandstone, coral and teal
 water, with its own exploring song. Hand-made rooms have pools, channels, causeways and islands; built
 rooms get pools (shallow at the rim, deep in the middle, now and then with something lurking in them),
-streams are never chasms, and the boss arena is a great pool around the Leviathan.
+streams are never chasms, and the boss arena is the Baths, a great pool around Leviathan Jr.
 
 - **Swimmers** move through shallow and deep water at 1 step a tile. One in deep water is **submerged**:
   ranged attacks, spells and bomb blasts can't reach it, only a blow from right beside it (or a
@@ -956,7 +956,7 @@ streams are never chasms, and the boss arena is a great pool around the Leviatha
 | Drowned | 2 | 2 | 1d6+1 | 1d6+1 | From floor 2. Swimmer; rises again once, like a Skeleton |
 | Petty Thief, Mugger Fly | | | | | Rare, as in the Keep |
 | **Miniboss: Crab King** | 6 | 2 | 2d6+1 | 1d6+2 | Shell; guards the Boss Key |
-| **Boss: Leviathan** | 10 | 4 | 2d6+1 | 1d6+1 | Never leaves the water, so it's nearly always submerged; bites at reach 2; every third turn a tail sweep hits every hero within 2 |
+| **Boss: Leviathan Jr.** | 10 | 4 | 2d6+1 | 1d6+1 | Wallows in **the Baths** (the boss room, named as you walk in): a great pool filling most of the room, deep but for a shallow rim, the shallows reaching out toward each door. Never leaves the water, so it's nearly always submerged; claws at reach 2; with nobody in reach of them, its **tongue** lashes a hero up to 5 tiles off, in sight (its Attack dice, no weapon); every third turn a tail sweep hits every hero within 2 |
 
 Its loot deck adds three cards:
 

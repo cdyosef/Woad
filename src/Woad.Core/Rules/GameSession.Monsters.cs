@@ -394,6 +394,10 @@ public sealed partial class GameSession
         {
             // Nobody in reach of a blow: it cast its spell instead.
         }
+        else if (LashTongue(room, monster, standing, events))
+        {
+            // Nobody in reach of its claws: its tongue lashed out instead.
+        }
         else if (ChooseTarget(room, monster, monster.Position, keeling) is { } keeler)
         {
             StrikeKeeler(room, monster, keeler, events);
@@ -412,6 +416,25 @@ public sealed partial class GameSession
                 RollMonsterAttack(room, monster, monster.AttackDiceThisTurn, definition.Weapon, spun, events);
             }
         }
+    }
+
+    /// <summary>
+    /// A monster with a tongue (Leviathan Jr.), nobody in reach of its blows, lashes it at the weakest hero within its
+    /// tongue's reach and in sight: its Attack dice, without its weapon. False when there's nobody to lash.
+    /// </summary>
+    private bool LashTongue(Room room, Monster monster, IReadOnlyList<Hero> standing, List<GameEvent> events)
+    {
+        int reach = monster.Definition.Tongue;
+        if (reach <= 0 || IsBlind(monster.Conditions)
+            || standing.Where(hero => !Diving(room, hero) && Targeting.CanAttack(room.Layout, AttackPattern.Ranged, reach, monster.NearestTile(hero.Position), hero.Position))
+                .OrderBy(hero => hero.Hearts).ThenBy(hero => hero.Seat).FirstOrDefault() is not { } target)
+        {
+            return false;
+        }
+
+        events.Add(new TongueLashed(monster.Id, target.Id));
+        RollMonsterAttack(room, monster, monster.AttackDiceThisTurn, 0, [target], events);
+        return true;
     }
 
     /// <summary>Of the heroes attackable from a tile, the one with the fewest hearts (then lowest seat).</summary>

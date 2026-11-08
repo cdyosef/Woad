@@ -624,6 +624,12 @@ public partial class GameScreen : Control
 
                 if (entered.FirstVisit)
                 {
+                    // The boss's room has a name of its own (the Sunken Temple's Baths).
+                    if (_session.State.Rooms[entered.RoomId].Role == RoomRole.Boss && Content.GetTheme(_session.State.ThemeId).BossRoomName is { } hall)
+                    {
+                        await _banner.Flash(hall, Palette.TrimBright, 1.0);
+                    }
+
                     await Taunt(_session.State.Rooms[entered.RoomId]);
                 }
 
@@ -1416,6 +1422,12 @@ public partial class GameScreen : Control
 
                 break;
 
+            case TongueLashed lashed:
+                CalloutOver(lashed.MonsterId, "SHLURP!", Palette.Danger);
+                Sfx.Play("flap", 0.6f);
+                await Pause(0.3);
+                break;
+
             case MonsterCharged charged:
                 CalloutOver(charged.MonsterId, "CHARGE!", Palette.Danger);
                 await _dice.ShowRoll($"{NameOf(charged.MonsterId)} charges", charged.Roll, 0, newGroup: true, kind: DiceKind.Wend);
@@ -1796,6 +1808,7 @@ public partial class GameScreen : Control
         MonsterWeaponBroke broke => FigureRoom(broke.MonsterId),
         MonsterThrew threw => FigureRoom(threw.MonsterId),
         MonsterCharged charged => FigureRoom(charged.MonsterId),
+        TongueLashed lashed => FigureRoom(lashed.MonsterId),
         MonsterPunched punched => FigureRoom(punched.MonsterId),
         MonsterSpawned spawned => spawned.RoomId,
         RoomCleared cleared => cleared.RoomId,

@@ -162,6 +162,12 @@ public sealed record MonsterDefinition
     /// </summary>
     public bool BullRushes { get; init; }
 
+    /// <summary>
+    /// With nobody in reach of its blows, it lashes its tongue at a hero up to this many tiles off, in sight: its
+    /// Attack dice, without its weapon (Leviathan Jr.'s 5). 0 for none.
+    /// </summary>
+    public int Tongue { get; init; }
+
     /// <summary>It throws twice as far as anyone else (an ogre).</summary>
     public bool ThrowsFar { get; init; }
 

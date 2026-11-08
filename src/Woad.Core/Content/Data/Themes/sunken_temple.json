@@ -1,7 +1,8 @@
 {
   "id": "sunken_temple",
   "name": "The Sunken Temple",
-  "description": "A flooded temple of eels, crabs and the drowned. The Leviathan circles its great pool.",
+  "description": "A flooded temple of eels, crabs and the drowned. Leviathan Jr. wallows in the Baths.",
+  "bossRoomName": "The Baths",
   "floors": 3,
   "boss": "leviathan",
   "miniboss": "crab_king",
