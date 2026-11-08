@@ -46,7 +46,7 @@ public sealed partial class GameSession
         foreach (CardInstance old in hero.CardsDisplacedBy(flame.Definition, slot))
         {
             hero.Remove(old);
-            if (old.Definition.Belts || HandHeld(old.Definition) && hero.Belt.Count < hero.BeltCapacity)
+            if (old.Definition.Belts || HandHeld(old.Definition) && hero.BeltUsed < hero.BeltCapacity)
             {
                 hero.AddToBelt(old);
                 events.Add(new CardBelted(hero.Id, old.Id));

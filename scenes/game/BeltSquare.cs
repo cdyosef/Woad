@@ -54,7 +54,7 @@ public partial class BeltSquare : Control
     /// <summary>The belt fan was clicked: show every card on the belt.</summary>
     public event Action? FanClicked;
 
-    private int Slots => _hero?.BeltCapacity ?? 0;
+    private int Slots => _hero?.BeltPlaces ?? 0;
 
     public override void _Ready()
     {
@@ -217,7 +217,7 @@ public partial class BeltSquare : Control
             FanSlot => "The belt fan: every card on your belt, face up.",
             BuckleSlot => $"{belt?.Definition.Name}{(buckle is null ? "" : $", {buckle.Definition.Name}")}"
                 + (hero.Mods.Count > 0 ? $"\nMods: {string.Join(", ", hero.Mods.Select(mod => mod.Definition.Name))}" : "")
-                + $"\n{hero.Belt.Count}/{hero.BeltCapacity} cards. Click the buckle for the belt.",
+                + $"\n{hero.BeltUsed}/{hero.BeltCapacity} cards{(hero.BeltPlaces > hero.BeltCapacity ? ", and a Rock Bag's place for Rocks" : "")}. Click the buckle for the belt.",
             >= 0 when CardIn(hit) is { } card => $"{CardSlot.Title(card)}\nClick to pick it up; double-click to use it, or draw it into a hand.",
             >= 0 => "A free place on your belt.",
             _ => belt is null ? "Beltless: put on a belt to carry cards on it." : "",

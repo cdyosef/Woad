@@ -383,6 +383,12 @@ public sealed class Hero
     /// <summary>How many cards the belt worn holds: none for a hero who is beltless.</summary>
     public int BeltCapacity => _equipment.GetValueOrDefault(EquipSlot.Belt)?.Definition.BeltSlots ?? 0;
 
+    /// <summary>The belt's own slots in use: what a bag on it holds (the Rock Bag's Rocks) rides in a slot of its own, a bonus.</summary>
+    public int BeltUsed => _belt.Count(card => !IsBagged(card.Definition));
+
+    /// <summary>The places the belt shows: its own slots, and one more for each bag on it (the Rock Bag).</summary>
+    public int BeltPlaces => BeltCapacity + (BeltCapacity > 0 ? _mods.Count(mod => mod.Definition.Holds is not null) : 0);
+
     /// <summary>The carrying slots in use.</summary>
     public int CarrySlotsUsed => _carried.Sum(card => card.Definition.CarrySlots) + (CarriedAlly is null ? 0 : GameRules.CarrySlots);
 
@@ -676,7 +682,7 @@ public sealed class Hero
         card.Definition.Clover ? TakeClover(card)
         : card.Definition.CarryOnly ? AddToCarried(card)
         : IsBagged(card.Definition) ? AddToBag(card)
-        : card.Definition.Belts && (_belt.Count < BeltCapacity || _belt.Any(held => held.Definition == card.Definition)) ? AddToBelt(card)
+        : card.Definition.Belts && (BeltUsed < BeltCapacity || _belt.Any(held => held.Definition == card.Definition)) ? AddToBelt(card)
         : AddToBackpack(card);
 
     /// <summary>A belt mod holds this card (the Rock Bag, Rocks).</summary>
@@ -695,7 +701,8 @@ public sealed class Hero
             return bagged;
         }
 
-        return _belt.Count < BeltCapacity ? Add(_belt, card) : JoinStack(card) ?? AddToBackpack(card);
+        // The bag is a place of its own on the belt: it always has room for what it holds.
+        return Add(_belt, card);
     }
 
     /// <summary>A Lucky Clover picked up: its points, up to the most a hero can hold. The card itself goes nowhere.</summary>
@@ -832,7 +839,7 @@ public sealed class Hero
         {
             _mods.Add(card);
         }
-        else if (definition.Belts && _belt.Count < BeltCapacity)
+        else if (definition.Belts && BeltUsed < BeltCapacity)
         {
             // Belt tools ride on the belt, a torch too (unlit, till it's taken in hand).
             _belt.Add(card);
@@ -841,7 +848,12 @@ public sealed class Hero
         {
             Equip(card);
         }
-        else if (CanBelt(definition) && _belt.Count < BeltCapacity)
+        else if (IsBagged(definition) && BeltCapacity > 0)
+        {
+            // Rocks with a Rock Bag on: into the bag, a place of its own.
+            AddToBag(card);
+        }
+        else if (CanBelt(definition) && BeltUsed < BeltCapacity)
         {
             // A spare weapon, shield or tool rides on the belt, where it can be drawn even in combat.
             _belt.Add(card);

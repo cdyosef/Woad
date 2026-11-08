@@ -256,7 +256,7 @@ public static class DemoRun
         Heroes = [DebugHeroes[0] with
         {
             BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20 },
-            CardIds = [.. Belted, "wooden_sword", "knights_shield", "shield_paint"],
+            CardIds = [.. Belted, "wooden_sword", "knights_shield", "rock_bag", "rock", "rock", "rock", "shield_paint", "health_potion", "torch", "lockpicks"],
             Appearance = (DebugHeroes[0].Appearance ?? new Woad.Core.Model.Appearance()) with { CrestField = "per_fess", CrestCharge = "eagle", CrestColor = "blood", CrestInk = "gilt" },
         }],
         Rooms = [new RoomSetup("yard", RoomTemplate.Parse(".........\n.........\n.........\n.........\n....1....\n.........\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],

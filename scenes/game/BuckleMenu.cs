@@ -93,7 +93,7 @@ public partial class BuckleMenu : Panel
         }
         else
         {
-            Row($"{belt.Definition.Name} ({hero.Belt.Count}/{hero.BeltCapacity})", "Unbuckle", session.CheckUnbuckle(), id => new UnbuckleBelt(id),
+            Row($"{belt.Definition.Name} ({hero.BeltUsed}/{hero.BeltCapacity})", "Unbuckle", session.CheckUnbuckle(), id => new UnbuckleBelt(id),
                 "Take the belt off whole: its buckle, mods and cards stay on it, in your bag, to buckle on again as it was.");
         }
 

@@ -160,10 +160,11 @@ the Party menu can spend points on them too.
   too small for what's on yours can't go on, and a belt comes off only empty. Characters saved before belts
   were cards were given a Basic Belt and Basic Buckle, with what was on their belt left there.
 - **Mods** go on the belt or the buckle and add their modifiers: Belt Studs (armor 1, on the belt), Buckle
-  Horns (+1 to Rumble rolls, on the buckle), the Rock Bag (on the belt: Rocks you pick up go straight into it,
-  up to 100, and a Sling loads them from the belt; a handful, ten at most, comes out into a hand free once a
+  Horns (+1 to Rumble rolls, on the buckle), the Rock Bag (on the belt, and a **place of its own** there, for Rocks
+  only: they take none of the belt's slots, and the belt square shows one more place for it; Rocks you pick up go
+  straight into it, up to 100, and a Sling loads them from the belt; a handful, ten at most, comes out into a hand free once a
   turn, and a hand emptied of Rocks fills again from it on its own). No two the same, unless a mod's card says otherwise; the belt
-  or buckle comes off only once its mods are off.
+  or buckle comes off only once its mods are off, and a Rock Bag with Rocks in it only while the belt has a slot for them.
 - **Carrying:** two slots in the hero's arms, for two cards or stacks. **While carrying anything, no Rumble
   and no Od Hand.** Carry-only cards go nowhere else: the Relic of Saint Wyn fills both slots. A card that
   finds no room anywhere else at the start of a run is carried. **Carry** takes a card into your arms (free
