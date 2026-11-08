@@ -64,6 +64,39 @@ public sealed class RockBagPlaceTests
     }
 
     [Fact]
+    public void RocksHandedOverGoStraightIntoTheRockBag()
+    {
+        GameSession session = TestRun.Start(Quiet.Replace("....1....", "....12..."), heroes: 2, cards: ["t_rockbag"]);
+        Hero giver = session.HeroInSeat(0), taker = session.HeroInSeat(1);
+        CardInstance rocks = Rocks(session, 6);
+        giver.AddToBackpack(rocks);
+        Assert.Null(taker.BagStack(rocks.Definition));
+
+        session.Do(new GiveCard(giver.Id, taker.Id, rocks.Id, 4));
+
+        Assert.Equal(4, taker.BagStack(rocks.Definition)!.Count);
+        Assert.DoesNotContain(taker.Backpack, card => card.Definition.Id == "t_rock");
+    }
+
+    [Fact]
+    public void RocksPutAwayFromAHandGoBackIntoTheBagEvenInAFight()
+    {
+        GameSession session = TestRun.Start(Quiet.Replace("....1....", "....1d..."), cards: ["t_rockbag"]);
+        Hero hero = session.HeroInSeat();
+        session.RoomById().AddLoot(hero.Position, [Rocks(session, 12)]);
+        session.Do(new PickUpLoot(hero.Id));
+        CardDefinition rock = session.Content.GetCard("t_rock");
+        session.Do(new EquipCard(hero.Id, hero.BagStack(rock)!.Id, EquipSlot.OffHand));
+        Assert.Equal(2, hero.BagStack(rock)!.Count);
+        Assert.True(session.InCombat);
+
+        session.Do(new StowCard(hero.Id, hero.Equipment[EquipSlot.OffHand].Id));
+
+        Assert.Equal(12, hero.BagStack(rock)!.Count);
+        Assert.False(hero.Equipment.ContainsKey(EquipSlot.OffHand));
+    }
+
+    [Fact]
     public void AFullBagCantComeOffABeltWithNoRoomForItsRocks()
     {
         GameSession session = TestRun.Start(Quiet, cards: ["t_rockbag", "potion", "drops", "holy", "bomb"]);

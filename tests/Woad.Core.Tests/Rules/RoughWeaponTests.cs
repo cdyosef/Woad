@@ -136,7 +136,9 @@ public sealed class RoughWeaponTests
         GameSession bagged = Duel("....1d...", ["shield", "t_rockbag", .. tenRocks], new ScriptedDice());
         Hero bagger = bagged.HeroInSeat();
         Assert.Equal(100, bagger.StackLimit(rock));
-        Assert.Equal(90, bagger.RoomFor(rock));
+        // The ten start in a hand; the bag, empty, has room for a hundred more.
+        Assert.Equal(10, bagger.Equipment[EquipSlot.MainHand].Count);
+        Assert.Equal(100, bagger.RoomFor(rock));
     }
 
     [Fact]

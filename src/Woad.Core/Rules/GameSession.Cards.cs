@@ -396,7 +396,9 @@ public sealed partial class GameSession
             return $"The {card.Definition.Name} won't go in a bag: it can only be carried.";
         }
 
-        if (InCombat)
+        // Rocks put back in a Rock Bag (on the belt, so even in a fight).
+        bool intoRockBag = ActiveHero.IsBagged(card.Definition) && ActiveHero.BeltCapacity > 0;
+        if (InCombat && !intoRockBag)
         {
             return BagInCombat;
         }
@@ -412,7 +414,7 @@ public sealed partial class GameSession
             return stuck;
         }
 
-        if (ActiveHero.Backpack.Count >= GameRules.BackpackCapacity)
+        if (!intoRockBag && ActiveHero.Backpack.Count >= GameRules.BackpackCapacity)
         {
             return "Your backpack is full.";
         }
@@ -787,7 +789,17 @@ public sealed partial class GameSession
         CardInstance card = hero.FindCard(command.CardId)!.Value.Card;
         SpendGearAction();
         hero.Remove(card);
-        hero.AddToBackpack(card);
+
+        // Rocks put away go back into a Rock Bag.
+        if (hero.IsBagged(card.Definition) && hero.BeltCapacity > 0)
+        {
+            hero.AddToBag(card);
+        }
+        else
+        {
+            hero.AddToBackpack(card);
+        }
+
         hero.ClampHearts();
         events.Add(new CardStowed(hero.Id, card.Id));
         return null;

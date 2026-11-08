@@ -519,6 +519,7 @@ public sealed class Hero
     public bool CanCarry(CardDefinition definition) =>
         definition.Clover ? CloverLuck < GameRules.MaxCloverLuck
         : definition.CarryOnly ? CanCarryInArms(definition)
+        : IsBagged(definition) && BeltCapacity > 0 ? (BagStack(definition)?.Count ?? 0) < StackLimit(definition)
         : StackOf(definition) is { } stack ? stack.Count < StackLimit(definition)
         : _backpack.Count < GameRules.BackpackCapacity;
 
@@ -531,7 +532,9 @@ public sealed class Hero
     /// <summary>How many more of this card the hero could take into the stack they hold of it (or a new one).</summary>
     public int RoomFor(CardDefinition definition) =>
         definition.Clover ? GameRules.MaxCloverLuck - CloverLuck
-        : !CanCarry(definition) ? 0 : StackLimit(definition) - (StackOf(definition)?.Count ?? 0);
+        : !CanCarry(definition) ? 0
+        : IsBagged(definition) && BeltCapacity > 0 ? StackLimit(definition) - (BagStack(definition)?.Count ?? 0)
+        : StackLimit(definition) - (StackOf(definition)?.Count ?? 0);
 
     /// <summary>
     /// What a weapon that shoots (the Sling) would load next: its ammo in the off hand, or on the belt when a
@@ -693,7 +696,7 @@ public sealed class Hero
         IsBagged(definition) ? _belt.FirstOrDefault(card => card.Definition == definition) : null;
 
     /// <summary>A card the bag on the belt holds goes straight into it (Rocks into the Rock Bag), not into a hand's stack.</summary>
-    private CardInstance AddToBag(CardInstance card)
+    internal CardInstance AddToBag(CardInstance card)
     {
         if (BagStack(card.Definition) is { } bagged && bagged != card)
         {

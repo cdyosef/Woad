@@ -92,7 +92,16 @@ public sealed partial class GameSession
         }
 
         CardInstance passed = TakeFromHero(from, card, amount);
-        to.AddToBackpack(passed);
+
+        // Rocks handed to someone with a Rock Bag go straight into it.
+        if (to.IsBagged(passed.Definition) && to.BeltCapacity > 0)
+        {
+            to.AddToBag(passed);
+        }
+        else
+        {
+            to.AddToBackpack(passed);
+        }
         events.Add(new CardTraded(from.Id, to.Id, passed.Id, amount));
         return null;
     }
