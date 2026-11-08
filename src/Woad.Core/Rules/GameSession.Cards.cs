@@ -276,24 +276,50 @@ public sealed partial class GameSession
             }
         }
 
-        // What comes off goes to the backpack; in combat, to the belt, as long as it's held gear and fits. A flame can't.
+        // What comes off: hand gear onto the belt while it has room (the place the new card left, in a swap), the rest
+        // into the backpack; in combat it all has to go on the belt. A flame can't come off.
         IReadOnlyList<CardInstance> displaced = hero.CardsDisplacedBy(definition, HandFor(hero, card, hand));
         if (displaced.FirstOrDefault(old => old.Definition.HeldFire) is { } held && held != card)
         {
             return "There's a flame of Hold Fire in that hand: hurl it, drop it or hand it on first.";
         }
-        if (combat && (displaced.Any(old => !HandHeld(old.Definition))
-            || hero.Belt.Count - (location == CardLocation.Belt ? 1 : 0) + displaced.Count > hero.BeltCapacity))
+
+        (int belted, int bagged) = WhereDisplacedGo(hero, displaced, location);
+        if (combat && (displaced.Any(old => !HandHeld(old.Definition)) || bagged > 0))
         {
             return "In combat what you'd take off has to go on your belt, and there's no room.";
         }
 
-        if (!combat && hero.Backpack.Count - (location == CardLocation.Backpack ? 1 : 0) + displaced.Count > GameRules.BackpackCapacity)
+        if (!combat && hero.Backpack.Count - (location == CardLocation.Backpack ? 1 : 0) + bagged > GameRules.BackpackCapacity)
         {
             return "There's no room in your backpack for what you'd take off.";
         }
 
         return CheckGearAction(card);
+    }
+
+    /// <summary>
+    /// Where what a card would push off goes: hand gear onto the belt while there's room (counting the place the new card
+    /// leaves, if it's coming off the belt), the rest into the backpack.
+    /// </summary>
+    private static (int Belted, int Bagged) WhereDisplacedGo(Hero hero, IReadOnlyList<CardInstance> displaced, CardLocation from)
+    {
+        int room = hero.BeltCapacity - hero.Belt.Count + (from == CardLocation.Belt ? 1 : 0);
+        int belted = 0, bagged = 0;
+        foreach (CardInstance old in displaced)
+        {
+            if (HandHeld(old.Definition) && room > 0)
+            {
+                room--;
+                belted++;
+            }
+            else
+            {
+                bagged++;
+            }
+        }
+
+        return (belted, bagged);
     }
 
     /// <summary>Why the active hero can't move the card to their belt right now, or null if they can.</summary>
@@ -681,13 +707,15 @@ public sealed partial class GameSession
             hero.Remove(card);
         }
 
-        // What comes off goes in the backpack, or, in combat, on the belt.
+        // What comes off: hand gear onto the belt while it has room (so it's to hand in a fight), the rest in the backpack.
+        int beltRoom = hero.BeltCapacity - hero.Belt.Count;
         foreach (CardInstance old in displaced)
         {
             hero.Remove(old);
-            if (combat)
+            if (HandHeld(old.Definition) && (beltRoom > 0 || hero.Belt.Any(on => on.Definition == old.Definition && on.Definition.IsStackable)))
             {
                 hero.AddToBelt(old);
+                beltRoom--;
                 events.Add(new CardBelted(hero.Id, old.Id));
             }
             else
@@ -1086,7 +1114,17 @@ public sealed partial class GameSession
             if (fits > 0)
             {
                 CardInstance picked = card.Count <= fits ? room.TakeCard(at, card.Id)! : card.Split(State.NextId(), fits);
-                hero.AddLoot(picked);
+
+                // In a fight, a weapon, shield or tool picked up goes on the belt while there's room: the bag can't be
+                // rummaged in till the fight's done.
+                if (InCombat && HandHeld(picked.Definition) && !picked.Definition.CarryOnly && !hero.IsBagged(picked.Definition) && hero.BeltCapacity > hero.Belt.Count)
+                {
+                    hero.AddToBelt(picked);
+                }
+                else
+                {
+                    hero.AddLoot(picked);
+                }
                 taken.Add(picked.Id);
             }
         }

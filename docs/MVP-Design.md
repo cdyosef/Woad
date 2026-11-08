@@ -149,6 +149,11 @@ the Party menu can spend points on them too.
 | Buckle | A buckle card, worn on the belt |
 
 - Two-handed items fill both the main hand and the off hand.
+- **Swapping hand gear:** whatever a weapon, shield or tool pushes out of a hand goes **on the belt** while it
+  has room (in a swap from the belt, into the place the new card left), so it's still to hand when a fight
+  starts; only with the belt full, and out of a fight, does it go in the bag. In a fight it must fit on the
+  belt, or the swap is refused. Armor and other worn gear taken off goes in the bag. In a fight a weapon,
+  shield or tool picked up goes on the belt too, while there's room (Rocks still go in a Rock Bag).
 - **Backpack:** 8 cards that are carried but not equipped *(tunable)*.
 - **Belts:** Basic Belt (4 cards, everyone starts with one, and a Basic Buckle), Good Belt (5), Better Belt
   (6), Grand Belt (7), Great Belt (8); legends speak of a Giant's Belt (9) and the Best Belt (10). A belt

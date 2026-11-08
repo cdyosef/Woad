@@ -51,7 +51,7 @@ public class CardTests
     }
 
     [Fact]
-    public void EquippingSwapsTheOldCardIntoTheBackpack()
+    public void EquippingSwapsAHeldCardOntoTheBelt()
     {
         GameSession session = TestRun.Start(Open, cards: ["sword", "big_sword"]);
         Hero hero = session.HeroInSeat();
@@ -60,9 +60,9 @@ public class CardTests
 
         IReadOnlyList<GameEvent> events = session.Do(new EquipCard(hero.Id, bigSword.Id));
 
-        Assert.Equal<GameEvent>([new CardStowed(hero.Id, sword.Id), new CardEquipped(hero.Id, bigSword.Id)], events);
+        Assert.Equal<GameEvent>([new CardBelted(hero.Id, sword.Id), new CardEquipped(hero.Id, bigSword.Id)], events);
         Assert.Same(bigSword, hero.Equipment[EquipSlot.MainHand]);
-        Assert.Equal([sword], hero.Backpack);
+        Assert.Equal([sword], hero.Belt);
         Assert.Equal(2, hero.EffectiveStats.Weapon);
         Assert.False(session.State.Turn!.HasActed);
     }
@@ -79,12 +79,12 @@ public class CardTests
         session.Do(new EquipCard(hero.Id, first.Id));
         Assert.Same(first, hero.Equipment[EquipSlot.OffHand]);
         Assert.Same(sword, hero.Equipment[EquipSlot.MainHand]);
-        Assert.Contains(shield, hero.Backpack);
+        Assert.Contains(shield, hero.Belt);
 
         session.Do(new EquipCard(hero.Id, second.Id, EquipSlot.MainHand));
         Assert.Same(second, hero.Equipment[EquipSlot.MainHand]);
         Assert.Same(first, hero.Equipment[EquipSlot.OffHand]);
-        Assert.Contains(sword, hero.Backpack);
+        Assert.Contains(sword, hero.Belt);
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public class CardTests
 
         Assert.Same(boomerang, hero.Equipment[EquipSlot.MainHand]);
         Assert.False(hero.Equipment.ContainsKey(EquipSlot.OffHand));
-        Assert.Equal([sword], hero.Backpack);
+        Assert.Equal([sword], hero.Belt);
         Assert.Contains("already in your main hand", session.Refuse(new EquipCard(hero.Id, boomerang.Id, EquipSlot.MainHand)));
     }
 
@@ -205,7 +205,7 @@ public class CardTests
 
         Assert.Same(bow, hero.Equipment[EquipSlot.MainHand]);
         Assert.Same(bow, hero.Equipment[EquipSlot.OffHand]);
-        Assert.Equal(["sword", "shield"], hero.Backpack.Select(card => card.Definition.Id));
+        Assert.Equal(["sword", "shield"], hero.Belt.Select(card => card.Definition.Id));
         Assert.Equal(4, hero.AttackRange);
         Assert.Equal((1, 0), (hero.EffectiveStats.Weapon, hero.EffectiveStats.Armor));
     }

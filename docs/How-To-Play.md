@@ -95,7 +95,10 @@ spent.
 - A **two-handed** weapon (a Great Axe, a Maul, a Big Club) fills both hands.
 - Your **belt** holds things ready for quick use: potions, bombs, tools, even a spare weapon or shield.
   **Using one belt item a turn is free.** Double-click a belt card to use it, or to draw it into a hand.
-- A weapon or shield on the belt is only being carried there. Draw it into a hand to use it.
+- A weapon or shield on the belt is only being carried there. Draw it into a hand to use it (double-click
+  it, or drag it onto the hand). Whatever was in that hand goes onto the belt in its place, so it's still to
+  hand later. It only goes in your bag if the belt is full.
+- **In a fight you can't take anything out of your bag.** Keep the weapons and tools you'll want on your belt.
 - Sticky Gloves and similar accessories can be dragged from the accessory square into your off hand. They
   leave a faded "ghost" behind; double-click the ghost to put them back on.
 - **Out of a fight, changing gear is free. In a fight it costs your action.**
