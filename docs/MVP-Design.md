@@ -124,6 +124,17 @@ the Party menu can spend points on them too.
   - **Random** rolls a look and colors. Any two players may share colors: on the board each hero
     stands on a ring of their seat color.
   - Characters saved before looks existed are Wanderers in their crest's color.
+- **Languages:** everyone speaks **Common**; the **Tongues** window (beside Skills in the editor) adds others, for
+  now free: **Primordial** (dots and dashes in runes, as if carved into stone, time and space), and two tongues of
+  it, **Gurgle** (the water's: wavy dashes, curving lines between the dots) and **Gravel** (the stone's: rough-hewn).
+  Things said show in a **speech bubble** over the speaker in their language's style, written in its script first,
+  then turning to English letter by letter if a player's hero listening understands it (the speaker aside): a
+  Primordial speaker makes out only a few words of Gurgle ("I", "trying", "peace", "you", "long", "freaks",
+  "creeps", "join", "water"), and all of Gravel, slowly. After a while a bubble shrinks to a little one over the
+  speaker's head, which opens again under the mouse. On your turn, **Enter** opens a chat box: pick one of your
+  languages and type. Leviathan Jr. grumbles in Gurgle, a line a round ("I am just trying to relax!", "Can't a guy
+  take a bath in peace?!!", "I've had a long day!", "You guys are freaks!", "Get out of here creeps!", "You freaks
+  wanna join me so bad! Come on in!!"), and the first time he drags someone down, "Come on in, the water is fine!"
 - **Crests:** a shield with a field and a charge, built in the editor's crest rows. The **field** is plain or
   parted in two colors (halved, parted, slanted, quartered, chief, pale, band, bend, chevron, cross, saltire,
   bordered), its second color the character's trim; the **charge** is one of 24 (roundel, lozenge, triangle,

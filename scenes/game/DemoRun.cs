@@ -268,7 +268,12 @@ public static class DemoRun
     {
         Seed = seed,
         ThemeId = "sunken_temple",
-        Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 30, AttackDice = 6, Armor = 2 }, CardIds = [.. Belted, "knights_sword"] }],
+        Heroes = [DebugHeroes[0] with
+        {
+            BaseStats = DebugHeroes[0].BaseStats with { Hearts = 30, AttackDice = 6, Armor = 2 },
+            CardIds = [.. Belted, "knights_sword"],
+            Appearance = (DebugHeroes[0].Appearance ?? new Woad.Core.Model.Appearance()) with { Languages = "primordial" },
+        }],
         Rooms = [new RoomSetup("baths", RoomTemplate.Parse(".........\n.,,,,,,,.\n.,=====,.\n.,==L==,.\n.,=====,.\n.,,,,,,,.\n....1....\n.........\n.........", ContentCatalog.LoadDefault()).WithTile(new GridPosition(4, 3), TileKind.DeepWater).WithTile(new GridPosition(4, 6), TileKind.ShallowWater))],
         StartRoomId = "baths",
     };

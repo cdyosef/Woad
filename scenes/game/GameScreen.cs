@@ -217,13 +217,16 @@ public partial class GameScreen : Control
             CardDrag.PressedAtMsec = Time.GetTicksMsec();
         }
 
-        if (@event is not InputEventKey { Pressed: true, Echo: false } key || _session.State.Turn is null || ActiveHero is not { IsCompanion: false } || _autoplay)
+        if (@event is not InputEventKey { Pressed: true, Echo: false } key || _session.State.Turn is null || ActiveHero is not { IsCompanion: false } || _autoplay || Chatting)
         {
             return;
         }
 
         switch (key.Keycode)
         {
+            case Key.Enter or Key.KpEnter:
+                OpenChat();
+                break;
             case Key.Space or Key.R:
                 ToggleRumble();
                 break;
@@ -1036,6 +1039,11 @@ public partial class GameScreen : Control
             case StayedAfloat afloat when _figures.TryGetValue(afloat.HeroId, out Figure? swimmer) && swimmer.RoomId == _shownRoomId:
                 _board.FloatText(swimmer.Position, "-1 Rumble: afloat", Palette.Heal);
                 await Pause(0.3);
+                break;
+
+            case MonsterSpoke spoke:
+                Say(spoke.MonsterId, spoke.Text, Languages.Get(spoke.Language));
+                await Pause(1.2);
                 break;
 
             case CarcassFloated floated when floated.RoomId == _shownRoomId:

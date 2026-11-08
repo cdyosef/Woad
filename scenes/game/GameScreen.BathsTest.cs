@@ -24,6 +24,15 @@ public partial class GameScreen
             Check(leviathan.Definition.Name == "Leviathan Jr." && room.Layout[leviathan.Position] == TileKind.DeepWater, "Leviathan Jr. waits in the deep");
             await SaveShot("baths_start");
 
+            // Aria says something in Primordial: nobody else is there to understand, so it stays in runes.
+            OpenChat();
+            Check(Chatting && _chatLanguage.ItemCount == 2, "Enter opens the chat box, with Common and Primordial to pick from");
+            _chatLanguage.Select(1);
+            SendChat("Hello there big fellow");
+            Check(!Chatting && HasBubble(aria.Id), "her words show in a bubble over her");
+            await Pause(0.4);
+            await SaveShot("baths_chat");
+
             for (int round = 0; round < 30 && room.FindMonster(leviathan.Id) is not null && aria.IsActive; round++)
             {
                 while (_session.State.Turn?.HeroId == aria.Id && _session.GetAttackableMonsters(null).Any(monster => monster.Id == leviathan.Id) && _session.AttackDiceLeft > 0)
@@ -49,6 +58,11 @@ public partial class GameScreen
 
                 await Click(this, _endTurn);
                 await WaitUntilIdle();
+                if (round == 0)
+                {
+                    await SaveShot("baths_speech");
+                    Check(HasBubble(leviathan.Id), "Leviathan Jr. grumbles in a bubble");
+                }
             }
 
             Check(room.FindMonster(leviathan.Id) is null, "Leviathan Jr. falls");

@@ -248,6 +248,14 @@ public sealed partial class GameSession
             events.Add(new MonsterYelled(monster.Id, yell));
         }
 
+        // A line a round, in order, while heroes are there to hear it (Leviathan Jr.'s grumbling).
+        if (monster.Definition.Speech is { } speech && monster.LinesSpoken < speech.Lines.Count && monster.SpokeInRound != State.Round && State.HeroesIn(room).Any())
+        {
+            events.Add(new MonsterSpoke(monster.Id, speech.Language, speech.Lines[monster.LinesSpoken]));
+            monster.LinesSpoken++;
+            monster.SpokeInRound = State.Round;
+        }
+
         if (!ConditionsAtTurnStart(room, monster, events))
         {
             return;

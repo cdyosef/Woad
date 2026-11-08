@@ -38,6 +38,13 @@ public sealed partial class GameSession
 
         if (room.Layout[hero.Position] == TileKind.DeepWater && !hero.HeldUnder)
         {
+            // The first time it drags someone down, it has something to say about it first.
+            if (monster.Definition.Speech is { DragLine: { } line } speech && !monster.SaidDragLine)
+            {
+                monster.SaidDragLine = true;
+                events.Add(new MonsterSpoke(monster.Id, speech.Language, line));
+            }
+
             hero.HeldUnder = true;
             events.Add(new DraggedUnder(monster.Id, hero.Id, hero.Position, hero.Position));
         }

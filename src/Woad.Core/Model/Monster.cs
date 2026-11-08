@@ -22,6 +22,14 @@ public sealed class Monster
 
     public int Hearts { get; internal set; }
 
+    /// <summary>How many of its lines it has said (see <see cref="MonsterDefinition.Speech"/>), and whether its drag line yet.</summary>
+    public int LinesSpoken { get; internal set; }
+
+    public bool SaidDragLine { get; internal set; }
+
+    /// <summary>The round it last spoke a line in: once a round.</summary>
+    public int SpokeInRound { get; internal set; }
+
     /// <summary>What it carries to throw (an ogre's Rocks, or a Boulder), or null.</summary>
     public CardInstance? Holding { get; internal set; }
 

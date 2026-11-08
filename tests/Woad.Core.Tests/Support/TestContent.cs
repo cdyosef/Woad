@@ -125,6 +125,7 @@ internal static class TestContent
           { "id": "dragger", "name": "Dragger", "glyph": "¢", "hearts": 9, "move": 4, "attackDice": 1, "defenseDice": 0, "swimmer": true, "waterOnly": true, "snatches": true },
           { "id": "zapper", "name": "Zapper", "glyph": "¤", "hearts": 9, "move": 0, "attackDice": 1, "defenseDice": 0, "dieType": "elektrik" },
           { "id": "floater", "name": "Floater", "glyph": "¥", "hearts": 1, "move": 0, "attackDice": 0, "defenseDice": 0, "swimmer": true, "waterOnly": true, "floatsWhenSlain": true },
+          { "id": "grumbler", "name": "Grumbler", "glyph": "¦", "hearts": 9, "move": 0, "attackDice": 1, "defenseDice": 0, "swimmer": true, "waterOnly": true, "snatches": true, "speech": { "language": "gurgle", "lines": ["I am relaxing!", "Go away!"], "dragLine": "Come on in!" } },
           { "id": "licker", "name": "Licker", "glyph": "$", "hearts": 9, "move": 0, "attackDice": 1, "weapon": 2, "defenseDice": 0, "tongue": 5 },
           { "id": "brawler", "name": "Brawler", "glyph": "e", "hearts": 9, "move": 0, "attackDice": 1, "defenseDice": 0, "fists": 2 },
           { "id": "charger", "name": "Charger", "glyph": "!", "hearts": 9, "move": 2, "attackDice": 1, "defenseDice": 0, "bullRushes": true },

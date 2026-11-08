@@ -251,6 +251,9 @@ public sealed record MonsterWeaponBroke(int MonsterId, string CardId) : GameEven
 /// <summary>A hero painted their crest on the shield in their off hand.</summary>
 public sealed record ShieldPainted(int HeroId, int CardId) : GameEvent;
 
+/// <summary>A monster says something, in its language (by id): it shows in a speech bubble over it.</summary>
+public sealed record MonsterSpoke(int MonsterId, string Language, string Text) : GameEvent;
+
 /// <summary>A slain monster's body floats belly-up on <paramref name="Tiles"/> (Leviathan Jr.'s): a surface to stand on.</summary>
 public sealed record CarcassFloated(string RoomId, int MonsterId, string MonsterDefinitionId, IReadOnlyList<GridPosition> Tiles) : GameEvent;
 

@@ -168,6 +168,12 @@ public sealed record MonsterDefinition
     /// </summary>
     public bool Snatches { get; init; }
 
+    /// <summary>
+    /// What it says as the fight goes on (Leviathan Jr.'s grumbling): a line a round, in order, in its language; and a
+    /// line of its own the first time it drags someone down.
+    /// </summary>
+    public MonsterSpeech? Speech { get; init; }
+
     /// <summary>Slain, its body floats belly-up where it fell, eyes X'd: a raft over the water heroes can stand on (Leviathan Jr.).</summary>
     public bool FloatsWhenSlain { get; init; }
 
@@ -317,6 +323,16 @@ public sealed record MonsterDefinition
 }
 
 /// <summary>A special card a monster drops on defeat, with a percent chance, besides its usual loot.</summary>
+/// <summary>A monster's lines: <see cref="Lines"/> one a round in order, <see cref="DragLine"/> the first time it drags someone down.</summary>
+public sealed record MonsterSpeech
+{
+    public string Language { get; init; } = Languages.CommonId;
+
+    public IReadOnlyList<string> Lines { get; init; } = [];
+
+    public string? DragLine { get; init; }
+}
+
 /// <summary>Something a monster may carry to throw: <see cref="Chance"/>% of them have <see cref="Min"/>-<see cref="Max"/> of it.</summary>
 public sealed record ThrowableGear
 {
