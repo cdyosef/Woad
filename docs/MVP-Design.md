@@ -113,8 +113,8 @@ the Party menu can spend points on them too.
   Turtle Reaper, Turtle Man, Fishman, Snakeman, Death Cultist, Snake Cultist, Man-At-Arms, Spearman, Militia,
   Skirmisher, Real Light, Wood Elf, Duergar, Genie, Egyptian) and its colors:
   - **Main and trim:** two of 12 colors (clothes, then belts, sashes, plumes and the like).
-  - **Skin and hair:** from the figure's own sets: skin tones, dark elf or demon skin, scales, stone
-    or wood; hair, fur, plumage or leaves. Some looks start on a fitting color (dark elves white-haired). Figures that don't show one (a Knight's helmet, a Monk's bald head) skip it.
+  - **Skin and hair:** from the figure's own sets: skin tones, orc, dark elf, duergar, genie or demon
+    skin, frog or turtle skin, scales (lizard or fish), stone or wood; hair, fur, plumage, leaves or a turtle's shell. Some looks start on a fitting color (dark elves white-haired). Figures that don't show one (a Knight's helmet, a Monk's bald head) skip it.
   - **Random** rolls a look and colors. Any two players may share colors: on the board each hero
     stands on a ring of their seat color.
   - Characters saved before looks existed are Wanderers in their crest's color.
