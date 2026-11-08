@@ -1400,6 +1400,16 @@ public partial class GameScreen : Control
                 await UpdateFigure(skipped.MonsterId, figure => figure.Frozen = false, 0.3);
                 break;
 
+            case MonsterCharged charged:
+                CalloutOver(charged.MonsterId, "CHARGE!", Palette.Danger);
+                await _dice.ShowRoll($"{NameOf(charged.MonsterId)} charges", charged.Roll, 0, newGroup: true, kind: DiceKind.Wend);
+                break;
+
+            case MonsterPunched punched:
+                CalloutOver(punched.MonsterId, "POW!", Palette.Danger);
+                await Pause(0.2);
+                break;
+
             case MonsterThrew threw:
                 CalloutOver(threw.MonsterId, "HURL!", Palette.Danger);
                 Sfx.Play("flap");
@@ -1769,6 +1779,8 @@ public partial class GameScreen : Control
         MonsterYelled yelled => FigureRoom(yelled.MonsterId),
         MonsterWeaponBroke broke => FigureRoom(broke.MonsterId),
         MonsterThrew threw => FigureRoom(threw.MonsterId),
+        MonsterCharged charged => FigureRoom(charged.MonsterId),
+        MonsterPunched punched => FigureRoom(punched.MonsterId),
         MonsterSpawned spawned => spawned.RoomId,
         RoomCleared cleared => cleared.RoomId,
         PotSmashed smashed => FigureRoom(smashed.HeroId),

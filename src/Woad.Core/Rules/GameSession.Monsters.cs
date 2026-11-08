@@ -333,6 +333,11 @@ public sealed partial class GameSession
 
         // With nobody in reach of its blows: something to throw goes at whoever's in range instead of it closing in;
         // with nothing, it picks back up what it threw, if that's beside it.
+        if (MonsterBullRush(room, monster, standing, events))
+        {
+            return;
+        }
+
         bool regrabbed = Regrab(room, monster, standing, events);
         if (ThrowInstead(room, monster, standing, events) || regrabbed)
         {

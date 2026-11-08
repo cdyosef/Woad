@@ -1145,6 +1145,12 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   them splinters it: the ogre fights on with its fists (melee, its own dice), drawn without it. An ogre that falls
   with its club whole drops it. To a hero it's a two-handed weapon doing the same: 2d6 on one Rumble roll a
   turn, reach 2, a shove for each 6 on its dice, broken by a double 1 on them.
+- **Ogre fists and charges:** at a hero right beside it, an ogre follows its club with its **off hand**: 2 dice,
+  every 6 knocking the hero a tile back, hit or miss; a Rock it carries adds +1 to the punch and is spent, a
+  Boulder its weapon 2, d6 and Earth die (a 1 on both breaks it, bursting on a 6). With nobody in reach but a hero
+  in a clear straight line (diagonals too) beyond it, an ogre **Bull Rushes**: a Wend die of tiles (a 6 rolls
+  another), and reaching the hero, a blow with the tiles to spare added: a hit drives them 2 tiles further back, a
+  miss leaves the ogre prone. Falling short, it just ends up nearer. It charges before it would throw.
 - **Rocks and Boulders:** half of all ogres carry 2-3 Rocks, and a fifth a **Boulder** instead (on their own
   dice as the floor is laid). An ogre throws twice as far as anyone else (Rocks 6, a Boulder 4): with nobody in its
   club's reach but someone in throwing range, it throws at the weakest instead of closing in. A Rock lands whole at
