@@ -160,6 +160,10 @@ public sealed partial class GameSession
             NudgeAlly c => Handle(c, events),
             PickUpAlly c => Handle(c, events),
             LightPortal c => Handle(c, events),
+            Smash c => Handle(c, events),
+            LiftBar c => Handle(c, events),
+            TakeTorch c => Handle(c, events),
+            PutTorch c => Handle(c, events),
             TakePortal c => Handle(c, events),
             PutDownAlly c => Handle(c, events),
             SpendPoint c => Handle(c, events),
@@ -223,6 +227,7 @@ public sealed partial class GameSession
             return CommandResult.Reject(error);
         }
 
+        FlushCounters(events);
         CreditDeeds(events);
 
         // A hero who keels over on their own turn (by a trap) hands the turn on.
@@ -315,6 +320,7 @@ public sealed partial class GameSession
         }
 
         KeepAfloat(hero, events);
+        DropCarriedFire(hero, events);
         if (State.Phase != RunPhase.InProgress || !hero.IsActive)
         {
             return null;
@@ -685,7 +691,8 @@ public sealed partial class GameSession
     {
         foreach ((GridPosition tile, TrapSetup trap) in features.Traps)
         {
-            room.SetTrap(tile, new Trap(trap.Kind, trap.Difficulty));
+            // An unstable portal is in plain sight.
+            room.SetTrap(tile, new Trap(trap.Kind, trap.Difficulty) { Revealed = trap.Kind == TrapKind.Rift });
         }
 
         foreach ((GridPosition chest, int difficulty) in features.LockedChests)
@@ -752,6 +759,11 @@ public sealed partial class GameSession
 
         room.RelicChest = features.RelicChest;
         room.RitualCircle = features.RitualCircle;
+        foreach ((GridPosition sconce, bool lit) in features.Sconces)
+        {
+            room.SetSconce(sconce, lit);
+        }
+
         foreach (GridPosition brazier in features.LitBraziers)
         {
             room.LightBrazier(brazier);
@@ -791,7 +803,17 @@ public sealed partial class GameSession
                 PassageSetup? setup = setups.FirstOrDefault(passage =>
                     (passage.RoomId == room.Id && passage.Side == side) || (passage.RoomId == target.Id && passage.Side == side.Opposite()));
                 Trap? trap = setup?.Trap is { } darts ? new Trap(darts.Kind, darts.Difficulty) : null;
-                var passage = new Passage(room.Id, side, target.Id, setup?.Kind ?? PassageKind.Open, setup?.Difficulty ?? 0, trap);
+                var passage = new Passage(room.Id, side, target.Id, setup?.Kind ?? PassageKind.Open, setup?.Difficulty ?? 0, trap)
+                {
+                    Locks = setup?.Locks ?? 1,
+                    BarredFrom = setup?.BarredFrom,
+                    TrapsArmedFrom = setup is { Trap: not null } armed ? (armed.RoomId == target.Id ? target.Id : room.Id) : null,
+                };
+                foreach (TrapSetup more in setup?.MoreTraps ?? [])
+                {
+                    passage.AddTrap(new Trap(more.Kind, more.Difficulty));
+                }
+
                 room.AddPassage(side, passage);
                 target.AddPassage(side.Opposite(), passage);
             }

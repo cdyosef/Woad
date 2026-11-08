@@ -6,6 +6,7 @@
   "boss": "iron_warden",
   "gate": { "knight": "emerald_knight", "guard": "emerald_guard" },
   "tower": true,
+  "unstablePortals": true,
   "miniboss": "key_warden",
 
   "roster": [

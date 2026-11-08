@@ -138,7 +138,7 @@ public sealed partial class GameSession
         Wielding Main(bool strike)
         {
             CardDefinition? weapon = main?.Definition;
-            int bonus = Math.Max(0, stats.Weapon) + (weapon?.AttackBonus ?? 0) + Versatile(hero) + AmmoBonus(hero, main)
+            int bonus = Math.Max(0, stats.Weapon) + (weapon?.AttackBonus ?? 0) - Excess(main) + Versatile(hero) + AmmoBonus(hero, main)
                         + (weapon is { OffHandStrike: true } ? PairBonus(hero) : 0) + (weapon is null ? 0 : Ambush(weapon));
             return new Wielding(main, false, strike, strike ? bonus : 0, strike ? weapon?.Modifiers.WeaponDice ?? 0 : 0, mainThrown);
         }
@@ -153,6 +153,9 @@ public sealed partial class GameSession
                 : Math.Max(0, stats.Weapon - (main?.Definition.Modifiers.Weapon ?? 0)) + weapon.Modifiers.Weapon + weapon.AttackBonus;
             return new Wielding(off, weapon.OffHandStrike, strike, strike ? bonus : 0, strike ? weapon.Modifiers.WeaponDice : 0, offThrown);
         }
+
+        // Wear past what a weapon's modifiers carry (break tokens from smashing) comes off its own value.
+        static int Excess(CardInstance? card) => card is null ? 0 : Math.Min(card.Definition.AttackBonus, Math.Max(0, card.Wear - Math.Max(0, card.Definition.Modifiers.Weapon)));
 
         // A crossbow strikes whenever it's loaded; other weapons while a strike is left this turn.
         bool mainCanStrike = main?.Definition.Reload is not null ? !main.Unloaded : mainStrikeLeft && (main is null || hero.Loaded(main));
@@ -214,9 +217,12 @@ public sealed partial class GameSession
             return new WeaponSpent(TakeFromHero(hero, ammo, 1), ammo.Id, target, null);
         }
 
+        EquipSlot? heldIn = hero.SlotOf(card);
         if (wielding.Thrown && weapon.BreaksOnUse)
         {
-            return new WeaponSpent(TakeFromHero(hero, card, 1), card.Id, target, null);
+            var spent = new WeaponSpent(TakeFromHero(hero, card, 1), card.Id, target, null);
+            ReloadFromBag(hero, heldIn, weapon, events);
+            return spent;
         }
 
         if (wielding.Thrown)
@@ -225,6 +231,7 @@ public sealed partial class GameSession
             GridPosition spot = room.Layout[target].IsWalkable() ? target : SafeTile(room, target);
             room.AddLoot(spot, [thrown]);
             events.Add(new DaggerThrown(hero.Id, thrown.Id, room.Id, spot));
+            ReloadFromBag(hero, heldIn, weapon, events);
             return null;
         }
 
@@ -232,10 +239,33 @@ public sealed partial class GameSession
         {
             TakeFromHero(hero, card, 1);
             events.Add(new WeaponBroke(hero.Id, card.Id));
+            ReloadFromBag(hero, heldIn, weapon, events);
             return null;
         }
 
         return struck && weapon.BreaksOnOne ? new WeaponSpent(null, card.Id, target, card) : null;
+    }
+
+    /// <summary>
+    /// The last of a stack gone from a hand (a Rock thrown or broken): the hand fills again from the bag on the
+    /// belt that holds it (the Rock Bag), a handful, free.
+    /// </summary>
+    private void ReloadFromBag(Hero hero, EquipSlot? hand, CardDefinition definition, List<GameEvent> events)
+    {
+        if (hand is not { } slot || hero.Equipment.ContainsKey(slot) || hero.BagStack(definition) is not { } bagged)
+        {
+            return;
+        }
+
+        int handful = Math.Max(1, definition.MaxStack);
+        CardInstance drawn = bagged.Count > handful ? bagged.Split(State.NextId(), handful) : bagged;
+        if (drawn == bagged)
+        {
+            hero.Remove(bagged);
+        }
+
+        hero.Equip(drawn, slot);
+        events.Add(new CardEquipped(hero.Id, drawn.Id));
     }
 
     /// <summary>

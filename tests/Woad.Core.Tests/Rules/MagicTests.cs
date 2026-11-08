@@ -170,7 +170,7 @@ public class MagicTests
         // The Od Hand die's 3 and the Fire die's 2, plus Magic 1: 6.
         GameSession session = TestRun.Start(Range, new ScriptedDice(3, 2), stats: TestRun.HeroStats with { OdHandDice = 1 });
         Hero hero = Mage(session, magic: 1, power: 0, "hurl_fire");
-        hero.Flame = true;
+        hero.Equip(new CardInstance(session.State.NextId(), TestContent.Catalog.GetCard("hold_fire"), null), EquipSlot.OffHand);
         Monster dummy = session.OnlyMonster();
         Assert.Contains(dummy.Position, session.GetHeldFireTargets());
 

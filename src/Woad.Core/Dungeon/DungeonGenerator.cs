@@ -104,7 +104,7 @@ public static partial class DungeonGenerator
             passages.Add(new PassageSetup(KeepCourtyard.Id, Direction.North, PassageKind.Gate));
         }
 
-        PlacePortals(rooms, theme.Floors);
+        PlacePortals(rooms, theme.Floors, theme.UnstablePortals);
         if (theme.Tower)
         {
             BuildTower(theme, content, layouts, heroes, seed, rooms, passages);
@@ -113,6 +113,9 @@ public static partial class DungeonGenerator
         List<BreachSetup> breaches = PlanBreaches(rooms, random);
         PlaceMerchant(rooms, theme.Floors, random);
         Darken(rooms, new Pcg32(seed, DarkStream));
+        PlaceCrates(rooms, breaches, new Pcg32(seed, CrateStream));
+        SternerDoors(rooms, passages, new Pcg32(seed, DoorStream));
+        PlaceSconces(rooms, new Pcg32(seed, SconceStream));
         return new RunSetup
         {
             Seed = seed,

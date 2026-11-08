@@ -202,6 +202,9 @@ public sealed class Hero
     /// <summary>Rooms they searched first (each an Explorer bonus): the most on a run wins the Explorer Award.</summary>
     public int ExplorerBonus { get; internal set; }
 
+    /// <summary>The round this hero last hit back (with the Emerald Axe): once a round.</summary>
+    public int CounteredRound { get; internal set; }
+
     /// <summary>Keys used this run (small keys, the Boss Key, a gate's key): for the Keymaster award.</summary>
     public int KeysUsed { get; internal set; }
 
@@ -324,10 +327,13 @@ public sealed class Hero
     public bool Knows(Skill skill) => (Skills & skill) == skill;
 
     /// <summary>Torches held (and so lit): one in each hand at most, and a flame of Hurl Fire (see <see cref="Flame"/>).</summary>
-    public int TorchesHeld => EquippedCards.Count(card => card.Definition.Torch) + (Flame ? 1 : 0);
+    public int TorchesHeld => EquippedCards.Count(card => card.Definition.Torch) + _carried.Count(card => card.Definition.HeldFire);
 
     /// <summary>A flame of Hurl Fire cast on themselves: a lit torch needing no hand, until a 1 in an attack puts it out or they fall to the floor below.</summary>
-    public bool Flame { get; internal set; }
+    public bool Flame => HeldFires.Any();
+
+    /// <summary>The flames of Hold Fire the hero has: in hand (one to a hand), or handed to them and still in their arms.</summary>
+    public IEnumerable<CardInstance> HeldFires => EquippedCards.Concat(_carried).Where(card => card.Definition.HeldFire);
 
     /// <summary>Their Medicine Bags, on the belt or in a hand, if they have any to hand.</summary>
     public CardInstance? MedicineBag => EquippedCards.Concat(_belt).FirstOrDefault(card => card.Definition.MedicineBag);
@@ -669,8 +675,28 @@ public sealed class Hero
     internal CardInstance AddLoot(CardInstance card) =>
         card.Definition.Clover ? TakeClover(card)
         : card.Definition.CarryOnly ? AddToCarried(card)
+        : IsBagged(card.Definition) ? AddToBag(card)
         : card.Definition.Belts && (_belt.Count < BeltCapacity || _belt.Any(held => held.Definition == card.Definition)) ? AddToBelt(card)
         : AddToBackpack(card);
+
+    /// <summary>A belt mod holds this card (the Rock Bag, Rocks).</summary>
+    public bool IsBagged(CardDefinition definition) => _mods.Any(mod => mod.Definition.Holds == definition.Id);
+
+    /// <summary>The stack of this card in the bag on the belt that holds it (the Rock Bag's Rocks), or null.</summary>
+    public CardInstance? BagStack(CardDefinition definition) =>
+        IsBagged(definition) ? _belt.FirstOrDefault(card => card.Definition == definition) : null;
+
+    /// <summary>A card the bag on the belt holds goes straight into it (Rocks into the Rock Bag), not into a hand's stack.</summary>
+    private CardInstance AddToBag(CardInstance card)
+    {
+        if (BagStack(card.Definition) is { } bagged && bagged != card)
+        {
+            bagged.Absorb(card);
+            return bagged;
+        }
+
+        return _belt.Count < BeltCapacity ? Add(_belt, card) : JoinStack(card) ?? AddToBackpack(card);
+    }
 
     /// <summary>A Lucky Clover picked up: its points, up to the most a hero can hold. The card itself goes nowhere.</summary>
     private CardInstance TakeClover(CardInstance card)

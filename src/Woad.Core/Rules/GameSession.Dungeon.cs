@@ -66,8 +66,10 @@ public sealed partial class GameSession
             events.Add(new KeyUsed(hero.Id, hero.Keys));
         }
 
-        passage.IsLocked = false;
-        events.Add(new DoorUnlocked(hero.Id, room.Id, command.Door, Picked: false, passage.NeedsBossKey));
+        // One lock opens; a door with more stays locked till the last.
+        passage.Locks = Math.Max(0, passage.Locks - 1);
+        passage.IsLocked = passage.Locks > 0 && !passage.NeedsSpecialKey;
+        events.Add(new DoorUnlocked(hero.Id, room.Id, command.Door, Picked: false, passage.NeedsBossKey) { Difficulty = passage.Difficulty, LocksLeft = passage.IsLocked ? passage.Locks : 0 });
         return null;
     }
 
@@ -108,7 +110,7 @@ public sealed partial class GameSession
 
         if (room.IsSealed)
         {
-            return "The way out is sealed until every monster here is defeated.";
+            return room.SealedText.Replace("The doors are", "The way out is");
         }
 
         if (CheckCanMove(Crawl) is { } error)
@@ -167,6 +169,12 @@ public sealed partial class GameSession
         bool found = trap.Revealed;
         trap.Revealed = true;
         events.Add(new TrapSprung(hero.Id, trap.Kind, position));
+        if (trap.Kind == TrapKind.Rift)
+        {
+            RiftStrike(room, position, hero.Id, events);
+            return;
+        }
+
         if (trap.Kind == TrapKind.BombTrap)
         {
             // No harm itself: it pops out a lit bomb, whose fuse burns on the hero's turns.

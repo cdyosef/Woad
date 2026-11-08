@@ -1,5 +1,6 @@
 using Woad.Core.Content;
 using Woad.Core.Grid;
+using Woad.Core.Model;
 using Woad.Core.Rules;
 
 namespace Woad.Core.Dungeon;
@@ -11,7 +12,7 @@ namespace Woad.Core.Dungeon;
 /// </summary>
 public static partial class DungeonGenerator
 {
-    private static void PlacePortals(List<RoomSetup> rooms, int floors)
+    private static void PlacePortals(List<RoomSetup> rooms, int floors, bool unstable = false)
     {
         RoomSetup?[] hosts =
         [
@@ -23,9 +24,13 @@ public static partial class DungeonGenerator
         ];
         foreach (RoomSetup host in hosts.OfType<RoomSetup>())
         {
-            if (PortalSpot(host) is { } spot)
+            if (PortalSpot(host, unstable) is { } spot)
             {
-                Replace(rooms, host with { Template = host.Template.WithTile(spot, TileKind.Portal) });
+                // Unstable, a portal is a rift on the floor: a trap in plain sight.
+                RoomFeatures features = host.Features ?? new RoomFeatures();
+                Replace(rooms, unstable
+                    ? host with { Features = features with { Traps = new Dictionary<GridPosition, TrapSetup>(features.Traps) { [spot] = new TrapSetup(TrapKind.Rift, GameRules.RiftDifficulty) } } }
+                    : host with { Template = host.Template.WithTile(spot, TileKind.Portal) });
             }
         }
     }
@@ -35,7 +40,8 @@ public static partial class DungeonGenerator
     /// what's already there, that cuts nothing off. In the boss room, near the door (away from the boss); elsewhere,
     /// near the middle.
     /// </summary>
-    private static GridPosition? PortalSpot(RoomSetup room)
+    /// <param name="trap">It'll be a rift (a trap): kept off the tiles beside chests and pots, which it could wall off.</param>
+    private static GridPosition? PortalSpot(RoomSetup room, bool trap = false)
     {
         RoomTemplate template = room.Template;
         IReadOnlyDictionary<Direction, GridPosition> doors = room.DoorTiles ?? new Dictionary<Direction, GridPosition>();
@@ -49,7 +55,8 @@ public static partial class DungeonGenerator
         return template.TilesOf(TileKind.Floor)
             .Where(tile => reached.Contains(tile) && !reserved.Contains(tile) && tile.ManhattanDistanceTo(near) >= keepOff
                 && template.Layout.Positions.Where(other => other.ChebyshevDistanceTo(tile) == 1).Count(Open) >= 3
-                && StaysConnected(template, [tile]))
+                && StaysConnected(template, [tile])
+                && !(trap && tile.OrthogonalNeighbors().Any(next => template.Layout.Contains(next) && template.Layout[next] is TileKind.Chest or TileKind.Pot)))
             .OrderBy(tile => tile.ManhattanDistanceTo(near))
             .ThenBy(tile => tile.Y)
             .ThenBy(tile => tile.X)

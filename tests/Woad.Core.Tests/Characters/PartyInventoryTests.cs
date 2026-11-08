@@ -101,6 +101,31 @@ public class PartyInventoryTests
     }
 
     [Fact]
+    public void TheEmeraldAxeIsMendedWithEmeraldsAndMadeTheFinerAxeWithThemAndGold()
+    {
+        Character morgan = Morgan();
+        morgan.GiveCard("emerald_axe~2", Content);
+        morgan.GiveCard("emerald", Content);
+        Assert.Equal(0, Smithy.RepairPrice(Content, "emerald_axe~2"));
+        Assert.Contains("2 emeralds", Smithy.Repair(Content, morgan, "emerald_axe~2", morgan).Message);
+
+        morgan.GiveCard("emerald", Content);
+        morgan.GiveCard("emerald", Content);
+        morgan.GiveCard("emerald", Content);
+        Assert.True(Smithy.Repair(Content, morgan, "emerald_axe~2", morgan).Done);
+        Assert.Equal(2, morgan.CountOf("emerald"));
+
+        // Finer: 3 emeralds and 3 gold.
+        Assert.Equal(("emerald_axe_3", "emerald", 3, Money.Gold(3)), Smithy.Improvement(Content, "emerald_axe"));
+        Assert.False(Smithy.Improve(Content, morgan, "emerald_axe", morgan).Done);
+        morgan.GiveCard("emerald", Content);
+        morgan.Earn(Money.Gold(5));
+        Assert.True(Smithy.Improve(Content, morgan, "emerald_axe", morgan).Done);
+        Assert.Equal((1, 0, 0), (morgan.CountOf("emerald_axe_3"), morgan.CountOf("emerald_axe"), morgan.CountOf("emerald")));
+        Assert.Null(Smithy.Improvement(Content, "emerald_axe_3"));
+    }
+
+    [Fact]
     public void ThePartyChestBuysIntoItselfSellsFromItselfAndPaysForMending()
     {
         RaidWorld world = RaidWorld.Begin(WoarldMap.LoadDefault());
@@ -125,7 +150,7 @@ public class PartyInventoryTests
         morgan.GiveCard("chain_mail~2", Content);
         before = chest.Coins;
         Assert.True(Smithy.Repair(Content, morgan, "chain_mail~2", chest).Done);
-        Assert.Equal(before - Smithy.RepairPrice("chain_mail~2"), chest.Coins);
+        Assert.Equal(before - Smithy.RepairPrice(Content, "chain_mail~2"), chest.Coins);
         Assert.Empty(morgan.WornGear);
     }
 

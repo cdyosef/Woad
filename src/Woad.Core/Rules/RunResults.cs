@@ -166,7 +166,7 @@ public static class RunResults
         }
 
         static List<string> Gear(IEnumerable<CardInstance> cards) =>
-            cards.Where(card => card.Definition.Type != CardType.Treasure && !card.Definition.GateKey).SelectMany(card => Enumerable.Repeat(card.Key, card.Count)).ToList();
+            cards.Where(card => card.Definition.Type != CardType.Treasure && !card.Definition.GateKey && !card.Definition.HeldFire).SelectMany(card => Enumerable.Repeat(card.Key, card.Count)).ToList();
 
         // The Explorer Award: a dungeon run someone got out of, to whoever searched the most rooms first.
         List<Hero> party = [.. state.Heroes.Where(hero => !hero.Summoned)];

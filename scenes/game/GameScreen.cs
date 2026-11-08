@@ -72,6 +72,9 @@ public partial class GameScreen : Control
 
     private Hero? ActiveHero => _session.State.ActiveHero;
 
+    /// <summary>Whose turn it was as the events on show happened (null between turns, while the monsters move).</summary>
+    private int? _turnHeroId;
+
     public override void _Ready()
     {
         Size = new Vector2(640, 360);
@@ -121,6 +124,14 @@ public partial class GameScreen : Control
         else if (args.Contains("--offhandtest"))
         {
             RunOffHandTest();
+        }
+        else if (args.Contains("--toolstest"))
+        {
+            RunToolsTest();
+        }
+        else if (args.Contains("--smashtest"))
+        {
+            RunSmashTest();
         }
         else if (args.Contains("--clicktest"))
         {
@@ -459,7 +470,12 @@ public partial class GameScreen : Control
         PlaySound(gameEvent);
         switch (gameEvent)
         {
+            case TurnEnded:
+                _turnHeroId = null;
+                break;
+
             case TurnStarted turn:
+                _turnHeroId = turn.HeroId;
                 // Tools kept out of the Od Hand's rolls (the Od Hand card put on top) were for that turn only.
                 if (_fronts.TryGetValue((turn.HeroId, _odHand.Title), out string? odFront) && odFront == HandView.DiceKey)
                 {
@@ -933,6 +949,59 @@ public partial class GameScreen : Control
                 await RemoveFigure(fell.MonsterId);
                 break;
 
+            case SmashRolled smash:
+                await ZoomOnActionAfresh(smash.HeroId, []);
+                await _dice.ShowRoll($"{NameOf(smash.HeroId)} smashes at the {smash.What} ({smash.Toughness}+)", smash.Roll, smash.Bonus, newGroup: true, kind: DiceKind.Rumble,
+                    target: new RollTarget(smash.What, smash.Toughness, 0, null, false) { Breaks = smash.Breaks, Needed = smash.Needed });
+                _dice.ShowOutcome(smash.Success, smash.Success ? $"{smash.Breaks}/{smash.Needed}" : "SHORT");
+                if (smash.Success)
+                {
+                    _board.FloatText(smash.Target, $"CRACK {smash.Breaks}/{smash.Needed}", Palette.Danger);
+                    _board.Shake(2);
+                }
+
+                _board.QueueRedraw();
+                break;
+
+            case SmashedOpen smashed:
+                _board.Shake(5);
+                _board.FloatText(smashed.Target, "SMASH!", Palette.TrimBright);
+                _board.QueueRedraw();
+                await Pause(0.3);
+                break;
+
+            case BarLifted or TorchTaken or TorchPlaced:
+                _board.QueueRedraw();
+                break;
+
+            case WallCracked:
+                _board.QueueRedraw();
+                break;
+
+            case WeaponWorn worn:
+                FloatOver(worn.HeroId, "-1 (break token)", Palette.Danger);
+                break;
+
+            case RiftCrackled crackled:
+                _board.Shake(5);
+                _board.FloatText(crackled.Rift, "ZAP!", DieTypes.Tint(DieType.Elektrik));
+                await Pause(0.3);
+                break;
+
+            case RiftZapped zapped:
+                await _dice.ShowRoll($"Lightning leaps at {NameOf(zapped.EntityId)}", zapped.Roll, zapped.Bonus, newGroup: true, types: [.. zapped.Roll.Faces.Select(_ => DieType.Elektrik)],
+                    rollerOnRight: _turnHeroId == zapped.EntityId);
+                break;
+
+            case HeroFlung flung:
+                await ChangeRoom(flung.HeroId, flung.RoomId, flung.Position);
+                await _banner.Flash($"Flung to {_session.State.Rooms[flung.RoomId].PlaceName}!", DieTypes.Tint(DieType.Elektrik), 0.5);
+                break;
+
+            case MonsterFlung monsterFlung:
+                await RemoveFigure(monsterFlung.MonsterId);
+                break;
+
             case Leaped leap:
                 await _dice.ShowRoll($"{NameOf(leap.HeroId)} leaps ({leap.From.ChebyshevDistanceTo(leap.Target) * 2}+)", new DiceRoll([leap.Roll]), 0, newGroup: true);
                 _dice.ShowOutcome(leap.Landing == leap.Target);
@@ -971,7 +1040,7 @@ public partial class GameScreen : Control
                 }
 
                 string goal = rolled.Difficulty > 0 ? $" ({rolled.Difficulty}+)" : "";
-                await _dice.ShowRoll($"{NameOf(rolled.HeroId)} {OdHandCaption(rolled.Kind)}{goal}", rolled.Roll, rolled.Bonus, newGroup: true, rolled.PowerDice, DiceKind.OdHand, rolled.ToolDice, cards: OdHandTray(rolled));
+                await _dice.ShowRoll($"{NameOf(rolled.HeroId)} {OdHandCaption(rolled.Kind)}{goal}", rolled.Roll, rolled.Bonus, newGroup: true, rolled.PowerDice, DiceKind.OdHand, rolled.ToolDice, cards: OdHandTray(rolled), target: rolled.Target);
                 break;
 
             case Stole stole:
@@ -1035,7 +1104,9 @@ public partial class GameScreen : Control
                 // An off-hand follow-up is an Od Hand roll: its color, its card.
                 string doing = attack.OffHand ? $"follows up with the {(attack.WeaponId is { } offHandId ? Content.FindCard(offHandId)?.Name : null) ?? "off hand"}"
                     : attack.Shove ? "shoves" : attack.Chain ? "flings its chain" : "attacks";
-                await _dice.ShowRoll(_spellCaption ?? $"{NameOf(attack.AttackerId)} {doing}", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice, attack.OffHand ? DiceKind.OdHand : DiceKind.Rumble, types: attack.DieTypes, cards: AttackTray(attack));
+                // Against the hero whose turn it is (a monster hitting back), they stay on the left.
+                bool againstTurn = _turnHeroId is int turnHero && attack.AttackerId != turnHero && attack.TargetIds is [var only] && only == turnHero;
+                await _dice.ShowRoll(_spellCaption ?? $"{NameOf(attack.AttackerId)} {doing}", attack.Roll, attack.Bonus, newGroup: true, attack.PowerDice, attack.OffHand ? DiceKind.OdHand : DiceKind.Rumble, types: attack.DieTypes, cards: AttackTray(attack), rollerOnRight: againstTurn);
                 _spellCaption = null;
                 // A hero's sixes get their own events; a monster's roll straight in, so call them out here.
                 if (attack.PowerDice > 0 && !IsHero(attack.AttackerId))
@@ -1043,6 +1114,11 @@ public partial class GameScreen : Control
                     CalloutOver(attack.AttackerId, "6!", Palette.Power);
                 }
 
+                break;
+
+            case TrapAttacked trap:
+                // The trap the hero set off strikes: on the right, the hero (whose turn it is) defending on the left.
+                await _dice.ShowRoll($"The {EventNarrator.TrapName(trap.Kind)} strikes", trap.Roll, trap.Bonus, newGroup: true, rollerOnRight: true);
                 break;
 
             case DefenseRolled defense:
@@ -1157,6 +1233,11 @@ public partial class GameScreen : Control
             case FrozenSolid frozen:
                 CalloutOver(frozen.EntityId, "FROZEN SOLID!", DieTypes.Tint(DieType.Ice));
                 await Pause(0.4);
+                break;
+
+            case Countered countered:
+                CalloutOver(countered.EntityId, "COUNTER!", DieTypes.Tint(DieType.Life));
+                await Pause(0.3);
                 break;
 
             case Staggered staggered:
@@ -1673,6 +1754,12 @@ public partial class GameScreen : Control
         ShoveResisted resisted => FigureRoom(resisted.TargetId),
         MonsterTrapped trapped => FigureRoom(trapped.MonsterId),
         MonsterFell fell => fell.FromRoomId,
+        RiftCrackled crackled => crackled.RoomId,
+        SmashRolled smashRoll => smashRoll.RoomId,
+        SmashedOpen smashOpen => smashOpen.RoomId,
+        WallCracked cracked => cracked.RoomId,
+        RiftZapped zapped => FigureRoom(zapped.EntityId),
+        MonsterFlung flungAway => flungAway.FromRoomId,
         Leaped leap => FigureRoom(leap.HeroId),
         StayedAfloat afloat => FigureRoom(afloat.HeroId),
         Drowned drowned => FigureRoom(drowned.HeroId),

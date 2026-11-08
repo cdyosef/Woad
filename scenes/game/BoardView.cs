@@ -179,7 +179,7 @@ public partial class BoardView : Control
     public override void _Process(double delta)
     {
         // Lit fuses spark; the ritual circle and the portal swirl.
-        if (_room?.Bombs.Any(bomb => bomb.Lit) == true || _room?.Flames.Count > 0 || _room?.LitBraziers.Count > 0 || _room?.PortalLit == true || (_room?.RitualCircle is not null && (RitualUnderWay || _room.Cursed)))
+        if (_room?.Bombs.Any(bomb => bomb.Lit) == true || _room?.Flames.Count > 0 || _room?.LitBraziers.Count > 0 || _room?.PortalLit == true || _room?.Sconces.Values.Any(lit => lit) == true || _room?.Traps.Values.Any(trap => trap.Kind == TrapKind.Rift) == true || (_room?.RitualCircle is not null && (RitualUnderWay || _room.Cursed)))
         {
             QueueRedraw();
         }
@@ -783,6 +783,22 @@ public partial class BoardView : Control
             DrawPortal(portal, _room.PortalLit);
         }
 
+        foreach (GridPosition crate in _room.TilesOfKind(TileKind.Crate))
+        {
+            DrawCrate(crate);
+        }
+
+        foreach ((GridPosition sconce, bool lit) in _room.Sconces)
+        {
+            DrawSconce(sconce, lit);
+        }
+
+        // Break marks smashed into crates and walls.
+        foreach ((GridPosition tile, int marks) in _room.Breaks)
+        {
+            DrawBreakMarks(TileRect(tile), marks);
+        }
+
         foreach ((GridPosition tile, Trap trap) in _room.Traps)
         {
             if (trap.Revealed)
@@ -802,6 +818,10 @@ public partial class BoardView : Control
             if (_room.PassageOn(side) is not { IsHidden: true })
             {
                 DrawDoor(side, _room.PassageOn(side), _room.IsSealed);
+                if (_room.PassageOn(side) is { Breaks: > 0 } cracked)
+                {
+                    DrawBreakMarks(TileRect(_room.DoorTile(side)), cracked.Breaks);
+                }
             }
         }
 
@@ -1107,6 +1127,12 @@ public partial class BoardView : Control
     private void DrawTrap(GridPosition tile, TrapKind kind)
     {
         Rect2 rect = TileRect(tile);
+        if (kind == TrapKind.Rift)
+        {
+            DrawRift(tile);
+            return;
+        }
+
         string artName = kind switch { TrapKind.TrapDoor => "trapdoor", TrapKind.BombTrap => "bomb_trap", _ => "spikes" };
         if (GameArt.Tile(ThemeId, artName) is { } art)
         {

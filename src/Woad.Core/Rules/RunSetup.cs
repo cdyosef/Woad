@@ -131,6 +131,9 @@ public sealed record RoomFeatures
 
     /// <summary>Braziers burning from the start.</summary>
     public IReadOnlyCollection<GridPosition> LitBraziers { get; init; } = [];
+
+    /// <summary>Wall sconces, by the floor tile under each: whether it holds a lit torch.</summary>
+    public IReadOnlyDictionary<GridPosition, bool> Sconces { get; init; } = new Dictionary<GridPosition, bool>();
 }
 
 /// <summary>
@@ -144,7 +147,17 @@ public sealed record BreachSetup(string RoomA, GridPosition TileA, string RoomB,
 /// How the door on <paramref name="Side"/> of room <paramref name="RoomId"/> starts: locked,
 /// the Boss Door, secret or a cracked wall, perhaps with a dart trap. Doors without one are open.
 /// </summary>
-public sealed record PassageSetup(string RoomId, Direction Side, PassageKind Kind, int Difficulty = 0, TrapSetup? Trap = null);
+public sealed record PassageSetup(string RoomId, Direction Side, PassageKind Kind, int Difficulty = 0, TrapSetup? Trap = null)
+{
+    /// <summary>Locks on it, each opened separately (a locked door has 1).</summary>
+    public int Locks { get; init; } = 1;
+
+    /// <summary>Traps behind the first, each set once the one before is gone.</summary>
+    public IReadOnlyList<TrapSetup> MoreTraps { get; init; } = [];
+
+    /// <summary>Barred on this room's side (a room id), or null.</summary>
+    public string? BarredFrom { get; init; }
+}
 
 public sealed record RunSetup
 {

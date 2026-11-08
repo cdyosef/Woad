@@ -35,16 +35,24 @@ public sealed partial class GameSession
                     break;
 
                 case DoorUnlocked door when Doer(door.HeroId) is { } hero:
-                    hero.DoorsUnlocked++;
+                    if (door.LocksLeft == 0)
+                    {
+                        hero.DoorsUnlocked++;
+                    }
+
                     if (door.Picked)
                     {
-                        Earn(hero.Id, GameRules.PickLockXp);
+                        Earn(hero.Id, GameRules.PickLockXp + door.Difficulty / GameRules.LockXpPer);
                     }
                     else if (!keyed.Contains(hero.Id))
                     {
                         // The Boss Key, or a gate's key (the Emerald Key): a key used too.
                         hero.KeysUsed++;
                         Earn(hero.Id, GameRules.KeyXp);
+                    }
+                    else
+                    {
+                        Earn(hero.Id, door.Difficulty / GameRules.LockXpPer);
                     }
 
                     break;
@@ -59,7 +67,11 @@ public sealed partial class GameSession
                     break;
 
                 case ChestUnlocked { Picked: true } chest:
-                    Earn(chest.HeroId, GameRules.PickLockXp);
+                    Earn(chest.HeroId, GameRules.PickLockXp + chest.Difficulty / GameRules.LockXpPer);
+                    break;
+
+                case ChestUnlocked chest:
+                    Earn(chest.HeroId, chest.Difficulty / GameRules.LockXpPer);
                     break;
 
                 case TrapDisarmed disarmed when Doer(disarmed.HeroId) is { } hero:

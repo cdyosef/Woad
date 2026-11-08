@@ -227,6 +227,9 @@ public sealed record ThemeDefinition
     /// <summary>A tower above floor 1 (the Emerald Keep's): two levels of rooms, then the roof.</summary>
     public bool Tower { get; init; }
 
+    /// <summary>Its portals are unstable: rifts of lightning that fling whoever they strike about floor 1 (the Emerald Keep's).</summary>
+    public bool UnstablePortals { get; init; }
+
     /// <summary>A line about the dungeon for the Dungeon Run list.</summary>
     public string Description { get; init; } = "";
 

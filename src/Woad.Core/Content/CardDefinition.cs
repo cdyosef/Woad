@@ -265,6 +265,33 @@ public sealed record CardDefinition
     /// <summary>Every push counts twice: twice as far, and a boss (or anything too big) can be shoved a tile.</summary>
     public bool DoublePush { get; init; }
 
+    /// <summary>Dice it adds, in hand, to a blow at something wooden (a Crowbar's d6 on a door or a crate).</summary>
+    public int WoodDice { get; init; }
+
+    /// <summary>It takes no break token from a blow at wood that falls short (a Crowbar).</summary>
+    public bool WoodProof { get; init; }
+
+    /// <summary>In hand, it carries an Od Hand die into a smash (a Crowbar).</summary>
+    public bool OdHandSmash { get; init; }
+
+    /// <summary>Hold Fire: a flame in a hand (see <c>GameSession.HeldFire</c>). It never goes on the belt or in the bag.</summary>
+    public bool HeldFire { get; init; }
+
+    /// <summary>Wielded, it hits back once a round when a Power Die comes up on a defense roll (the Emerald Axe).</summary>
+    public bool Counters { get; init; }
+
+    /// <summary>Its typed dice's sixes take hold on a miss too (the Emerald Axe's Life dice).</summary>
+    public bool TypedOnMiss { get; init; }
+
+    /// <summary>The smith mends it only with these, one for each point of wear (the Emerald Axe: emeralds), not gold.</summary>
+    public string? MendsWith { get; init; }
+
+    /// <summary>What the smith can make it into (the Emerald Axe +3), for <see cref="ImproveCost"/> of <see cref="MendsWith"/> and gold.</summary>
+    public string? ImprovesTo { get; init; }
+
+    /// <summary>How many of <see cref="MendsWith"/> improving it takes (and as many gold).</summary>
+    public int ImproveCost { get; init; }
+
     /// <summary>Bull Rush flies over open air (pits) and water.</summary>
     public bool FlyingRush { get; init; }
 

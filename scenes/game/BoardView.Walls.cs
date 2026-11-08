@@ -163,7 +163,35 @@ public partial class BoardView
 
                 DrawRect(new Rect2(opening.Position + new Vector2(0, 1.5f), new Vector2(opening.Size.X, 1.5f)), iron);
                 DrawRect(new Rect2(opening.Position + new Vector2(0, 10), new Vector2(opening.Size.X, 1.5f)), iron);
-                DrawKeyhole(opening.GetCenter() + new Vector2(0, 0.5f), boss);
+
+                // A keyhole for each lock still fastened.
+                if (passage.Locks > 1)
+                {
+                    DrawKeyhole(opening.GetCenter() + new Vector2(-5, 0.5f), boss);
+                    DrawKeyhole(opening.GetCenter() + new Vector2(5, 0.5f), boss);
+                }
+                else
+                {
+                    DrawKeyhole(opening.GetCenter() + new Vector2(0, 0.5f), boss);
+                }
+
+                break;
+
+            case { IsBarred: true }:
+                // Shut; from the side it's barred on, a heavy beam across it in iron brackets.
+                DrawRect(opening, wood);
+                for (float x = 3; x < opening.Size.X; x += 4)
+                {
+                    DrawLine(opening.Position + new Vector2(x, 0), opening.Position + new Vector2(x, opening.Size.Y), woodDark, 1);
+                }
+
+                if (passage.BarredFrom == _room!.Id)
+                {
+                    DrawRect(new Rect2(opening.Position + new Vector2(-3, opening.Size.Y / 2 - 2), new Vector2(opening.Size.X + 6, 4)), woodDark);
+                    DrawRect(new Rect2(opening.Position + new Vector2(-3, opening.Size.Y / 2 - 3), new Vector2(3, 6)), iron);
+                    DrawRect(new Rect2(opening.Position + new Vector2(opening.Size.X, opening.Size.Y / 2 - 3), new Vector2(3, 6)), iron);
+                }
+
                 break;
 
             default:

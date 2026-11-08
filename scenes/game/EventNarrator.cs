@@ -33,6 +33,18 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         ShoveResisted resisted => $"{nameOf(resisted.TargetId)} holds their ground.",
         MonsterTrapped trapped => $"{nameOf(trapped.MonsterId)} is shoved onto a {(trapped.Kind == TrapKind.TrapDoor ? "trap door" : "spike trap")}!",
         MonsterFell fell => $"{nameOf(fell.MonsterId)} drops to the floor below.",
+        SmashRolled smash when smash.Success => $"{nameOf(smash.HeroId)} smashes at the {smash.What}: {smash.Total} against {smash.Toughness}, a break mark ({smash.Breaks} of {smash.Needed}).",
+        SmashRolled smash => $"{nameOf(smash.HeroId)} smashes at the {smash.What}: {smash.Total} against {smash.Toughness}, it holds.",
+        SmashedOpen smashed => $"{nameOf(smashed.HeroId)} smashes the {smashed.What} {(smashed.What == "wall" ? "into a crack" : "open")}!",
+        TorchTaken taken => $"{nameOf(taken.HeroId)} takes the torch down from its sconce.",
+        TorchPlaced placed => $"{nameOf(placed.HeroId)} puts a torch up in the sconce.",
+        BarLifted lifted => $"{nameOf(lifted.HeroId)} lifts the bar from the door.",
+        DoorUnlocked { LocksLeft: > 0 } partly => $"{nameOf(partly.HeroId)} opens a lock: {partly.LocksLeft} more to go.",
+        WeaponWorn worn => $"{nameOf(worn.HeroId)}'s {cardNameOf(worn.CardId)} takes a break token.",
+        RiftCrackled crackled => $"The unstable portal crackles: lightning leaps through {string.Join(", ", crackled.StruckIds.Select(nameOf))}!",
+        RiftZapped zapped => $"The lightning strikes at {nameOf(zapped.EntityId)} with {zapped.Total}.",
+        HeroFlung flung => $"{nameOf(flung.HeroId)} is flung away through the rift.",
+        MonsterFlung flungAway => $"{nameOf(flungAway.MonsterId)} is flung away through the rift.",
         BullRushed { MonsterId: int struck } rushed => $"{nameOf(rushed.HeroId)} charges {rushed.Length} and slams into {nameOf(struck)}{(rushed.Leftover > 0 ? $", +{rushed.Leftover} to spare" : "")}!",
         BullRushed rushed when rushed.To == rushed.From => $"{nameOf(rushed.HeroId)} charges, and gets nowhere.",
         BullRushed rushed => $"{nameOf(rushed.HeroId)} charges {rushed.Length}.",
@@ -52,6 +64,7 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         PoisonRolled poison => poison.LostHeart ? $"The poison bites {nameOf(poison.EntityId)} ({poison.Face}): a heart lost." : $"{nameOf(poison.EntityId)} fights the poison off ({poison.Face}){(poison.Face == 6 ? ", throwing off a token" : "")}.",
         AcidBurned acid => $"Acid eats at {nameOf(acid.EntityId)} ({acid.Roll.Total}).",
         FrozenSolid frozen => $"{nameOf(frozen.EntityId)} is frozen solid and can't move a muscle.",
+        Countered countered => $"{nameOf(countered.EntityId)} hits back at {nameOf(countered.TargetId)}!",
         Staggered staggered => $"{nameOf(staggered.EntityId)} is confused: lashing out and staggering about!",
         PlantsGrew grew => $"Plants spring up{(grew.ForHeroes ? " for the party" : " for the monsters")}.",
         HeroSummoned summoned => $"{summoned.Name} {(summoned.Guise == "sentient_shrub" ? "springs up" : "rises")} to follow {nameOf(summoned.OwnerId)}!",
@@ -331,11 +344,12 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         return string.Join(" and ", parts);
     }
 
-    private static string TrapName(TrapKind kind) => kind switch
+    internal static string TrapName(TrapKind kind) => kind switch
     {
         TrapKind.Spikes => "spike trap",
         TrapKind.Needle => "needle in the lock",
         TrapKind.Darts => "dart trap",
+        TrapKind.Rift => "unstable portal",
         _ => "trap",
     };
 

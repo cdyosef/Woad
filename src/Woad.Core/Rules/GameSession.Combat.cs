@@ -346,13 +346,26 @@ public sealed partial class GameSession
             }
         }
 
+        // A weapon whose typed dice take hold on a miss too (the Emerald Axe's Life dice): on those it missed.
+        if (attack.Weapon is { TypedOnMiss: true } && attack.Casting is null)
+        {
+            foreach (int missed in attack.TargetIds.Where(id => !hit.Contains(id)))
+            {
+                if (room.FindMonster(missed) is { } untouched)
+                {
+                    LayTypedDice(room, untouched, sixes, hero.Id, hero.Position, hero, events);
+                }
+            }
+        }
+
         WeaponAftermath(hero, room, attack, events);
+        MonstersCounter(room, hero, attack.TargetIds, events);
         SpellAftermath(hero, room, attack, hit, events);
 
         // Any 1 in a torch-lit attack burns one of the torches out: a flame of Hurl Fire first.
         if (attack.Torches > 0 && attack.Roll.Faces.Contains(1) && hero.Flame)
         {
-            hero.Flame = false;
+            QuenchHeldFire(hero);
             events.Add(new FlameWentOut(hero.Id));
         }
         else if (attack.Torches > 0 && attack.Roll.Faces.Contains(1) && hero.EquippedCards.LastOrDefault(card => card.Definition.Torch) is { } torch)
@@ -831,6 +844,13 @@ public sealed partial class GameSession
         attackTotal += hero.Stun.AttackBonus + Exposure(hero.Conditions) - (room.PlantsFor(hero.Position, heroes: true) ? 1 : 0);
         int lyingLow = ranged && hero.IsProne ? 1 : 0;
         int defense = HeroDefense(hero, attackTotal, events, lyingLow);
+
+        // A Power Die on the defense, with the Emerald Axe in hand: it'll hit back once the attack's done.
+        if (events.OfType<DefenseRolled>().LastOrDefault(defended => defended.DefenderId == hero.Id) is { PowerDice: > 0 } rolled
+            && hero.MainWeapon is { Definition.Counters: true } && room.FindMonster(attackerId) is not null)
+        {
+            _counters.Add((hero, attackerId, [.. rolled.Roll.Faces.TakeLast(rolled.PowerDice)]));
+        }
         if (lucky is ({ Luck: > 0 } attacker, var faces) && attackTotal <= defense)
         {
             attackTotal += TryLuck(attacker.Id, faces, () => attacker.Luck--, events);

@@ -20,6 +20,7 @@ public sealed partial class GameSession
     public IEnumerable<GridPosition> LightsIn(Room room) =>
         FiresIn(room)
             .Concat(room.LitBraziers)
+            .Concat(LitSconces(room))
             .Concat(State.HeroesIn(room).Where(hero => hero.ShiningRounds > 0).Select(hero => hero.Position));
 
     /// <summary>
@@ -30,7 +31,8 @@ public sealed partial class GameSession
         State.HeroesIn(room).SelectMany(hero => Enumerable.Repeat(hero.Position, hero.TorchesHeld + (hero.FireDice > 0 ? 1 : 0) + (hero.ShiningRounds > 0 ? 1 : 0)))
             .Concat(room.Flames.Keys)
             .Concat(room.Monsters.Where(monster => monster.FireDice > 0 || monster.Definition.DieType == DieType.Fire).Select(monster => monster.Position))
-            .Concat(room.LitBraziers);
+            .Concat(room.LitBraziers)
+            .Concat(LitSconces(room));
 
     /// <summary>The light bonus on a search: +1 for each light whose glow (<see cref="GameRules.LightRadius"/>) the hero stands in, stacking.</summary>
     public int LightBonus(Hero hero)
@@ -43,7 +45,11 @@ public sealed partial class GameSession
     private IEnumerable<GridPosition> FiresIn(Room room) =>
         State.HeroesIn(room).Where(hero => hero.TorchesHeld > 0 || hero.FireDice > 0).Select(hero => hero.Position)
             .Concat(room.Flames.Keys)
-            .Concat(room.Monsters.Where(monster => monster.FireDice > 0 || monster.Definition.DieType == DieType.Fire).SelectMany(monster => monster.Tiles));
+            .Concat(room.Monsters.Where(monster => monster.FireDice > 0 || monster.Definition.DieType == DieType.Fire).SelectMany(monster => monster.Tiles))
+            .Concat(LitSconces(room));
+
+    /// <summary>The tiles under a room's lit sconces: a torch's light and fire there.</summary>
+    private static IEnumerable<GridPosition> LitSconces(Room room) => room.Sconces.Where(sconce => sconce.Value).Select(sconce => sconce.Key);
 
     /// <summary>After every command: an unlit brazier with fire beside it catches.</summary>
     private void LightBraziers(List<GameEvent> events)

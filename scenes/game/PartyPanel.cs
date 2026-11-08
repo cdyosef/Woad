@@ -33,6 +33,7 @@ public partial class PartyPanel : Panel
     [
         (Skill.Search, "Srch"), (Skill.Steal, "Steal"), (Skill.PickLock, "Lock"), (Skill.Disarm, "Dsrm"), (Skill.Aid, "Aid"),
         (Skill.Parry, "Parry"), (Skill.Shove, "Shove"), (Skill.BullRush, "Rush"), (Skill.Guard, "Guard"), (Skill.HighAlert, "Alert"),
+        (Skill.Smash, "Smash"),
     ];
 
     private VBoxContainer _rows = null!;

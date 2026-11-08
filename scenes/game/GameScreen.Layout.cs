@@ -198,7 +198,7 @@ public partial class GameScreen
             ?? $"Retreat: your selected Od Hand dice look for a way out, against the monsters' chase (a die more than there are of them, +{GameSession.RetreatChaseBonus}). Get away and you're off the field, the monsters left where they are; fail and you bolt in a panic and fall flat.";
         _partyButton.Position = new Vector2(SideWidth + BoardView.Pixels + (_retreat.Visible ? 30 : 82), 3);
         _steal.Disabled = !(idle && !pending) || _session.CheckStealStart() is not null;
-        _stealing &= !_steal.Disabled;
+        _stealing &= !_steal.Disabled || _aloneTool is not null;
         _steal.Text = _stealing ? "Cancel" : "Steal";
         _rumble.Disabled = !(idle && !pending) || _session.AttackDiceLeft < 1;
         _rumbling &= !_rumble.Disabled;
@@ -333,6 +333,7 @@ public partial class GameScreen
         .. _session.GetAttackableMerchants().Select(merchant => merchant.Position),
         .. _session.GetAttackableAllies(ReadiedWeaponId).Select(ally => ally.Position),
         .. room.Bombs.Where(bomb => _session.CheckAttackBomb(bomb.Id) is null).Select(bomb => bomb.Position),
+        .. _session.GetSmashTargets(),
     ];
 
     private void UpdateHighlights()
@@ -719,6 +720,7 @@ public partial class GameScreen
         _heroPanel.CardSelected += ClickCard;
         _heroPanel.CardInspected += SelectCard;
         _heroPanel.BeltCardUsed += UseFromBelt;
+        _heroPanel.SlotDoubleClicked += OnSlotDoubleClicked;
         _heroPanel.BuckleClicked += () =>
         {
             // The buckle opens its menu over the board (the bag and belt views make way).
@@ -1084,12 +1086,12 @@ public partial class GameScreen
         return label;
     }
 
-    /// <summary>The bubbles over the dice tray (Power! and Try your Luck?): side by side and centered, just above it.</summary>
+    /// <summary>The bubbles over the dice tray (Power! and Try your Luck?): side by side from its left side, just above it.</summary>
     private void PlaceBubbles()
     {
+        // From the tray's left side: Power! first, then Try your Luck?.
         List<Control> up = [.. new Control[] { _powerPrompt, _luckPrompt }.Where(bubble => bubble.Visible)];
-        float width = up.Sum(bubble => bubble.Size.X) + 6 * Math.Max(0, up.Count - 1);
-        float x = _dice.Position.X + (_dice.Size.X - width) / 2;
+        float x = _dice.Position.X + 4;
         foreach (Control bubble in up)
         {
             bubble.Position = new Vector2(x, _dice.Position.Y - bubble.Size.Y - 1);

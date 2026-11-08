@@ -160,7 +160,14 @@ public sealed record UnlockDoor(int HeroId, Direction Door) : GameCommand(HeroId
 /// An Od Hand roll: <paramref name="Dice"/> of this turn's unused Od Hand dice (null for all), plus
 /// the tools' value if <paramref name="UseTools"/> and it isn't used yet, plus banked Power Dice.
 /// </summary>
-public abstract record OdHandCommand(int HeroId, int? Dice, bool UseTools, int PowerDice) : GameCommand(HeroId);
+public abstract record OdHandCommand(int HeroId, int? Dice, bool UseTools, int PowerDice) : GameCommand(HeroId)
+{
+    /// <summary>
+    /// A tool played on its own (from the belt, the accessory slot or a hand): its bonus and dice alone, with no
+    /// Od Hand dice and no other tools. Null for an ordinary roll: Od Hand dice and the tools in hand.
+    /// </summary>
+    public int? ToolId { get; init; }
+}
 
 /// <summary>Pick the lock of the door you stand in (<paramref name="Target"/> is your own tile) or of an adjacent chest.</summary>
 public sealed record PickLock(int HeroId, GridPosition Target, int? Dice = null, bool UseTools = true, int PowerDice = 0)
@@ -183,6 +190,18 @@ public sealed record PickUpAlly(int HeroId, int AllyId) : GameCommand(HeroId);
 
 /// <summary>Set down the ally you carry, beside you. Free.</summary>
 public sealed record PutDownAlly(int HeroId) : GameCommand(HeroId);
+
+/// <summary>Take the torch from the sconce over <paramref name="Sconce"/> (free).</summary>
+public sealed record TakeTorch(int HeroId, GridPosition Sconce) : GameCommand(HeroId);
+
+/// <summary>Put the torch in your hand into the empty sconce over <paramref name="Sconce"/> (free).</summary>
+public sealed record PutTorch(int HeroId, GridPosition Sconce) : GameCommand(HeroId);
+
+/// <summary>Lift the bar from a door barred on your side (free).</summary>
+public sealed record LiftBar(int HeroId, Direction Door) : GameCommand(HeroId);
+
+/// <summary>Smash what's on <paramref name="Target"/> (a door, a crate, a wall beside you) with your Rumble dice and a weapon (<paramref name="WeaponId"/>, or the main hand's).</summary>
+public sealed record Smash(int HeroId, GridPosition Target, int? Dice = null, bool UseWeapon = true, int PowerDice = 0, int? WeaponId = null) : GameCommand(HeroId);
 
 /// <summary>Light the portal beside you: channel a Magic Die into it, or else a banked Power Die. Free.</summary>
 public sealed record LightPortal(int HeroId, bool Magic = false) : GameCommand(HeroId);

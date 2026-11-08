@@ -2,6 +2,7 @@ using Godot;
 using Woad.Core.Dungeon;
 using Woad.Core.Grid;
 using Woad.Core.Model;
+using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Game;
 
@@ -36,6 +37,110 @@ public partial class BoardView
         h *= 0x5bd1e995;
         h ^= h >> 15;
         return (h & 0xFFFF) / 65536f;
+    }
+
+    /// <summary>A wall sconce: an iron bracket on the room's edge over the tile, a torch burning in it (or empty).</summary>
+    private void DrawSconce(GridPosition tile, bool lit)
+    {
+        Rect2 rect = TileRect(tile);
+        RoomLayout layout = _room!.Layout;
+        Vector2 wall = tile.Y == 0 ? new Vector2(rect.GetCenter().X, rect.Position.Y + 3)
+            : tile.Y == layout.Height - 1 ? new Vector2(rect.GetCenter().X, rect.End.Y - 3)
+            : tile.X == 0 ? new Vector2(rect.Position.X + 3, rect.GetCenter().Y)
+            : new Vector2(rect.End.X - 3, rect.GetCenter().Y);
+        Vector2 inward = (rect.GetCenter() - wall).Normalized();
+        Color iron = new("3a3a44"), ironLight = new("8a8a96");
+        Vector2 cup = wall + inward * 6;
+        DrawLine(wall, cup, iron, 2);
+        DrawRect(new Rect2(cup - new Vector2(3, 2), new Vector2(6, 4)), iron);
+        DrawLine(cup - new Vector2(3, 2), cup + new Vector2(3, -2), ironLight, 1);
+        if (!lit)
+        {
+            return;
+        }
+
+        float time = Time.GetTicksMsec() / 1000f;
+        DrawCircle(cup, 12, Palette.FireCore with { A = 0.1f + 0.04f * Mathf.Sin(time * 6 + tile.X) }, antialiased: true);
+        DrawRect(new Rect2(cup - new Vector2(1, 6), new Vector2(2, 5)), new Color("6a4424"));
+        float height = 7 + 2 * Mathf.Sin(time * 9 + tile.Y);
+        Vector2 foot = cup - new Vector2(0, 6);
+        DrawColoredPolygon([foot + new Vector2(-3, 0), foot + new Vector2(3, 0), foot + new Vector2(0, -height)], Palette.Fire);
+        DrawColoredPolygon([foot + new Vector2(-1.5f, 0), foot + new Vector2(1.5f, 0), foot + new Vector2(0, -height * 0.55f)], Palette.FireCore);
+    }
+
+    /// <summary>A wooden crate: planks, a cross-brace, iron corners.</summary>
+    private void DrawCrate(GridPosition tile)
+    {
+        Rect2 rect = TileRect(tile).Grow(-4);
+        Color wood = new("9a6a3a"), dark = new("5a3a1e"), light = new("c08a50"), iron = new("4a4a52");
+        DrawRect(new Rect2(rect.Position + new Vector2(2, 3), rect.Size), new Color(0, 0, 0, 0.3f));
+        DrawRect(rect, wood);
+        for (float y = rect.Position.Y + 6; y < rect.End.Y; y += 6)
+        {
+            DrawLine(new Vector2(rect.Position.X, y), new Vector2(rect.End.X, y), dark, 1);
+        }
+
+        DrawLine(rect.Position + new Vector2(2, 2), rect.End - new Vector2(2, 2), light, 2);
+        DrawRect(rect, dark, filled: false, width: 2);
+        foreach (Vector2 corner in new[] { rect.Position, new Vector2(rect.End.X - 4, rect.Position.Y), new Vector2(rect.Position.X, rect.End.Y - 4), rect.End - new Vector2(4, 4) })
+        {
+            DrawRect(new Rect2(corner, new Vector2(4, 4)), iron);
+        }
+    }
+
+    /// <summary>Break marks: a jagged crack for each, spreading across the tile.</summary>
+    private void DrawBreakMarks(Rect2 rect, int marks)
+    {
+        Color crack = new(0.05f, 0.04f, 0.04f, 0.85f);
+        Vector2 c = rect.GetCenter();
+        for (int i = 0; i < Math.Min(marks, 10); i++)
+        {
+            float angle = i * 2.39996f;
+            Vector2 dir = new(Mathf.Cos(angle), Mathf.Sin(angle));
+            Vector2 side = new(-dir.Y, dir.X);
+            float reach = 6 + i % 3 * 3;
+            DrawPolyline([c + dir * 2, c + dir * (reach * 0.5f) + side * 2, c + dir * reach - side], crack, 1.5f);
+        }
+    }
+
+    /// <summary>An unstable portal: a broken ring of stone round a violet swirl, lightning crackling off it.</summary>
+    private void DrawRift(GridPosition tile)
+    {
+        Rect2 rect = TileRect(tile);
+        Vector2 center = rect.GetCenter();
+        float time = Time.GetTicksMsec() / 1000f;
+        Color violet = new("8a5cff"), bolt = new("e8f4ff"), spark = new("6ad8ff");
+        DrawCircle(center, 13, new Color(0, 0, 0, 0.35f), antialiased: true);
+        DrawCircle(center, 11 + Mathf.Sin(time * 7) * 1.5f, violet with { A = 0.45f }, antialiased: true);
+        DrawCircle(center, 7, violet with { A = 0.85f }, antialiased: true);
+        for (int arm = 0; arm < 3; arm++)
+        {
+            float start = -time * 4 + arm * Mathf.Tau / 3;
+            DrawArc(center, 5, start, start + 2f, 10, bolt, 1.5f, antialiased: true);
+        }
+
+        // The ring, cracked: three stones of it, with gaps.
+        for (int stone = 0; stone < 6; stone++)
+        {
+            float from = stone * Mathf.Tau / 6 + 0.15f, to = from + Mathf.Tau / 6 - 0.45f;
+            DrawArc(center, 12, from, to, 6, Palette.Wall, 4, antialiased: true);
+        }
+
+        // Lightning: a jagged bolt or two, flickering.
+        int flicker = (int)(time * 12) + tile.X * 7 + tile.Y * 3;
+        for (int i = 0; i < 2; i++)
+        {
+            if ((flicker + i) % 3 == 0)
+            {
+                continue;
+            }
+
+            float angle = (flicker * 1.7f + i * 2.4f) % Mathf.Tau;
+            Vector2 dir = new(Mathf.Cos(angle), Mathf.Sin(angle));
+            Vector2 side = new(-dir.Y, dir.X);
+            Vector2 a = center + dir * 9, b = center + dir * 13 + side * 3, c = center + dir * 17 - side * 2;
+            DrawPolyline([a, b, c], i == 0 ? bolt : spark, 1.5f);
+        }
     }
 
     /// <summary>One courtyard tile, by what it looks like.</summary>

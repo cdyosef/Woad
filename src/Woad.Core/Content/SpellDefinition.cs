@@ -64,6 +64,12 @@ public sealed record SpellDefinition
     /// <summary>Learned with a rank of Magic (rather than from a scroll).</summary>
     public bool Basic { get; init; }
 
+    /// <summary>
+    /// The spell this one improves (Hurl Fire 1: Hurl Fire). It isn't cast itself, and it's only learned by
+    /// someone who knows the spell it improves.
+    /// </summary>
+    public string? Upgrades { get; init; }
+
     /// <summary>How hard it is to learn from a scroll: the roll needs 6 plus this.</summary>
     public int Level { get; init; } = 1;
 

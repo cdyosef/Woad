@@ -18,7 +18,7 @@ namespace Woad.Scenes;
 
 /// <summary>
 /// The app's root: owns the content and the character store, swaps between screens, and saves
-/// each character's results when a run ends. Debug flags: <c>--uitest</c>, <c>--floortest</c>, <c>--hazardtest</c>, <c>--keeltest</c>, <c>--firetest</c>, <c>--cameratest</c>, <c>--bombtest</c>, <c>--rumbletest</c>, <c>--offhandtest</c>, <c>--clicktest</c>, <c>--loottest</c>, <c>--dietypetest</c>, <c>--tradetest</c>, <c>--monstertest</c>, <c>--dentest</c>, <c>--merchanttest</c>, <c>--wanderertest</c>, <c>--encountertest</c>, <c>--skirmishtest</c>, <c>--gatetest</c> and
+/// each character's results when a run ends. Debug flags: <c>--uitest</c>, <c>--floortest</c>, <c>--hazardtest</c>, <c>--keeltest</c>, <c>--firetest</c>, <c>--cameratest</c>, <c>--bombtest</c>, <c>--rumbletest</c>, <c>--offhandtest</c>, <c>--toolstest</c>, <c>--smashtest</c>, <c>--clicktest</c>, <c>--loottest</c>, <c>--dietypetest</c>, <c>--tradetest</c>, <c>--monstertest</c>, <c>--dentest</c>, <c>--merchanttest</c>, <c>--wanderertest</c>, <c>--encountertest</c>, <c>--skirmishtest</c>, <c>--gatetest</c> and
 /// <c>--autoplay</c> jump straight into a run with the debug party (<c>--party N</c> heroes,
 /// <c>--theme id</c> for another dungeon); <c>--menutest</c> and
 /// <c>--resultstest</c> click through the menus using a throwaway save folder; <c>--tracker</c> opens the
@@ -137,6 +137,14 @@ public partial class Main : Control
 		else if (args.Contains("--bombtest"))
 		{
 			Show(new GameScreen { Setup = DemoRun.Bombs(seed), Content = _content });
+		}
+		else if (args.Contains("--smashtest"))
+		{
+			Show(new GameScreen { Setup = DemoRun.SmashDemo(seed), Content = _content });
+		}
+		else if (args.Contains("--toolstest"))
+		{
+			Show(new GameScreen { Setup = DemoRun.Tools(seed), Content = _content });
 		}
 		else if (args.Contains("--offhandtest"))
 		{

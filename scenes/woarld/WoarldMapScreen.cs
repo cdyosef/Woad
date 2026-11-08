@@ -401,8 +401,12 @@ public partial class WoarldMapScreen : Control
         Wares = () => smithy.Stock,
         Price = (id, shopper) => TavernServices.BuyPrice(Content.GetCard(id), shopper.Standing),
         Buy = (id, shopper) => Smithy.Buy(smithy, Content, shopper, id),
-        MendPrice = Smithy.RepairPrice,
+        MendPrice = key => Smithy.RepairPrice(Content, key),
         Mend = (owner, key, purse) => Smithy.Repair(Content, owner, key, purse),
+        MendWith = key => Smithy.RepairMaterial(Content, key) is (string material, int count) ? $"{count} {Content.GetCard(material).Name}{(count == 1 ? "" : "s")}" : null,
+        Improvement = key => Smithy.Improvement(Content, key) is (string into, string material, int count, int price)
+            ? $"Make it the {Content.GetCard(into).Name}: {count} {Content.GetCard(material).Name}s and {Money.Short(price)}" : null,
+        Improve = (owner, key, purse) => Smithy.Improve(Content, owner, key, purse),
     };
 
     internal void Refresh()

@@ -44,6 +44,7 @@ public partial class CharacterEditor : MenuScreen
         [Skill.BullRush] = "Rumble: charge in a line, attack, push 2",
         [Skill.Guard] = "Rumble: a held die for your or an ally's defense",
         [Skill.HighAlert] = "Rumble: a Rumble die on your next search",
+        [Skill.Smash] = "Rumble: a die more smashing doors, crates, walls",
     };
     private readonly List<(Label Caption, Button Previous, ColorRect Swatch, Label Value, Button Next)> _styleRows = [];
 
@@ -283,7 +284,7 @@ public partial class CharacterEditor : MenuScreen
     /// <summary>The Skills window: each skill, what it does and costs, and a button to learn it (or forget one learned here).</summary>
     private void BuildSkillsPanel()
     {
-        _skillsPanel = Add(new Panel { Position = new Vector2(150, 44), Size = new Vector2(340, 254), Visible = false });
+        _skillsPanel = Add(new Panel { Position = new Vector2(150, 40), Size = new Vector2(340, 276), Visible = false });
         _skillsPanel.AddChild(UiTheme.Heading(UiTheme.Label(new Vector2(10, 6), new Vector2(200, 16), "SKILLS", 9, Palette.TrimBright), 1));
         _skillsPanel.AddChild(UiTheme.Label(new Vector2(70, 8), new Vector2(200, 12), "1 point each, some free", color: Palette.TextDim));
         Button close = UiTheme.CompactButton(new Vector2(284, 6), new Vector2(48, 16), "Done");

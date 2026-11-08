@@ -85,6 +85,14 @@ the Party menu can spend points on them too.
   Burgling Tools on a lock, a lit torch in hand on a search, a Medicine Bag (or Bandages, to rouse) on
   Aid, Burgling Tools on a trap, and Burgling Tools, a Cutpurse Knife or Sticky Gloves on a steal. With
   the skill, the tool adds to your Od Hand dice.
+- **Where a tool is matters:** only tools **in a hand** (shown in the Od Hand square) go in with the Od Hand
+  dice, all of them together (Sticky Gloves, a Cutpurse Knife and the Steal card make one stack). A tool on the
+  **belt** or **worn** (Sticky Gloves in the accessory slot) is **played on its own**: double-click it to aim
+  its job (pick a lock, disarm a trap, steal), rolling just its bonus and dice, once a turn (asked which job,
+  or whether to draw it into a hand, for a belt tool). Lockpicks and Burgling Tools go in either hand, like
+  weapons; Sticky Gloves can be dragged from the accessory slot into the off hand and back, leaving their
+  **ghost** in the empty accessory slot (double-click it to put them back on). In a fight, moving gear takes
+  your action, as ever.
 - Learning a spell and running from a fight need no skill: a free die starts each roll (learning is 1d6
   plus Magic, with any Od Hand dice on top).
 - Characters made before skills existed keep their dice, with one more Od Hand die, and know every Od
@@ -134,8 +142,9 @@ the Party menu can spend points on them too.
   too small for what's on yours can't go on, and a belt comes off only empty. Characters saved before belts
   were cards were given a Basic Belt and Basic Buckle, with what was on their belt left there.
 - **Mods** go on the belt or the buckle and add their modifiers: Belt Studs (armor 1, on the belt), Buckle
-  Horns (+1 to Rumble rolls, on the buckle), the Rock Bag (on the belt: your Rocks stack to 100 in it, and a
-  Sling loads them from the belt). No two the same, unless a mod's card says otherwise; the belt
+  Horns (+1 to Rumble rolls, on the buckle), the Rock Bag (on the belt: Rocks you pick up go straight into it,
+  up to 100, and a Sling loads them from the belt; a handful, ten at most, comes out into a hand free once a
+  turn, and a hand emptied of Rocks fills again from it on its own). No two the same, unless a mod's card says otherwise; the belt
   or buckle comes off only once its mods are off.
 - **Carrying:** two slots in the hero's arms, for two cards or stacks. **While carrying anything, no Rumble
   and no Od Hand.** Carry-only cards go nowhere else: the Relic of Saint Wyn fills both slots. A card that
@@ -450,7 +459,7 @@ the next room.
   it earns another.
 - **The bank:** each hero and monster can bank up to **3** *(tunable)*, kept until used (across turns
   and floors). A 6 rolled with a full bank is rolled into that roll straight away instead.
-- **Your attacks, moves and Od Hand rolls:** after a 6, **Power!** pops up just over the dice tray: **Roll** (roll it in now) or
+- **Your attacks, moves and Od Hand rolls:** after a 6, **Power!** pops up just over the dice tray, at its left side: **Roll** (roll it in now) or
   **Bank** (keep it for later). Nothing else can happen until you choose. Banked dice show in the dice pool's POWER row,
   unselected; select them to roll them into your next attack or move.
 - **Star dice** are a damage type of their own (below): a **6** on one **surges**, with no choice to make:
@@ -602,7 +611,7 @@ All cost **1 Power** and can be upcast.
 | Spell | Range | Dice | What it does |
 | --- | --- | --- | --- |
 | Shooting Star | 8 | 1 Star | A 6 surges with Power |
-| Hurl Fire | 6 | 1 Fire | On yourself: **Hold Fire**, a flame that's a lit torch needing no hand (light, a Search die, a fire die on your attacks), until a 1 in an attack puts it out (before any torch) or you fall to the floor below; the stairs don't. While it burns, a **Hold Fire** card is in your Od Hand: play it and click a monster within 6 to hurl the flame, its Fire die and your Magic with the Od Hand dice you add, for no Power; the flame is gone |
+| Hurl Fire | 6 | 1 Fire | On yourself: **Hold Fire**, a flame held in a hand as a **card** (an empty hand first, else the off hand, whose card goes to the belt or bag), one to a hand, so two at most. It's a lit torch (light, a Search die, a fire die on your attacks) until a 1 in an attack puts it out (before any torch) or you fall to the floor below; the stairs don't. It never goes on the belt or in the bag: move it to your other hand, **drop** it (the floor there burns, spreading and dying down like any fire), or **hand it to an ally**, into their arms, where it burns on as a light; they must take it into a hand by the end of their turn or it falls, burning. The **Hold Fire** card in your Od Hand hurls it: click a monster within 6, its Fire die and your Magic with the Od Hand dice you add, for no Power; the flame is gone. **Hurl Fire 1**, a basic spell picked with a rank of Magic by someone who knows Hurl Fire (it isn't cast itself), adds +1 fire to Hurl Fire and to a hurled flame |
 | Poison Mist | 2, every creature in a straight line | 1 Poison, +1 per Poison token on you | Throws off every Poison token on you |
 | Icicle Arrow | 4 | 1 Ice | Or cast on the floor to lay ice (below) |
 | Acid Ball | 3 | 1 Acid | The same roll splashes one random creature beside the target, friend or foe |
@@ -1019,7 +1028,14 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   apron the **Emerald Knight** (6 hearts, 2 dice and weapon 2, defense 2 and armor 2; a miniboss) holds the
   door with **Emerald Guards** (green, spears reaching 2 in a line), two for every three heroes, rounded up.
   The great door is the **gate**: only the **Emerald Key** opens it (no small key, no picking), and the knight
-  carries it. Shut, it's iron-bound oak with an emerald; open, it stands back on the dark. It leads into the
+  carries it. The knight **hits back**: whenever a creature attacks him, hit or miss, he strikes it back with a
+  die, his weapon and his Emerald Axe's **Life die** (its 6 grows plants, on a hit or a miss), as long as it's
+  beside him, and not while he's stunned or frozen past half his Wend; confused, the blow lands on whatever's
+  beside him. Very rarely (1 in 20) he drops the **Emerald Axe**: two-handed, weapon 2 and a Life die whose 6
+  takes hold on a hit or a miss. Wielding it, once a round, a Power Die on your defense roll means you hit
+  back, those Power Dice rolled into the blow (the same limits as the knight's). The smith mends it only with
+  an **emerald** for each point of wear, and makes it the **Emerald Axe +3** (weapon 3, two Life dice) for 3
+  emeralds and 3 gold. Shut, it's iron-bound oak with an emerald; open, it stands back on the dark. It leads into the
   **entrance hall**, the first room inside the keep (no monsters; the entrance's portal is here), and the
   rest of floor 1 opens out from there. The key stays in the keep when you leave.
 - **The Emerald Keep's tower:** stairs up from an ordinary room on floor 1 climb to **Level 1**, a floor of
@@ -1047,6 +1063,13 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   it; it stays lit. From beside a lit portal a hero steps through, free, to any **other lit portal**, coming
   out beside it (reaching a deeper floor that way counts as reaching it). A portal blocks movement but not
   sight. Click a portal to walk up to it, then click it again: dark, it asks which die; lit, where to.
+- **Unstable portals (the Emerald Keep's):** the keep's three portals are rifts on the floor, crackling with
+  lightning, in plain sight: a trap. Walk in (or be pushed in) and a 1d6 **Elektrik** bolt (+ the floor) strikes
+  you and leaps on to everyone beside you, and from each of them on again, striking each once; everyone it
+  strikes, hit or miss, is **flung** to a random free spot on floor 1, any room, secret or not (getting out of
+  one may take a bomb). A boss, or anything too big, takes the blow but holds its ground. A rift can be
+  **disarmed**, closing it: a banked Power Die buys the attempt, Od Hand against 11; botched, it goes off on
+  whoever tried.
 - **Room roles:** the walk's first room is the Arrival room, which has no monsters. The room farthest
   from it holds the Stairs down (floors 1–2) or the Boss and Exit (floor 3), behind the Boss Door. A dead
   end becomes the Treasure room (chests, one guard), on floor 3 another becomes the Vault (the Boss Key's
@@ -1092,6 +1115,33 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
 - **Stairs:** click them to walk up beside them, and click them again to go down, free. You come out of the
   stairs up in the next floor's arrival room, beside them. Reaching a floor for the first time restores your Luck and recharges wands. Below the
   first floor, the arrival room has **stairs up** that lead back to the stairs room above (free, the same way).
+- **Smashing:** a Rumble attack (with a weapon, or bare-handed) at something breakable beside you: a locked
+  door (from its doorway or beside it), a **crate**, a cracked wall or a wall. Double-click it to aim, click
+  again to swing. A blow that reaches its toughness leaves a **break mark**; enough marks break it: a door
+  (toughness 5, locked 6) takes **3** marks, a locked one a mark more for every 4 of its lock's difficulty;
+  a crate (3) **2**; a cracked wall (6) **5**; a wall (7) **10** to crack it, then 5 more to break it through
+  (now and then something was hidden in it). The Boss Door and a gate don't break. A door smashed in stands
+  open for good, and sets off any trap on it on whoever broke it. A crate spills a card (2 in 5), some silver
+  (1 in 3) or nothing. A blow that falls short puts a **break token** on the weapon: its value down 1, and
+  past nothing it breaks (Rocks and Sticks break with the blow anyway). **Smashing** (a Rumble skill) adds a
+  Rumble die to every blow at something breakable. The **Crowbar** (either hand, weapon 1; the smith sells
+  them) adds a die against wood (doors, crates), takes no break token from wood, and carries an Od Hand die
+  into any smash. Some ordinary rooms have a crate or two.
+- **Sterner doors:** past floor 1, some locked doors have **two locks** (each opened by its own key or picking;
+  the door opens with the last) and some trapped doors **two traps** (the second set once the first is gone).
+  A door's traps are armed against one side: from the **other side** their works are in reach, and they're
+  switched off by hand, no roll. Now and then a door between two ordinary rooms is **barred** on one side
+  (only where there's another way round): from that side the bar lifts free; from the other, the door has to
+  be smashed in (a mark tougher, and 2 marks more). A lock is worth 1 XP more for every 4 of its difficulty,
+  picked or keyed. A roll at a door or chest shows it beside the dice: its keyholes, how heavily it's bolted
+  (iron bands for a harder lock), a bar, and a trap on it (a red "!", or once found, the trap itself);
+  smashing, its break marks so far.
+- **Wall sconces:** some rooms have an iron sconce or two on their walls. In a lit room most hold a burning
+  torch (a light and a fire, like a lit brazier); in a dark room they're empty. From under one or beside it,
+  click it to take its torch down (free: into a free hand, else the belt or bag), or, holding a torch, to put
+  it up and light the room.
+- **Sealed rooms:** the boss's room, and a den (the Ogre Champ's), shut behind you: no one leaves by its
+  doors while the boss (or the den's keeper) stands, as a trap room holds you till its last monster falls.
 - **Exit:** sealed until the boss in its room is defeated. Stand on it and click again to escape. Your
   turn ends, and you're out of the run with your treasure.
 - **Splitting up:** heroes can be on different rooms and floors. During the monsters' phase the view
@@ -1301,7 +1351,8 @@ them up there like any character.
   text: Rumble and Shove red, Wend and Leap green, Search and Steal yellow.
 - **Dice bar:** under the board, fighting-game style. Whoever rolls is on the left with their dice,
   bonus and total; whoever answers is on the right of a slanted VS (several defenders, as in a blast,
-  each get a smaller column). The winning side glows gold, and each defender is tagged HIT, MISS or
+  each get a smaller column). Against the hero whose turn it is (a trap they set off, a monster hitting
+  back), the sides swap: that hero is always on the left on their own turn. The winning side glows gold, and each defender is tagged HIT, MISS or
   BLOCKED. Dice jitter and spin as they tumble, then land with a small pop. With Luck, the roller's
   dice can be clicked to reroll them. Rolls with no opponent (moving, the Keel Die) show one side.
   A hero's roll shows the cards it was played with above their own dice: the pool's card (Rumble, Wend,

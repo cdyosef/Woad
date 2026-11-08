@@ -97,6 +97,31 @@ public sealed class Room
     public IReadOnlyDictionary<GridPosition, string> DeepHoles => _deepHoles;
 
     private readonly Dictionary<GridPosition, string> _deepHoles = [];
+    private readonly Dictionary<GridPosition, int> _breaks = [];
+    private readonly Dictionary<GridPosition, bool> _sconces = [];
+
+    /// <summary>Wall sconces, by the floor tile under each: whether it holds a lit torch.</summary>
+    public IReadOnlyDictionary<GridPosition, bool> Sconces => _sconces;
+
+    internal void SetSconce(GridPosition tile, bool lit) => _sconces[tile] = lit;
+
+    /// <summary>Break marks smashed into a crate or wall on the tile (0 for none).</summary>
+    public int BreaksAt(GridPosition tile) => _breaks.GetValueOrDefault(tile);
+
+    /// <summary>Every tile with break marks, and how many.</summary>
+    public IReadOnlyDictionary<GridPosition, int> Breaks => _breaks;
+
+    internal void SetBreaks(GridPosition tile, int breaks)
+    {
+        if (breaks > 0)
+        {
+            _breaks[tile] = breaks;
+        }
+        else
+        {
+            _breaks.Remove(tile);
+        }
+    }
 
     internal void MakeDeep(GridPosition hole, string roomId) => _deepHoles[hole] = roomId;
 
@@ -106,8 +131,20 @@ public sealed class Room
     /// <summary>Where heroes appear when they come down the stairs into this room, in order of preference.</summary>
     public IReadOnlyList<GridPosition> ArrivalTiles { get; }
 
-    /// <summary>True while a trap room still holds monsters: nobody can leave through its doors.</summary>
-    public bool IsSealed => Trap && _monsters.Count > 0;
+    /// <summary>
+    /// Nobody can leave through its doors: a trap room while any monster is left in it, and the boss's room or a
+    /// den while its boss (or the den's keeper) stands.
+    /// </summary>
+    public bool IsSealed => Trap ? _monsters.Count > 0 : IsGuarded;
+
+    /// <summary>The boss's room with the boss still standing, or a den with its keeper: sealed shut till it falls.</summary>
+    public bool IsGuarded =>
+        Role == RoomRole.Den ? _monsters.Count > 0 : Role == RoomRole.Boss && _monsters.Any(monster => monster.Definition.Boss);
+
+    /// <summary>Why its doors won't open, said.</summary>
+    public string SealedText => IsGuarded && !Trap
+        ? $"The doors are sealed until {(Role == RoomRole.Den ? "the den's keeper" : "the boss")} here falls."
+        : "The doors are sealed until every monster here is defeated.";
 
     public RoomLayout Layout { get; }
 

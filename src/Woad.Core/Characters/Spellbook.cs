@@ -31,6 +31,6 @@ public static class Spellbook
     public static IEnumerable<SpellDefinition> Learnable(IEnumerable<string> known, ContentCatalog content)
     {
         HashSet<string> knows = [.. known];
-        return content.BasicSpells.Where(spell => !knows.Contains(spell.Id));
+        return content.BasicSpells.Where(spell => !knows.Contains(spell.Id) && (spell.Upgrades is null || knows.Contains(spell.Upgrades)));
     }
 }

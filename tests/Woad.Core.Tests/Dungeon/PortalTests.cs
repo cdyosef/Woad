@@ -25,8 +25,6 @@ public class PortalTests
     [Theory]
     [InlineData("sunken_temple", 1UL)]
     [InlineData("sunken_temple", 77UL)]
-    [InlineData("emerald_keep", 42UL)]
-    [InlineData("emerald_keep", 2026UL)]
     public void TheEntranceTheFirstStairsAndTheBossRoomEachHoldAPortalYouCanWalkUpTo(string theme, ulong seed)
     {
         RunSetup run = DungeonGenerator.CreateRun(Content, theme, Party(2), seed);
@@ -41,6 +39,20 @@ public class PortalTests
             var reached = PathSearch.Run(door, tile => layout.Contains(tile) && layout[tile].IsWalkable()).Distances.Keys.ToHashSet();
             Assert.Contains(reached, tile => tile.ChebyshevDistanceTo(portal) == 1);
         }
+    }
+
+    [Theory]
+    [InlineData(42UL)]
+    [InlineData(2026UL)]
+    public void TheEmeraldKeepsPortalsAreRiftsInPlainSight(ulong seed)
+    {
+        RunSetup run = DungeonGenerator.CreateRun(Content, "emerald_keep", Party(2), seed);
+        RoomSetup[] hosts = [Host(run, 1, RoomRole.Arrival), Host(run, 1, RoomRole.Stairs), Host(run, 3, RoomRole.Boss)];
+        Assert.DoesNotContain(run.Rooms, room => room.Template.TilesOf(TileKind.Portal).Any());
+        Assert.All(hosts, host => Assert.Single(host.Features!.Traps.Values, trap => trap.Kind == TrapKind.Rift));
+
+        GameState state = new GameSession(Content, run).State;
+        Assert.All(hosts, host => Assert.Single(state.Rooms[host.Id].Traps.Values, trap => trap is { Kind: TrapKind.Rift, Revealed: true }));
     }
 
     [Fact]

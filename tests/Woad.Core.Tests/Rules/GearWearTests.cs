@@ -82,7 +82,7 @@ public class GearWearTests
         session.Begin();
         Assert.Equal(2, session.HeroInSeat().Card("chain_mail").Wear);
 
-        Assert.Equal(Money.Gold(4), Smithy.RepairPrice("chain_mail~2"));
+        Assert.Equal(Money.Gold(4), Smithy.RepairPrice(content, "chain_mail~2"));
         Assert.True(Smithy.Repair(content, hero, "chain_mail~2").Done);
         Assert.Equal((Money.Gold(1), 3), (hero.Coins, hero.Stats(content).Armor));
         Assert.Contains("chain_mail", hero.Equipped);

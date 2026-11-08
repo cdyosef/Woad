@@ -33,13 +33,16 @@ public enum Skill
 
     /// <summary>A Rumble die added to your next search, or rolled to search on its own.</summary>
     HighAlert = 1 << 9,
+
+    /// <summary>A Rumble die more on every blow at something breakable (a door, a crate, a wall).</summary>
+    Smash = 1 << 10,
 }
 
 public static class Skills
 {
     public const Skill OdHand = Skill.Search | Skill.Steal | Skill.PickLock | Skill.Disarm | Skill.Aid | Skill.Parry;
 
-    public const Skill Rumble = Skill.Shove | Skill.BullRush | Skill.Guard | Skill.HighAlert;
+    public const Skill Rumble = Skill.Shove | Skill.BullRush | Skill.Guard | Skill.HighAlert | Skill.Smash;
 
     public const Skill All = OdHand | Rumble;
 
@@ -54,6 +57,7 @@ public static class Skills
         Skill.PickLock => "Pick Lock",
         Skill.BullRush => "Bull Rush",
         Skill.HighAlert => "High Alert",
+        Skill.Smash => "Smashing",
         _ => skill.ToString(),
     };
 }

@@ -105,7 +105,7 @@ public static class CompanionBot
             return cast;
         }
 
-        if (session.GetAttackableMonsters()
+        if (session.GetAttackableMonsters().OrderBy(monster => monster.Definition.Counter is null ? 0 : 1)
                 .FirstOrDefault(monster => hero.Order != CompanionOrder.StayBack || monster.NearestTile(hero.Position).ChebyshevDistanceTo(hero.Position) == 1)
             is { } target)
         {

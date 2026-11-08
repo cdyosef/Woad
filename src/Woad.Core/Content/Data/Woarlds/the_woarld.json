@@ -58,7 +58,7 @@
       "x": 14,
       "y": 17,
       "description": "A smoky shack down the road from the inn: worn gear mended, arms and armor forged.",
-      "stock": ["autosmith_hammer", "leather_armor", "studded_armor", "chain_mail", "buckler", "tower_shield", "longsword", "war_hammer", "spear", "great_axe"]
+      "stock": ["autosmith_hammer", "crowbar", "leather_armor", "studded_armor", "chain_mail", "buckler", "tower_shield", "longsword", "war_hammer", "spear", "great_axe"]
     },
     {
       "id": "emerald_keep",

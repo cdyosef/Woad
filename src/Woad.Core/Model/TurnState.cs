@@ -199,6 +199,9 @@ public sealed class TurnState
     /// <summary>The hero has attacked with what's in their off hand, by the Od Hand card, this turn.</summary>
     public bool OffHandAttacked { get; internal set; }
 
+    /// <summary>A handful drawn from the Rock Bag into a hand for free this turn (the next takes the action in a fight).</summary>
+    public bool BagDrawn { get; internal set; }
+
     /// <summary>The hero has made a Rumble attack (a Shove or a Bull Rush too) this turn: the off hand can follow up.</summary>
     public bool Rumbled { get; internal set; }
 

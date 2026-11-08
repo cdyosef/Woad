@@ -271,8 +271,12 @@ public sealed partial class GameSession
             }
         }
 
-        // What comes off goes to the backpack; in combat, to the belt, as long as it's held gear and fits.
+        // What comes off goes to the backpack; in combat, to the belt, as long as it's held gear and fits. A flame can't.
         IReadOnlyList<CardInstance> displaced = hero.CardsDisplacedBy(definition, HandFor(hero, card, hand));
+        if (displaced.FirstOrDefault(old => old.Definition.HeldFire) is { } held && held != card)
+        {
+            return "There's a flame of Hold Fire in that hand: hurl it, drop it or hand it on first.";
+        }
         if (combat && (displaced.Any(old => !HandHeld(old.Definition))
             || hero.Belt.Count - (location == CardLocation.Belt ? 1 : 0) + displaced.Count > hero.BeltCapacity))
         {
@@ -284,7 +288,7 @@ public sealed partial class GameSession
             return "There's no room in your backpack for what you'd take off.";
         }
 
-        return CheckGearAction();
+        return CheckGearAction(card);
     }
 
     /// <summary>Why the active hero can't move the card to their belt right now, or null if they can.</summary>
@@ -293,6 +297,11 @@ public sealed partial class GameSession
         if (CheckCardQuery(cardId, out CardInstance? card, out CardLocation location) is { } error)
         {
             return error;
+        }
+
+        if (HeldFireStays(card!) is { } flame)
+        {
+            return flame;
         }
 
         if (card!.Definition.CarryOnly)
@@ -341,6 +350,11 @@ public sealed partial class GameSession
             return error;
         }
 
+        if (HeldFireStays(card!) is { } flame)
+        {
+            return flame;
+        }
+
         if (location == CardLocation.Backpack)
         {
             return $"The {card!.Definition.Name} is already in your backpack.";
@@ -375,6 +389,11 @@ public sealed partial class GameSession
         if (CheckCardQuery(cardId, out CardInstance? card, out CardLocation location) is { } error)
         {
             return error;
+        }
+
+        if (location == CardLocation.Equipped && HeldFireStays(card!) is { } flame)
+        {
+            return flame;
         }
 
         if (location == CardLocation.Carried)
@@ -571,6 +590,10 @@ public sealed partial class GameSession
     private string? CheckGearAction() =>
         GearIsFree || !Turn.HasActed ? null : "Changing gear in a fight takes your action, which you've used.";
 
+    /// <summary>The gear action, unless it's the turn's free handful from the Rock Bag.</summary>
+    private string? CheckGearAction(CardInstance card) =>
+        ActiveHero.BagStack(card.Definition) == card && !Turn.BagDrawn ? null : CheckGearAction();
+
     /// <summary>Gear changes are free outside a fight; in one they take the action.</summary>
     private void SpendGearAction()
     {
@@ -630,9 +653,24 @@ public sealed partial class GameSession
             card = card.Split(State.NextId(), 1);
         }
 
+        // From the Rock Bag, a handful (a hand's stack at most) comes out; once a turn it's free.
+        bool fromBag = hero.BagStack(card.Definition) == card;
+        if (fromBag && card.Count > Math.Max(1, card.Definition.MaxStack))
+        {
+            card = card.Split(State.NextId(), Math.Max(1, card.Definition.MaxStack));
+        }
+
         IReadOnlyList<CardInstance> displaced = hero.CardsDisplacedBy(card.Definition, hand);
         bool combat = InCombat;
-        SpendGearAction();
+        if (fromBag && !Turn.BagDrawn)
+        {
+            Turn.BagDrawn = true;
+        }
+        else
+        {
+            SpendGearAction();
+        }
+
         if (hero.FindCard(card.Id) is not null)
         {
             hero.Remove(card);
@@ -722,6 +760,13 @@ public sealed partial class GameSession
         if (hero.FindCard(command.CardId) is not var (card, _))
         {
             return "You don't have that card.";
+        }
+
+        // A flame dropped sets the floor burning.
+        if (card.Definition.HeldFire)
+        {
+            DropHeldFire(hero, card, events);
+            return null;
         }
 
         int count = command.Count ?? card.Count;
@@ -837,12 +882,12 @@ public sealed partial class GameSession
             return null;
         }
 
-        if (room.ChestLockAt(command.Chest) is not null)
+        if (room.ChestLockAt(command.Chest) is { } chestLock)
         {
             hero.Keys--;
             room.UnlockChest(command.Chest);
             events.Add(new KeyUsed(hero.Id, hero.Keys));
-            events.Add(new ChestUnlocked(hero.Id, command.Chest, Picked: false));
+            events.Add(new ChestUnlocked(hero.Id, command.Chest, Picked: false) { Difficulty = chestLock });
         }
 
         if (room.ChestTrapAt(command.Chest) is { } trap)

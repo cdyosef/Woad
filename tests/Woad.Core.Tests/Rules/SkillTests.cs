@@ -109,15 +109,38 @@ public class SkillTests
     }
 
     [Fact]
-    public void StealingToolsStackOnTheOneStealATurn()
+    public void StealingToolsInHandStackOnTheOneStealATurn()
     {
         // The Od Hand die's 4, the tools' dice 2 and 3, and +1 each: 11.
         GameSession session = TestRun.Start(Beside, new ScriptedDice(4, 2, 3), cards: ["t_burgle", "t_gloves"]);
         Hero hero = session.HeroInSeat();
 
+        // Worn, the gloves stay out of it; moved into the off hand (the tools into the main hand), they go in.
+        Assert.Equal(EquipSlot.Accessory, hero.SlotOf(hero.Card("t_gloves")));
+        session.Do(new EquipCard(hero.Id, hero.Card("t_burgle").Id, EquipSlot.MainHand));
+        session.State.Turn!.HasActed = false; // (a gear change takes the action in a fight: as if a turn had passed)
+        session.Do(new EquipCard(hero.Id, hero.Card("t_gloves").Id, EquipSlot.OffHand));
         OdHandRolled rolled = session.Do(new Steal(hero.Id, session.OnlyMonster().Id, Dice: 1)).SingleOf<OdHandRolled>();
 
         Assert.Equal((2, 2, 11), (rolled.Bonus, rolled.ToolDice, rolled.Total));
+    }
+
+    [Fact]
+    public void WornGlovesStealOnTheirOwnWithNoOdHandDice()
+    {
+        // The gloves' die 3 and +1: 4. The Od Hand die isn't touched.
+        GameSession session = TestRun.Start(Beside, new ScriptedDice(3), cards: ["t_gloves"]);
+        Hero hero = session.HeroInSeat();
+        int gloves = hero.Card("t_gloves").Id;
+        Assert.Equal(0, session.ToolsBonusLeft);
+        Assert.Null(session.CheckToolAlone(gloves, Skill.Steal));
+        Assert.NotNull(session.CheckToolAlone(gloves, Skill.PickLock));
+
+        OdHandRolled rolled = session.Do(new Steal(hero.Id, session.OnlyMonster().Id) { ToolId = gloves }).SingleOf<OdHandRolled>();
+
+        Assert.Equal((1, 1, 4), (rolled.Bonus, rolled.ToolDice, rolled.Total));
+        Assert.Equal(0, session.State.Turn!.OdHandDiceUsed);
+        Assert.Contains("used your tools", session.CheckToolAlone(gloves, Skill.Steal));
     }
 
     [Fact]

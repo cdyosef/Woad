@@ -60,6 +60,9 @@ public enum TileKind
 
     /// <summary>A portal: a standing ring of stone. Blocks movement (not sight); lit, it links to the dungeon's other lit portals.</summary>
     Portal,
+
+    /// <summary>A wooden crate: blocks movement (not sight); smash it open for what's inside.</summary>
+    Crate,
 }
 
 public static class TileKindExtensions

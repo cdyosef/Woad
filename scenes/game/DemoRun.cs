@@ -224,6 +224,40 @@ public static class DemoRun
         StartRoomId = "yard",
     };
 
+    /// <summary>For --gatetest's rift: Aria beside an unstable portal, a slime the far side of it.</summary>
+    public static RunSetup Rift(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20 } }],
+        Rooms =
+        [
+            new RoomSetup("hall", RoomTemplate.Parse(".......\n.......\n.......\n..1.s..\n.......\n.......\n.......", ContentCatalog.LoadDefault()),
+                Features: new RoomFeatures { Traps = new Dictionary<GridPosition, TrapSetup> { [new GridPosition(3, 3)] = new TrapSetup(Woad.Core.Model.TrapKind.Rift, GameRules.RiftDifficulty) } }),
+        ],
+        StartRoomId = "hall",
+    };
+
+    /// <summary>For --smashtest: Aria beside a crate, a wall a step beyond.</summary>
+    public static RunSetup SmashDemo(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20, AttackDice = 3 } }],
+        Rooms = [new RoomSetup("yard", RoomTemplate.Parse(".........\n.........\n.........\n.........\n...1+.#..\n.........\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
+        StartRoomId = "yard",
+    };
+
+    /// <summary>For --toolstest: Aria wearing Sticky Gloves, Lockpicks on her belt, a Dagger in her off hand, nothing about to fight.</summary>
+    public static RunSetup Tools(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20, OdHandDice = 1 }, CardIds = [.. Belted, "wooden_sword", "dagger", "sticky_gloves", "lockpicks"] }],
+        Rooms = [new RoomSetup("yard", RoomTemplate.Parse(".........\n.........\n.........\n.........\n....1....\n.........\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
+        StartRoomId = "yard",
+    };
+
     /// <summary>For --spelltest: Aria with a Flame Scroll on her belt and a Frost Wand in her off hand, two slimes across the room.</summary>
     public static RunSetup Spells(ulong seed) => new()
     {

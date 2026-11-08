@@ -165,7 +165,7 @@ public sealed partial class GameSession
         // An Od Hand die added, and the Focus Bonus.
         Turn.OdHandDiceUsed += command.OdHandDice;
         var casting = new SpellCasting(spell, command.Target, extra, spell.Shove ? rumble : 0, spell.Swirl ? command.MoveTo : null);
-        RollHeroAttack(hero, command.OdHandDice, hero.Focus, targets, DamageSource.Spell, events, typed: [(spell.DieType, dice)], casting: casting);
+        RollHeroAttack(hero, command.OdHandDice, hero.Focus + (spell.Id == HurlFireId ? FireBonus(hero) : 0), targets, DamageSource.Spell, events, typed: [(spell.DieType, dice)], casting: casting);
         return null;
     }
 
@@ -234,7 +234,7 @@ public sealed partial class GameSession
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
         SpellDefinition spell = Content.GetSpell(HurlFireId);
-        hero.Flame = false;
+        QuenchHeldFire(hero);
         Reveal(hero, events);
 
         // At an unlit brazier with no one there, it lights it.
@@ -250,7 +250,7 @@ public sealed partial class GameSession
         events.Add(new FlameHurled(hero.Id, monster.Id));
         SpendBankedPowerDice(hero, command.PowerDice, events);
         var casting = new SpellCasting(spell, monster.Position, new Dictionary<int, (int, int)>(), 0, null);
-        RollHeroAttack(hero, command.Dice, hero.Focus, [monster.Id], DamageSource.Spell, events, command.PowerDice, typed: [(spell.DieType, spell.Dice)], casting: casting);
+        RollHeroAttack(hero, command.Dice, hero.Focus + FireBonus(hero), [monster.Id], DamageSource.Spell, events, command.PowerDice, typed: [(spell.DieType, spell.Dice)], casting: casting);
         return null;
     }
 
@@ -266,6 +266,11 @@ public sealed partial class GameSession
         if (hero.Spells.FirstOrDefault(known => known.Id == spellId) is not { } spell)
         {
             return "You don't know that spell.";
+        }
+
+        if (spell.Upgrades is not null)
+        {
+            return $"{spell.Name} isn't cast: it makes {Content.GetSpell(spell.Upgrades).Name} stronger.";
         }
 
         if (AttackDiceLeft < 1)
@@ -449,8 +454,10 @@ public sealed partial class GameSession
                 break;
 
             case DieType.Fire:
-                target.Flame = true;
-                events.Add(new BoonGained(target.Id, Boon.Flame, 0, 0));
+                if (GrantHeldFire(target, events))
+                {
+                    events.Add(new BoonGained(target.Id, Boon.Flame, 0, 0));
+                }
                 break;
         }
     }

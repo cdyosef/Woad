@@ -68,7 +68,8 @@ public class GateTests
         Assert.Single(run.Rooms, room => room.Floor == 1 && room.Level == 0 && room.MapPosition == courtyard.MapPosition);
         Assert.Contains(run.Passages, passage => passage is { RoomId: KeepCourtyard.Id, Side: Direction.North, Kind: PassageKind.Gate });
         Assert.Empty(hall.Template.Monsters);
-        Assert.Single(hall.Template.TilesOf(TileKind.Portal));
+        // The keep's portal is unstable: a rift on the floor, a trap in plain sight.
+        Assert.Single(hall.Features!.Traps.Values, trap => trap.Kind == TrapKind.Rift);
         Assert.Empty(courtyard.Template.TilesOf(TileKind.Portal));
         Assert.Empty(hall.Template.TilesOf(TileKind.Exit));
     }

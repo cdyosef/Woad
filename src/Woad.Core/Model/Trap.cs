@@ -16,6 +16,9 @@ public enum TrapKind
 
     /// <summary>A floor tile that pops out a lit bomb when stepped on (no harm itself); disarmed, it pops out an unlit one.</summary>
     BombTrap,
+
+    /// <summary>An unstable portal (the Emerald Keep's), in plain sight: lightning that leaps on, and flings all it strikes about floor 1.</summary>
+    Rift,
 }
 
 /// <summary>

@@ -89,8 +89,8 @@ public static class SimpleBot
             return new UseCard(hero.Id, scroll.Id, aim);
         }
 
-        // One all-out attack: every Attack die left plus the weapon.
-        if (session.GetAttackableMonsters().FirstOrDefault() is { } target)
+        // One all-out attack: every Attack die left plus the weapon (what hits back, the Emerald Knight, last).
+        if (session.GetAttackableMonsters().OrderBy(monster => monster.Definition.Counter is null ? 0 : 1).FirstOrDefault() is { } target)
         {
             return new AttackMonster(hero.Id, target.Id);
         }
@@ -179,6 +179,13 @@ public static class SimpleBot
 
         bool canStep = turn.MovementPoints > 0;
         Direction? door = fighting ? null : NextDoor(state, room, hero);
+
+        // A door barred on this side: lift the bar.
+        if (door is { } barredSide && hero.Position.ChebyshevDistanceTo(room.DoorTile(barredSide)) <= 1 && session.CheckLiftBar(barredSide) is null)
+        {
+            return new LiftBar(hero.Id, barredSide);
+        }
+
         if (door is { } lockedSide && hero.Position == room.DoorTile(lockedSide) && room.PassageOn(lockedSide) is { IsLocked: true } locked)
         {
             if (locked.NeedsGateKey ? GameSession.HasGateKey(hero) : locked.NeedsBossKey || hero.Keys > 0)
@@ -546,7 +553,7 @@ public static class SimpleBot
             {
                 // Secret doors and cracked walls are out of the bot's reach; the Boss Door needs the Boss Key.
                 if (room.PassageOn(side) is { } passage
-                    && (passage.IsHidden || passage.IsBlocked || (passage.IsLocked && passage.NeedsBossKey && !hero.HasBossKey) || (passage.IsLocked && passage.NeedsGateKey && !GameSession.HasGateKey(hero))))
+                    && (passage.IsHidden || passage.IsBlocked || (passage.IsBarred && passage.BarredFrom != room.Id) || (passage.IsLocked && passage.NeedsBossKey && !hero.HasBossKey) || (passage.IsLocked && passage.NeedsGateKey && !GameSession.HasGateKey(hero))))
                 {
                     continue;
                 }

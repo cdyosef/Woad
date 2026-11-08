@@ -162,6 +162,11 @@ public sealed partial class GameSession
     private List<CardInstance> TakeFound(Hero hero)
     {
         var found = new List<CardInstance>();
+        foreach (CardInstance flame in hero.HeldFires.ToList())
+        {
+            hero.Remove(flame);
+        }
+
         foreach (CardInstance card in hero.AllCards.ToList())
         {
             int copies = card.FoundBy(hero.Id);

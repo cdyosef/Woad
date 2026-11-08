@@ -225,6 +225,18 @@ def draw(item):
         c.poly([(14, 8), (24, 3), (28, 12), (20, 18)], STEEL[1])
         c.poly([(20, 14), (26, 7), (27, 12)], STEEL[0])
         c.poly([(16, 12), (10, 8), (12, 16)], STEEL[2])
+    elif i in ("emerald_axe", "emerald_axe_3"):
+        # A battleaxe: a broad green-steel head, an emerald set in it; the finer one gold-bound with a second gem.
+        haft(c, 6, 28, 22, 6)
+        c.poly([(13, 6), (25, 1), (30, 13), (21, 20)], "#3f8f62")
+        c.poly([(19, 13), (27, 5), (29, 12)], "#8fe0b0")
+        c.poly([(16, 11), (9, 6), (11, 16)], "#1f5a3a")
+        c.circle(20, 11, 2, "#3fd98a")
+        c.dot(19, 10, "#d8ffe9")
+        if i == "emerald_axe_3":
+            c.line(13, 6, 25, 1, "#e2c47a")
+            c.line(25, 1, 30, 13, "#e2c47a")
+            c.circle(25, 8, 1.5, "#3fd98a")
     elif i == "war_hammer":
         haft(c, 6, 28, 20, 10)
         c.poly([(15, 9), (21, 3), (28, 10), (22, 16)], IRON[1])
@@ -372,6 +384,21 @@ def draw(item):
         c.line(16, 15, 22, 15, WOOD[2])
         c.poly([(22, 13), (26, 13), (24, 17)], GREEN[1])
         c.line(7, 26, 15, 16, WOOD[0])
+    elif i == "crowbar":
+        # An iron bar, its hooked claw at the top, its flat end at the bottom.
+        c.line(10, 28, 22, 8, IRON[1], 3)
+        c.line(11, 27, 22, 9, IRON[0], 1)
+        c.poly([(20, 9), (22, 4), (26, 3), (27, 6), (24, 6), (23, 10)], IRON[1])
+        c.line(25, 4, 23, 6, IRON[2])
+        c.poly([(8, 27), (11, 29), (13, 26), (10, 25)], IRON[2])
+    elif i == "hold_fire":
+        # A flame cupped in an open hand.
+        c.poly([(7, 22), (11, 27), (21, 27), (26, 21), (24, 19), (20, 22), (12, 22), (9, 19)], "#d8a07a")
+        c.poly([(9, 19), (8, 13), (10, 13), (11, 19)], "#d8a07a")
+        c.poly([(24, 19), (25, 13), (27, 14), (26, 20)], "#d8a07a")
+        c.poly([(16, 21), (11, 15), (13, 8), (16, 3), (19, 8), (21, 15)], FLAME[2])
+        c.poly([(16, 20), (13, 15), (15, 9), (16, 7), (18, 10), (19, 15)], FLAME[1])
+        c.poly([(16, 19), (15, 15), (16, 11), (17, 15)], FLAME[0])
     elif i == "lit_stick":
         # The Stick, alight at its tip.
         c.line(6, 27, 16, 15, WOOD[1], 2)
@@ -402,14 +429,28 @@ def draw(item):
         c.line(11, 19, 21, 19, LEATHER[0])
         c.line(26, 14, 24, 12, LEATHER[0])
     elif i == "lucky_clover":
-        # Four heart-shaped leaves round a stem.
-        c.line(17, 16, 22, 29, GREEN[2], 2)
-        for dx, dy in ((-6, -6), (6, -6), (-6, 6), (6, 6)):
-            c.circle(16 + dx, 14 + dy, 5, GREEN[1])
-            c.circle(16 + dx + (-1 if dx < 0 else 1), 14 + dy + (-1 if dy < 0 else 1), 2, GREEN[0])
-        # The veins between the leaves, and the heart's notch in each.
-        c.line(16, 3, 16, 25, GREEN[2])
-        c.line(5, 14, 27, 14, GREEN[2])
+        # The Luck clover itself (the sheet's icon), twice the size: four leaves and a curling stem.
+        rows = [
+            ".ooo.ooo....",
+            "olggolggo...",
+            "ogggogggo...",
+            "oggdoggdo...",
+            ".ooooooo....",
+            "olggolggo...",
+            "ogggogggo...",
+            "oggdoggdo...",
+            ".ooo.oooso..",
+            ".......oso..",
+            "........oso.",
+            ".........o..",
+        ]
+        colors = {"o": OUTLINE, "g": "#5cc86a", "l": "#a8eca0", "d": "#2e8a3e", "s": "#3a7a3a"}
+        for y, row in enumerate(rows):
+            for x, ch in enumerate(row):
+                if ch in colors:
+                    for dy in (0, 1):
+                        for dx in (0, 1):
+                            c.dot(5 + x * 2 + dx, 4 + y * 2 + dy, colors[ch])
         c.circle(16, 14, 1.6, GREEN[2])
     elif i == "torch":
         c.line(10, 28, 18, 14, WOOD[1], 3)
@@ -979,6 +1020,14 @@ def spell(c, name):
         c.line(4, 28, 16, 16, GOLD[2], 1)
         _star(c, 20, 12, 9, 4, GOLD[1])
         _star(c, 20, 12, 5, 2.2, GOLD[0])
+    elif name == "hurl_fire_1":
+        # Hurl Fire, hotter: the fireball with a second tail, and a gold +1 spark.
+        c.poly([(4, 24), (14, 13), (20, 20), (10, 28)], FLAME[2])
+        c.poly([(2, 16), (12, 10), (14, 15), (5, 20)], FLAME[1])
+        c.circle(20, 12, 9, FLAME[2])
+        c.circle(20, 12, 6.5, FLAME[1])
+        c.circle(19, 11, 4, FLAME[0])
+        _star(c, 27, 25, 4, 1.8, GOLD[0])
     elif name == "hurl_fire":
         c.poly([(4, 24), (14, 13), (20, 20), (10, 28)], FLAME[2])
         c.poly([(7, 24), (15, 16), (18, 20), (11, 26)], FLAME[1])
@@ -1083,7 +1132,7 @@ def spell(c, name):
 
 
 SPELLS = [
-    "shooting_star", "hurl_fire", "poison_mist", "icicle_arrow", "acid_ball", "death_touch", "squall_wave",
+    "shooting_star", "hurl_fire", "hurl_fire_1", "poison_mist", "icicle_arrow", "acid_ball", "death_touch", "squall_wave",
     "shining_light", "lifeforce", "quake", "elektrobolt", "swirly_eyes", "shadowbind",
     "flame_blast", "frost_blast", "venom_blast", "acid_blast", "grave_blast", "gale_blast", "sun_blast",
     "bloom_blast", "quake_blast", "spark_blast", "mind_blast", "shadow_blast",
@@ -1098,7 +1147,7 @@ def draw_spell(name):
 
 
 ITEMS = [
-    "wooden_sword", "longsword", "knights_sword", "trident", "short_bow", "great_axe", "maul", "war_hammer",
+    "hold_fire", "crowbar", "wooden_sword", "longsword", "knights_sword", "trident", "short_bow", "great_axe", "emerald_axe", "emerald_axe_3", "maul", "war_hammer",
     "spear", "dagger", "rapier", "crossbow", "heavy_crossbow", "frost_brand", "quake_hammer", "longbow",
     "buckler", "tower_shield", "knights_shield", "emerald_baron_helm", "leather_cap", "diving_helm", "lucky_helmet", "cowards_cloak",
     "leather_armor", "studded_armor", "chain_mail", "wardens_plate", "storm_mail", "dash_boots",

@@ -20,6 +20,17 @@ public enum AttackPattern
 }
 
 /// <summary>An attack that hits every hero near the monster, used every few turns instead of its normal attack.</summary>
+/// <summary>A monster that hits back whenever it's attacked, hit or miss (the Emerald Knight): its plain dice, its weapon, and typed dice.</summary>
+public sealed record CounterAttack
+{
+    public int Dice { get; init; } = 1;
+
+    /// <summary>The typed dice rolled in (the Emerald Axe's Life die), whose sixes take hold on a hit or a miss.</summary>
+    public Model.DieType? DieType { get; init; }
+
+    public int TypedDice { get; init; } = 1;
+}
+
 public sealed record SweepAttack
 {
     /// <summary>Heroes within this many tiles (diagonals count as 1) are hit.</summary>
@@ -183,6 +194,9 @@ public sealed record MonsterDefinition
     public int SplitCount { get; init; }
 
     public SweepAttack? Sweep { get; init; }
+
+    /// <summary>It hits back at whoever attacks it, hit or miss, unless stunned or frozen past half its Wend (see <c>GameSession.Counter</c>).</summary>
+    public CounterAttack? Counter { get; init; }
 
     /// <summary>
     /// Its attack swings through a 3-tile arc toward its target (it can strike diagonally): everyone

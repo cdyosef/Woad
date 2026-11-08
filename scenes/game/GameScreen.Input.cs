@@ -43,6 +43,11 @@ public partial class GameScreen
         {
             Execute(new AttackMerchant(hero.Id, merchant.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
         }
+        else if (_session.BreakableAt(room, tile) is not null)
+        {
+            // A door, a crate or a wall: a blow at it, for a break mark.
+            Execute(new Smash(hero.Id, tile, SelectedAttackDice, !_weaponHeld, SelectedPowerDice, ReadiedWeaponId));
+        }
     }
 
     /// <summary>The enemy a double-click rolled Wend toward: clicking it again walks up to it.</summary>
@@ -66,6 +71,16 @@ public partial class GameScreen
         if (room.MonsterAt(tile) is { } monster && RumbleTargets(room).Contains(tile))
         {
             AimAt(monster);
+            return;
+        }
+
+        // Something breakable beside you: Rumble aims at it, and one more click swings.
+        if (_session.BreakableAt(room, tile) is { } breakable && _session.GetSmashTargets().Contains(tile))
+        {
+            _rumbling = true;
+            _stealing = _shoving = _leaping = _rushing = _hurling = false;
+            Log($"Click the {breakable.Name} again to smash at it ({breakable.Toughness}+ for a break mark, {breakable.Breaks}/{breakable.Needed}). Right-click to cancel.", Palette.Danger);
+            RefreshPanels();
             return;
         }
 
@@ -488,6 +503,14 @@ public partial class GameScreen
         {
             Execute(new SmashPot(hero.Id, tile));
         }
+        else if (room.Sconces.ContainsKey(tile) && hero.Position.ChebyshevDistanceTo(tile) <= 1 && _session.CheckTakeTorch(tile) is null)
+        {
+            Execute(new TakeTorch(hero.Id, tile));
+        }
+        else if (room.Sconces.ContainsKey(tile) && hero.Position.ChebyshevDistanceTo(tile) <= 1 && _session.CheckPutTorch(tile) is null)
+        {
+            Execute(new PutTorch(hero.Id, tile));
+        }
         else if (tile != hero.Position && (DoorAt(room, tile) is not null || room.Layout[tile] is TileKind.StairsDown or TileKind.StairsUp or TileKind.Portal))
         {
             ApproachPassage(hero, room, tile, turn);
@@ -564,13 +587,14 @@ public partial class GameScreen
             return;
         }
 
-        if (_session.OdHandDiceLeft > 0 && SelectedOdHandDice < 1 && !_toolsHeld)
+        // A tool played on its own needs no Od Hand dice.
+        if (_aloneTool is null && _session.OdHandDiceLeft > 0 && SelectedOdHandDice < 1 && !_toolsHeld)
         {
             Log("Select at least one Od Hand die.", Palette.TextDim);
             return;
         }
 
-        Execute(command(hero.Id, SelectedOdHandDice, !_toolsHeld, SelectedPowerDice));
+        Execute(WithAloneTool(command(hero.Id, SelectedOdHandDice, !_toolsHeld, SelectedPowerDice)));
     }
 
     /// <summary>Unlocks shackles (your own, or an ally's beside you): with a key if you have one, else by picking the lock.</summary>
@@ -626,6 +650,29 @@ public partial class GameScreen
     {
         Passage? passage = room.PassageOn(side);
         GridPosition doorway = room.DoorTile(side);
+
+        // Barred on this side: lift the bar. From the other: it has to be smashed in.
+        if (passage is { IsBarred: true })
+        {
+            if (_session.CheckLiftBar(side) is null)
+            {
+                Execute(new LiftBar(hero.Id, side));
+            }
+            else
+            {
+                Log("It's barred from the other side: double-click it to smash it in, or find another way round.", Palette.TextDim);
+            }
+
+            return;
+        }
+
+        // A door's traps from their far side: switched off by hand, no roll.
+        if (passage is { Trap: not null, TrapsArmedFrom: { } armedFrom } && armedFrom != room.Id)
+        {
+            Execute(new Disarm(hero.Id, doorway));
+            return;
+        }
+
         if (passage?.Trap is { Revealed: true } && passage is not { IsLocked: true })
         {
             AskTrap("Darts are set in this doorway.", "Go through", () => Execute(new GoThroughDoor(hero.Id, side)),
@@ -1045,9 +1092,23 @@ public partial class GameScreen
             return grave + "Loot: " + string.Join(", ", things) + ". Stand on it and click to pick it up (your first loot each turn is free).";
         }
 
+        if (room.Sconces.TryGetValue(tile, out bool sconceLit))
+        {
+            return sconceLit
+                ? "A torch burns in a sconce on the wall here. From under it or beside it, click to take it down (free)."
+                : "An empty sconce on the wall here. Holding a torch, click it from under it or beside it to put the torch up (free): a light for the room.";
+        }
+
+        if (room.Layout[tile] == TileKind.Crate)
+        {
+            return $"A wooden crate. Double-click it from beside it to smash at it with Rumble: {GameRules.CrateToughness}+ for a break mark, {GameRules.CrateBreaks} break it open ({room.BreaksAt(tile)} so far).";
+        }
+
         if (room.TrapAt(tile) is { Revealed: true } trap)
         {
-            return trap.Kind == TrapKind.BombTrap
+            return trap.Kind == TrapKind.Rift
+                ? $"An unstable portal, crackling with lightning. Step in (or be pushed in) and a 1d6 Elektrik bolt strikes you and leaps to everyone beside you, and on from them: all it strikes are flung somewhere on floor 1. Next to it: click to disarm it with Od Hand ({trap.Difficulty}+), a banked Power Die buying the try."
+                : trap.Kind == TrapKind.BombTrap
                 ? $"A bomb trap: step on it and it pops out a lit bomb. Next to it: click to disarm it ({trap.Difficulty}+), and it gives up the bomb unlit."
                 : trap.Kind == TrapKind.TrapDoor
                 ? $"A trap door to the floor below. Next to it: click to jump down safely (1 step), or disarm it ({trap.Difficulty}+). Walk onto it and you fall, losing a heart."
@@ -1135,7 +1196,7 @@ public partial class GameScreen
     {
         if (room.IsSealed)
         {
-            return "A sealed door. It opens when every monster here is defeated.";
+            return $"A sealed door. {room.SealedText}";
         }
 
         Passage? passage = room.PassageOn(side);
@@ -1155,9 +1216,22 @@ public partial class GameScreen
             return "The keep's gate, barred by an emerald portcullis. Only the Emerald Key opens it: the Emerald Knight carries it.";
         }
 
+        if (passage is { IsBarred: true })
+        {
+            return passage.BarredFrom == room.Id
+                ? $"A door barred on this side. Stand by it and click to lift the bar (free).{darts}"
+                : $"A door barred from the other side. Smash it in (double-click it from beside it), or find another way round.{darts}";
+        }
+
+        if (passage is { TrapsArmedFrom: { } armedFrom, Trap: not null } && armedFrom != room.Id)
+        {
+            return $"Its trap's works are on this side: stand in the doorway and click to switch {(passage.Traps.Count > 1 ? "them" : "it")} off, no roll.";
+        }
+
         if (passage is { IsLocked: true })
         {
-            return $"A locked door. Stand in it and click to use a key, or to pick the lock with Od Hand ({passage.Difficulty}+).{darts}";
+            string locks = passage.Locks > 1 ? $"{passage.Locks} locks, each opened by itself" : "a lock";
+            return $"A locked door, {locks}. Stand in it and click to use a key, or to pick the lock with Od Hand ({passage.Difficulty}+); or smash it in.{darts}";
         }
 
         bool explored = _session.State.Rooms[room.Doors[side]].Explored;
@@ -1375,6 +1449,7 @@ public partial class GameScreen
     private void CancelSelection()
     {
         _odAim = OdAim.None;
+        _aloneTool = null;
         _confirmingRetreat = false;
         _wingsChoice = false;
         _heroPanel.CloseBag();
@@ -1429,6 +1504,35 @@ public partial class GameScreen
         {
             PlayAbility(new AbilityCard(card.Definition.Id, card.Definition.Name, _aid, () => true));
             return;
+        }
+
+        // A tool on the belt: played on its own from there, or drawn into a hand to go in with the Od Hand dice.
+        if (card.Definition.Tool is { } toolUse && _session.State.Turn is not null)
+        {
+            List<(string Text, Action Then)> choices = [.. ToolJobs.Where(job => toolUse.For.HasFlag(job.Skill) && _session.CheckToolAlone(card.Id, job.Skill) is null)
+                .Select(job => ($"{job.Verb} with it alone", (Action)(() => AimToolAlone(card, job.Skill))))];
+            if (_session.CheckEquip(card.Id) is null)
+            {
+                choices.Add(("Draw it into a hand", () =>
+                {
+                    if (card.Definition.AltSlot is not null)
+                    {
+                        AskHand(hero, card);
+                    }
+                    else
+                    {
+                        Execute(new EquipCard(hero.Id, card.Id));
+                    }
+                }));
+            }
+
+            if (choices.Count > 0)
+            {
+                _selectedCardId = cardId;
+                RefreshPanels();
+                _inventory.AskChoice(cardId, $"The {card.Definition.Name}:", choices);
+                return;
+            }
         }
 
         _selectedCardId = cardId;

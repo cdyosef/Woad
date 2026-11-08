@@ -321,18 +321,53 @@ public sealed record ChestOpened(int HeroId, GridPosition Chest, IReadOnlyList<i
 /// <summary>An Od Hand roll for a check, against <paramref name="Difficulty"/> (0 for a steal, a contest).</summary>
 public sealed record OdHandRolled(int HeroId, OdHandCheckKind Kind, DiceRoll Roll, int Bonus, int Total, int Difficulty, int PowerDice = 0) : GameEvent
 {
+    /// <summary>What the roll is at, to picture it (a door, a chest...); null for a search, a steal and the like.</summary>
+    public RollTarget? Target { get; init; }
+
     /// <summary>Of the faces, after the Od Hand dice: the tools' own dice (a lockpick's d6). Power Dice come last.</summary>
     public int ToolDice { get; init; }
+}
+
+/// <summary>
+/// What a roll is at, pictured beside it: a door or chest (its locks still fastened, the lock's difficulty, which
+/// shows as how heavily it's bolted), a crate or wall being smashed, and any trap on it (seen, or just a "!").
+/// </summary>
+public sealed record RollTarget(string What, int Difficulty, int Locks, TrapKind? Trap, bool TrapSeen, bool Barred = false)
+{
+    /// <summary>Break marks on it (a smash), of the <see cref="Needed"/> that break it.</summary>
+    public int Breaks { get; init; }
+
+    public int Needed { get; init; }
 }
 
 /// <summary>An Od Hand check fell short (or a steal was out-rolled); nothing happens.</summary>
 public sealed record CheckFailed(int HeroId, OdHandCheckKind Kind) : GameEvent;
 
 /// <summary>A door opened: with a key, the Boss Key, or a picked lock.</summary>
-public sealed record DoorUnlocked(int HeroId, string RoomId, Direction Side, bool Picked, bool BossDoor) : GameEvent;
+public sealed record DoorUnlocked(int HeroId, string RoomId, Direction Side, bool Picked, bool BossDoor) : GameEvent
+{
+    /// <summary>The lock's difficulty (harder locks are worth more XP).</summary>
+    public int Difficulty { get; init; }
+
+    /// <summary>Locks still fastened on it: 0 once it's open.</summary>
+    public int LocksLeft { get; init; }
+}
+
+/// <summary>A torch taken from a wall sconce.</summary>
+public sealed record TorchTaken(int HeroId, string RoomId, GridPosition Sconce, int CardId) : GameEvent;
+
+/// <summary>A torch put into a wall sconce, lighting it.</summary>
+public sealed record TorchPlaced(int HeroId, string RoomId, GridPosition Sconce) : GameEvent;
+
+/// <summary>A bar lifted from a door, from the side it's on.</summary>
+public sealed record BarLifted(int HeroId, string RoomId, Direction Side) : GameEvent;
 
 /// <summary>A chest's lock opened, with a key or picked. It still has to be opened.</summary>
-public sealed record ChestUnlocked(int HeroId, GridPosition Chest, bool Picked) : GameEvent;
+public sealed record ChestUnlocked(int HeroId, GridPosition Chest, bool Picked) : GameEvent
+{
+    /// <summary>The lock's difficulty (harder locks are worth more XP).</summary>
+    public int Difficulty { get; init; }
+}
 
 /// <summary>
 /// A search turned things up: secret doors (by side), traps (tiles, chests and doors), stashes, and
@@ -762,6 +797,33 @@ public sealed record FrozenSolid(int EntityId) : GameEvent;
 
 /// <summary>A confused hero or monster lashed out at whoever was beside it and staggered off.</summary>
 public sealed record Staggered(int EntityId) : GameEvent;
+
+/// <summary>A counterattack: the Emerald Knight (or a hero with the Emerald Axe) hitting back at <paramref name="TargetId"/>.</summary>
+public sealed record Countered(int EntityId, int TargetId) : GameEvent;
+
+/// <summary>A blow at something breakable: its roll against the toughness, and the break marks it has now (of those it takes).</summary>
+public sealed record SmashRolled(int HeroId, string RoomId, GridPosition Target, DiceRoll Roll, int Bonus, int Total, int Toughness, bool Success, int Breaks, int Needed, string What) : GameEvent;
+
+/// <summary>Enough break marks: a door smashed in, a crate broken open, a wall cracked or broken through.</summary>
+public sealed record SmashedOpen(int HeroId, string RoomId, GridPosition Target, string What) : GameEvent;
+
+/// <summary>Ten break marks: a wall cracks (and can be broken through).</summary>
+public sealed record WallCracked(string RoomId, GridPosition Tile) : GameEvent;
+
+/// <summary>A blow that fell short: a break token on the weapon (its wear now).</summary>
+public sealed record WeaponWorn(int HeroId, int CardId, int Wear) : GameEvent;
+
+/// <summary>An unstable portal went off: its lightning leapt to everyone in <paramref name="StruckIds"/>.</summary>
+public sealed record RiftCrackled(string RoomId, GridPosition Rift, IReadOnlyList<int> StruckIds) : GameEvent;
+
+/// <summary>The rift's lightning at one of those it struck: its Elektrik die and the floor's bonus.</summary>
+public sealed record RiftZapped(int EntityId, DiceRoll Roll, int Bonus, int Total) : GameEvent;
+
+/// <summary>A hero flung by a rift to a random spot on floor 1.</summary>
+public sealed record HeroFlung(int HeroId, string FromRoomId, string RoomId, GridPosition Position) : GameEvent;
+
+/// <summary>A monster flung by a rift to a random spot on floor 1.</summary>
+public sealed record MonsterFlung(int MonsterId, string FromRoomId, string RoomId, GridPosition Position) : GameEvent;
 
 /// <summary>Plants grew on a tile (Life dice), for the heroes' side or the monsters'.</summary>
 public sealed record PlantsGrew(string RoomId, GridPosition Tile, bool ForHeroes) : GameEvent;
