@@ -416,6 +416,15 @@ LOOKS = [
         "........", "......oo", ".....oHH", "....oHHH", "....oHSS", "....oSeS", "....oSSS", "...ootTT",
         "..oSotTt", "..oSotTt", "...oobbR", "....oRRR", "....oRRo", "....okko", "....oooo", "........"],
      "extra": [(7, 14, 'm'), (8, 13, 'm'), (8, 14, 'k'), (8, 15, 'm'), (9, 13, 'm'), (9, 14, 'M'), (9, 15, 'M'), (10, 2, 'g'), (11, 2, 'm'), (12, 2, 'm')]},
+    {"id": "ninja", "name": "Ninja", "skin": "human", "hair": None, "rows": [
+        "........", "......oo", ".....oTT", "....oTTT", "....oTTT", "....oSeS", "....oTTT", "...otTTT",
+        "..oTotTT", "..oTotTT", "...oRRRR", "....otTT", "....otTo", "....oTTo", "....oooo", "........"],
+     "extra": [(6, 12, 'g'), (5, 13, 'N'), (4, 13, 'N'), (3, 14, 'N'), (2, 14, 'N'), (9, 1, 'm'), (8, 1, 'M')]},
+    {"id": "geisha", "name": "Geisha", "skin": "human", "skinDefault": "pale", "hair": "hair", "hairDefault": "black", "rows": [
+        "....oo.o", "...oHHoH", "...oHHHH", "..oHHHHH", "...oHHSS", "...oHSeS", "...oHSSS", "...oowtT",
+        ".otTotTT", ".otTotTT", "..ooRRRR", "...otTTT", "....otTT", "....owwo", "....oooo", "........"],
+     "extra": [(6, 7, 'p'), (6, 8, 'p'), (1, 3, 'g'), (0, 2, 'g'), (1, 12, 'g'), (0, 13, 'g'), (2, 12, 'c')],
+     "palette": {"p": "#d85060"}},
 ]
 
 
