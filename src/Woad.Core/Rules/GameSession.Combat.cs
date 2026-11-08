@@ -365,7 +365,7 @@ public sealed partial class GameSession
         // Any 1 in a torch-lit attack burns one of the torches out: a flame of Hurl Fire first.
         if (attack.Torches > 0 && attack.Roll.Faces.Contains(1) && hero.Flame)
         {
-            hero.Flame = false;
+            QuenchHeldFire(hero);
             events.Add(new FlameWentOut(hero.Id));
         }
         else if (attack.Torches > 0 && attack.Roll.Faces.Contains(1) && hero.EquippedCards.LastOrDefault(card => card.Definition.Torch) is { } torch)

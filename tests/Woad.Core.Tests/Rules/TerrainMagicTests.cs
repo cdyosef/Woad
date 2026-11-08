@@ -331,7 +331,7 @@ public class TerrainMagicTests
         Assert.Equal(new BrazierLit(room.Id, new GridPosition(4, 4)), session.Do(new CastSpell(hero.Id, "flame_blast", new GridPosition(4, 4))).SingleOf<BrazierLit>());
 
         session.State.Turn!.AttackDiceUsed = 0;
-        hero.Flame = true;
+        hero.Equip(new CardInstance(session.State.NextId(), TestContent.Catalog.GetCard("hold_fire"), null), EquipSlot.OffHand);
         IReadOnlyList<GameEvent> events = session.Do(new HurlHeldFire(hero.Id, new GridPosition(6, 4)));
         Assert.Equal(new BrazierLit(room.Id, new GridPosition(6, 4)), events.SingleOf<BrazierLit>());
         Assert.False(hero.Flame);

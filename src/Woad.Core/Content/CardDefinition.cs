@@ -265,6 +265,9 @@ public sealed record CardDefinition
     /// <summary>Every push counts twice: twice as far, and a boss (or anything too big) can be shoved a tile.</summary>
     public bool DoublePush { get; init; }
 
+    /// <summary>Hold Fire: a flame in a hand (see <c>GameSession.HeldFire</c>). It never goes on the belt or in the bag.</summary>
+    public bool HeldFire { get; init; }
+
     /// <summary>Wielded, it hits back once a round when a Power Die comes up on a defense roll (the Emerald Axe).</summary>
     public bool Counters { get; init; }
 

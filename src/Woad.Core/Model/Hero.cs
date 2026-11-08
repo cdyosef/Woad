@@ -327,10 +327,13 @@ public sealed class Hero
     public bool Knows(Skill skill) => (Skills & skill) == skill;
 
     /// <summary>Torches held (and so lit): one in each hand at most, and a flame of Hurl Fire (see <see cref="Flame"/>).</summary>
-    public int TorchesHeld => EquippedCards.Count(card => card.Definition.Torch) + (Flame ? 1 : 0);
+    public int TorchesHeld => EquippedCards.Count(card => card.Definition.Torch) + _carried.Count(card => card.Definition.HeldFire);
 
     /// <summary>A flame of Hurl Fire cast on themselves: a lit torch needing no hand, until a 1 in an attack puts it out or they fall to the floor below.</summary>
-    public bool Flame { get; internal set; }
+    public bool Flame => HeldFires.Any();
+
+    /// <summary>The flames of Hold Fire the hero has: in hand (one to a hand), or handed to them and still in their arms.</summary>
+    public IEnumerable<CardInstance> HeldFires => EquippedCards.Concat(_carried).Where(card => card.Definition.HeldFire);
 
     /// <summary>Their Medicine Bags, on the belt or in a hand, if they have any to hand.</summary>
     public CardInstance? MedicineBag => EquippedCards.Concat(_belt).FirstOrDefault(card => card.Definition.MedicineBag);

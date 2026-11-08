@@ -64,7 +64,7 @@ public partial class GameScreen
     private void UpdateCastButton(Hero? hero, bool ready)
     {
         LayoutEndTurnRow();
-        List<string?> errors = hero is null ? [] : [.. hero.Spells.Select(spell => _session.CheckCastSpell(spell.Id))];
+        List<string?> errors = hero is null ? [] : [.. hero.Spells.Where(spell => spell.Upgrades is null).Select(spell => _session.CheckCastSpell(spell.Id))];
         string? blocked = errors.Count == 0 ? "" : errors.All(error => error is not null) ? errors[0] : null;
         _cast.Disabled = !ready || blocked is not null || hero is null || hero.Spells.Count == 0 || (_session.State.Turn?.KeelingOver ?? false);
         _cast.TooltipText = blocked ?? "Cast a spell you know: it costs banked Power Dice and your Rumble dice. Select more Power Dice to put more into it (a die each, up to your Magic).";

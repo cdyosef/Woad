@@ -61,6 +61,7 @@ internal static class TestContent
           { "id": "trident", "name": "Trident", "type": "weapon", "slot": "mainHand", "twoHanded": true, "modifiers": { "weapon": 1 }, "attackRange": 2, "swimmerBonus": 1 },
           { "id": "helm", "name": "Helm", "type": "armor", "slot": "head", "swims": true },
           { "id": "picks", "name": "Picks", "type": "tool", "slot": "offHand", "stacks": true, "belts": true, "tool": { "for": "pickLock", "bonus": 1, "dice": 1, "snaps": true } },
+          { "id": "hold_fire", "name": "Hold Fire", "type": "tool", "slot": "offHand", "altSlot": "mainHand", "torch": true, "heldFire": true, "quest": true },
           { "id": "t_torch", "name": "T-Torch", "type": "tool", "slot": "offHand", "altSlot": "mainHand", "stacks": true, "torch": true },
           { "id": "longsword", "name": "Longsword", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 1, "weaponDice": 1 }, "versatile": 1 },
           { "id": "tonic", "name": "Tonic", "type": "potion", "usage": "singleUse", "stacks": true, "effect": { "kind": "heal", "amount": 1 } },

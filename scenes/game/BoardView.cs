@@ -179,7 +179,7 @@ public partial class BoardView : Control
     public override void _Process(double delta)
     {
         // Lit fuses spark; the ritual circle and the portal swirl.
-        if (_room?.Bombs.Any(bomb => bomb.Lit) == true || _room?.Flames.Count > 0 || _room?.LitBraziers.Count > 0 || _room?.PortalLit == true || (_room?.RitualCircle is not null && (RitualUnderWay || _room.Cursed)))
+        if (_room?.Bombs.Any(bomb => bomb.Lit) == true || _room?.Flames.Count > 0 || _room?.LitBraziers.Count > 0 || _room?.PortalLit == true || _room?.Traps.Values.Any(trap => trap.Kind == TrapKind.Rift) == true || (_room?.RitualCircle is not null && (RitualUnderWay || _room.Cursed)))
         {
             QueueRedraw();
         }
@@ -1107,6 +1107,12 @@ public partial class BoardView : Control
     private void DrawTrap(GridPosition tile, TrapKind kind)
     {
         Rect2 rect = TileRect(tile);
+        if (kind == TrapKind.Rift)
+        {
+            DrawRift(tile);
+            return;
+        }
+
         string artName = kind switch { TrapKind.TrapDoor => "trapdoor", TrapKind.BombTrap => "bomb_trap", _ => "spikes" };
         if (GameArt.Tile(ThemeId, artName) is { } art)
         {

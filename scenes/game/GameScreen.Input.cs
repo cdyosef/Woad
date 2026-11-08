@@ -1048,7 +1048,9 @@ public partial class GameScreen
 
         if (room.TrapAt(tile) is { Revealed: true } trap)
         {
-            return trap.Kind == TrapKind.BombTrap
+            return trap.Kind == TrapKind.Rift
+                ? $"An unstable portal, crackling with lightning. Step in (or be pushed in) and a 1d6 Elektrik bolt strikes you and leaps to everyone beside you, and on from them: all it strikes are flung somewhere on floor 1. Next to it: click to disarm it with Od Hand ({trap.Difficulty}+), a banked Power Die buying the try."
+                : trap.Kind == TrapKind.BombTrap
                 ? $"A bomb trap: step on it and it pops out a lit bomb. Next to it: click to disarm it ({trap.Difficulty}+), and it gives up the bomb unlit."
                 : trap.Kind == TrapKind.TrapDoor
                 ? $"A trap door to the floor below. Next to it: click to jump down safely (1 step), or disarm it ({trap.Difficulty}+). Walk onto it and you fall, losing a heart."

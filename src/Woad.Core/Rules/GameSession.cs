@@ -316,6 +316,7 @@ public sealed partial class GameSession
         }
 
         KeepAfloat(hero, events);
+        DropCarriedFire(hero, events);
         if (State.Phase != RunPhase.InProgress || !hero.IsActive)
         {
             return null;
@@ -686,7 +687,8 @@ public sealed partial class GameSession
     {
         foreach ((GridPosition tile, TrapSetup trap) in features.Traps)
         {
-            room.SetTrap(tile, new Trap(trap.Kind, trap.Difficulty));
+            // An unstable portal is in plain sight.
+            room.SetTrap(tile, new Trap(trap.Kind, trap.Difficulty) { Revealed = trap.Kind == TrapKind.Rift });
         }
 
         foreach ((GridPosition chest, int difficulty) in features.LockedChests)

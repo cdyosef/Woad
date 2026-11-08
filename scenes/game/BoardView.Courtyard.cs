@@ -2,6 +2,7 @@ using Godot;
 using Woad.Core.Dungeon;
 using Woad.Core.Grid;
 using Woad.Core.Model;
+using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Game;
 
@@ -36,6 +37,46 @@ public partial class BoardView
         h *= 0x5bd1e995;
         h ^= h >> 15;
         return (h & 0xFFFF) / 65536f;
+    }
+
+    /// <summary>An unstable portal: a broken ring of stone round a violet swirl, lightning crackling off it.</summary>
+    private void DrawRift(GridPosition tile)
+    {
+        Rect2 rect = TileRect(tile);
+        Vector2 center = rect.GetCenter();
+        float time = Time.GetTicksMsec() / 1000f;
+        Color violet = new("8a5cff"), bolt = new("e8f4ff"), spark = new("6ad8ff");
+        DrawCircle(center, 13, new Color(0, 0, 0, 0.35f), antialiased: true);
+        DrawCircle(center, 11 + Mathf.Sin(time * 7) * 1.5f, violet with { A = 0.45f }, antialiased: true);
+        DrawCircle(center, 7, violet with { A = 0.85f }, antialiased: true);
+        for (int arm = 0; arm < 3; arm++)
+        {
+            float start = -time * 4 + arm * Mathf.Tau / 3;
+            DrawArc(center, 5, start, start + 2f, 10, bolt, 1.5f, antialiased: true);
+        }
+
+        // The ring, cracked: three stones of it, with gaps.
+        for (int stone = 0; stone < 6; stone++)
+        {
+            float from = stone * Mathf.Tau / 6 + 0.15f, to = from + Mathf.Tau / 6 - 0.45f;
+            DrawArc(center, 12, from, to, 6, Palette.Wall, 4, antialiased: true);
+        }
+
+        // Lightning: a jagged bolt or two, flickering.
+        int flicker = (int)(time * 12) + tile.X * 7 + tile.Y * 3;
+        for (int i = 0; i < 2; i++)
+        {
+            if ((flicker + i) % 3 == 0)
+            {
+                continue;
+            }
+
+            float angle = (flicker * 1.7f + i * 2.4f) % Mathf.Tau;
+            Vector2 dir = new(Mathf.Cos(angle), Mathf.Sin(angle));
+            Vector2 side = new(-dir.Y, dir.X);
+            Vector2 a = center + dir * 9, b = center + dir * 13 + side * 3, c = center + dir * 17 - side * 2;
+            DrawPolyline([a, b, c], i == 0 ? bolt : spark, 1.5f);
+        }
     }
 
     /// <summary>One courtyard tile, by what it looks like.</summary>

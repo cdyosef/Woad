@@ -52,6 +52,21 @@ public partial class Main
             await portals.WaitUntilIdle();
             await portals.CheckPortals();
 
+            // An unstable portal: in plain sight, crackling.
+            var rift = new GameScreen { Setup = DemoRun.Rift(11), Content = _content };
+            Show(rift);
+            await rift.WaitUntilIdle();
+            Check(rift.Session.State.Rooms["hall"].TrapAt(new GridPosition(3, 3)) is { Kind: TrapKind.Rift, Revealed: true }, "the keep's portal is a rift, in plain sight");
+            if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } riftShots)
+            {
+                for (int frame = 0; frame < 20; frame++)
+                {
+                    await NextFrame(this);
+                }
+
+                GetViewport().GetTexture().GetImage().SavePng($"{riftShots}/rift.png");
+            }
+
             // The roof, from the start: open stone, the crenellated edge, the stairs down in the middle.
             if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } roofShots)
             {

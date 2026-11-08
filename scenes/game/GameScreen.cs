@@ -945,6 +945,26 @@ public partial class GameScreen : Control
                 await RemoveFigure(fell.MonsterId);
                 break;
 
+            case RiftCrackled crackled:
+                _board.Shake(5);
+                _board.FloatText(crackled.Rift, "ZAP!", DieTypes.Tint(DieType.Elektrik));
+                await Pause(0.3);
+                break;
+
+            case RiftZapped zapped:
+                await _dice.ShowRoll($"Lightning leaps at {NameOf(zapped.EntityId)}", zapped.Roll, zapped.Bonus, newGroup: true, types: [.. zapped.Roll.Faces.Select(_ => DieType.Elektrik)],
+                    rollerOnRight: _turnHeroId == zapped.EntityId);
+                break;
+
+            case HeroFlung flung:
+                await ChangeRoom(flung.HeroId, flung.RoomId, flung.Position);
+                await _banner.Flash($"Flung to {_session.State.Rooms[flung.RoomId].PlaceName}!", DieTypes.Tint(DieType.Elektrik), 0.5);
+                break;
+
+            case MonsterFlung monsterFlung:
+                await RemoveFigure(monsterFlung.MonsterId);
+                break;
+
             case Leaped leap:
                 await _dice.ShowRoll($"{NameOf(leap.HeroId)} leaps ({leap.From.ChebyshevDistanceTo(leap.Target) * 2}+)", new DiceRoll([leap.Roll]), 0, newGroup: true);
                 _dice.ShowOutcome(leap.Landing == leap.Target);
@@ -1697,6 +1717,9 @@ public partial class GameScreen : Control
         ShoveResisted resisted => FigureRoom(resisted.TargetId),
         MonsterTrapped trapped => FigureRoom(trapped.MonsterId),
         MonsterFell fell => fell.FromRoomId,
+        RiftCrackled crackled => crackled.RoomId,
+        RiftZapped zapped => FigureRoom(zapped.EntityId),
+        MonsterFlung flungAway => flungAway.FromRoomId,
         Leaped leap => FigureRoom(leap.HeroId),
         StayedAfloat afloat => FigureRoom(afloat.HeroId),
         Drowned drowned => FigureRoom(drowned.HeroId),

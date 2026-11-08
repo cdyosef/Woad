@@ -224,6 +224,20 @@ public static class DemoRun
         StartRoomId = "yard",
     };
 
+    /// <summary>For --gatetest's rift: Aria beside an unstable portal, a slime the far side of it.</summary>
+    public static RunSetup Rift(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20 } }],
+        Rooms =
+        [
+            new RoomSetup("hall", RoomTemplate.Parse(".......\n.......\n.......\n..1.s..\n.......\n.......\n.......", ContentCatalog.LoadDefault()),
+                Features: new RoomFeatures { Traps = new Dictionary<GridPosition, TrapSetup> { [new GridPosition(3, 3)] = new TrapSetup(Woad.Core.Model.TrapKind.Rift, GameRules.RiftDifficulty) } }),
+        ],
+        StartRoomId = "hall",
+    };
+
     /// <summary>For --toolstest: Aria wearing Sticky Gloves, Lockpicks on her belt, a Dagger in her off hand, nothing about to fight.</summary>
     public static RunSetup Tools(ulong seed) => new()
     {

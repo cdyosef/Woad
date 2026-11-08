@@ -766,6 +766,18 @@ public sealed record Staggered(int EntityId) : GameEvent;
 /// <summary>A counterattack: the Emerald Knight (or a hero with the Emerald Axe) hitting back at <paramref name="TargetId"/>.</summary>
 public sealed record Countered(int EntityId, int TargetId) : GameEvent;
 
+/// <summary>An unstable portal went off: its lightning leapt to everyone in <paramref name="StruckIds"/>.</summary>
+public sealed record RiftCrackled(string RoomId, GridPosition Rift, IReadOnlyList<int> StruckIds) : GameEvent;
+
+/// <summary>The rift's lightning at one of those it struck: its Elektrik die and the floor's bonus.</summary>
+public sealed record RiftZapped(int EntityId, DiceRoll Roll, int Bonus, int Total) : GameEvent;
+
+/// <summary>A hero flung by a rift to a random spot on floor 1.</summary>
+public sealed record HeroFlung(int HeroId, string FromRoomId, string RoomId, GridPosition Position) : GameEvent;
+
+/// <summary>A monster flung by a rift to a random spot on floor 1.</summary>
+public sealed record MonsterFlung(int MonsterId, string FromRoomId, string RoomId, GridPosition Position) : GameEvent;
+
 /// <summary>Plants grew on a tile (Life dice), for the heroes' side or the monsters'.</summary>
 public sealed record PlantsGrew(string RoomId, GridPosition Tile, bool ForHeroes) : GameEvent;
 

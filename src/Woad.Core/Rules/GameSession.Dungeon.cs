@@ -167,6 +167,12 @@ public sealed partial class GameSession
         bool found = trap.Revealed;
         trap.Revealed = true;
         events.Add(new TrapSprung(hero.Id, trap.Kind, position));
+        if (trap.Kind == TrapKind.Rift)
+        {
+            RiftStrike(room, position, hero.Id, events);
+            return;
+        }
+
         if (trap.Kind == TrapKind.BombTrap)
         {
             // No harm itself: it pops out a lit bomb, whose fuse burns on the hero's turns.

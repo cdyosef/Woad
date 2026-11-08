@@ -94,7 +94,11 @@ public sealed partial class GameSession
 
         if (hero.Flame)
         {
-            hero.Flame = false;
+            while (hero.Flame)
+            {
+                QuenchHeldFire(hero);
+            }
+
             events.Add(new FlameWentOut(hero.Id));
         }
 

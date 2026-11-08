@@ -104,7 +104,7 @@ public static partial class DungeonGenerator
             passages.Add(new PassageSetup(KeepCourtyard.Id, Direction.North, PassageKind.Gate));
         }
 
-        PlacePortals(rooms, theme.Floors);
+        PlacePortals(rooms, theme.Floors, theme.UnstablePortals);
         if (theme.Tower)
         {
             BuildTower(theme, content, layouts, heroes, seed, rooms, passages);

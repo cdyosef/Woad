@@ -109,6 +109,9 @@ public static class GameRules
     /// <summary>An end-of-run award (Keymaster, Slayer...) is worth this for each floor of the dungeon.</summary>
     public const int AwardXpPerFloor = 5;
 
+    /// <summary>What disarming an unstable portal takes (a banked Power Die buys the attempt).</summary>
+    public const int RiftDifficulty = 11;
+
     /// <summary>Search total to find a hidden stash of keys or loot.</summary>
     public static int StashDifficulty(int floor) => 5 + floor;
 

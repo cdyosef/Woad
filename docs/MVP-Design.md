@@ -611,7 +611,7 @@ All cost **1 Power** and can be upcast.
 | Spell | Range | Dice | What it does |
 | --- | --- | --- | --- |
 | Shooting Star | 8 | 1 Star | A 6 surges with Power |
-| Hurl Fire | 6 | 1 Fire | On yourself: **Hold Fire**, a flame that's a lit torch needing no hand (light, a Search die, a fire die on your attacks), until a 1 in an attack puts it out (before any torch) or you fall to the floor below; the stairs don't. While it burns, a **Hold Fire** card is in your Od Hand: play it and click a monster within 6 to hurl the flame, its Fire die and your Magic with the Od Hand dice you add, for no Power; the flame is gone |
+| Hurl Fire | 6 | 1 Fire | On yourself: **Hold Fire**, a flame held in a hand as a **card** (an empty hand first, else the off hand, whose card goes to the belt or bag), one to a hand, so two at most. It's a lit torch (light, a Search die, a fire die on your attacks) until a 1 in an attack puts it out (before any torch) or you fall to the floor below; the stairs don't. It never goes on the belt or in the bag: move it to your other hand, **drop** it (the floor there burns, spreading and dying down like any fire), or **hand it to an ally**, into their arms, where it burns on as a light; they must take it into a hand by the end of their turn or it falls, burning. The **Hold Fire** card in your Od Hand hurls it: click a monster within 6, its Fire die and your Magic with the Od Hand dice you add, for no Power; the flame is gone. **Hurl Fire 1**, a basic spell picked with a rank of Magic by someone who knows Hurl Fire (it isn't cast itself), adds +1 fire to Hurl Fire and to a hurled flame |
 | Poison Mist | 2, every creature in a straight line | 1 Poison, +1 per Poison token on you | Throws off every Poison token on you |
 | Icicle Arrow | 4 | 1 Ice | Or cast on the floor to lay ice (below) |
 | Acid Ball | 3 | 1 Acid | The same roll splashes one random creature beside the target, friend or foe |
@@ -1063,6 +1063,13 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   it; it stays lit. From beside a lit portal a hero steps through, free, to any **other lit portal**, coming
   out beside it (reaching a deeper floor that way counts as reaching it). A portal blocks movement but not
   sight. Click a portal to walk up to it, then click it again: dark, it asks which die; lit, where to.
+- **Unstable portals (the Emerald Keep's):** the keep's three portals are rifts on the floor, crackling with
+  lightning, in plain sight: a trap. Walk in (or be pushed in) and a 1d6 **Elektrik** bolt (+ the floor) strikes
+  you and leaps on to everyone beside you, and from each of them on again, striking each once; everyone it
+  strikes, hit or miss, is **flung** to a random free spot on floor 1, any room, secret or not (getting out of
+  one may take a bomb). A boss, or anything too big, takes the blow but holds its ground. A rift can be
+  **disarmed**, closing it: a banked Power Die buys the attempt, Od Hand against 11; botched, it goes off on
+  whoever tried.
 - **Room roles:** the walk's first room is the Arrival room, which has no monsters. The room farthest
   from it holds the Stairs down (floors 1–2) or the Boss and Exit (floor 3), behind the Boss Door. A dead
   end becomes the Treasure room (chests, one guard), on floor 3 another becomes the Vault (the Boss Key's

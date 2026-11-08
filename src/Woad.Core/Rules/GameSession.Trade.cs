@@ -61,6 +61,20 @@ public sealed partial class GameSession
             return $"{from.Name} doesn't have that card.";
         }
 
+        // A flame goes into their arms, burning, for them to take into a hand by the end of their turn.
+        if (card.Definition.HeldFire)
+        {
+            if (!to.CanCarryInArms(card.Definition))
+            {
+                return $"{to.Name}'s arms are full.";
+            }
+
+            from.Remove(card);
+            to.AddToCarried(card);
+            events.Add(new CardTraded(from.Id, to.Id, card.Id, 1));
+            return null;
+        }
+
         int amount = count ?? card.Count;
         if (amount < 1 || amount > card.Count)
         {

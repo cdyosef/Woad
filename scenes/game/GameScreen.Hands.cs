@@ -741,7 +741,7 @@ public partial class GameScreen
     private List<AbilityCard> SpellCards(Hero? hero, bool ready)
     {
         var cards = new List<AbilityCard>();
-        foreach (SpellDefinition spell in hero?.Spells ?? [])
+        foreach (SpellDefinition spell in (hero?.Spells ?? []).Where(spell => spell.Upgrades is null))
         {
             if (!_spellButtons.TryGetValue(spell.Id, out Button? button))
             {

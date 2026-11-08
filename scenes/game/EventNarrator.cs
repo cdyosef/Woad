@@ -33,6 +33,10 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         ShoveResisted resisted => $"{nameOf(resisted.TargetId)} holds their ground.",
         MonsterTrapped trapped => $"{nameOf(trapped.MonsterId)} is shoved onto a {(trapped.Kind == TrapKind.TrapDoor ? "trap door" : "spike trap")}!",
         MonsterFell fell => $"{nameOf(fell.MonsterId)} drops to the floor below.",
+        RiftCrackled crackled => $"The unstable portal crackles: lightning leaps through {string.Join(", ", crackled.StruckIds.Select(nameOf))}!",
+        RiftZapped zapped => $"The lightning strikes at {nameOf(zapped.EntityId)} with {zapped.Total}.",
+        HeroFlung flung => $"{nameOf(flung.HeroId)} is flung away through the rift.",
+        MonsterFlung flungAway => $"{nameOf(flungAway.MonsterId)} is flung away through the rift.",
         BullRushed { MonsterId: int struck } rushed => $"{nameOf(rushed.HeroId)} charges {rushed.Length} and slams into {nameOf(struck)}{(rushed.Leftover > 0 ? $", +{rushed.Leftover} to spare" : "")}!",
         BullRushed rushed when rushed.To == rushed.From => $"{nameOf(rushed.HeroId)} charges, and gets nowhere.",
         BullRushed rushed => $"{nameOf(rushed.HeroId)} charges {rushed.Length}.",
@@ -337,6 +341,7 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         TrapKind.Spikes => "spike trap",
         TrapKind.Needle => "needle in the lock",
         TrapKind.Darts => "dart trap",
+        TrapKind.Rift => "unstable portal",
         _ => "trap",
     };
 

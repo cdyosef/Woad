@@ -271,8 +271,12 @@ public sealed partial class GameSession
             }
         }
 
-        // What comes off goes to the backpack; in combat, to the belt, as long as it's held gear and fits.
+        // What comes off goes to the backpack; in combat, to the belt, as long as it's held gear and fits. A flame can't.
         IReadOnlyList<CardInstance> displaced = hero.CardsDisplacedBy(definition, HandFor(hero, card, hand));
+        if (displaced.FirstOrDefault(old => old.Definition.HeldFire) is { } held && held != card)
+        {
+            return "There's a flame of Hold Fire in that hand: hurl it, drop it or hand it on first.";
+        }
         if (combat && (displaced.Any(old => !HandHeld(old.Definition))
             || hero.Belt.Count - (location == CardLocation.Belt ? 1 : 0) + displaced.Count > hero.BeltCapacity))
         {
@@ -293,6 +297,11 @@ public sealed partial class GameSession
         if (CheckCardQuery(cardId, out CardInstance? card, out CardLocation location) is { } error)
         {
             return error;
+        }
+
+        if (HeldFireStays(card!) is { } flame)
+        {
+            return flame;
         }
 
         if (card!.Definition.CarryOnly)
@@ -341,6 +350,11 @@ public sealed partial class GameSession
             return error;
         }
 
+        if (HeldFireStays(card!) is { } flame)
+        {
+            return flame;
+        }
+
         if (location == CardLocation.Backpack)
         {
             return $"The {card!.Definition.Name} is already in your backpack.";
@@ -375,6 +389,11 @@ public sealed partial class GameSession
         if (CheckCardQuery(cardId, out CardInstance? card, out CardLocation location) is { } error)
         {
             return error;
+        }
+
+        if (location == CardLocation.Equipped && HeldFireStays(card!) is { } flame)
+        {
+            return flame;
         }
 
         if (location == CardLocation.Carried)
@@ -741,6 +760,13 @@ public sealed partial class GameSession
         if (hero.FindCard(command.CardId) is not var (card, _))
         {
             return "You don't have that card.";
+        }
+
+        // A flame dropped sets the floor burning.
+        if (card.Definition.HeldFire)
+        {
+            DropHeldFire(hero, card, events);
+            return null;
         }
 
         int count = command.Count ?? card.Count;

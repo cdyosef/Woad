@@ -187,6 +187,13 @@ public sealed partial class GameSession
             return error;
         }
 
+        // A rift: a banked Power Die buys the attempt.
+        if (ActiveRoom.TrapAt(command.Target) is { Kind: TrapKind.Rift })
+        {
+            ActiveHero.Power.Banked--;
+            events.Add(new PowerDiceSpent(ActiveHero.Id, 1, ActiveHero.Power.Banked));
+        }
+
         RollOdHand(command, dice, check!, events);
         return null;
     }
@@ -355,6 +362,11 @@ public sealed partial class GameSession
         if (trap is not { Revealed: true })
         {
             return "There's no trap you know of there. Search to find traps, then disarm one next to you.";
+        }
+
+        if (trap.Kind == TrapKind.Rift && hero.Power.Banked < 1)
+        {
+            return "Steadying an unstable portal takes a banked Power Die to try.";
         }
 
         check = new OdHandCheck(OdHandCheckKind.Disarm, trap.Difficulty, target);

@@ -485,6 +485,10 @@ public sealed partial class GameSession
         {
             MonsterFalls(hero, room, monster, from, to, events);
         }
+        else if (room.TrapAt(to) is { Kind: TrapKind.Rift } && !monster.Flies)
+        {
+            RiftStrike(room, to, monster.Id, events);
+        }
         else if (room.TrapAt(to) is { Kind: TrapKind.Spikes or TrapKind.TrapDoor or TrapKind.BombTrap } trap && !monster.Flies)
         {
             trap.Revealed = true;

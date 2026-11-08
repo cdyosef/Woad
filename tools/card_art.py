@@ -384,6 +384,14 @@ def draw(item):
         c.line(16, 15, 22, 15, WOOD[2])
         c.poly([(22, 13), (26, 13), (24, 17)], GREEN[1])
         c.line(7, 26, 15, 16, WOOD[0])
+    elif i == "hold_fire":
+        # A flame cupped in an open hand.
+        c.poly([(7, 22), (11, 27), (21, 27), (26, 21), (24, 19), (20, 22), (12, 22), (9, 19)], "#d8a07a")
+        c.poly([(9, 19), (8, 13), (10, 13), (11, 19)], "#d8a07a")
+        c.poly([(24, 19), (25, 13), (27, 14), (26, 20)], "#d8a07a")
+        c.poly([(16, 21), (11, 15), (13, 8), (16, 3), (19, 8), (21, 15)], FLAME[2])
+        c.poly([(16, 20), (13, 15), (15, 9), (16, 7), (18, 10), (19, 15)], FLAME[1])
+        c.poly([(16, 19), (15, 15), (16, 11), (17, 15)], FLAME[0])
     elif i == "lit_stick":
         # The Stick, alight at its tip.
         c.line(6, 27, 16, 15, WOOD[1], 2)
@@ -1005,6 +1013,14 @@ def spell(c, name):
         c.line(4, 28, 16, 16, GOLD[2], 1)
         _star(c, 20, 12, 9, 4, GOLD[1])
         _star(c, 20, 12, 5, 2.2, GOLD[0])
+    elif name == "hurl_fire_1":
+        # Hurl Fire, hotter: the fireball with a second tail, and a gold +1 spark.
+        c.poly([(4, 24), (14, 13), (20, 20), (10, 28)], FLAME[2])
+        c.poly([(2, 16), (12, 10), (14, 15), (5, 20)], FLAME[1])
+        c.circle(20, 12, 9, FLAME[2])
+        c.circle(20, 12, 6.5, FLAME[1])
+        c.circle(19, 11, 4, FLAME[0])
+        _star(c, 27, 25, 4, 1.8, GOLD[0])
     elif name == "hurl_fire":
         c.poly([(4, 24), (14, 13), (20, 20), (10, 28)], FLAME[2])
         c.poly([(7, 24), (15, 16), (18, 20), (11, 26)], FLAME[1])
@@ -1109,7 +1125,7 @@ def spell(c, name):
 
 
 SPELLS = [
-    "shooting_star", "hurl_fire", "poison_mist", "icicle_arrow", "acid_ball", "death_touch", "squall_wave",
+    "shooting_star", "hurl_fire", "hurl_fire_1", "poison_mist", "icicle_arrow", "acid_ball", "death_touch", "squall_wave",
     "shining_light", "lifeforce", "quake", "elektrobolt", "swirly_eyes", "shadowbind",
     "flame_blast", "frost_blast", "venom_blast", "acid_blast", "grave_blast", "gale_blast", "sun_blast",
     "bloom_blast", "quake_blast", "spark_blast", "mind_blast", "shadow_blast",
@@ -1124,7 +1140,7 @@ def draw_spell(name):
 
 
 ITEMS = [
-    "wooden_sword", "longsword", "knights_sword", "trident", "short_bow", "great_axe", "emerald_axe", "emerald_axe_3", "maul", "war_hammer",
+    "hold_fire", "wooden_sword", "longsword", "knights_sword", "trident", "short_bow", "great_axe", "emerald_axe", "emerald_axe_3", "maul", "war_hammer",
     "spear", "dagger", "rapier", "crossbow", "heavy_crossbow", "frost_brand", "quake_hammer", "longbow",
     "buckler", "tower_shield", "knights_shield", "emerald_baron_helm", "leather_cap", "diving_helm", "lucky_helmet", "cowards_cloak",
     "leather_armor", "studded_armor", "chain_mail", "wardens_plate", "storm_mail", "dash_boots",
