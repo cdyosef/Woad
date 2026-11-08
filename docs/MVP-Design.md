@@ -278,8 +278,11 @@ every room that holds at least one player. Rooms with no players stay paused.
      act or roll another move in between, and any steps left over are added to the next move. Only a
      sprung trap ends your movement early. A negative Wend bonus always applies to your first move.
      **Rough ground** (rubble) and **water** cost 2 steps a tile. You can swim **deep water**, but if your
-     turn ends in it, one of your unused Rumble dice keeps you afloat; with none left you **drown**: you
-     lose a heart and stay where you are, out in the deep water, to swim for it next turn.
+     turn ends in it, one of your unused Rumble dice keeps your head above it. **Under** it (diving, prone in deep
+     water, or dragged down), or with no Rumble die left, you hold your breath: one of your hearts turns **blue**,
+     from the last one you'd lose up (empty and Black Hearts never do). Blue Hearts are your breath, so more hearts
+     means longer under. With **every** heart blue you **drown**: a heart lost each turn, on top of any other harm.
+     Each turn you end out of the deep (and not lying face down in the shallows), one blue heart turns red again.
    - **Leaps (Wend):** press **Leap**, pick a tile up to 3 away in a straight line (diagonals too) and
      commit; only then is one unused Wend die rolled. The leap carries half the roll, rounded down,
      never past your target. It sails over pits, water, traps and figures, but not walls, chests or pots.

@@ -287,7 +287,7 @@ public partial class HeroPanel : Panel
         float nameWidth = heading.GetStringSize(hero.Name, fontSize: UiTheme.HeadingSize).X;
         _hearts.Position = new Vector2(Math.Min(4 + nameWidth + 5, 100), 5);
         _hearts.Size = new Vector2(172 - _hearts.Position.X, 9);
-        _hearts.ShowHearts(hero.Hearts, hero.MaxHearts);
+        _hearts.ShowHearts(hero.Hearts, hero.MaxHearts, hero.BlueHearts);
 
         // The title, for now, is what they look like (Barbarian, Bard...).
         string dim = Palette.Hex(Palette.TextDim);

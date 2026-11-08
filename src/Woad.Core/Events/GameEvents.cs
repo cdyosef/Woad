@@ -251,6 +251,12 @@ public sealed record MonsterWeaponBroke(int MonsterId, string CardId) : GameEven
 /// <summary>A hero painted their crest on the shield in their off hand.</summary>
 public sealed record ShieldPainted(int HeroId, int CardId) : GameEvent;
 
+/// <summary>A hero under the water holds their breath: a heart turns blue (<paramref name="Blue"/> of <paramref name="Hearts"/> now).</summary>
+public sealed record BreathHeld(int HeroId, int Blue, int Hearts) : GameEvent;
+
+/// <summary>Out of the deep, a hero gets a breath back: a blue heart turns red (<paramref name="Blue"/> still blue).</summary>
+public sealed record BreathCaught(int HeroId, int Blue) : GameEvent;
+
 /// <summary>A monster's tongue lashes out at a hero beyond its claws (Leviathan Jr.).</summary>
 public sealed record TongueLashed(int MonsterId, int TargetId) : GameEvent;
 

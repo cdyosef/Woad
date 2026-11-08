@@ -1034,6 +1034,18 @@ public partial class GameScreen : Control
                 await Pause(0.3);
                 break;
 
+            case BreathHeld held:
+                FloatOver(held.HeroId, held.Blue >= held.Hearts ? "out of breath!" : "holding breath", HeartsView.Blue);
+                await UpdateFigure(held.HeroId, figure => figure.BlueHearts = held.Blue, 0.25);
+                RefreshPanels();
+                break;
+
+            case BreathCaught caught:
+                FloatOver(caught.HeroId, "a breath", HeartsView.Blue);
+                await UpdateFigure(caught.HeroId, figure => figure.BlueHearts = caught.Blue, 0.15);
+                RefreshPanels();
+                break;
+
             case Drowned drowned:
                 if (_figures.TryGetValue(drowned.HeroId, out Figure? drowning) && drowning.RoomId == _shownRoomId)
                 {

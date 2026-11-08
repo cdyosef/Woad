@@ -198,6 +198,10 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         Mugged mugged => $"{nameOf(mugged.MonsterId)} snatches {Money.Long(mugged.Coins)} from {nameOf(mugged.HeroId)}.",
         StunWoreOff wore => $"{nameOf(wore.EntityId)} shakes off the stun.",
         ShieldPainted painted => $"{nameOf(painted.HeroId)} paints their crest on their {cardNameOf(painted.CardId)}: those beside them rally to it.",
+        BreathHeld held => held.Blue >= held.Hearts
+            ? $"{nameOf(held.HeroId)} is out of breath: every heart has turned blue!"
+            : $"{nameOf(held.HeroId)} holds their breath under the water: a heart turns blue ({held.Blue} of {held.Hearts}).",
+        BreathCaught caught => $"{nameOf(caught.HeroId)} gulps a breath of air{(caught.Blue > 0 ? $" ({caught.Blue} blue still)" : "")}.",
         TongueLashed lashed => $"{nameOf(lashed.MonsterId)}'s tongue lashes out at {nameOf(lashed.TargetId)}!",
         MonsterPunched punched => punched.With is { } with
             ? $"{nameOf(punched.MonsterId)} swings its off hand at {nameOf(punched.TargetId)}, a {with} in its fist!"

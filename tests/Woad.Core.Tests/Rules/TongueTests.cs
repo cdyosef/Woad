@@ -24,7 +24,7 @@ public sealed class TongueTests
     [Fact]
     public void BeyondItsClawsItsTongueLashesAHeroWithinFiveWithoutItsWeapon()
     {
-        GameSession session = Yard("..1...?..", new ScriptedDice(3, 1, 1, 1));
+        GameSession session = Yard("..1...$..", new ScriptedDice(3, 1, 1, 1));
         Hero hero = session.HeroInSeat();
         Monster licker = session.OnlyMonster();
 
@@ -37,7 +37,7 @@ public sealed class TongueTests
     [Fact]
     public void FurtherThanFiveItsTongueDoesntReach()
     {
-        GameSession session = Yard("1.......?", new ScriptedDice(3, 1, 1, 1));
+        GameSession session = Yard("1.......$", new ScriptedDice(3, 1, 1, 1));
 
         Assert.DoesNotContain(session.EndRound(), gameEvent => gameEvent is TongueLashed);
     }

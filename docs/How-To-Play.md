@@ -36,7 +36,8 @@ tray to choose how many go into the next roll.
 - Steps you don't use carry over for the rest of your turn: walk a little, attack, then keep walking.
 - Moving is orthogonal (no diagonal steps). Walls and monsters block you; your allies don't.
 - **Rubble** and **water** cost 2 steps a tile. You can swim in deep water, but ending your turn in it costs
-  a Rumble die to stay afloat.
+  a Rumble die to stay afloat. Under the water (or with no die left), a heart turns **blue** each turn: that's
+  your breath. With every heart blue you start to drown. Each turn you end out of the deep, a breath comes back.
 - **Leap:** pick a tile up to 3 away in a straight line, then roll a Wend die; you sail half the roll. It's
   how you clear pits and traps.
 
