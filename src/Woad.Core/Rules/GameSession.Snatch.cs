@@ -25,10 +25,11 @@ public sealed partial class GameSession
     /// <summary>Into the deep water beside it, and under: the hero's taken to the free deep tile beside it nearest them.</summary>
     private void PullUnder(Room room, Monster monster, Hero hero, List<GameEvent> events)
     {
-        if (room.Layout[hero.Position] != TileKind.DeepWater
+        // Into the deep beside it if it can (else into any water beside it: its claws reach 2, and it holds what's beside it).
+        if ((room.Layout[hero.Position] != TileKind.DeepWater || hero.Position.ManhattanDistanceTo(monster.Position) > 1)
             && monster.Position.OrthogonalNeighbors()
-                .Where(tile => room.Layout.Contains(tile) && room.Layout[tile] == TileKind.DeepWater && !IsOccupied(room, tile))
-                .OrderBy(tile => tile.ManhattanDistanceTo(hero.Position)).ThenBy(tile => tile.Y).ThenBy(tile => tile.X)
+                .Where(tile => room.Layout.Contains(tile) && InWater(room, tile) && !IsOccupied(room, tile))
+                .OrderBy(tile => room.Layout[tile] == TileKind.DeepWater ? 0 : 1).ThenBy(tile => tile.ManhattanDistanceTo(hero.Position)).ThenBy(tile => tile.Y).ThenBy(tile => tile.X)
                 .Select(tile => (GridPosition?)tile).FirstOrDefault() is { } deep)
         {
             GridPosition from = hero.Position;

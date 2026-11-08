@@ -1041,6 +1041,35 @@ public partial class GameScreen : Control
                 await Pause(0.3);
                 break;
 
+            case ElektrikAbsorbed absorbed:
+                FloatOver(absorbed.MonsterId, $"absorbs {absorbed.Dice}!", DieTypes.Tint(DieType.Elektrik));
+                await Pause(0.25);
+                break;
+
+            case ShockwaveReleased shock:
+                CalloutOver(shock.MonsterId, "SHOCKWAVE!", DieTypes.Tint(DieType.Elektrik));
+                _trayShowsMovement = false;
+                await _dice.ShowRoll($"{NameOf(shock.MonsterId)}'s shockwave", shock.Roll, 0, newGroup: true, types: [.. shock.Roll.Faces.Select(_ => DieType.Elektrik)]);
+                Sfx.Play("boom", 1.4f);
+                break;
+
+            case ShockwaveFizzled fizzled:
+                FloatOver(fizzled.MonsterId, "fizzles...", DieTypes.Tint(DieType.Elektrik));
+                break;
+
+            case BarrageLoosed loosed:
+                CalloutOver(loosed.MonsterId, loosed.Name.ToUpperInvariant() + "!", Palette.Danger);
+                await Pause(0.35);
+                break;
+
+            case BarrageRecharged recharged:
+                FloatOver(recharged.MonsterId, $"{recharged.Name} ready", Palette.TrimBright);
+                break;
+
+            case MonsterDove dove:
+                FloatOver(dove.MonsterId, "dives", HeartsView.Blue);
+                break;
+
             case MonsterSpoke spoke:
                 Say(spoke.MonsterId, spoke.Text, Languages.Get(spoke.Language));
                 await Pause(1.2);
@@ -1875,6 +1904,8 @@ public partial class GameScreen : Control
         MonsterThrew threw => FigureRoom(threw.MonsterId),
         MonsterCharged charged => FigureRoom(charged.MonsterId),
         TongueLashed lashed => FigureRoom(lashed.MonsterId),
+        BarrageLoosed loosed => FigureRoom(loosed.MonsterId),
+        ShockwaveReleased shock => FigureRoom(shock.MonsterId),
         Snatched snatched => FigureRoom(snatched.MonsterId),
         DraggedUnder dragged => FigureRoom(dragged.MonsterId),
         MonsterPunched punched => FigureRoom(punched.MonsterId),

@@ -22,6 +22,12 @@ public sealed class Monster
 
     public int Hearts { get; internal set; }
 
+    /// <summary>Elektrik dice it has absorbed, to be released in a shockwave at the start of its turn.</summary>
+    public int StoredElektrik { get; internal set; }
+
+    /// <summary>Its barrages loosed and not yet come back (by id).</summary>
+    public HashSet<string> SpentBarrages { get; } = [];
+
     /// <summary>How many of its lines it has said (see <see cref="MonsterDefinition.Speech"/>), and whether its drag line yet.</summary>
     public int LinesSpoken { get; internal set; }
 

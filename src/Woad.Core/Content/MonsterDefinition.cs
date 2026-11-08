@@ -174,6 +174,18 @@ public sealed record MonsterDefinition
     /// </summary>
     public MonsterSpeech? Speech { get; init; }
 
+    /// <summary>Elektrik dice that attack it don't count against it: it stores them, released in a shockwave through its water at the start of its turn (Leviathan Jr.).</summary>
+    public bool AbsorbsElektrik { get; init; }
+
+    /// <summary>For a water creature: how far it crawls on land, back toward the water, a turn (Leviathan Jr.'s 1); -1 for no crawling.</summary>
+    public int LandMove { get; init; } = -1;
+
+    /// <summary>With moves left at the end of its turn, it goes back down into the deep water (Leviathan Jr.).</summary>
+    public bool DivesAfter { get; init; }
+
+    /// <summary>Ranged attacks it looses when nobody's in reach of its blows, one a turn; once loosed, each comes back on a die roll (Leviathan Jr.'s Bolt Ball and Mass Swirly Eyes).</summary>
+    public IReadOnlyList<MonsterBarrage> Barrages { get; init; } = [];
+
     /// <summary>Slain, its body floats belly-up where it fell, eyes X'd: a raft over the water heroes can stand on (Leviathan Jr.).</summary>
     public bool FloatsWhenSlain { get; init; }
 
@@ -323,6 +335,27 @@ public sealed record MonsterDefinition
 }
 
 /// <summary>A special card a monster drops on defeat, with a percent chance, besides its usual loot.</summary>
+/// <summary>
+/// A monster's ranged barrage: its typed dice, its range (in sight), on everyone in sight (<see cref="Mass"/>) or one
+/// target, drawing those it hits a tile nearer (<see cref="Swirl"/>); spent once loosed, back on a d6 of <see cref="Recharge"/> or more.
+/// </summary>
+public sealed record MonsterBarrage
+{
+    public required string Id { get; init; }
+
+    public required string Name { get; init; }
+
+    public IReadOnlyList<TypedDie> Dice { get; init; } = [];
+
+    public int Range { get; init; } = 8;
+
+    public bool Mass { get; init; }
+
+    public bool Swirl { get; init; }
+
+    public int Recharge { get; init; } = 6;
+}
+
 /// <summary>A monster's lines: <see cref="Lines"/> one a round in order, <see cref="DragLine"/> the first time it drags someone down.</summary>
 public sealed record MonsterSpeech
 {

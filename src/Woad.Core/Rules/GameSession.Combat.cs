@@ -318,6 +318,8 @@ public sealed partial class GameSession
 
             if (room.FindMonster(targetId) is { } monster)
             {
+                // Leviathan Jr. drinks in Elektrik dice: they don't count against it.
+                (total, laid) = AbsorbElektrik(monster, attack.Roll, attack.DieTypes, total, laid, events);
                 Thaw(monster.Conditions, monster.Id, fireDice, events);
                 if (attack.Chill > 0)
                 {

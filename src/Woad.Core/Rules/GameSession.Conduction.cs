@@ -24,18 +24,7 @@ public sealed partial class GameSession
         }
 
         // The body of water: the water tiles joined to the struck one, within reach of it.
-        var water = new HashSet<GridPosition> { at };
-        var frontier = new Queue<GridPosition>([at]);
-        while (frontier.TryDequeue(out GridPosition tile))
-        {
-            foreach (GridPosition next in tile.OrthogonalNeighbors())
-            {
-                if (room.Layout.Contains(next) && InWater(room, next) && next.ChebyshevDistanceTo(at) <= ConductReach && water.Add(next))
-                {
-                    frontier.Enqueue(next);
-                }
-            }
-        }
+        HashSet<GridPosition> water = BodyOfWater(room, at, ConductReach);
 
         int attackerId = heroAttacker?.Id ?? monsterAttacker?.Id ?? 0;
         List<Hero> heroes = [.. State.HeroesIn(room).Where(hero => hero.IsInPlay && hero.Id != attackerId && !struck.Contains(hero.Id) && water.Contains(hero.Position))];
@@ -58,9 +47,10 @@ public sealed partial class GameSession
 
         foreach (Monster monster in monsters.Where(monster => room.FindMonster(monster.Id) is not null))
         {
-            if (DamageMonster(heroAttacker, room, monster, total, DamageSource.Weapon, events, ranged: true) > 0 && room.FindMonster(monster.Id) is not null)
+            (int against, Dictionary<DieType, int> laid) = AbsorbElektrik(monster, roll, types, total, sixes, events);
+            if (DamageMonster(heroAttacker, room, monster, against, DamageSource.Weapon, events, ranged: true) > 0 && room.FindMonster(monster.Id) is not null)
             {
-                LayTypedDice(room, monster, sixes, attackerId, at, heroAttacker, events);
+                LayTypedDice(room, monster, laid, attackerId, at, heroAttacker, events);
             }
         }
     }

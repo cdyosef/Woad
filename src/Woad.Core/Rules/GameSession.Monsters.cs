@@ -248,6 +248,16 @@ public sealed partial class GameSession
             events.Add(new MonsterYelled(monster.Id, yell));
         }
 
+        // Leviathan Jr.: its barrages coming back, its stored Elektrik going off.
+        if (monster.Definition.AbsorbsElektrik || monster.Definition.Barrages.Count > 0)
+        {
+            LeviathanTurnStart(room, monster, events);
+            if (State.Phase != RunPhase.InProgress || room.FindMonster(monster.Id) is null)
+            {
+                return;
+            }
+        }
+
         // A line a round, in order, while heroes are there to hear it (Leviathan Jr.'s grumbling).
         if (monster.Definition.Speech is { } speech && monster.LinesSpoken < speech.Lines.Count && monster.SpokeInRound != State.Round && State.HeroesIn(room).Any())
         {
@@ -357,6 +367,17 @@ public sealed partial class GameSession
             return;
         }
 
+        // Stranded on land, a water creature crawls back toward the water, then fights whoever's in reach.
+        if (CrawlToWater(room, monster, events))
+        {
+            if (ChooseTarget(room, monster, monster.Position, standing) is { } beside)
+            {
+                MonsterAttacks(room, monster, beside, events);
+            }
+
+            return;
+        }
+
         bool regrabbed = Regrab(room, monster, standing, events);
         if (ThrowInstead(room, monster, standing, events) || regrabbed)
         {
@@ -413,9 +434,9 @@ public sealed partial class GameSession
         {
             // Nobody in reach of a blow: it cast its spell instead.
         }
-        else if (LashTongue(room, monster, standing, events))
+        else if (LooseBarrage(room, monster, standing, events))
         {
-            // Nobody in reach of its claws: its tongue lashed out instead.
+            // Nobody in reach of its claws: a barrage, or its tongue, instead.
         }
         else if (ChooseTarget(room, monster, monster.Position, keeling) is { } keeler)
         {
@@ -425,6 +446,9 @@ public sealed partial class GameSession
         {
             MonsterAttacksMerchant(room, monster, events);
         }
+
+        // With moves left, a diver goes back down into the deep.
+        DiveBack(room, monster, monster.MovesThisTurn - path.Count, events);
 
         // A spin on top of it all, at everyone near.
         if (definition.Sweep is { Bonus: true } spin && monster.TurnsTaken % spin.Every == 0 && room.FindMonster(monster.Id) is not null && State.Phase == RunPhase.InProgress)

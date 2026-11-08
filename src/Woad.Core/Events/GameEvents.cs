@@ -251,6 +251,24 @@ public sealed record MonsterWeaponBroke(int MonsterId, string CardId) : GameEven
 /// <summary>A hero painted their crest on the shield in their off hand.</summary>
 public sealed record ShieldPainted(int HeroId, int CardId) : GameEvent;
 
+/// <summary>A monster drinks in Elektrik dice that attacked it (Leviathan Jr.): <paramref name="Stored"/> now waiting to go off.</summary>
+public sealed record ElektrikAbsorbed(int MonsterId, int Dice, int Stored) : GameEvent;
+
+/// <summary>Its stored Elektrik goes off in a shockwave through its water, at all these.</summary>
+public sealed record ShockwaveReleased(int MonsterId, DiceRoll Roll, IReadOnlyList<int> Struck) : GameEvent;
+
+/// <summary>Out of the water, its stored Elektrik fizzles out.</summary>
+public sealed record ShockwaveFizzled(int MonsterId, int Dice) : GameEvent;
+
+/// <summary>A monster looses a barrage (Bolt Ball, Mass Swirly Eyes) at these.</summary>
+public sealed record BarrageLoosed(int MonsterId, string Name, IReadOnlyList<int> TargetIds) : GameEvent;
+
+/// <summary>A spent barrage comes back on its die (<paramref name="Face"/>).</summary>
+public sealed record BarrageRecharged(int MonsterId, string Name, int Face) : GameEvent;
+
+/// <summary>A monster goes back down into the deep at the end of its turn.</summary>
+public sealed record MonsterDove(int MonsterId) : GameEvent;
+
 /// <summary>A monster says something, in its language (by id): it shows in a speech bubble over it.</summary>
 public sealed record MonsterSpoke(int MonsterId, string Language, string Text) : GameEvent;
 
