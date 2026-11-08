@@ -289,7 +289,9 @@ LOOKS = [
         "........", "......oo", ".....oRR", "....ogkg", "...oHrrr", "...oHMeS", "...oHSsH", "..oHhTHH",
         "..oSohtH", "..oSotTH", "...oobbh", "....otTT", "....otTo", "....okko", "....oooo", "........"],
      "extra": [(6, 10, "k"), (6, 11, "k"), (5, 12, "w"), (5, 13, "f"), (3, 13, "m"), (2, 14, "m"), (1, 13, "m"),
-               (10, 8, "b")],
+               (10, 8, "b"),
+               # A mechanical arm on the cigarette side: a brass shoulder, a steel arm and a steel hand.
+               (7, 12, "g"), (8, 12, "m"), (9, 12, "M")],
      "palette": {"f": "#ff7a3a"}},
 ]
 
