@@ -64,6 +64,7 @@ public partial class GameScreen
             {
                 _names[monster.Id] = monster.Definition.Name;
                 _figures[monster.Id] = MonsterFigure(monster.Id, monster.Definition, room.Id, monster.Position, monster.Hearts, monster.MaxHearts);
+                _figures[monster.Id].Unarmed = monster.Disarmed;
                 _figures[monster.Id].Frozen = monster.FrozenTurns > 0;
                 _figures[monster.Id].Collapsed = monster.Collapsed;
                 _figures[monster.Id].FireDice = monster.FireDice;
@@ -149,8 +150,12 @@ public partial class GameScreen
             twoHanded ? null : Shown(EquipSlot.OffHand),
             Shown(EquipSlot.Head),
             belted ? BeltSquare.BeltColors(look.BeltLook.Length > 0 ? look.BeltLook : belt!.Definition.Id).Leather : null,
-            belted && buckle is not null ? BeltSquare.BuckleMetal(look.BuckleLook.Length > 0 ? look.BuckleLook : buckle.Definition.Id) : null);
+            belted && buckle is not null ? BeltSquare.BuckleMetal(look.BuckleLook.Length > 0 ? look.BuckleLook : buckle.Definition.Id) : null,
+            GameSession.BearsCrest(hero) && !twoHanded ? CrestOf(hero) : null);
     }
+
+    /// <summary>A hero's crest, as their painted shield shows it.</summary>
+    private static Crest CrestOf(Hero hero) => Crests.Resolve(hero.Appearance, hero.Portrait, Looks.Resolve(hero.Appearance, hero.Portrait));
 
     /// <summary>Puts each hero's gear on their figure, as it is now.</summary>
     private void DressFigures()
@@ -166,6 +171,11 @@ public partial class GameScreen
 
     private void ApplyFigure(Figure figure, TokenView token)
     {
+        if (figure.Unarmed && figure.Monster is { } armed && GameArt.Monster(_session.State.ThemeId, armed.Id + "_unarmed") is { } unarmed)
+        {
+            token.Body = unarmed;
+        }
+
         token.SetHearts(figure.Hearts, figure.MaxHearts);
         token.Frozen = figure.Frozen;
         token.Collapsed = figure.Collapsed;
@@ -478,6 +488,9 @@ public partial class GameScreen
     private sealed class Figure
     {
         public int Id { get; init; }
+
+        /// <summary>Its weapon broke: drawn from its "_unarmed" sprite.</summary>
+        public bool Unarmed { get; set; }
 
         public bool IsHero { get; init; }
 

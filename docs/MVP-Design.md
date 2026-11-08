@@ -104,20 +104,33 @@ the Party menu can spend points on them too.
   each kind *(tunable)*. Points already spent can't be refunded.
 - **Progression:** XP from monster kills and floors reached. Level 2 takes 10 XP, level 3 takes 30, then
   60, 100 and so on (10 × 1, 3, 6, 10…). Each level grants 1 point.
-- **Looks:** purely cosmetic; stats come only from point-buy. A character picks one of 45 figures
+- **Looks:** purely cosmetic; stats come only from point-buy. A character picks one of 78 figures
   (Wanderer, Knight, Ranger, Rogue, Mage, Wizard, Brute, Barbarian, Wild Woman, Shaka, Druid,
   Princess, Noble, Enchantress, Dancer, Sorceress, Street Rat, Sultan, Bard, Bunny Lady, Cat Lady,
   Monk, Priestess, Elf, She-Elf, Dark Elf, Spider Lover, Brave, Wolf Man, Birdman, Dwarf, Halfling,
   Lizard Man, Stone Man, Log Man, Devilman, Helling, Raider, Swashbuckler, Pirate, Tempest, Riverman,
-  Alchemist, Artificer, Artifixer) and its colors:
+  Alchemist, Artificer, Artifixer, Half-Orc, 3/4 Orc, Gnome, Fairy, Cook, Fat Man, Harpy Man, Frog Man,
+  Turtle Reaper, Turtle Man, Fishman, Snakeman, Death Cultist, Snake Cultist, Veteran, Man-At-Arms, Spearman, Militia,
+  Skirmisher, Real Light, Wood Elf, Duergar, Genie, Egyptian, Huskarl, Samurai, Mangudai, Scout, Witch,
+  Joan of Arc, Squire, Ninja, Geisha) and its colors:
   - **Main and trim:** two of 12 colors (clothes, then belts, sashes, plumes and the like).
-  - **Skin and hair:** from the figure's own sets: skin tones, dark elf or demon skin, scales, stone
-    or wood; hair, fur, plumage or leaves. Some looks start on a fitting color (dark elves white-haired). Figures that don't show one (a Knight's helmet, a Monk's bald head) skip it.
+  - **Skin and hair:** from the figure's own sets: skin tones, orc, dark elf, duergar, genie or demon
+    skin, frog or turtle skin, scales (lizard or fish), stone or wood; hair, fur, plumage, leaves or a turtle's shell. Some looks start on a fitting color (dark elves white-haired). Figures that don't show one (a Knight's helmet, a Monk's bald head) skip it.
   - **Random** rolls a look and colors. Any two players may share colors: on the board each hero
     stands on a ring of their seat color.
   - Characters saved before looks existed are Wanderers in their crest's color.
-- **Crests:** eight heraldic sigils, drawn in the character's main and trim colors. They head the
-  hero panel in a run.
+- **Crests:** a shield with a field and a charge, built in the editor's crest rows. The **field** is plain or
+  parted in two colors (halved, parted, slanted, quartered, chief, pale, band, bend, chevron, cross, saltire,
+  bordered), its second color the character's trim; the **charge** is one of 24 (roundel, lozenge, triangle,
+  tau, spark, ring, bars, vee, sun, moon, star, tower, sword, axe, skull, eagle, fish, tree, crown, key, flame,
+  hand, heart, anvil) or none. The field's **color** and the charge's **ink** follow the character's main
+  color (darker and lighter) unless picked from the twelve colors, so a crest can differ from the figure's
+  colors. Left as they are, a crest is the portrait's own sigil, plain, as crests always were. `-- --crestsheet`
+  shows them all. They head the hero panel in a run.
+- **Shield Paint:** a single-use tool (the smithy sells it). Used, it paints your crest on the shield in your
+  off hand, for good: it shows on the shield's card and on your figure, and stays on through mending and
+  between runs (a "*" on the card's key); scraped off, the paint is gone. While you bear a painted shield, the
+  heroes beside you rally to your colors: +1 to their defense (added to their armor).
 - **Characters screen:** lists saved characters (with their figures) and their stats, gear and record.
   You can create, edit (rename, restyle, spend points) or delete them; delete asks for a second click.
 - **Party setup:** click characters to seat them; the order you pick them is the turn order. An
@@ -886,8 +899,8 @@ total reaches its number:
 | Petty Thief | 2 | 4 | 1d6 | 1d6 | Od Hand 3: steals from a hero beside it (each die over their Od Hand roll and tools takes, in turn, 2 gold, an item, 2 gold...); with loot it runs from everyone |
 | Mugger Fly | 1 | 6 | 2×1d6 | 1d6 | Flies. Goes for the hero with the most gold; every hit takes 1 gold; Od Hand 1 steals gold only |
 | Mimic | 4 | 2 | 2d6+1 | 1d6+1 | Not spawned: about one ordinary chest in ten is a Mimic (never the Boss Key's, nor in an arrival room). Opening it or trying its lock wakes it with a free bite; a Search reaching 5 + floor finds it out first. A hit grabs: the hero can't move or leap until it's hurt, shoved, stunned, frozen or knocked flat. Always drops 2 cards |
-| Ogre | 5 | 2 | 2d6+2 | 1d6+1 | Rare, from floor 2. Each hit knocks the hero a tile straight back, into a pit or onto a trap if one's there |
-| Ogre Champ | 6 | 1 | 3d6 | 1d6+1 | Only in its den. Reach 2. Drawn bigger: fat, shirtless and horned, with a great club. Each hit knocks the hero a tile back, and every 6 on its roll a tile more, hit or miss |
+| Ogre | 5 | 2 | 2d6 + Big Club 2d6 | 1d6+1 | Rare, from floor 2. Each hit knocks the hero a tile straight back, into a pit or onto a trap if one's there. Yells "GRA!!" every turn |
+| Ogre Champ | 6 | 1 | 3d6 + Big Club 2d6 | 1d6+1 | Only in its den. Drawn bigger: fat, shirtless and horned. Each hit knocks the hero a tile back, and every 6 on its roll a tile more, hit or miss. Laughs as you come in, yells "GRA!!" every turn |
 | Necromancer | 3 | 2 | 1d6+1 | 1d6 | Rare, from floor 2. Ranged 4; keeps its distance. Every other turn raises a Skeleton beside it (from a grave nearby if there is one): 2 at a time, 4 in all. They crumble when it falls and are worth no XP, loot or kill |
 | Ghoul | 4 | 6 | 3×1d6 | 1d6 | Rare, from floor 2. Greater undead: Holy Water hits it with 5 Radiate dice. Three attacks of a Necro die each, and every hit stuns. Its miasma attacks every living creature starting its turn beside it with a Poison die |
 | Hexer | 2 | 3 | 1d6+1 | 1d6 | Rare, from floor 2. Ranged 4; keeps its distance. Has 1 Luck of its own; each hit steals a point of Luck (Luck, then Clover Luck), which it keeps; with none left, it stuns. Tries its Luck when its attack or defense is about to fail. Once a turn, a **Bad Luck Curse** on the nearest hero it can see. Dying, its unused Luck scatters as Lucky Clovers within 13 tiles |
@@ -1140,6 +1153,28 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   torch (a light and a fire, like a lit brazier); in a dark room they're empty. From under one or beside it,
   click it to take its torch down (free: into a free hand, else the belt or bag), or, holding a torch, to put
   it up and light the room.
+- **Big Clubs:** both ogres swing one (one-handed, to an ogre): 2 weapon dice on their first attack a turn, reach 2
+  in a straight line, and each 6 on those dice shoves the hero a tile further back, hit or miss. A double 1 on
+  them splinters it: the ogre fights on with its fists (melee, its own dice), drawn without it. An ogre that falls
+  with its club whole drops it. To a hero it's a two-handed weapon doing the same: 2d6 on one Rumble roll a
+  turn, reach 2, a shove for each 6 on its dice, broken by a double 1 on them.
+- **Ogre fists and charges:** at a hero right beside it, an ogre follows its club with its **off hand**: 2 dice,
+  every 6 knocking the hero a tile back, hit or miss; a Rock it carries adds +1 to the punch and is spent, a
+  Boulder its weapon 2, d6 and Earth die (a 1 on both breaks it, bursting on a 6). With nobody in reach but a hero
+  in a clear straight line (diagonals too) beyond it, an ogre **Bull Rushes**: a Wend die of tiles (a 6 rolls
+  another), and reaching the hero, a blow with the tiles to spare added: a hit drives them 2 tiles further back, a
+  miss leaves the ogre prone. Falling short, it just ends up nearer. It charges before it would throw.
+- **Rocks and Boulders:** half of all ogres carry 2-3 Rocks, and a fifth a **Boulder** instead (on their own
+  dice as the floor is laid). An ogre throws twice as far as anyone else (Rocks 6, a Boulder 4): with nobody in its
+  club's reach but someone in throwing range, it throws at the weakest instead of closing in. A Rock lands whole at
+  the target's feet on a 6, else shatters. With nothing left to throw, an ogre beside what it threw picks it back
+  up, in place of moving. A **Boulder** (two-handed to a hero; always thrown, even at someone beside you; range 2)
+  adds weapon 2, a d6 and an Earth die. After the blow it rolls on 1d6 tiles the way it was thrown, striking each of
+  the thrower's foes it meets with the same roll: on past them on a hit, or a miss they only just turn aside; it
+  stops dead at a defense of twice its roll, at a wall, or against one of the thrower's own side, and lies there as
+  loot. A 1 on both its d6 and its Earth die breaks it into 1-3 Rocks (a quarter of the time coins, now and then an
+  Emerald); on a critical roll (a 6 in it) it bursts, flinging them onto the tiles around, each Rock striking
+  whoever of the thrower's foes is there with a die, the Rock and an Earth die.
 - **Sealed rooms:** the boss's room, and a den (the Ogre Champ's), shut behind you: no one leaves by its
   doors while the boss (or the den's keeper) stands, as a trap room holds you till its last monster falls.
 - **Exit:** sealed until the boss in its room is defeated. Stand on it and click again to escape. Your

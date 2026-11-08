@@ -25,7 +25,6 @@ public partial class CharacterEditor : MenuScreen
         (StatKind.Magic, "Magic", "icon_magic"),
     ];
 
-    private readonly List<PortraitView> _portraits = [];
     private readonly Dictionary<StatKind, (Button Minus, Label Value, Button Plus)> _statControls = [];
     private readonly Dictionary<StatKind, Label> _costLabels = [];
     private readonly Dictionary<Skill, (Label Note, Button Toggle)> _skillRows = [];
@@ -81,6 +80,12 @@ public partial class CharacterEditor : MenuScreen
     private string _trim = "";
     private string _skin = "";
     private string _hair = "";
+    private string _crestField = "";
+    private string _crestCharge = "";
+    private string _crestColor = "";
+    private string _crestInk = "";
+    private PortraitView _crest = null!;
+    private readonly List<(Label Value, ColorRect? Swatch)> _crestRows = [];
 
     private Label _points = null!;
     private Label _error = null!;
@@ -113,7 +118,10 @@ public partial class CharacterEditor : MenuScreen
     /// <summary>The preview panel's text: the character's summary, or the help for the stat under the mouse.</summary>
     internal string PreviewText => _previewStats.Text;
 
-    internal PortraitView PortraitButton(int index) => _portraits[index];
+    /// <summary>The arrow buttons of the crest rows: 0 field, 1 charge, 2 field color, 3 charge color.</summary>
+    internal Button CrestButton(int row, bool next) => _crestButtons[row * 2 + (next ? 1 : 0)];
+
+    private readonly List<Button> _crestButtons = [];
 
     internal Button PlusButton(StatKind stat) => _statControls[stat].Plus;
 
@@ -124,7 +132,7 @@ public partial class CharacterEditor : MenuScreen
 
     internal Button RandomButton { get; private set; } = null!;
 
-    internal Appearance Appearance => new(_look, _main, _trim, _skin, _hair);
+    internal Appearance Appearance => new(_look, _main, _trim, _skin, _hair, CrestField: _crestField, CrestCharge: _crestCharge, CrestColor: _crestColor, CrestInk: _crestInk);
 
     public override void _Ready()
     {
@@ -134,7 +142,7 @@ public partial class CharacterEditor : MenuScreen
             _budget = PointBuy.Cost(character.Allocation) + character.UnspentPoints;
             _level = character.Level;
             _portrait = character.Portrait;
-            (_look, _main, _trim, _skin, _hair, _, _, _) = character.Appearance;
+            (_look, _main, _trim, _skin, _hair, _, _, _, _crestField, _crestCharge, _crestColor, _crestInk) = character.Appearance;
         }
         else
         {
@@ -165,18 +173,25 @@ public partial class CharacterEditor : MenuScreen
         _companionType.TooltipText = "Companions join a player's party. The game plays them, following that player's orders.";
         _isCompanion = Editing?.IsCompanion ?? false;
 
+        // The crest: its field and charge, and their colors (following the character's unless picked).
         Caption(new Vector2(24, 92), "CREST");
-        for (int i = 0; i < Portraits.All.Count; i++)
+        _crest = Add(new PortraitView { Position = new Vector2(26, 106), Size = new Vector2(28, 34) });
+        string[] crestCaptions = ["Field", "Charge", "Color", "Ink"];
+        for (int row = 0; row < 4; row++)
         {
-            string id = Portraits.All[i].Id;
-            PortraitView portrait = Add(new PortraitView { Clickable = true, Position = new Vector2(26 + i * 38, 106), Size = new Vector2(28, 34), TooltipText = Portraits.All[i].Name });
-            portrait.PortraitId = id;
-            portrait.Clicked += () =>
-            {
-                _portrait = id;
-                Refresh();
-            };
-            _portraits.Add(portrait);
+            float x = row % 2 == 0 ? 60 : 206;
+            float y = row < 2 ? 104 : 125;
+            Add(UiTheme.Label(new Vector2(x, y + 4), new Vector2(34, 12), crestCaptions[row], color: Palette.TextDim));
+            int step = row;
+            Button previous = Add(UiTheme.Button(new Vector2(x + 34, y), new Vector2(18, 19), "<"));
+            previous.Pressed += () => StepCrest(step, -1);
+            ColorRect? swatch = row >= 2 ? Add(new ColorRect { Position = new Vector2(x + 56, y + 4), Size = new Vector2(11, 11), MouseFilter = MouseFilterEnum.Ignore }) : null;
+            Label value = Add(UiTheme.Label(new Vector2(x + (row >= 2 ? 70 : 56), y + 4), new Vector2(row >= 2 ? 50 : 64, 12)));
+            Button next = Add(UiTheme.Button(new Vector2(x + 122, y), new Vector2(18, 19), ">"));
+            next.Pressed += () => StepCrest(step, +1);
+            _crestButtons.Add(previous);
+            _crestButtons.Add(next);
+            _crestRows.Add((value, swatch));
         }
 
         Caption(new Vector2(24, 150), "STATS");
@@ -424,6 +439,35 @@ public partial class CharacterEditor : MenuScreen
         }
     }
 
+    /// <summary>Steps a crest row: its field, its charge, or one of their colors (wrapping around).</summary>
+    private void StepCrest(int row, int delta)
+    {
+        Crest shown = Crests.Resolve(Appearance, _portrait, Looks.Resolve(Appearance, _portrait));
+        switch (row)
+        {
+            case 0:
+                _crestField = Next(Crests.Fields.Select(part => part.Id).ToList(), shown.Field);
+                break;
+            case 1:
+                _crestCharge = Next(Crests.Charges.Select(part => part.Id).ToList(), shown.Charge);
+                break;
+            case 2:
+                _crestColor = Next(Crests.ColorChoices.Select(swatch => swatch.Id).ToList(), _crestColor);
+                break;
+            default:
+                _crestInk = Next(Crests.ColorChoices.Select(swatch => swatch.Id).ToList(), _crestInk);
+                break;
+        }
+
+        Refresh();
+
+        string Next(IReadOnlyList<string> ids, string current)
+        {
+            int index = Math.Max(0, ids.ToList().IndexOf(current));
+            return ids[((index + delta) % ids.Count + ids.Count) % ids.Count];
+        }
+    }
+
     private void Randomize()
     {
         Look look = Looks.All[Random.Shared.Next(Looks.All.Count)];
@@ -443,9 +487,20 @@ public partial class CharacterEditor : MenuScreen
         Look look = colors.Look;
         _figure.Colors = colors;
         _preview.Colors = colors;
-        foreach (PortraitView portrait in _portraits)
+        _preview.Appearance = Appearance;
+        _crest.Colors = colors;
+        _crest.Appearance = Appearance;
+        _crest.PortraitId = _portrait;
+        Crest crest = Crests.Resolve(Appearance, _portrait, colors);
+        _crestRows[0].Value.Text = Crests.Name(Crests.Fields, crest.Field);
+        _crestRows[1].Value.Text = Crests.Name(Crests.Charges, crest.Charge);
+        ShowCrestColor(2, _crestColor, crest.FieldColor);
+        ShowCrestColor(3, _crestInk, crest.ChargeColor);
+
+        void ShowCrestColor(int row, string id, Color color)
         {
-            portrait.Colors = colors;
+            _crestRows[row].Value.Text = Looks.Find(Looks.Colors, id)?.Name ?? "Follow";
+            _crestRows[row].Swatch!.Color = color;
         }
 
         ShowRow(0, "Look", null, look.Name, enabled: true);
@@ -498,11 +553,6 @@ public partial class CharacterEditor : MenuScreen
             toggle.Text = known ? (_floor.Skills.HasFlag(skill) ? "Known" : "Forget") : cost == 0 ? "Learn free" : $"Learn {cost}";
             toggle.Disabled = known ? _floor.Skills.HasFlag(skill) : !PointBuy.CanLearn(_allocation, skill, _level, _budget);
             toggle.TooltipText = known || PointBuy.Check(_allocation.WithSkill(skill, true), _level, _budget) is not { } why ? "" : why;
-        }
-
-        foreach (PortraitView portrait in _portraits)
-        {
-            portrait.Selected = portrait.PortraitId == _portrait;
         }
 
         _heroType.SetPressedNoSignal(!_isCompanion);

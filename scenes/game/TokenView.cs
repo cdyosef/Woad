@@ -39,7 +39,17 @@ public partial class TokenView : Node2D
     public Color Fill { get; init; } = Colors.White;
 
     /// <summary>The sprite; null falls back to a shape.</summary>
-    public Texture2D? Body { get; init; }
+    public Texture2D? Body
+    {
+        get => _body;
+        set
+        {
+            _body = value;
+            QueueRedraw();
+        }
+    }
+
+    private Texture2D? _body;
 
     /// <summary>A hero's look and colors, drawn instead of <see cref="Body"/>; <see cref="Fill"/> is then their seat color.</summary>
     public LookColors? Look { get; init; }
@@ -92,12 +102,14 @@ public partial class TokenView : Node2D
     /// A hero's gear shown on their figure: what's in each hand and on their head (by card id, drawn small
     /// from its card art), and their belt's leather and buckle colors. Null shows none.
     /// </summary>
-    public sealed record FigureGear(string? MainHand, string? OffHand, string? Head, Color? Belt, Color? Buckle);
+    /// <param name="Crest">A painted shield in the off hand: the crest drawn on it.</param>
+    public sealed record FigureGear(string? MainHand, string? OffHand, string? Head, Color? Belt, Color? Buckle, Crest? Crest = null);
 
     private FigureGear? _gear;
 
     public FigureGear? Gear
     {
+        get => _gear;
         set
         {
             if (value != _gear)
@@ -455,7 +467,14 @@ public partial class TokenView : Node2D
         }
 
         Item(gear.Head, new Vector2(4.5f, -2.5f));
-        Item(gear.OffHand, new Vector2(-1.5f, 6.5f));
+        if (gear.Crest is { } crest && gear.OffHand is not null)
+        {
+            Crests.Draw(this, new Rect2(rect.Position + new Vector2(-1f, 6.5f) * pixel, new Vector2(6 * pixel, 7 * pixel)), crest);
+        }
+        else
+        {
+            Item(gear.OffHand, new Vector2(-1.5f, 6.5f));
+        }
         Item(gear.MainHand, new Vector2(10.5f, 6.5f));
     }
 

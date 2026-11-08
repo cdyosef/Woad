@@ -228,6 +228,11 @@ public sealed partial class GameSession
             dice = 0;
         }
 
+        if (weapon?.ExtraDie is { } extraDie && weaponDice > 0)
+        {
+            typed.Add((extraDie, 1));
+        }
+
         if (weapon?.DieType is { } own && weaponDice > 0)
         {
             typed.Add((own, weaponDice));
@@ -282,6 +287,7 @@ public sealed partial class GameSession
             Casting = casting,
             BullRush = bullRush,
             Spent = spent,
+            WeaponFaces = weaponFaces,
         };
         SurgePowerDice(hero, StarSixes(roll, dieTypes), events);
         EarnPowerDice(hero, Sixes(rolled.Faces), events);
@@ -592,6 +598,19 @@ public sealed partial class GameSession
             }
         }
 
+        // Its weapon, if it's still whole.
+        if (monster.Wielding is { } wielding)
+        {
+            DropLoot(room, SafeTile(room, monster.Position), new CardInstance(State.NextId(), wielding, broughtInByHeroId: null), events);
+        }
+
+        // And what it carried to throw.
+        if (monster.Holding is { } held)
+        {
+            monster.Holding = null;
+            DropLoot(room, SafeTile(room, monster.Position), held, events);
+        }
+
         foreach (RareDrop carried in definition.Carries.Where(carried => _random.Loot.NextInt(0, 100) < carried.Chance))
         {
             // A unique already claimed this raid: what drops in its place.
@@ -686,21 +705,63 @@ public sealed partial class GameSession
 
         IReadOnlyList<int> attacks = definition.SeparateAttacks
             ? Enumerable.Repeat(1, monster.AttackDiceThisTurn).ToList()
-            : PlanAttacks(monster.AttackDiceThisTurn, definition.Weapon, target.EffectiveStats);
+            : PlanAttacks(monster.AttackDiceThisTurn, monster.Weapon, target.EffectiveStats);
         int prone = ProneBonus(target, monster.Position);
         for (int i = 0; i < attacks.Count && target.IsActive; i++)
         {
-            RollMonsterAttack(room, monster, attacks[i] + (i == 0 ? prone : 0), i == 0 ? definition.Weapon : 0, [target], events, weaponDice: i == 0 ? definition.WeaponDice : 0);
+            RollMonsterAttack(room, monster, attacks[i] + (i == 0 ? prone : 0), i == 0 ? monster.Weapon : 0, [target], events, weaponDice: i == 0 ? monster.WeaponDice : 0);
+        }
+
+        Punch(room, monster, target, events);
+    }
+
+    /// <summary>
+    /// An ogre's off hand, at a hero right beside it: its fists' dice, every 6 knocking them a tile back, and a Rock
+    /// (spent on them) or a Boulder (its weapon 2, d6 and Earth die; broken by a 1 on both) it carries swung in too.
+    /// </summary>
+    private void Punch(Room room, Monster monster, Hero target, List<GameEvent> events)
+    {
+        if (monster.Definition.Fists <= 0 || !target.IsActive || room.FindMonster(monster.Id) is null
+            || target.Position.ChebyshevDistanceTo(monster.NearestTile(target.Position)) > 1)
+        {
+            return;
+        }
+
+        CardDefinition? held = monster.Holding?.Definition;
+        int bonus = held is null ? 0 : held.Modifiers.Weapon + held.AttackBonus;
+        events.Add(new MonsterPunched(monster.Id, target.Id, held?.Name));
+        MonsterAttackRoll? punch = RollMonsterAttack(room, monster, monster.Definition.Fists, bonus, [target], events, weaponDice: held?.Modifiers.WeaponDice ?? 0, thrown: held, knockbackOnSix: true);
+        if (monster.Holding is not { } item || punch is null)
+        {
+            return;
+        }
+
+        if (item.Definition.BreaksOnUse)
+        {
+            // A Rock smashed on them.
+            if (--item.Count <= 0)
+            {
+                monster.Holding = null;
+            }
+
+            events.Add(new ThrownShattered(monster.Id, item.Definition.Name));
+        }
+        else if (OwnDiceBreak(item.Definition, punch.WeaponFaces, punch.ExtraFaces))
+        {
+            monster.Holding = null;
+            BreakBoulder(room, null, monster, target.Position, punch.Roll.Faces.Contains(GameRules.PowerDieFace), events);
         }
     }
 
     /// <summary>One attack roll that every target defends against separately (a sweep hits them all with the same roll).</summary>
     /// <param name="weaponDice">Its weapon's own dice (a Captain's mace), rolled in, a 6 rolling another straight in.</param>
-    private void RollMonsterAttack(Room room, Monster monster, int dice, int bonus, IReadOnlyList<Hero> targets, List<GameEvent> events, int weaponDice = 0)
+    /// <param name="thrown">What it throws, if it's a throw (a Rock, a Boulder with its Earth die): its club stays out of it.</param>
+    /// <param name="knockbackOnSix">Every 6 knocks them a tile back, hit or miss (an ogre's fists).</param>
+    private MonsterAttackRoll? RollMonsterAttack(Room room, Monster monster, int dice, int bonus, IReadOnlyList<Hero> targets, List<GameEvent> events, int weaponDice = 0, CardDefinition? thrown = null, bool knockbackOnSix = false)
     {
         if (dice < 1)
         {
-            return;
+            return null;
         }
 
         (DiceRoll roll, IReadOnlyList<DieType> types, int powerDice) = RollMonsterDice(monster, dice);
@@ -712,6 +773,22 @@ public sealed partial class GameSession
 
         powerDice += crits;
         int weaponSixes = weaponFaces.Count(face => face == GameRules.PowerDieFace);
+        int[] extraFaces = [];
+        if (thrown?.ExtraDie is { } extraDie)
+        {
+            List<DieType> aligned = [.. types, .. Enumerable.Repeat(DieType.Plain, roll.Faces.Count - types.Count)];
+            (extraFaces, DieType[] extraTypes) = RollTypedDice([(extraDie, 1)]);
+            foreach (int face in extraFaces)
+            {
+                roll = roll.With(face);
+            }
+
+            types = [.. aligned, .. extraTypes];
+        }
+
+        CardDefinition? wielded = thrown is null && weaponDice > 0 ? monster.Wielding : null;
+        int weaponShoves = wielded is { ShovesOnWeaponSix: true } ? weaponSixes : 0;
+        bool weaponBreaks = wielded is { BreaksOnDoubleOne: true } && weaponFaces.Count(face => face == 1) >= 2;
 
         // Banked Power Dice go in, one at a time, while the roll looks short of getting past the
         // best-defended target (their armor and a middling defense die); a 6 rolls another straight in.
@@ -773,13 +850,24 @@ public sealed partial class GameSession
             }
 
             // A heavy blow knocks the hero back a tile, and with a mighty one every 6 knocks them a tile further, hit or miss.
+            // A Big Club's sixes shove them a tile further each.
             int knockback = (dealt > 0 && monster.Definition.KnocksBack ? 1 : 0)
-                            + (monster.Definition.KnockbackOnSix ? roll.Faces.Count(face => face == GameRules.PowerDieFace) : 0);
+                            + (monster.Definition.KnockbackOnSix || knockbackOnSix ? roll.Faces.Count(face => face == GameRules.PowerDieFace) : 0)
+                            + weaponShoves;
             if (knockback > 0 && hero.IsActive)
             {
                 KnockBack(room, monster, hero, knockback, events);
             }
         }
+
+        // A double 1 on a Big Club's dice: it splinters in the ogre's fist.
+        if (weaponBreaks && room.FindMonster(monster.Id) is not null)
+        {
+            monster.Disarmed = true;
+            events.Add(new MonsterWeaponBroke(monster.Id, wielded!.Id));
+        }
+
+        return new MonsterAttackRoll(roll, total, weaponFaces, extraFaces);
     }
 
     /// <summary>

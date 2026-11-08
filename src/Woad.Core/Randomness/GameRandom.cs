@@ -18,4 +18,7 @@ public sealed class GameRandom(ulong seed)
 
     /// <summary>What lies about on the floor (Rocks and Sticks), and where it's hidden: its own stream, so the rest stay as they were.</summary>
     public IRandomSource Finds { get; init; } = new Pcg32(seed, sequence: 4);
+
+    /// <summary>What monsters carry to throw (an ogre's Rocks or Boulder): its own stream, so the rest stay as they were.</summary>
+    public IRandomSource Gear { get; init; } = new Pcg32(seed, sequence: 6);
 }

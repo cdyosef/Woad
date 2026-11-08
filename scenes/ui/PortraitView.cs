@@ -1,4 +1,5 @@
 using Godot;
+using Woad.Core.Model;
 
 namespace Woad.Scenes.Ui;
 
@@ -25,6 +26,15 @@ public partial class PortraitView : Control
         get => _colors;
         set { _colors = value; QueueRedraw(); }
     }
+
+    /// <summary>The character's crest picks; null for the portrait's own crest.</summary>
+    public Appearance? Appearance
+    {
+        get => _appearance;
+        set { _appearance = value; QueueRedraw(); }
+    }
+
+    private Appearance? _appearance;
 
     public bool Selected
     {
@@ -53,56 +63,14 @@ public partial class PortraitView : Control
 
     public override void _Draw()
     {
-        DrawCrest(this, new Rect2(Vector2.Zero, Size), Portraits.Get(PortraitId), _colors);
+        DrawCrest(this, new Rect2(Vector2.Zero, Size), Portraits.Get(PortraitId), _colors, _appearance);
         if (_selected)
         {
             DrawRect(new Rect2(-3, -3, Size.X + 6, Size.Y + 6), Palette.TrimBright, filled: false, width: 1.5f);
         }
     }
 
-    /// <summary>Draws a shield with the portrait's sigil, in the character's main and trim colors (or the portrait's color).</summary>
-    public static void DrawCrest(CanvasItem canvas, Rect2 rect, Portrait portrait, LookColors? colors = null)
-    {
-        Color color = colors?.Main ?? portrait.Color;
-        Vector2 o = rect.Position;
-        float w = rect.Size.X;
-        float h = rect.Size.Y;
-        Vector2[] shield = [o, o + new Vector2(w, 0), o + new Vector2(w, h * 0.55f), o + new Vector2(w / 2, h), o + new Vector2(0, h * 0.55f)];
-        canvas.DrawColoredPolygon(shield, color.Darkened(0.4f));
-        canvas.DrawPolyline([.. shield, shield[0]], colors?.Trim ?? Palette.Trim, 1.5f, antialiased: true);
-
-        Vector2 c = o + new Vector2(w / 2, h * 0.42f);
-        float s = w * 0.2f;
-        Color ink = color.Lightened(0.3f);
-        switch (portrait.Sigil)
-        {
-            case 0:
-                canvas.DrawCircle(c, s, ink, antialiased: true);
-                break;
-            case 1:
-                canvas.DrawColoredPolygon([c + new Vector2(0, -1.3f * s), c + new Vector2(s, 0), c + new Vector2(0, 1.3f * s), c + new Vector2(-s, 0)], ink);
-                break;
-            case 2:
-                canvas.DrawColoredPolygon([c + new Vector2(0, -1.2f * s), c + new Vector2(1.1f * s, 0.9f * s), c + new Vector2(-1.1f * s, 0.9f * s)], ink);
-                break;
-            case 3:
-                canvas.DrawRect(new Rect2(c.X - 0.3f * s, c.Y - 1.2f * s, 0.6f * s, 2.4f * s), ink);
-                canvas.DrawRect(new Rect2(c.X - 1.1f * s, c.Y - 0.5f * s, 2.2f * s, 0.6f * s), ink);
-                break;
-            case 4:
-                canvas.DrawColoredPolygon([c + new Vector2(0, -1.4f * s), c + new Vector2(0.35f * s, 0), c + new Vector2(0, 1.4f * s), c + new Vector2(-0.35f * s, 0)], ink);
-                canvas.DrawColoredPolygon([c + new Vector2(-1.4f * s, 0), c + new Vector2(0, -0.35f * s), c + new Vector2(1.4f * s, 0), c + new Vector2(0, 0.35f * s)], ink);
-                break;
-            case 5:
-                canvas.DrawArc(c, s * 0.9f, 0, Mathf.Tau, 24, ink, s * 0.45f, antialiased: true);
-                break;
-            case 6:
-                canvas.DrawRect(new Rect2(c.X - 1.1f * s, c.Y - 0.8f * s, 2.2f * s, 0.5f * s), ink);
-                canvas.DrawRect(new Rect2(c.X - 1.1f * s, c.Y + 0.3f * s, 2.2f * s, 0.5f * s), ink);
-                break;
-            default:
-                canvas.DrawPolyline([c + new Vector2(-1.1f * s, -0.6f * s), c + new Vector2(0, 0.7f * s), c + new Vector2(1.1f * s, -0.6f * s)], ink, 0.5f * s, antialiased: true);
-                break;
-        }
-    }
+    /// <summary>Draws a character's crest: their picks (<paramref name="appearance"/>), else the portrait's sigil in their colors.</summary>
+    public static void DrawCrest(CanvasItem canvas, Rect2 rect, Portrait portrait, LookColors? colors = null, Appearance? appearance = null) =>
+        Crests.Draw(canvas, rect, Crests.Resolve(appearance ?? Appearance.Default, portrait.Id, colors));
 }

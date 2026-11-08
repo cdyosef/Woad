@@ -134,5 +134,15 @@ public partial class SheetCard : CardSlot
                 : "",
             NoteIsBad: card.Unloaded || card.Wear > 0);
         CardFace.DrawFront(this, rect, picture, card.Definition.Name, marks, selected: ButtonPressed, hover: hover, small: Small);
+
+        // A painted shield: its bearer's crest on it.
+        if (card.Painted && PaintedCrest?.Invoke(card) is { } crest)
+        {
+            float width = rect.Size.X * 0.34f;
+            Crests.Draw(this, new Rect2(rect.Position.X + (rect.Size.X - width) / 2, rect.Position.Y + rect.Size.Y * 0.3f, width, width * 1.2f), crest);
+        }
     }
+
+    /// <summary>The crest to show on a painted shield (its bearer's), set by the game screen.</summary>
+    public static Func<Woad.Core.Model.CardInstance, Crest?>? PaintedCrest { get; set; }
 }

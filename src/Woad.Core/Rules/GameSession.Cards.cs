@@ -24,7 +24,7 @@ public sealed partial class GameSession
         Hero hero = ActiveHero;
         Room room = ActiveRoom;
         CardEffect effect = held.Card.Definition.Effect!;
-        if (effect.Kind is CardEffectKind.Heal or CardEffectKind.CowardsFlight or CardEffectKind.Cure or CardEffectKind.Repair)
+        if (effect.Kind is CardEffectKind.Heal or CardEffectKind.CowardsFlight or CardEffectKind.Cure or CardEffectKind.Repair or CardEffectKind.PaintShield)
         {
             return CheckEffectTarget(hero, room, effect, null, out _) is null ? [hero.Position] : [];
         }
@@ -119,6 +119,11 @@ public sealed partial class GameSession
             case CardEffectKind.Repair when MostWorn(hero) is { } worn:
                 worn.Wear = 0;
                 events.Add(new GearMended(hero.Id, worn.Id));
+                break;
+
+            case CardEffectKind.PaintShield when UnpaintedShield(hero) is { } shield:
+                shield.Painted = true;
+                events.Add(new ShieldPainted(hero.Id, shield.Id));
                 break;
 
             case CardEffectKind.Attack when IsBomb(card.Definition):
@@ -552,7 +557,7 @@ public sealed partial class GameSession
         }
 
         CardEffect effect = card!.Definition.Effect!;
-        return effect.Kind is CardEffectKind.Heal or CardEffectKind.Cure or CardEffectKind.Repair
+        return effect.Kind is CardEffectKind.Heal or CardEffectKind.Cure or CardEffectKind.Repair or CardEffectKind.PaintShield
             ? CheckEffectTarget(ActiveHero, ActiveRoom, effect, null, out _) ?? "You can't use that now."
             : "There's no monster in range and in sight.";
     }
@@ -1225,6 +1230,10 @@ public sealed partial class GameSession
             case CardEffectKind.Repair:
                 return target is { } mendTile && mendTile != hero.Position ? "That can only be used on yourself."
                     : MostWorn(hero) is null ? "Nothing you carry needs mending." : null;
+
+            case CardEffectKind.PaintShield:
+                return target is { } paintTile && paintTile != hero.Position ? "That can only be used on yourself."
+                    : UnpaintedShield(hero) is null ? "Hold a shield without your crest on it in your off hand to paint it." : null;
 
             case CardEffectKind.Holy:
                 return CheckSanctify(hero, room, effect, target, out targets);

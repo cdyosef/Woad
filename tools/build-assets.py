@@ -293,6 +293,138 @@ LOOKS = [
                # A mechanical arm on the cigarette side: a brass shoulder, a steel arm and a steel hand.
                (7, 12, "g"), (8, 12, "m"), (9, 12, "M")],
      "palette": {"f": "#ff7a3a"}},
+    {"id": "half_orc", "name": "Half-Orc", "skin": "orc", "hair": "hair", "hairDefault": "black", "rows": [
+        "........", "......oo", ".....oHH", "....oHHH", "....oHSS", "....oSeS", "....oSwS", "...ootTT",
+        "..oSotTT", "..oSotTT", "...oobbR", "....otTT", "....otTo", "....okko", "....oooo", "........"],
+     "palette": {"e": "#e8c040"}},
+    {"id": "three_quarter_orc", "name": "3/4 Orc", "skin": "orc", "hair": "hair", "skinDefault": "green", "hairDefault": "black", "rows": [
+        "........", "......oH", ".....oHH", "....oSSS", "...oSSSS", "...okeSS", "...oSwSS", "..oosSSS",
+        ".oSSotTT", ".oSSotTT", ".oSoobbR", "...otTTT", "...otTTo", "...okkko", "...ooooo", "........"],
+     "palette": {"e": "#e04030"}},
+    {"id": "gnome", "name": "Gnome", "skin": "human", "hair": "hair", "hairDefault": "white", "rows": [
+        "........", "......oT", ".....otT", ".....oTT", "....otTT", "...oRRRR", "....oSeS", "....oSSS",
+        "....oHHH", "..oSoHHH", "...ooHHH", "....otTT", "....otTo", "....okko", "....oooo", "........"],
+     "extra": [(7, 7, "s"), (7, 8, "s"), (0, 7, "o"), (0, 8, "o")]},
+    {"id": "fairy", "name": "Fairy", "skin": "human", "hair": "hair", "hairDefault": "pink", "rows": [
+        "........", "........", "........", "......oo", ".....oHH", "....oHHH", "c...oHSS", "cc..oSeS",
+        "ccc.oSSS", ".cc.otTT", "..cotTTT", "...otTTT", "....oSSo", "....oSSo", "....oooo", "........"],
+     "extra": [(4, 1, "g"), (3, 14, "g"), (1, 12, "g")]},
+    {"id": "cook", "name": "Cook", "skin": "human", "hair": "hair", "rows": [
+        ".....ooo", "....owww", "....owww", "....oRRR", "....oHSS", "....oSeS", "....oSHH", "...ootTT",
+        "..oSotww", "..oSotww", "...oobww", "....otww", "....otTo", "....okko", "....oooo", "........"],
+     "extra": [(8, 12, "m"), (7, 13, "m"), (6, 13, "m"), (5, 13, "M"), (5, 14, "M"), (6, 14, "M")]},
+    {"id": "fat_man", "name": "Fat Man", "skin": "human", "hair": "hair", "rows": [
+        "........", "......oo", ".....oHH", "....oHHH", "....oSSS", "....oSeS", "...oosss", "..ootTTT",
+        ".oSotTTT", "oSotTTTT", "oSotTTTT", ".oobbbbR", "..otTTTT", "...okkko", "...ooooo", "........"],
+     "extra": [(9, 6, "t"), (9, 9, "t"), (10, 7, "t"), (10, 8, "t")]},
+    {"id": "harpy_man", "name": "Harpy Man", "skin": "human", "hair": "plumage", "rows": [
+        "........", "......oo", ".....oHH", "....oHHH", "....oHSS", "....oSeS", "....oSSS", "..hootTT",
+        ".hHHotTT", "hHHHotTT", ".hHoobbR", "....otTT", "....ogo.", "....ogo.", "...ggg..", "........"]},
+    {"id": "frog_man", "name": "Frog Man", "skin": "frog", "hair": None, "rows": [
+        "........", "........", "...ooo..", "..oSeSo.", "..oSSSoo", "..oSSSSS", "..oSkkkk", "...osSSS",
+        "..oSotTT", ".oSSotTT", "...oobbb", "....otTT", "..osso.o", "..oSSSo.", "..ooooo.", "........"],
+     "palette": {"e": "#181420"}},
+    {"id": "turtle_reaper", "name": "Turtle Reaper", "skin": "turtle", "hair": "shell", "rows": [
+        "......oo", ".....oTT", "....oTTT", "....oTSS", "....oSeS", "....oSSS", "...otTSS", "..otTTTT",
+        "..oHotTT", ".oHHotTT", ".oSHotTT", "...otTTT", "...otTTT", "...otTTT", "...ooooo", "........"],
+     "extra": [(0, 11, 'm'), (0, 12, 'm'), (0, 13, 'm'), (1, 11, 'm'), (1, 12, 'M'), (0, 14, 'N'), (1, 14, 'N'), (2, 14, 'N'), (3, 14, 'N'), (4, 14, 'N'), (5, 14, 'N'), (6, 14, 'N'), (7, 14, 'N'), (8, 14, 'N'), (9, 14, 'N'), (10, 14, 'N'), (11, 14, 'N'), (12, 14, 'N'), (13, 14, 'N'), (14, 14, 'N')],
+     "palette": {"e": "#e04030"}},
+    {"id": "turtle_man", "name": "Turtle Man", "skin": "turtle", "hair": "shell", "rows": [
+        "......oo", ".....oSS", "....oSSS", "....oSSS", "....oSeS", "....osSS", "..ooHoSS", ".oHHoRRR",
+        ".oHHoRrR", "oSHHoRRR", ".oHHoRrR", "..oHoRRR", "....oSSo", "....oSSo", "....oooo", "........"]},
+    {"id": "fishman", "name": "Fishman", "skin": "fish", "hair": None, "rows": [
+        ".......R", "......oR", ".....oSS", "....oSSS", "...oSSSS", "..RoeSSS", "...osSSS", "....oskk",
+        "..oSotTT", ".RoSotTT", "...oobbb", "....otTT", "....oSSo", "...oSSSo", "...ooooo", "........"],
+     "palette": {"e": "#f0ecd8"}},
+    {"id": "snakeman", "name": "Snakeman", "skin": "scales", "hair": None, "rows": [
+        "........", "......oo", ".....oSS", "...ooSSS", "..oSSSSS", "..oSSeSS", "..osSSSS", "...oosss",
+        "..oSotTT", "..oSotTT", "...oobbb", "....oSSS", "...oSSss", "..oSSSSo", "..oooooo", "........"],
+     "extra": [(7, 7, "p"), (7, 8, "p"), (13, 13, "S"), (13, 14, "S"), (12, 14, "s")],
+     "palette": {"p": "#d03040", "e": "#e8d040"}},
+    {"id": "death_cultist", "name": "Death Cultist", "skin": None, "hair": None, "rows": [
+        "......oo", ".....oTT", "....oTTT", "....oTww", "....oTew", "....oTww", "....oTwk", "...otTTT",
+        "..otTTTT", "..owotTT", "...otRRR", "...otTTT", "...otTTT", "...otTTT", "...ooooo", "........"],
+     "palette": {"e": "#181420"}},
+    {"id": "snake_cultist", "name": "Snake Cultist", "skin": "human", "hair": "hair", "rows": [
+        "......oo", ".....oTT", "....oTTT", "....oTHH", "....oTSS", "....oSeS", "....oSSS", "...otTTT",
+        "..oSotTT", "..oSotRT", "...otRRR", "...otTTT", "...otTTT", "...otTTT", "...ooooo", "........"],
+     "extra": [(7, 4, 'G'), (7, 5, 'G'), (7, 6, 'G'), (7, 7, 'G'), (7, 8, 'G'), (7, 9, 'G'), (7, 10, 'G'), (7, 11, 'G'), (8, 12, 'G'), (9, 12, 'G'), (6, 12, 'G'), (5, 12, 'G'), (5, 13, 'G'), (6, 4, 'G')]},
+    {"id": "veteran", "name": "Veteran", "skin": "human", "hair": None, "rows": [
+        "........", "......oo", ".....omm", "...ommmm", "....oSSS", "....oSeS", "....oSSS", "...ommTT",
+        "..oSmtTR", "..oSmtTR", "...oobbb", "...omtTT", "....omMo", "....okko", "....oooo", "........"],
+     "extra": [(10, 12, "g"), (11, 12, "m"), (12, 12, "m"), (13, 12, "M")]},
+    {"id": "man_at_arms", "name": "Man-At-Arms", "skin": "human", "hair": None, "rows": [
+        ".......o", "......om", ".....omm", "....ommm", "....ommM", "....omeM", "....omSS", "...ommTT",
+        "..omotTT", "..oSotRT", "...oobbb", "...omtTT", "....omMo", "....okko", "....oooo", "........"],
+     "extra": [(7, 1, 'R'), (7, 2, 'R'), (7, 3, 'R'), (8, 0, 'R'), (8, 1, 'T'), (8, 2, 'T'), (8, 3, 'R'), (9, 0, 'R'), (9, 1, 'T'), (9, 2, 'r'), (9, 3, 'R'), (10, 1, 'R'), (10, 2, 'T'), (10, 3, 'R'), (11, 1, 'R'), (11, 2, 'R'), (12, 2, 'R'), (1, 14, 'w'), (2, 14, 'm'), (3, 14, 'm'), (4, 14, 'm'), (5, 14, 'm'), (6, 14, 'm'), (7, 14, 'm'), (8, 13, 'g'), (8, 14, 'g'), (8, 15, 'g'), (9, 14, 'N')]},
+    {"id": "spearman", "name": "Spearman", "skin": "human", "hair": None, "rows": [
+        "........", "......oo", ".....omm", "..oMMMMM", "....oSSS", "....oSeS", "...noSSS", "..nookTT",
+        ".noSokTT", ".noSokTT", "..noobbR", "....otTT", "....otTo", "....okko", "....oooo", "........"],
+     "extra": [(0, 14, 'm'), (1, 14, 'm'), (2, 14, 'M'), (3, 14, 'N'), (4, 14, 'N'), (5, 14, 'N'), (6, 14, 'N'), (7, 14, 'N'), (8, 14, 'N'), (9, 14, 'N'), (10, 14, 'N'), (11, 14, 'N'), (12, 14, 'N'), (13, 14, 'N'), (14, 14, 'N')]},
+    {"id": "militia", "name": "Militia", "skin": "human", "hair": "hair", "rows": [
+        "........", "......oo", ".....oHH", "....oHHH", "....oRRR", "...oHSeS", "...oHSHH", "...oHtTT",
+        "..oSotTt", "..oSotTt", "...oobbb", "....onnn", "....onno", "....okko", "....oooo", "........"],
+     "extra": [(8, 14, "N"), (7, 14, "l"), (6, 14, "l"), (6, 15, "l"), (5, 14, "l"), (5, 15, "l"), (4, 14, "N"), (4, 15, "N"), (7, 15, "N"), (9, 14, "N")]},
+    {"id": "skirmisher", "name": "Skirmisher", "skin": "human", "hair": "hair", "rows": [
+        "........", "......oo", ".....oRR", "....oRRR", "....oHSS", "....oSeS", "....oSSS", "...ootTT",
+        "..oSonTT", "..oSotnT", "...oobbb", "....otTT", "....oSSo", "....onno", "....oooo", "........"],
+     "extra": [(1, 2, 'm'), (2, 3, 'm'), (2, 2, 'N'), (3, 2, 'N'), (4, 2, 'N'), (5, 2, 'N'), (6, 2, 'N'), (3, 3, 'N'), (4, 3, 'N'), (5, 3, 'N'), (6, 3, 'N')]},
+    {"id": "real_light", "name": "Real Light", "skin": "human", "hair": "hair", "skinDefault": "deep", "hairDefault": "black", "rows": [
+        "......oo", ".....oRR", "....oRRR", "....oRrR", "....oSSS", "....oSeS", "....oHSS", "...otHHH",
+        "..oSotgg", "..oSotgg", "...otTTT", "...otTTT", "...otTTT", "...otTTT", "...ooooo", "........"],
+     "extra": [(8, 7, 'p'), (8, 8, 'c'), (9, 7, 'G'), (9, 8, 'p'), (13, 4, 'w'), (13, 11, 'w'), (13, 7, 'w'), (13, 8, 'w')]},
+    {"id": "wood_elf", "name": "Wood Elf", "skin": "human", "hair": "hair", "rows": [
+        "........", "......oo", ".....oHH", "....oHHH", "...soHSS", "....oSeS", "....oSSS", "...oHtTT",
+        "..oSHtTT", "..oSotTT", "...oobbR", "....otTT", "....oRRo", "....onno", "....oooo", "........"],
+     "extra": [(3, 2, 'n'), (4, 1, 'n'), (5, 1, 'n'), (6, 1, 'n'), (7, 2, 'n'), (3, 6, 'G'), (3, 9, 'G'), (2, 7, 'G')]},
+    {"id": "duergar", "name": "Duergar", "skin": "duergar", "hair": "hair", "hairDefault": "grey", "rows": [
+        "........", "......oo", ".....oSS", "....oSSS", "....okkk", "....oSeS", "...oHSSS", "..oHHHHH",
+        ".omoHHHH", ".omomHHH", "..oomMHH", "...oobbb", "...omMMM", "...okkko", "...ooooo", "........"],
+     "palette": {"e": "#e04030"}},
+    {"id": "genie", "name": "Genie", "skin": "genie", "hair": "hair", "hairDefault": "black", "rows": [
+        ".......H", "......oH", ".....oSS", "....oSSS", "....oSSS", "....oSeS", "...goSSS", "...otTSS",
+        "..oSotSS", "..gSotSS", "...oRRRR", "....osSS", ".....sSS", "......sS", ".......s", "........"],
+     "extra": [(13, 10, 's'), (14, 10, 's'), (14, 11, 's'), (13, 11, 's'), (12, 11, 's')]},
+    {"id": "egyptian", "name": "Egyptian", "skin": "human", "hair": None, "skinDefault": "tan", "rows": [
+        "........", "......oo", ".....oTT", "....oRRR", "...oTTSS", "...oRSeS", "...oTSSS", "...oRggg",
+        "..oSoSSS", "..oSoSSS", "...ooRRR", "....owww", "....oSSo", "....onno", "....oooo", "........"]},
+    {"id": "huskarl", "name": "Huskarl", "skin": "human", "hair": "hair", "hairDefault": "blonde", "rows": [
+        "........", "......oo", ".....omm", "....ommm", "....oMeM", "...oHSSS", "...oHHHH", "..oohHHH",
+        "..omotHH", "..oSotTT", "...oobbb", "...otTTT", "....onno", "....okko", "....oooo", "........"],
+     "extra": [(7, 1, 'R'), (7, 2, 'R'), (7, 3, 'R'), (8, 0, 'R'), (8, 1, 'T'), (8, 2, 'T'), (8, 3, 'T'), (8, 4, 'R'), (9, 0, 'R'), (9, 1, 'T'), (9, 2, 'g'), (9, 3, 'T'), (9, 4, 'R'), (10, 0, 'R'), (10, 1, 'T'), (10, 2, 'T'), (10, 3, 'T'), (10, 4, 'R'), (11, 1, 'R'), (11, 2, 'R'), (11, 3, 'R'), (5, 13, 'N'), (6, 13, 'N'), (7, 13, 'N'), (8, 13, 'N'), (5, 14, 'm'), (6, 14, 'm'), (6, 15, 'm'), (7, 14, 'm'), (7, 15, 'M'), (4, 14, 'M')]},
+    {"id": "samurai", "name": "Samurai", "skin": "human", "hair": None, "rows": [
+        "....g...", ".....goo", "....oTTT", "...oTTTT", "..oToSSS", "..oToSeS", "....oSkk", "..oRRtTT",
+        ".oRRotTT", "..oSotRT", "...oobbb", "...otRTT", "...otTTo", "....okko", "....oooo", "........"],
+     "extra": [(9, 11, 'N'), (10, 12, 'k'), (11, 13, 'k'), (12, 14, 'k')]},
+    {"id": "mangudai", "name": "Mangudai", "skin": "human", "hair": "hair", "hairDefault": "black", "rows": [
+        "........", "......oT", ".....oTT", "....onnn", "....oHSS", "....oSeS", "....oSSS", "...ootTT",
+        "..oSotTT", "..oSotRR", "...oRRRR", "...otTTT", "....okko", "....okko", "....oooo", "........"],
+     "extra": [(3, 13, 'n'), (4, 14, 'n'), (5, 14, 'n'), (6, 14, 'n'), (7, 14, 'n'), (8, 14, 'n'), (9, 13, 'n'), (6, 2, 'n'), (7, 2, 'n'), (5, 2, 'w'), (5, 1, 'w'), (4, 2, 'w')]},
+    {"id": "scout", "name": "Scout", "skin": "human", "hair": "hair", "rows": [
+        "........", "......oo", ".....oTT", "....oTTT", "....oTSS", "....oSeS", "....oRRR", "...otTTT",
+        "..oTotTT", "..oSotTT", "...oobbb", "....onnn", "....onno", "....okko", "....oooo", "........"],
+     "extra": [(8, 14, 'g'), (7, 14, 'g'), (7, 15, 'g'), (6, 15, 'M')]},
+    {"id": "witch", "name": "Witch", "skin": "human", "hair": "hair", "hairDefault": "black", "rows": [
+        ".......o", "......oT", ".....oTT", "....oTTT", ".otttttt", "...oHSeS", "...oHSSS", "...oHtTT",
+        "..oSHtTT", "..oSotTT", "...otRRR", "...otTTT", "...otTTT", "...otTTT", "...ooooo", "........"],
+     "extra": [(3, 14, 'N'), (4, 14, 'N'), (5, 14, 'N'), (6, 14, 'N'), (7, 14, 'N'), (8, 14, 'N'), (9, 14, 'N'), (10, 14, 'N'), (11, 14, 'N'), (12, 13, 'n'), (12, 14, 'n'), (12, 15, 'n'), (13, 13, 'n'), (13, 14, 'n'), (13, 15, 'n'), (14, 14, 'n')]},
+    {"id": "joan_of_arc", "name": "Joan of Arc", "skin": "human", "hair": "hair", "rows": [
+        "........", "......oo", ".....oHH", "....oHHH", "...oHHSS", "...oHSeS", "...oHSSS", "...ommTT",
+        "..omotTR", "..omotRR", "...oommm", "....omMm", "....omMo", "....oMMo", "....oooo", "........"],
+     "extra": [(1, 14, 'N'), (2, 14, 'N'), (3, 14, 'N'), (4, 14, 'N'), (5, 14, 'N'), (6, 14, 'N'), (7, 14, 'N'), (8, 14, 'N'), (9, 14, 'N'), (10, 14, 'N'), (11, 14, 'N'), (12, 14, 'N'), (13, 14, 'N'), (0, 14, 'g'), (0, 11, 'w'), (0, 12, 'w'), (0, 13, 'w'), (1, 11, 'w'), (1, 12, 'g'), (1, 13, 'w'), (2, 11, 'w'), (2, 12, 'w'), (2, 13, 'w'), (3, 12, 'w')]},
+    {"id": "squire", "name": "Squire", "skin": "human", "hair": "hair", "rows": [
+        "........", "......oo", ".....oHH", "....oHHH", "....oHSS", "....oSeS", "....oSSS", "...ootTT",
+        "..oSotTt", "..oSotTt", "...oobbR", "....oRRR", "....oRRo", "....okko", "....oooo", "........"],
+     "extra": [(7, 14, 'm'), (8, 13, 'm'), (8, 14, 'k'), (8, 15, 'm'), (9, 13, 'm'), (9, 14, 'M'), (9, 15, 'M'), (10, 2, 'g'), (11, 2, 'm'), (12, 2, 'm')]},
+    {"id": "ninja", "name": "Ninja", "skin": "human", "hair": None, "rows": [
+        "........", "......oo", ".....oTT", "....oTTT", "....oTTT", "....oSeS", "....oTTT", "...otTTT",
+        "..oTotTT", "..oTotTT", "...oRRRR", "....otTT", "....otTo", "....oTTo", "....oooo", "........"],
+     "extra": [(6, 12, 'g'), (5, 13, 'N'), (4, 13, 'N'), (3, 14, 'N'), (2, 14, 'N'), (9, 1, 'm'), (8, 1, 'M')]},
+    {"id": "geisha", "name": "Geisha", "skin": "human", "skinDefault": "pale", "hair": "hair", "hairDefault": "black", "rows": [
+        "....oo.o", "...oHHoH", "...oHHHH", "..oHHHHH", "...oHHSS", "...oHSeS", "...oHSSS", "...oowtT",
+        ".otTotTT", ".otTotTT", "..ooRRRR", "...otTTT", "....otTT", "....owwo", "....oooo", "........"],
+     "extra": [(6, 7, 'p'), (6, 8, 'p'), (1, 3, 'g'), (0, 2, 'g'), (1, 12, 'g'), (0, 13, 'g'), (2, 12, 'c')],
+     "palette": {"p": "#d85060"}},
 ]
 
 
@@ -355,6 +487,56 @@ def write_look_list(path):
         "    public static IReadOnlyList<Look> All { get; } =\n    [\n"
         + "\n".join(entries) + "\n    ];\n}\n",
         encoding="utf-8", newline="\n")
+
+# Ogres: big, green and tusked, and the Champ fatter, shirtless and horned; both swing a Big Club (C/D wood,
+# K iron studs). Once it breaks they're drawn from their "_unarmed" sprite, the club gone.
+BIG_CLUB = {"C": "#8a5a2b", "D": "#5a3818", "K": "#c8c8d0"}
+OGRE = [
+    ".............DCD",
+    "....oooooooo.CKC",
+    "...onssssssnoDCC",
+    "..osnnssssnnsoCD",
+    "..osesssssseso" "DC",
+    "..osssssssssso" "CD",
+    "..osswsssswsso" "DC",
+    "...odssssssdo.CD",
+    ".obbssssssssbboD",
+    "obsbssssssssbsbo",
+    "osobsssddsssboso",
+    "osobdssssssdboso",
+    "..oddssssssddo..",
+    "..ossppppppsso..",
+    "..osso.pp.osso..",
+    "..okko....okko..",
+]
+OGRE_PALETTE = {"o": "#1e140c", "n": "#050505", "s": "#c8844a", "d": "#a0663a", "e": "#ffe060", "w": "#f0ead8", "b": "#6a4a2a",
+                "l": "#3a2a18", "p": "#5a4a6a", "k": "#2a1e14", **BIG_CLUB}
+OGRE_CHAMP = [
+    "............DCD.",
+    "..o.........DCKC",
+    "...ho......ohKCD",
+    "....hooooooh.DCC",
+    "....onnssnno..CD",
+    "....osnnnnso..DC",
+    "....osesseso..CD",
+    "....owsssswo..DC",
+    "...odssssssdo.CD",
+    ".ossssssssssssso",
+    "ossossddddssosso",
+    "ossoddddddddosso",
+    ".oo.bbbbbbbb.oo.",
+    "....ssppppss....",
+    "....sssppsss....",
+    "....kkk..kkk....",
+]
+OGRE_CHAMP_PALETTE = {"o": "#1e140c", "n": "#050505", "s": "#d0864a", "d": "#a8642e", "h": "#f0e6c8", "e": "#ff4030",
+                      "w": "#ffffff", "b": "#5a3a1a", "p": "#4a3a5a", "k": "#2a1e14", **BIG_CLUB}
+
+
+def unarmed(rows):
+    """The same figure with its Big Club gone."""
+    return ["".join("." if char in BIG_CLUB else char for char in row) for row in rows]
+
 
 MONSTERS = {
     "slime": (sprite([
@@ -479,45 +661,10 @@ MONSTERS = {
         "...ooo..",
     ], {"o": "#141a14", "g": "#7a9a7a", "a": "#5a7a5a", "y": "#ffe03a", "d": "#3a1a1a", "c": "#e8e2d0"}, mirror=True)),
 
-    "ogre": (sprite([  # big, green and tusked
-        "........",
-        "....oooo",
-        "...ossss",
-        "..osssss",
-        "..osesss",
-        "..osssss",
-        "..osswss",
-        "...ossss",
-        ".obbbbbb",
-        "obsbbbbb",
-        "osobbbbb",
-        "osolllll",
-        "..oppppp",
-        "..oppo..",
-        "..okko..",
-        "..oooo..",
-    ], {"o": "#1e140c", "s": "#c8844a", "e": "#ffe060", "w": "#f0ead8", "b": "#6a4a2a",
-        "l": "#3a2a18", "p": "#5a4a6a", "k": "#2a1e14"}, mirror=True)),
-
-    "ogre_champ": (sprite([  # bigger, fatter, shirtless and horned, with a great club
-        ".............cc.",
-        "..o.........occc",
-        "...ho......oh.cc",
-        "....hooooooh..cc",
-        "....osssssso..cc",
-        "....osesseso..cc",
-        "....owsssswo..cc",
-        "..oossssssssoocc",
-        ".ossssssssssssso",
-        "ossossddddssosso",
-        "ossoddddddddosso",
-        ".oo.bbbbbbbb.oo.",
-        "....pppppppp....",
-        "....ppp..ppp....",
-        "....kkk..kkk....",
-        "................",
-    ], {"o": "#1e140c", "s": "#d0864a", "d": "#a8642e", "h": "#f0e6c8", "e": "#ff4030", "w": "#ffffff",
-        "c": "#7a4a20", "b": "#5a3a1a", "p": "#4a3a5a", "k": "#2a1e14"})),
+    "ogre": sprite(OGRE, OGRE_PALETTE),
+    "ogre_unarmed": sprite(unarmed(OGRE), OGRE_PALETTE),
+    "ogre_champ": sprite(OGRE_CHAMP, OGRE_CHAMP_PALETTE),
+    "ogre_champ_unarmed": sprite(unarmed(OGRE_CHAMP), OGRE_CHAMP_PALETTE),
 
     "necromancer": (sprite([  # a hooded skull with glowing green eyes and hands
         "........",
@@ -1084,7 +1231,7 @@ WOOD = {"o": "#2a1a10", "w": "#b07840", "d": "#8a5a2b", "g": "#e2c47a", "y": "#3
 
 # The Sunken Temple's own monsters (its other monsters borrow the Emerald Keep's sprites).
 # Monsters only the Emerald Keep has.
-KEEP_ONLY = {"ogre", "ogre_champ", "necromancer", "hexer", "gelatinous_cube", "mimic", "emerald_knight", "emerald_guard", "baron_herkullos", "grasshopper_knight"}
+KEEP_ONLY = {"ogre", "ogre_unarmed", "ogre_champ", "ogre_champ_unarmed", "necromancer", "hexer", "gelatinous_cube", "mimic", "emerald_knight", "emerald_guard", "baron_herkullos", "grasshopper_knight"}
 
 TEMPLE_MONSTERS = {
     "snapper_eel": sprite([
@@ -2530,6 +2677,16 @@ def laugh():
     return samples
 
 
+def gra():
+    """An ogre's "GRA!!": a throaty growl breaking into a loud, rolling, falling bellow."""
+    growl = mix(noise(0.07, 0.35, decay=12, seed=59, lowpass=0.55), tone(lambda t: 85, 0.07, square, 0.12, release=0.02))
+    bellow_length = 0.42
+    voice = tone(lambda t: (135 + 60 * t / 0.1 if t < 0.1 else 195 - 150 * (t - 0.1)) * (1 + 0.08 * math.sin(t * 2 * math.pi * 28)),
+                 bellow_length, square, 0.24, release=0.12)
+    rasp = noise(bellow_length, 0.16, decay=3, seed=61, lowpass=0.45)
+    return growl + mix(voice, rasp)
+
+
 def flap():
     """A wingbeat: two soft whooshes of air, the second lighter."""
     return noise(0.12, 0.35, decay=18, seed=47, lowpass=0.88) + noise(0.1, 0.22, decay=22, seed=53, lowpass=0.9)
@@ -2561,6 +2718,7 @@ def build_sounds(directory):
         "fuse": noise(0.25, 0.18, decay=8, seed=43, lowpass=0.9),
         "victory": notes([(523, 0.1), (659, 0.1), (784, 0.1), (1047, 0.12), (784, 0.08), (1047, 0.35)], volume=0.25),
         "laugh": laugh(),
+        "gra": gra(),
         "flap": flap(),
         "fall": tone(lambda t: 1700 * (1 - 0.82 * t / 0.85), 0.85, sine, 0.2, release=0.05),
     }

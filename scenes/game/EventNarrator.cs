@@ -197,6 +197,20 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         MonsterStole stole => $"{nameOf(stole.MonsterId)} lifts {Money.Long(stole.Coins)} from {nameOf(stole.HeroId)}!",
         Mugged mugged => $"{nameOf(mugged.MonsterId)} snatches {Money.Long(mugged.Coins)} from {nameOf(mugged.HeroId)}.",
         StunWoreOff wore => $"{nameOf(wore.EntityId)} shakes off the stun.",
+        ShieldPainted painted => $"{nameOf(painted.HeroId)} paints their crest on their {cardNameOf(painted.CardId)}: those beside them rally to it.",
+        MonsterPunched punched => punched.With is { } with
+            ? $"{nameOf(punched.MonsterId)} swings its off hand at {nameOf(punched.TargetId)}, a {with} in its fist!"
+            : $"{nameOf(punched.MonsterId)} punches {nameOf(punched.TargetId)} with its off hand!",
+        MonsterCharged charged => charged.TargetId is { } rammed
+            ? $"{nameOf(charged.MonsterId)} charges {charged.Length} tiles into {nameOf(rammed)}!"
+            : $"{nameOf(charged.MonsterId)} charges {charged.Length} tile{(charged.Length == 1 ? "" : "s")}, falling short.",
+        MonsterThrew threw => $"{nameOf(threw.MonsterId)} hurls a {threw.What} at {nameOf(threw.TargetId)}!",
+        ThrownShattered shattered => $"{nameOf(shattered.ThrowerId)}'s {shattered.What} shatters.",
+        BoulderRolled rolled => rolled.Path.Count > 0 ? $"The Boulder rolls on {rolled.Path.Count} tile{(rolled.Path.Count == 1 ? "" : "s")}." : "The Boulder comes to rest.",
+        BoulderBroke shattered => shattered.Burst ? "The Boulder bursts, flinging rocks about!" : "The Boulder breaks into rocks.",
+        MonsterPickedUp picked => $"{nameOf(picked.MonsterId)} picks up {(picked.Count > 1 ? $"{picked.Count} {picked.What}s" : $"a {picked.What}")} to throw.",
+        MonsterWeaponBroke broke => $"{nameOf(broke.MonsterId)}'s club splinters to pieces!",
+        MonsterYelled yelled => $"{nameOf(yelled.MonsterId)} yells: \"{yelled.Text}\"",
         MonsterTurnSkipped skipped => $"{nameOf(skipped.MonsterId)} is frozen and loses its turn.",
         HeroHealed healed => $"{nameOf(healed.HeroId)} recovers {Count(healed.Amount, "heart")}.",
         Ignited { FireDice: 1 } ignited => $"{nameOf(ignited.EntityId)} catches fire!",

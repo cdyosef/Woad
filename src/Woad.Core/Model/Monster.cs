@@ -22,6 +22,29 @@ public sealed class Monster
 
     public int Hearts { get; internal set; }
 
+    /// <summary>What it carries to throw (an ogre's Rocks, or a Boulder), or null.</summary>
+    public CardInstance? Holding { get; internal set; }
+
+    /// <summary>Its weapon broke (a Big Club on a double 1): it fights on with its own dice alone.</summary>
+    public bool Disarmed { get; internal set; }
+
+    /// <summary>The weapon it fights with, while it still has it.</summary>
+    public CardDefinition? Wielding => Disarmed ? null : Definition.WieldsCard;
+
+    /// <summary>How it attacks: its own way, or its weapon's reach when that's longer.</summary>
+    public AttackPattern AttackPattern => Wielding is { AttackRange: > 1 } weapon && weapon.AttackRange > Definition.AttackRange
+        ? weapon.Reach ? AttackPattern.Reach : AttackPattern.Ranged
+        : Definition.AttackPattern;
+
+    /// <summary>How far it attacks: its own range, or its weapon's when that's longer.</summary>
+    public int AttackRange => Math.Max(Definition.AttackRange, Wielding?.AttackRange ?? 0);
+
+    /// <summary>The fixed value added to its first attack a turn: its own, and its weapon's.</summary>
+    public int Weapon => Definition.Weapon + (Wielding is { } weapon ? weapon.Modifiers.Weapon + weapon.AttackBonus : 0);
+
+    /// <summary>Dice rolled in with its first attack a turn: its own weapon dice, and its weapon's.</summary>
+    public int WeaponDice => Definition.WeaponDice + (Wielding?.Modifiers.WeaponDice ?? 0);
+
     /// <summary>Hearts each hero (by id) has taken off it: how its XP is shared when it falls.</summary>
     public Dictionary<int, int> DamageBy { get; } = [];
 

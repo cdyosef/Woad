@@ -325,7 +325,7 @@ public sealed partial class GameSession
     private bool MonsterAttacksMerchant(Room room, Monster monster, List<GameEvent> events)
     {
         if (monster.AttackDiceThisTurn < 1
-            || room.Merchants.FirstOrDefault(merchant => Targeting.CanAttack(room.Layout, monster.Definition.AttackPattern, monster.Definition.AttackRange, monster.Position, merchant.Position)) is not { } prey)
+            || room.Merchants.FirstOrDefault(merchant => Targeting.CanAttack(room.Layout, monster.AttackPattern, monster.AttackRange, monster.Position, merchant.Position)) is not { } prey)
         {
             return false;
         }

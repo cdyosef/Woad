@@ -46,7 +46,10 @@ public sealed class CardInstance
     /// <summary>How a character keeps it between runs: its id and its wear (and a packed belt, what it carries).</summary>
     public string Key => Packed is { } packed
         ? CardKey.Packed(CardKey.Of(Definition.Id, Wear), packed.Attached.SelectMany(Copies), packed.Held.SelectMany(Copies))
-        : CardKey.Of(Definition.Id, Wear);
+        : CardKey.Of(Definition.Id, Wear, Painted);
+
+    /// <summary>A shield with its owner's crest painted on it (Shield Paint): heroes beside its bearer defend at +1.</summary>
+    public bool Painted { get; internal set; }
 
     private static IEnumerable<string> Copies(CardInstance card) => Enumerable.Repeat(card.Key, card.Count);
 
@@ -59,7 +62,7 @@ public sealed class CardInstance
     /// </summary>
     public static CardInstance FromKey(string key, ContentCatalog content, Func<int> nextId, int? broughtInByHeroId)
     {
-        var card = new CardInstance(nextId(), content.GetCard(key), broughtInByHeroId) { Wear = CardKey.Wear(key) };
+        var card = new CardInstance(nextId(), content.GetCard(key), broughtInByHeroId) { Wear = CardKey.Wear(key), Painted = CardKey.Painted(key) };
         if (CardKey.Unpack(key) is var (attached, held))
         {
             List<CardInstance> Make(IEnumerable<string> keys)

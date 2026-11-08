@@ -140,6 +140,38 @@ public sealed record MonsterDefinition
     /// <summary>What it bellows when heroes first come into its room (shown and heard, no effect).</summary>
     public string? Taunt { get; init; }
 
+    /// <summary>
+    /// The weapon it fights with (a card, an ogre's Big Club): its weapon dice, value, reach and ways go into its
+    /// attacks; if it breaks, they're gone; and when the monster falls with it whole, it drops it.
+    /// </summary>
+    public string? Wields { get; init; }
+
+    /// <summary>What it may carry to throw, checked in turn on one d100 as it's placed (an ogre's Boulder, else Rocks).</summary>
+    public IReadOnlyList<ThrowableGear> Throws { get; init; } = [];
+
+    /// <summary>
+    /// Its off hand's fists: after its blows at a hero right beside it, it punches with this many dice, every 6
+    /// knocking them a tile back, a Rock or Boulder it carries adding to the punch (an ogre's 2).
+    /// </summary>
+    public int Fists { get; init; }
+
+    /// <summary>
+    /// It charges (a Bull Rush) at a hero in a clear straight line beyond its reach: a Wend die of tiles (a 6
+    /// rolls another), and reaching them, a blow with the tiles to spare added; a hit drives them 2 tiles on,
+    /// a miss leaves it prone (an ogre).
+    /// </summary>
+    public bool BullRushes { get; init; }
+
+    /// <summary>It throws twice as far as anyone else (an ogre).</summary>
+    public bool ThrowsFar { get; init; }
+
+    /// <summary>The card it <see cref="Wields"/>, linked up as the content loads.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public CardDefinition? WieldsCard { get; internal set; }
+
+    /// <summary>What it yells at the start of each of its turns (shown and heard, no effect): an ogre's "GRA!!".</summary>
+    public string? Yell { get; init; }
+
     /// <summary>Its own song, played while a hero shares its room.</summary>
     public string? Music { get; init; }
 
@@ -270,6 +302,18 @@ public sealed record MonsterDefinition
 }
 
 /// <summary>A special card a monster drops on defeat, with a percent chance, besides its usual loot.</summary>
+/// <summary>Something a monster may carry to throw: <see cref="Chance"/>% of them have <see cref="Min"/>-<see cref="Max"/> of it.</summary>
+public sealed record ThrowableGear
+{
+    public required string Card { get; init; }
+
+    public int Chance { get; init; }
+
+    public int Min { get; init; } = 1;
+
+    public int Max { get; init; } = 1;
+}
+
 public sealed record RareDrop
 {
     public required string Card { get; init; }

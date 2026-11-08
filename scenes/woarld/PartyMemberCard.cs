@@ -42,7 +42,7 @@ public partial class PartyMemberCard : Button
 
         // Figure and crest, then name and level, purse and hearts.
         Looks.Draw(this, new Rect2(3, 3, 24, 24), Looks.Resolve(Character.Appearance, Character.Portrait));
-        PortraitView.DrawCrest(this, new Rect2(28, 4, 13, 16), Portraits.Get(Character.Portrait), Looks.Resolve(Character.Appearance, Character.Portrait));
+        PortraitView.DrawCrest(this, new Rect2(28, 4, 13, 16), Portraits.Get(Character.Portrait), Looks.Resolve(Character.Appearance, Character.Portrait), Character.Appearance);
         DrawString(font, new Vector2(44, 12), Character.Name, HorizontalAlignment.Left, Width - 46, small, ink);
         DrawString(font, new Vector2(44, 22), $"L{Character.Level}{(Character.UnspentPoints > 0 ? $" +{Character.UnspentPoints}" : "")}",
             HorizontalAlignment.Left, 30, small, Character.UnspentPoints > 0 ? Palette.Power : Palette.TextDim);

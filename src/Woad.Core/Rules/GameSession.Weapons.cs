@@ -96,6 +96,8 @@ public sealed partial class GameSession
         thrown = false;
         if (Targeting.CanHeroAttack(layout, 1, from, to))
         {
+            // A Boulder is thrown even at someone right beside you.
+            thrown = card?.Definition is { ThrownOnly: true };
             return true;
         }
 
@@ -218,6 +220,12 @@ public sealed partial class GameSession
         }
 
         EquipSlot? heldIn = hero.SlotOf(card);
+        // A Boulder leaves the hands, to break or roll on as the dice fall.
+        if (wielding.Thrown && weapon.Rolls)
+        {
+            return new WeaponSpent(TakeFromHero(hero, card, 1), card.Id, target, null);
+        }
+
         if (wielding.Thrown && weapon.BreaksOnUse)
         {
             var spent = new WeaponSpent(TakeFromHero(hero, card, 1), card.Id, target, null);
@@ -243,7 +251,7 @@ public sealed partial class GameSession
             return null;
         }
 
-        return struck && weapon.BreaksOnOne ? new WeaponSpent(null, card.Id, target, card) : null;
+        return struck && (weapon.BreaksOnOne || weapon.BreaksOnDoubleOne) ? new WeaponSpent(null, card.Id, target, card) : null;
     }
 
     /// <summary>
@@ -280,6 +288,15 @@ public sealed partial class GameSession
         }
 
         Room room = State.RoomOf(hero);
+        if (spent.Flung is { Definition.Rolls: true } boulder)
+        {
+            IReadOnlyList<int> extraFaces = boulder.Definition.ExtraDie is { } extra
+                ? [.. attack.Roll.Faces.Where((_, i) => i < attack.DieTypes.Count && attack.DieTypes[i] == extra)]
+                : [];
+            BoulderLands(room, hero, null, hero.Position, spent.At, boulder, attack.Total, attack.Roll.Faces.Contains(GameRules.PowerDieFace), attack.WeaponFaces, extraFaces, events);
+            return;
+        }
+
         if (spent.Flung is { } flung && attack.Roll.Faces.Contains(GameRules.PowerDieFace))
         {
             GridPosition spot = room.Layout[spent.At].IsWalkable() ? spent.At : SafeTile(room, spent.At);
@@ -291,7 +308,10 @@ public sealed partial class GameSession
             events.Add(new WeaponBroke(hero.Id, spent.NamedBy));
         }
 
-        if (spent.Brittle is { } club && attack.Roll.Faces.Contains(1) && hero.FindCard(club.Id) is not null)
+        bool snaps = spent.Brittle is { Definition.BreaksOnDoubleOne: true }
+            ? attack.WeaponFaces.Count(face => face == 1) >= 2
+            : attack.Roll.Faces.Contains(1);
+        if (spent.Brittle is { } club && snaps && hero.FindCard(club.Id) is not null)
         {
             TakeFromHero(hero, club, 1);
             events.Add(new WeaponBroke(hero.Id, club.Id));
@@ -423,6 +443,17 @@ public sealed partial class GameSession
             && ShoveDestination(room, hero, target.Position, target.Flies) is { } to)
         {
             PushMonster(hero, room, target, to, events);
+        }
+
+        // A Big Club: each 6 on its own dice shoves the target a tile back, hit or miss.
+        int weaponSixes = attack.WeaponFaces.Count(face => face == GameRules.PowerDieFace);
+        if (weapon.ShovesOnWeaponSix
+            && attack.TargetIds.Select(room.FindMonster).FirstOrDefault(found => found is not null) is { Definition: { Boss: false, Miniboss: false } } shoved)
+        {
+            for (int i = 0; i < weaponSixes && room.FindMonster(shoved.Id) is not null && ShoveDestination(room, hero, shoved.Position, shoved.Flies) is { } further; i++)
+            {
+                PushMonster(hero, room, shoved, further, events);
+            }
         }
     }
 }

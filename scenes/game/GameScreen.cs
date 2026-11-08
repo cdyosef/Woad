@@ -78,6 +78,7 @@ public partial class GameScreen : Control
     public override void _Ready()
     {
         Size = new Vector2(640, 360);
+        SheetCard.PaintedCrest = card => _session.State.Heroes.FirstOrDefault(hero => hero.FindCard(card.Id) is not null) is { } bearer ? CrestOf(bearer) : null;
         string[] args = OS.GetCmdlineUserArgs();
         _autoplay = args.Contains("--autoplay");
         if (_autoplay && args.Contains("--fast"))
@@ -128,6 +129,10 @@ public partial class GameScreen : Control
         else if (args.Contains("--toolstest"))
         {
             RunToolsTest();
+        }
+        else if (args.Contains("--painttest"))
+        {
+            RunPaintTest();
         }
         else if (args.Contains("--smashtest"))
         {
@@ -1400,6 +1405,68 @@ public partial class GameScreen : Control
                 await UpdateFigure(skipped.MonsterId, figure => figure.Frozen = false, 0.3);
                 break;
 
+            case ShieldPainted painted:
+                DressFigures();
+                RefreshPanels();
+                if (_figures.TryGetValue(painted.HeroId, out Figure? painter) && painter.RoomId == _shownRoomId)
+                {
+                    _board.FloatText(painter.Position, "painted!", Palette.TrimBright);
+                }
+
+                break;
+
+            case MonsterCharged charged:
+                CalloutOver(charged.MonsterId, "CHARGE!", Palette.Danger);
+                await _dice.ShowRoll($"{NameOf(charged.MonsterId)} charges", charged.Roll, 0, newGroup: true, kind: DiceKind.Wend);
+                break;
+
+            case MonsterPunched punched:
+                CalloutOver(punched.MonsterId, "POW!", Palette.Danger);
+                await Pause(0.2);
+                break;
+
+            case MonsterThrew threw:
+                CalloutOver(threw.MonsterId, "HURL!", Palette.Danger);
+                Sfx.Play("flap");
+                await Pause(0.3);
+                break;
+
+            case BoulderRolled rolled when rolled.RoomId == _shownRoomId:
+                _board.QueueRedraw();
+                _board.FloatText(rolled.Rest, rolled.Path.Count > 0 ? "rolls!" : "thud!", Palette.TrimBright);
+                Sfx.Play("door");
+                await Pause(0.3);
+                break;
+
+            case BoulderBroke shattered when shattered.RoomId == _shownRoomId:
+                _board.QueueRedraw();
+                _board.FloatText(shattered.At, shattered.Burst ? "BURSTS!" : "crumbles!", shattered.Burst ? Palette.Danger : Palette.TrimBright);
+                Sfx.Play(shattered.Burst ? "boom" : "pot");
+                await Pause(0.3);
+                break;
+
+            case MonsterPickedUp picked when picked.RoomId == _shownRoomId:
+                _board.QueueRedraw();
+                await Pause(0.2);
+                break;
+
+            case ThrownShattered:
+                _board.QueueRedraw();
+                Sfx.Play("pot");
+                break;
+
+            case MonsterWeaponBroke broke:
+                CalloutOver(broke.MonsterId, "SNAP!", Palette.TrimBright);
+                Sfx.Play("pot");
+                await UpdateFigure(broke.MonsterId, figure => figure.Unarmed = true, 0.4);
+                break;
+
+            case MonsterYelled yelled:
+                CalloutOver(yelled.MonsterId, yelled.Text, Palette.Danger);
+                Sfx.PlayVaried("gra");
+                await Pause(0.45);
+                break;
+
             case RoomCleared:
                 _board.QueueRedraw();
                 await Pause(0.2);
@@ -1724,6 +1791,11 @@ public partial class GameScreen : Control
         MonsterReassembled risen => FigureRoom(risen.MonsterId),
         MonsterFrozen stunned => FigureRoom(stunned.MonsterId),
         MonsterTurnSkipped skipped => FigureRoom(skipped.MonsterId),
+        MonsterYelled yelled => FigureRoom(yelled.MonsterId),
+        MonsterWeaponBroke broke => FigureRoom(broke.MonsterId),
+        MonsterThrew threw => FigureRoom(threw.MonsterId),
+        MonsterCharged charged => FigureRoom(charged.MonsterId),
+        MonsterPunched punched => FigureRoom(punched.MonsterId),
         MonsterSpawned spawned => spawned.RoomId,
         RoomCleared cleared => cleared.RoomId,
         PotSmashed smashed => FigureRoom(smashed.HeroId),

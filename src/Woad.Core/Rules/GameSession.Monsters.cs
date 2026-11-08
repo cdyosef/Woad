@@ -243,6 +243,11 @@ public sealed partial class GameSession
             return;
         }
 
+        if (monster.Definition.Yell is { } yell && State.HeroesIn(room).Any())
+        {
+            events.Add(new MonsterYelled(monster.Id, yell));
+        }
+
         if (!ConditionsAtTurnStart(room, monster, events))
         {
             return;
@@ -325,6 +330,19 @@ public sealed partial class GameSession
         }
 
         standing = [.. State.ActiveHeroesIn(room).Where(hero => hero.ShadowboundRounds == 0)];
+
+        // With nobody in reach of its blows: something to throw goes at whoever's in range instead of it closing in;
+        // with nothing, it picks back up what it threw, if that's beside it.
+        if (MonsterBullRush(room, monster, standing, events))
+        {
+            return;
+        }
+
+        bool regrabbed = Regrab(room, monster, standing, events);
+        if (ThrowInstead(room, monster, standing, events) || regrabbed)
+        {
+            return;
+        }
         bool cornered = definition.KeepsDistance && heroes.Any(hero => hero.Position.ManhattanDistanceTo(monster.NearestTile(hero.Position)) == 1);
         if (!cornered && !definition.Erratic)
         {
@@ -401,7 +419,7 @@ public sealed partial class GameSession
         heroes
             // Blind, it can only find those right beside it.
             .Where(hero => !IsBlind(monster.Conditions) || FootprintAt(monster, from).Any(tile => hero.Position.ChebyshevDistanceTo(tile) <= 1))
-            .Where(hero => ArcReaches(monster, from, hero) || FootprintAt(monster, from).Any(tile => Targeting.CanAttack(room.Layout, monster.Definition.AttackPattern, monster.Definition.AttackRange, tile, hero.Position)))
+            .Where(hero => ArcReaches(monster, from, hero) || FootprintAt(monster, from).Any(tile => Targeting.CanAttack(room.Layout, monster.AttackPattern, monster.AttackRange, tile, hero.Position)))
             // Someone diving in deep water can only be reached up close.
             .Where(hero => !Diving(room, hero) || FootprintAt(monster, from).Any(tile => hero.Position.ChebyshevDistanceTo(tile) <= 1))
             // A mugger goes for the gold.

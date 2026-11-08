@@ -110,7 +110,11 @@ public partial class Main : Control
 		AddChild(new Music());
 
 		ulong seed = (ulong)DateTime.UtcNow.Ticks;
-		if (args.Contains("--uitest"))
+		if (args.Contains("--crestsheet"))
+		{
+			AddChild(new CrestSheet());
+		}
+		else if (args.Contains("--uitest"))
 		{
 			Show(new GameScreen { Setup = DemoRun.SingleRoom(seed), Content = _content });
 		}
@@ -141,6 +145,10 @@ public partial class Main : Control
 		else if (args.Contains("--smashtest"))
 		{
 			Show(new GameScreen { Setup = DemoRun.SmashDemo(seed), Content = _content });
+		}
+		else if (args.Contains("--painttest"))
+		{
+			Show(new GameScreen { Setup = DemoRun.Paint(seed), Content = _content });
 		}
 		else if (args.Contains("--toolstest"))
 		{

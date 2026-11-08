@@ -245,6 +245,36 @@ public sealed record MonsterFrozen(int MonsterId, int Turns) : GameEvent;
 
 public sealed record MonsterTurnSkipped(int MonsterId) : GameEvent;
 
+/// <summary>A monster's weapon broke (a Big Club on a double 1): it fights on without it, and won't drop it.</summary>
+public sealed record MonsterWeaponBroke(int MonsterId, string CardId) : GameEvent;
+
+/// <summary>A hero painted their crest on the shield in their off hand.</summary>
+public sealed record ShieldPainted(int HeroId, int CardId) : GameEvent;
+
+/// <summary>An ogre punches with its off hand, a Rock or Boulder in it (<paramref name="With"/>) or bare-fisted.</summary>
+public sealed record MonsterPunched(int MonsterId, int TargetId, string? With) : GameEvent;
+
+/// <summary>A monster charges (a Bull Rush): <paramref name="Roll"/> tiles, at <paramref name="TargetId"/> if it reached them.</summary>
+public sealed record MonsterCharged(int MonsterId, DiceRoll Roll, int Length, int? TargetId) : GameEvent;
+
+/// <summary>A monster throws what it carries (a Rock, a Boulder) at a hero.</summary>
+public sealed record MonsterThrew(int MonsterId, int TargetId, string What, GridPosition From, GridPosition To) : GameEvent;
+
+/// <summary>Something a monster threw shattered on landing (a Rock without a 6).</summary>
+public sealed record ThrownShattered(int ThrowerId, string What) : GameEvent;
+
+/// <summary>A thrown Boulder rolled on past its target (over <paramref name="Path"/>), coming to rest at <paramref name="Rest"/>.</summary>
+public sealed record BoulderRolled(string RoomId, GridPosition From, IReadOnlyList<GridPosition> Path, GridPosition Rest) : GameEvent;
+
+/// <summary>A thrown Boulder broke (a double 1), bursting on a critical roll.</summary>
+public sealed record BoulderBroke(string RoomId, GridPosition At, bool Burst) : GameEvent;
+
+/// <summary>A monster picked back up something to throw.</summary>
+public sealed record MonsterPickedUp(int MonsterId, string RoomId, GridPosition From, string What, int Count) : GameEvent;
+
+/// <summary>A monster yells as its turn starts (an ogre's "GRA!!"): no effect, just noise.</summary>
+public sealed record MonsterYelled(int MonsterId, string Text) : GameEvent;
+
 public sealed record HeroHealed(int HeroId, int Amount, int Hearts) : GameEvent;
 
 /// <summary>A hero hit 0 hearts and is Keeling Over where they lie. <paramref name="Bane"/> is what brought them down.</summary>

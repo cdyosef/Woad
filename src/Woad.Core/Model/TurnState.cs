@@ -143,6 +143,9 @@ public sealed class PendingRoll
     /// <summary>The weapon the attack was made with, for what it does as the attack lands (cleave, shove, crush); null bare-handed.</summary>
     public CardDefinition? Weapon { get; internal init; }
 
+    /// <summary>What the weapon's own dice came up as (a Big Club's pair), for what they do as the attack lands.</summary>
+    public IReadOnlyList<int> WeaponFaces { get; internal init; } = [];
+
     /// <summary>The tools (lockpicks) went into this roll: if it fails with a 1 among its non-Power dice, a pick snaps.</summary>
     public bool UsedTools { get; internal init; }
 
