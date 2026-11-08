@@ -1127,6 +1127,15 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   Rumble die to every blow at something breakable. The **Crowbar** (either hand, weapon 1; the smith sells
   them) adds a die against wood (doors, crates), takes no break token from wood, and carries an Od Hand die
   into any smash. Some ordinary rooms have a crate or two.
+- **Sterner doors:** past floor 1, some locked doors have **two locks** (each opened by its own key or picking;
+  the door opens with the last) and some trapped doors **two traps** (the second set once the first is gone).
+  A door's traps are armed against one side: from the **other side** their works are in reach, and they're
+  switched off by hand, no roll. Now and then a door between two ordinary rooms is **barred** on one side
+  (only where there's another way round): from that side the bar lifts free; from the other, the door has to
+  be smashed in (a mark tougher, and 2 marks more). A lock is worth 1 XP more for every 4 of its difficulty,
+  picked or keyed. A roll at a door or chest shows it beside the dice: its keyholes, how heavily it's bolted
+  (iron bands for a harder lock), a bar, and a trap on it (a red "!", or once found, the trap itself);
+  smashing, its break marks so far.
 - **Sealed rooms:** the boss's room, and a den (the Ogre Champ's), shut behind you: no one leaves by its
   doors while the boss (or the den's keeper) stands, as a trap room holds you till its last monster falls.
 - **Exit:** sealed until the boss in its room is defeated. Stand on it and click again to escape. Your

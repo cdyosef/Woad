@@ -114,6 +114,7 @@ public static partial class DungeonGenerator
         PlaceMerchant(rooms, theme.Floors, random);
         Darken(rooms, new Pcg32(seed, DarkStream));
         PlaceCrates(rooms, breaches, new Pcg32(seed, CrateStream));
+        SternerDoors(rooms, passages, new Pcg32(seed, DoorStream));
         return new RunSetup
         {
             Seed = seed,

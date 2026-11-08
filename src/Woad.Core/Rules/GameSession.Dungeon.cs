@@ -66,8 +66,10 @@ public sealed partial class GameSession
             events.Add(new KeyUsed(hero.Id, hero.Keys));
         }
 
-        passage.IsLocked = false;
-        events.Add(new DoorUnlocked(hero.Id, room.Id, command.Door, Picked: false, passage.NeedsBossKey));
+        // One lock opens; a door with more stays locked till the last.
+        passage.Locks = Math.Max(0, passage.Locks - 1);
+        passage.IsLocked = passage.Locks > 0 && !passage.NeedsSpecialKey;
+        events.Add(new DoorUnlocked(hero.Id, room.Id, command.Door, Picked: false, passage.NeedsBossKey) { Difficulty = passage.Difficulty, LocksLeft = passage.IsLocked ? passage.Locks : 0 });
         return null;
     }
 

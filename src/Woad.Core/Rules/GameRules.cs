@@ -98,6 +98,9 @@ public static class GameRules
     /// <summary>XP for picking a lock (a door, a gate or a chest).</summary>
     public const int PickLockXp = 3;
 
+    /// <summary>A lock is worth 1 XP more for every this many points of its difficulty, picked or keyed.</summary>
+    public const int LockXpPer = 4;
+
     /// <summary>XP for using a key: a small key, the Boss Key, a gate's key.</summary>
     public const int KeyXp = 2;
 

@@ -57,8 +57,10 @@ public sealed partial class GameSession
                 return new Breakable(BreakableKind.CrackedWall, tile, GameRules.CrackedWallToughness, GameRules.CrackedWallBreaks, passage.Breaks, false, found.Key);
             }
 
+            // Locked, it's sterner; barred, sterner still.
             return passage.NeedsSpecialKey ? null
-                : new Breakable(BreakableKind.Door, tile, GameRules.DoorToughness + (passage.IsLocked ? 1 : 0), GameRules.DoorBreaks + (passage.IsLocked ? passage.Difficulty / 4 : 0), passage.Breaks, true, found.Key);
+                : new Breakable(BreakableKind.Door, tile, GameRules.DoorToughness + (passage.IsLocked ? 1 : 0) + (passage.IsBarred ? 1 : 0),
+                    GameRules.DoorBreaks + (passage.IsLocked ? passage.Locks * passage.Difficulty / 4 : 0) + (passage.IsBarred ? 2 : 0), passage.Breaks, true, found.Key);
         }
 
         int breaks = room.BreaksAt(tile);
@@ -253,9 +255,11 @@ public sealed partial class GameSession
             case BreakableKind.Door:
                 Passage door = room.PassageOn(target.Door!.Value)!;
                 door.IsLocked = false;
+                door.Locks = 0;
+                door.BarredFrom = null;
                 door.Breaks = 0;
                 door.IsBroken = true;
-                if (door.Trap is { } trap)
+                while (door.Trap is { } trap && hero.IsActive)
                 {
                     door.Trap = null;
                     SpringTrap(hero, room, trap, target.Tile, events);

@@ -135,7 +135,7 @@ public class DungeonSecretsTests
         IReadOnlyList<GameEvent> events = session.Do(new UnlockDoor(hero.Id, Direction.East));
 
         Assert.Equal(new KeyUsed(hero.Id, 0), events[0]);
-        Assert.Equal(new DoorUnlocked(hero.Id, "A", Direction.East, Picked: false, BossDoor: false), events[1]);
+        Assert.Equal(new DoorUnlocked(hero.Id, "A", Direction.East, Picked: false, BossDoor: false) { Difficulty = 5 }, events[1]);
         Assert.False(session.State.Turn!.HasActed);
         session.Do(new GoThroughDoor(hero.Id, Direction.East));
         Assert.Equal("B", hero.RoomId);
@@ -154,8 +154,8 @@ public class DungeonSecretsTests
 
         events = session.Do(new PickLock(hero.Id, hero.Position, Dice: 1));
 
-        Assert.Equal(new DoorUnlocked(hero.Id, "A", Direction.East, Picked: true, BossDoor: false), events.SingleOf<DoorUnlocked>());
-        Assert.Equal((GameRules.PickLockXp, 1), (events.SingleOf<XpGained>().Amount, hero.DoorsUnlocked));
+        Assert.Equal(new DoorUnlocked(hero.Id, "A", Direction.East, Picked: true, BossDoor: false) { Difficulty = 5 }, events.SingleOf<DoorUnlocked>());
+        Assert.Equal((GameRules.PickLockXp + 5 / GameRules.LockXpPer, 1), (events.SingleOf<XpGained>().Amount, hero.DoorsUnlocked));
         Assert.Equal(0, session.OdHandDiceLeft);
         Assert.False(session.State.Turn!.HasActed);
     }
@@ -187,7 +187,7 @@ public class DungeonSecretsTests
         hero.HasBossKey = true;
         IReadOnlyList<GameEvent> events = session.Do(new UnlockDoor(hero.Id, Direction.East));
 
-        Assert.Equal(new DoorUnlocked(hero.Id, "A", Direction.East, Picked: false, BossDoor: true), events.SingleOf<DoorUnlocked>());
+        Assert.Equal(new DoorUnlocked(hero.Id, "A", Direction.East, Picked: false, BossDoor: true) { Difficulty = 5 }, events.SingleOf<DoorUnlocked>());
         // The Boss Key is a key used.
         Assert.Equal((GameRules.KeyXp, 1, 1), (events.SingleOf<XpGained>().Amount, hero.KeysUsed, hero.DoorsUnlocked));
         Assert.False(hero.HasBossKey);
@@ -364,8 +364,8 @@ public class DungeonSecretsTests
         Assert.Contains("isn't locked", session.CheckPickLock(new GridPosition(3, 4)));
 
         IReadOnlyList<GameEvent> picked = session.Do(new PickLock(hero.Id, new GridPosition(4, 3)));
-        Assert.Equal(new ChestUnlocked(hero.Id, new GridPosition(4, 3), Picked: true), picked.SingleOf<ChestUnlocked>());
-        Assert.Equal(GameRules.PickLockXp, picked.SingleOf<XpGained>().Amount);
+        Assert.Equal(new ChestUnlocked(hero.Id, new GridPosition(4, 3), Picked: true) { Difficulty = 5 }, picked.SingleOf<ChestUnlocked>());
+        Assert.Equal(GameRules.PickLockXp + 5 / GameRules.LockXpPer, picked.SingleOf<XpGained>().Amount);
         Assert.False(session.RoomById().IsChestOpened(new GridPosition(4, 3)));
 
         IReadOnlyList<GameEvent> events = session.Do(new OpenChest(hero.Id, new GridPosition(4, 3)));

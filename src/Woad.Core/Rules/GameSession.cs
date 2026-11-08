@@ -161,6 +161,7 @@ public sealed partial class GameSession
             PickUpAlly c => Handle(c, events),
             LightPortal c => Handle(c, events),
             Smash c => Handle(c, events),
+            LiftBar c => Handle(c, events),
             TakePortal c => Handle(c, events),
             PutDownAlly c => Handle(c, events),
             SpendPoint c => Handle(c, events),
@@ -795,7 +796,17 @@ public sealed partial class GameSession
                 PassageSetup? setup = setups.FirstOrDefault(passage =>
                     (passage.RoomId == room.Id && passage.Side == side) || (passage.RoomId == target.Id && passage.Side == side.Opposite()));
                 Trap? trap = setup?.Trap is { } darts ? new Trap(darts.Kind, darts.Difficulty) : null;
-                var passage = new Passage(room.Id, side, target.Id, setup?.Kind ?? PassageKind.Open, setup?.Difficulty ?? 0, trap);
+                var passage = new Passage(room.Id, side, target.Id, setup?.Kind ?? PassageKind.Open, setup?.Difficulty ?? 0, trap)
+                {
+                    Locks = setup?.Locks ?? 1,
+                    BarredFrom = setup?.BarredFrom,
+                    TrapsArmedFrom = setup is { Trap: not null } armed ? (armed.RoomId == target.Id ? target.Id : room.Id) : null,
+                };
+                foreach (TrapSetup more in setup?.MoreTraps ?? [])
+                {
+                    passage.AddTrap(new Trap(more.Kind, more.Difficulty));
+                }
+
                 room.AddPassage(side, passage);
                 target.AddPassage(side.Opposite(), passage);
             }

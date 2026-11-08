@@ -36,6 +36,8 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         SmashRolled smash when smash.Success => $"{nameOf(smash.HeroId)} smashes at the {smash.What}: {smash.Total} against {smash.Toughness}, a break mark ({smash.Breaks} of {smash.Needed}).",
         SmashRolled smash => $"{nameOf(smash.HeroId)} smashes at the {smash.What}: {smash.Total} against {smash.Toughness}, it holds.",
         SmashedOpen smashed => $"{nameOf(smashed.HeroId)} smashes the {smashed.What} {(smashed.What == "wall" ? "into a crack" : "open")}!",
+        BarLifted lifted => $"{nameOf(lifted.HeroId)} lifts the bar from the door.",
+        DoorUnlocked { LocksLeft: > 0 } partly => $"{nameOf(partly.HeroId)} opens a lock: {partly.LocksLeft} more to go.",
         WeaponWorn worn => $"{nameOf(worn.HeroId)}'s {cardNameOf(worn.CardId)} takes a break token.",
         RiftCrackled crackled => $"The unstable portal crackles: lightning leaps through {string.Join(", ", crackled.StruckIds.Select(nameOf))}!",
         RiftZapped zapped => $"The lightning strikes at {nameOf(zapped.EntityId)} with {zapped.Total}.",

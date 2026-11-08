@@ -321,18 +321,47 @@ public sealed record ChestOpened(int HeroId, GridPosition Chest, IReadOnlyList<i
 /// <summary>An Od Hand roll for a check, against <paramref name="Difficulty"/> (0 for a steal, a contest).</summary>
 public sealed record OdHandRolled(int HeroId, OdHandCheckKind Kind, DiceRoll Roll, int Bonus, int Total, int Difficulty, int PowerDice = 0) : GameEvent
 {
+    /// <summary>What the roll is at, to picture it (a door, a chest...); null for a search, a steal and the like.</summary>
+    public RollTarget? Target { get; init; }
+
     /// <summary>Of the faces, after the Od Hand dice: the tools' own dice (a lockpick's d6). Power Dice come last.</summary>
     public int ToolDice { get; init; }
+}
+
+/// <summary>
+/// What a roll is at, pictured beside it: a door or chest (its locks still fastened, the lock's difficulty, which
+/// shows as how heavily it's bolted), a crate or wall being smashed, and any trap on it (seen, or just a "!").
+/// </summary>
+public sealed record RollTarget(string What, int Difficulty, int Locks, TrapKind? Trap, bool TrapSeen, bool Barred = false)
+{
+    /// <summary>Break marks on it (a smash), of the <see cref="Needed"/> that break it.</summary>
+    public int Breaks { get; init; }
+
+    public int Needed { get; init; }
 }
 
 /// <summary>An Od Hand check fell short (or a steal was out-rolled); nothing happens.</summary>
 public sealed record CheckFailed(int HeroId, OdHandCheckKind Kind) : GameEvent;
 
 /// <summary>A door opened: with a key, the Boss Key, or a picked lock.</summary>
-public sealed record DoorUnlocked(int HeroId, string RoomId, Direction Side, bool Picked, bool BossDoor) : GameEvent;
+public sealed record DoorUnlocked(int HeroId, string RoomId, Direction Side, bool Picked, bool BossDoor) : GameEvent
+{
+    /// <summary>The lock's difficulty (harder locks are worth more XP).</summary>
+    public int Difficulty { get; init; }
+
+    /// <summary>Locks still fastened on it: 0 once it's open.</summary>
+    public int LocksLeft { get; init; }
+}
+
+/// <summary>A bar lifted from a door, from the side it's on.</summary>
+public sealed record BarLifted(int HeroId, string RoomId, Direction Side) : GameEvent;
 
 /// <summary>A chest's lock opened, with a key or picked. It still has to be opened.</summary>
-public sealed record ChestUnlocked(int HeroId, GridPosition Chest, bool Picked) : GameEvent;
+public sealed record ChestUnlocked(int HeroId, GridPosition Chest, bool Picked) : GameEvent
+{
+    /// <summary>The lock's difficulty (harder locks are worth more XP).</summary>
+    public int Difficulty { get; init; }
+}
 
 /// <summary>
 /// A search turned things up: secret doors (by side), traps (tiles, chests and doors), stashes, and

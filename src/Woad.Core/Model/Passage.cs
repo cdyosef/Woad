@@ -36,7 +36,11 @@ public sealed class Passage
         RoomB = roomB;
         Kind = kind;
         Difficulty = difficulty;
-        Trap = trap;
+        if (trap is not null)
+        {
+            _traps.Add(trap);
+        }
+
         IsLocked = kind is PassageKind.Locked or PassageKind.BossLocked or PassageKind.Gate;
         IsHidden = kind == PassageKind.Secret;
         IsBlocked = kind == PassageKind.Cracked;
@@ -77,11 +81,53 @@ public sealed class Passage
     /// <summary>Smashed open: it stands open for good, its lock gone.</summary>
     public bool IsBroken { get; internal set; }
 
-    /// <summary>A dart trap that fires on the next hero through, until disarmed.</summary>
-    public Trap? Trap { get; internal set; }
+    private readonly List<Trap> _traps = [];
+
+    /// <summary>
+    /// The trap that fires on the next hero through, until disarmed (the first of its traps: with more, the next is
+    /// set once this one's gone). Setting it null takes it off.
+    /// </summary>
+    public Trap? Trap
+    {
+        get => _traps.FirstOrDefault();
+        internal set
+        {
+            if (value is null)
+            {
+                if (_traps.Count > 0)
+                {
+                    _traps.RemoveAt(0);
+                }
+            }
+            else if (_traps.Count > 0)
+            {
+                _traps[0] = value;
+            }
+            else
+            {
+                _traps.Add(value);
+            }
+        }
+    }
+
+    /// <summary>All its traps, the one that fires next first.</summary>
+    public IReadOnlyList<Trap> Traps => _traps;
+
+    internal void AddTrap(Trap trap) => _traps.Add(trap);
+
+    /// <summary>The room whose side its traps are armed from; from the other side they're switched off by hand, no roll.</summary>
+    public string? TrapsArmedFrom { get; internal set; }
+
+    /// <summary>Locks still fastened (a door can have more than one): each takes its own key or picking.</summary>
+    public int Locks { get; internal set; } = 1;
+
+    /// <summary>Barred on this room's side: from there the bar lifts; from the other, the door must be smashed in.</summary>
+    public string? BarredFrom { get; internal set; }
+
+    public bool IsBarred => BarredFrom is not null;
 
     /// <summary>Heroes can walk through it now.</summary>
-    public bool IsOpen => !IsLocked && !IsHidden && !IsBlocked;
+    public bool IsOpen => !IsLocked && !IsHidden && !IsBlocked && !IsBarred;
 
     public string OtherRoom(string roomId) => roomId == RoomA ? RoomB : RoomA;
 

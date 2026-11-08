@@ -181,6 +181,15 @@ public sealed partial class GameSession
 
     private string? Handle(Disarm command, List<GameEvent> events)
     {
+        // From the far side of a door, its trap's mechanism is in reach: switched off, no roll.
+        if (State.Turn is { PendingRoll: null, UnsettledPowerDice: 0 } && DoorAt(ActiveRoom, command.Target) is { Trap: { } armed, TrapsArmedFrom: { } armedFrom } trapped
+            && armedFrom != ActiveRoom.Id && ActiveHero.Position.ChebyshevDistanceTo(command.Target) <= 1)
+        {
+            trapped.Trap = null;
+            events.Add(new TrapDisarmed(ActiveHero.Id, command.Target));
+            return null;
+        }
+
         OdHandCheck? check = null;
         if ((CheckOdHandCommand(command, Skill.Disarm, out int dice) ?? FindTrapToDisarm(command.Target, out check)) is { } error)
         {
@@ -470,7 +479,7 @@ public sealed partial class GameSession
         DiceRoll rolled = _dice.Roll(dice + command.PowerDice);
         (int[] tool, int crits) = RollBonusDice(toolDice);
         var roll = new DiceRoll([.. rolled.Faces.Take(dice), .. tool[..toolDice], .. rolled.Faces.Skip(dice), .. tool[toolDice..]]);
-        events.Add(new OdHandRolled(hero.Id, check.Kind, roll, bonus, roll.Total + bonus, check.Difficulty, command.PowerDice + crits) { ToolDice = toolDice });
+        events.Add(new OdHandRolled(hero.Id, check.Kind, roll, bonus, roll.Total + bonus, check.Difficulty, command.PowerDice + crits) { ToolDice = toolDice, Target = RollTargetOf(ActiveRoom, check) });
         if (crits > 0)
         {
             events.Add(new CritRolled(hero.Id, crits));
@@ -558,9 +567,10 @@ public sealed partial class GameSession
         switch (check.Kind)
         {
             case OdHandCheckKind.PickDoor when success && DoorAt(room, check.Target) is { } passage:
-                passage.IsLocked = false;
+                passage.Locks = Math.Max(0, passage.Locks - 1);
+                passage.IsLocked = passage.Locks > 0;
                 Direction side = room.Passages.First(door => door.Value == passage).Key;
-                events.Add(new DoorUnlocked(hero.Id, room.Id, side, Picked: true, BossDoor: false));
+                events.Add(new DoorUnlocked(hero.Id, room.Id, side, Picked: true, BossDoor: false) { Difficulty = passage.Difficulty, LocksLeft = passage.Locks });
                 break;
 
             case OdHandCheckKind.PickChains when success && room.FindMerchant(check.TargetId) is { Chained: true } freed:
@@ -574,7 +584,7 @@ public sealed partial class GameSession
 
             case OdHandCheckKind.PickChest when success:
                 room.UnlockChest(check.Target);
-                events.Add(new ChestUnlocked(hero.Id, check.Target, Picked: true));
+                events.Add(new ChestUnlocked(hero.Id, check.Target, Picked: true) { Difficulty = check.Difficulty });
                 break;
 
             case OdHandCheckKind.PickGate when success:

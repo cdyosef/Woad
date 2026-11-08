@@ -951,7 +951,8 @@ public partial class GameScreen : Control
 
             case SmashRolled smash:
                 await ZoomOnActionAfresh(smash.HeroId, []);
-                await _dice.ShowRoll($"{NameOf(smash.HeroId)} smashes at the {smash.What} ({smash.Toughness}+)", smash.Roll, smash.Bonus, newGroup: true, kind: DiceKind.Rumble);
+                await _dice.ShowRoll($"{NameOf(smash.HeroId)} smashes at the {smash.What} ({smash.Toughness}+)", smash.Roll, smash.Bonus, newGroup: true, kind: DiceKind.Rumble,
+                    target: new RollTarget(smash.What, smash.Toughness, 0, null, false) { Breaks = smash.Breaks, Needed = smash.Needed });
                 _dice.ShowOutcome(smash.Success, smash.Success ? $"{smash.Breaks}/{smash.Needed}" : "SHORT");
                 if (smash.Success)
                 {
@@ -967,6 +968,10 @@ public partial class GameScreen : Control
                 _board.FloatText(smashed.Target, "SMASH!", Palette.TrimBright);
                 _board.QueueRedraw();
                 await Pause(0.3);
+                break;
+
+            case BarLifted:
+                _board.QueueRedraw();
                 break;
 
             case WallCracked:
@@ -1035,7 +1040,7 @@ public partial class GameScreen : Control
                 }
 
                 string goal = rolled.Difficulty > 0 ? $" ({rolled.Difficulty}+)" : "";
-                await _dice.ShowRoll($"{NameOf(rolled.HeroId)} {OdHandCaption(rolled.Kind)}{goal}", rolled.Roll, rolled.Bonus, newGroup: true, rolled.PowerDice, DiceKind.OdHand, rolled.ToolDice, cards: OdHandTray(rolled));
+                await _dice.ShowRoll($"{NameOf(rolled.HeroId)} {OdHandCaption(rolled.Kind)}{goal}", rolled.Roll, rolled.Bonus, newGroup: true, rolled.PowerDice, DiceKind.OdHand, rolled.ToolDice, cards: OdHandTray(rolled), target: rolled.Target);
                 break;
 
             case Stole stole:

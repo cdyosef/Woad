@@ -882,12 +882,12 @@ public sealed partial class GameSession
             return null;
         }
 
-        if (room.ChestLockAt(command.Chest) is not null)
+        if (room.ChestLockAt(command.Chest) is { } chestLock)
         {
             hero.Keys--;
             room.UnlockChest(command.Chest);
             events.Add(new KeyUsed(hero.Id, hero.Keys));
-            events.Add(new ChestUnlocked(hero.Id, command.Chest, Picked: false));
+            events.Add(new ChestUnlocked(hero.Id, command.Chest, Picked: false) { Difficulty = chestLock });
         }
 
         if (room.ChestTrapAt(command.Chest) is { } trap)

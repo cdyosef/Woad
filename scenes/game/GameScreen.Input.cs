@@ -642,6 +642,29 @@ public partial class GameScreen
     {
         Passage? passage = room.PassageOn(side);
         GridPosition doorway = room.DoorTile(side);
+
+        // Barred on this side: lift the bar. From the other: it has to be smashed in.
+        if (passage is { IsBarred: true })
+        {
+            if (_session.CheckLiftBar(side) is null)
+            {
+                Execute(new LiftBar(hero.Id, side));
+            }
+            else
+            {
+                Log("It's barred from the other side: double-click it to smash it in, or find another way round.", Palette.TextDim);
+            }
+
+            return;
+        }
+
+        // A door's traps from their far side: switched off by hand, no roll.
+        if (passage is { Trap: not null, TrapsArmedFrom: { } armedFrom } && armedFrom != room.Id)
+        {
+            Execute(new Disarm(hero.Id, doorway));
+            return;
+        }
+
         if (passage?.Trap is { Revealed: true } && passage is not { IsLocked: true })
         {
             AskTrap("Darts are set in this doorway.", "Go through", () => Execute(new GoThroughDoor(hero.Id, side)),
@@ -1178,9 +1201,22 @@ public partial class GameScreen
             return "The keep's gate, barred by an emerald portcullis. Only the Emerald Key opens it: the Emerald Knight carries it.";
         }
 
+        if (passage is { IsBarred: true })
+        {
+            return passage.BarredFrom == room.Id
+                ? $"A door barred on this side. Stand by it and click to lift the bar (free).{darts}"
+                : $"A door barred from the other side. Smash it in (double-click it from beside it), or find another way round.{darts}";
+        }
+
+        if (passage is { TrapsArmedFrom: { } armedFrom, Trap: not null } && armedFrom != room.Id)
+        {
+            return $"Its trap's works are on this side: stand in the doorway and click to switch {(passage.Traps.Count > 1 ? "them" : "it")} off, no roll.";
+        }
+
         if (passage is { IsLocked: true })
         {
-            return $"A locked door. Stand in it and click to use a key, or to pick the lock with Od Hand ({passage.Difficulty}+).{darts}";
+            string locks = passage.Locks > 1 ? $"{passage.Locks} locks, each opened by itself" : "a lock";
+            return $"A locked door, {locks}. Stand in it and click to use a key, or to pick the lock with Od Hand ({passage.Difficulty}+); or smash it in.{darts}";
         }
 
         bool explored = _session.State.Rooms[room.Doors[side]].Explored;

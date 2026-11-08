@@ -215,7 +215,7 @@ public sealed partial class GameSession
 
         if (room.PassageOn(command.Door) is { IsBlocked: true })
         {
-            return "A cracked wall blocks this doorway. A bomb could break it.";
+            return "A cracked wall blocks this doorway. A bomb, or smashing, could break it.";
         }
 
         if (room.PassageOn(command.Door) is { IsLocked: true } locked)
@@ -223,7 +223,12 @@ public sealed partial class GameSession
             return locked.NeedsGateKey ? GateLockedText
                 : locked.NeedsBossKey
                 ? "The Boss Door opens only with the Boss Key."
-                : $"The door is locked: use a key, or pick the lock with Od Hand ({locked.Difficulty}+).";
+                : $"The door is locked{(locked.Locks > 1 ? $" ({locked.Locks} locks)" : "")}: use a key, pick the lock with Od Hand ({locked.Difficulty}+), or smash it in.";
+        }
+
+        if (room.PassageOn(command.Door) is { IsBarred: true } barred)
+        {
+            return barred.BarredFrom == room.Id ? "It's barred on this side: lift the bar first (free)." : "It's barred from the other side: smash it in, or find another way round.";
         }
 
         if (!AtDoor(room, command.Door, hero.Position))

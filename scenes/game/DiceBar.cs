@@ -1,5 +1,6 @@
 using Godot;
 using Woad.Core.Dice;
+using Woad.Core.Events;
 using Woad.Core.Model;
 using Woad.Scenes.Ui;
 
@@ -60,6 +61,9 @@ public partial class DiceBar : Control
     /// </summary>
     private bool _rollerOnRight;
 
+    /// <summary>What the roll on show is at (a door, a chest, a crate...), pictured on the right; null for none.</summary>
+    private RollTarget? _target;
+
     public event Action<int>? DieClicked;
 
     /// <summary>Where the roller's die <paramref name="index"/> is on screen, to click it; null if there's no such die.</summary>
@@ -88,8 +92,14 @@ public partial class DiceBar : Control
     /// <param name="types">What each face is made of, in order (Plain past its end).</param>
     /// <param name="cards">The cards played into the roll, each over its own dice, in order.</param>
     /// <param name="rollerOnRight">A new roll against the hero whose turn it is: it goes on the right, their answer on the left.</param>
-    public async Task ShowRoll(string caption, DiceRoll roll, int bonus, bool newGroup, int powerDice = 0, DiceKind kind = DiceKind.Plain, int toolDice = 0, IReadOnlyList<DieType>? types = null, IReadOnlyList<TrayCard>? cards = null, bool rollerOnRight = false)
+    /// <param name="target">What a new roll is at (a door, a chest...), pictured on the right.</param>
+    public async Task ShowRoll(string caption, DiceRoll roll, int bonus, bool newGroup, int powerDice = 0, DiceKind kind = DiceKind.Plain, int toolDice = 0, IReadOnlyList<DieType>? types = null, IReadOnlyList<TrayCard>? cards = null, bool rollerOnRight = false, RollTarget? target = null)
     {
+        if (newGroup || _roller is null)
+        {
+            _target = target;
+        }
+
         var row = new Row(caption, [.. roll.Faces], bonus, roll.Faces.Count - powerDice) { Kind = kind, ToolFrom = roll.Faces.Count - powerDice - toolDice, Types = [.. types ?? []], Cards = [.. cards ?? []] };
         ShowedTypedDice |= row.Types.Any(type => type != DieType.Plain);
         if (newGroup || _roller is null)
@@ -375,6 +385,11 @@ public partial class DiceBar : Control
         DrawConfetti();
         if (_defenders.Count == 0)
         {
+            if (_target is { } target)
+            {
+                DrawTarget(font, target);
+            }
+
             return;
         }
 
@@ -386,6 +401,144 @@ public partial class DiceBar : Control
         for (int i = 0; i < _defenders.Count; i++)
         {
             DrawSide(font, _defenders[i], new Rect2(left + i * column, 0, column, Size.Y), clickable: false, alignRight: _defenders.Count == 1);
+        }
+    }
+
+    /// <summary>
+    /// What the roll's at, on the right: a door (planks, an arch, a keyhole for each lock still fastened, iron
+    /// bands the heavier the lock, a bar if barred), a chest, a gate, a crate, a wall, or a trap; a trap on it
+    /// shows as a red "!", or once found, as itself. Smashing, its break marks so far.
+    /// </summary>
+    private void DrawTarget(Font font, RollTarget target)
+    {
+        var box = new Rect2(Size.X - 46, 2, 40, Size.Y - 4);
+        Vector2 c = box.GetCenter();
+        Color wood = new("7a4a24"), woodDark = new("4a2a14"), iron = new("3a3a44"), ironLight = new("8a8a96"), gold = Palette.TrimBright;
+        int bands = target.Locks > 0 ? Math.Clamp(1 + target.Difficulty / 3, 1, 4) : 0;
+        switch (target.What)
+        {
+            case "door":
+                var door = new Rect2(c.X - 13, box.Position.Y + 8, 26, box.Size.Y - 9);
+                DrawCircle(new Vector2(c.X, door.Position.Y), 13, wood);
+                DrawRect(door, wood);
+                for (float x = door.Position.X + 6; x < door.End.X; x += 6)
+                {
+                    DrawLine(new Vector2(x, door.Position.Y - 6), new Vector2(x, door.End.Y), woodDark, 1);
+                }
+
+                for (int i = 0; i < bands; i++)
+                {
+                    float y = door.Position.Y + 3 + i * (door.Size.Y - 6) / Math.Max(1, bands);
+                    DrawRect(new Rect2(door.Position.X, y, door.Size.X, 2.5f), iron);
+                    DrawRect(new Rect2(door.Position.X + 2, y + 0.5f, 1.5f, 1.5f), ironLight);
+                    DrawRect(new Rect2(door.End.X - 3.5f, y + 0.5f, 1.5f, 1.5f), ironLight);
+                }
+
+                for (int i = 0; i < target.Locks; i++)
+                {
+                    Vector2 hole = new(c.X + 6, door.Position.Y + door.Size.Y * (0.45f + i * 0.25f));
+                    DrawCircle(hole, 3, gold);
+                    DrawCircle(hole, 1.4f, Palette.Ink);
+                    DrawRect(new Rect2(hole.X - 0.6f, hole.Y, 1.2f, 3), Palette.Ink);
+                }
+
+                if (target.Barred)
+                {
+                    DrawRect(new Rect2(door.Position.X - 4, door.GetCenter().Y - 2, door.Size.X + 8, 4), woodDark);
+                    DrawRect(new Rect2(door.Position.X - 4, door.GetCenter().Y - 2, door.Size.X + 8, 4), iron, filled: false, width: 1);
+                }
+
+                break;
+
+            case "chest":
+                var chest = new Rect2(c.X - 15, c.Y - 6, 30, 18);
+                DrawRect(new Rect2(chest.Position.X, chest.Position.Y - 7, chest.Size.X, 8), wood.Lightened(0.1f));
+                DrawRect(chest, wood);
+                for (int i = 0; i < Math.Max(1, bands); i++)
+                {
+                    DrawRect(new Rect2(chest.Position.X + 4 + i * 8, chest.Position.Y - 7, 2, chest.Size.Y + 7), iron);
+                }
+
+                if (target.Locks > 0)
+                {
+                    DrawRect(new Rect2(c.X - 3, chest.Position.Y - 2, 6, 7), gold);
+                    DrawCircle(new Vector2(c.X, chest.Position.Y + 1), 1.2f, Palette.Ink);
+                }
+
+                break;
+
+            case "gate":
+                var gate = new Rect2(c.X - 14, box.Position.Y + 4, 28, box.Size.Y - 6);
+                DrawRect(gate, new Color("0a0c10"));
+                for (float x = gate.Position.X + 2; x < gate.End.X; x += 4)
+                {
+                    DrawLine(new Vector2(x, gate.Position.Y), new Vector2(x, gate.End.Y), new Color("2f7a4e"), 1.5f);
+                }
+
+                break;
+
+            case "crate":
+                var crate = new Rect2(c.X - 13, c.Y - 11, 26, 24);
+                DrawRect(crate, new Color("9a6a3a"));
+                DrawLine(crate.Position, crate.End, woodDark, 2);
+                DrawRect(crate, woodDark, filled: false, width: 2);
+                break;
+
+            case "trap":
+                break;
+
+            default:
+                // A wall, or a cracked one: stone blocks.
+                var wall = new Rect2(c.X - 15, c.Y - 13, 30, 28);
+                DrawRect(wall, new Color("55695c"));
+                for (float y = wall.Position.Y; y < wall.End.Y; y += 7)
+                {
+                    DrawLine(new Vector2(wall.Position.X, y), new Vector2(wall.End.X, y), new Color("33443a"), 1);
+                }
+
+                if (target.What == "cracked wall")
+                {
+                    DrawPolyline([new Vector2(c.X - 4, wall.Position.Y), new Vector2(c.X + 2, c.Y - 2), new Vector2(c.X - 3, c.Y + 4), new Vector2(c.X + 4, wall.End.Y)], Palette.Ink, 1.5f);
+                }
+
+                break;
+        }
+
+        // A trap on it: a red "!" while hidden, or the trap itself once found.
+        if (target.Trap is { } trap)
+        {
+            Vector2 at = target.What == "trap" ? c : new Vector2(box.End.X - 6, box.Position.Y + 8);
+            float r = target.What == "trap" ? 12 : 6;
+            DrawCircle(at, r, Palette.Danger);
+            if (!target.TrapSeen)
+            {
+                DrawString(font, at + new Vector2(-2, 4), "!", fontSize: UiTheme.FontSize, modulate: Colors.White);
+            }
+            else
+            {
+                switch (trap)
+                {
+                    case TrapKind.Darts:
+                        for (int i = -1; i <= 1; i++)
+                        {
+                            DrawLine(at + new Vector2(-r * 0.6f, i * r * 0.4f), at + new Vector2(r * 0.6f, i * r * 0.4f), Colors.White, 1);
+                        }
+
+                        break;
+                    case TrapKind.Needle:
+                        DrawLine(at + new Vector2(-r * 0.6f, r * 0.6f), at + new Vector2(r * 0.6f, -r * 0.6f), Colors.White, 1);
+                        break;
+                    default:
+                        DrawColoredPolygon([at + new Vector2(-r * 0.6f, r * 0.5f), at + new Vector2(0, -r * 0.6f), at + new Vector2(r * 0.6f, r * 0.5f)], Colors.White);
+                        break;
+                }
+            }
+        }
+
+        // Smashing: its break marks so far.
+        if (target.Needed > 0)
+        {
+            DrawString(font, new Vector2(box.Position.X - 24, box.GetCenter().Y + 4), $"{target.Breaks}/{target.Needed}", HorizontalAlignment.Right, 22, UiTheme.FontSize, Palette.Danger);
         }
     }
 
