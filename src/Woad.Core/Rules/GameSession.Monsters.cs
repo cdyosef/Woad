@@ -330,6 +330,14 @@ public sealed partial class GameSession
         }
 
         standing = [.. State.ActiveHeroesIn(room).Where(hero => hero.ShadowboundRounds == 0)];
+
+        // With nobody in reach of its blows: something to throw goes at whoever's in range instead of it closing in;
+        // with nothing, it picks back up what it threw, if that's beside it.
+        bool regrabbed = Regrab(room, monster, standing, events);
+        if (ThrowInstead(room, monster, standing, events) || regrabbed)
+        {
+            return;
+        }
         bool cornered = definition.KeepsDistance && heroes.Any(hero => hero.Position.ManhattanDistanceTo(monster.NearestTile(hero.Position)) == 1);
         if (!cornered && !definition.Erratic)
         {

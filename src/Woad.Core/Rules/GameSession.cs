@@ -503,6 +503,7 @@ public sealed partial class GameSession
                 // A graveyard's dead lie still until a hero comes near.
                 Monster monster = CreateMonster(state.NextId(), spawn.Monster, spawn.Position, GameRules.PartyStrength(setup.Heroes));
                 monster.Asleep = theme.Graveyard is not null;
+                GiveThrowables(monster, random.Gear, content, state);
                 room.AddMonster(monster);
             }
 

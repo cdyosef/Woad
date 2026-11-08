@@ -1400,6 +1400,36 @@ public partial class GameScreen : Control
                 await UpdateFigure(skipped.MonsterId, figure => figure.Frozen = false, 0.3);
                 break;
 
+            case MonsterThrew threw:
+                CalloutOver(threw.MonsterId, "HURL!", Palette.Danger);
+                Sfx.Play("flap");
+                await Pause(0.3);
+                break;
+
+            case BoulderRolled rolled when rolled.RoomId == _shownRoomId:
+                _board.QueueRedraw();
+                _board.FloatText(rolled.Rest, rolled.Path.Count > 0 ? "rolls!" : "thud!", Palette.TrimBright);
+                Sfx.Play("door");
+                await Pause(0.3);
+                break;
+
+            case BoulderBroke shattered when shattered.RoomId == _shownRoomId:
+                _board.QueueRedraw();
+                _board.FloatText(shattered.At, shattered.Burst ? "BURSTS!" : "crumbles!", shattered.Burst ? Palette.Danger : Palette.TrimBright);
+                Sfx.Play(shattered.Burst ? "boom" : "pot");
+                await Pause(0.3);
+                break;
+
+            case MonsterPickedUp picked when picked.RoomId == _shownRoomId:
+                _board.QueueRedraw();
+                await Pause(0.2);
+                break;
+
+            case ThrownShattered:
+                _board.QueueRedraw();
+                Sfx.Play("pot");
+                break;
+
             case MonsterWeaponBroke broke:
                 CalloutOver(broke.MonsterId, "SNAP!", Palette.TrimBright);
                 Sfx.Play("pot");
@@ -1738,6 +1768,7 @@ public partial class GameScreen : Control
         MonsterTurnSkipped skipped => FigureRoom(skipped.MonsterId),
         MonsterYelled yelled => FigureRoom(yelled.MonsterId),
         MonsterWeaponBroke broke => FigureRoom(broke.MonsterId),
+        MonsterThrew threw => FigureRoom(threw.MonsterId),
         MonsterSpawned spawned => spawned.RoomId,
         RoomCleared cleared => cleared.RoomId,
         PotSmashed smashed => FigureRoom(smashed.HeroId),

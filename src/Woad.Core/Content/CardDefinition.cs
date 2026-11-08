@@ -347,7 +347,16 @@ public sealed record CardDefinition
     /// <summary>Weapons: any 1 in an attack made with it breaks it, as a torch burns out (the Club).</summary>
     public bool BreaksOnOne { get; init; }
 
-    /// <summary>Two or more 1s on its own weapon dice break it (a Big Club).</summary>
+    /// <summary>One more die of this type rolled in with its weapon dice (a Boulder's Earth die).</summary>
+    public Model.DieType? ExtraDie { get; init; }
+
+    /// <summary>Only ever thrown, even at someone right beside you (a Boulder).</summary>
+    public bool ThrownOnly { get; init; }
+
+    /// <summary>Thrown, it rolls on 1d6 tiles past its target, striking whoever it meets (a Boulder).</summary>
+    public bool Rolls { get; init; }
+
+    /// <summary>Two or more 1s on its own weapon dice break it (a Big Club); with an <see cref="ExtraDie"/>, a 1 on both its weapon die and that.</summary>
     public bool BreaksOnDoubleOne { get; init; }
 
     /// <summary>Each 6 on its own weapon dice shoves the target a tile back, hit or miss (a Big Club).</summary>

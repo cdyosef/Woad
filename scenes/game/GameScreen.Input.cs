@@ -1272,6 +1272,11 @@ public partial class GameScreen
             traits.Add("can't burn");
         }
 
+        if (monster.Holding is { } held)
+        {
+            traits.Add(held.Count > 1 ? $"carries {held.Count} {held.Definition.Name}s to throw" : $"carries a {held.Definition.Name} to throw");
+        }
+
         if (monster.Wielding is { } wielding)
         {
             traits.Add($"swings a {wielding.Name}");

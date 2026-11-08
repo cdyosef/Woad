@@ -146,6 +146,12 @@ public sealed record MonsterDefinition
     /// </summary>
     public string? Wields { get; init; }
 
+    /// <summary>What it may carry to throw, checked in turn on one d100 as it's placed (an ogre's Boulder, else Rocks).</summary>
+    public IReadOnlyList<ThrowableGear> Throws { get; init; } = [];
+
+    /// <summary>It throws twice as far as anyone else (an ogre).</summary>
+    public bool ThrowsFar { get; init; }
+
     /// <summary>The card it <see cref="Wields"/>, linked up as the content loads.</summary>
     [System.Text.Json.Serialization.JsonIgnore]
     public CardDefinition? WieldsCard { get; internal set; }
@@ -283,6 +289,18 @@ public sealed record MonsterDefinition
 }
 
 /// <summary>A special card a monster drops on defeat, with a percent chance, besides its usual loot.</summary>
+/// <summary>Something a monster may carry to throw: <see cref="Chance"/>% of them have <see cref="Min"/>-<see cref="Max"/> of it.</summary>
+public sealed record ThrowableGear
+{
+    public required string Card { get; init; }
+
+    public int Chance { get; init; }
+
+    public int Min { get; init; } = 1;
+
+    public int Max { get; init; } = 1;
+}
+
 public sealed record RareDrop
 {
     public required string Card { get; init; }

@@ -228,6 +228,11 @@ public sealed partial class GameSession
             dice = 0;
         }
 
+        if (weapon?.ExtraDie is { } extraDie && weaponDice > 0)
+        {
+            typed.Add((extraDie, 1));
+        }
+
         if (weapon?.DieType is { } own && weaponDice > 0)
         {
             typed.Add((own, weaponDice));
@@ -599,6 +604,13 @@ public sealed partial class GameSession
             DropLoot(room, SafeTile(room, monster.Position), new CardInstance(State.NextId(), wielding, broughtInByHeroId: null), events);
         }
 
+        // And what it carried to throw.
+        if (monster.Holding is { } held)
+        {
+            monster.Holding = null;
+            DropLoot(room, SafeTile(room, monster.Position), held, events);
+        }
+
         foreach (RareDrop carried in definition.Carries.Where(carried => _random.Loot.NextInt(0, 100) < carried.Chance))
         {
             // A unique already claimed this raid: what drops in its place.
@@ -703,11 +715,12 @@ public sealed partial class GameSession
 
     /// <summary>One attack roll that every target defends against separately (a sweep hits them all with the same roll).</summary>
     /// <param name="weaponDice">Its weapon's own dice (a Captain's mace), rolled in, a 6 rolling another straight in.</param>
-    private void RollMonsterAttack(Room room, Monster monster, int dice, int bonus, IReadOnlyList<Hero> targets, List<GameEvent> events, int weaponDice = 0)
+    /// <param name="thrown">What it throws, if it's a throw (a Rock, a Boulder with its Earth die): its club stays out of it.</param>
+    private MonsterAttackRoll? RollMonsterAttack(Room room, Monster monster, int dice, int bonus, IReadOnlyList<Hero> targets, List<GameEvent> events, int weaponDice = 0, CardDefinition? thrown = null)
     {
         if (dice < 1)
         {
-            return;
+            return null;
         }
 
         (DiceRoll roll, IReadOnlyList<DieType> types, int powerDice) = RollMonsterDice(monster, dice);
@@ -719,7 +732,20 @@ public sealed partial class GameSession
 
         powerDice += crits;
         int weaponSixes = weaponFaces.Count(face => face == GameRules.PowerDieFace);
-        CardDefinition? wielded = weaponDice > 0 ? monster.Wielding : null;
+        int[] extraFaces = [];
+        if (thrown?.ExtraDie is { } extraDie)
+        {
+            List<DieType> aligned = [.. types, .. Enumerable.Repeat(DieType.Plain, roll.Faces.Count - types.Count)];
+            (extraFaces, DieType[] extraTypes) = RollTypedDice([(extraDie, 1)]);
+            foreach (int face in extraFaces)
+            {
+                roll = roll.With(face);
+            }
+
+            types = [.. aligned, .. extraTypes];
+        }
+
+        CardDefinition? wielded = thrown is null && weaponDice > 0 ? monster.Wielding : null;
         int weaponShoves = wielded is { ShovesOnWeaponSix: true } ? weaponSixes : 0;
         bool weaponBreaks = wielded is { BreaksOnDoubleOne: true } && weaponFaces.Count(face => face == 1) >= 2;
 
@@ -799,6 +825,8 @@ public sealed partial class GameSession
             monster.Disarmed = true;
             events.Add(new MonsterWeaponBroke(monster.Id, wielded!.Id));
         }
+
+        return new MonsterAttackRoll(roll, total, weaponFaces, extraFaces);
     }
 
     /// <summary>

@@ -1145,6 +1145,17 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   them splinters it: the ogre fights on with its fists (melee, its own dice), drawn without it. An ogre that falls
   with its club whole drops it. To a hero it's a two-handed weapon doing the same: 2d6 on one Rumble roll a
   turn, reach 2, a shove for each 6 on its dice, broken by a double 1 on them.
+- **Rocks and Boulders:** half of all ogres carry 2-3 Rocks, and a fifth a **Boulder** instead (on their own
+  dice as the floor is laid). An ogre throws twice as far as anyone else (Rocks 6, a Boulder 4): with nobody in its
+  club's reach but someone in throwing range, it throws at the weakest instead of closing in. A Rock lands whole at
+  the target's feet on a 6, else shatters. With nothing left to throw, an ogre beside what it threw picks it back
+  up, in place of moving. A **Boulder** (two-handed to a hero; always thrown, even at someone beside you; range 2)
+  adds weapon 2, a d6 and an Earth die. After the blow it rolls on 1d6 tiles the way it was thrown, striking each of
+  the thrower's foes it meets with the same roll: on past them on a hit, or a miss they only just turn aside; it
+  stops dead at a defense of twice its roll, at a wall, or against one of the thrower's own side, and lies there as
+  loot. A 1 on both its d6 and its Earth die breaks it into 1-3 Rocks (a quarter of the time coins, now and then an
+  Emerald); on a critical roll (a 6 in it) it bursts, flinging them onto the tiles around, each Rock striking
+  whoever of the thrower's foes is there with a die, the Rock and an Earth die.
 - **Sealed rooms:** the boss's room, and a den (the Ogre Champ's), shut behind you: no one leaves by its
   doors while the boss (or the den's keeper) stands, as a trap room holds you till its last monster falls.
 - **Exit:** sealed until the boss in its room is defeated. Stand on it and click again to escape. Your

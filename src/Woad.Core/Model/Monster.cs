@@ -22,6 +22,9 @@ public sealed class Monster
 
     public int Hearts { get; internal set; }
 
+    /// <summary>What it carries to throw (an ogre's Rocks, or a Boulder), or null.</summary>
+    public CardInstance? Holding { get; internal set; }
+
     /// <summary>Its weapon broke (a Big Club on a double 1): it fights on with its own dice alone.</summary>
     public bool Disarmed { get; internal set; }
 

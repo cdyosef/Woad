@@ -96,6 +96,8 @@ public sealed partial class GameSession
         thrown = false;
         if (Targeting.CanHeroAttack(layout, 1, from, to))
         {
+            // A Boulder is thrown even at someone right beside you.
+            thrown = card?.Definition is { ThrownOnly: true };
             return true;
         }
 
@@ -218,6 +220,12 @@ public sealed partial class GameSession
         }
 
         EquipSlot? heldIn = hero.SlotOf(card);
+        // A Boulder leaves the hands, to break or roll on as the dice fall.
+        if (wielding.Thrown && weapon.Rolls)
+        {
+            return new WeaponSpent(TakeFromHero(hero, card, 1), card.Id, target, null);
+        }
+
         if (wielding.Thrown && weapon.BreaksOnUse)
         {
             var spent = new WeaponSpent(TakeFromHero(hero, card, 1), card.Id, target, null);
@@ -280,6 +288,15 @@ public sealed partial class GameSession
         }
 
         Room room = State.RoomOf(hero);
+        if (spent.Flung is { Definition.Rolls: true } boulder)
+        {
+            IReadOnlyList<int> extraFaces = boulder.Definition.ExtraDie is { } extra
+                ? [.. attack.Roll.Faces.Where((_, i) => i < attack.DieTypes.Count && attack.DieTypes[i] == extra)]
+                : [];
+            BoulderLands(room, hero, null, hero.Position, spent.At, boulder, attack.Total, attack.Roll.Faces.Contains(GameRules.PowerDieFace), attack.WeaponFaces, extraFaces, events);
+            return;
+        }
+
         if (spent.Flung is { } flung && attack.Roll.Faces.Contains(GameRules.PowerDieFace))
         {
             GridPosition spot = room.Layout[spent.At].IsWalkable() ? spent.At : SafeTile(room, spent.At);

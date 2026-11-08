@@ -228,6 +228,12 @@ public sealed class ContentCatalog
                 }
             }
 
+            if (monster.Throws.Any(carried => !cardIds.Contains(carried.Card) || carried.Chance is < 1 or > 100 || carried.Min < 1 || carried.Max < carried.Min)
+                || monster.Throws.Sum(carried => carried.Chance) > 100)
+            {
+                errors.Add($"Monster '{monster.Id}' throws an unknown card, or its chances or counts are out of range.");
+            }
+
             if (monster.Carries.Any(carried => !cardIds.Contains(carried.Card) || carried.Chance is < 1 or > 100))
             {
                 errors.Add($"Monster '{monster.Id}' carries an unknown card, or one with a chance outside 1-100.");
