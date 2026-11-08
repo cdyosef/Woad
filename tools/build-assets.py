@@ -341,6 +341,30 @@ LOOKS = [
         "..oSotTT", "..oSotTT", "...oobbb", "....oSSS", "...oSSss", "..oSSSSo", "..oooooo", "........"],
      "extra": [(7, 7, "p"), (7, 8, "p"), (13, 13, "S"), (13, 14, "S"), (12, 14, "s")],
      "palette": {"p": "#d03040", "e": "#e8d040"}},
+    {"id": "death_cultist", "name": "Death Cultist", "skin": None, "hair": None, "rows": [
+        "......oo", ".....oTT", "....oTTT", "....oTww", "....oTew", "....oTww", "....oTwk", "...otTTT",
+        "..otTTTT", "..owotTT", "...otRRR", "...otTTT", "...otTTT", "...otTTT", "...ooooo", "........"],
+     "palette": {"e": "#181420"}},
+    {"id": "snake_cultist", "name": "Snake Cultist", "skin": "human", "hair": "hair", "rows": [
+        "......oo", ".....oTT", "....oTTT", "....oTHH", "....oTSS", "....oSeS", "....oSSS", "...otTTT",
+        "..oSotTT", "..oSotRT", "...otRRR", "...otTTT", "...otTTT", "...otTTT", "...ooooo", "........"],
+     "extra": [(7, 4, 'G'), (7, 5, 'G'), (7, 6, 'G'), (7, 7, 'G'), (7, 8, 'G'), (7, 9, 'G'), (7, 10, 'G'), (7, 11, 'G'), (8, 12, 'G'), (9, 12, 'G'), (6, 12, 'G'), (5, 12, 'G'), (5, 13, 'G'), (6, 4, 'G')]},
+    {"id": "man_at_arms", "name": "Man-At-Arms", "skin": "human", "hair": None, "rows": [
+        "........", "......oo", ".....omm", "...ommmm", "....oSSS", "....oSeS", "....oSSS", "...ommTT",
+        "..oSmtTR", "..oSmtTR", "...oobbb", "...omtTT", "....omMo", "....okko", "....oooo", "........"],
+     "extra": [(10, 12, "g"), (11, 12, "m"), (12, 12, "m"), (13, 12, "M")]},
+    {"id": "spearman", "name": "Spearman", "skin": "human", "hair": None, "rows": [
+        "........", "......oo", ".....omm", "....ommm", "....omSS", "....oSeS", "....oSSS", "...ootTT",
+        "..oSotTT", "..oSotTT", "...oobbR", "....otTT", "....otTo", "....okko", "....oooo", "........"],
+     "extra": [(0, 14, 'm'), (1, 14, 'm'), (2, 14, 'M'), (3, 14, 'N'), (4, 14, 'N'), (5, 14, 'N'), (6, 14, 'N'), (7, 14, 'N'), (8, 14, 'N'), (9, 14, 'N'), (10, 14, 'N'), (11, 14, 'N'), (12, 14, 'N'), (13, 14, 'N'), (14, 14, 'N')]},
+    {"id": "militia", "name": "Militia", "skin": "human", "hair": "hair", "rows": [
+        "........", "......oo", ".....onn", "....onnn", "....oHSS", "....oSeS", "....oSSS", "...ootTT",
+        "..oSotTt", "..oSotTt", "...oobbb", "....oRRR", "....oRRo", "....okko", "....oooo", "........"],
+     "extra": [(0, 13, 'm'), (0, 15, 'm'), (1, 13, 'm'), (1, 14, 'm'), (1, 15, 'm'), (0, 14, 'm'), (2, 14, 'M'), (3, 14, 'N'), (4, 14, 'N'), (5, 14, 'N'), (6, 14, 'N'), (7, 14, 'N'), (8, 14, 'N'), (9, 14, 'N'), (10, 14, 'N'), (11, 14, 'N'), (12, 14, 'N'), (13, 14, 'N'), (14, 14, 'N')]},
+    {"id": "skirmisher", "name": "Skirmisher", "skin": "human", "hair": "hair", "rows": [
+        "........", "......oo", ".....oRR", "....oRRR", "....oHSS", "....oSeS", "....oSSS", "...ootTT",
+        "..oSonTT", "..oSotnT", "...oobbb", "....otTT", "....oSSo", "....onno", "....oooo", "........"],
+     "extra": [(1, 2, 'm'), (2, 3, 'm'), (2, 2, 'N'), (3, 2, 'N'), (4, 2, 'N'), (5, 2, 'N'), (6, 2, 'N'), (3, 3, 'N'), (4, 3, 'N'), (5, 3, 'N'), (6, 3, 'N')]},
 ]
 
 
