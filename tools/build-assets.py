@@ -349,10 +349,14 @@ LOOKS = [
         "......oo", ".....oTT", "....oTTT", "....oTHH", "....oTSS", "....oSeS", "....oSSS", "...otTTT",
         "..oSotTT", "..oSotRT", "...otRRR", "...otTTT", "...otTTT", "...otTTT", "...ooooo", "........"],
      "extra": [(7, 4, 'G'), (7, 5, 'G'), (7, 6, 'G'), (7, 7, 'G'), (7, 8, 'G'), (7, 9, 'G'), (7, 10, 'G'), (7, 11, 'G'), (8, 12, 'G'), (9, 12, 'G'), (6, 12, 'G'), (5, 12, 'G'), (5, 13, 'G'), (6, 4, 'G')]},
-    {"id": "man_at_arms", "name": "Man-At-Arms", "skin": "human", "hair": None, "rows": [
+    {"id": "veteran", "name": "Veteran", "skin": "human", "hair": None, "rows": [
         "........", "......oo", ".....omm", "...ommmm", "....oSSS", "....oSeS", "....oSSS", "...ommTT",
         "..oSmtTR", "..oSmtTR", "...oobbb", "...omtTT", "....omMo", "....okko", "....oooo", "........"],
      "extra": [(10, 12, "g"), (11, 12, "m"), (12, 12, "m"), (13, 12, "M")]},
+    {"id": "man_at_arms", "name": "Man-At-Arms", "skin": "human", "hair": None, "rows": [
+        ".......o", "......om", ".....omm", "....ommm", "....ommM", "....omeM", "....omSS", "...ommTT",
+        "..omotTT", "..oSotRT", "...oobbb", "...omtTT", "....omMo", "....okko", "....oooo", "........"],
+     "extra": [(7, 1, 'R'), (7, 2, 'R'), (7, 3, 'R'), (8, 0, 'R'), (8, 1, 'T'), (8, 2, 'T'), (8, 3, 'R'), (9, 0, 'R'), (9, 1, 'T'), (9, 2, 'r'), (9, 3, 'R'), (10, 1, 'R'), (10, 2, 'T'), (10, 3, 'R'), (11, 1, 'R'), (11, 2, 'R'), (12, 2, 'R'), (1, 14, 'w'), (2, 14, 'm'), (3, 14, 'm'), (4, 14, 'm'), (5, 14, 'm'), (6, 14, 'm'), (7, 14, 'm'), (8, 13, 'g'), (8, 14, 'g'), (8, 15, 'g'), (9, 14, 'N')]},
     {"id": "spearman", "name": "Spearman", "skin": "human", "hair": None, "rows": [
         "........", "......oo", ".....omm", "..oMMMMM", "....oSSS", "....oSeS", "...noSSS", "..nookTT",
         ".noSokTT", ".noSokTT", "..noobbR", "....otTT", "....otTo", "....okko", "....oooo", "........"],

@@ -64,6 +64,7 @@ public static partial class Looks
         new("snakeman", "Snakeman", "scales", null, [new(5, 5), new(10, 5)], null, null),
         new("death_cultist", "Death Cultist", null, null, [new(6, 4), new(9, 4)], null, null),
         new("snake_cultist", "Snake Cultist", "human", "hair", [new(6, 5), new(9, 5)], null, null),
+        new("veteran", "Veteran", "human", null, [new(6, 5), new(9, 5)], null, null),
         new("man_at_arms", "Man-At-Arms", "human", null, [new(6, 5), new(9, 5)], null, null),
         new("spearman", "Spearman", "human", null, [new(6, 5), new(9, 5)], null, null),
         new("militia", "Militia", "human", "hair", [new(6, 5), new(9, 5)], null, null),
