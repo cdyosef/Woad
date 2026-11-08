@@ -283,6 +283,14 @@ LOOKS = [
      "extra": [(7, 2, "m"), (7, 3, "M"), (8, 3, "m"), (9, 3, "m"), (8, 2, "M"), (9, 2, "M"), (10, 3, "g"),
                (4, 9, "g"), (4, 10, "g"), (5, 10, "g"),
                (8, 13, "m"), (9, 13, "m"), (10, 13, "m"), (7, 13, "M"), (7, 14, "M"), (11, 13, "M"), (11, 14, "M")]},
+    # After Chris's drawing of Geraint Loomwood: a cap with goggles on the brow, long hair to his
+    # shoulders, little round spectacles, a long stringy beard and a cigarette holder in his teeth.
+    {"id": "artifixer", "name": "Artifixer", "skin": "human", "hair": "hair", "rows": [
+        "........", "......oo", ".....oRR", "....ogkg", "...oHrrr", "...oHMeS", "...oHSsH", "..oHhTHH",
+        "..oSohtH", "..oSotTH", "...oobbh", "....otTT", "....otTo", "....okko", "....oooo", "........"],
+     "extra": [(6, 10, "k"), (6, 11, "k"), (5, 12, "w"), (5, 13, "f"), (3, 13, "m"), (2, 14, "m"), (1, 13, "m"),
+               (10, 8, "b")],
+     "palette": {"f": "#ff7a3a"}},
 ]
 
 

@@ -49,5 +49,6 @@ public static partial class Looks
         new("riverman", "Riverman", "human", "hair", [new(6, 5), new(9, 5)], null, null),
         new("alchemist", "Alchemist", "human", "hair", [new(6, 5), new(9, 5)], null, null),
         new("artificer", "Artificer", "human", "hair", [new(6, 5), new(9, 5)], null, null),
+        new("artifixer", "Artifixer", "human", "hair", [new(6, 5), new(9, 5)], null, null),
     ];
 }
