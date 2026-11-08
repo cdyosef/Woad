@@ -248,6 +248,9 @@ public sealed record MonsterTurnSkipped(int MonsterId) : GameEvent;
 /// <summary>A monster's weapon broke (a Big Club on a double 1): it fights on without it, and won't drop it.</summary>
 public sealed record MonsterWeaponBroke(int MonsterId, string CardId) : GameEvent;
 
+/// <summary>A hero painted their crest on the shield in their off hand.</summary>
+public sealed record ShieldPainted(int HeroId, int CardId) : GameEvent;
+
 /// <summary>An ogre punches with its off hand, a Rock or Boulder in it (<paramref name="With"/>) or bare-fisted.</summary>
 public sealed record MonsterPunched(int MonsterId, int TargetId, string? With) : GameEvent;
 

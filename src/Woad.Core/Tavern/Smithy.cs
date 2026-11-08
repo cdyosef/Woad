@@ -89,7 +89,7 @@ public static class Smithy
             hero.TakeCard(material);
         }
 
-        hero.Replace(key, CardKey.Of(into, CardKey.Wear(key)));
+        hero.Replace(key, CardKey.Of(into, CardKey.Wear(key), CardKey.Painted(key)));
         return new ServiceResult(true, $"The smith makes {hero.Name}'s {content.GetCard(key).Name} into the {content.GetCard(into).Name} with {count} {named}s and {Money.Long(price)}.");
     }
 

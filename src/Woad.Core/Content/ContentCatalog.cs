@@ -401,7 +401,7 @@ public sealed class ContentCatalog
 
         if (card.Effect is { } effect)
         {
-            if (effect.Amount < 1 && effect.Kind is not (CardEffectKind.Cure or CardEffectKind.Repair or CardEffectKind.SinEater))
+            if (effect.Amount < 1 && effect.Kind is not (CardEffectKind.Cure or CardEffectKind.Repair or CardEffectKind.PaintShield or CardEffectKind.SinEater))
             {
                 errors.Add($"{name} effect needs an amount of at least 1.");
             }

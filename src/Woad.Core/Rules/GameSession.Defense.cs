@@ -58,9 +58,20 @@ public sealed partial class GameSession
     /// (dice, armor and Block). <paramref name="extraDice"/> are rolled from the start, on top of the base
     /// die (lying low against a ranged attack).
     /// </summary>
+    /// <summary>The shield in the hero's off hand that Shield Paint could paint, or null.</summary>
+    private static CardInstance? UnpaintedShield(Hero hero) =>
+        hero.Equipment.GetValueOrDefault(EquipSlot.OffHand) is { Definition.Type: CardType.Shield, Painted: false } shield ? shield : null;
+
+    /// <summary>Whether the hero holds a painted shield: their crest, for the heroes beside them to rally to.</summary>
+    public static bool BearsCrest(Hero hero) => hero.Equipment.GetValueOrDefault(EquipSlot.OffHand) is { Definition.Type: CardType.Shield, Painted: true };
+
+    /// <summary>+1 to a hero's defense with an ally bearing a painted shield (their crest) beside them.</summary>
+    private int Rally(Hero hero) =>
+        hero.IsInPlay && State.ActiveHeroesIn(State.RoomOf(hero)).Any(ally => ally != hero && BearsCrest(ally) && ally.Position.ChebyshevDistanceTo(hero.Position) <= 1) ? 1 : 0;
+
     private int HeroDefense(Hero hero, int attackTotal, List<GameEvent> events, int extraDice = 0)
     {
-        int armor = Math.Max(0, hero.EffectiveStats.Armor) + (hero.ShiningRounds > 0 ? hero.ShiningDefense : 0);
+        int armor = Math.Max(0, hero.EffectiveStats.Armor) + (hero.ShiningRounds > 0 ? hero.ShiningDefense : 0) + Rally(hero);
         CardInstance? lucky = hero.EquippedCards.FirstOrDefault(card => card.Definition.LastChanceDie);
 
         // Each ready Guard Die of the allies standing beside them, in seat order.

@@ -248,6 +248,21 @@ public static class DemoRun
         StartRoomId = "yard",
     };
 
+    /// <summary>For --painttest: Aria with a Knight's Shield in her off hand and Shield Paint on her belt, her crest a gilt eagle on a parted field.</summary>
+    public static RunSetup Paint(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = [DebugHeroes[0] with
+        {
+            BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20 },
+            CardIds = [.. Belted, "wooden_sword", "knights_shield", "shield_paint"],
+            Appearance = (DebugHeroes[0].Appearance ?? new Woad.Core.Model.Appearance()) with { CrestField = "per_fess", CrestCharge = "eagle", CrestColor = "blood", CrestInk = "gilt" },
+        }],
+        Rooms = [new RoomSetup("yard", RoomTemplate.Parse(".........\n.........\n.........\n.........\n....1....\n.........\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
+        StartRoomId = "yard",
+    };
+
     /// <summary>For --toolstest: Aria wearing Sticky Gloves, Lockpicks on her belt, a Dagger in her off hand, nothing about to fight.</summary>
     public static RunSetup Tools(ulong seed) => new()
     {

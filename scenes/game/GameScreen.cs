@@ -78,6 +78,7 @@ public partial class GameScreen : Control
     public override void _Ready()
     {
         Size = new Vector2(640, 360);
+        SheetCard.PaintedCrest = card => _session.State.Heroes.FirstOrDefault(hero => hero.FindCard(card.Id) is not null) is { } bearer ? CrestOf(bearer) : null;
         string[] args = OS.GetCmdlineUserArgs();
         _autoplay = args.Contains("--autoplay");
         if (_autoplay && args.Contains("--fast"))
@@ -128,6 +129,10 @@ public partial class GameScreen : Control
         else if (args.Contains("--toolstest"))
         {
             RunToolsTest();
+        }
+        else if (args.Contains("--painttest"))
+        {
+            RunPaintTest();
         }
         else if (args.Contains("--smashtest"))
         {
@@ -1398,6 +1403,16 @@ public partial class GameScreen : Control
 
             case MonsterTurnSkipped skipped:
                 await UpdateFigure(skipped.MonsterId, figure => figure.Frozen = false, 0.3);
+                break;
+
+            case ShieldPainted painted:
+                DressFigures();
+                RefreshPanels();
+                if (_figures.TryGetValue(painted.HeroId, out Figure? painter) && painter.RoomId == _shownRoomId)
+                {
+                    _board.FloatText(painter.Position, "painted!", Palette.TrimBright);
+                }
+
                 break;
 
             case MonsterCharged charged:

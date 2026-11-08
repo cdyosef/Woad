@@ -197,7 +197,7 @@ public sealed partial class Character : IPurse
             int at = place.IndexOf(key);
             if (at >= 0)
             {
-                place[at] = CardKey.Id(key);
+                place[at] = CardKey.Of(CardKey.Id(key), 0, CardKey.Painted(key));
                 return true;
             }
         }

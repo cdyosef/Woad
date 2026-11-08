@@ -15,6 +15,7 @@ internal static class TestContent
           { "id": "sword", "name": "Sword", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 1 } },
           { "id": "big_sword", "name": "Big Sword", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 2 } },
           { "id": "bow", "name": "Bow", "type": "weapon", "slot": "mainHand", "twoHanded": true, "modifiers": { "weapon": 1 }, "attackRange": 4 },
+          { "id": "shield_paint", "name": "Shield Paint", "type": "tool", "usage": "singleUse", "effect": { "kind": "paintShield" } },
           { "id": "shield", "name": "Shield", "type": "shield", "slot": "offHand", "modifiers": { "armor": 1 } },
           { "id": "baron_helm", "name": "Baron Helm", "type": "armor", "slot": "head", "modifiers": { "armor": 2 }, "pushDice": 1, "doublePush": true, "flyingRush": true, "emeraldCharge": true },
           { "id": "ksword", "name": "K-Sword", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 2 }, "set": { "with": "kshield", "modifiers": { "weapon": 1, "block": 1 } } },

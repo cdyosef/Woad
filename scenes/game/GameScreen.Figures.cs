@@ -150,8 +150,12 @@ public partial class GameScreen
             twoHanded ? null : Shown(EquipSlot.OffHand),
             Shown(EquipSlot.Head),
             belted ? BeltSquare.BeltColors(look.BeltLook.Length > 0 ? look.BeltLook : belt!.Definition.Id).Leather : null,
-            belted && buckle is not null ? BeltSquare.BuckleMetal(look.BuckleLook.Length > 0 ? look.BuckleLook : buckle.Definition.Id) : null);
+            belted && buckle is not null ? BeltSquare.BuckleMetal(look.BuckleLook.Length > 0 ? look.BuckleLook : buckle.Definition.Id) : null,
+            GameSession.BearsCrest(hero) && !twoHanded ? CrestOf(hero) : null);
     }
+
+    /// <summary>A hero's crest, as their painted shield shows it.</summary>
+    private static Crest CrestOf(Hero hero) => Crests.Resolve(hero.Appearance, hero.Portrait, Looks.Resolve(hero.Appearance, hero.Portrait));
 
     /// <summary>Puts each hero's gear on their figure, as it is now.</summary>
     private void DressFigures()

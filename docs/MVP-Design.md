@@ -124,6 +124,10 @@ the Party menu can spend points on them too.
   color (darker and lighter) unless picked from the twelve colors, so a crest can differ from the figure's
   colors. Left as they are, a crest is the portrait's own sigil, plain, as crests always were. `-- --crestsheet`
   shows them all. They head the hero panel in a run.
+- **Shield Paint:** a single-use tool (the smithy sells it). Used, it paints your crest on the shield in your
+  off hand, for good: it shows on the shield's card and on your figure, and stays on through mending and
+  between runs (a "*" on the card's key); scraped off, the paint is gone. While you bear a painted shield, the
+  heroes beside you rally to your colors: +1 to their defense (added to their armor).
 - **Characters screen:** lists saved characters (with their figures) and their stats, gear and record.
   You can create, edit (rename, restyle, spend points) or delete them; delete asks for a second click.
 - **Party setup:** click characters to seat them; the order you pick them is the turn order. An

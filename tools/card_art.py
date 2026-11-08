@@ -417,6 +417,15 @@ def draw(item):
         c.poly([(19, 11), (21, 3), (24, 7), (27, 2), (28, 10), (25, 14), (20, 14)], FLAME[2])
         c.poly([(21, 11), (23, 6), (25, 9), (26, 6), (26, 11), (23, 13)], FLAME[1])
         c.poly([(22, 11), (24, 8), (25, 11), (23, 12)], FLAME[0])
+    elif i == "shield_paint":
+        # A pot of paint, its lip running red and gold, a brush standing in it.
+        c.poly([(8, 14), (24, 14), (23, 28), (9, 28)], IRON[1])
+        c.poly([(8, 14), (24, 14), (24, 16), (8, 16)], IRON[0])
+        c.poly([(9, 17), (15, 17), (14, 24), (10, 21)], "#b8323f")
+        c.poly([(17, 17), (23, 17), (22, 22), (19, 25)], GOLD[1])
+        c.line(18, 13, 25, 3, WOOD[1], 2)
+        c.poly([(23, 2), (27, 0), (29, 4), (26, 6)], "#b8323f")
+        c.line(9, 26, 23, 26, IRON[2])
     elif i == "boulder":
         # A great round stone filling the card, cracked and mossy.
         c.poly([(4, 18), (7, 8), (15, 3), (25, 5), (30, 13), (29, 24), (20, 30), (9, 28)], STONE[1])
@@ -1173,7 +1182,7 @@ ITEMS = [
     "leather_armor", "studded_armor", "chain_mail", "wardens_plate", "storm_mail", "dash_boots",
     "flame_scroll", "frost_scroll", "venom_scroll", "acid_scroll", "grave_scroll", "gale_scroll", "sun_scroll",
     "bloom_scroll", "quake_scroll", "spark_scroll", "mind_scroll", "shadow_scroll", "frost_wand", "boomerang",
-    "club", "big_club", "boulder", "stick", "lit_stick", "rock", "sling", "rock_bag", "lucky_clover",
+    "club", "big_club", "boulder", "shield_paint", "stick", "lit_stick", "rock", "sling", "rock_bag", "lucky_clover",
     "torch", "lockpicks", "emerald_key", "barons_strongbox", "holy_key", "saints_relic", "modern_medicine", "thieves_oil", "burgling_tools", "cutpurse_knife", "sticky_gloves", "bomb", "autosmith_hammer", "eye_drops", "holy_water", "health_potion",
     "antidote", "strong_base", "smelling_salts", "bandages", "medicine_bag", "shovel", "sineater_doll",
     "loose_coins", "coin_pouch", "emerald", "pearl", "golden_idol",

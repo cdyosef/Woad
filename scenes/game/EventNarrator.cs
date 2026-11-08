@@ -197,6 +197,7 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         MonsterStole stole => $"{nameOf(stole.MonsterId)} lifts {Money.Long(stole.Coins)} from {nameOf(stole.HeroId)}!",
         Mugged mugged => $"{nameOf(mugged.MonsterId)} snatches {Money.Long(mugged.Coins)} from {nameOf(mugged.HeroId)}.",
         StunWoreOff wore => $"{nameOf(wore.EntityId)} shakes off the stun.",
+        ShieldPainted painted => $"{nameOf(painted.HeroId)} paints their crest on their {cardNameOf(painted.CardId)}: those beside them rally to it.",
         MonsterPunched punched => punched.With is { } with
             ? $"{nameOf(punched.MonsterId)} swings its off hand at {nameOf(punched.TargetId)}, a {with} in its fist!"
             : $"{nameOf(punched.MonsterId)} punches {nameOf(punched.TargetId)} with its off hand!",

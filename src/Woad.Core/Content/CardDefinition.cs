@@ -79,6 +79,9 @@ public enum CardEffectKind
     /// <summary>Mends your most worn card whole (the Autosmith Hammer).</summary>
     Repair,
 
+    /// <summary>Paints your crest on the shield in your off hand (Shield Paint): heroes beside you defend at +1.</summary>
+    PaintShield,
+
     /// <summary>
     /// Holy Water: drunk, it clears <see cref="CardEffect.Cures"/>; thrown at the undead within
     /// <see cref="CardEffect.Range"/>, it destroys lesser undead and hits greater ones with
