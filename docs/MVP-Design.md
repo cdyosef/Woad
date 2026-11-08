@@ -1136,6 +1136,10 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   picked or keyed. A roll at a door or chest shows it beside the dice: its keyholes, how heavily it's bolted
   (iron bands for a harder lock), a bar, and a trap on it (a red "!", or once found, the trap itself);
   smashing, its break marks so far.
+- **Wall sconces:** some rooms have an iron sconce or two on their walls. In a lit room most hold a burning
+  torch (a light and a fire, like a lit brazier); in a dark room they're empty. From under one or beside it,
+  click it to take its torch down (free: into a free hand, else the belt or bag), or, holding a torch, to put
+  it up and light the room.
 - **Sealed rooms:** the boss's room, and a den (the Ogre Champ's), shut behind you: no one leaves by its
   doors while the boss (or the den's keeper) stands, as a trap room holds you till its last monster falls.
 - **Exit:** sealed until the boss in its room is defeated. Stand on it and click again to escape. Your

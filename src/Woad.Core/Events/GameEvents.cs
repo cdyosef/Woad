@@ -353,6 +353,12 @@ public sealed record DoorUnlocked(int HeroId, string RoomId, Direction Side, boo
     public int LocksLeft { get; init; }
 }
 
+/// <summary>A torch taken from a wall sconce.</summary>
+public sealed record TorchTaken(int HeroId, string RoomId, GridPosition Sconce, int CardId) : GameEvent;
+
+/// <summary>A torch put into a wall sconce, lighting it.</summary>
+public sealed record TorchPlaced(int HeroId, string RoomId, GridPosition Sconce) : GameEvent;
+
 /// <summary>A bar lifted from a door, from the side it's on.</summary>
 public sealed record BarLifted(int HeroId, string RoomId, Direction Side) : GameEvent;
 

@@ -970,7 +970,7 @@ public partial class GameScreen : Control
                 await Pause(0.3);
                 break;
 
-            case BarLifted:
+            case BarLifted or TorchTaken or TorchPlaced:
                 _board.QueueRedraw();
                 break;
 

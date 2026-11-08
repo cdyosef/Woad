@@ -191,6 +191,12 @@ public sealed record PickUpAlly(int HeroId, int AllyId) : GameCommand(HeroId);
 /// <summary>Set down the ally you carry, beside you. Free.</summary>
 public sealed record PutDownAlly(int HeroId) : GameCommand(HeroId);
 
+/// <summary>Take the torch from the sconce over <paramref name="Sconce"/> (free).</summary>
+public sealed record TakeTorch(int HeroId, GridPosition Sconce) : GameCommand(HeroId);
+
+/// <summary>Put the torch in your hand into the empty sconce over <paramref name="Sconce"/> (free).</summary>
+public sealed record PutTorch(int HeroId, GridPosition Sconce) : GameCommand(HeroId);
+
 /// <summary>Lift the bar from a door barred on your side (free).</summary>
 public sealed record LiftBar(int HeroId, Direction Door) : GameCommand(HeroId);
 

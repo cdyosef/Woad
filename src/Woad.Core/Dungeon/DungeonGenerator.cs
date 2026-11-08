@@ -115,6 +115,7 @@ public static partial class DungeonGenerator
         Darken(rooms, new Pcg32(seed, DarkStream));
         PlaceCrates(rooms, breaches, new Pcg32(seed, CrateStream));
         SternerDoors(rooms, passages, new Pcg32(seed, DoorStream));
+        PlaceSconces(rooms, new Pcg32(seed, SconceStream));
         return new RunSetup
         {
             Seed = seed,

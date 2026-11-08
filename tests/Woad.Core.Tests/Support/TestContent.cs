@@ -63,6 +63,7 @@ internal static class TestContent
           { "id": "picks", "name": "Picks", "type": "tool", "slot": "offHand", "stacks": true, "belts": true, "tool": { "for": "pickLock", "bonus": 1, "dice": 1, "snaps": true } },
           { "id": "t_crowbar", "name": "T-Crowbar", "type": "weapon", "slot": "offHand", "altSlot": "mainHand", "attackBonus": 1, "woodDice": 1, "woodProof": true, "odHandSmash": true },
           { "id": "hold_fire", "name": "Hold Fire", "type": "tool", "slot": "offHand", "altSlot": "mainHand", "torch": true, "heldFire": true, "quest": true },
+          { "id": "torch", "name": "Torch", "type": "tool", "slot": "offHand", "altSlot": "mainHand", "stacks": true, "torch": true, "belts": true },
           { "id": "t_torch", "name": "T-Torch", "type": "tool", "slot": "offHand", "altSlot": "mainHand", "stacks": true, "torch": true },
           { "id": "longsword", "name": "Longsword", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 1, "weaponDice": 1 }, "versatile": 1 },
           { "id": "tonic", "name": "Tonic", "type": "potion", "usage": "singleUse", "stacks": true, "effect": { "kind": "heal", "amount": 1 } },

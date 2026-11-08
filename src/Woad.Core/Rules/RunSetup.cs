@@ -131,6 +131,9 @@ public sealed record RoomFeatures
 
     /// <summary>Braziers burning from the start.</summary>
     public IReadOnlyCollection<GridPosition> LitBraziers { get; init; } = [];
+
+    /// <summary>Wall sconces, by the floor tile under each: whether it holds a lit torch.</summary>
+    public IReadOnlyDictionary<GridPosition, bool> Sconces { get; init; } = new Dictionary<GridPosition, bool>();
 }
 
 /// <summary>

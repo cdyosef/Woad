@@ -503,6 +503,14 @@ public partial class GameScreen
         {
             Execute(new SmashPot(hero.Id, tile));
         }
+        else if (room.Sconces.ContainsKey(tile) && hero.Position.ChebyshevDistanceTo(tile) <= 1 && _session.CheckTakeTorch(tile) is null)
+        {
+            Execute(new TakeTorch(hero.Id, tile));
+        }
+        else if (room.Sconces.ContainsKey(tile) && hero.Position.ChebyshevDistanceTo(tile) <= 1 && _session.CheckPutTorch(tile) is null)
+        {
+            Execute(new PutTorch(hero.Id, tile));
+        }
         else if (tile != hero.Position && (DoorAt(room, tile) is not null || room.Layout[tile] is TileKind.StairsDown or TileKind.StairsUp or TileKind.Portal))
         {
             ApproachPassage(hero, room, tile, turn);
@@ -1082,6 +1090,13 @@ public partial class GameScreen
             }
 
             return grave + "Loot: " + string.Join(", ", things) + ". Stand on it and click to pick it up (your first loot each turn is free).";
+        }
+
+        if (room.Sconces.TryGetValue(tile, out bool sconceLit))
+        {
+            return sconceLit
+                ? "A torch burns in a sconce on the wall here. From under it or beside it, click to take it down (free)."
+                : "An empty sconce on the wall here. Holding a torch, click it from under it or beside it to put the torch up (free): a light for the room.";
         }
 
         if (room.Layout[tile] == TileKind.Crate)

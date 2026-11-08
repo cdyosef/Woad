@@ -162,6 +162,8 @@ public sealed partial class GameSession
             LightPortal c => Handle(c, events),
             Smash c => Handle(c, events),
             LiftBar c => Handle(c, events),
+            TakeTorch c => Handle(c, events),
+            PutTorch c => Handle(c, events),
             TakePortal c => Handle(c, events),
             PutDownAlly c => Handle(c, events),
             SpendPoint c => Handle(c, events),
@@ -757,6 +759,11 @@ public sealed partial class GameSession
 
         room.RelicChest = features.RelicChest;
         room.RitualCircle = features.RitualCircle;
+        foreach ((GridPosition sconce, bool lit) in features.Sconces)
+        {
+            room.SetSconce(sconce, lit);
+        }
+
         foreach (GridPosition brazier in features.LitBraziers)
         {
             room.LightBrazier(brazier);

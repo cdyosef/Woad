@@ -98,6 +98,12 @@ public sealed class Room
 
     private readonly Dictionary<GridPosition, string> _deepHoles = [];
     private readonly Dictionary<GridPosition, int> _breaks = [];
+    private readonly Dictionary<GridPosition, bool> _sconces = [];
+
+    /// <summary>Wall sconces, by the floor tile under each: whether it holds a lit torch.</summary>
+    public IReadOnlyDictionary<GridPosition, bool> Sconces => _sconces;
+
+    internal void SetSconce(GridPosition tile, bool lit) => _sconces[tile] = lit;
 
     /// <summary>Break marks smashed into a crate or wall on the tile (0 for none).</summary>
     public int BreaksAt(GridPosition tile) => _breaks.GetValueOrDefault(tile);

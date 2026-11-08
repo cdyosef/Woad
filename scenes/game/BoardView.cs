@@ -179,7 +179,7 @@ public partial class BoardView : Control
     public override void _Process(double delta)
     {
         // Lit fuses spark; the ritual circle and the portal swirl.
-        if (_room?.Bombs.Any(bomb => bomb.Lit) == true || _room?.Flames.Count > 0 || _room?.LitBraziers.Count > 0 || _room?.PortalLit == true || _room?.Traps.Values.Any(trap => trap.Kind == TrapKind.Rift) == true || (_room?.RitualCircle is not null && (RitualUnderWay || _room.Cursed)))
+        if (_room?.Bombs.Any(bomb => bomb.Lit) == true || _room?.Flames.Count > 0 || _room?.LitBraziers.Count > 0 || _room?.PortalLit == true || _room?.Sconces.Values.Any(lit => lit) == true || _room?.Traps.Values.Any(trap => trap.Kind == TrapKind.Rift) == true || (_room?.RitualCircle is not null && (RitualUnderWay || _room.Cursed)))
         {
             QueueRedraw();
         }
@@ -786,6 +786,11 @@ public partial class BoardView : Control
         foreach (GridPosition crate in _room.TilesOfKind(TileKind.Crate))
         {
             DrawCrate(crate);
+        }
+
+        foreach ((GridPosition sconce, bool lit) in _room.Sconces)
+        {
+            DrawSconce(sconce, lit);
         }
 
         // Break marks smashed into crates and walls.
