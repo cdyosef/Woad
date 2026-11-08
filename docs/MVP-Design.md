@@ -1232,13 +1232,17 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
 - **Keeling Over:** a hero or companion reduced to 0 hearts falls where they stand (X's for eyes) and
   is **Keeling Over**. They keep everything they carry and still take their turns, but all they can do
   is roll the **Keel Die** (the End turn button becomes **Roll Keel Die**):
-  - **6:** a mark of life, and a **Power Die** is rolled at once: another mark of life on a 6.
+  - **6:** a mark of life, and a **Power Die** won: kept, and banked when they stand back up (lost if they die).
+  - **5:** a **Power Die** rolls in with their next Keel roll (a mark of life on a 6).
+  - **3 and 4:** nothing.
+  - **2:** a **Doom Die** added to their next Keel roll (a mark of death on a 1).
   - **1:** a mark of death, and a **Doom Die** is rolled at once: another mark of death on a 1.
   - **Banked Power Dice** can be added to the roll (select them first). Their 6s are marks of life;
     their 1s do nothing.
-  - **Creeping doom:** every Keel roll after the first adds Doom Dice (1s are marks of death): 1 on the
-    second roll, 2 on the third, and so on, so nobody lingers for long. It starts over when they stand up.
-  - **Three marks of life:** they stand back up with 1 heart (and their turn ends). **Three marks of
+  - **Creeping doom:** from the **10th** Keel roll on, each adds Doom Dice (1s are marks of death): 1 on the
+    10th roll, 2 on the 11th, and so on, so nobody lingers for ever. It starts over when they stand up.
+  - **Three marks of life:** they come round with 1 heart, **prone**, and play the **whole of their turn** (getting
+    up costs its 2 steps as ever); the Power Dice their sixes won go into their bank. **Three marks of
     death:** they die. Reaching both at once, life wins. Marks start over each time someone keels over.
   - **Rousing:** a standing ally next to them (diagonals too) can click them to roll Od Hand dice for
     them, like a search: not the action. Every 6 of the total (tools and Power Dice included) is a mark

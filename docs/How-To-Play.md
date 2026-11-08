@@ -164,10 +164,14 @@ burning, Ice slows and freezes them, Poison weakens their rolls, Earth knocks th
 At 0 hearts you don't die straight away: you **Keel Over**. You still take turns, but all you can do is roll
 the **Keel Die**:
 
-- A **6** is a mark of life (and rolls a bonus die for another).
+- A **6** is a mark of life, and wins you a Power Die that you keep if you stand back up.
+- A **5** gives you a Power Die to roll in with your next Keel roll.
+- A **3** or **4** does nothing.
+- A **2** adds a Doom Die to your next Keel roll.
 - A **1** is a mark of death (and rolls a Doom Die for another).
-- Every roll after the first adds more Doom Dice, so nobody lingers.
-- **Three marks of life:** you stand back up with 1 heart. **Three marks of death:** you die.
+- From your 10th Keel roll on, extra Doom Dice creep in, so nobody lingers for ever.
+- **Three marks of life:** you come round with 1 heart, lying prone, and play the rest of your turn as normal.
+  **Three marks of death:** you die.
 
 Friends can help. A standing ally beside you can **Aid** you with their Od Hand dice (every 6 is a mark of
 life), or **carry** you out of danger.

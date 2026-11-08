@@ -78,14 +78,27 @@ public sealed partial class GameSession
         }
 
         SpendBankedPowerDice(hero, command.PowerDice, events);
+
+        // The Keel Die: a 6 is a mark of life and a Power Die kept for when they stand; a 5, a Power Die on the next
+        // roll; a 2, a Doom Die on the next roll; a 1, a mark of death and a Doom Die (another mark on a 1); 3 and 4 nothing.
         int keel = RollOneDie();
         int life = 0, death = 0;
         int? bonus = null;
+        int powerNext = hero.KeelPowerNext;
+        hero.KeelPowerNext = 0;
+        int doomNext = 0;
         if (keel == GameRules.PowerDieFace)
         {
             life++;
-            bonus = RollOneDie();
-            life += bonus == GameRules.PowerDieFace ? 1 : 0;
+            hero.KeelPowerKept++;
+        }
+        else if (keel == GameRules.KeelPowerFace)
+        {
+            hero.KeelPowerNext++;
+        }
+        else if (keel == GameRules.KeelDoomFace)
+        {
+            doomNext++;
         }
         else if (keel == GameRules.DeathFace)
         {
@@ -94,24 +107,35 @@ public sealed partial class GameSession
             death += bonus == GameRules.DeathFace ? 1 : 0;
         }
 
-        List<int> power = Enumerable.Range(0, command.PowerDice).Select(_ => RollOneDie()).ToList();
-        // The doom allies left, then the creeping doom: one more Doom Die for every roll already made.
-        int creeping = hero.KeelRolls;
+        // Banked Power Dice spent, and those a 5 earned last roll: each 6 a mark of life.
+        List<int> power = Enumerable.Range(0, command.PowerDice + powerNext).Select(_ => RollOneDie()).ToList();
+
+        // The doom allies left, then the creeping doom: none till the 10th roll, then one more each roll.
+        int creeping = Math.Max(0, hero.KeelRolls - (GameRules.CreepingDoomFromRoll - 2));
         hero.KeelRolls++;
         List<int> doom = Enumerable.Range(0, hero.DoomDiceOwed + creeping).Select(_ => RollOneDie()).ToList();
         life += power.Count(face => face == GameRules.PowerDieFace);
         death += doom.Count(face => face == GameRules.DeathFace);
-        hero.DoomDiceOwed = 0;
+        hero.DoomDiceOwed = doomNext;
         hero.LifeMarks = Math.Min(GameRules.MarksToRise, hero.LifeMarks + life);
         hero.DeathMarks = Math.Min(GameRules.MarksToDie, hero.DeathMarks + death);
-        events.Add(new KeelRolled(hero.Id, keel, bonus, power, doom, life, death, hero.LifeMarks, hero.DeathMarks, creeping));
+        events.Add(new KeelRolled(hero.Id, keel, bonus, power, doom, life, death, hero.LifeMarks, hero.DeathMarks, creeping)
+        {
+            PowerNext = hero.KeelPowerNext,
+            PowerKept = hero.KeelPowerKept,
+            PowerRolledIn = powerNext,
+            DoomNext = doomNext,
+        });
 
-        // Reaching both at once, life wins.
+        // Reaching both at once, life wins: on their feet (prone), with the whole of their turn still to play.
         if (hero.LifeMarks >= GameRules.MarksToRise)
         {
             StandUp(hero, events);
+            State.Turn = new TurnState(hero.Id);
+            return null;
         }
-        else if (hero.DeathMarks >= GameRules.MarksToDie)
+
+        if (hero.DeathMarks >= GameRules.MarksToDie)
         {
             Die(State.RoomOf(hero), hero, events);
         }
@@ -139,6 +163,8 @@ public sealed partial class GameSession
         hero.DeathMarks = 0;
         hero.DoomDiceOwed = 0;
         hero.KeelRolls = 0;
+        hero.KeelPowerNext = 0;
+        hero.KeelPowerKept = 0;
         hero.Bane = bane;
         if (!room.Layout[hero.Position].IsWalkable())
         {
@@ -156,15 +182,27 @@ public sealed partial class GameSession
             SetDownAlly(carrier, events);
         }
 
+        // Up with a heart, still lying flat (getting up costs steps as ever).
         hero.Status = HeroStatus.Active;
-        hero.Prone = false;
+        hero.Prone = true;
         hero.LifeMarks = 0;
         hero.DeathMarks = 0;
         hero.DoomDiceOwed = 0;
         hero.KeelRolls = 0;
+        hero.KeelPowerNext = 0;
         hero.Bane = null;
         hero.Hearts = Math.Min(hero.MaxHearts, GameRules.HeartsOnRising);
         events.Add(new HeroStoodUp(hero.Id, hero.Hearts));
+
+        // The Power Dice won on the Keel Die's sixes, banked (rolled in straight away with the bank full).
+        int kept = hero.KeelPowerKept;
+        hero.KeelPowerKept = 0;
+        int room = Math.Max(0, hero.Power.Capacity - hero.Power.Banked);
+        if (Math.Min(kept, room) is > 0 and var banked)
+        {
+            hero.Power.Banked += banked;
+            events.Add(new PowerDiceBanked(hero.Id, banked, hero.Power.Banked));
+        }
     }
 
     /// <summary>

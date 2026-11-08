@@ -353,6 +353,12 @@ public sealed class Hero
     /// </summary>
     public int KeelRolls { get; internal set; }
 
+    /// <summary>Power Dice that roll in with the next Keel roll (a 5 on the Keel Die earns one).</summary>
+    public int KeelPowerNext { get; internal set; }
+
+    /// <summary>Power Dice won on the Keel Die (each 6 earns one), banked if they stand back up, lost if they die.</summary>
+    public int KeelPowerKept { get; internal set; }
+
     /// <summary>What brought the hero down, as their tombstone tells it ("Slain by a Goblin"), or null.</summary>
     public string? Bane { get; internal set; }
 

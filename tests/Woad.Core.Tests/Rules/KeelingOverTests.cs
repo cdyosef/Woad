@@ -34,14 +34,45 @@ public class KeelingOverTests
     }
 
     [Fact]
-    public void AKeelSixIsAMarkOfLifeAndRollsAPowerDieThatCanEarnAnother()
+    public void AKeelSixIsAMarkOfLifeAndAPowerDieKeptForStandingUp()
     {
-        (GameSession session, _, Hero fallen) = FallenTurn(new ScriptedDice(6, 6));
+        (GameSession session, _, Hero fallen) = FallenTurn(new ScriptedDice(6));
 
         var rolled = session.Do(new RollKeel(fallen.Id)).SingleOf<KeelRolled>();
 
-        Assert.Equal((6, 6, 2, 0), (rolled.Keel, rolled.BonusDie, rolled.LifeGained, rolled.DeathGained));
-        Assert.Equal((2, 0), (fallen.LifeMarks, fallen.DeathMarks));
+        Assert.Equal((6, (int?)null, 1, 0, 1), (rolled.Keel, rolled.BonusDie, rolled.LifeGained, rolled.DeathGained, rolled.PowerKept));
+        Assert.Equal((1, 0, 1), (fallen.LifeMarks, fallen.DeathMarks, fallen.KeelPowerKept));
+        Assert.Equal(0, fallen.Power.Banked);
+    }
+
+    [Fact]
+    public void AKeelFiveRollsAPowerDieInWithTheNextKeelRoll()
+    {
+        // A 5; next turn a 3, and the Power Die's 6: a mark of life.
+        (GameSession session, Hero standing, Hero fallen) = FallenTurn(new ScriptedDice(5, 3, 6));
+
+        Assert.Equal(1, session.Do(new RollKeel(fallen.Id)).SingleOf<KeelRolled>().PowerNext);
+        session.Do(new EndTurn(standing.Id));
+        var next = session.Do(new RollKeel(fallen.Id)).SingleOf<KeelRolled>();
+
+        Assert.Equal([6], next.PowerFaces);
+        Assert.Equal((1, 1), (next.PowerRolledIn, next.LifeGained));
+        Assert.Equal(0, fallen.KeelPowerNext);
+    }
+
+    [Fact]
+    public void AKeelTwoAddsADoomDieToTheNextKeelRoll()
+    {
+        // A 2; next turn a 3, and the Doom Die's 1: a mark of death.
+        (GameSession session, Hero standing, Hero fallen) = FallenTurn(new ScriptedDice(2, 3, 1));
+
+        var first = session.Do(new RollKeel(fallen.Id)).SingleOf<KeelRolled>();
+        Assert.Equal((0, 1, 1), (first.DeathGained, first.DoomNext, fallen.DoomDiceOwed));
+        session.Do(new EndTurn(standing.Id));
+        var next = session.Do(new RollKeel(fallen.Id)).SingleOf<KeelRolled>();
+
+        Assert.Equal([1], next.DoomFaces);
+        Assert.Equal(1, next.DeathGained);
     }
 
     [Fact]
@@ -94,34 +125,44 @@ public class KeelingOverTests
     }
 
     [Fact]
-    public void EveryKeelRollAfterTheFirstAddsOneMoreDoomDie()
+    public void CreepingDoomStartsOnTheTenthKeelRollAndAddsOneMoreEachRollAfter()
     {
-        // Rolls: 3 (no doom); 3 + doom 4; 3 + doom 1, 5.
-        (GameSession session, Hero standing, Hero fallen) = FallenTurn(new ScriptedDice(3, 3, 4, 3, 1, 5));
+        // Nine rolls of 3 with no doom; the tenth a 3 + doom 4; the eleventh a 3 + doom 1, 5.
+        (GameSession session, Hero standing, Hero fallen) = FallenTurn(new ScriptedDice(3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 3, 1, 5));
 
-        Assert.Empty(session.Do(new RollKeel(fallen.Id)).SingleOf<KeelRolled>().DoomFaces);
-        session.Do(new EndTurn(standing.Id));
-        var second = session.Do(new RollKeel(fallen.Id)).SingleOf<KeelRolled>();
-        session.Do(new EndTurn(standing.Id));
-        var third = session.Do(new RollKeel(fallen.Id)).SingleOf<KeelRolled>();
+        for (int roll = 1; roll <= 9; roll++)
+        {
+            Assert.Empty(session.Do(new RollKeel(fallen.Id)).SingleOf<KeelRolled>().DoomFaces);
+            session.Do(new EndTurn(standing.Id));
+        }
 
-        Assert.Equal((1, 1), (second.CreepingDoom, second.DoomFaces.Count));
-        Assert.Equal((2, 2), (third.CreepingDoom, third.DoomFaces.Count));
-        Assert.Equal((0, 1, 3), (fallen.LifeMarks, fallen.DeathMarks, fallen.KeelRolls));
+        var tenth = session.Do(new RollKeel(fallen.Id)).SingleOf<KeelRolled>();
+        session.Do(new EndTurn(standing.Id));
+        var eleventh = session.Do(new RollKeel(fallen.Id)).SingleOf<KeelRolled>();
+
+        Assert.Equal((1, 1), (tenth.CreepingDoom, tenth.DoomFaces.Count));
+        Assert.Equal((2, 2), (eleventh.CreepingDoom, eleventh.DoomFaces.Count));
+        Assert.Equal((0, 1, 11), (fallen.LifeMarks, fallen.DeathMarks, fallen.KeelRolls));
     }
 
     [Fact]
-    public void ThreeMarksOfLifeStandTheHeroUpWithAHeart()
+    public void ThreeMarksOfLifeStandTheHeroUpProneWithAHeartTheirPowerDiceAndTheirWholeTurn()
     {
         (GameSession session, Hero standing, Hero fallen) = FallenTurn(new ScriptedDice(6, 3));
         fallen.LifeMarks = 2;
         fallen.DeathMarks = 2;
+        fallen.KeelPowerKept = 1;
 
         IReadOnlyList<GameEvent> events = session.Do(new RollKeel(fallen.Id));
 
         Assert.Equal(new HeroStoodUp(fallen.Id, GameRules.HeartsOnRising), events.SingleOf<HeroStoodUp>());
-        Assert.Equal((HeroStatus.Active, 1, 0, 0), (fallen.Status, fallen.Hearts, fallen.LifeMarks, fallen.DeathMarks));
-        Assert.Equal(new TurnStarted(standing.Id), events[^1]);
+        Assert.Equal((HeroStatus.Active, 1, 0, 0, true), (fallen.Status, fallen.Hearts, fallen.LifeMarks, fallen.DeathMarks, fallen.Prone));
+
+        // The two sixes' Power Dice go in the bank, and it's still their turn, all of it.
+        Assert.Equal((2, 0), (fallen.Power.Banked, fallen.KeelPowerKept));
+        Assert.Equal(fallen.Id, session.State.Turn!.HeroId);
+        Assert.False(session.State.Turn.KeelingOver);
+        Assert.DoesNotContain(events, gameEvent => gameEvent is TurnEnded);
     }
 
     [Fact]

@@ -323,11 +323,10 @@ public partial class GameScreen
     private async Task ShowKeelRoll(KeelRolled keel)
     {
         _trayShowsMovement = false;
-        bool six = keel.Keel == GameRules.PowerDieFace;
-        List<int> keelFaces = [keel.Keel, .. six && keel.BonusDie is int power ? [power] : Array.Empty<int>(), .. keel.PowerFaces];
+        List<int> keelFaces = [keel.Keel, .. keel.PowerFaces];
         await _dice.ShowRoll($"{NameOf(keel.HeroId)} rolls the Keel Die", new DiceRoll(keelFaces), 0, newGroup: true, keelFaces.Count - 1);
 
-        List<int> doomFaces = [.. !six && keel.BonusDie is int doom ? [doom] : Array.Empty<int>(), .. keel.DoomFaces];
+        List<int> doomFaces = [.. keel.BonusDie is int doom ? [doom] : Array.Empty<int>(), .. keel.DoomFaces];
         if (doomFaces.Count > 0)
         {
             await _dice.ShowRoll("Doom Dice (1s are death)", new DiceRoll(doomFaces), 0, newGroup: false);
@@ -340,6 +339,14 @@ public partial class GameScreen
         else if (keel.DeathGained > 0)
         {
             FloatOver(keel.HeroId, $"+{keel.DeathGained} death", Palette.Danger);
+        }
+        else if (keel.Keel == GameRules.KeelPowerFace)
+        {
+            FloatOver(keel.HeroId, "a Power Die next roll", Palette.TrimBright);
+        }
+        else if (keel.Keel == GameRules.KeelDoomFace)
+        {
+            FloatOver(keel.HeroId, "a Doom Die next roll", Palette.Danger);
         }
         else
         {
