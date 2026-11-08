@@ -106,6 +106,19 @@ public static partial class Looks
                 new("gold", "Gold", new Color("d8b040")),
                 new("green", "Green", new Color("5a9a6a")),
             ]),
+            ["duergar"] = ("Skin", [
+                new("ash", "Ash", new Color("8a8a90")),
+                new("slate", "Slate", new Color("6a7080")),
+                new("stone", "Stone", new Color("a0a0a0")),
+                new("dark", "Dark", new Color("4a4a54")),
+            ]),
+            ["genie"] = ("Skin", [
+                new("blue", "Blue", new Color("4a8ad8")),
+                new("teal", "Teal", new Color("3aa8a0")),
+                new("violet", "Violet", new Color("8a5ad0")),
+                new("red", "Red", new Color("c84a40")),
+                new("smoke", "Smoke", new Color("a0a8b8")),
+            ]),
             ["darkelf"] = ("Skin", [
                 new("ash", "Ash", new Color("7a7488")),
                 new("lavender", "Lavender", new Color("9a88b8")),

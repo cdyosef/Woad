@@ -365,6 +365,25 @@ LOOKS = [
         "........", "......oo", ".....oRR", "....oRRR", "....oHSS", "....oSeS", "....oSSS", "...ootTT",
         "..oSonTT", "..oSotnT", "...oobbb", "....otTT", "....oSSo", "....onno", "....oooo", "........"],
      "extra": [(1, 2, 'm'), (2, 3, 'm'), (2, 2, 'N'), (3, 2, 'N'), (4, 2, 'N'), (5, 2, 'N'), (6, 2, 'N'), (3, 3, 'N'), (4, 3, 'N'), (5, 3, 'N'), (6, 3, 'N')]},
+    {"id": "real_light", "name": "Real Light", "skin": "human", "hair": "hair", "skinDefault": "deep", "hairDefault": "black", "rows": [
+        "......oo", ".....oRR", "....oRRR", "....oRrR", "....oSSS", "....oSeS", "....oHSS", "...otHHH",
+        "..oSotgg", "..oSotgg", "...otTTT", "...otTTT", "...otTTT", "...otTTT", "...ooooo", "........"],
+     "extra": [(8, 7, 'p'), (8, 8, 'c'), (9, 7, 'G'), (9, 8, 'p'), (13, 4, 'w'), (13, 11, 'w'), (13, 7, 'w'), (13, 8, 'w')]},
+    {"id": "wood_elf", "name": "Wood Elf", "skin": "human", "hair": "hair", "rows": [
+        "........", "......oo", ".....oHH", "....oHHH", "...soHSS", "....oSeS", "....oSSS", "...oHtTT",
+        "..oSHtTT", "..oSotTT", "...oobbR", "....otTT", "....oRRo", "....onno", "....oooo", "........"],
+     "extra": [(3, 2, 'n'), (4, 1, 'n'), (5, 1, 'n'), (6, 1, 'n'), (7, 2, 'n'), (3, 6, 'G'), (3, 9, 'G'), (2, 7, 'G')]},
+    {"id": "duergar", "name": "Duergar", "skin": "duergar", "hair": "hair", "hairDefault": "grey", "rows": [
+        "........", "......oo", ".....oSS", "....oSSS", "....okkk", "....oSeS", "...oHSSS", "..oHHHHH",
+        ".omoHHHH", ".omomHHH", "..oomMHH", "...oobbb", "...omMMM", "...okkko", "...ooooo", "........"],
+     "palette": {"e": "#e04030"}},
+    {"id": "genie", "name": "Genie", "skin": "genie", "hair": "hair", "hairDefault": "black", "rows": [
+        ".......H", "......oH", ".....oSS", "....oSSS", "....oSSS", "....oSeS", "...goSSS", "...otTSS",
+        "..oSotSS", "..gSotSS", "...oRRRR", "....osSS", ".....sSS", "......sS", ".......s", "........"],
+     "extra": [(13, 10, 's'), (14, 10, 's'), (14, 11, 's'), (13, 11, 's'), (12, 11, 's')]},
+    {"id": "egyptian", "name": "Egyptian", "skin": "human", "hair": None, "skinDefault": "tan", "rows": [
+        "........", "......oo", ".....oTT", "....oRRR", "...oTTSS", "...oRSeS", "...oTSSS", "...oRggg",
+        "..oSoSSS", "..oSoSSS", "...ooRRR", "....owww", "....oSSo", "....onno", "....oooo", "........"]},
 ]
 
 
