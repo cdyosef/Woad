@@ -1034,6 +1034,17 @@ public partial class GameScreen : Control
                 await Pause(0.3);
                 break;
 
+            case CurrentConducted current when current.RoomId == _shownRoomId:
+                _board.FloatText(current.At, "ZZZAP!", DieTypes.Tint(DieType.Elektrik));
+                foreach (int struck in current.Struck)
+                {
+                    FloatOver(struck, "shocked!", DieTypes.Tint(DieType.Elektrik));
+                }
+
+                Sfx.Play("hit", 1.6f);
+                await Pause(0.35);
+                break;
+
             case Snatched snatched:
                 CalloutOver(snatched.MonsterId, "SNATCH!", Palette.Danger);
                 FloatOver(snatched.HeroId, "snatched!", Palette.Danger);

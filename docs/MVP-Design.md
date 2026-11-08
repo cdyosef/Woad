@@ -515,6 +515,9 @@ Necromancer with Necro). A typed die earns **no Power Die**: each **6** rolls an
 straight in, and **if the attack hits**, lays a stack of its type's effect on the target. Items may do more
 of their own on top (a Flame Scroll aimed at bare floor sets it burning).
 
+- **Elektrik through water:** an attack with Elektrik dice on someone standing in water (shallow or deep) runs on
+  through that body of water: the same roll strikes every other creature in it within 8 tiles, friend or foe, each
+  defending as usual (its sixes stunning on a hit). Whoever made the attack is spared.
 - **Fire (Burn):** a fire die on the target (see Fire).
 - **Poison (Poisoned):** a Poison token. Each takes 1 off all their rolls (attacks, defense, moves, Od
   Hand). At the end of their turn they roll a die: not higher than their tokens, they lose a heart; a 6

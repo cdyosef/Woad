@@ -123,6 +123,7 @@ internal static class TestContent
           { "id": "riposter", "name": "Riposter", "glyph": "r", "hearts": 9, "move": 0, "attackDice": 0, "weapon": 2, "defenseDice": 0, "counter": { "dice": 1, "dieType": "life", "typedDice": 1 } },
           { "id": "snatcher", "name": "Snatcher", "glyph": "£", "hearts": 9, "move": 0, "attackDice": 1, "defenseDice": 0, "swimmer": true, "waterOnly": true, "snatches": true },
           { "id": "dragger", "name": "Dragger", "glyph": "¢", "hearts": 9, "move": 4, "attackDice": 1, "defenseDice": 0, "swimmer": true, "waterOnly": true, "snatches": true },
+          { "id": "zapper", "name": "Zapper", "glyph": "¤", "hearts": 9, "move": 0, "attackDice": 1, "defenseDice": 0, "dieType": "elektrik" },
           { "id": "licker", "name": "Licker", "glyph": "$", "hearts": 9, "move": 0, "attackDice": 1, "weapon": 2, "defenseDice": 0, "tongue": 5 },
           { "id": "brawler", "name": "Brawler", "glyph": "e", "hearts": 9, "move": 0, "attackDice": 1, "defenseDice": 0, "fists": 2 },
           { "id": "charger", "name": "Charger", "glyph": "!", "hearts": 9, "move": 2, "attackDice": 1, "defenseDice": 0, "bullRushes": true },

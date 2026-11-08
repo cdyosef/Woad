@@ -868,6 +868,12 @@ public sealed partial class GameSession
             }
         }
 
+        // Elektrik dice run on through the water the target stands in.
+        if (targets.FirstOrDefault() is { } first && State.Phase == RunPhase.InProgress)
+        {
+            ConductThroughWater(room, first.Position, total, roll, types, [.. targets.Select(hero => hero.Id)], null, monster, events);
+        }
+
         // A double 1 on a Big Club's dice: it splinters in the ogre's fist.
         if (weaponBreaks && room.FindMonster(monster.Id) is not null)
         {

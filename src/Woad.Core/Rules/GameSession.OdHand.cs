@@ -542,13 +542,26 @@ public sealed partial class GameSession
         {
             ResolveShove(roll, events);
         }
-        else if (roll.BullRush)
-        {
-            BullRushAftermath(roll, ResolveHeroAttack(roll, events), events);
-        }
         else
         {
-            ResolveHeroAttack(roll, events);
+            // Where the blow lands, for Elektrik running on through water from there.
+            Hero attacker = State.GetHero(roll.HeroId);
+            Room room = State.RoomOf(attacker);
+            GridPosition? at = roll.TargetIds.Select(id => room.FindMonster(id)?.Position ?? State.Heroes.FirstOrDefault(hero => hero.Id == id)?.Position)
+                .FirstOrDefault(position => position is not null);
+            if (roll.BullRush)
+            {
+                BullRushAftermath(roll, ResolveHeroAttack(roll, events), events);
+            }
+            else
+            {
+                ResolveHeroAttack(roll, events);
+            }
+
+            if (at is { } struck && State.Phase == RunPhase.InProgress)
+            {
+                ConductThroughWater(room, struck, roll.Total, roll.Roll, roll.DieTypes, roll.TargetIds, attacker, null, events);
+            }
         }
 
         if (roll.Check is null)

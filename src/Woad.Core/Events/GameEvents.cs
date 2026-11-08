@@ -251,6 +251,9 @@ public sealed record MonsterWeaponBroke(int MonsterId, string CardId) : GameEven
 /// <summary>A hero painted their crest on the shield in their off hand.</summary>
 public sealed record ShieldPainted(int HeroId, int CardId) : GameEvent;
 
+/// <summary>Elektrik runs on through the water from <paramref name="At"/>, striking these creatures too.</summary>
+public sealed record CurrentConducted(string RoomId, GridPosition At, IReadOnlyList<int> Struck) : GameEvent;
+
 /// <summary>A monster's claws snatch a hero (Leviathan Jr.): held, with a grip of <paramref name="Grip"/> to beat.</summary>
 public sealed record Snatched(int MonsterId, int HeroId, int Grip) : GameEvent;
 
