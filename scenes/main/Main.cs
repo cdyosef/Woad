@@ -110,7 +110,11 @@ public partial class Main : Control
 		AddChild(new Music());
 
 		ulong seed = (ulong)DateTime.UtcNow.Ticks;
-		if (args.Contains("--uitest"))
+		if (args.Contains("--crestsheet"))
+		{
+			AddChild(new CrestSheet());
+		}
+		else if (args.Contains("--uitest"))
 		{
 			Show(new GameScreen { Setup = DemoRun.SingleRoom(seed), Content = _content });
 		}

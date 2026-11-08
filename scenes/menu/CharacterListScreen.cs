@@ -142,6 +142,7 @@ public partial class CharacterListScreen : MenuScreen
 
         _portrait.PortraitId = _selected.Portrait;
         _figure.Colors = _portrait.Colors = Looks.Resolve(_selected.Appearance, _selected.Portrait);
+        _portrait.Appearance = _selected.Appearance;
         _name.Text = _selected.Name;
         _details.Text = Describe(_selected);
     }

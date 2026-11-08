@@ -116,8 +116,14 @@ the Party menu can spend points on them too.
   - **Random** rolls a look and colors. Any two players may share colors: on the board each hero
     stands on a ring of their seat color.
   - Characters saved before looks existed are Wanderers in their crest's color.
-- **Crests:** eight heraldic sigils, drawn in the character's main and trim colors. They head the
-  hero panel in a run.
+- **Crests:** a shield with a field and a charge, built in the editor's crest rows. The **field** is plain or
+  parted in two colors (halved, parted, slanted, quartered, chief, pale, band, bend, chevron, cross, saltire,
+  bordered), its second color the character's trim; the **charge** is one of 24 (roundel, lozenge, triangle,
+  tau, spark, ring, bars, vee, sun, moon, star, tower, sword, axe, skull, eagle, fish, tree, crown, key, flame,
+  hand, heart, anvil) or none. The field's **color** and the charge's **ink** follow the character's main
+  color (darker and lighter) unless picked from the twelve colors, so a crest can differ from the figure's
+  colors. Left as they are, a crest is the portrait's own sigil, plain, as crests always were. `-- --crestsheet`
+  shows them all. They head the hero panel in a run.
 - **Characters screen:** lists saved characters (with their figures) and their stats, gear and record.
   You can create, edit (rename, restyle, spend points) or delete them; delete asks for a second click.
 - **Party setup:** click characters to seat them; the order you pick them is the turn order. An

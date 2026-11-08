@@ -40,7 +40,13 @@ public partial class Main
             await Type(this, "Morgan");
             Check(editor.NameEdit.Text == "Morgan", "typing fills in the name");
             Check(!editor.SaveButton.Disabled, "a valid name enables Create");
-            await Click(this, editor.PortraitButton(2));
+            await Click(this, editor.CrestButton(1, next: true));
+            Check(editor.Appearance.CrestCharge == "lozenge", "the crest arrows step the charge on from the portrait's own");
+            if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } crestShots)
+            {
+                await ToSignal(GetTree().CreateTimer(0.2), SceneTreeTimer.SignalName.Timeout);
+                GetViewport().GetTexture().GetImage().SavePng($"{crestShots}/editor_crest.png");
+            }
             await Click(this, editor.StyleButton(0, next: true));
             Check(editor.Appearance.Look == "knight" && editor.StyleButton(3, next: true).Disabled, "the next look is the Knight, whose face is hidden (no skin color)");
             await Click(this, editor.StyleButton(0, next: true));
@@ -202,7 +208,7 @@ public partial class Main
             Check(pip.Position == post, "a holding companion stays put on its own turn");
             Check(!game.OrdersButton.Visible, "a player without companions has no Orders button");
             Check(morgan.MaxHearts == Woad.Core.Rules.GameRules.HeroBaseStats.Hearts + 2 && morgan.EffectiveStats.AttackDice == 2 && morgan.EffectiveStats.Weapon == 1 && morgan.TorchesHeld == 0, "the hero has the character's stats and gear: a Club in hand, the torch on the belt");
-            Check(morgan.Portrait == "moss", "the hero has the chosen portrait");
+            Check(morgan.Appearance.CrestCharge == "lozenge", "the hero has the chosen crest");
             Check(morgan.Appearance is { Look: "mage", Main: "ember", Hair: "black" }, "the hero has the chosen look");
             Check(Music.Current == "dungeon", "a run plays the dungeon music");
 

@@ -7,7 +7,12 @@ namespace Woad.Core.Model;
 /// <param name="BeltLook">The belt art worn on the belt square: a belt card's id the hero owns, or empty for the belt worn.</param>
 /// <param name="BuckleLook">Likewise for the buckle.</param>
 /// <param name="HiddenGear">The slots whose gear isn't shown on the hero's figure on the map, by name, comma-separated.</param>
-public sealed record Appearance(string Look = "", string Main = "", string Trim = "", string Skin = "", string Hair = "", string BeltLook = "", string BuckleLook = "", string HiddenGear = "")
+/// <param name="CrestField">The crest's field pattern (empty: plain).</param>
+/// <param name="CrestCharge">The crest's charge (empty: the portrait's own emblem).</param>
+/// <param name="CrestColor">The crest field's color (empty: follows the character's main color).</param>
+/// <param name="CrestInk">The charge's color (empty: follows the character's main color).</param>
+public sealed record Appearance(string Look = "", string Main = "", string Trim = "", string Skin = "", string Hair = "", string BeltLook = "", string BuckleLook = "", string HiddenGear = "",
+    string CrestField = "", string CrestCharge = "", string CrestColor = "", string CrestInk = "")
 {
     public static Appearance Default { get; } = new();
 
