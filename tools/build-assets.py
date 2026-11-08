@@ -346,6 +346,56 @@ def write_look_list(path):
         + "\n".join(entries) + "\n    ];\n}\n",
         encoding="utf-8", newline="\n")
 
+# Ogres: big, green and tusked, and the Champ fatter, shirtless and horned; both swing a Big Club (C/D wood,
+# K iron studs). Once it breaks they're drawn from their "_unarmed" sprite, the club gone.
+BIG_CLUB = {"C": "#8a5a2b", "D": "#5a3818", "K": "#c8c8d0"}
+OGRE = [
+    ".............DCD",
+    "....oooooooo.CKC",
+    "...onssssssnoDCC",
+    "..osnnssssnnsoCD",
+    "..osesssssseso" "DC",
+    "..osssssssssso" "CD",
+    "..osswsssswsso" "DC",
+    "...odssssssdo.CD",
+    ".obbssssssssbboD",
+    "obsbssssssssbsbo",
+    "osobsssddsssboso",
+    "osobdssssssdboso",
+    "..oddssssssddo..",
+    "..ossppppppsso..",
+    "..osso.pp.osso..",
+    "..okko....okko..",
+]
+OGRE_PALETTE = {"o": "#1e140c", "n": "#050505", "s": "#c8844a", "d": "#a0663a", "e": "#ffe060", "w": "#f0ead8", "b": "#6a4a2a",
+                "l": "#3a2a18", "p": "#5a4a6a", "k": "#2a1e14", **BIG_CLUB}
+OGRE_CHAMP = [
+    "............DCD.",
+    "..o.........DCKC",
+    "...ho......ohKCD",
+    "....hooooooh.DCC",
+    "....onnssnno..CD",
+    "....osnnnnso..DC",
+    "....osesseso..CD",
+    "....owsssswo..DC",
+    "...odssssssdo.CD",
+    ".ossssssssssssso",
+    "ossossddddssosso",
+    "ossoddddddddosso",
+    ".oo.bbbbbbbb.oo.",
+    "....ssppppss....",
+    "....sssppsss....",
+    "....kkk..kkk....",
+]
+OGRE_CHAMP_PALETTE = {"o": "#1e140c", "n": "#050505", "s": "#d0864a", "d": "#a8642e", "h": "#f0e6c8", "e": "#ff4030",
+                      "w": "#ffffff", "b": "#5a3a1a", "p": "#4a3a5a", "k": "#2a1e14", **BIG_CLUB}
+
+
+def unarmed(rows):
+    """The same figure with its Big Club gone."""
+    return ["".join("." if char in BIG_CLUB else char for char in row) for row in rows]
+
+
 MONSTERS = {
     "slime": (sprite([
         "........", "........", "........", "........", "........", "........",
@@ -469,45 +519,10 @@ MONSTERS = {
         "...ooo..",
     ], {"o": "#141a14", "g": "#7a9a7a", "a": "#5a7a5a", "y": "#ffe03a", "d": "#3a1a1a", "c": "#e8e2d0"}, mirror=True)),
 
-    "ogre": (sprite([  # big, green and tusked
-        "........",
-        "....oooo",
-        "...ossss",
-        "..osssss",
-        "..osesss",
-        "..osssss",
-        "..osswss",
-        "...ossss",
-        ".obbbbbb",
-        "obsbbbbb",
-        "osobbbbb",
-        "osolllll",
-        "..oppppp",
-        "..oppo..",
-        "..okko..",
-        "..oooo..",
-    ], {"o": "#1e140c", "s": "#c8844a", "e": "#ffe060", "w": "#f0ead8", "b": "#6a4a2a",
-        "l": "#3a2a18", "p": "#5a4a6a", "k": "#2a1e14"}, mirror=True)),
-
-    "ogre_champ": (sprite([  # bigger, fatter, shirtless and horned, with a great club
-        ".............cc.",
-        "..o.........occc",
-        "...ho......oh.cc",
-        "....hooooooh..cc",
-        "....osssssso..cc",
-        "....osesseso..cc",
-        "....owsssswo..cc",
-        "..oossssssssoocc",
-        ".ossssssssssssso",
-        "ossossddddssosso",
-        "ossoddddddddosso",
-        ".oo.bbbbbbbb.oo.",
-        "....pppppppp....",
-        "....ppp..ppp....",
-        "....kkk..kkk....",
-        "................",
-    ], {"o": "#1e140c", "s": "#d0864a", "d": "#a8642e", "h": "#f0e6c8", "e": "#ff4030", "w": "#ffffff",
-        "c": "#7a4a20", "b": "#5a3a1a", "p": "#4a3a5a", "k": "#2a1e14"})),
+    "ogre": sprite(OGRE, OGRE_PALETTE),
+    "ogre_unarmed": sprite(unarmed(OGRE), OGRE_PALETTE),
+    "ogre_champ": sprite(OGRE_CHAMP, OGRE_CHAMP_PALETTE),
+    "ogre_champ_unarmed": sprite(unarmed(OGRE_CHAMP), OGRE_CHAMP_PALETTE),
 
     "necromancer": (sprite([  # a hooded skull with glowing green eyes and hands
         "........",
@@ -1074,7 +1089,7 @@ WOOD = {"o": "#2a1a10", "w": "#b07840", "d": "#8a5a2b", "g": "#e2c47a", "y": "#3
 
 # The Sunken Temple's own monsters (its other monsters borrow the Emerald Keep's sprites).
 # Monsters only the Emerald Keep has.
-KEEP_ONLY = {"ogre", "ogre_champ", "necromancer", "hexer", "gelatinous_cube", "mimic", "emerald_knight", "emerald_guard", "baron_herkullos", "grasshopper_knight"}
+KEEP_ONLY = {"ogre", "ogre_unarmed", "ogre_champ", "ogre_champ_unarmed", "necromancer", "hexer", "gelatinous_cube", "mimic", "emerald_knight", "emerald_guard", "baron_herkullos", "grasshopper_knight"}
 
 TEMPLE_MONSTERS = {
     "snapper_eel": sprite([
@@ -2520,6 +2535,16 @@ def laugh():
     return samples
 
 
+def gra():
+    """An ogre's "GRA!!": a throaty growl breaking into a loud, rolling, falling bellow."""
+    growl = mix(noise(0.07, 0.35, decay=12, seed=59, lowpass=0.55), tone(lambda t: 85, 0.07, square, 0.12, release=0.02))
+    bellow_length = 0.42
+    voice = tone(lambda t: (135 + 60 * t / 0.1 if t < 0.1 else 195 - 150 * (t - 0.1)) * (1 + 0.08 * math.sin(t * 2 * math.pi * 28)),
+                 bellow_length, square, 0.24, release=0.12)
+    rasp = noise(bellow_length, 0.16, decay=3, seed=61, lowpass=0.45)
+    return growl + mix(voice, rasp)
+
+
 def flap():
     """A wingbeat: two soft whooshes of air, the second lighter."""
     return noise(0.12, 0.35, decay=18, seed=47, lowpass=0.88) + noise(0.1, 0.22, decay=22, seed=53, lowpass=0.9)
@@ -2551,6 +2576,7 @@ def build_sounds(directory):
         "fuse": noise(0.25, 0.18, decay=8, seed=43, lowpass=0.9),
         "victory": notes([(523, 0.1), (659, 0.1), (784, 0.1), (1047, 0.12), (784, 0.08), (1047, 0.35)], volume=0.25),
         "laugh": laugh(),
+        "gra": gra(),
         "flap": flap(),
         "fall": tone(lambda t: 1700 * (1 - 0.82 * t / 0.85), 0.85, sine, 0.2, release=0.05),
     }

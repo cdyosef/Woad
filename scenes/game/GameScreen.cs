@@ -1400,6 +1400,18 @@ public partial class GameScreen : Control
                 await UpdateFigure(skipped.MonsterId, figure => figure.Frozen = false, 0.3);
                 break;
 
+            case MonsterWeaponBroke broke:
+                CalloutOver(broke.MonsterId, "SNAP!", Palette.TrimBright);
+                Sfx.Play("pot");
+                await UpdateFigure(broke.MonsterId, figure => figure.Unarmed = true, 0.4);
+                break;
+
+            case MonsterYelled yelled:
+                CalloutOver(yelled.MonsterId, yelled.Text, Palette.Danger);
+                Sfx.PlayVaried("gra");
+                await Pause(0.45);
+                break;
+
             case RoomCleared:
                 _board.QueueRedraw();
                 await Pause(0.2);
@@ -1724,6 +1736,8 @@ public partial class GameScreen : Control
         MonsterReassembled risen => FigureRoom(risen.MonsterId),
         MonsterFrozen stunned => FigureRoom(stunned.MonsterId),
         MonsterTurnSkipped skipped => FigureRoom(skipped.MonsterId),
+        MonsterYelled yelled => FigureRoom(yelled.MonsterId),
+        MonsterWeaponBroke broke => FigureRoom(broke.MonsterId),
         MonsterSpawned spawned => spawned.RoomId,
         RoomCleared cleared => cleared.RoomId,
         PotSmashed smashed => FigureRoom(smashed.HeroId),

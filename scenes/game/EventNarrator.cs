@@ -197,6 +197,8 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         MonsterStole stole => $"{nameOf(stole.MonsterId)} lifts {Money.Long(stole.Coins)} from {nameOf(stole.HeroId)}!",
         Mugged mugged => $"{nameOf(mugged.MonsterId)} snatches {Money.Long(mugged.Coins)} from {nameOf(mugged.HeroId)}.",
         StunWoreOff wore => $"{nameOf(wore.EntityId)} shakes off the stun.",
+        MonsterWeaponBroke broke => $"{nameOf(broke.MonsterId)}'s club splinters to pieces!",
+        MonsterYelled yelled => $"{nameOf(yelled.MonsterId)} yells: \"{yelled.Text}\"",
         MonsterTurnSkipped skipped => $"{nameOf(skipped.MonsterId)} is frozen and loses its turn.",
         HeroHealed healed => $"{nameOf(healed.HeroId)} recovers {Count(healed.Amount, "heart")}.",
         Ignited { FireDice: 1 } ignited => $"{nameOf(ignited.EntityId)} catches fire!",

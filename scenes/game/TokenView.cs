@@ -39,7 +39,17 @@ public partial class TokenView : Node2D
     public Color Fill { get; init; } = Colors.White;
 
     /// <summary>The sprite; null falls back to a shape.</summary>
-    public Texture2D? Body { get; init; }
+    public Texture2D? Body
+    {
+        get => _body;
+        set
+        {
+            _body = value;
+            QueueRedraw();
+        }
+    }
+
+    private Texture2D? _body;
 
     /// <summary>A hero's look and colors, drawn instead of <see cref="Body"/>; <see cref="Fill"/> is then their seat color.</summary>
     public LookColors? Look { get; init; }

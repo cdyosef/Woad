@@ -140,6 +140,19 @@ public sealed record MonsterDefinition
     /// <summary>What it bellows when heroes first come into its room (shown and heard, no effect).</summary>
     public string? Taunt { get; init; }
 
+    /// <summary>
+    /// The weapon it fights with (a card, an ogre's Big Club): its weapon dice, value, reach and ways go into its
+    /// attacks; if it breaks, they're gone; and when the monster falls with it whole, it drops it.
+    /// </summary>
+    public string? Wields { get; init; }
+
+    /// <summary>The card it <see cref="Wields"/>, linked up as the content loads.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public CardDefinition? WieldsCard { get; internal set; }
+
+    /// <summary>What it yells at the start of each of its turns (shown and heard, no effect): an ogre's "GRA!!".</summary>
+    public string? Yell { get; init; }
+
     /// <summary>Its own song, played while a hero shares its room.</summary>
     public string? Music { get; init; }
 

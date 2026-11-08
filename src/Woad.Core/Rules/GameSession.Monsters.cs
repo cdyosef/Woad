@@ -243,6 +243,11 @@ public sealed partial class GameSession
             return;
         }
 
+        if (monster.Definition.Yell is { } yell && State.HeroesIn(room).Any())
+        {
+            events.Add(new MonsterYelled(monster.Id, yell));
+        }
+
         if (!ConditionsAtTurnStart(room, monster, events))
         {
             return;
@@ -401,7 +406,7 @@ public sealed partial class GameSession
         heroes
             // Blind, it can only find those right beside it.
             .Where(hero => !IsBlind(monster.Conditions) || FootprintAt(monster, from).Any(tile => hero.Position.ChebyshevDistanceTo(tile) <= 1))
-            .Where(hero => ArcReaches(monster, from, hero) || FootprintAt(monster, from).Any(tile => Targeting.CanAttack(room.Layout, monster.Definition.AttackPattern, monster.Definition.AttackRange, tile, hero.Position)))
+            .Where(hero => ArcReaches(monster, from, hero) || FootprintAt(monster, from).Any(tile => Targeting.CanAttack(room.Layout, monster.AttackPattern, monster.AttackRange, tile, hero.Position)))
             // Someone diving in deep water can only be reached up close.
             .Where(hero => !Diving(room, hero) || FootprintAt(monster, from).Any(tile => hero.Position.ChebyshevDistanceTo(tile) <= 1))
             // A mugger goes for the gold.

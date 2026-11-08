@@ -369,6 +369,16 @@ def draw(item):
         c.poly([(19, 13), (23, 3), (27, 13), (23, 16)], ICE[1])
         c.line(23, 5, 23, 14, ICE[0])
         c.dot(26, 6, "#ffffff")
+    elif i == "big_club":
+        # An ogre's club: a long haft swelling to a huge knotted head, studded with iron.
+        c.line(5, 29, 14, 18, WOOD[2], 3)
+        c.line(5, 28, 14, 17, WOOD[1], 1)
+        c.poly([(11, 20), (15, 7), (21, 1), (29, 4), (29, 11), (19, 22)], WOOD[1])
+        c.poly([(15, 9), (20, 3), (26, 4), (18, 13)], WOOD[0])
+        c.line(19, 22, 29, 11, WOOD[2], 2)
+        for x, y in ((18, 8), (24, 6), (22, 13), (27, 10), (16, 16)):
+            c.circle(x, y, 1.3, IRON[0])
+            c.dot(x, y + 1, IRON[2])
     elif i == "club":
         # A knobbly cudgel, thick at the head.
         c.line(8, 27, 15, 16, WOOD[2], 3)
@@ -1153,7 +1163,7 @@ ITEMS = [
     "leather_armor", "studded_armor", "chain_mail", "wardens_plate", "storm_mail", "dash_boots",
     "flame_scroll", "frost_scroll", "venom_scroll", "acid_scroll", "grave_scroll", "gale_scroll", "sun_scroll",
     "bloom_scroll", "quake_scroll", "spark_scroll", "mind_scroll", "shadow_scroll", "frost_wand", "boomerang",
-    "club", "stick", "lit_stick", "rock", "sling", "rock_bag", "lucky_clover",
+    "club", "big_club", "stick", "lit_stick", "rock", "sling", "rock_bag", "lucky_clover",
     "torch", "lockpicks", "emerald_key", "barons_strongbox", "holy_key", "saints_relic", "modern_medicine", "thieves_oil", "burgling_tools", "cutpurse_knife", "sticky_gloves", "bomb", "autosmith_hammer", "eye_drops", "holy_water", "health_potion",
     "antidote", "strong_base", "smelling_salts", "bandages", "medicine_bag", "shovel", "sineater_doll",
     "loose_coins", "coin_pouch", "emerald", "pearl", "golden_idol",

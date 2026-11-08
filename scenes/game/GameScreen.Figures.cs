@@ -64,6 +64,7 @@ public partial class GameScreen
             {
                 _names[monster.Id] = monster.Definition.Name;
                 _figures[monster.Id] = MonsterFigure(monster.Id, monster.Definition, room.Id, monster.Position, monster.Hearts, monster.MaxHearts);
+                _figures[monster.Id].Unarmed = monster.Disarmed;
                 _figures[monster.Id].Frozen = monster.FrozenTurns > 0;
                 _figures[monster.Id].Collapsed = monster.Collapsed;
                 _figures[monster.Id].FireDice = monster.FireDice;
@@ -166,6 +167,11 @@ public partial class GameScreen
 
     private void ApplyFigure(Figure figure, TokenView token)
     {
+        if (figure.Unarmed && figure.Monster is { } armed && GameArt.Monster(_session.State.ThemeId, armed.Id + "_unarmed") is { } unarmed)
+        {
+            token.Body = unarmed;
+        }
+
         token.SetHearts(figure.Hearts, figure.MaxHearts);
         token.Frozen = figure.Frozen;
         token.Collapsed = figure.Collapsed;
@@ -478,6 +484,9 @@ public partial class GameScreen
     private sealed class Figure
     {
         public int Id { get; init; }
+
+        /// <summary>Its weapon broke: drawn from its "_unarmed" sprite.</summary>
+        public bool Unarmed { get; set; }
 
         public bool IsHero { get; init; }
 

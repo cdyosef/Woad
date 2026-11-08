@@ -886,8 +886,8 @@ total reaches its number:
 | Petty Thief | 2 | 4 | 1d6 | 1d6 | Od Hand 3: steals from a hero beside it (each die over their Od Hand roll and tools takes, in turn, 2 gold, an item, 2 gold...); with loot it runs from everyone |
 | Mugger Fly | 1 | 6 | 2×1d6 | 1d6 | Flies. Goes for the hero with the most gold; every hit takes 1 gold; Od Hand 1 steals gold only |
 | Mimic | 4 | 2 | 2d6+1 | 1d6+1 | Not spawned: about one ordinary chest in ten is a Mimic (never the Boss Key's, nor in an arrival room). Opening it or trying its lock wakes it with a free bite; a Search reaching 5 + floor finds it out first. A hit grabs: the hero can't move or leap until it's hurt, shoved, stunned, frozen or knocked flat. Always drops 2 cards |
-| Ogre | 5 | 2 | 2d6+2 | 1d6+1 | Rare, from floor 2. Each hit knocks the hero a tile straight back, into a pit or onto a trap if one's there |
-| Ogre Champ | 6 | 1 | 3d6 | 1d6+1 | Only in its den. Reach 2. Drawn bigger: fat, shirtless and horned, with a great club. Each hit knocks the hero a tile back, and every 6 on its roll a tile more, hit or miss |
+| Ogre | 5 | 2 | 2d6 + Big Club 2d6 | 1d6+1 | Rare, from floor 2. Each hit knocks the hero a tile straight back, into a pit or onto a trap if one's there. Yells "GRA!!" every turn |
+| Ogre Champ | 6 | 1 | 3d6 + Big Club 2d6 | 1d6+1 | Only in its den. Drawn bigger: fat, shirtless and horned. Each hit knocks the hero a tile back, and every 6 on its roll a tile more, hit or miss. Laughs as you come in, yells "GRA!!" every turn |
 | Necromancer | 3 | 2 | 1d6+1 | 1d6 | Rare, from floor 2. Ranged 4; keeps its distance. Every other turn raises a Skeleton beside it (from a grave nearby if there is one): 2 at a time, 4 in all. They crumble when it falls and are worth no XP, loot or kill |
 | Ghoul | 4 | 6 | 3×1d6 | 1d6 | Rare, from floor 2. Greater undead: Holy Water hits it with 5 Radiate dice. Three attacks of a Necro die each, and every hit stuns. Its miasma attacks every living creature starting its turn beside it with a Poison die |
 | Hexer | 2 | 3 | 1d6+1 | 1d6 | Rare, from floor 2. Ranged 4; keeps its distance. Has 1 Luck of its own; each hit steals a point of Luck (Luck, then Clover Luck), which it keeps; with none left, it stuns. Tries its Luck when its attack or defense is about to fail. Once a turn, a **Bad Luck Curse** on the nearest hero it can see. Dying, its unused Luck scatters as Lucky Clovers within 13 tiles |
@@ -1140,6 +1140,11 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
   torch (a light and a fire, like a lit brazier); in a dark room they're empty. From under one or beside it,
   click it to take its torch down (free: into a free hand, else the belt or bag), or, holding a torch, to put
   it up and light the room.
+- **Big Clubs:** both ogres swing one (one-handed, to an ogre): 2 weapon dice on their first attack a turn, reach 2
+  in a straight line, and each 6 on those dice shoves the hero a tile further back, hit or miss. A double 1 on
+  them splinters it: the ogre fights on with its fists (melee, its own dice), drawn without it. An ogre that falls
+  with its club whole drops it. To a hero it's a two-handed weapon doing the same: 2d6 on one Rumble roll a
+  turn, reach 2, a shove for each 6 on its dice, broken by a double 1 on them.
 - **Sealed rooms:** the boss's room, and a den (the Ogre Champ's), shut behind you: no one leaves by its
   doors while the boss (or the den's keeper) stands, as a trap room holds you till its last monster falls.
 - **Exit:** sealed until the boss in its room is defeated. Stand on it and click again to escape. Your

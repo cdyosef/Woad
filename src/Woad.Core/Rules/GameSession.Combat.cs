@@ -282,6 +282,7 @@ public sealed partial class GameSession
             Casting = casting,
             BullRush = bullRush,
             Spent = spent,
+            WeaponFaces = weaponFaces,
         };
         SurgePowerDice(hero, StarSixes(roll, dieTypes), events);
         EarnPowerDice(hero, Sixes(rolled.Faces), events);
@@ -592,6 +593,12 @@ public sealed partial class GameSession
             }
         }
 
+        // Its weapon, if it's still whole.
+        if (monster.Wielding is { } wielding)
+        {
+            DropLoot(room, SafeTile(room, monster.Position), new CardInstance(State.NextId(), wielding, broughtInByHeroId: null), events);
+        }
+
         foreach (RareDrop carried in definition.Carries.Where(carried => _random.Loot.NextInt(0, 100) < carried.Chance))
         {
             // A unique already claimed this raid: what drops in its place.
@@ -686,11 +693,11 @@ public sealed partial class GameSession
 
         IReadOnlyList<int> attacks = definition.SeparateAttacks
             ? Enumerable.Repeat(1, monster.AttackDiceThisTurn).ToList()
-            : PlanAttacks(monster.AttackDiceThisTurn, definition.Weapon, target.EffectiveStats);
+            : PlanAttacks(monster.AttackDiceThisTurn, monster.Weapon, target.EffectiveStats);
         int prone = ProneBonus(target, monster.Position);
         for (int i = 0; i < attacks.Count && target.IsActive; i++)
         {
-            RollMonsterAttack(room, monster, attacks[i] + (i == 0 ? prone : 0), i == 0 ? definition.Weapon : 0, [target], events, weaponDice: i == 0 ? definition.WeaponDice : 0);
+            RollMonsterAttack(room, monster, attacks[i] + (i == 0 ? prone : 0), i == 0 ? monster.Weapon : 0, [target], events, weaponDice: i == 0 ? monster.WeaponDice : 0);
         }
     }
 
@@ -712,6 +719,9 @@ public sealed partial class GameSession
 
         powerDice += crits;
         int weaponSixes = weaponFaces.Count(face => face == GameRules.PowerDieFace);
+        CardDefinition? wielded = weaponDice > 0 ? monster.Wielding : null;
+        int weaponShoves = wielded is { ShovesOnWeaponSix: true } ? weaponSixes : 0;
+        bool weaponBreaks = wielded is { BreaksOnDoubleOne: true } && weaponFaces.Count(face => face == 1) >= 2;
 
         // Banked Power Dice go in, one at a time, while the roll looks short of getting past the
         // best-defended target (their armor and a middling defense die); a 6 rolls another straight in.
@@ -773,12 +783,21 @@ public sealed partial class GameSession
             }
 
             // A heavy blow knocks the hero back a tile, and with a mighty one every 6 knocks them a tile further, hit or miss.
+            // A Big Club's sixes shove them a tile further each.
             int knockback = (dealt > 0 && monster.Definition.KnocksBack ? 1 : 0)
-                            + (monster.Definition.KnockbackOnSix ? roll.Faces.Count(face => face == GameRules.PowerDieFace) : 0);
+                            + (monster.Definition.KnockbackOnSix ? roll.Faces.Count(face => face == GameRules.PowerDieFace) : 0)
+                            + weaponShoves;
             if (knockback > 0 && hero.IsActive)
             {
                 KnockBack(room, monster, hero, knockback, events);
             }
+        }
+
+        // A double 1 on a Big Club's dice: it splinters in the ogre's fist.
+        if (weaponBreaks && room.FindMonster(monster.Id) is not null)
+        {
+            monster.Disarmed = true;
+            events.Add(new MonsterWeaponBroke(monster.Id, wielded!.Id));
         }
     }
 

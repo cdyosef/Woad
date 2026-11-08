@@ -243,7 +243,7 @@ public sealed partial class GameSession
             return null;
         }
 
-        return struck && weapon.BreaksOnOne ? new WeaponSpent(null, card.Id, target, card) : null;
+        return struck && (weapon.BreaksOnOne || weapon.BreaksOnDoubleOne) ? new WeaponSpent(null, card.Id, target, card) : null;
     }
 
     /// <summary>
@@ -291,7 +291,10 @@ public sealed partial class GameSession
             events.Add(new WeaponBroke(hero.Id, spent.NamedBy));
         }
 
-        if (spent.Brittle is { } club && attack.Roll.Faces.Contains(1) && hero.FindCard(club.Id) is not null)
+        bool snaps = spent.Brittle is { Definition.BreaksOnDoubleOne: true }
+            ? attack.WeaponFaces.Count(face => face == 1) >= 2
+            : attack.Roll.Faces.Contains(1);
+        if (spent.Brittle is { } club && snaps && hero.FindCard(club.Id) is not null)
         {
             TakeFromHero(hero, club, 1);
             events.Add(new WeaponBroke(hero.Id, club.Id));
@@ -423,6 +426,17 @@ public sealed partial class GameSession
             && ShoveDestination(room, hero, target.Position, target.Flies) is { } to)
         {
             PushMonster(hero, room, target, to, events);
+        }
+
+        // A Big Club: each 6 on its own dice shoves the target a tile back, hit or miss.
+        int weaponSixes = attack.WeaponFaces.Count(face => face == GameRules.PowerDieFace);
+        if (weapon.ShovesOnWeaponSix
+            && attack.TargetIds.Select(room.FindMonster).FirstOrDefault(found => found is not null) is { Definition: { Boss: false, Miniboss: false } } shoved)
+        {
+            for (int i = 0; i < weaponSixes && room.FindMonster(shoved.Id) is not null && ShoveDestination(room, hero, shoved.Position, shoved.Flies) is { } further; i++)
+            {
+                PushMonster(hero, room, shoved, further, events);
+            }
         }
     }
 }

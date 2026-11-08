@@ -245,6 +245,12 @@ public sealed record MonsterFrozen(int MonsterId, int Turns) : GameEvent;
 
 public sealed record MonsterTurnSkipped(int MonsterId) : GameEvent;
 
+/// <summary>A monster's weapon broke (a Big Club on a double 1): it fights on without it, and won't drop it.</summary>
+public sealed record MonsterWeaponBroke(int MonsterId, string CardId) : GameEvent;
+
+/// <summary>A monster yells as its turn starts (an ogre's "GRA!!"): no effect, just noise.</summary>
+public sealed record MonsterYelled(int MonsterId, string Text) : GameEvent;
+
 public sealed record HeroHealed(int HeroId, int Amount, int Hearts) : GameEvent;
 
 /// <summary>A hero hit 0 hearts and is Keeling Over where they lie. <paramref name="Bane"/> is what brought them down.</summary>

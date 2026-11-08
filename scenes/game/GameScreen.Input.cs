@@ -1272,14 +1272,23 @@ public partial class GameScreen
             traits.Add("can't burn");
         }
 
-        if (definition.AttackPattern == AttackPattern.Reach)
+        if (monster.Wielding is { } wielding)
         {
-            traits.Add($"reach {definition.AttackRange}");
+            traits.Add($"swings a {wielding.Name}");
+        }
+        else if (monster.Disarmed)
+        {
+            traits.Add("its weapon broke");
         }
 
-        if (definition.AttackPattern == AttackPattern.Ranged)
+        if (monster.AttackPattern == AttackPattern.Reach)
         {
-            traits.Add($"ranged {definition.AttackRange}");
+            traits.Add($"reach {monster.AttackRange}");
+        }
+
+        if (monster.AttackPattern == AttackPattern.Ranged)
+        {
+            traits.Add($"ranged {monster.AttackRange}");
         }
 
         if (definition.Sweep is { } sweep)

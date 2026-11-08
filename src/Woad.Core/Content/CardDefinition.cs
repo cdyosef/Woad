@@ -347,6 +347,12 @@ public sealed record CardDefinition
     /// <summary>Weapons: any 1 in an attack made with it breaks it, as a torch burns out (the Club).</summary>
     public bool BreaksOnOne { get; init; }
 
+    /// <summary>Two or more 1s on its own weapon dice break it (a Big Club).</summary>
+    public bool BreaksOnDoubleOne { get; init; }
+
+    /// <summary>Each 6 on its own weapon dice shoves the target a tile back, hit or miss (a Big Club).</summary>
+    public bool ShovesOnWeaponSix { get; init; }
+
     /// <summary>Stackables: the most one stack holds (Rocks and Sticks, 10); 0 for no limit. See <see cref="Holds"/>.</summary>
     public int MaxStack { get; init; }
 

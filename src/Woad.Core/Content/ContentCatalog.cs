@@ -219,6 +219,15 @@ public sealed class ContentCatalog
 
         foreach (MonsterDefinition monster in monsters)
         {
+            if (monster.Wields is { } wields)
+            {
+                monster.WieldsCard = cards.FirstOrDefault(card => card.Id == wields && card.Type == CardType.Weapon);
+                if (monster.WieldsCard is null)
+                {
+                    errors.Add($"Monster '{monster.Id}' wields '{wields}': it must be a known weapon.");
+                }
+            }
+
             if (monster.Carries.Any(carried => !cardIds.Contains(carried.Card) || carried.Chance is < 1 or > 100))
             {
                 errors.Add($"Monster '{monster.Id}' carries an unknown card, or one with a chance outside 1-100.");

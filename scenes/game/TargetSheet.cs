@@ -53,8 +53,10 @@ public partial class TargetSheet : Panel
         _kind.Text = (definition.Boss ? "Boss" : definition.Miniboss ? "Champion" : "Monster") + $"  {definition.Xp} XP";
         _portrait.Show(GameArt.Monster(ThemeId, definition.Id), null, monster: true);
 
-        string reach = definition.AttackRange > 1 ? $"Range {definition.AttackRange}" : "Melee";
-        _attack.ShowFace(definition.AttackRange > 1 ? "short_bow" : "rumble", definition.Weapon > 0 ? $"{reach} +{definition.Weapon}" : reach, Palette.DieRumble, true, $"Attacks: {definition.AttackDice}d6{(definition.Weapon > 0 ? $" +{definition.Weapon}" : "")}, {reach.ToLowerInvariant()}.");
+        string reach = monster.AttackRange > 1 ? $"{(monster.AttackPattern == AttackPattern.Reach ? "Reach" : "Range")} {monster.AttackRange}" : "Melee";
+        string extra = (monster.WeaponDice > 0 ? $" +{monster.WeaponDice}d6" : "") + (monster.Weapon > 0 ? $" +{monster.Weapon}" : "");
+        string wields = monster.Wielding is { } wielding ? $" with a {wielding.Name}" : "";
+        _attack.ShowFace(monster.AttackRange > 1 ? "short_bow" : "rumble", $"{reach}{extra}", Palette.DieRumble, true, $"Attacks: {definition.AttackDice}d6{extra}{wields}, {reach.ToLowerInvariant()}.");
         List<string> traits = Traits(monster);
         if (traits.Count > 0)
         {
