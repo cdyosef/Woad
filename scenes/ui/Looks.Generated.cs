@@ -50,5 +50,11 @@ public static partial class Looks
         new("alchemist", "Alchemist", "human", "hair", [new(6, 5), new(9, 5)], null, null),
         new("artificer", "Artificer", "human", "hair", [new(6, 5), new(9, 5)], null, null),
         new("artifixer", "Artifixer", "human", "hair", [new(6, 5), new(9, 5)], null, null),
+        new("half_orc", "Half-Orc", "orc", "hair", [new(6, 5), new(9, 5)], null, "black"),
+        new("three_quarter_orc", "3/4 Orc", "orc", "hair", [new(5, 5), new(10, 5)], "green", "black"),
+        new("gnome", "Gnome", "human", "hair", [new(6, 6), new(9, 6)], null, "white"),
+        new("fairy", "Fairy", "human", "hair", [new(6, 7), new(9, 7)], null, "pink"),
+        new("cook", "Cook", "human", "hair", [new(6, 5), new(9, 5)], null, null),
+        new("fat_man", "Fat Man", "human", "hair", [new(6, 5), new(9, 5)], null, null),
     ];
 }

@@ -72,6 +72,13 @@ public static partial class Looks
                 new("redwood", "Redwood", new Color("a04a32")),
                 new("ebony", "Ebony", new Color("4a3a32")),
             ]),
+            ["orc"] = ("Skin", [
+                new("olive", "Olive", new Color("8a9a5a")),
+                new("green", "Green", new Color("5a8a3a")),
+                new("moss", "Moss", new Color("4a6a3a")),
+                new("grey", "Grey", new Color("7a8278")),
+                new("tan", "Tan", new Color("a89060")),
+            ]),
             ["darkelf"] = ("Skin", [
                 new("ash", "Ash", new Color("7a7488")),
                 new("lavender", "Lavender", new Color("9a88b8")),

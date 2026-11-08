@@ -293,6 +293,30 @@ LOOKS = [
                # A mechanical arm on the cigarette side: a brass shoulder, a steel arm and a steel hand.
                (7, 12, "g"), (8, 12, "m"), (9, 12, "M")],
      "palette": {"f": "#ff7a3a"}},
+    {"id": "half_orc", "name": "Half-Orc", "skin": "orc", "hair": "hair", "hairDefault": "black", "rows": [
+        "........", "......oo", ".....oHH", "....oHHH", "....oHSS", "....oSeS", "....oSwS", "...ootTT",
+        "..oSotTT", "..oSotTT", "...oobbR", "....otTT", "....otTo", "....okko", "....oooo", "........"],
+     "palette": {"e": "#e8c040"}},
+    {"id": "three_quarter_orc", "name": "3/4 Orc", "skin": "orc", "hair": "hair", "skinDefault": "green", "hairDefault": "black", "rows": [
+        "........", "......oH", ".....oHH", "....oSSS", "...oSSSS", "...okeSS", "...oSwSS", "..oosSSS",
+        ".oSSotTT", ".oSSotTT", ".oSoobbR", "...otTTT", "...otTTo", "...okkko", "...ooooo", "........"],
+     "palette": {"e": "#e04030"}},
+    {"id": "gnome", "name": "Gnome", "skin": "human", "hair": "hair", "hairDefault": "white", "rows": [
+        "........", "......oT", ".....otT", ".....oTT", "....otTT", "...oRRRR", "....oSeS", "....oSSS",
+        "....oHHH", "..oSoHHH", "...ooHHH", "....otTT", "....otTo", "....okko", "....oooo", "........"],
+     "extra": [(7, 7, "s"), (7, 8, "s"), (0, 7, "o"), (0, 8, "o")]},
+    {"id": "fairy", "name": "Fairy", "skin": "human", "hair": "hair", "hairDefault": "pink", "rows": [
+        "........", "........", "........", "......oo", ".....oHH", "....oHHH", "c...oHSS", "cc..oSeS",
+        "ccc.oSSS", ".cc.otTT", "..cotTTT", "...otTTT", "....oSSo", "....oSSo", "....oooo", "........"],
+     "extra": [(4, 1, "g"), (3, 14, "g"), (1, 12, "g")]},
+    {"id": "cook", "name": "Cook", "skin": "human", "hair": "hair", "rows": [
+        ".....ooo", "....owww", "....owww", "....oRRR", "....oHSS", "....oSeS", "....oSHH", "...ootTT",
+        "..oSotww", "..oSotww", "...oobww", "....otww", "....otTo", "....okko", "....oooo", "........"],
+     "extra": [(8, 12, "m"), (7, 13, "m"), (6, 13, "m"), (5, 13, "M"), (5, 14, "M"), (6, 14, "M")]},
+    {"id": "fat_man", "name": "Fat Man", "skin": "human", "hair": "hair", "rows": [
+        "........", "......oo", ".....oHH", "....oHHH", "....oSSS", "....oSeS", "...oosss", "..ootTTT",
+        ".oSotTTT", "oSotTTTT", "oSotTTTT", ".oobbbbR", "..otTTTT", "...okkko", "...ooooo", "........"],
+     "extra": [(9, 6, "t"), (9, 9, "t"), (10, 7, "t"), (10, 8, "t")]},
 ]
 
 
