@@ -113,6 +113,7 @@ public static partial class DungeonGenerator
         List<BreachSetup> breaches = PlanBreaches(rooms, random);
         PlaceMerchant(rooms, theme.Floors, random);
         Darken(rooms, new Pcg32(seed, DarkStream));
+        PlaceCrates(rooms, breaches, new Pcg32(seed, CrateStream));
         return new RunSetup
         {
             Seed = seed,

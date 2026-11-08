@@ -384,6 +384,13 @@ def draw(item):
         c.line(16, 15, 22, 15, WOOD[2])
         c.poly([(22, 13), (26, 13), (24, 17)], GREEN[1])
         c.line(7, 26, 15, 16, WOOD[0])
+    elif i == "crowbar":
+        # An iron bar, its hooked claw at the top, its flat end at the bottom.
+        c.line(10, 28, 22, 8, IRON[1], 3)
+        c.line(11, 27, 22, 9, IRON[0], 1)
+        c.poly([(20, 9), (22, 4), (26, 3), (27, 6), (24, 6), (23, 10)], IRON[1])
+        c.line(25, 4, 23, 6, IRON[2])
+        c.poly([(8, 27), (11, 29), (13, 26), (10, 25)], IRON[2])
     elif i == "hold_fire":
         # A flame cupped in an open hand.
         c.poly([(7, 22), (11, 27), (21, 27), (26, 21), (24, 19), (20, 22), (12, 22), (9, 19)], "#d8a07a")
@@ -1140,7 +1147,7 @@ def draw_spell(name):
 
 
 ITEMS = [
-    "hold_fire", "wooden_sword", "longsword", "knights_sword", "trident", "short_bow", "great_axe", "emerald_axe", "emerald_axe_3", "maul", "war_hammer",
+    "hold_fire", "crowbar", "wooden_sword", "longsword", "knights_sword", "trident", "short_bow", "great_axe", "emerald_axe", "emerald_axe_3", "maul", "war_hammer",
     "spear", "dagger", "rapier", "crossbow", "heavy_crossbow", "frost_brand", "quake_hammer", "longbow",
     "buckler", "tower_shield", "knights_shield", "emerald_baron_helm", "leather_cap", "diving_helm", "lucky_helmet", "cowards_cloak",
     "leather_armor", "studded_armor", "chain_mail", "wardens_plate", "storm_mail", "dash_boots",

@@ -138,7 +138,7 @@ public sealed partial class GameSession
         Wielding Main(bool strike)
         {
             CardDefinition? weapon = main?.Definition;
-            int bonus = Math.Max(0, stats.Weapon) + (weapon?.AttackBonus ?? 0) + Versatile(hero) + AmmoBonus(hero, main)
+            int bonus = Math.Max(0, stats.Weapon) + (weapon?.AttackBonus ?? 0) - Excess(main) + Versatile(hero) + AmmoBonus(hero, main)
                         + (weapon is { OffHandStrike: true } ? PairBonus(hero) : 0) + (weapon is null ? 0 : Ambush(weapon));
             return new Wielding(main, false, strike, strike ? bonus : 0, strike ? weapon?.Modifiers.WeaponDice ?? 0 : 0, mainThrown);
         }
@@ -153,6 +153,9 @@ public sealed partial class GameSession
                 : Math.Max(0, stats.Weapon - (main?.Definition.Modifiers.Weapon ?? 0)) + weapon.Modifiers.Weapon + weapon.AttackBonus;
             return new Wielding(off, weapon.OffHandStrike, strike, strike ? bonus : 0, strike ? weapon.Modifiers.WeaponDice : 0, offThrown);
         }
+
+        // Wear past what a weapon's modifiers carry (break tokens from smashing) comes off its own value.
+        static int Excess(CardInstance? card) => card is null ? 0 : Math.Min(card.Definition.AttackBonus, Math.Max(0, card.Wear - Math.Max(0, card.Definition.Modifiers.Weapon)));
 
         // A crossbow strikes whenever it's loaded; other weapons while a strike is left this turn.
         bool mainCanStrike = main?.Definition.Reload is not null ? !main.Unloaded : mainStrikeLeft && (main is null || hero.Loaded(main));

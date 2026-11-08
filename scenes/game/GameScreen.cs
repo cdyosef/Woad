@@ -129,6 +129,10 @@ public partial class GameScreen : Control
         {
             RunToolsTest();
         }
+        else if (args.Contains("--smashtest"))
+        {
+            RunSmashTest();
+        }
         else if (args.Contains("--clicktest"))
         {
             RunClickTest();
@@ -945,6 +949,34 @@ public partial class GameScreen : Control
                 await RemoveFigure(fell.MonsterId);
                 break;
 
+            case SmashRolled smash:
+                await ZoomOnActionAfresh(smash.HeroId, []);
+                await _dice.ShowRoll($"{NameOf(smash.HeroId)} smashes at the {smash.What} ({smash.Toughness}+)", smash.Roll, smash.Bonus, newGroup: true, kind: DiceKind.Rumble);
+                _dice.ShowOutcome(smash.Success, smash.Success ? $"{smash.Breaks}/{smash.Needed}" : "SHORT");
+                if (smash.Success)
+                {
+                    _board.FloatText(smash.Target, $"CRACK {smash.Breaks}/{smash.Needed}", Palette.Danger);
+                    _board.Shake(2);
+                }
+
+                _board.QueueRedraw();
+                break;
+
+            case SmashedOpen smashed:
+                _board.Shake(5);
+                _board.FloatText(smashed.Target, "SMASH!", Palette.TrimBright);
+                _board.QueueRedraw();
+                await Pause(0.3);
+                break;
+
+            case WallCracked:
+                _board.QueueRedraw();
+                break;
+
+            case WeaponWorn worn:
+                FloatOver(worn.HeroId, "-1 (break token)", Palette.Danger);
+                break;
+
             case RiftCrackled crackled:
                 _board.Shake(5);
                 _board.FloatText(crackled.Rift, "ZAP!", DieTypes.Tint(DieType.Elektrik));
@@ -1718,6 +1750,9 @@ public partial class GameScreen : Control
         MonsterTrapped trapped => FigureRoom(trapped.MonsterId),
         MonsterFell fell => fell.FromRoomId,
         RiftCrackled crackled => crackled.RoomId,
+        SmashRolled smashRoll => smashRoll.RoomId,
+        SmashedOpen smashOpen => smashOpen.RoomId,
+        WallCracked cracked => cracked.RoomId,
         RiftZapped zapped => FigureRoom(zapped.EntityId),
         MonsterFlung flungAway => flungAway.FromRoomId,
         Leaped leap => FigureRoom(leap.HeroId),

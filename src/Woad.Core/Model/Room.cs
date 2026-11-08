@@ -97,6 +97,25 @@ public sealed class Room
     public IReadOnlyDictionary<GridPosition, string> DeepHoles => _deepHoles;
 
     private readonly Dictionary<GridPosition, string> _deepHoles = [];
+    private readonly Dictionary<GridPosition, int> _breaks = [];
+
+    /// <summary>Break marks smashed into a crate or wall on the tile (0 for none).</summary>
+    public int BreaksAt(GridPosition tile) => _breaks.GetValueOrDefault(tile);
+
+    /// <summary>Every tile with break marks, and how many.</summary>
+    public IReadOnlyDictionary<GridPosition, int> Breaks => _breaks;
+
+    internal void SetBreaks(GridPosition tile, int breaks)
+    {
+        if (breaks > 0)
+        {
+            _breaks[tile] = breaks;
+        }
+        else
+        {
+            _breaks.Remove(tile);
+        }
+    }
 
     internal void MakeDeep(GridPosition hole, string roomId) => _deepHoles[hole] = roomId;
 

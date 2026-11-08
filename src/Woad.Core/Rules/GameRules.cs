@@ -109,6 +109,31 @@ public static class GameRules
     /// <summary>An end-of-run award (Keymaster, Slayer...) is worth this for each floor of the dungeon.</summary>
     public const int AwardXpPerFloor = 5;
 
+    /// <summary>Smashing: what a blow must reach to leave a break mark, and how many marks break each thing.</summary>
+    public const int DoorToughness = 5;
+
+    public const int DoorBreaks = 3;
+
+    public const int CrateToughness = 3;
+
+    public const int CrateBreaks = 2;
+
+    public const int CrackedWallToughness = 6;
+
+    public const int CrackedWallBreaks = 5;
+
+    public const int WallToughness = 7;
+
+    public const int WallBreaks = 10;
+
+    /// <summary>The chance (%) a wall broken through had something hidden in it.</summary>
+    public const int WallFindChance = 15;
+
+    /// <summary>The chances (%) a crate holds a card, or else some coins.</summary>
+    public const int CrateCardChance = 40;
+
+    public const int CrateCoinChance = 35;
+
     /// <summary>What disarming an unstable portal takes (a banked Power Die buys the attempt).</summary>
     public const int RiftDifficulty = 11;
 

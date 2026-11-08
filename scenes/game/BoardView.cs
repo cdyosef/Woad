@@ -783,6 +783,17 @@ public partial class BoardView : Control
             DrawPortal(portal, _room.PortalLit);
         }
 
+        foreach (GridPosition crate in _room.TilesOfKind(TileKind.Crate))
+        {
+            DrawCrate(crate);
+        }
+
+        // Break marks smashed into crates and walls.
+        foreach ((GridPosition tile, int marks) in _room.Breaks)
+        {
+            DrawBreakMarks(TileRect(tile), marks);
+        }
+
         foreach ((GridPosition tile, Trap trap) in _room.Traps)
         {
             if (trap.Revealed)
@@ -802,6 +813,10 @@ public partial class BoardView : Control
             if (_room.PassageOn(side) is not { IsHidden: true })
             {
                 DrawDoor(side, _room.PassageOn(side), _room.IsSealed);
+                if (_room.PassageOn(side) is { Breaks: > 0 } cracked)
+                {
+                    DrawBreakMarks(TileRect(_room.DoorTile(side)), cracked.Breaks);
+                }
             }
         }
 

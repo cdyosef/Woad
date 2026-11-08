@@ -191,6 +191,9 @@ public sealed record PickUpAlly(int HeroId, int AllyId) : GameCommand(HeroId);
 /// <summary>Set down the ally you carry, beside you. Free.</summary>
 public sealed record PutDownAlly(int HeroId) : GameCommand(HeroId);
 
+/// <summary>Smash what's on <paramref name="Target"/> (a door, a crate, a wall beside you) with your Rumble dice and a weapon (<paramref name="WeaponId"/>, or the main hand's).</summary>
+public sealed record Smash(int HeroId, GridPosition Target, int? Dice = null, bool UseWeapon = true, int PowerDice = 0, int? WeaponId = null) : GameCommand(HeroId);
+
 /// <summary>Light the portal beside you: channel a Magic Die into it, or else a banked Power Die. Free.</summary>
 public sealed record LightPortal(int HeroId, bool Magic = false) : GameCommand(HeroId);
 

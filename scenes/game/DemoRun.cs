@@ -238,6 +238,16 @@ public static class DemoRun
         StartRoomId = "hall",
     };
 
+    /// <summary>For --smashtest: Aria beside a crate, a wall a step beyond.</summary>
+    public static RunSetup SmashDemo(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20, AttackDice = 3 } }],
+        Rooms = [new RoomSetup("yard", RoomTemplate.Parse(".........\n.........\n.........\n.........\n...1+.#..\n.........\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
+        StartRoomId = "yard",
+    };
+
     /// <summary>For --toolstest: Aria wearing Sticky Gloves, Lockpicks on her belt, a Dagger in her off hand, nothing about to fight.</summary>
     public static RunSetup Tools(ulong seed) => new()
     {

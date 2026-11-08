@@ -71,6 +71,12 @@ public sealed class Passage
     /// <summary>A cracked wall still standing in the doorway.</summary>
     public bool IsBlocked { get; internal set; }
 
+    /// <summary>Break marks on it from smashing (see <c>GameSession.Smash</c>).</summary>
+    public int Breaks { get; internal set; }
+
+    /// <summary>Smashed open: it stands open for good, its lock gone.</summary>
+    public bool IsBroken { get; internal set; }
+
     /// <summary>A dart trap that fires on the next hero through, until disarmed.</summary>
     public Trap? Trap { get; internal set; }
 

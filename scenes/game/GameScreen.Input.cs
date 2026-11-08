@@ -43,6 +43,11 @@ public partial class GameScreen
         {
             Execute(new AttackMerchant(hero.Id, merchant.Id, SelectedAttackDice, !_weaponHeld, SelectedPowerDice));
         }
+        else if (_session.BreakableAt(room, tile) is not null)
+        {
+            // A door, a crate or a wall: a blow at it, for a break mark.
+            Execute(new Smash(hero.Id, tile, SelectedAttackDice, !_weaponHeld, SelectedPowerDice, ReadiedWeaponId));
+        }
     }
 
     /// <summary>The enemy a double-click rolled Wend toward: clicking it again walks up to it.</summary>
@@ -66,6 +71,16 @@ public partial class GameScreen
         if (room.MonsterAt(tile) is { } monster && RumbleTargets(room).Contains(tile))
         {
             AimAt(monster);
+            return;
+        }
+
+        // Something breakable beside you: Rumble aims at it, and one more click swings.
+        if (_session.BreakableAt(room, tile) is { } breakable && _session.GetSmashTargets().Contains(tile))
+        {
+            _rumbling = true;
+            _stealing = _shoving = _leaping = _rushing = _hurling = false;
+            Log($"Click the {breakable.Name} again to smash at it ({breakable.Toughness}+ for a break mark, {breakable.Breaks}/{breakable.Needed}). Right-click to cancel.", Palette.Danger);
+            RefreshPanels();
             return;
         }
 
@@ -1044,6 +1059,11 @@ public partial class GameScreen
             }
 
             return grave + "Loot: " + string.Join(", ", things) + ". Stand on it and click to pick it up (your first loot each turn is free).";
+        }
+
+        if (room.Layout[tile] == TileKind.Crate)
+        {
+            return $"A wooden crate. Double-click it from beside it to smash at it with Rumble: {GameRules.CrateToughness}+ for a break mark, {GameRules.CrateBreaks} break it open ({room.BreaksAt(tile)} so far).";
         }
 
         if (room.TrapAt(tile) is { Revealed: true } trap)

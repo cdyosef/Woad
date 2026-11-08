@@ -39,6 +39,41 @@ public partial class BoardView
         return (h & 0xFFFF) / 65536f;
     }
 
+    /// <summary>A wooden crate: planks, a cross-brace, iron corners.</summary>
+    private void DrawCrate(GridPosition tile)
+    {
+        Rect2 rect = TileRect(tile).Grow(-4);
+        Color wood = new("9a6a3a"), dark = new("5a3a1e"), light = new("c08a50"), iron = new("4a4a52");
+        DrawRect(new Rect2(rect.Position + new Vector2(2, 3), rect.Size), new Color(0, 0, 0, 0.3f));
+        DrawRect(rect, wood);
+        for (float y = rect.Position.Y + 6; y < rect.End.Y; y += 6)
+        {
+            DrawLine(new Vector2(rect.Position.X, y), new Vector2(rect.End.X, y), dark, 1);
+        }
+
+        DrawLine(rect.Position + new Vector2(2, 2), rect.End - new Vector2(2, 2), light, 2);
+        DrawRect(rect, dark, filled: false, width: 2);
+        foreach (Vector2 corner in new[] { rect.Position, new Vector2(rect.End.X - 4, rect.Position.Y), new Vector2(rect.Position.X, rect.End.Y - 4), rect.End - new Vector2(4, 4) })
+        {
+            DrawRect(new Rect2(corner, new Vector2(4, 4)), iron);
+        }
+    }
+
+    /// <summary>Break marks: a jagged crack for each, spreading across the tile.</summary>
+    private void DrawBreakMarks(Rect2 rect, int marks)
+    {
+        Color crack = new(0.05f, 0.04f, 0.04f, 0.85f);
+        Vector2 c = rect.GetCenter();
+        for (int i = 0; i < Math.Min(marks, 10); i++)
+        {
+            float angle = i * 2.39996f;
+            Vector2 dir = new(Mathf.Cos(angle), Mathf.Sin(angle));
+            Vector2 side = new(-dir.Y, dir.X);
+            float reach = 6 + i % 3 * 3;
+            DrawPolyline([c + dir * 2, c + dir * (reach * 0.5f) + side * 2, c + dir * reach - side], crack, 1.5f);
+        }
+    }
+
     /// <summary>An unstable portal: a broken ring of stone round a violet swirl, lightning crackling off it.</summary>
     private void DrawRift(GridPosition tile)
     {

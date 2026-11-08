@@ -265,6 +265,15 @@ public sealed record CardDefinition
     /// <summary>Every push counts twice: twice as far, and a boss (or anything too big) can be shoved a tile.</summary>
     public bool DoublePush { get; init; }
 
+    /// <summary>Dice it adds, in hand, to a blow at something wooden (a Crowbar's d6 on a door or a crate).</summary>
+    public int WoodDice { get; init; }
+
+    /// <summary>It takes no break token from a blow at wood that falls short (a Crowbar).</summary>
+    public bool WoodProof { get; init; }
+
+    /// <summary>In hand, it carries an Od Hand die into a smash (a Crowbar).</summary>
+    public bool OdHandSmash { get; init; }
+
     /// <summary>Hold Fire: a flame in a hand (see <c>GameSession.HeldFire</c>). It never goes on the belt or in the bag.</summary>
     public bool HeldFire { get; init; }
 

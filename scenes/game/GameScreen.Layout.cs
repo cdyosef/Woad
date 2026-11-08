@@ -333,6 +333,7 @@ public partial class GameScreen
         .. _session.GetAttackableMerchants().Select(merchant => merchant.Position),
         .. _session.GetAttackableAllies(ReadiedWeaponId).Select(ally => ally.Position),
         .. room.Bombs.Where(bomb => _session.CheckAttackBomb(bomb.Id) is null).Select(bomb => bomb.Position),
+        .. _session.GetSmashTargets(),
     ];
 
     private void UpdateHighlights()

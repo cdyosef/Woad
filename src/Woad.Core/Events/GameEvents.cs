@@ -766,6 +766,18 @@ public sealed record Staggered(int EntityId) : GameEvent;
 /// <summary>A counterattack: the Emerald Knight (or a hero with the Emerald Axe) hitting back at <paramref name="TargetId"/>.</summary>
 public sealed record Countered(int EntityId, int TargetId) : GameEvent;
 
+/// <summary>A blow at something breakable: its roll against the toughness, and the break marks it has now (of those it takes).</summary>
+public sealed record SmashRolled(int HeroId, string RoomId, GridPosition Target, DiceRoll Roll, int Bonus, int Total, int Toughness, bool Success, int Breaks, int Needed, string What) : GameEvent;
+
+/// <summary>Enough break marks: a door smashed in, a crate broken open, a wall cracked or broken through.</summary>
+public sealed record SmashedOpen(int HeroId, string RoomId, GridPosition Target, string What) : GameEvent;
+
+/// <summary>Ten break marks: a wall cracks (and can be broken through).</summary>
+public sealed record WallCracked(string RoomId, GridPosition Tile) : GameEvent;
+
+/// <summary>A blow that fell short: a break token on the weapon (its wear now).</summary>
+public sealed record WeaponWorn(int HeroId, int CardId, int Wear) : GameEvent;
+
 /// <summary>An unstable portal went off: its lightning leapt to everyone in <paramref name="StruckIds"/>.</summary>
 public sealed record RiftCrackled(string RoomId, GridPosition Rift, IReadOnlyList<int> StruckIds) : GameEvent;
 

@@ -1115,6 +1115,18 @@ Emerald Keep) and on the Dungeon Run list. It's **one room, 100 by 100 tiles**, 
 - **Stairs:** click them to walk up beside them, and click them again to go down, free. You come out of the
   stairs up in the next floor's arrival room, beside them. Reaching a floor for the first time restores your Luck and recharges wands. Below the
   first floor, the arrival room has **stairs up** that lead back to the stairs room above (free, the same way).
+- **Smashing:** a Rumble attack (with a weapon, or bare-handed) at something breakable beside you: a locked
+  door (from its doorway or beside it), a **crate**, a cracked wall or a wall. Double-click it to aim, click
+  again to swing. A blow that reaches its toughness leaves a **break mark**; enough marks break it: a door
+  (toughness 5, locked 6) takes **3** marks, a locked one a mark more for every 4 of its lock's difficulty;
+  a crate (3) **2**; a cracked wall (6) **5**; a wall (7) **10** to crack it, then 5 more to break it through
+  (now and then something was hidden in it). The Boss Door and a gate don't break. A door smashed in stands
+  open for good, and sets off any trap on it on whoever broke it. A crate spills a card (2 in 5), some silver
+  (1 in 3) or nothing. A blow that falls short puts a **break token** on the weapon: its value down 1, and
+  past nothing it breaks (Rocks and Sticks break with the blow anyway). **Smashing** (a Rumble skill) adds a
+  Rumble die to every blow at something breakable. The **Crowbar** (either hand, weapon 1; the smith sells
+  them) adds a die against wood (doors, crates), takes no break token from wood, and carries an Od Hand die
+  into any smash. Some ordinary rooms have a crate or two.
 - **Sealed rooms:** the boss's room, and a den (the Ogre Champ's), shut behind you: no one leaves by its
   doors while the boss (or the den's keeper) stands, as a trap room holds you till its last monster falls.
 - **Exit:** sealed until the boss in its room is defeated. Stand on it and click again to escape. Your
