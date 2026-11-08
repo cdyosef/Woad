@@ -198,6 +198,7 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         Mugged mugged => $"{nameOf(mugged.MonsterId)} snatches {Money.Long(mugged.Coins)} from {nameOf(mugged.HeroId)}.",
         StunWoreOff wore => $"{nameOf(wore.EntityId)} shakes off the stun.",
         ShieldPainted painted => $"{nameOf(painted.HeroId)} paints their crest on their {cardNameOf(painted.CardId)}: those beside them rally to it.",
+        CarcassFloated floated => $"{nameOf(floated.MonsterId)} rolls belly-up and floats, eyes X'd: something to stand on.",
         CurrentConducted current => $"The lightning runs on through the water, striking {Names(current.Struck)}!",
         Snatched snatched => $"{nameOf(snatched.MonsterId)}'s claws snatch {nameOf(snatched.HeroId)}! (A Rumble roll over {snatched.Grip} breaks free.)",
         DraggedUnder dragged => dragged.From == dragged.To ? $"{nameOf(dragged.MonsterId)} drags {nameOf(dragged.HeroId)} under the water!" : $"{nameOf(dragged.MonsterId)} drags {nameOf(dragged.HeroId)} through the water.",

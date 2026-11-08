@@ -550,6 +550,31 @@ public sealed partial class GameSession
     }
 
     /// <param name="crushed">Broken by a crushing blow: bones don't reassemble.</param>
+    /// <summary>
+    /// A body that floats (Leviathan Jr.'s) comes to rest belly-up where it fell, across the water there: its own tile
+    /// and the water beside it, three tiles long where it can be, which become a surface to stand on.
+    /// </summary>
+    private void FloatCarcass(Room room, Monster monster, List<GameEvent> events)
+    {
+        if (!monster.Definition.FloatsWhenSlain || !InWater(room, monster.Position))
+        {
+            return;
+        }
+
+        bool Afloat(GridPosition tile) => room.Layout.Contains(tile) && InWater(room, tile);
+        GridPosition at = monster.Position;
+        List<GridPosition> across = [.. new[] { new GridPosition(at.X - 1, at.Y), at, new GridPosition(at.X + 1, at.Y) }.Where(Afloat)];
+        List<GridPosition> down = [.. new[] { new GridPosition(at.X, at.Y - 1), at, new GridPosition(at.X, at.Y + 1) }.Where(Afloat)];
+        List<GridPosition> body = across.Count >= down.Count ? across : down;
+        foreach (GridPosition tile in body)
+        {
+            room.Layout.Set(tile, TileKind.Floor);
+        }
+
+        room.AddCarcass(new Carcass(monster.Definition.Id, body));
+        events.Add(new CarcassFloated(room.Id, monster.Id, monster.Definition.Id, body));
+    }
+
     private void DefeatMonster(Hero? killer, Room room, Monster monster, DamageSource source, List<GameEvent> events, bool crushed = false)
     {
         MonsterDefinition definition = monster.Definition;
@@ -564,6 +589,7 @@ public sealed partial class GameSession
 
         room.RemoveMonster(monster);
         LetGo(monster);
+        FloatCarcass(room, monster, events);
         DropStolen(room, monster, SafeTile(room, monster.Position), events);
         ScatterLuck(room, monster, events);
         if (killer is not null && monster.RaisedBy is null)

@@ -134,6 +134,10 @@ public partial class GameScreen : Control
         {
             RunPaintTest();
         }
+        else if (args.Contains("--bathstest"))
+        {
+            RunBathsTest();
+        }
         else if (args.Contains("--smashtest"))
         {
             RunSmashTest();
@@ -1032,6 +1036,12 @@ public partial class GameScreen : Control
             case StayedAfloat afloat when _figures.TryGetValue(afloat.HeroId, out Figure? swimmer) && swimmer.RoomId == _shownRoomId:
                 _board.FloatText(swimmer.Position, "-1 Rumble: afloat", Palette.Heal);
                 await Pause(0.3);
+                break;
+
+            case CarcassFloated floated when floated.RoomId == _shownRoomId:
+                _board.QueueRedraw();
+                _board.FloatText(floated.Tiles[floated.Tiles.Count / 2], "belly up!", Palette.TrimBright);
+                await Pause(0.4);
                 break;
 
             case CurrentConducted current when current.RoomId == _shownRoomId:

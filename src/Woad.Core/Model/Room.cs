@@ -99,6 +99,12 @@ public sealed class Room
     private readonly Dictionary<GridPosition, string> _deepHoles = [];
     private readonly Dictionary<GridPosition, int> _breaks = [];
     private readonly Dictionary<GridPosition, bool> _sconces = [];
+    private readonly List<Carcass> _carcasses = [];
+
+    /// <summary>Bodies floating where they fell (Leviathan Jr.'s), each a raft over the water heroes can stand on.</summary>
+    public IReadOnlyList<Carcass> Carcasses => _carcasses;
+
+    internal void AddCarcass(Carcass carcass) => _carcasses.Add(carcass);
 
     /// <summary>Wall sconces, by the floor tile under each: whether it holds a lit torch.</summary>
     public IReadOnlyDictionary<GridPosition, bool> Sconces => _sconces;

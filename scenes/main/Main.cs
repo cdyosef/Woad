@@ -146,6 +146,10 @@ public partial class Main : Control
 		{
 			Show(new GameScreen { Setup = DemoRun.SmashDemo(seed), Content = _content });
 		}
+		else if (args.Contains("--bathstest"))
+		{
+			Show(new GameScreen { Setup = DemoRun.Baths(seed), Content = _content });
+		}
 		else if (args.Contains("--painttest"))
 		{
 			Show(new GameScreen { Setup = DemoRun.Paint(seed), Content = _content });

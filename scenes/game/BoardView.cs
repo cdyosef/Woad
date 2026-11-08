@@ -793,6 +793,11 @@ public partial class BoardView : Control
             DrawSconce(sconce, lit);
         }
 
+        foreach (Carcass carcass in _room.Carcasses)
+        {
+            DrawCarcass(carcass);
+        }
+
         // Break marks smashed into crates and walls.
         foreach ((GridPosition tile, int marks) in _room.Breaks)
         {

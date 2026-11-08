@@ -263,6 +263,16 @@ public static class DemoRun
         StartRoomId = "yard",
     };
 
+    /// <summary>For --bathstest: Aria at the edge of a pool in the Sunken Temple, Leviathan Jr. in the deep.</summary>
+    public static RunSetup Baths(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "sunken_temple",
+        Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 30, AttackDice = 6, Armor = 2 }, CardIds = [.. Belted, "knights_sword"] }],
+        Rooms = [new RoomSetup("baths", RoomTemplate.Parse(".........\n.,,,,,,,.\n.,=====,.\n.,==L==,.\n.,=====,.\n.,,,,,,,.\n....1....\n.........\n.........", ContentCatalog.LoadDefault()).WithTile(new GridPosition(4, 3), TileKind.DeepWater).WithTile(new GridPosition(4, 6), TileKind.ShallowWater))],
+        StartRoomId = "baths",
+    };
+
     /// <summary>For --toolstest: Aria wearing Sticky Gloves, Lockpicks on her belt, a Dagger in her off hand, nothing about to fight.</summary>
     public static RunSetup Tools(ulong seed) => new()
     {

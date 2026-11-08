@@ -168,6 +168,9 @@ public sealed record MonsterDefinition
     /// </summary>
     public bool Snatches { get; init; }
 
+    /// <summary>Slain, its body floats belly-up where it fell, eyes X'd: a raft over the water heroes can stand on (Leviathan Jr.).</summary>
+    public bool FloatsWhenSlain { get; init; }
+
     /// <summary>
     /// With nobody in reach of its blows, it lashes its tongue at a hero up to this many tiles off, in sight: its
     /// Attack dice, without its weapon (Leviathan Jr.'s 5). 0 for none.

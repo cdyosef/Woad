@@ -39,6 +39,41 @@ public partial class BoardView
         return (h & 0xFFFF) / 65536f;
     }
 
+    /// <summary>
+    /// A body floating belly-up over the water (Leviathan Jr.'s): the water under it, then its figure upside down,
+    /// stretched along its tiles, its eyes X'd out.
+    /// </summary>
+    private void DrawCarcass(Carcass carcass)
+    {
+        foreach (GridPosition tile in carcass.Tiles)
+        {
+            DrawTexturedTile(tile, TileKind.DeepWater);
+        }
+
+        Rect2 first = TileRect(carcass.Tiles[0]), last = TileRect(carcass.Tiles[^1]);
+        Rect2 span = first.Merge(last).Grow(-2);
+        if (GameArt.Monster(ThemeId, carcass.MonsterId) is { } sprite)
+        {
+            // Upside down: drawn flipped top to bottom.
+            DrawSetTransform(new Vector2(0, span.Position.Y * 2 + span.Size.Y), 0, new Vector2(1, -1));
+            DrawTextureRect(sprite, span, tile: false, modulate: new Color(0.85f, 0.9f, 0.85f));
+            DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        }
+        else
+        {
+            DrawRect(span, new Color("3a8a6a"));
+        }
+
+        // Eyes X'd: two little crosses near its (now lower) head.
+        float y = span.End.Y - span.Size.Y * 0.32f;
+        foreach (float fraction in new[] { 0.38f, 0.62f })
+        {
+            var eye = new Vector2(span.Position.X + span.Size.X * fraction, y);
+            DrawLine(eye - new Vector2(2.5f, 2.5f), eye + new Vector2(2.5f, 2.5f), Palette.Background, 1.5f);
+            DrawLine(eye + new Vector2(-2.5f, 2.5f), eye + new Vector2(2.5f, -2.5f), Palette.Background, 1.5f);
+        }
+    }
+
     /// <summary>A wall sconce: an iron bracket on the room's edge over the tile, a torch burning in it (or empty).</summary>
     private void DrawSconce(GridPosition tile, bool lit)
     {
