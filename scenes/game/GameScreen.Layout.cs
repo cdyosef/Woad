@@ -76,6 +76,7 @@ public partial class GameScreen
     private Button _prone = null!;
     private Button _dropRoll = null!;
     private Button _digOut = null!;
+    private Button _breakFree = null!;
     private Button _roll = null!;
     private Button _search = null!;
     private Button _steal = null!;
@@ -262,6 +263,13 @@ public partial class GameScreen
         _digOut.TooltipText = digError ?? $"Dig at the earth with every Rumble die left: every {GameRules.DigPerToken} of the roll throws off a token ({hero!.Conditions[Condition.Buried]} to go).";
         _rumble.Visible &= !buried;
         _prone.Visible &= !_digOut.Visible;
+
+        // Snatched, struggling free is offered (every Rumble die left against the grip).
+        bool snatched = hero is { GripTotal: > 0 } && _session.HeldBy(hero) is not null;
+        _breakFree.Visible = !waiting && snatched && !_digOut.Visible && !_dropRoll.Visible;
+        string? breakError = hero is null || turn is null ? "" : _session.CheckBreakFree();
+        _breakFree.Disabled = breakError is not null || Locked;
+        _breakFree.TooltipText = breakError ?? $"Struggle with every Rumble die left: beat its grip of {hero!.GripTotal} to break free.";
 
         // A save after a fall comes first; then Luck, asked by the Luck menu's switches (or the clover glowing):
         // a roll it isn't asked on stands at once.
@@ -978,6 +986,9 @@ public partial class GameScreen
         _digOut = UiTheme.Accent(UiTheme.CompactButton(new Vector2(116, 279), new Vector2(52, 20), "Dig out"), DieTypes.Tint(DieType.Earth));
         _digOut.Pressed += () => ExecuteForActiveHero(heroId => new DigOut(heroId));
         right.AddChild(_digOut);
+        _breakFree = UiTheme.Accent(UiTheme.CompactButton(new Vector2(116, 279), new Vector2(52, 20), "Break free"), Palette.DieRumble);
+        _breakFree.Pressed += () => ExecuteForActiveHero(heroId => new BreakFree(heroId));
+        right.AddChild(_breakFree);
 
 
         // Five buttons in a row: Wend, Leap, Search, Steal and Shove.

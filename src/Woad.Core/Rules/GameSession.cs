@@ -163,6 +163,7 @@ public sealed partial class GameSession
             Smash c => Handle(c, events),
             LiftBar c => Handle(c, events),
             TakeTorch c => Handle(c, events),
+            BreakFree c => Handle(c, events),
             PutTorch c => Handle(c, events),
             TakePortal c => Handle(c, events),
             PutDownAlly c => Handle(c, events),

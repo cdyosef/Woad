@@ -191,6 +191,9 @@ public sealed record PickUpAlly(int HeroId, int AllyId) : GameCommand(HeroId);
 /// <summary>Set down the ally you carry, beside you. Free.</summary>
 public sealed record PutDownAlly(int HeroId) : GameCommand(HeroId);
 
+/// <summary>Struggle against a snatch (Leviathan Jr.'s claws): every Rumble die left, beating its claws' total, frees you.</summary>
+public sealed record BreakFree(int HeroId) : GameCommand(HeroId);
+
 /// <summary>Take the torch from the sconce over <paramref name="Sconce"/> (free).</summary>
 public sealed record TakeTorch(int HeroId, GridPosition Sconce) : GameCommand(HeroId);
 

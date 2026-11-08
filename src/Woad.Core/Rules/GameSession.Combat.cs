@@ -709,7 +709,15 @@ public sealed partial class GameSession
         int prone = ProneBonus(target, monster.Position);
         for (int i = 0; i < attacks.Count && target.IsActive; i++)
         {
-            RollMonsterAttack(room, monster, attacks[i] + (i == 0 ? prone : 0), i == 0 ? monster.Weapon : 0, [target], events, weaponDice: i == 0 ? monster.WeaponDice : 0);
+            int mark = events.Count;
+            MonsterAttackRoll? claws = RollMonsterAttack(room, monster, attacks[i] + (i == 0 ? prone : 0), i == 0 ? monster.Weapon : 0, [target], events, weaponDice: i == 0 ? monster.WeaponDice : 0);
+
+            // Leviathan Jr.'s claws: a 6 that hits snatches the hero.
+            if (definition.Snatches && claws is { } roll && roll.Roll.Faces.Contains(GameRules.PowerDieFace) && target.IsActive && target.GrabbedBy != monster.Id
+                && events.Skip(mark).OfType<Damaged>().Any(damaged => damaged.TargetId == target.Id && damaged.Amount > 0))
+            {
+                Snatch(room, monster, target, roll.Total, events);
+            }
         }
 
         Punch(room, monster, target, events);

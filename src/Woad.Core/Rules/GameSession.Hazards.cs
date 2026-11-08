@@ -280,7 +280,7 @@ public sealed partial class GameSession
     }
 
     /// <summary>Under the surface: diving (prone in deep water), or held under by something that dragged them down.</summary>
-    private static bool Underwater(Room room, Hero hero) => room.Layout[hero.Position] == TileKind.DeepWater && (hero.IsProne || hero.HeldUnder);
+    private bool Underwater(Room room, Hero hero) => room.Layout[hero.Position] == TileKind.DeepWater && (hero.IsProne || (hero.HeldUnder && HeldBy(hero) is not null));
 
     /// <summary>A breath held under the water: a heart turns blue, or, every heart blue already, one is lost.</summary>
     private void HoldBreath(Room room, Hero hero, List<GameEvent> events)

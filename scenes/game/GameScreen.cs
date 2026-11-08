@@ -1034,6 +1034,31 @@ public partial class GameScreen : Control
                 await Pause(0.3);
                 break;
 
+            case Snatched snatched:
+                CalloutOver(snatched.MonsterId, "SNATCH!", Palette.Danger);
+                FloatOver(snatched.HeroId, "snatched!", Palette.Danger);
+                await Pause(0.3);
+                break;
+
+            case DraggedUnder dragged:
+                if (dragged.From != dragged.To)
+                {
+                    await Walk(dragged.HeroId, [dragged.To]);
+                }
+                else
+                {
+                    FloatOver(dragged.HeroId, "dragged under!", HeartsView.Blue);
+                    await Pause(0.25);
+                }
+
+                break;
+
+            case StruggledFree struggle:
+                _trayShowsMovement = false;
+                await _dice.ShowRoll($"{NameOf(struggle.HeroId)} struggles (beat {struggle.Grip})", struggle.Roll, 0, newGroup: true);
+                FloatOver(struggle.HeroId, struggle.Free ? "breaks free!" : "held fast", struggle.Free ? Palette.Heal : Palette.Danger);
+                break;
+
             case BreathHeld held:
                 FloatOver(held.HeroId, held.Blue >= held.Hearts ? "out of breath!" : "holding breath", HeartsView.Blue);
                 await UpdateFigure(held.HeroId, figure => figure.BlueHearts = held.Blue, 0.25);
@@ -1821,6 +1846,8 @@ public partial class GameScreen : Control
         MonsterThrew threw => FigureRoom(threw.MonsterId),
         MonsterCharged charged => FigureRoom(charged.MonsterId),
         TongueLashed lashed => FigureRoom(lashed.MonsterId),
+        Snatched snatched => FigureRoom(snatched.MonsterId),
+        DraggedUnder dragged => FigureRoom(dragged.MonsterId),
         MonsterPunched punched => FigureRoom(punched.MonsterId),
         MonsterSpawned spawned => spawned.RoomId,
         RoomCleared cleared => cleared.RoomId,

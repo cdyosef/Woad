@@ -251,6 +251,15 @@ public sealed record MonsterWeaponBroke(int MonsterId, string CardId) : GameEven
 /// <summary>A hero painted their crest on the shield in their off hand.</summary>
 public sealed record ShieldPainted(int HeroId, int CardId) : GameEvent;
 
+/// <summary>A monster's claws snatch a hero (Leviathan Jr.): held, with a grip of <paramref name="Grip"/> to beat.</summary>
+public sealed record Snatched(int MonsterId, int HeroId, int Grip) : GameEvent;
+
+/// <summary>A snatched hero dragged through the water (<paramref name="From"/> to <paramref name="To"/>) and under.</summary>
+public sealed record DraggedUnder(int MonsterId, int HeroId, GridPosition From, GridPosition To) : GameEvent;
+
+/// <summary>A snatched hero's struggle: their Rumble roll against the grip, and whether they broke free.</summary>
+public sealed record StruggledFree(int HeroId, int MonsterId, DiceRoll Roll, int Grip, bool Free) : GameEvent;
+
 /// <summary>A hero under the water holds their breath: a heart turns blue (<paramref name="Blue"/> of <paramref name="Hearts"/> now).</summary>
 public sealed record BreathHeld(int HeroId, int Blue, int Hearts) : GameEvent;
 

@@ -198,6 +198,10 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         Mugged mugged => $"{nameOf(mugged.MonsterId)} snatches {Money.Long(mugged.Coins)} from {nameOf(mugged.HeroId)}.",
         StunWoreOff wore => $"{nameOf(wore.EntityId)} shakes off the stun.",
         ShieldPainted painted => $"{nameOf(painted.HeroId)} paints their crest on their {cardNameOf(painted.CardId)}: those beside them rally to it.",
+        Snatched snatched => $"{nameOf(snatched.MonsterId)}'s claws snatch {nameOf(snatched.HeroId)}! (A Rumble roll over {snatched.Grip} breaks free.)",
+        DraggedUnder dragged => dragged.From == dragged.To ? $"{nameOf(dragged.MonsterId)} drags {nameOf(dragged.HeroId)} under the water!" : $"{nameOf(dragged.MonsterId)} drags {nameOf(dragged.HeroId)} through the water.",
+        StruggledFree { Free: true } struggle => $"{nameOf(struggle.HeroId)} struggles free of {nameOf(struggle.MonsterId)} ({struggle.Roll.Total} beats {struggle.Grip})!",
+        StruggledFree struggle => $"{nameOf(struggle.HeroId)} struggles, but {nameOf(struggle.MonsterId)} holds fast ({struggle.Roll.Total} against {struggle.Grip}).",
         BreathHeld held => held.Blue >= held.Hearts
             ? $"{nameOf(held.HeroId)} is out of breath: every heart has turned blue!"
             : $"{nameOf(held.HeroId)} holds their breath under the water: a heart turns blue ({held.Blue} of {held.Hearts}).",

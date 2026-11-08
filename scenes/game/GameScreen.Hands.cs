@@ -64,7 +64,7 @@ public partial class GameScreen
         var hidden = new Control { Visible = false, Name = "Abilities" };
         right.AddChild(hidden);
         _abilities = hidden;
-        foreach (Button button in new[] { _rumble, _shove, _prone, _dropRoll, _digOut, _roll, _leap, _search, _steal })
+        foreach (Button button in new[] { _rumble, _shove, _prone, _dropRoll, _digOut, _breakFree, _roll, _leap, _search, _steal })
         {
             button.Reparent(hidden);
         }
@@ -129,6 +129,7 @@ public partial class GameScreen
             new("guard", "Guard", _guard, Threatened, () => Knows(Skill.Guard)),
             new("high_alert", "High Alert", _highAlert, () => true, () => Knows(Skill.HighAlert)),
             new("dig_out", "Dig out", _digOut, () => true, () => ActiveHero?.Conditions.Has(Condition.Buried) == true),
+            new("break_free", "Break free", _breakFree, () => true, () => ActiveHero is { GripTotal: > 0 } snatched && _session.HeldBy(snatched) is not null),
         ]);
         _wendHand = AddHand(new Vector2(HeroPanel.Columns[1], HeroPanel.Rows[2]), "icon_wend", "Wend", Palette.DieWend, wend,
         [

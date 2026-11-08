@@ -338,6 +338,17 @@ public sealed partial class GameSession
             return;
         }
 
+        // Holding someone it snatched, it swims off with them, then fights whoever's in reach.
+        if (DragHeld(room, monster, standing, events))
+        {
+            if (ChooseTarget(room, monster, monster.Position, standing) is { } held)
+            {
+                MonsterAttacks(room, monster, held, events);
+            }
+
+            return;
+        }
+
         bool regrabbed = Regrab(room, monster, standing, events);
         if (ThrowInstead(room, monster, standing, events) || regrabbed)
         {

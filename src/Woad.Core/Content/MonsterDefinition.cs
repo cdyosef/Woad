@@ -163,6 +163,12 @@ public sealed record MonsterDefinition
     public bool BullRushes { get; init; }
 
     /// <summary>
+    /// A 6 on its claws, hitting, snatches the hero (Leviathan Jr.): held, dragged off into deep water and under with
+    /// it, till they break free (a Rumble roll beating its claws' total) or it's hurt.
+    /// </summary>
+    public bool Snatches { get; init; }
+
+    /// <summary>
     /// With nobody in reach of its blows, it lashes its tongue at a hero up to this many tiles off, in sight: its
     /// Attack dice, without its weapon (Leviathan Jr.'s 5). 0 for none.
     /// </summary>

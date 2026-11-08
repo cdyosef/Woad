@@ -324,6 +324,9 @@ public sealed class Hero
     /// <summary>Dragged under the water by what holds them (Leviathan Jr.): under the surface till they get free.</summary>
     public bool HeldUnder { get; internal set; }
 
+    /// <summary>A snatch's grip: the claws' total a Rumble roll must beat to break free (0 when not snatched).</summary>
+    public int GripTotal { get; internal set; }
+
     /// <summary>What they've learned to do (see <see cref="Skill"/>).</summary>
     public Skill Skills { get; internal set; } = Content.Skills.All;
 
