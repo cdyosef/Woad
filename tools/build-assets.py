@@ -317,6 +317,30 @@ LOOKS = [
         "........", "......oo", ".....oHH", "....oHHH", "....oSSS", "....oSeS", "...oosss", "..ootTTT",
         ".oSotTTT", "oSotTTTT", "oSotTTTT", ".oobbbbR", "..otTTTT", "...okkko", "...ooooo", "........"],
      "extra": [(9, 6, "t"), (9, 9, "t"), (10, 7, "t"), (10, 8, "t")]},
+    {"id": "harpy_man", "name": "Harpy Man", "skin": "human", "hair": "plumage", "rows": [
+        "........", "......oo", ".....oHH", "....oHHH", "....oHSS", "....oSeS", "....oSSS", "..hootTT",
+        ".hHHotTT", "hHHHotTT", ".hHoobbR", "....otTT", "....ogo.", "....ogo.", "...ggg..", "........"]},
+    {"id": "frog_man", "name": "Frog Man", "skin": "frog", "hair": None, "rows": [
+        "........", "........", "...ooo..", "..oSeSo.", "..oSSSoo", "..oSSSSS", "..oSkkkk", "...osSSS",
+        "..oSotTT", ".oSSotTT", "...oobbb", "....otTT", "..osso.o", "..oSSSo.", "..ooooo.", "........"],
+     "palette": {"e": "#181420"}},
+    {"id": "turtle_reaper", "name": "Turtle Reaper", "skin": "turtle", "hair": "shell", "rows": [
+        "......oo", ".....oTT", "....oTTT", "....oTSS", "....oSeS", "....oSSS", "...otTSS", "..otTTTT",
+        "..oHotTT", ".oHHotTT", ".oSHotTT", "...otTTT", "...otTTT", "...otTTT", "...ooooo", "........"],
+     "extra": [(0, 11, 'm'), (0, 12, 'm'), (0, 13, 'm'), (1, 11, 'm'), (1, 12, 'M'), (0, 14, 'N'), (1, 14, 'N'), (2, 14, 'N'), (3, 14, 'N'), (4, 14, 'N'), (5, 14, 'N'), (6, 14, 'N'), (7, 14, 'N'), (8, 14, 'N'), (9, 14, 'N'), (10, 14, 'N'), (11, 14, 'N'), (12, 14, 'N'), (13, 14, 'N'), (14, 14, 'N')],
+     "palette": {"e": "#e04030"}},
+    {"id": "turtle_man", "name": "Turtle Man", "skin": "turtle", "hair": "shell", "rows": [
+        "......oo", ".....oSS", "....oSSS", "....oSSS", "....oSeS", "....osSS", "..ooHoSS", ".oHHoRRR",
+        ".oHHoRrR", "oSHHoRRR", ".oHHoRrR", "..oHoRRR", "....oSSo", "....oSSo", "....oooo", "........"]},
+    {"id": "fishman", "name": "Fishman", "skin": "fish", "hair": None, "rows": [
+        ".......R", "......oR", ".....oSS", "....oSSS", "...oSSSS", "..RoeSSS", "...osSSS", "....oskk",
+        "..oSotTT", ".RoSotTT", "...oobbb", "....otTT", "....oSSo", "...oSSSo", "...ooooo", "........"],
+     "palette": {"e": "#f0ecd8"}},
+    {"id": "snakeman", "name": "Snakeman", "skin": "scales", "hair": None, "rows": [
+        "........", "......oo", ".....oSS", "...ooSSS", "..oSSSSS", "..oSSeSS", "..osSSSS", "...oosss",
+        "..oSotTT", "..oSotTT", "...oobbb", "....oSSS", "...oSSss", "..oSSSSo", "..oooooo", "........"],
+     "extra": [(7, 7, "p"), (7, 8, "p"), (13, 13, "S"), (13, 14, "S"), (12, 14, "s")],
+     "palette": {"p": "#d03040", "e": "#e8d040"}},
 ]
 
 

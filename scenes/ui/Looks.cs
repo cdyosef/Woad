@@ -79,6 +79,33 @@ public static partial class Looks
                 new("grey", "Grey", new Color("7a8278")),
                 new("tan", "Tan", new Color("a89060")),
             ]),
+            ["frog"] = ("Skin", [
+                new("green", "Green", new Color("5aa040")),
+                new("lime", "Lime", new Color("9ad050")),
+                new("brown", "Brown", new Color("8a7040")),
+                new("blue", "Blue", new Color("3a7ad0")),
+                new("red", "Red", new Color("c84030")),
+                new("yellow", "Yellow", new Color("e0c040")),
+            ]),
+            ["turtle"] = ("Skin", [
+                new("sea", "Sea", new Color("7aa060")),
+                new("olive", "Olive", new Color("8a9a5a")),
+                new("jade", "Jade", new Color("4a9a7a")),
+                new("grey", "Grey", new Color("8a8a80")),
+            ]),
+            ["shell"] = ("Shell", [
+                new("brown", "Brown", new Color("7a5230")),
+                new("olive", "Olive", new Color("6a6a30")),
+                new("dark", "Dark", new Color("4a4030")),
+                new("red", "Red", new Color("8a3a2a")),
+            ]),
+            ["fish"] = ("Scales", [
+                new("silver", "Silver", new Color("a8b8c8")),
+                new("blue", "Blue", new Color("4a7ab8")),
+                new("orange", "Orange", new Color("e08030")),
+                new("gold", "Gold", new Color("d8b040")),
+                new("green", "Green", new Color("5a9a6a")),
+            ]),
             ["darkelf"] = ("Skin", [
                 new("ash", "Ash", new Color("7a7488")),
                 new("lavender", "Lavender", new Color("9a88b8")),

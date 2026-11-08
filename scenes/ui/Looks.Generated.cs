@@ -56,5 +56,11 @@ public static partial class Looks
         new("fairy", "Fairy", "human", "hair", [new(6, 7), new(9, 7)], null, "pink"),
         new("cook", "Cook", "human", "hair", [new(6, 5), new(9, 5)], null, null),
         new("fat_man", "Fat Man", "human", "hair", [new(6, 5), new(9, 5)], null, null),
+        new("harpy_man", "Harpy Man", "human", "plumage", [new(6, 5), new(9, 5)], null, null),
+        new("frog_man", "Frog Man", "frog", null, [new(4, 3), new(11, 3)], null, null),
+        new("turtle_reaper", "Turtle Reaper", "turtle", "shell", [new(6, 4), new(9, 4)], null, null),
+        new("turtle_man", "Turtle Man", "turtle", "shell", [new(6, 4), new(9, 4)], null, null),
+        new("fishman", "Fishman", "fish", null, [new(4, 5), new(11, 5)], null, null),
+        new("snakeman", "Snakeman", "scales", null, [new(5, 5), new(10, 5)], null, null),
     ];
 }
