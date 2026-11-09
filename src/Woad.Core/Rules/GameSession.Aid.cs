@@ -41,7 +41,7 @@ public sealed partial class GameSession
 
     /// <summary>
     /// An Aid roll needs a turn with nothing pending, and Od Hand dice left to roll on it (with the Aid
-    /// skill), or a Medicine Bag ready, or Bandages to rouse with.
+    /// skill), or a Medicine Bag ready, or Bandages.
     /// </summary>
     private string? CheckAidStart() => CheckOdHandStart(Skill.Aid);
 
@@ -59,8 +59,8 @@ public sealed partial class GameSession
             return targetError;
         }
 
-        // Rolled with no Od Hand dice, it takes a Medicine Bag, or Bandages on a Rouse.
-        bool bandaged = check!.Kind == OdHandCheckKind.Rouse && command.UseTools && ActiveHero.Bandages is not null;
+        // Rolled with no Od Hand dice, it takes a Medicine Bag, or Bandages.
+        bool bandaged = command.UseTools && ActiveHero.Bandages is not null;
         int usable = OdHandDiceFor(Skill.Aid);
         int least = bag || bandaged ? 0 : 1;
         int dice = command.Dice ?? usable;
@@ -131,8 +131,7 @@ public sealed partial class GameSession
         ];
 
     /// <summary>
-    /// What helps an Aid roll: a Medicine Bag (+1 and a die, once a turn), Bandages on a Rouse (a die,
-    /// one used up), a Shovel in hand against Buried (a die). Returns whether the bag helped and the dice they add.
+    /// What helps an Aid roll: a Medicine Bag (+1 and a die, once a turn), Bandages (a die, one used up), a Shovel in hand against Buried (a die). Returns whether the bag helped and the dice they add.
     /// </summary>
     private (bool Bag, int Dice) AidKit(Hero hero, OdHandCommand command, OdHandCheck check, List<GameEvent> events)
     {
@@ -144,7 +143,7 @@ public sealed partial class GameSession
         bool bag = command.UseTools && MedicineBagReady;
         Turn.MedicineBagUsed |= bag;
         int dice = bag ? 1 : 0;
-        if (check.Kind == OdHandCheckKind.Rouse && command.UseTools && hero.Bandages is { } bandages)
+        if (command.UseTools && hero.Bandages is { } bandages)
         {
             UseUp(hero, bandages, events);
             dice++;

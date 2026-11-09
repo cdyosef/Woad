@@ -136,6 +136,21 @@ public class AidTests
     }
 
     [Fact]
+    public void BandagesAddADieToACureToo()
+    {
+        // The Od Hand die 5, and the bandage's 6 and the 1 it rolls in, less 1 for the poison: 11 against 10.
+        GameSession session = TestRun.Start(Pair, new ScriptedDice(5, 6, 1), cards: ["t_bandage"]);
+        Hero hero = session.HeroInSeat();
+        hero.Conditions.Add(Condition.Poison, 1);
+
+        IReadOnlyList<GameEvent> events = session.Do(new Aid(hero.Id, hero.Id, Ailment.Poison));
+
+        Assert.Equal(10, events.SingleOf<OdHandRolled>().Difficulty);
+        Assert.False(hero.Conditions.Has(Condition.Poison));
+        Assert.Null(hero.Bandages);
+    }
+
+    [Fact]
     public void AShovelInHandDigsAStackOffAtTheStartOfYourTurn()
     {
         GameSession session = TestRun.Start(Pair, new ScriptedDice(), cards: ["t_shovel"]);

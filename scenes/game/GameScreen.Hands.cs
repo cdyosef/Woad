@@ -580,12 +580,20 @@ public partial class GameScreen
             return;
         }
 
-        // The off hand's weapon or torch in the Od Hand square: the follow-up, once there's one to make (never a search).
-        if (hand == _odHand && card.CardId is int offId && ActiveHero is { } holder && GameSession.OffHandItem(holder)?.Id == offId)
+        // The off hand's weapon or torch in the Od Hand square: the follow-up, once there's one to make. A torch (or a
+        // flame of Hold Fire) with no follow-up to make lights a search instead.
+        if (hand == _odHand && card.CardId is int offId && ActiveHero is { } holder && GameSession.OffHandItem(holder) is { } offItem && offItem.Id == offId)
         {
             if (_session.CheckOffHandAttack() is { } why)
             {
-                Log($"{card.Name}: {why}", Palette.TextDim);
+                if (offItem.Definition.Torch && _session.CheckSearch() is null)
+                {
+                    _search.EmitSignal(BaseButton.SignalName.Pressed);
+                }
+                else
+                {
+                    Log($"{card.Name}: {why}", Palette.TextDim);
+                }
             }
             else if (!_offHanding)
             {

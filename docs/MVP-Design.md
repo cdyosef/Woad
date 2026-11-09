@@ -87,7 +87,7 @@ the Party menu can spend points on them too.
   it. Characters saved when only the first Rumble die brought a skill (Shove) got back the points they'd paid for
   Rumble skills that are now free.
 - **Without the skill, a tool stands in**, once a turn, rolling only its own dice: Lockpicks or
-  Burgling Tools on a lock, a lit torch in hand on a search, a Medicine Bag (or Bandages, to rouse) on
+  Burgling Tools on a lock, a lit torch in hand on a search, a Medicine Bag (or Bandages) on
   Aid, Burgling Tools on a trap, and Burgling Tools, a Cutpurse Knife or Sticky Gloves on a steal. With
   the skill, the tool adds to your Od Hand dice.
 - **Where a tool is matters:** only tools **in a hand** (shown in the Od Hand square) go in with the Od Hand
@@ -740,7 +740,7 @@ total reaches its number:
 - **Medicine Bag** (tool, stacks, goes on the belt and works from there or a hand): +1 and 1d6 on one
   Aid roll a turn (a 6 rolls another), even with no Od Hand dice left. A failed Aid it helped with a 1
   showing uses one up, as a failed pick snaps a lockpick.
-- **Bandages** (single use, stack): carried, one goes into each Rouse for +1d6 (a 6 rolls another).
+- **Bandages** (single use, stack): carried, one goes into each Aid, a Rouse or a cure, for +1d6 (a 6 rolls another), even with no Od Hand dice left.
 - **Shovel** (two-handed, Weapon 2): a die more and +1 against earth creatures. Held, it digs a stack
   of Buried off you at the start of your turn, and adds a die to digging out and to Aid against Buried.
 - **Holy Water** (single use, stack): drink it to cure every Black Heart and every disease (and curses,
