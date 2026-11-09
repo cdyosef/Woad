@@ -251,6 +251,51 @@ public sealed record MonsterWeaponBroke(int MonsterId, string CardId) : GameEven
 /// <summary>A hero painted their crest on the shield in their off hand.</summary>
 public sealed record ShieldPainted(int HeroId, int CardId) : GameEvent;
 
+/// <summary>A monster drinks in Elektrik dice that attacked it (Leviathan Jr.): <paramref name="Stored"/> now waiting to go off.</summary>
+public sealed record ElektrikAbsorbed(int MonsterId, int Dice, int Stored) : GameEvent;
+
+/// <summary>Its stored Elektrik goes off in a shockwave through its water, at all these.</summary>
+public sealed record ShockwaveReleased(int MonsterId, DiceRoll Roll, IReadOnlyList<int> Struck) : GameEvent;
+
+/// <summary>Out of the water, its stored Elektrik fizzles out.</summary>
+public sealed record ShockwaveFizzled(int MonsterId, int Dice) : GameEvent;
+
+/// <summary>A monster looses a barrage (Bolt Ball, Mass Swirly Eyes) at these.</summary>
+public sealed record BarrageLoosed(int MonsterId, string Name, IReadOnlyList<int> TargetIds) : GameEvent;
+
+/// <summary>A spent barrage comes back on its die (<paramref name="Face"/>).</summary>
+public sealed record BarrageRecharged(int MonsterId, string Name, int Face) : GameEvent;
+
+/// <summary>A monster goes back down into the deep at the end of its turn.</summary>
+public sealed record MonsterDove(int MonsterId) : GameEvent;
+
+/// <summary>A monster says something, in its language (by id): it shows in a speech bubble over it.</summary>
+public sealed record MonsterSpoke(int MonsterId, string Language, string Text) : GameEvent;
+
+/// <summary>A slain monster's body floats belly-up on <paramref name="Tiles"/> (Leviathan Jr.'s): a surface to stand on.</summary>
+public sealed record CarcassFloated(string RoomId, int MonsterId, string MonsterDefinitionId, IReadOnlyList<GridPosition> Tiles) : GameEvent;
+
+/// <summary>Elektrik runs on through the water from <paramref name="At"/>, striking these creatures too.</summary>
+public sealed record CurrentConducted(string RoomId, GridPosition At, IReadOnlyList<int> Struck) : GameEvent;
+
+/// <summary>A monster's claws snatch a hero (Leviathan Jr.): held, with a grip of <paramref name="Grip"/> to beat.</summary>
+public sealed record Snatched(int MonsterId, int HeroId, int Grip) : GameEvent;
+
+/// <summary>A snatched hero dragged through the water (<paramref name="From"/> to <paramref name="To"/>) and under.</summary>
+public sealed record DraggedUnder(int MonsterId, int HeroId, GridPosition From, GridPosition To) : GameEvent;
+
+/// <summary>A snatched hero's struggle: their Rumble roll against the grip, and whether they broke free.</summary>
+public sealed record StruggledFree(int HeroId, int MonsterId, DiceRoll Roll, int Grip, bool Free) : GameEvent;
+
+/// <summary>A hero under the water holds their breath: a heart turns blue (<paramref name="Blue"/> of <paramref name="Hearts"/> now).</summary>
+public sealed record BreathHeld(int HeroId, int Blue, int Hearts) : GameEvent;
+
+/// <summary>Out of the deep, a hero gets a breath back: a blue heart turns red (<paramref name="Blue"/> still blue).</summary>
+public sealed record BreathCaught(int HeroId, int Blue) : GameEvent;
+
+/// <summary>A monster's tongue lashes out at a hero beyond its claws (Leviathan Jr.).</summary>
+public sealed record TongueLashed(int MonsterId, int TargetId) : GameEvent;
+
 /// <summary>An ogre punches with its off hand, a Rock or Boulder in it (<paramref name="With"/>) or bare-fisted.</summary>
 public sealed record MonsterPunched(int MonsterId, int TargetId, string? With) : GameEvent;
 

@@ -11,10 +11,14 @@ namespace Woad.Core.Model;
 /// <param name="CrestCharge">The crest's charge (empty: the portrait's own emblem).</param>
 /// <param name="CrestColor">The crest field's color (empty: follows the character's main color).</param>
 /// <param name="CrestInk">The charge's color (empty: follows the character's main color).</param>
+/// <param name="Languages">The languages they speak besides Common, by id, comma-separated (see <see cref="Content.Languages"/>).</param>
 public sealed record Appearance(string Look = "", string Main = "", string Trim = "", string Skin = "", string Hair = "", string BeltLook = "", string BuckleLook = "", string HiddenGear = "",
-    string CrestField = "", string CrestCharge = "", string CrestColor = "", string CrestInk = "")
+    string CrestField = "", string CrestCharge = "", string CrestColor = "", string CrestInk = "", string Languages = "")
 {
     public static Appearance Default { get; } = new();
+
+    /// <summary>The languages they speak: Common, and the rest they know.</summary>
+    public IReadOnlyList<Content.Language> Speaks => Content.Languages.Known(Languages);
 
     /// <summary>Whether the gear in <paramref name="slot"/> shows on the hero's figure.</summary>
     public bool Shows(Content.EquipSlot slot) => !HiddenGear.Split(',').Contains(slot.ToString());

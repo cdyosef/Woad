@@ -134,6 +134,10 @@ public partial class GameScreen : Control
         {
             RunPaintTest();
         }
+        else if (args.Contains("--bathstest"))
+        {
+            RunBathsTest();
+        }
         else if (args.Contains("--smashtest"))
         {
             RunSmashTest();
@@ -213,13 +217,16 @@ public partial class GameScreen : Control
             CardDrag.PressedAtMsec = Time.GetTicksMsec();
         }
 
-        if (@event is not InputEventKey { Pressed: true, Echo: false } key || _session.State.Turn is null || ActiveHero is not { IsCompanion: false } || _autoplay)
+        if (@event is not InputEventKey { Pressed: true, Echo: false } key || _session.State.Turn is null || ActiveHero is not { IsCompanion: false } || _autoplay || Chatting)
         {
             return;
         }
 
         switch (key.Keycode)
         {
+            case Key.Enter or Key.KpEnter:
+                OpenChat();
+                break;
             case Key.Space or Key.R:
                 ToggleRumble();
                 break;
@@ -624,6 +631,12 @@ public partial class GameScreen : Control
 
                 if (entered.FirstVisit)
                 {
+                    // The boss's room has a name of its own (the Sunken Temple's Baths).
+                    if (_session.State.Rooms[entered.RoomId].Role == RoomRole.Boss && Content.GetTheme(_session.State.ThemeId).BossRoomName is { } hall)
+                    {
+                        await _banner.Flash(hall, Palette.TrimBright, 1.0);
+                    }
+
                     await Taunt(_session.State.Rooms[entered.RoomId]);
                 }
 
@@ -1028,6 +1041,94 @@ public partial class GameScreen : Control
                 await Pause(0.3);
                 break;
 
+            case ElektrikAbsorbed absorbed:
+                FloatOver(absorbed.MonsterId, $"absorbs {absorbed.Dice}!", DieTypes.Tint(DieType.Elektrik));
+                await Pause(0.25);
+                break;
+
+            case ShockwaveReleased shock:
+                CalloutOver(shock.MonsterId, "SHOCKWAVE!", DieTypes.Tint(DieType.Elektrik));
+                _trayShowsMovement = false;
+                await _dice.ShowRoll($"{NameOf(shock.MonsterId)}'s shockwave", shock.Roll, 0, newGroup: true, types: [.. shock.Roll.Faces.Select(_ => DieType.Elektrik)]);
+                Sfx.Play("boom", 1.4f);
+                break;
+
+            case ShockwaveFizzled fizzled:
+                FloatOver(fizzled.MonsterId, "fizzles...", DieTypes.Tint(DieType.Elektrik));
+                break;
+
+            case BarrageLoosed loosed:
+                CalloutOver(loosed.MonsterId, loosed.Name.ToUpperInvariant() + "!", Palette.Danger);
+                await Pause(0.35);
+                break;
+
+            case BarrageRecharged recharged:
+                FloatOver(recharged.MonsterId, $"{recharged.Name} ready", Palette.TrimBright);
+                break;
+
+            case MonsterDove dove:
+                FloatOver(dove.MonsterId, "dives", HeartsView.Blue);
+                break;
+
+            case MonsterSpoke spoke:
+                Say(spoke.MonsterId, spoke.Text, Languages.Get(spoke.Language));
+                await Pause(1.2);
+                break;
+
+            case CarcassFloated floated when floated.RoomId == _shownRoomId:
+                _board.QueueRedraw();
+                _board.FloatText(floated.Tiles[floated.Tiles.Count / 2], "belly up!", Palette.TrimBright);
+                await Pause(0.4);
+                break;
+
+            case CurrentConducted current when current.RoomId == _shownRoomId:
+                _board.FloatText(current.At, "ZZZAP!", DieTypes.Tint(DieType.Elektrik));
+                foreach (int struck in current.Struck)
+                {
+                    FloatOver(struck, "shocked!", DieTypes.Tint(DieType.Elektrik));
+                }
+
+                Sfx.Play("hit", 1.6f);
+                await Pause(0.35);
+                break;
+
+            case Snatched snatched:
+                CalloutOver(snatched.MonsterId, "SNATCH!", Palette.Danger);
+                FloatOver(snatched.HeroId, "snatched!", Palette.Danger);
+                await Pause(0.3);
+                break;
+
+            case DraggedUnder dragged:
+                if (dragged.From != dragged.To)
+                {
+                    await Walk(dragged.HeroId, [dragged.To]);
+                }
+                else
+                {
+                    FloatOver(dragged.HeroId, "dragged under!", HeartsView.Blue);
+                    await Pause(0.25);
+                }
+
+                break;
+
+            case StruggledFree struggle:
+                _trayShowsMovement = false;
+                await _dice.ShowRoll($"{NameOf(struggle.HeroId)} struggles (beat {struggle.Grip})", struggle.Roll, 0, newGroup: true);
+                FloatOver(struggle.HeroId, struggle.Free ? "breaks free!" : "held fast", struggle.Free ? Palette.Heal : Palette.Danger);
+                break;
+
+            case BreathHeld held:
+                FloatOver(held.HeroId, held.Blue >= held.Hearts ? "out of breath!" : "holding breath", HeartsView.Blue);
+                await UpdateFigure(held.HeroId, figure => figure.BlueHearts = held.Blue, 0.25);
+                RefreshPanels();
+                break;
+
+            case BreathCaught caught:
+                FloatOver(caught.HeroId, "a breath", HeartsView.Blue);
+                await UpdateFigure(caught.HeroId, figure => figure.BlueHearts = caught.Blue, 0.15);
+                RefreshPanels();
+                break;
+
             case Drowned drowned:
                 if (_figures.TryGetValue(drowned.HeroId, out Figure? drowning) && drowning.RoomId == _shownRoomId)
                 {
@@ -1416,6 +1517,12 @@ public partial class GameScreen : Control
 
                 break;
 
+            case TongueLashed lashed:
+                CalloutOver(lashed.MonsterId, "SHLURP!", Palette.Danger);
+                Sfx.Play("flap", 0.6f);
+                await Pause(0.3);
+                break;
+
             case MonsterCharged charged:
                 CalloutOver(charged.MonsterId, "CHARGE!", Palette.Danger);
                 await _dice.ShowRoll($"{NameOf(charged.MonsterId)} charges", charged.Roll, 0, newGroup: true, kind: DiceKind.Wend);
@@ -1796,6 +1903,11 @@ public partial class GameScreen : Control
         MonsterWeaponBroke broke => FigureRoom(broke.MonsterId),
         MonsterThrew threw => FigureRoom(threw.MonsterId),
         MonsterCharged charged => FigureRoom(charged.MonsterId),
+        TongueLashed lashed => FigureRoom(lashed.MonsterId),
+        BarrageLoosed loosed => FigureRoom(loosed.MonsterId),
+        ShockwaveReleased shock => FigureRoom(shock.MonsterId),
+        Snatched snatched => FigureRoom(snatched.MonsterId),
+        DraggedUnder dragged => FigureRoom(dragged.MonsterId),
         MonsterPunched punched => FigureRoom(punched.MonsterId),
         MonsterSpawned spawned => spawned.RoomId,
         RoomCleared cleared => cleared.RoomId,

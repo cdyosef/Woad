@@ -28,7 +28,7 @@ public static partial class DungeonGenerator
 
         if (role == RoomRole.Boss && template.BossSpawn is { } boss)
         {
-            return Pool(template, boss, Math.Min(template.Layout.Width, template.Layout.Height) / 4.0, kept, spawnInside: false) ?? template;
+            return Baths(template, boss, doorTiles.Values, kept) ?? Pool(template, boss, Math.Min(template.Layout.Width, template.Layout.Height) / 4.0, kept, spawnInside: false) ?? template;
         }
 
         int area = template.Layout.Positions.Count(tile => template.Layout[tile].IsWalkable());
@@ -79,6 +79,47 @@ public static partial class DungeonGenerator
 
         return Connected(pool) ? pool : null;
     }
+
+    /// <summary>
+    /// The Baths, the boss's arena: a great pool filling most of the room, deep but for a shallow rim, and the
+    /// shallows reaching out toward each doorway. Shrinks until it leaves the room whole for those who walk.
+    /// </summary>
+    private static RoomTemplate? Baths(RoomTemplate template, GridPosition center, IEnumerable<GridPosition> doors, HashSet<GridPosition> kept)
+    {
+        List<GridPosition> entrances = [.. doors];
+        for (double radius = Math.Min(template.Layout.Width, template.Layout.Height) / 2.0 - 1; radius >= 3; radius -= 0.5)
+        {
+            RoomTemplate pool = template;
+            foreach (GridPosition tile in template.Layout.Positions)
+            {
+                if (kept.Contains(tile) || template.Layout[tile] is not (TileKind.Floor or TileKind.Rubble))
+                {
+                    continue;
+                }
+
+                double distance = Math.Sqrt(Math.Pow(tile.X - center.X, 2) + Math.Pow(tile.Y - center.Y, 2));
+                bool byTheDoor = entrances.Any(door => Math.Sqrt(Math.Pow(tile.X - door.X, 2) + Math.Pow(tile.Y - door.Y, 2)) <= BathsShallowsReach);
+                if (distance <= radius - 1.2)
+                {
+                    pool = pool.WithTile(tile, TileKind.DeepWater);
+                }
+                else if (distance <= radius || byTheDoor)
+                {
+                    pool = pool.WithTile(tile, TileKind.ShallowWater);
+                }
+            }
+
+            if (Connected(pool))
+            {
+                return pool;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>How far the Baths' shallows reach out from each doorway.</summary>
+    private const double BathsShallowsReach = 4.5;
 
     /// <summary>Whether a monster may be placed on this tile: a water-only swimmer in water, only flyers and swimmers in deep water.</summary>
     private static bool CanSpawnOn(MonsterDefinition monster, TileKind tile) =>

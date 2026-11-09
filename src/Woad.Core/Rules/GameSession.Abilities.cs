@@ -37,6 +37,8 @@ public sealed partial class GameSession
         foreach (Hero hero in State.Heroes.Where(hero => hero.GrabbedBy == monster.Id))
         {
             hero.GrabbedBy = null;
+            hero.HeldUnder = false;
+            hero.GripTotal = 0;
         }
     }
 

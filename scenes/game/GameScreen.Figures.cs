@@ -177,6 +177,7 @@ public partial class GameScreen
         }
 
         token.SetHearts(figure.Hearts, figure.MaxHearts);
+        token.BlueHearts = figure.BlueHearts;
         token.Frozen = figure.Frozen;
         token.Collapsed = figure.Collapsed;
         token.Keeling = figure.Keeling ? (figure.LifeMarks, figure.DeathMarks) : null;
@@ -509,6 +510,9 @@ public partial class GameScreen
         public GridPosition Position { get; set; }
 
         public int Hearts { get; set; }
+
+        /// <summary>Blue Hearts: breath held under water.</summary>
+        public int BlueHearts { get; set; }
 
         public int MaxHearts { get; init; }
 

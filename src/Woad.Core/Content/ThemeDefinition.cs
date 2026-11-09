@@ -238,6 +238,9 @@ public sealed record ThemeDefinition
     /// <summary>A flooded dungeon: built rooms get pools, the boss arena a great pool, and streams are never chasms.</summary>
     public bool Flooded { get; init; }
 
+    /// <summary>What the boss's room is called, shown as heroes first walk in (the Sunken Temple's "The Baths"); null for none.</summary>
+    public string? BossRoomName { get; init; }
+
     public IReadOnlyList<LootDeckEntry> LootDeck { get; init; } = [];
 
     public PotDefinition? Pots { get; init; }

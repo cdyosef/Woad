@@ -248,6 +248,24 @@ public sealed partial class GameSession
             events.Add(new MonsterYelled(monster.Id, yell));
         }
 
+        // Leviathan Jr.: its barrages coming back, its stored Elektrik going off.
+        if (monster.Definition.AbsorbsElektrik || monster.Definition.Barrages.Count > 0)
+        {
+            LeviathanTurnStart(room, monster, events);
+            if (State.Phase != RunPhase.InProgress || room.FindMonster(monster.Id) is null)
+            {
+                return;
+            }
+        }
+
+        // A line a round, in order, while heroes are there to hear it (Leviathan Jr.'s grumbling).
+        if (monster.Definition.Speech is { } speech && monster.LinesSpoken < speech.Lines.Count && monster.SpokeInRound != State.Round && State.HeroesIn(room).Any())
+        {
+            events.Add(new MonsterSpoke(monster.Id, speech.Language, speech.Lines[monster.LinesSpoken]));
+            monster.LinesSpoken++;
+            monster.SpokeInRound = State.Round;
+        }
+
         if (!ConditionsAtTurnStart(room, monster, events))
         {
             return;
@@ -338,6 +356,28 @@ public sealed partial class GameSession
             return;
         }
 
+        // Holding someone it snatched, it swims off with them, then fights whoever's in reach.
+        if (DragHeld(room, monster, standing, events))
+        {
+            if (ChooseTarget(room, monster, monster.Position, standing) is { } held)
+            {
+                MonsterAttacks(room, monster, held, events);
+            }
+
+            return;
+        }
+
+        // Stranded on land, a water creature crawls back toward the water, then fights whoever's in reach.
+        if (CrawlToWater(room, monster, events))
+        {
+            if (ChooseTarget(room, monster, monster.Position, standing) is { } beside)
+            {
+                MonsterAttacks(room, monster, beside, events);
+            }
+
+            return;
+        }
+
         bool regrabbed = Regrab(room, monster, standing, events);
         if (ThrowInstead(room, monster, standing, events) || regrabbed)
         {
@@ -394,6 +434,10 @@ public sealed partial class GameSession
         {
             // Nobody in reach of a blow: it cast its spell instead.
         }
+        else if (LooseBarrage(room, monster, standing, events))
+        {
+            // Nobody in reach of its claws: a barrage, or its tongue, instead.
+        }
         else if (ChooseTarget(room, monster, monster.Position, keeling) is { } keeler)
         {
             StrikeKeeler(room, monster, keeler, events);
@@ -402,6 +446,9 @@ public sealed partial class GameSession
         {
             MonsterAttacksMerchant(room, monster, events);
         }
+
+        // With moves left, a diver goes back down into the deep.
+        DiveBack(room, monster, monster.MovesThisTurn - path.Count, events);
 
         // A spin on top of it all, at everyone near.
         if (definition.Sweep is { Bonus: true } spin && monster.TurnsTaken % spin.Every == 0 && room.FindMonster(monster.Id) is not null && State.Phase == RunPhase.InProgress)
@@ -412,6 +459,25 @@ public sealed partial class GameSession
                 RollMonsterAttack(room, monster, monster.AttackDiceThisTurn, definition.Weapon, spun, events);
             }
         }
+    }
+
+    /// <summary>
+    /// A monster with a tongue (Leviathan Jr.), nobody in reach of its blows, lashes it at the weakest hero within its
+    /// tongue's reach and in sight: its Attack dice, without its weapon. False when there's nobody to lash.
+    /// </summary>
+    private bool LashTongue(Room room, Monster monster, IReadOnlyList<Hero> standing, List<GameEvent> events)
+    {
+        int reach = monster.Definition.Tongue;
+        if (reach <= 0 || IsBlind(monster.Conditions)
+            || standing.Where(hero => !Diving(room, hero) && Targeting.CanAttack(room.Layout, AttackPattern.Ranged, reach, monster.NearestTile(hero.Position), hero.Position))
+                .OrderBy(hero => hero.Hearts).ThenBy(hero => hero.Seat).FirstOrDefault() is not { } target)
+        {
+            return false;
+        }
+
+        events.Add(new TongueLashed(monster.Id, target.Id));
+        RollMonsterAttack(room, monster, monster.AttackDiceThisTurn, 0, [target], events);
+        return true;
     }
 
     /// <summary>Of the heroes attackable from a tile, the one with the fewest hearts (then lowest seat).</summary>

@@ -936,6 +936,15 @@ def ability(c, name):
         for y in (12, 16, 20):
             c.line(5, y, 12, y - 1, PARCHMENT[2])
         c.circle(23, 16, 3, "#b07ce8")
+    elif name == "break_free":
+        # A fist bursting a coil of green claws apart, bubbles rising.
+        c.ring(16, 18, 9, "#3a8a6a", 3)
+        c.poly([(12, 10), (20, 10), (22, 18), (10, 18)], LEATHER[0])
+        c.rect(12, 18, 10, 6, LEATHER[1])
+        for x, y in ((6, 8), (26, 6), (24, 26), (7, 25)):
+            c.line(x, y, x + (3 if x < 16 else -3), y + (3 if y < 16 else -3), PARCHMENT[1], 2)
+        c.circle(9, 4, 1.5, "#a0e0f0")
+        c.circle(23, 3, 1, "#a0e0f0")
     elif name == "dig_out":
         c.line(6, 4, 18, 18, WOOD[1], 2)
         c.poly([(16, 16), (24, 14), (26, 24), (18, 26)], IRON[1])
@@ -1044,7 +1053,7 @@ def back(c, slot):
 
 ABILITIES = [
     "rumble", "shove", "wend", "od_hand", "leap", "prone", "search", "steal", "pick_lock", "disarm", "rouse",
-    "retreat", "learn", "dig_out", "drop_roll", "cast", "jackalope_foot", "shield_cufflinks", "icarus_wings",
+    "retreat", "learn", "dig_out", "break_free", "drop_roll", "cast", "jackalope_foot", "shield_cufflinks", "icarus_wings",
     "parry", "guard", "high_alert", "bull_rush",
 ]
 

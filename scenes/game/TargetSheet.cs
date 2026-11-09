@@ -77,7 +77,7 @@ public partial class TargetSheet : Panel
     {
         _name.Text = hero.Name.ToUpperInvariant();
         _name.AddThemeColorOverride("font_color", Palette.Seat(hero.Seat));
-        _hearts.ShowHearts(hero.Hearts, hero.MaxHearts);
+        _hearts.ShowHearts(hero.Hearts, hero.MaxHearts, hero.BlueHearts);
         _kind.Text = $"Lv {hero.Level}" + (hero.IsCompanion ? " companion" : hero.PlayerNumber > 0 ? $"  Player {hero.PlayerNumber}" : "");
         _portrait.Show(null, Looks.Resolve(hero.Appearance, hero.Portrait), monster: false, Palette.Seat(hero.Seat));
         if (hero.MainWeapon is { } weapon)

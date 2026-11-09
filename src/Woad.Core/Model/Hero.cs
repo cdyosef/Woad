@@ -321,6 +321,12 @@ public sealed class Hero
     /// <summary>The monster whose grab last caught them (a Mimic); see <c>GameSession.HeldBy</c> for whether it still holds them.</summary>
     public int? GrabbedBy { get; internal set; }
 
+    /// <summary>Dragged under the water by what holds them (Leviathan Jr.): under the surface till they get free.</summary>
+    public bool HeldUnder { get; internal set; }
+
+    /// <summary>A snatch's grip: the claws' total a Rumble roll must beat to break free (0 when not snatched).</summary>
+    public int GripTotal { get; internal set; }
+
     /// <summary>What they've learned to do (see <see cref="Skill"/>).</summary>
     public Skill Skills { get; internal set; } = Content.Skills.All;
 
@@ -352,6 +358,19 @@ public sealed class Hero
     /// creeping doom): none on the first, 1 on the second, 2 on the third...
     /// </summary>
     public int KeelRolls { get; internal set; }
+
+    /// <summary>
+    /// Blue Hearts: breath held, going under. One of their hearts turns blue each turn they end under the water (or
+    /// can't stay afloat), from the last heart they'd lose up; one turns back each turn ended out of the deep. Never
+    /// more than the hearts they have (empty and black ones don't turn blue). All blue, drowning costs hearts.
+    /// </summary>
+    public int BlueHearts
+    {
+        get => Math.Min(_blueHearts, Hearts);
+        internal set => _blueHearts = Math.Max(0, value);
+    }
+
+    private int _blueHearts;
 
     /// <summary>Power Dice that roll in with the next Keel roll (a 5 on the Keel Die earns one).</summary>
     public int KeelPowerNext { get; internal set; }

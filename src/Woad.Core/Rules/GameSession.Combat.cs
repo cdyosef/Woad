@@ -318,6 +318,8 @@ public sealed partial class GameSession
 
             if (room.FindMonster(targetId) is { } monster)
             {
+                // Leviathan Jr. drinks in Elektrik dice: they don't count against it.
+                (total, laid) = AbsorbElektrik(monster, attack.Roll, attack.DieTypes, total, laid, events);
                 Thaw(monster.Conditions, monster.Id, fireDice, events);
                 if (attack.Chill > 0)
                 {
@@ -550,6 +552,31 @@ public sealed partial class GameSession
     }
 
     /// <param name="crushed">Broken by a crushing blow: bones don't reassemble.</param>
+    /// <summary>
+    /// A body that floats (Leviathan Jr.'s) comes to rest belly-up where it fell, across the water there: its own tile
+    /// and the water beside it, three tiles long where it can be, which become a surface to stand on.
+    /// </summary>
+    private void FloatCarcass(Room room, Monster monster, List<GameEvent> events)
+    {
+        if (!monster.Definition.FloatsWhenSlain || !InWater(room, monster.Position))
+        {
+            return;
+        }
+
+        bool Afloat(GridPosition tile) => room.Layout.Contains(tile) && InWater(room, tile);
+        GridPosition at = monster.Position;
+        List<GridPosition> across = [.. new[] { new GridPosition(at.X - 1, at.Y), at, new GridPosition(at.X + 1, at.Y) }.Where(Afloat)];
+        List<GridPosition> down = [.. new[] { new GridPosition(at.X, at.Y - 1), at, new GridPosition(at.X, at.Y + 1) }.Where(Afloat)];
+        List<GridPosition> body = across.Count >= down.Count ? across : down;
+        foreach (GridPosition tile in body)
+        {
+            room.Layout.Set(tile, TileKind.Floor);
+        }
+
+        room.AddCarcass(new Carcass(monster.Definition.Id, body));
+        events.Add(new CarcassFloated(room.Id, monster.Id, monster.Definition.Id, body));
+    }
+
     private void DefeatMonster(Hero? killer, Room room, Monster monster, DamageSource source, List<GameEvent> events, bool crushed = false)
     {
         MonsterDefinition definition = monster.Definition;
@@ -564,6 +591,7 @@ public sealed partial class GameSession
 
         room.RemoveMonster(monster);
         LetGo(monster);
+        FloatCarcass(room, monster, events);
         DropStolen(room, monster, SafeTile(room, monster.Position), events);
         ScatterLuck(room, monster, events);
         if (killer is not null && monster.RaisedBy is null)
@@ -709,7 +737,15 @@ public sealed partial class GameSession
         int prone = ProneBonus(target, monster.Position);
         for (int i = 0; i < attacks.Count && target.IsActive; i++)
         {
-            RollMonsterAttack(room, monster, attacks[i] + (i == 0 ? prone : 0), i == 0 ? monster.Weapon : 0, [target], events, weaponDice: i == 0 ? monster.WeaponDice : 0);
+            int mark = events.Count;
+            MonsterAttackRoll? claws = RollMonsterAttack(room, monster, attacks[i] + (i == 0 ? prone : 0), i == 0 ? monster.Weapon : 0, [target], events, weaponDice: i == 0 ? monster.WeaponDice : 0);
+
+            // Leviathan Jr.'s claws: a 6 that hits snatches the hero.
+            if (definition.Snatches && claws is { } roll && roll.Roll.Faces.Contains(GameRules.PowerDieFace) && target.IsActive && target.GrabbedBy != monster.Id
+                && events.Skip(mark).OfType<Damaged>().Any(damaged => damaged.TargetId == target.Id && damaged.Amount > 0))
+            {
+                Snatch(room, monster, target, roll.Total, events);
+            }
         }
 
         Punch(room, monster, target, events);
@@ -858,6 +894,12 @@ public sealed partial class GameSession
             {
                 KnockBack(room, monster, hero, knockback, events);
             }
+        }
+
+        // Elektrik dice run on through the water the target stands in.
+        if (targets.FirstOrDefault() is { } first && State.Phase == RunPhase.InProgress)
+        {
+            ConductThroughWater(room, first.Position, total, roll, types, [.. targets.Select(hero => hero.Id)], null, monster, events);
         }
 
         // A double 1 on a Big Club's dice: it splinters in the ogre's fist.

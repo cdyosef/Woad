@@ -295,7 +295,7 @@ public class HazardTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void EndingATurnInDeepWaterTakesARumbleDieOrYouDrownBackToShore(bool diceLeft)
+    public void EndingATurnInDeepWaterTakesARumbleDieOrAHeartTurnsBlue(bool diceLeft)
     {
         GameSession session = TestRun.Start("""
             .........
@@ -326,10 +326,11 @@ public class HazardTests
         }
         else
         {
-            // They stay out there, to swim for it next turn.
-            Assert.Equal(new Drowned(hero.Id, new GridPosition(4, 3)), events.SingleOf<Drowned>());
+            // They go under: a heart turns blue, none lost yet, and they stay out there, to swim for it next turn.
+            Assert.Equal(new BreathHeld(hero.Id, 1, TestRun.HeroStats.Hearts), events.SingleOf<BreathHeld>());
+            Assert.DoesNotContain(events, gameEvent => gameEvent is Drowned);
             Assert.Equal(new GridPosition(4, 3), hero.Position);
-            Assert.Equal(TestRun.HeroStats.Hearts - GameRules.DrownDamage, hero.Hearts);
+            Assert.Equal((TestRun.HeroStats.Hearts, 1), (hero.Hearts, hero.BlueHearts));
         }
 
         Assert.Equal(new TurnStarted(session.HeroInSeat(1).Id), events[^1]);

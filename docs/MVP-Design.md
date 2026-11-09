@@ -124,6 +124,17 @@ the Party menu can spend points on them too.
   - **Random** rolls a look and colors. Any two players may share colors: on the board each hero
     stands on a ring of their seat color.
   - Characters saved before looks existed are Wanderers in their crest's color.
+- **Languages:** everyone speaks **Common**; the **Tongues** window (beside Skills in the editor) adds others, for
+  now free: **Primordial** (dots and dashes in runes, as if carved into stone, time and space), and two tongues of
+  it, **Gurgle** (the water's: wavy dashes, curving lines between the dots) and **Gravel** (the stone's: rough-hewn).
+  Things said show in a **speech bubble** over the speaker in their language's style, written in its script first,
+  then turning to English letter by letter if a player's hero listening understands it (the speaker aside): a
+  Primordial speaker makes out only a few words of Gurgle ("I", "trying", "peace", "you", "long", "freaks",
+  "creeps", "join", "water"), and all of Gravel, slowly. After a while a bubble shrinks to a little one over the
+  speaker's head, which opens again under the mouse. On your turn, **Enter** opens a chat box: pick one of your
+  languages and type. Leviathan Jr. grumbles in Gurgle, a line a round ("I am just trying to relax!", "Can't a guy
+  take a bath in peace?!!", "I've had a long day!", "You guys are freaks!", "Get out of here creeps!", "You freaks
+  wanna join me so bad! Come on in!!"), and the first time he drags someone down, "Come on in, the water is fine!"
 - **Crests:** a shield with a field and a charge, built in the editor's crest rows. The **field** is plain or
   parted in two colors (halved, parted, slanted, quartered, chief, pale, band, bend, chevron, cross, saltire,
   bordered), its second color the character's trim; the **charge** is one of 24 (roundel, lozenge, triangle,
@@ -278,8 +289,11 @@ every room that holds at least one player. Rooms with no players stay paused.
      act or roll another move in between, and any steps left over are added to the next move. Only a
      sprung trap ends your movement early. A negative Wend bonus always applies to your first move.
      **Rough ground** (rubble) and **water** cost 2 steps a tile. You can swim **deep water**, but if your
-     turn ends in it, one of your unused Rumble dice keeps you afloat; with none left you **drown**: you
-     lose a heart and stay where you are, out in the deep water, to swim for it next turn.
+     turn ends in it, one of your unused Rumble dice keeps your head above it. **Under** it (diving, prone in deep
+     water, or dragged down), or with no Rumble die left, you hold your breath: one of your hearts turns **blue**,
+     from the last one you'd lose up (empty and Black Hearts never do). Blue Hearts are your breath, so more hearts
+     means longer under. With **every** heart blue you **drown**: a heart lost each turn, on top of any other harm.
+     Each turn you end out of the deep (and not lying face down in the shallows), one blue heart turns red again.
    - **Leaps (Wend):** press **Leap**, pick a tile up to 3 away in a straight line (diagonals too) and
      commit; only then is one unused Wend die rolled. The leap carries half the roll, rounded down,
      never past your target. It sails over pits, water, traps and figures, but not walls, chests or pots.
@@ -512,6 +526,9 @@ Necromancer with Necro). A typed die earns **no Power Die**: each **6** rolls an
 straight in, and **if the attack hits**, lays a stack of its type's effect on the target. Items may do more
 of their own on top (a Flame Scroll aimed at bare floor sets it burning).
 
+- **Elektrik through water:** an attack with Elektrik dice on someone standing in water (shallow or deep) runs on
+  through that body of water: the same roll strikes every other creature in it within 8 tiles, friend or foe, each
+  defending as usual (its sixes stunning on a hit). Whoever made the attack is spared.
 - **Fire (Burn):** a fire die on the target (see Fire).
 - **Poison (Poisoned):** a Poison token. Each takes 1 off all their rolls (attacks, defense, moves, Od
   Hand). At the end of their turn they roll a die: not higher than their tokens, they lose a heart; a 6
@@ -937,7 +954,7 @@ file under `Themes/`.
 Picked with the Dungeon button on the party screen. Three flooded floors of sandstone, coral and teal
 water, with its own exploring song. Hand-made rooms have pools, channels, causeways and islands; built
 rooms get pools (shallow at the rim, deep in the middle, now and then with something lurking in them),
-streams are never chasms, and the boss arena is a great pool around the Leviathan.
+streams are never chasms, and the boss arena is the Baths, a great pool around Leviathan Jr.
 
 - **Swimmers** move through shallow and deep water at 1 step a tile. One in deep water is **submerged**:
   ranged attacks, spells and bomb blasts can't reach it, only a blow from right beside it (or a
@@ -956,7 +973,7 @@ streams are never chasms, and the boss arena is a great pool around the Leviatha
 | Drowned | 2 | 2 | 1d6+1 | 1d6+1 | From floor 2. Swimmer; rises again once, like a Skeleton |
 | Petty Thief, Mugger Fly | | | | | Rare, as in the Keep |
 | **Miniboss: Crab King** | 6 | 2 | 2d6+1 | 1d6+2 | Shell; guards the Boss Key |
-| **Boss: Leviathan** | 10 | 4 | 2d6+1 | 1d6+1 | Never leaves the water, so it's nearly always submerged; bites at reach 2; every third turn a tail sweep hits every hero within 2 |
+| **Boss: Leviathan Jr.** | 10 | 5 in water, 1 on land | 2d6+1 | 1d6+1 | Wallows in **the Baths** (the boss room, named as you walk in): a great pool filling most of the room, deep but for a shallow rim, the shallows reaching out toward each door. Never leaves the water, so it's nearly always submerged; claws at reach 2; a **6** on its claws that hits **snatches** the hero: pulled into the deep water beside it and under (holding their breath, Blue Hearts), then each turn it swims off as far as it can from everyone else, dragging them along behind it and under with it. They break free with **Break free** (every Rumble die left, beating its claws' total), or when it's hurt, stunned, frozen or knocked flat. With nobody in reach of its claws, its **tongue** lashes a hero up to 5 tiles off, in sight (its Attack dice, no weapon); every third turn a tail sweep hits every hero within 2. It **absorbs Elektrik**: Elektrik dice that attack it don't count against it, and are stored, all let go at the start of its turn in a **shockwave** on everyone else in its body of water (out of the water they fizzle out). Shoved onto land it can only crawl a tile a turn back to the water. In the water it comes into the shallows after heroes on the shore; with nobody in reach of its claws it looses **one** ranged attack a turn: **Bolt Ball** (a Fire, an Acid and 3 Elektrik dice at one target, the Elektrik running on through any water they stand in; back on a 5-6), **Mass Swirly Eyes** (a Psycho die at everyone in sight within 8, each it hits drawn a tile toward it, maybe into the water; back on a 6), or its tongue; with moves left after, it dives back into the deep. Slain, it **floats belly-up** where it fell, eyes X'd: three tiles of it across the water become a surface to stand on (`-- --bathstest` shows the fight) |
 
 Its loot deck adds three cards:
 

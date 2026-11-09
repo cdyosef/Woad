@@ -249,26 +249,46 @@ public sealed partial class GameSession
     }
 
     /// <summary>
-    /// At the end of a hero's turn in deep water, one of their unused Rumble dice keeps them afloat.
-    /// With none left they drown: they lose a heart and stay out there, to swim for it next turn.
+    /// Breath, at the end of a hero's turn. In deep water, one of their unused Rumble dice keeps their head above it;
+    /// under it (diving, or dragged down), or with no Rumble die left, they hold their breath: a heart turns blue. With
+    /// every heart blue, they drown: a heart lost. Out of the deep (and not lying face down in the shallows), a breath
+    /// comes back: one blue heart turns red again.
     /// </summary>
     private void KeepAfloat(Hero hero, List<GameEvent> events)
     {
         Room room = State.RoomOf(hero);
-        if (room.Layout[hero.Position] != TileKind.DeepWater)
+        TileKind tile = room.Layout[hero.Position];
+        if (tile != TileKind.DeepWater || hero.Swims)
         {
+            if (hero.BlueHearts > 0 && !(hero.IsProne && tile == TileKind.ShallowWater))
+            {
+                hero.BlueHearts--;
+                events.Add(new BreathCaught(hero.Id, hero.BlueHearts));
+            }
+
             return;
         }
 
-        if (hero.Swims)
-        {
-            return;
-        }
-
-        if (AttackDiceLeft > 0)
+        if (!Underwater(room, hero) && AttackDiceLeft > 0)
         {
             Turn.AttackDiceUsed++;
             events.Add(new StayedAfloat(hero.Id));
+            return;
+        }
+
+        HoldBreath(room, hero, events);
+    }
+
+    /// <summary>Under the surface: diving (prone in deep water), or held under by something that dragged them down.</summary>
+    private bool Underwater(Room room, Hero hero) => room.Layout[hero.Position] == TileKind.DeepWater && (hero.IsProne || (hero.HeldUnder && HeldBy(hero) is not null));
+
+    /// <summary>A breath held under the water: a heart turns blue, or, every heart blue already, one is lost.</summary>
+    private void HoldBreath(Room room, Hero hero, List<GameEvent> events)
+    {
+        if (hero.BlueHearts < hero.Hearts)
+        {
+            hero.BlueHearts++;
+            events.Add(new BreathHeld(hero.Id, hero.BlueHearts, hero.Hearts));
             return;
         }
 

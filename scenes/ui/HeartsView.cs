@@ -10,11 +10,17 @@ public partial class HeartsView : Control
 
     private int _hearts;
     private int _maxHearts;
+    private int _blue;
 
-    public void ShowHearts(int hearts, int maxHearts)
+    /// <summary>The blue of a heart held as breath under water.</summary>
+    public static readonly Color Blue = new("4aa0f0");
+
+    /// <param name="blue">Blue Hearts (breath held under water): the first hearts, the last ones that would be lost.</param>
+    public void ShowHearts(int hearts, int maxHearts, int blue = 0)
     {
         _hearts = hearts;
         _maxHearts = maxHearts;
+        _blue = Math.Min(blue, hearts);
         QueueRedraw();
     }
 
@@ -28,13 +34,14 @@ public partial class HeartsView : Control
         {
             var origin = new Vector2(i * step, 0);
             Texture2D? texture = i < _hearts ? full : empty;
+            bool blue = i < _blue;
             if (texture is not null)
             {
-                DrawTextureRect(texture, new Rect2(origin, new Vector2(HeartWidth, HeartWidth)), tile: false);
+                DrawTextureRect(texture, new Rect2(origin, new Vector2(HeartWidth, HeartWidth)), tile: false, modulate: blue ? Blue * new Color(1.6f, 1.6f, 1.6f) : Colors.White);
             }
             else
             {
-                DrawHeart(this, origin, HeartWidth, i < _hearts ? Palette.Heart : Palette.HeartEmpty);
+                DrawHeart(this, origin, HeartWidth, blue ? Blue : i < _hearts ? Palette.Heart : Palette.HeartEmpty);
             }
         }
     }

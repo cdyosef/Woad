@@ -74,6 +74,15 @@ public partial class TokenView : Node2D
 
     public void SetHearts(int hearts) => SetHearts(hearts, _maxHearts);
 
+    /// <summary>Blue Hearts: breath held under water, drawn blue from the first pip.</summary>
+    public int BlueHearts
+    {
+        get => _blueHearts;
+        set { _blueHearts = value; QueueRedraw(); }
+    }
+
+    private int _blueHearts;
+
     public GridPosition Tile =>
         new(Mathf.RoundToInt(Position.X / BoardView.TileSize), Mathf.RoundToInt(Position.Y / BoardView.TileSize));
 
@@ -633,7 +642,8 @@ public partial class TokenView : Node2D
         float pip = (width - (_maxHearts - 1)) / _maxHearts;
         for (int i = 0; i < _maxHearts; i++)
         {
-            Color color = i < _hearts ? Palette.Heart : i >= _maxHearts - black ? DieTypes.Tint(Condition.BlackHeart) : Palette.HeartEmpty;
+            Color color = i < Math.Min(_blueHearts, _hearts) ? HeartsView.Blue
+                : i < _hearts ? Palette.Heart : i >= _maxHearts - black ? DieTypes.Tint(Condition.BlackHeart) : Palette.HeartEmpty;
             DrawRect(new Rect2(left + i * (pip + 1), top, pip, 3), color);
         }
     }

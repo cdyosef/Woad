@@ -84,6 +84,9 @@ public partial class CharacterEditor : MenuScreen
     private string _crestCharge = "";
     private string _crestColor = "";
     private string _crestInk = "";
+    private readonly HashSet<string> _languages = [];
+    private Panel _languagesPanel = null!;
+    private readonly Dictionary<string, Button> _languageButtons = [];
     private PortraitView _crest = null!;
     private readonly List<(Label Value, ColorRect? Swatch)> _crestRows = [];
 
@@ -132,7 +135,8 @@ public partial class CharacterEditor : MenuScreen
 
     internal Button RandomButton { get; private set; } = null!;
 
-    internal Appearance Appearance => new(_look, _main, _trim, _skin, _hair, CrestField: _crestField, CrestCharge: _crestCharge, CrestColor: _crestColor, CrestInk: _crestInk);
+    internal Appearance Appearance => new(_look, _main, _trim, _skin, _hair, CrestField: _crestField, CrestCharge: _crestCharge, CrestColor: _crestColor, CrestInk: _crestInk,
+        Languages: string.Join(",", Languages.All.Where(language => _languages.Contains(language.Id)).Select(language => language.Id)));
 
     public override void _Ready()
     {
@@ -142,7 +146,8 @@ public partial class CharacterEditor : MenuScreen
             _budget = PointBuy.Cost(character.Allocation) + character.UnspentPoints;
             _level = character.Level;
             _portrait = character.Portrait;
-            (_look, _main, _trim, _skin, _hair, _, _, _, _crestField, _crestCharge, _crestColor, _crestInk) = character.Appearance;
+            (_look, _main, _trim, _skin, _hair, _, _, _, _crestField, _crestCharge, _crestColor, _crestInk, string languages) = character.Appearance;
+            _languages.UnionWith(Languages.Known(languages).Where(language => language != Languages.Common).Select(language => language.Id));
         }
         else
         {
@@ -196,7 +201,15 @@ public partial class CharacterEditor : MenuScreen
 
         Caption(new Vector2(24, 150), "STATS");
         _points = Add(UiTheme.Label(new Vector2(84, 150), new Vector2(150, 12), color: Palette.TrimBright));
-        Button skills = Add(UiTheme.CompactButton(new Vector2(234, 147), new Vector2(110, 16), "Skills..."));
+        Button tongues = Add(UiTheme.CompactButton(new Vector2(290, 147), new Vector2(54, 16), "Tongues"));
+        tongues.Name = "Languages";
+        tongues.TooltipText = "The languages they speak, besides Common.";
+        tongues.Pressed += () =>
+        {
+            _languagesPanel.Visible = !_languagesPanel.Visible;
+            Refresh();
+        };
+        Button skills = Add(UiTheme.CompactButton(new Vector2(234, 147), new Vector2(54, 16), "Skills..."));
         skills.Name = "Skills";
         skills.Pressed += () =>
         {
@@ -267,6 +280,7 @@ public partial class CharacterEditor : MenuScreen
         };
 
         BuildSkillsPanel();
+        BuildLanguagesPanel();
 
         _error = Add(UiTheme.Label(new Vector2(24, 302), new Vector2(320, 14), color: Palette.Danger));
         SaveButton = Add(UiTheme.Button(new Vector2(420, 316), new Vector2(96, 26), Editing is null ? "Create" : "Save"));
@@ -321,6 +335,42 @@ public partial class CharacterEditor : MenuScreen
             toggle.Pressed += () => ToggleSkill(skill);
             _skillsPanel.AddChild(toggle);
             _skillRows[skill] = (note, toggle);
+        }
+    }
+
+    /// <summary>The Languages window: every language besides Common, each a toggle; what they speak shows in their speech bubbles.</summary>
+    private void BuildLanguagesPanel()
+    {
+        _languagesPanel = Add(new Panel { Position = new Vector2(150, 60), Size = new Vector2(240, 40 + (Languages.All.Count - 1) * 22), Visible = false });
+        _languagesPanel.AddChild(UiTheme.Heading(UiTheme.Label(new Vector2(10, 6), new Vector2(160, 16), "LANGUAGES", 9, Palette.TrimBright), 1));
+        _languagesPanel.AddChild(UiTheme.Label(new Vector2(10, 20), new Vector2(170, 12), "Everyone speaks Common.", color: Palette.TextDim));
+        Button close = UiTheme.CompactButton(new Vector2(184, 6), new Vector2(48, 16), "Done");
+        close.Pressed += () =>
+        {
+            _languagesPanel.Visible = false;
+            Refresh();
+        };
+        _languagesPanel.AddChild(close);
+        int row = 0;
+        foreach (Language language in Languages.All.Where(language => language != Languages.Common))
+        {
+            float y = 36 + row++ * 22;
+            string note = language.Parent is { } parent ? $"a tongue of {Languages.Get(parent).Name}" : "the first tongue";
+            _languagesPanel.AddChild(UiTheme.Label(new Vector2(10, y + 3), new Vector2(150, 12), $"{language.Name}  ({note})"));
+            Button toggle = UiTheme.CompactButton(new Vector2(170, y), new Vector2(62, 18), "");
+            toggle.Name = $"Language{language.Name}";
+            string id = language.Id;
+            toggle.Pressed += () =>
+            {
+                if (!_languages.Remove(id))
+                {
+                    _languages.Add(id);
+                }
+
+                Refresh();
+            };
+            _languagesPanel.AddChild(toggle);
+            _languageButtons[id] = toggle;
         }
     }
 
@@ -557,6 +607,11 @@ public partial class CharacterEditor : MenuScreen
             toggle.Text = known ? (_floor.Skills.HasFlag(skill) ? "Known" : "Forget") : cost == 0 ? "Learn free" : $"Learn {cost}";
             toggle.Disabled = known ? _floor.Skills.HasFlag(skill) : !PointBuy.CanLearn(_allocation, skill, _level, _budget);
             toggle.TooltipText = known || PointBuy.Check(_allocation.WithSkill(skill, true), _level, _budget) is not { } why ? "" : why;
+        }
+
+        foreach ((string id, Button toggle) in _languageButtons)
+        {
+            toggle.Text = _languages.Contains(id) ? "Speaks" : "Learn";
         }
 
         _heroType.SetPressedNoSignal(!_isCompanion);

@@ -228,6 +228,11 @@ public sealed class ContentCatalog
                 }
             }
 
+            if (monster.Speech is { } speech && Languages.All.All(language => language.Id != speech.Language))
+            {
+                errors.Add($"Monster '{monster.Id}' speaks '{speech.Language}', which isn't a language.");
+            }
+
             if (monster.Throws.Any(carried => !cardIds.Contains(carried.Card) || carried.Chance is < 1 or > 100 || carried.Min < 1 || carried.Max < carried.Min)
                 || monster.Throws.Sum(carried => carried.Chance) > 100)
             {
