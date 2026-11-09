@@ -47,11 +47,42 @@ public static class CardKey
             return null;
         }
 
-        string inside = key[(open + 1)..].TrimEnd(Close);
-        string[] parts = inside.Split(Between);
-        static string[] Keys(string part) => part.Split(Comma, StringSplitOptions.RemoveEmptyEntries);
-        return (Keys(parts[0]), parts.Length > 1 ? Keys(parts[1]) : []);
+        // Keys inside can carry braces of their own (a bag on a belt packed whole): split only at this level.
+        string inside = key[(open + 1)..^(key.EndsWith(Close) ? 1 : 0)];
+        var parts = new List<List<string>> { new() };
+        int depth = 0, start = 0;
+        for (int i = 0; i <= inside.Length; i++)
+        {
+            char c = i < inside.Length ? inside[i] : Between;
+            if (c == Open)
+            {
+                depth++;
+            }
+            else if (c == Close)
+            {
+                depth--;
+            }
+            else if (depth == 0 && (c == Comma || c == Between))
+            {
+                if (i > start)
+                {
+                    parts[^1].Add(inside[start..i]);
+                }
+
+                if (c == Between && i < inside.Length)
+                {
+                    parts.Add([]);
+                }
+
+                start = i + 1;
+            }
+        }
+
+        return (parts[0], parts.Count > 1 ? parts[1] : []);
     }
+
+    /// <summary>The key for a bag with these cards in it (by their keys).</summary>
+    public static string Bagged(string key, IEnumerable<string> contents) => Packed(key, [], contents);
 
     /// <summary>What a card adds worn: its modifiers, less its wear (off its armor, or a weapon's value).</summary>
     public static Stats Modifiers(CardDefinition card, int wear)

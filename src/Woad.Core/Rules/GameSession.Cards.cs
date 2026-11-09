@@ -55,7 +55,7 @@ public sealed partial class GameSession
         }
 
         Reveal(hero, events);
-        if (location == CardLocation.Belt)
+        if (location is CardLocation.Belt or CardLocation.Bag)
         {
             Turn.UsedBeltItem = true;
         }
@@ -235,7 +235,7 @@ public sealed partial class GameSession
             return BagInCombat;
         }
 
-        if (location == CardLocation.Belt && !HandHeld(definition))
+        if (location is CardLocation.Belt or CardLocation.Bag && !HandHeld(definition))
         {
             return $"The {definition.Name} works from your belt; it isn't held.";
         }
@@ -355,7 +355,7 @@ public sealed partial class GameSession
             return "You're beltless: put on a belt first.";
         }
 
-        if (ActiveHero.BeltUsed >= ActiveHero.BeltCapacity && !ActiveHero.IsBagged(card.Definition))
+        if (ActiveHero.BeltUsed >= ActiveHero.BeltCapacity)
         {
             return $"Your belt is full ({ActiveHero.BeltCapacity} cards). Stow one to make room.";
         }
@@ -401,12 +401,6 @@ public sealed partial class GameSession
         if (InCombat && !intoRockBag)
         {
             return BagInCombat;
-        }
-
-        // A bag full of Rocks off the belt: they'd need a place of the belt's own.
-        if (card.Definition.Holds is { } held && ActiveHero.Belt.Any(on => on.Definition.Id == held) && ActiveHero.BeltUsed >= ActiveHero.BeltCapacity)
-        {
-            return $"Your belt has no room for what's in the {card.Definition.Name}: make room on it, or empty the bag first.";
         }
 
         if (TakingOff(card) is { } stuck)
@@ -629,9 +623,9 @@ public sealed partial class GameSession
     private string? CheckGearAction() =>
         GearIsFree || !Turn.HasActed ? null : "Changing gear in a fight takes your action, which you've used.";
 
-    /// <summary>The gear action, unless it's the turn's free handful from the Rock Bag.</summary>
+    /// <summary>The gear action, unless it's the turn's free draw from a bag under the belt (a handful from the Rock Bag).</summary>
     private string? CheckGearAction(CardInstance card) =>
-        ActiveHero.BagStack(card.Definition) == card && !Turn.BagDrawn ? null : CheckGearAction();
+        ActiveHero.BagHolding(card) is not null && !Turn.BagDrawn ? null : CheckGearAction();
 
     /// <summary>Gear changes are free outside a fight; in one they take the action.</summary>
     private void SpendGearAction()
@@ -693,7 +687,7 @@ public sealed partial class GameSession
         }
 
         // From the Rock Bag, a handful (a hand's stack at most) comes out; once a turn it's free.
-        bool fromBag = hero.BagStack(card.Definition) == card;
+        bool fromBag = hero.BagHolding(card) is not null;
         if (fromBag && card.Count > Math.Max(1, card.Definition.MaxStack))
         {
             card = card.Split(State.NextId(), Math.Max(1, card.Definition.MaxStack));
@@ -1245,7 +1239,7 @@ public sealed partial class GameSession
             return $"The {definition.Name} has no charges left. They refill on a new floor.";
         }
 
-        if (location == CardLocation.Belt)
+        if (location is CardLocation.Belt or CardLocation.Bag)
         {
             return Turn.UsedBeltItem ? "You've already used your free belt item this turn." : null;
         }

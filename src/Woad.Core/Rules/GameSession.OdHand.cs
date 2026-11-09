@@ -70,14 +70,19 @@ public sealed partial class GameSession
     {
         IEnumerable<CardInstance> cards = alone is int id
             ? ToolsAnywhere(hero).Where(card => card.Id == id)
-            : new[] { EquipSlot.MainHand, EquipSlot.OffHand }.Select(slot => hero.Equipment.GetValueOrDefault(slot)).OfType<CardInstance>().Distinct();
+            : new[] { EquipSlot.MainHand, EquipSlot.OffHand }.Select(slot => hero.Equipment.GetValueOrDefault(slot)).OfType<CardInstance>()
+                .Concat(BagTools(hero)).Distinct();
         IEnumerable<ToolUse> tools = cards.Select(card => card.Definition.Tool).OfType<ToolUse>().Where(tool => skill != Skill.None && tool.For.HasFlag(skill));
         return (tools.Sum(tool => tool.Bonus), tools.Sum(tool => tool.Dice));
     }
 
-    /// <summary>Every tool the hero could play: worn, held or on the belt.</summary>
+    /// <summary>Every tool the hero could play: worn, held, on the belt, or a bag under it and what's in it.</summary>
     public static IEnumerable<CardInstance> ToolsAnywhere(Hero hero) =>
-        hero.EquippedCards.Concat(hero.Belt).Where(card => card.Definition.Tool is not null).Distinct();
+        hero.EquippedCards.Concat(hero.Belt).Concat(BagTools(hero)).Where(card => card.Definition.Tool is not null).Distinct();
+
+    /// <summary>Tools that work from the belt's bags, with the Od Hand dice: a bag that is a tool (Burgling Tools), and the tools in the bags (its Lockpicks).</summary>
+    public static IEnumerable<CardInstance> BagTools(Hero hero) =>
+        hero.Bags.Concat(hero.Bags.SelectMany(bag => bag.Contents)).Where(card => card.Definition.Tool is not null);
 
     /// <summary>Why the active hero can't play the tool <paramref name="cardId"/> on its own for <paramref name="skill"/> now, or null.</summary>
     public string? CheckToolAlone(int cardId, Skill skill)
@@ -513,7 +518,8 @@ public sealed partial class GameSession
     {
         Skill skill = SkillFor(check.Kind);
         if (success || !roll.UsedTools || !roll.Roll.Faces.Take(roll.NonPowerDice).Contains(1)
-            || hero.EquippedCards.Concat(hero.BeltTools).FirstOrDefault(card => card.Definition.Tool is { Snaps: true } tool && tool.For.HasFlag(skill)) is not { } picks)
+            || hero.EquippedCards.Concat(hero.BeltTools).Concat(hero.Bags.SelectMany(bag => bag.Contents))
+                .FirstOrDefault(card => card.Definition.Tool is { Snaps: true } tool && tool.For.HasFlag(skill) && card.Definition.Hangs is null) is not { } picks)
         {
             return;
         }

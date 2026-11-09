@@ -106,12 +106,13 @@ public sealed class RoughWeaponTests
 
         GameSession session = Duel("..1...d..", ["t_sling", "shield", "t_rockbag", "t_rock"], new ScriptedDice(4));
         Hero hero = session.HeroInSeat();
-        Assert.Contains(hero.Card("t_rock"), hero.Belt);
+        CardInstance rock = hero.Card("t_rock");
+        Assert.Equal(CardLocation.Bag, hero.FindCard(rock.Id)!.Value.Location);
 
         IReadOnlyList<GameEvent> events = session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id));
 
         Assert.Equal(2, events.SingleOf<AttackRolled>().Bonus);
-        Assert.Null(hero.FindCard(hero.Belt.FirstOrDefault(card => card.Definition.Id == "t_rock")?.Id ?? -1));
+        Assert.Null(hero.FindCard(rock.Id));
     }
 
     [Fact]

@@ -48,7 +48,7 @@ public sealed partial class GameSession
             return $"{(patient == hero ? "You have" : $"{patient.Name} has")} no {ailment.Name()}.";
         }
 
-        if (location == CardLocation.Belt)
+        if (location is CardLocation.Belt or CardLocation.Bag)
         {
             return Turn.UsedBeltItem ? "You've already used your free belt item this turn." : null;
         }
@@ -65,7 +65,7 @@ public sealed partial class GameSession
 
         Hero hero = ActiveHero;
         (CardInstance doll, CardLocation location) = hero.FindCard(command.CardId)!.Value;
-        if (location == CardLocation.Belt)
+        if (location is CardLocation.Belt or CardLocation.Bag)
         {
             Turn.UsedBeltItem = true;
         }

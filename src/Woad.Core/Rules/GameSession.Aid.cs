@@ -230,7 +230,7 @@ public sealed partial class GameSession
     /// <summary>A failed Aid roll a Medicine Bag helped, with a 1 among its dice, uses a bag up.</summary>
     private static void SpillMedicineBag(Hero hero, PendingRoll roll, bool success, List<GameEvent> events)
     {
-        if (success || !roll.UsedMedicineBag || !roll.Roll.Faces.Take(roll.NonPowerDice).Contains(1) || hero.MedicineBag is not { } bag)
+        if (success || !roll.UsedMedicineBag || !roll.Roll.Faces.Take(roll.NonPowerDice).Contains(1) || hero.MedicineBag is not { } bag || bag.Definition.Hangs is not null)
         {
             return;
         }
