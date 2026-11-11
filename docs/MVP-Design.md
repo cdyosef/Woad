@@ -479,9 +479,12 @@ the next room.
   it, defended as usual (1 heart on a hit; a mark of death for someone Keeling Over). Then each **6** adds
   a fire die and sets a random neighbor alight (diagonals too, anyone: hero, companion or monster), and
   each **1** snuffs a die out. With none left, the fire is out.
-- **Putting it out:** stepping or being shoved into shallow or deep water douses it. **Stop, drop and
-  roll** (the **Drop & roll** button, only while on fire, before doing anything else that turn) puts it
-  out at the cost of the whole turn, and leaves the hero prone.
+- **Putting it out:** stepping or being shoved into shallow or deep water douses it. Or **stop, drop and
+  roll**: while burning, a **fire slot** slides out from behind the sheet (under the carry tab), a stack of
+  fire cards with the total fire dice. Double-click it for **STOP** (all the turn's Rumble), **DROP** (all
+  its Wend, and you lie down) and **ROLL** (all its Od Hand), each only with that pool untouched this turn
+  (crossed out otherwise). All three in one turn put the fire out. The sheet's **Carry** button pulls the
+  carrying window out, carrying or not.
 - **Credit:** a monster that burns to death is a kill (and XP) for whoever set the fire. Skeletons burned
   to death stay down.
 

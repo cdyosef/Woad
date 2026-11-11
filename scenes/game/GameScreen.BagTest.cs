@@ -64,6 +64,14 @@ public partial class GameScreen
             Check(aria.Equipment.GetValueOrDefault(EquipSlot.OffHand)?.Definition.Id == "rock" && BagUsePopup is null,
                 $"the Od Hand puts a Rock in her off hand ({aria.Equipment.GetValueOrDefault(EquipSlot.OffHand)?.Definition.Id}: {string.Join(" / ", _messages.TakeLast(2))})");
 
+            // The Carry button on the sheet pulls the carrying window out, empty or not, and puts it back.
+            await Click(this, _heroPanel.CarryButton);
+            await Pause(0.3);
+            Check(_carryTab.IsOut, "the sheet's Carry button pulls the carrying window out");
+            await Click(this, _heroPanel.CarryButton);
+            await Pause(0.3);
+            Check(!_carryTab.IsOut, "and puts it back");
+
             GD.Print("Bag test passed.");
             Sfx.QuitGame(this);
         }

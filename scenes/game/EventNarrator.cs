@@ -1,3 +1,4 @@
+using Woad.Core.Commands;
 using Woad.Core.Events;
 using Woad.Core.Content;
 using Woad.Core.Model;
@@ -238,6 +239,7 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         FireBurned burned => $"{nameOf(burned.EntityId)} burns: the fire rolls {burned.Roll.Total}{(burned.FireDiceLeft == 0 ? "" : $" and {(burned.FireDiceLeft == 1 ? "1 fire die burns on" : $"{burned.FireDiceLeft} fire dice burn on")}")}.",
         FireOut { Cause: FireOutCause.Water } fireOut => $"The water puts out the fire on {nameOf(fireOut.EntityId)}.",
         FireOut { Cause: FireOutCause.Aided } fireOut => $"The flames on {nameOf(fireOut.EntityId)} are smothered.",
+        FireFought fought => $"{nameOf(fought.HeroId)} {fought.Part switch { FirePart.Stop => "STOPS", FirePart.Drop => "DROPS", _ => "ROLLS" }} ({fought.Done}/3).",
         FireOut { Cause: FireOutCause.Rolled } fireOut => $"{nameOf(fireOut.EntityId)} stops, drops and rolls, putting out the flames.",
         FireOut fireOut => $"The fire on {nameOf(fireOut.EntityId)} gutters out.",
         WentProne { Diving: true } prone => $"{nameOf(prone.EntityId)} dives beneath the surface.",

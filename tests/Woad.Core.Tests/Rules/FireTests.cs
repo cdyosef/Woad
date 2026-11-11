@@ -256,6 +256,56 @@ public class FireTests
         session.Do(new RollMovement(session.HeroInSeat(1).Id));
         Assert.Contains("whole turn", session.Refuse(new StopDropRoll(session.HeroInSeat(1).Id)));
     }
+
+    [Fact]
+    public void StopDropAndRollEachTakeAWholePoolAndAllThreePutTheFireOut()
+    {
+        GameSession session = TestRun.Start(DummyRoom, new ScriptedDice(3), heroes: 2);
+        Hero hero = session.HeroInSeat(0);
+        hero.FireDice = 3;
+
+        IReadOnlyList<GameEvent> stop = session.Do(new FightFire(hero.Id, FirePart.Stop));
+        Assert.Equal(new FireFought(hero.Id, FirePart.Stop, 1), stop.SingleOf<FireFought>());
+        Assert.Equal(0, session.AttackDiceLeft);
+        Assert.Contains("already", session.Refuse(new FightFire(hero.Id, FirePart.Stop)));
+
+        session.Do(new FightFire(hero.Id, FirePart.Drop));
+        Assert.True(hero.Prone);
+        Assert.Equal(0, session.MoveDiceLeft);
+        Assert.Equal(3, hero.FireDice);
+
+        IReadOnlyList<GameEvent> roll = session.Do(new FightFire(hero.Id, FirePart.Roll));
+        Assert.Equal(new FireOut(hero.Id, FireOutCause.Rolled), roll.SingleOf<FireOut>());
+        Assert.Equal((0, 0), (hero.FireDice, session.OdHandDiceLeft));
+        Assert.Equal(hero.Id, session.State.Turn!.HeroId);
+    }
+
+    [Fact]
+    public void APoolAlreadyUsedThisTurnCantGoIntoTheFire()
+    {
+        GameSession session = TestRun.Start(DummyRoom, new ScriptedDice(3, 3), heroes: 2);
+        Hero hero = session.HeroInSeat(0);
+        hero.FireDice = 1;
+        session.Do(new RollMovement(hero.Id));
+
+        Assert.Contains("Wend", session.Refuse(new FightFire(hero.Id, FirePart.Drop)));
+        Assert.Null(session.CheckFightFire(FirePart.Stop));
+        Assert.Null(session.CheckFightFire(FirePart.Roll));
+    }
+
+    [Fact]
+    public void TheFireStaysWithAPartLeftUndoneWhenTheTurnEnds()
+    {
+        GameSession session = TestRun.Start(DummyRoom, new ScriptedDice(3, 3, 3, 3, 3, 3), heroes: 2);
+        Hero hero = session.HeroInSeat(0);
+        hero.FireDice = 1;
+        session.Do(new FightFire(hero.Id, FirePart.Stop));
+        session.Do(new FightFire(hero.Id, FirePart.Drop));
+
+        session.Do(new EndTurn(hero.Id));
+
+        Assert.True(hero.FireDice > 0);
+    }
 }
 
 public class ProneTests

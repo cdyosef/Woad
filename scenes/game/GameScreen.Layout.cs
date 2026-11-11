@@ -74,7 +74,7 @@ public partial class GameScreen
     private bool _confirmingRetreat;
     private Button _rumble = null!;
     private Button _prone = null!;
-    private Button _dropRoll = null!;
+    private FireTab _fireTab = null!;
     private Button _digOut = null!;
     private Button _breakFree = null!;
     private Button _roll = null!;
@@ -145,6 +145,7 @@ public partial class GameScreen
         _heroPanel.ShowHero(sheet, sheet == hero ? turn : null, sheet == hero ? _selectedCardId : null);
         _inventory.ShowHero(hero, _selectedCardId, AvailableCardActions(hero, turn));
         _carryTab.ShowHero(sheet, sheet == hero ? _selectedCardId : null);
+        _fireTab.ShowHero(sheet, _session, sheet == hero && turn is not null && !Locked);
         _buckleMenu.Visible &= sheet == hero && hero is not null;
         _buckleMenu.ShowHero(_session, hero);
         _header.Text = HeaderText();
@@ -242,22 +243,17 @@ public partial class GameScreen
         _flyOn.Disabled = Locked || flyError is not null;
         _land.TooltipText = landError ?? (hero?.Aloft == true ? "Come down where you are. Over a pit, there's nothing to land on." : "Stay on the ground.");
         _flyOn.TooltipText = flyError ?? "Beat the wings: a d6 of flight (a 6 rolls a Power Die in). A 1 breaks them, and down you come: prone, stunned, your Wend gone.";
-        _rumble.Visible = _shove.Visible = _prone.Visible = _dropRoll.Visible = !waiting && !landing;
+        _rumble.Visible = _shove.Visible = _prone.Visible = !waiting && !landing;
         _prone.Text = lying ? "Get up" : "Prone";
         string? proneError = hero is null || turn is null ? "" : lying ? _session.CheckGetUp() : _session.CheckGoProne();
         _prone.Disabled = proneError is not null;
         _prone.TooltipText = proneError ?? (lying
             ? $"Get back on your feet: {GameRules.GetUpCost} steps."
             : $"Lie down: {GameRules.ProneCost} step. Every step costs double while prone; melee on you rolls an extra die, ranged attacks face an extra defense die. In deep water you dive: out of reach of ranged attacks.");
-        string? dropError = hero is null || turn is null ? "" : _session.CheckStopDropRoll();
-        _dropRoll.Visible &= hero?.FireDice > 0 && dropError is null;
-        _prone.Visible &= !_dropRoll.Visible;
-        _dropRoll.Disabled = dropError is not null;
-        _dropRoll.TooltipText = dropError ?? "Stop, drop and roll: put the fire out. It takes your whole turn and leaves you prone.";
 
         // Buried, digging out takes the place of everything else; blind, the eyes can be tended.
         bool buried = hero?.Conditions.Has(Condition.Buried) == true;
-        _digOut.Visible = !waiting && buried && !_dropRoll.Visible;
+        _digOut.Visible = !waiting && buried;
         string? digError = hero is null || turn is null ? "" : _session.CheckDigOut();
         _digOut.Disabled = digError is not null || Locked;
         _digOut.TooltipText = digError ?? $"Dig at the earth with every Rumble die left: every {GameRules.DigPerToken} of the roll throws off a token ({hero!.Conditions[Condition.Buried]} to go).";
@@ -266,7 +262,7 @@ public partial class GameScreen
 
         // Snatched, struggling free is offered (every Rumble die left against the grip).
         bool snatched = hero is { GripTotal: > 0 } && _session.HeldBy(hero) is not null;
-        _breakFree.Visible = !waiting && snatched && !_digOut.Visible && !_dropRoll.Visible;
+        _breakFree.Visible = !waiting && snatched && !_digOut.Visible;
         string? breakError = hero is null || turn is null ? "" : _session.CheckBreakFree();
         _breakFree.Disabled = breakError is not null || Locked;
         _breakFree.TooltipText = breakError ?? $"Struggle with every Rumble die left: beat its grip of {hero!.GripTotal} to break free.";
@@ -858,6 +854,12 @@ public partial class GameScreen
         _carryTab.CardSelected += ClickCard;
         _carryTab.PutDownRequested += () => ExecuteForActiveHero(heroId => new PutDownAlly(heroId));
         AddChild(_carryTab);
+        _heroPanel.CarryClicked += () => _carryTab.Toggle();
+
+        // The fire slot under it, out while the hero burns: double-click for STOP, DROP and ROLL.
+        _fireTab = new FireTab { Position = new Vector2(SideWidth, StripHeight + 4 + 62), ZIndex = 2 };
+        _fireTab.PartChosen += part => ExecuteForActiveHero(heroId => new FightFire(heroId, part));
+        AddChild(_fireTab);
 
         // Under the board, the dice bar: who rolls on the left, VS, who answers on the right.
         AddChild(new Panel { Position = new Vector2(SideWidth, StripHeight + BoardView.Pixels), Size = new Vector2(BoardView.Pixels, StripHeight) });
@@ -982,9 +984,6 @@ public partial class GameScreen
         _prone = UiTheme.CompactButton(new Vector2(116, 279), new Vector2(52, 20), "Prone");
         _prone.Pressed += () => ExecuteForActiveHero(heroId => ActiveHero?.Prone == true ? new GetUp(heroId) : new GoProne(heroId));
         right.AddChild(_prone);
-        _dropRoll = UiTheme.CompactButton(new Vector2(116, 279), new Vector2(52, 20), "Drop&roll");
-        _dropRoll.Pressed += () => ExecuteForActiveHero(heroId => new StopDropRoll(heroId));
-        right.AddChild(_dropRoll);
 
         _digOut = UiTheme.Accent(UiTheme.CompactButton(new Vector2(116, 279), new Vector2(52, 20), "Dig out"), DieTypes.Tint(DieType.Earth));
         _digOut.Pressed += () => ExecuteForActiveHero(heroId => new DigOut(heroId));

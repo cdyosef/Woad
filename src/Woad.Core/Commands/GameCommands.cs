@@ -400,8 +400,24 @@ public sealed record GoProne(int HeroId) : GameCommand(HeroId);
 /// <summary>Get back on your feet: costs 2 steps.</summary>
 public sealed record GetUp(int HeroId) : GameCommand(HeroId);
 
-/// <summary>On fire, with nothing done yet this turn: put the fire out, ending the turn prone.</summary>
+/// <summary>On fire, with nothing done yet this turn: put the fire out, ending the turn prone (all three of <see cref="FightFire"/> at once).</summary>
 public sealed record StopDropRoll(int HeroId) : GameCommand(HeroId);
+
+/// <summary>The three parts of putting out a fire on yourself, each taking a whole pool of dice.</summary>
+public enum FirePart
+{
+    /// <summary>STOP: all your Rumble.</summary>
+    Stop,
+
+    /// <summary>DROP: all your Wend; you lie down.</summary>
+    Drop,
+
+    /// <summary>ROLL: all your Od Hand.</summary>
+    Roll,
+}
+
+/// <summary>On fire: one part of stopping, dropping and rolling. All three in one turn put the fire out.</summary>
+public sealed record FightFire(int HeroId, FirePart Part) : GameCommand(HeroId);
 
 /// <summary>Buried: dig at the earth with every Rumble die left this turn, every 3 of the roll throwing off a token.</summary>
 public sealed record DigOut(int HeroId) : GameCommand(HeroId);

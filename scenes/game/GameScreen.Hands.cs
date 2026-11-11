@@ -64,7 +64,7 @@ public partial class GameScreen
         var hidden = new Control { Visible = false, Name = "Abilities" };
         right.AddChild(hidden);
         _abilities = hidden;
-        foreach (Button button in new[] { _rumble, _shove, _prone, _dropRoll, _digOut, _breakFree, _roll, _leap, _search, _steal })
+        foreach (Button button in new[] { _rumble, _shove, _prone, _digOut, _breakFree, _roll, _leap, _search, _steal })
         {
             button.Reparent(hidden);
         }
@@ -136,7 +136,6 @@ public partial class GameScreen
             wend,
             new("leap", "Leap", _leap, () => _session.GetLeapTargets().Count > 0),
             new("prone", "Prone", _prone, () => ActiveHero?.Prone == true),
-            new("drop_roll", "Drop & roll", _dropRoll, () => true, () => ActiveHero?.FireDice > 0),
         ]);
         _rumbleHand.Slot = EquipSlot.MainHand;
         _wendHand.Slot = EquipSlot.Feet;

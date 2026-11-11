@@ -1,3 +1,4 @@
+using Woad.Core.Commands;
 using Woad.Core.Content;
 using Woad.Core.Characters;
 using Woad.Core.Dice;
@@ -668,6 +669,9 @@ public sealed record FloorBurnedOut(string RoomId, IReadOnlyList<GridPosition> T
 
 /// <summary>A hero's or monster's fire went out.</summary>
 public sealed record FireOut(int EntityId, FireOutCause Cause) : GameEvent;
+
+/// <summary>A burning hero did one part of stopping, dropping and rolling (<paramref name="Done"/> of the three so far this turn).</summary>
+public sealed record FireFought(int HeroId, FirePart Part, int Done) : GameEvent;
 
 /// <summary>A hero or monster lay down (or was knocked down): prone, or diving in deep water.</summary>
 public sealed record WentProne(int EntityId, bool Diving) : GameEvent;

@@ -385,7 +385,7 @@ public partial class GameScreen
         {
             await WaitUntilIdle();
             Hero aria = ActiveHero!;
-            Check(!_dropRoll.Visible, "Drop & roll only shows while you're on fire");
+            Check(!_fireTab.IsOut, "the fire slot only shows while you're on fire");
             for (int rounds = 0; aria.FireDice == 0 && rounds < 60; rounds++)
             {
                 await Click(this, _endTurn);
@@ -393,13 +393,27 @@ public partial class GameScreen
             }
 
             Check(aria.FireDice > 0 && _figures[aria.Id].FireDice == aria.FireDice, "an imp's fire attack sets Aria alight, and her figure shows it");
-            Check(_dropRoll.Visible && !_dropRoll.Disabled, "on fire, Drop & roll is offered");
-            await UseAbility(_dropRoll);
+            await Pause(0.3);
+            Check(_fireTab.IsOut, "on fire, the fire slot slides out from behind the sheet");
+            await DoubleClickAt(this, _fireTab.Slot.GetGlobalRect().GetCenter());
+            Check(_fireTab.IsMenuOpen, "double-clicking it opens STOP, DROP and ROLL");
+            await SaveShot("fire_menu");
+            foreach (FirePart part in new[] { FirePart.Stop, FirePart.Drop, FirePart.Roll })
+            {
+                Check(!_fireTab.PartButton(part).Disabled, $"{part} can be done");
+                await Click(this, _fireTab.PartButton(part));
+                await WaitUntilIdle();
+                Check(_session.State.Turn!.FireParts.Contains(part), $"{part} is done ({string.Join(" / ", _messages.TakeLast(2))})");
+            }
+
+            Check(aria.FireDice == 0 && aria.Prone && _figures[aria.Id].Prone, "all three put the fire out, and she's lying down");
+            Check(_messages.Any(message => message.Contains("putting out the flames")), "the log says so");
+            await Click(this, _endTurn);
             await WaitUntilIdle();
-            // (The imps may set her alight again in their phase, so the log tells whether it went out.)
-            Check(aria.Prone, "Drop & roll leaves Aria prone");
-            Check(_figures[aria.Id].Prone, "her figure lies down");
-            Check(ActiveHero == aria && _session.State.Round > 1, "it takes her whole turn");
+            for (int rounds = 0; ActiveHero != aria && rounds < 10; rounds++)
+            {
+                await WaitUntilIdle();
+            }
 
             await UseAbility(_roll);
             await WaitUntilIdle();
