@@ -63,6 +63,84 @@ public sealed partial class GameSession
         return fresh ? null : "Stopping, dropping and rolling takes your whole turn: do it before anything else.";
     }
 
+    /// <summary>
+    /// Why the active hero can't do this part of stopping, dropping and rolling now, or null. Each takes a whole pool
+    /// untouched this turn: STOP all the Rumble, DROP all the Wend, ROLL all the Od Hand.
+    /// </summary>
+    public string? CheckFightFire(FirePart part)
+    {
+        if (State.Turn is not { KeelingOver: false } turn)
+        {
+            return "It isn't your turn.";
+        }
+
+        if (ActiveHero.FireDice == 0)
+        {
+            return "You're not on fire.";
+        }
+
+        if (turn is not { PendingRoll: null, UnsettledPowerDice: 0 })
+        {
+            return "Finish the roll first.";
+        }
+
+        if (turn.FireParts.Contains(part))
+        {
+            return $"You've done {part.ToString().ToUpperInvariant()} already this turn.";
+        }
+
+        return part switch
+        {
+            FirePart.Stop when turn.AttackDiceUsed > 0 || turn.Rumbled => "STOP takes all your Rumble, and you've used some this turn.",
+            FirePart.Drop when turn.MoveDiceUsed > 0 || turn.MovementRoll is not null || turn.HasMoved => "DROP takes all your Wend, and you've used some this turn.",
+            FirePart.Roll when turn.OdHandDiceUsed > 0 => "ROLL takes all your Od Hand, and you've used some this turn.",
+            _ => null,
+        };
+    }
+
+    private string? Handle(FightFire command, List<GameEvent> events)
+    {
+        if (CheckFightFire(command.Part) is { } error)
+        {
+            return error;
+        }
+
+        Hero hero = ActiveHero;
+        TurnState turn = Turn;
+        Stats stats = hero.EffectiveStats;
+        turn._fireParts.Add(command.Part);
+        switch (command.Part)
+        {
+            case FirePart.Stop:
+                turn.AttackDiceUsed = Math.Max(turn.AttackDiceUsed, stats.AttackDice);
+                turn.Rumbled = true;
+                break;
+            case FirePart.Drop:
+                turn.MoveDiceUsed = Math.Max(turn.MoveDiceUsed, stats.MoveDice + turn.ExtraMoveDice);
+                turn.MovementPoints = 0;
+                turn.HasMoved = true;
+                if (!hero.Prone)
+                {
+                    hero.Prone = true;
+                    events.Add(new WentProne(hero.Id, IsDiving(hero)));
+                }
+
+                break;
+            case FirePart.Roll:
+                turn.OdHandDiceUsed = Math.Max(turn.OdHandDiceUsed, stats.OdHandDice);
+                break;
+        }
+
+        events.Add(new FireFought(hero.Id, command.Part, turn.FireParts.Count));
+        if (turn.FireParts.Count == 3)
+        {
+            hero.FireDice = 0;
+            events.Add(new FireOut(hero.Id, FireOutCause.Rolled));
+        }
+
+        return null;
+    }
+
     /// <summary>Each step costs double while the active hero is prone, and double again chilled by Freeze.</summary>
     private int Crawl => CrawlOf(ActiveHero);
 

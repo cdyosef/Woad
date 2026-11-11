@@ -83,6 +83,16 @@ public partial class CarryTab : Control
 
     private bool _carrying;
 
+    /// <summary>Pulled out by its button on the sheet, carrying or not.</summary>
+    private bool _pinned;
+
+    /// <summary>The sheet's Carry button: pulls the window out, or puts it back.</summary>
+    public void Toggle()
+    {
+        _pinned = !_out;
+        Slide(_carrying || _pinned);
+    }
+
     public override void _Notification(int what)
     {
         // A card picked up to drag: the window peeks out to be dropped on; let go, it goes back as it was.
@@ -92,7 +102,7 @@ public partial class CarryTab : Control
         }
         else if (what == NotificationDragEnd)
         {
-            Slide(_carrying);
+            Slide(_carrying || _pinned);
         }
     }
 
@@ -128,7 +138,7 @@ public partial class CarryTab : Control
         // One card filling both arms takes the window's whole width.
         _cards[0].Size = both ? new Vector2(62, 40) : new Vector2(30, 40);
         _title.TooltipText = "While you carry anything: no Rumble and no Od Hand. Drop it, or put it away, to fight.";
-        Slide(carried.Count > 0);
+        Slide(carried.Count > 0 || _pinned);
     }
 
     private void Slide(bool open)

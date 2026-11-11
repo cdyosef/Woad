@@ -1,3 +1,4 @@
+using Woad.Core.Commands;
 using Woad.Core.Content;
 using Woad.Core.Dice;
 using Woad.Core.Grid;
@@ -229,6 +230,11 @@ public sealed class TurnState
 
     /// <summary>A Medicine Bag has helped an Aid roll this turn (once a turn).</summary>
     public bool MedicineBagUsed { get; internal set; }
+
+    /// <summary>The parts of stopping, dropping and rolling done this turn: all three put the fire out.</summary>
+    public IReadOnlySet<FirePart> FireParts => _fireParts;
+
+    internal readonly HashSet<FirePart> _fireParts = [];
 
     /// <summary>The once-per-turn free loot (picking up or opening a chest) has been used.</summary>
     public bool UsedFreeLoot { get; internal set; }

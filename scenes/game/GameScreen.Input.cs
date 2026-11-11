@@ -951,9 +951,9 @@ public partial class GameScreen
             return "You rolled a 6! Add a Power Die to this roll, or bank it for later.";
         }
 
-        if (hero.FireDice > 0 && _session.CheckStopDropRoll() is null)
+        if (hero.FireDice > 0 && new[] { FirePart.Stop, FirePart.Drop, FirePart.Roll }.Any(part => _session.CheckFightFire(part) is null))
         {
-            return $"You're on fire ({hero.FireDice} {(hero.FireDice == 1 ? "die" : "dice")})! Stop, drop and roll to put it out (your whole turn), or get into water.";
+            return $"You're on fire ({hero.FireDice} {(hero.FireDice == 1 ? "die" : "dice")})! Double-click the fire slot to STOP (all your Rumble), DROP (all your Wend) and ROLL (all your Od Hand): all three put it out. Or get into water.";
         }
 
         if (turn.PendingRoll is null && _session.HeldBy(hero) is { } holder)

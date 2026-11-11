@@ -219,6 +219,7 @@ public sealed partial class GameSession
             Land c => Handle(c, events),
             GetUp c => Handle(c, events),
             StopDropRoll c => Handle(c, events),
+            FightFire c => Handle(c, events),
             DigOut c => Handle(c, events),
             AttackBomb c => Handle(c, events),
             _ => $"Unknown command {command.GetType().Name}.",

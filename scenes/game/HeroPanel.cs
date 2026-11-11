@@ -79,6 +79,12 @@ public partial class HeroPanel : Panel
     /// <summary>The belt's buckle was clicked.</summary>
     public event Action? BuckleClicked;
 
+    /// <summary>The Carry button: pull the carrying window out, or put it back.</summary>
+    public event Action? CarryClicked;
+
+    /// <summary>The Carry button on the sheet.</summary>
+    internal Button CarryButton { get; private set; } = null!;
+
     /// <summary>A bag under the belt was double-clicked (its id).</summary>
     public event Action<int>? BagUsed;
 
@@ -194,6 +200,11 @@ public partial class HeroPanel : Panel
         _luck = Add(UiTheme.RichLabel(new(3, Rows[0] + CardHeight + 2), new(76, 12)));
         LuckClover = Add(new LuckClover { Position = new(2, Rows[0] + CardHeight + 1), Size = new(76, 13) });
         _magicRank = Add(UiTheme.RichLabel(new(137, Rows[0] + CardHeight + 2), new(38, 12)));
+        CarryButton = Add(UiTheme.CompactButton(new(Columns[1], Rows[0] + CardHeight + 2), new(CardWidth, 12), "Carry"));
+        CarryButton.Name = "Carry";
+        CarryButton.AddThemeFontSizeOverride("font_size", UiTheme.FontSize - 2);
+        CarryButton.TooltipText = "What you carry in your arms: pull the window out (or put it back). Drag cards onto it to carry them.";
+        CarryButton.Pressed += () => CarryClicked?.Invoke();
 
         // The bag: a deck, its cards listed under it.
         for (int i = 2; i >= 1; i--)

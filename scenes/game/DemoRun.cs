@@ -293,7 +293,7 @@ public static class DemoRun
     {
         Seed = seed,
         ThemeId = "emerald_keep",
-        Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20, OdHandDice = 1 }, CardIds = [.. Belted, "rock_bag", "medicine_bag", "sack", "bomb_bag", "wooden_sword", "rock", "rock", "rock", "eye_drops", "antidote", "bomb", "dagger"] }],
+        Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20, OdHandDice = 1 }, CardIds = [.. Belted, "rock_bag", "medicine_bag", "sack", "bomb_bag", "wooden_sword", "rock", "rock", "rock", "eye_drops", "antidote", "bomb", "dagger"], Lingering = new Dictionary<Woad.Core.Model.Condition, int> { [Woad.Core.Model.Condition.Blind] = 1 } }],
         Rooms = [new RoomSetup("yard", RoomTemplate.Parse(".........\n.........\n.........\n.........\n....1....\n.........\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
         StartRoomId = "yard",
     };

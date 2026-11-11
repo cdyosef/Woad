@@ -57,6 +57,9 @@ public partial class PartyPanel : Panel
 
     public event Action? CloseRequested;
 
+    /// <summary>A hero's block was clicked: put up their sheet.</summary>
+    public event Action<int>? HeroClicked;
+
     internal Button? Find(string name) => FindChild(name, recursive: true, owned: false) as Button;
 
     public override void _Ready()
@@ -161,17 +164,18 @@ public partial class PartyPanel : Panel
             HeroStatus.KeelingOver => "  (down)",
             _ => "",
         };
-        string owner = hero.OwnerId is int ownerId ? $", {session.State.GetHero(ownerId).Name}'s companion" : "";
-        row.AddChild(UiTheme.Label(new Vector2(0, y), new Vector2(width, 13), $"{hero.Name}   Lv {hero.Level}   {hero.Hearts}/{hero.MaxHearts} hearts{owner}{status}", color: Palette.Seat(hero.Seat)));
-        y += 13;
+        // The hero's block: portrait, crest, name, hearts, level and gold, vital stats. Click it for their sheet.
+        Crest crest = Crests.Resolve(hero.Appearance, hero.Portrait, Looks.Resolve(hero.Appearance, hero.Portrait));
+        var block = new PartyCard(hero, crest, status.Trim(' ', '(', ')')) { Position = new Vector2(0, y), Size = new Vector2(width, PartyCard.HeightFor(hero, width)) };
+        if (hero.OwnerId is int ownerId)
+        {
+            block.TooltipText = $"{hero.Name}, {session.State.GetHero(ownerId).Name}'s companion: click to put up their sheet.";
+        }
 
-        string Names(IEnumerable<CardInstance> cards) => string.Join(", ", cards.Select(card => card.Count > 1 ? $"{card.Definition.Name} x{card.Count}" : card.Definition.Name).DefaultIfEmpty("nothing"));
-        string keys = hero.Keys > 0 ? $"   {UiTheme.Count(hero.Keys, "key", "keys")}" : "";
-        Label gear = UiTheme.Label(new Vector2(4, y), new Vector2(width - 4, 36),
-            $"Wearing {Names(hero.EquippedCards)}.\nBelt: {Names(hero.Belt)}.  Pack: {Names(hero.Backpack)}.{keys}", color: Palette.Text);
-        gear.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        row.AddChild(gear);
-        y += 26;
+        int clicked = hero.Id;
+        block.Pressed += () => HeroClicked?.Invoke(clicked);
+        row.AddChild(block);
+        y += block.Size.Y + 3;
 
         bool mine = viewer is not null && (hero == viewer || hero.OwnerId == viewer.Id) && hero.IsInPlay;
         if (mine && hero.PointsToSpend > 0)
