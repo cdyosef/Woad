@@ -835,6 +835,12 @@ public partial class GameScreen
         _party = new PartyPanel { Position = BoardOrigin, Size = new Vector2(BoardView.Pixels, BoardView.Pixels), Visible = false, ZIndex = 2 };
         _party.SpendRequested += (heroId, stat, spell) => ExecuteForActiveHero(ownerId => new SpendPoint(ownerId, heroId, stat, spell));
         _party.LearnRequested += (heroId, skill) => ExecuteForActiveHero(ownerId => new LearnSkill(ownerId, heroId, skill));
+        _party.HeroClicked += heroId =>
+        {
+            // Their sheet goes up on the left (the active hero's own block puts theirs back).
+            _viewedHeroId = heroId == ActiveHero?.Id ? null : heroId;
+            RefreshPanels();
+        };
         _party.PolicyRequested += (companionId, policy) => ExecuteForActiveHero(ownerId => new SetCompanionPolicy(ownerId, companionId, policy));
         _party.SwitchRequested += (heroId, ownerId) => ExecuteForActiveHero(playerId => new SwitchControl(playerId, heroId, ownerId));
         _party.CloseRequested += () =>

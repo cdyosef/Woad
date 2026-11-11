@@ -1533,6 +1533,11 @@ public partial class GameScreen
             Check(_partyButton.Text == "Party!", "the Party button says when there's a point to spend");
             await Click(this, _partyButton);
             Check(_party.Visible, "the Party button opens the Party menu");
+            await SaveShot("party_blocks");
+            await Click(this, (Control)_party.FindChild($"Block{pip.Id}", recursive: true, owned: false)!);
+            Check(SheetHero == pip, "clicking Pip's block puts up his sheet");
+            await Click(this, (Control)_party.FindChild($"Block{aria.Id}", recursive: true, owned: false)!);
+            Check(SheetHero == aria, "and Aria's puts hers back");
 
             int max = aria.MaxHearts;
             await Click(this, _party.Find($"Spend{aria.Id}Hearts")!);
