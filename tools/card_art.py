@@ -457,6 +457,24 @@ def draw(item):
         c.circle(18, 8, 2.5, STONE[0])
         c.line(11, 19, 21, 19, LEATHER[0])
         c.line(26, 14, 24, 12, LEATHER[0])
+    elif i == "sack":
+        # A burlap sack, its neck tied with a cord, a weave across it.
+        c.poly([(10, 10), (22, 10), (27, 18), (27, 27), (22, 30), (10, 30), (5, 27), (5, 18)], CLOTH[1])
+        c.poly([(12, 4), (20, 4), (22, 10), (10, 10)], CLOTH[2])
+        c.rect(10, 9, 12, 2, LEATHER[2])
+        c.line(21, 10, 25, 13, LEATHER[2])
+        for y in (15, 19, 23, 27):
+            c.line(7, y, 25, y, CLOTH[2])
+        c.line(9, 14, 9, 28, CLOTH[0])
+    elif i == "bomb_bag":
+        # A dark pouch with a bomb's fuse poking out, lit at its tip.
+        c.poly([(8, 13), (24, 13), (27, 24), (22, 30), (10, 30), (5, 24)], BLACK[1])
+        c.rect(8, 11, 16, 3, LEATHER[2])
+        c.circle(16, 10, 4, BLACK[0])
+        c.line(18, 7, 22, 2, WOOD[1])
+        c.circle(23, 2, 1.6, FLAME[1])
+        c.line(9, 20, 23, 20, BLACK[2])
+        c.circle(16, 24, 2.5, RED[1])
     elif i == "lucky_clover":
         # The Luck clover itself (the sheet's icon), twice the size: four leaves and a curling stem.
         rows = [
@@ -1272,7 +1290,7 @@ ITEMS = [
     "leather_armor", "studded_armor", "chain_mail", "wardens_plate", "storm_mail", "dash_boots",
     "flame_scroll", "frost_scroll", "venom_scroll", "acid_scroll", "grave_scroll", "gale_scroll", "sun_scroll",
     "bloom_scroll", "quake_scroll", "spark_scroll", "mind_scroll", "shadow_scroll", "frost_wand", "boomerang",
-    "club", "big_club", "boulder", "shield_paint", "stick", "lit_stick", "rock", "sling", "rock_bag", "lucky_clover",
+    "club", "big_club", "boulder", "shield_paint", "stick", "lit_stick", "rock", "sling", "rock_bag", "sack", "bomb_bag", "lucky_clover",
     "torch", "lockpicks", "emerald_key", "barons_strongbox", "holy_key", "saints_relic", "modern_medicine", "thieves_oil", "burgling_tools", "cutpurse_knife", "sticky_gloves", "bomb", "autosmith_hammer", "eye_drops", "holy_water", "health_potion",
     "antidote", "strong_base", "smelling_salts", "bandages", "medicine_bag", "shovel", "sineater_doll",
     "loose_coins", "coin_pouch", "emerald", "pearl", "golden_idol",

@@ -39,8 +39,14 @@ public partial class HeroPanel : Panel
     private BeltSquare _beltSquare = null!;
     private Panel _beltView = null!;
     private Label _beltTitle = null!;
-    // The belt's own places, and one for a Rock Bag.
-    private readonly SheetCard[] _beltCards = new SheetCard[GameRules.MaxBeltSlots + 1];
+    private readonly SheetCard[] _beltCards = new SheetCard[GameRules.MaxBeltSlots];
+    private BagRow _bagRow = null!;
+    private BagMouthView _pouchView = null!;
+    private readonly SheetCard[] _pouchCards = new SheetCard[MaxPouchSlots];
+    private int? _openPouchId;
+
+    /// <summary>The most a bag under the belt holds (the Medicine Bag's 20 stacks).</summary>
+    private const int MaxPouchSlots = 20;
     private readonly CardSlot[] _backpack = new CardSlot[GameRules.BackpackCapacity];
     private Label _name = null!;
     private HeartsView _hearts = null!;
@@ -50,8 +56,7 @@ public partial class HeroPanel : Panel
     private RichTextLabel _luck = null!;
     private RichTextLabel _magicRank = null!;
     private SheetCard _bag = null!;
-    private Panel _bagView = null!;
-    private Label _bagTitle = null!;
+    private BagMouthView _bagView = null!;
     private readonly SheetCard[] _bagCards = new SheetCard[GameRules.BackpackCapacity];
     private Label _turn = null!;
     private int? _goldHeroId;
@@ -74,11 +79,46 @@ public partial class HeroPanel : Panel
     /// <summary>The belt's buckle was clicked.</summary>
     public event Action? BuckleClicked;
 
+    /// <summary>A bag under the belt was double-clicked (its id).</summary>
+    public event Action<int>? BagUsed;
+
+    /// <summary>A card in an open bag under the belt was double-clicked: use it, or draw it into a hand.</summary>
+    public event Action<int>? PouchCardUsed;
+
     /// <summary>Where the board starts, to the right of the sheet: the open bag goes over it.</summary>
     private const float SideOfBoard = 176;
 
     /// <summary>Puts the open bag (and the belt's full view) away.</summary>
-    public void CloseBag() => _bagView.Visible = _beltView.Visible = false;
+    public void CloseBag()
+    {
+        _bagView.Visible = _beltView.Visible = _pouchView.Visible = false;
+        _openPouchId = null;
+    }
+
+    /// <summary>The bags hung under the belt.</summary>
+    internal BagRow BagRow => _bagRow;
+
+    /// <summary>The bag under the belt that's open, if one is.</summary>
+    internal int? OpenPouchId => _pouchView.Visible ? _openPouchId : null;
+
+    /// <summary>An open bag under the belt, seen from above, for the game screen to put over the board.</summary>
+    public Control PouchView => _pouchView;
+
+    internal BagMouthView PouchMouth => _pouchView;
+
+    internal BagMouthView BagMouth => _bagView;
+
+    /// <summary>A card in the open bag under the belt.</summary>
+    internal SheetCard PouchCard(int index) => _pouchCards[index];
+
+    /// <summary>Opens a bag under the belt, or closes it if it's the one open.</summary>
+    public void TogglePouch(int bagId)
+    {
+        bool open = !(_pouchView.Visible && _openPouchId == bagId);
+        CloseBag();
+        _openPouchId = open ? bagId : null;
+        _pouchView.Visible = open;
+    }
 
     /// <summary>The belt square, which wears the belt.</summary>
     internal BeltSquare BeltSquare => _beltSquare;
@@ -162,21 +202,14 @@ public partial class HeroPanel : Panel
         }
 
         _bag = Add(new SheetCard { Position = new(Columns[0], Rows[2]), Size = new(CardWidth, CardHeight), Back = "back_bag", ToggleMode = false, DropsAs = new DropTarget(DropKind.Bag) });
-        _bag.Pressed += () =>
-        {
-            _bagView.Visible = !_bagView.Visible;
-            _beltView.Visible = false;
-            BagToggled?.Invoke();
-        };
+        _bag.Pressed += ToggleBag;
 
-        // The bag spread open over the board: its cards face up, two rows of four, to pick from.
-        _bagView = new Panel { Position = new(SideOfBoard + 79, 100), Size = new(146, 106), Visible = false, ZIndex = 3 };
-        _bagTitle = UiTheme.Label(new(0, 3), new(146, 12), color: Palette.TrimBright);
-        _bagTitle.HorizontalAlignment = HorizontalAlignment.Center;
-        _bagView.AddChild(_bagTitle);
+        // The bag open over the board, seen from above: its cards face up inside, two rows of four, to pick from; its knot closes it.
+        _bagView = new BagMouthView { Position = new(SideOfBoard + 79, 94), Size = new(146, BagMouthView.Inside + 90), Visible = false, ZIndex = 3 };
+        _bagView.KnotPressed += ToggleBag;
         for (int i = 0; i < _bagCards.Length; i++)
         {
-            var card = new SheetCard { Position = new(9 + i % 4 * 33, 18 + i / 4 * 43), Size = CardFace.Size, Back = "back_bag", Draggable = true, DropsAs = new DropTarget(DropKind.Bag) };
+            var card = new SheetCard { Position = new(9 + i % 4 * 33, BagMouthView.Inside + i / 4 * 43), Size = CardFace.Size, Back = "back_bag", Draggable = true, DropsAs = new DropTarget(DropKind.Bag) };
             card.Pressed += () =>
             {
                 if (card.Card is { } held)
@@ -231,7 +264,43 @@ public partial class HeroPanel : Panel
             _beltCards[i] = card;
         }
 
-        _turn = Add(UiTheme.Label(new(118, Rows[2] + CardHeight + 12), new(56, 24), color: Palette.TextDim));
+        // The bags hung under the belt, on the leg; each opens over the board, seen from above, its knot on top to close it.
+        _bagRow = Add(new BagRow { Position = new(Columns[2] - 4, Rows[2] + BeltSquare.SquareHeight + 12) });
+        _bagRow.KnotClicked += id =>
+        {
+            TogglePouch(id);
+            BagToggled?.Invoke();
+        };
+        _bagRow.CardSelected += id => CardSelected?.Invoke(id);
+        _bagRow.BagUsed += id => BagUsed?.Invoke(id);
+        _pouchView = new BagMouthView { Position = new(SideOfBoard + 50, 94), Size = new(180, BagMouthView.Inside + 48), Visible = false, ZIndex = 3 };
+        _pouchView.KnotPressed += () =>
+        {
+            CloseBag();
+            BagToggled?.Invoke();
+        };
+        for (int i = 0; i < _pouchCards.Length; i++)
+        {
+            var card = new SheetCard { Position = new(8 + i % 5 * 33, BagMouthView.Inside + i / 5 * 43), Size = CardFace.Size, Back = "back_bag", Draggable = true };
+            card.Pressed += () =>
+            {
+                if (card.Card is { } held)
+                {
+                    CardSelected?.Invoke(held.Id);
+                }
+            };
+            card.DoubleClicked += () =>
+            {
+                if (card.Card is { } held)
+                {
+                    PouchCardUsed?.Invoke(held.Id);
+                }
+            };
+            _pouchView.AddChild(card);
+            _pouchCards[i] = card;
+        }
+
+        _turn = Add(UiTheme.Label(new(118, Rows[2] + BeltSquare.SquareHeight + 12 + BagRow.RowHeight), new(56, 24), color: Palette.TextDim));
         _turn.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         _turn.HorizontalAlignment = HorizontalAlignment.Center;
     }
@@ -239,6 +308,48 @@ public partial class HeroPanel : Panel
     public override bool _CanDropData(Vector2 atPosition, Variant data) => CardDrag.Accepts(data);
 
     public override void _DropData(Vector2 atPosition, Variant data) => CardDrag.Drop(data, new DropTarget(DropKind.Sheet));
+
+    /// <summary>The pack opened, or closed (its deck on the sheet and its knot both do it).</summary>
+    private void ToggleBag()
+    {
+        bool open = !_bagView.Visible;
+        CloseBag();
+        _bagView.Visible = open;
+        BagToggled?.Invoke();
+    }
+
+    /// <summary>The open bag under the belt: its slots, as many as it has, with what's in them; it grows with them.</summary>
+    private void ShowPouch(Hero hero, int? selectedCardId)
+    {
+        CardInstance? bag = _openPouchId is int id ? hero.Bags.FirstOrDefault(bag => bag.Id == id) : null;
+        _bagRow.ShowHero(hero, selectedCardId, _pouchView.Visible ? bag?.Id : null);
+        if (bag is null)
+        {
+            _pouchView.Visible = false;
+            return;
+        }
+
+        BagSpec spec = bag.Definition.Hangs!;
+        int slots = Math.Min(spec.Slots, _pouchCards.Length);
+        int shown = Math.Min(slots, Math.Max(bag.Contents.Count + 1, Math.Min(slots, 5)));
+        int perRow = Math.Min(5, Math.Max(1, shown));
+        int rows = (shown + 4) / 5;
+        _pouchView.Size = new(Math.Max(110, 16 + perRow * 33), BagMouthView.Inside + rows * 43 + 4);
+        (_pouchView.Cloth, _pouchView.Trim) = BagRow.Colors(bag.Definition.Id);
+        _pouchView.Title = $"THE {bag.Definition.Name.ToUpperInvariant()} {bag.Contents.Count}/{spec.Slots}";
+        float left = (_pouchView.Size.X - perRow * 33) / 2 + 2;
+        for (int i = 0; i < _pouchCards.Length; i++)
+        {
+            CardInstance? card = i < bag.Contents.Count ? bag.Contents[i] : null;
+            SheetCard slot = _pouchCards[i];
+            slot.Visible = i < shown;
+            slot.Position = new(left + i % 5 * 33, BagMouthView.Inside + i / 5 * 43);
+            slot.DropsAs = new DropTarget(DropKind.Pack, BagId: bag.Id);
+            slot.Show(card, "", card is not null && card.Id == selectedCardId, hero);
+        }
+
+        _pouchView.QueueRedraw();
+    }
 
     private SheetCard AddCard(Vector2 position, string back)
     {
@@ -278,6 +389,7 @@ public partial class HeroPanel : Panel
             }
 
             _beltSquare.ShowHero(null, null);
+            _bagRow.ShowHero(null, null, null);
             return;
         }
 
@@ -353,10 +465,12 @@ public partial class HeroPanel : Panel
             _backpack[i].Visible = card is not null;
         }
 
-        _bag.Show(null, $"Bag {hero.Backpack.Count}/{GameRules.BackpackCapacity}", selected: false);
+        // The pack's deck lights up while it's open, as the knot on top of it does.
+        _bag.Show(null, $"Bag {hero.Backpack.Count}/{GameRules.BackpackCapacity}", selected: _bagView.Visible);
         _bag.Disabled = false;
         _bag.TooltipText = (hero.Backpack.Count == 0 ? "The bag is empty." : "In the bag:\n" + string.Join("\n", hero.Backpack.Select(CardSlot.Title))) + "\nClick to open it.";
-        _bagTitle.Text = hero.Backpack.Count == 0 ? "THE BAG IS EMPTY" : $"THE BAG {hero.Backpack.Count}/{GameRules.BackpackCapacity}";
+        _bagView.Title = hero.Backpack.Count == 0 ? "THE BAG IS EMPTY" : $"THE BAG {hero.Backpack.Count}/{GameRules.BackpackCapacity}";
+        ShowPouch(hero, selectedCardId);
         for (int i = 0; i < _bagCards.Length; i++)
         {
             CardInstance? card = i < hero.Backpack.Count ? hero.Backpack[i] : null;

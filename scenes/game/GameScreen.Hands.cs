@@ -179,6 +179,7 @@ public partial class GameScreen
         };
         AddChild(_spread);
         AddChild(_heroPanel.BagView);
+        AddChild(_heroPanel.PouchView);
         AddChild(_heroPanel.BeltView);
 
         _curePicker = new Panel { Position = BoardOrigin + new Vector2(BoardView.Pixels / 2 - 70, 60), Size = new Vector2(140, 40), Visible = false, ZIndex = 4 };
@@ -455,6 +456,14 @@ public partial class GameScreen
             }
 
             stack.AddRange(tools.Select(tool => ItemCard(tool, mine && turn!.ToolsUsed, Plus(tool.Definition.Tool!.Bonus), mine && !turn!.ToolsUsed ? tool.Definition.Tool.Dice : 0)));
+
+            // The bags under the belt that work from there: Burgling Tools go in with the Od Hand dice, the Medicine Bag aims Aid.
+            foreach (CardInstance bag in hero.Bags.Where(bag => bag.Definition.Tool is not null || bag.Definition.MedicineBag))
+            {
+                stack.Add(bag.Definition.Tool is { } kit
+                    ? ItemCard(bag, mine && turn!.ToolsUsed, Plus(kit.Bonus), mine && !turn!.ToolsUsed ? kit.Dice : 0)
+                    : ItemCard(bag, tapped: false, "+1", 1));
+            }
         }
 
         if (hand.Played is { Held: true } played)

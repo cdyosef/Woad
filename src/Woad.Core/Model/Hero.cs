@@ -926,6 +926,11 @@ public sealed class Hero
         {
             _mods.Add(card);
         }
+        else if (IsBagged(definition))
+        {
+            // What a bag under the belt holds goes into it: Rocks into the Rock Bag, cures into the Medicine Bag.
+            AddToBag(card);
+        }
         else if (definition.Belts && BeltUsed < BeltCapacity)
         {
             // Belt tools ride on the belt, a torch too (unlit, till it's taken in hand).
@@ -934,11 +939,6 @@ public sealed class Hero
         else if (definition.Slot is not null && CardsDisplacedBy(definition).Count == 0)
         {
             Equip(card);
-        }
-        else if (IsBagged(definition) && BeltCapacity > 0)
-        {
-            // Rocks with a Rock Bag on: into the bag, a place of its own.
-            AddToBag(card);
         }
         else if (CanBelt(definition) && BeltUsed < BeltCapacity)
         {

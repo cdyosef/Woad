@@ -288,6 +288,16 @@ public static class DemoRun
         StartRoomId = "yard",
     };
 
+    /// <summary>For --bagtest: Aria with a Rock Bag, a Medicine Bag, a Sack and a Bomb Bag under her belt, rocks, cures and a bomb in them, and a dagger.</summary>
+    public static RunSetup Bags(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20, OdHandDice = 1 }, CardIds = [.. Belted, "rock_bag", "medicine_bag", "sack", "bomb_bag", "wooden_sword", "rock", "rock", "rock", "eye_drops", "antidote", "bomb", "dagger"] }],
+        Rooms = [new RoomSetup("yard", RoomTemplate.Parse(".........\n.........\n.........\n.........\n....1....\n.........\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
+        StartRoomId = "yard",
+    };
+
     /// <summary>For --toolstest: Aria wearing Sticky Gloves, Lockpicks on her belt, a Dagger in her off hand, nothing about to fight.</summary>
     public static RunSetup Tools(ulong seed) => new()
     {
