@@ -419,16 +419,12 @@ public static class TavernServices
         Level: 1,
         Price: Money.Gold(10));
 
-    /// <summary>Hires a recruit: paid by <paramref name="buyer"/>, they become a companion character.</summary>
-    /// <param name="purse">Who pays, if not the buyer (the Party Chest).</param>
+    /// <summary>
+    /// Hires a recruit: they become <paramref name="buyer"/>'s companion, for nothing down. Their price is their wage,
+    /// paid after every run they finish (see <see cref="SettleRun"/>).
+    /// </summary>
     public static (ServiceResult Result, Character? Recruit) Hire(Character buyer, RecruitOffer offer, ContentCatalog content, DateTimeOffset now, IPurse? purse = null)
     {
-        purse ??= buyer;
-        if (!purse.Spend(offer.Price))
-        {
-            return (NotEnough(purse, offer.Price), null);
-        }
-
         Character recruit = Character.Create(offer.Name, offer.Portrait, offer.Allocation, content, now, isCompanion: true, offer.Appearance);
         if (offer.Appearance.Persona == Rules.GameSession.ClodPersona)
         {
@@ -449,7 +445,48 @@ public static class TavernServices
             recruit.GiveCard(card, content);
         }
 
-        return (new ServiceResult(true, $"{buyer.Name} hires {offer.Name} for {Money.Long(offer.Price)}. {offer.Name} joins as {buyer.Name}'s companion."), recruit);
+        recruit.SetWage(offer.Price);
+        return (new ServiceResult(true, $"{buyer.Name} hires {offer.Name} for {Money.Long(offer.Price)} a run, paid after each. {offer.Name} joins as {buyer.Name}'s companion."), recruit);
+    }
+
+    /// <summary>
+    /// The end of a run in a dungeon. Every hired companion who was on it is paid their wage by whoever they follow,
+    /// win or lose (as much of it as that purse holds). And a party that won it together grows closer: +1 bond
+    /// between each two of them.
+    /// </summary>
+    /// <param name="party">Everyone who went, each with whoever they follow (null for a player's own hero).</param>
+    /// <returns>What happened, to tell the players.</returns>
+    public static IReadOnlyList<string> SettleRun(IReadOnlyList<(Character Member, Character? Owner)> party, bool won, RaidWorld? world)
+    {
+        var news = new List<string>();
+        foreach ((Character companion, Character? owner) in party.Where(entry => entry.Member.Wage > 0 && entry.Owner is not null))
+        {
+            int paid = Math.Min(companion.Wage, owner!.Coins);
+            if (paid > 0)
+            {
+                owner.Spend(paid);
+                companion.Earn(paid);
+            }
+
+            news.Add(paid == companion.Wage ? $"{owner.Name} pays {companion.Name} {Money.Long(paid)}."
+                : paid > 0 ? $"{owner.Name} can only pay {companion.Name} {Money.Long(paid)} of {Money.Long(companion.Wage)}."
+                : $"{owner.Name} has nothing to pay {companion.Name}.");
+        }
+
+        if (won && world is not null && party.Count > 1)
+        {
+            for (int i = 0; i < party.Count; i++)
+            {
+                for (int j = i + 1; j < party.Count; j++)
+                {
+                    world.RaiseBond(party[i].Member.Id, party[j].Member.Id);
+                }
+            }
+
+            news.Add("The party grows closer (+1 bond).");
+        }
+
+        return news;
     }
 
     /// <summary>

@@ -141,6 +141,11 @@ public sealed partial class Character : IPurse
 
     public void SetPolicy(CompanionPolicy policy) => Policy = policy;
 
+    /// <summary>A hired companion's wage, in copper: what whoever they follow pays them after every run they finish, win or lose.</summary>
+    public int Wage { get; private set; }
+
+    public void SetWage(int copper) => Wage = Math.Max(0, copper);
+
     /// <summary>The rolls Luck is asked on when they're about to fail (the Luck menu's switches).</summary>
     public LuckRoll LuckAsks { get; private set; } = LuckRoll.All;
 

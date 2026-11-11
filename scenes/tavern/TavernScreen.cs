@@ -637,7 +637,7 @@ public partial class TavernScreen : Control
 
     private void ShowRecruits()
     {
-        Row($"Your name here: {World.Reputation(Tavern.Id)}. At 3 and at 6, better folk will follow you.", 536);
+        Row($"Your name here: {World.Reputation(Tavern.Id)}. At 3 and at 6, better folk will follow you. Nothing down: each is paid their price after every run, win or lose.", 536);
         // Clod Hopper, the frog hunter, is always at the recruiter's elbow, keen to come along.
         foreach (RecruitOffer offer in TavernServices.Recruits(World, Tavern).Append(TavernServices.Clod))
         {
@@ -646,7 +646,7 @@ public partial class TavernScreen : Control
                 .Concat(Skills.In(offer.Allocation.Skills).Select(skill => skill.Name())));
             string gear = offer.Gear.Count > 0 ? $"; brings {string.Join(", ", offer.Gear.Select(id => Content.GetCard(id).Name))}" : "";
             HBoxContainer row = Row($"{offer.Name}, level {offer.Level}: {stats}{gear}", 436);
-            Button hire = RowButton(row, hired ? "Hired" : $"Hire, {Money.Short(offer.Price)}", 96, () => Hire(offer));
+            Button hire = RowButton(row, hired ? "Hired" : $"Hire, {Money.Short(offer.Price)}/run", 96, () => Hire(offer));
             hire.Disabled = hired;
         }
     }

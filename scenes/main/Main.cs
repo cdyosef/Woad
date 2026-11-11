@@ -1112,6 +1112,27 @@ public partial class Main : Control
 						  (wares.Count > 0 ? $": new wares, {string.Join(", ", wares.Select(ware => _content.GetCard(ware).Name))}." : ".");
 		}
 
+		// After a dungeon: hired companions are paid by whoever they follow, win or lose, and a party that won grows closer.
+		string settled = "";
+		if (!setup.Skirmish)
+		{
+			Character? Of(int seat) => results.FirstOrDefault(result => result.Seat == seat) is { CharacterId: Guid id } ? party.FirstOrDefault(member => member.Id == id) : null;
+			List<(Character Member, Character? Owner)> went = [.. results.Where(result => result.CharacterId is not null)
+				.Select(result => (Member: Of(result.Seat), Owner: result.Seat < setup.Heroes.Count && setup.Heroes[result.Seat].OwnerSeat is int owner ? Of(owner) : null))
+				.Where(entry => entry.Member is not null).Select(entry => (entry.Member!, entry.Owner))];
+			RaidWorld? bonds = _raiding ? LoadRaidWorld() : null;
+			settled = string.Join(" ", TavernServices.SettleRun(went, results.Any(result => result.Won), bonds));
+			if (bonds is not null)
+			{
+				SaveRaidWorld();
+			}
+
+			foreach (Character member in went.SelectMany(entry => new[] { entry.Member, entry.Owner }).OfType<Character>().Distinct())
+			{
+				_ = _characters.SaveAsync(member);
+			}
+		}
+
 		if (setup.Skirmish)
 		{
 			SettleSkirmish(results, party);
@@ -1127,7 +1148,7 @@ public partial class Main : Control
 		}
 
 		Music.Play(results.Any(result => result.Won) ? "victory" : "defeat", loop: false);
-		var screen = new ResultsScreen { Rows = rows, Content = _content, SaveProblem = saveProblem };
+		var screen = new ResultsScreen { Rows = rows, Content = _content, SaveProblem = saveProblem, Settled = settled };
 		screen.DoneRequested += () =>
 		{
 			if (_runFromMap)

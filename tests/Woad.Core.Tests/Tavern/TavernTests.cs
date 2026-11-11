@@ -267,6 +267,39 @@ public class TavernTests
     }
 
     [Fact]
+    public void AHiredCompanionIsPaidAfterEveryRunWinOrLose()
+    {
+        Character ash = Hero("Ash", Money.Gold(25));
+        (_, Character? clod) = TavernServices.Hire(ash, TavernServices.Clod, Content, DateTimeOffset.UnixEpoch);
+        Assert.Equal((Money.Gold(25), Money.Gold(10)), (ash.Coins, clod!.Wage));
+
+        IReadOnlyList<string> lost = TavernServices.SettleRun([(ash, null), (clod, ash)], won: false, world: null);
+        Assert.Equal((Money.Gold(15), Money.Gold(10)), (ash.Coins, clod.Coins));
+        Assert.Contains("pays Clod Hopper", Assert.Single(lost));
+
+        TavernServices.SettleRun([(ash, null), (clod, ash)], won: true, world: null);
+        // A purse run short pays what it holds.
+        IReadOnlyList<string> shortOf = TavernServices.SettleRun([(ash, null), (clod, ash)], won: false, world: null);
+        Assert.Equal((0, Money.Gold(25)), (ash.Coins, clod.Coins));
+        Assert.Contains("can only pay", shortOf[0]);
+    }
+
+    [Fact]
+    public void APartyThatWinsARunTogetherGrowsCloser()
+    {
+        RaidWorld world = RaidWorld.Begin(Map);
+        Character ash = Hero("Ash", 0), bryn = Hero("Bryn", 0), cole = Hero("Cole", 0, companion: true);
+
+        TavernServices.SettleRun([(ash, null), (bryn, null), (cole, ash)], won: false, world);
+        Assert.Equal(0, world.Bond(ash.Id, bryn.Id));
+
+        IReadOnlyList<string> news = TavernServices.SettleRun([(ash, null), (bryn, null), (cole, ash)], won: true, world);
+
+        Assert.Equal((1, 1, 1), (world.Bond(ash.Id, bryn.Id), world.Bond(ash.Id, cole.Id), world.Bond(bryn.Id, cole.Id)));
+        Assert.Contains(news, line => line.Contains("grows closer"));
+    }
+
+    [Fact]
     public void HiringMakesAnOutfittedCompanion()
     {
         RaidWorld world = RaidWorld.Begin(Map);
@@ -277,13 +310,15 @@ public class TavernTests
         (ServiceResult result, Character? recruit) = TavernServices.Hire(ash, offer, Content, DateTimeOffset.UnixEpoch);
 
         Assert.True(result.Done, result.Message);
-        Assert.Equal(Money.Gold(40) - offer.Price, ash.Coins);
+        Assert.Equal(Money.Gold(40), ash.Coins);
+        Assert.Equal(offer.Price, recruit!.Wage);
         Assert.True(recruit!.IsCompanion);
         Assert.Equal(3, recruit.Level);
         Assert.Contains("knights_sword", recruit.Equipped);
         Assert.DoesNotContain("wooden_sword", recruit.Equipped);
         Assert.Equal(offer.Appearance, recruit.Appearance);
-        Assert.Null(TavernServices.Hire(Hero("Broke", 0), offer, Content, DateTimeOffset.UnixEpoch).Recruit);
+        // Nothing down: even an empty purse can hire (the wage comes due after the run).
+        Assert.NotNull(TavernServices.Hire(Hero("Broke", 0), offer, Content, DateTimeOffset.UnixEpoch).Recruit);
     }
 
     [Fact]

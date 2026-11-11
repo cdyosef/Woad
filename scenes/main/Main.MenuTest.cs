@@ -416,8 +416,8 @@ public partial class Main
 
         await TalkTo(Npc(NpcRole.Recruiter));
         await Click(this, inn.ListButton("Hire")!);
-        Check(inn.Party.Count == 4 && inn.Party[2].IsCompanion && inn.Party[3].Name == "Morgan" && wren.Coins == gold - Money.Gold(10),
-            "hiring a recruit for 10 gold seats them as Wren's companion, after Pip");
+        Check(inn.Party.Count == 4 && inn.Party[2].IsCompanion && inn.Party[3].Name == "Morgan" && wren.Coins == gold && inn.Party[2].Wage == Money.Gold(10),
+            "hiring a recruit costs nothing down (10 gold a run, paid after) and seats them as Wren's companion, after Pip");
         await Click(this, inn.ByeButton);
 
         await TalkTo(Npc(NpcRole.Innkeeper));

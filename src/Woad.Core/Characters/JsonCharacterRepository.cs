@@ -106,6 +106,7 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
         Policy = character.Policy,
         LuckAsks = character.LuckAsks,
         CloverLuck = character.CloverLuck,
+        Wage = character.Wage,
         Spells = [.. character.Spells],
         Lingering = new Dictionary<Condition, int>(character.Lingering),
     };
@@ -148,6 +149,7 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
             KnownSpells(file.Spells), file.Lingering, Known(file.Carried));
         character.SetLuckAsks(file.LuckAsks ?? LuckRoll.All);
         character.SetCloverLuck(file.CloverLuck);
+        character.SetWage(file.Wage);
 
         // Saved before belts were cards: the belt of 4 they had becomes a Basic Belt and Basic Buckle.
         if (file.SchemaVersion < 3)
@@ -238,6 +240,8 @@ public sealed class JsonCharacterRepository(string folderPath, ContentCatalog co
 
         /// <summary>Missing in files saved before Lucky Clovers: none.</summary>
         public int CloverLuck { get; init; }
+
+        public int Wage { get; init; }
 
         /// <summary>Missing in files saved before Magic: none.</summary>
         public List<string> Spells { get; init; } = [];

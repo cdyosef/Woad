@@ -627,7 +627,10 @@ Magic is dangerous in this world, and people don't like it, for good reason.
   the list below (up to rank 13, one for each). Raising Magic in the character editor, or with a level's
   points from the Party menu in a run, asks which.
 - Companions can take Magic too, and cast their spells under the **Fight** order.
-- **Clod Hopper**, frog hunter of the bog country, waits at every recruiter's elbow (10 gold): hat, waders and a
+- **Hiring** costs nothing down. A recruit's price is their **wage**: whoever they follow pays it to them after
+  every dungeon run they finish, win or lose (as much of it as that purse holds). Fights on the Woarld Map don't count.
+- **Bonds:** a party that wins a run together grows closer: +1 bond between each two of them.
+- **Clod Hopper**, frog hunter of the bog country, waits at every recruiter's elbow (10 gold a run): hat, waders and a
   mossy coat, a frog on his crest. He brings a **Frog Gig** (Weapon 1, reach 2 in a line; +1 against swimmers and
   earth creatures; a hit on something small out at its reach drags it a tile in), **Bog Waders** (water costs a step,
   and he stays afloat), a **Bog Lantern** (a torch that never burns out) and a **Sack**. He speaks a little Gurgle,
