@@ -42,6 +42,9 @@
   { "id": "chain_mail", "name": "Chain Mail", "type": "armor", "slot": "body", "modifiers": { "armor": 3 }, "value": 10, "text": "Armor 3: adds 3 to every defense." },
   { "id": "wardens_plate", "name": "Warden's Plate", "type": "armor", "slot": "body", "modifiers": { "armor": 3, "defenseDice": 1 }, "value": 25, "text": "The Iron Warden's own. Armor 3, and an extra Defense die: it rolls in when a defense is losing, back each turn." },
   { "id": "storm_mail", "name": "Storm Mail", "type": "armor", "slot": "body", "modifiers": { "armor": 1 }, "rumbleType": "elektrik", "value": 18, "text": "Armor 1. Your Rumble dice crackle: they're Elektrik dice, earning no Power Dice, but each 6 rolls another in and on a hit stuns." },
+  { "id": "frog_gig", "name": "Frog Gig", "type": "weapon", "slot": "mainHand", "modifiers": { "weapon": 1 }, "attackRange": 2, "reach": true, "swimmerBonus": 1, "earthBonus": 1, "snags": true, "value": 9, "text": "A frog hunter's forked spear. Weapon 1, reach 2 in a straight line, past an ally in front of you. +1 against swimmers (it spears them even submerged) and earth creatures. A hit on something small out at its reach drags it a tile toward you." },
+  { "id": "bog_waders", "name": "Bog Waders", "type": "boots", "slot": "feet", "swims": true, "value": 8, "text": "Waterproof to the chest. Water costs you 1 step a tile, and you stay afloat in deep water without spending a Rumble die." },
+  { "id": "bog_lantern", "name": "Bog Lantern", "type": "tool", "slot": "offHand", "altSlot": "mainHand", "torch": true, "everlit": true, "belts": true, "value": 6, "text": "A shuttered lantern that never burns out. It rides on your belt; held, it's a torch in every way: +1d6 on Search rolls, it lights your way, and a fire die on your Rumble attacks." },
   { "id": "dash_boots", "name": "Dash Boots", "type": "boots", "slot": "feet", "modifiers": { "moveDice": 1 }, "value": 10, "text": "+1 Wend die." },
 
   // Accessories

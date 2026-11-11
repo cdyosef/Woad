@@ -84,6 +84,9 @@ public partial class CharacterEditor : MenuScreen
     private string _crestCharge = "";
     private string _crestColor = "";
     private string _crestInk = "";
+
+    /// <summary>A companion's persona, kept through editing (Clod Hopper's).</summary>
+    private string _persona = "";
     private readonly HashSet<string> _languages = [];
     private Panel _languagesPanel = null!;
     private readonly Dictionary<string, Button> _languageButtons = [];
@@ -136,7 +139,7 @@ public partial class CharacterEditor : MenuScreen
     internal Button RandomButton { get; private set; } = null!;
 
     internal Appearance Appearance => new(_look, _main, _trim, _skin, _hair, CrestField: _crestField, CrestCharge: _crestCharge, CrestColor: _crestColor, CrestInk: _crestInk,
-        Languages: string.Join(",", Languages.All.Where(language => _languages.Contains(language.Id)).Select(language => language.Id)));
+        Languages: string.Join(",", Languages.All.Where(language => _languages.Contains(language.Id)).Select(language => language.Id)), Persona: _persona);
 
     public override void _Ready()
     {
@@ -146,7 +149,7 @@ public partial class CharacterEditor : MenuScreen
             _budget = PointBuy.Cost(character.Allocation) + character.UnspentPoints;
             _level = character.Level;
             _portrait = character.Portrait;
-            (_look, _main, _trim, _skin, _hair, _, _, _, _crestField, _crestCharge, _crestColor, _crestInk, string languages) = character.Appearance;
+            (_look, _main, _trim, _skin, _hair, _, _, _, _crestField, _crestCharge, _crestColor, _crestInk, string languages, _persona) = character.Appearance;
             _languages.UnionWith(Languages.Known(languages).Where(language => language != Languages.Common).Select(language => language.Id));
         }
         else

@@ -276,6 +276,9 @@ public sealed record MonsterDove(int MonsterId) : GameEvent;
 /// <summary>A monster says something, in its language (by id): it shows in a speech bubble over it.</summary>
 public sealed record MonsterSpoke(int MonsterId, string Language, string Text) : GameEvent;
 
+/// <summary>A hero (a companion with a persona of its own) said something, in a language.</summary>
+public sealed record HeroSpoke(int HeroId, string Language, string Text) : GameEvent;
+
 /// <summary>A slain monster's body floats belly-up on <paramref name="Tiles"/> (Leviathan Jr.'s): a surface to stand on.</summary>
 public sealed record CarcassFloated(string RoomId, int MonsterId, string MonsterDefinitionId, IReadOnlyList<GridPosition> Tiles) : GameEvent;
 
@@ -669,6 +672,9 @@ public sealed record FloorBurnedOut(string RoomId, IReadOnlyList<GridPosition> T
 
 /// <summary>A hero's or monster's fire went out.</summary>
 public sealed record FireOut(int EntityId, FireOutCause Cause) : GameEvent;
+
+/// <summary>A hero's weapon caught a monster and drags it a tile in (a Frog Gig).</summary>
+public sealed record Snagged(int HeroId, int MonsterId) : GameEvent;
 
 /// <summary>A burning hero did one part of stopping, dropping and rolling (<paramref name="Done"/> of the three so far this turn).</summary>
 public sealed record FireFought(int HeroId, FirePart Part, int Done) : GameEvent;

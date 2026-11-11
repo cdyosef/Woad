@@ -138,6 +138,10 @@ public partial class GameScreen : Control
         {
             RunBathsTest();
         }
+        else if (args.Contains("--clodtest"))
+        {
+            RunClodTest();
+        }
         else if (args.Contains("--bagtest"))
         {
             RunBagTest();
@@ -1081,6 +1085,11 @@ public partial class GameScreen : Control
             case MonsterSpoke spoke:
                 Say(spoke.MonsterId, spoke.Text, Languages.Get(spoke.Language));
                 await Pause(1.2);
+                break;
+
+            case HeroSpoke spoke:
+                Say(spoke.HeroId, spoke.Text, Languages.Get(spoke.Language));
+                await Pause(0.8);
                 break;
 
             case CarcassFloated floated when floated.RoomId == _shownRoomId:

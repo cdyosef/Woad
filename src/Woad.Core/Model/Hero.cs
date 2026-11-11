@@ -81,6 +81,9 @@ public sealed class Hero
     /// <summary>The game plays a companion's turns, following its owner's orders.</summary>
     public bool IsCompanion => OwnerId is not null;
 
+    /// <summary>The round a companion with a persona last said its piece (see <see cref="Rules.GameSession"/>'s Persona).</summary>
+    public int? SpokeRound { get; internal set; }
+
     /// <summary>"Player 2": counting players only, in seat order; 0 for a companion.</summary>
     public int PlayerNumber { get; internal set; }
 

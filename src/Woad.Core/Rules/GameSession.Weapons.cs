@@ -415,11 +415,26 @@ public sealed partial class GameSession
     /// What a weapon does as its attack lands: a Great Axe's sixes cleave into more monsters beside the
     /// attacker, and a Maul's six shoves the target back, hit or miss.
     /// </summary>
-    private void WeaponAftermath(Hero hero, Room room, PendingRoll attack, List<GameEvent> events)
+    private void WeaponAftermath(Hero hero, Room room, PendingRoll attack, IReadOnlyCollection<int> hit, List<GameEvent> events)
     {
         if (attack.Weapon is not { } weapon)
         {
             return;
+        }
+
+        // A Frog Gig: a hit on something small out at its reach drags it a tile in.
+        if (weapon.Snags)
+        {
+            foreach (Monster snagged in hit.Select(room.FindMonster).OfType<Monster>()
+                         .Where(monster => monster.Tiles.Count() == 1 && !monster.Definition.Boss && !monster.Definition.Miniboss && monster.Position.ChebyshevDistanceTo(hero.Position) > 1))
+            {
+                var inward = new GridPosition(snagged.Position.X + Math.Sign(hero.Position.X - snagged.Position.X), snagged.Position.Y + Math.Sign(hero.Position.Y - snagged.Position.Y));
+                if (inward != hero.Position && room.Layout.Contains(inward) && !IsOccupied(room, inward) && (room.Layout[inward].IsWalkable(snagged.Flies) || (snagged.Definition.Swimmer && InWater(room, inward))))
+                {
+                    events.Add(new Snagged(hero.Id, snagged.Id));
+                    PushMonster(hero, room, snagged, inward, events);
+                }
+            }
         }
 
         int sixes = attack.Roll.Faces.Count(face => face == GameRules.PowerDieFace);

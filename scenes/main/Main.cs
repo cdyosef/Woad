@@ -146,6 +146,10 @@ public partial class Main : Control
 		{
 			Show(new GameScreen { Setup = DemoRun.SmashDemo(seed), Content = _content });
 		}
+		else if (args.Contains("--clodtest"))
+		{
+			Show(new GameScreen { Setup = DemoRun.Clod(seed), Content = _content });
+		}
 		else if (args.Contains("--bagtest"))
 		{
 			Show(new GameScreen { Setup = DemoRun.Bags(seed), Content = _content });

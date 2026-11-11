@@ -8,6 +8,7 @@ public static partial class Looks
         new("wanderer", "Wanderer", "human", "hair", [new(6, 5), new(9, 5)], null, null),
         new("knight", "Knight", null, null, [new(6, 5), new(9, 5)], null, null),
         new("ranger", "Ranger", "human", null, [new(6, 5), new(9, 5)], null, null),
+        new("frog_hunter", "Frog Hunter", "human", null, [new(6, 6), new(9, 6)], null, null),
         new("rogue", "Rogue", "human", "hair", [new(6, 5), new(9, 5)], null, null),
         new("mage", "Mage", "human", "hair", [new(6, 5), new(9, 5)], null, null),
         new("wizard", "Wizard", "human", "hair", [new(6, 5), new(9, 5)], null, null),

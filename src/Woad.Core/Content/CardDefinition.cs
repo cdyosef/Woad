@@ -194,6 +194,15 @@ public sealed record CardDefinition
     /// <summary>Gear: water costs the wearer 1 step a tile, and deep water needs no Rumble die to stay afloat.</summary>
     public bool Swims { get; init; }
 
+    /// <summary>A light that never burns out (the Bog Lantern): a 1 in an attack by it doesn't put it out.</summary>
+    public bool Everlit { get; init; }
+
+    /// <summary>Weapons: this much more against earth creatures (a Frog Gig's +1 for the toads in the mud).</summary>
+    public int EarthBonus { get; init; }
+
+    /// <summary>Weapons: a hit on a one-tile monster that isn't beside you drags it a tile toward you (a Frog Gig). Not bosses.</summary>
+    public bool Snags { get; init; }
+
     /// <summary>
     /// Worn, it's the last line of defense: when a defense is still losing after everything else, it
     /// rolls one more die in, and then breaks (the Lucky Helmet).
