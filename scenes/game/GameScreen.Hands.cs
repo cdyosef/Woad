@@ -462,6 +462,14 @@ public partial class GameScreen
                 stack.Add(bag.Definition.Tool is { } kit
                     ? ItemCard(bag, mine && turn!.ToolsUsed, Plus(kit.Bonus), mine && !turn!.ToolsUsed ? kit.Dice : 0)
                     : ItemCard(bag, tapped: false, "+1", 1));
+
+                // The Medicine Bag pulls in what's in it that would help now: cures for what ails the hero or an ally beside
+                // them, a potion for the hurt, Bandages for anyone ailing or down. Double-click one to use it (Bandages go into an Aid).
+                if (bag.Definition.MedicineBag)
+                {
+                    stack.AddRange(bag.Contents.Where(cure => Helps(hero, cure.Definition))
+                        .Select(cure => ItemCard(cure, cure.Definition.Bandage ? false : mine && turn!.UsedBeltItem)));
+                }
             }
         }
 
@@ -471,6 +479,24 @@ public partial class GameScreen
         }
 
         return stack;
+    }
+
+    /// <summary>Whether a card from the Medicine Bag would help the hero or an ally beside them now.</summary>
+    private bool Helps(Hero hero, CardDefinition cure)
+    {
+        List<Hero> patients = [.. _session.State.HeroesIn(_session.State.RoomOf(hero)).Where(other => other == hero || (other.IsInPlay && other.Position.ChebyshevDistanceTo(hero.Position) <= 1))];
+        if (cure.Bandage)
+        {
+            return patients.Any(patient => patient.IsKeelingOver || patient.Conditions.All.Values.Any(count => count > 0));
+        }
+
+        return cure.Effect switch
+        {
+            { Kind: CardEffectKind.Heal } => hero.Hearts < hero.MaxHearts,
+            { Cures: { } condition } effect => patients.Any(patient => patient.Conditions.Has(condition)) || (effect.CuresDisease && patients.Any(patient => patient.Conditions.Has(Condition.Nekrot))),
+            { CuresDisease: true } => patients.Any(patient => patient.Conditions.Has(Condition.Nekrot)),
+            _ => false,
+        };
     }
 
     /// <summary>A skill that's only disabled for the moment (a roll waiting), not used up.</summary>
@@ -578,6 +604,14 @@ public partial class GameScreen
             // A tool goes to work on what it's for.
             Button action = tool.For.HasFlag(Skill.PickLock) ? _pickLock : tool.For.HasFlag(Skill.Steal) ? _steal : _search;
             PlayAbility(new AbilityCard(card.Picture, card.Name, action, () => true));
+            return;
+        }
+
+        // A cure or potion the Medicine Bag pulled into the Od Hand square: used from the bag, as from the belt.
+        if (hand == _odHand && card.CardId is int cureId && ActiveHero is { } medic && medic.FindCard(cureId) is { Card: { Definition.Bandage: false } cure, Location: CardLocation.Bag }
+            && medic.BagHolding(cure) is { Definition.MedicineBag: true })
+        {
+            UseFromBelt(cureId);
             return;
         }
 

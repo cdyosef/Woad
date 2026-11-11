@@ -29,6 +29,18 @@ public partial class GameScreen
             Check(aria.Belt.All(card => card.Definition.Id != "eye_drops"), "and none of them take a belt slot");
             await SaveShot("bags_belt");
 
+            // Blind, the Medicine Bag pulls the Eye Drops (not the Antidote) into the Od Hand square; double-clicked, they cure her.
+            List<StackCard> od = StackOf(_odHand, aria);
+            CardInstance drops = medicine.Contents.Single(card => card.Definition.Id == "eye_drops");
+            Check(od.Any(card => card.CardId == drops.Id) && od.All(card => card.CardId is not int id || aria.FindCard(id)?.Card.Definition.Id != "antidote"),
+                $"the Medicine Bag pulls the Eye Drops into the Od Hand stack ({string.Join(", ", od.Select(card => card.Name))})");
+            UseStackCard(_odHand, od.First(card => card.CardId == drops.Id));
+            await WaitUntilIdle();
+            await ClickTile(aria.Position);
+            await WaitUntilIdle();
+            await ConfirmIfHeld();
+            Check(!aria.Conditions.Has(Condition.Blind), $"double-clicked, they cure her ({string.Join(" / ", _messages.TakeLast(2))})");
+
             // A knot opens its bag, seen from above; the knot at the top of it closes it.
             Vector2 row = _heroPanel.BagRow.GetGlobalRect().Position;
             await ClickAt(this, row + _heroPanel.BagRow.KnotPoint(1));
