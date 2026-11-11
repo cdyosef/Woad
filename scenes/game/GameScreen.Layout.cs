@@ -151,7 +151,7 @@ public partial class GameScreen
         _header.Text = HeaderText();
         if (_party.Visible)
         {
-            _party.ShowParty(_session, Locked ? null : hero);
+            _party.ShowParty(_session, Locked ? null : hero, SheetHero);
         }
 
         // Someone with points to spend: the Party button says so.
@@ -760,6 +760,11 @@ public partial class GameScreen
         _partyButton.Pressed += () =>
         {
             _party.Visible = !_party.Visible;
+            if (_party.Visible)
+            {
+                _party.Opened(_session, ActiveHero);
+            }
+
             RefreshPanels();
         };
         AddChild(_partyButton);
@@ -835,6 +840,7 @@ public partial class GameScreen
         _party = new PartyPanel { Position = BoardOrigin, Size = new Vector2(BoardView.Pixels, BoardView.Pixels), Visible = false, ZIndex = 2 };
         _party.SpendRequested += (heroId, stat, spell) => ExecuteForActiveHero(ownerId => new SpendPoint(ownerId, heroId, stat, spell));
         _party.LearnRequested += (heroId, skill) => ExecuteForActiveHero(ownerId => new LearnSkill(ownerId, heroId, skill));
+        _party.CardSelected += ClickCard;
         _party.HeroClicked += heroId =>
         {
             // Their sheet goes up on the left (the active hero's own block puts theirs back).
