@@ -13,7 +13,7 @@ namespace Woad.Core.Model;
 /// <param name="CrestInk">The charge's color (empty: follows the character's main color).</param>
 /// <param name="Languages">The languages they speak besides Common, by id, comma-separated (see <see cref="Content.Languages"/>).</param>
 public sealed record Appearance(string Look = "", string Main = "", string Trim = "", string Skin = "", string Hair = "", string BeltLook = "", string BuckleLook = "", string HiddenGear = "",
-    string CrestField = "", string CrestCharge = "", string CrestColor = "", string CrestInk = "", string Languages = "")
+    string CrestField = "", string CrestCharge = "", string CrestColor = "", string CrestInk = "", string Languages = "", string Persona = "")
 {
     public static Appearance Default { get; } = new();
 

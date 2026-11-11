@@ -405,6 +405,20 @@ public static class TavernServices
         return offers;
     }
 
+    /// <summary>
+    /// Clod Hopper, frog hunter of the bog country, in his hat and waders with his gig and lantern: always at the
+    /// recruiter's elbow, and keen. He speaks a little Gurgle, and picks up whatever's lying about.
+    /// </summary>
+    public static RecruitOffer Clod { get; } = new(
+        "Clod Hopper",
+        new Appearance("frog_hunter", "moss", "umber", "tan", "brown", CrestField: "bordure", CrestCharge: "frog", CrestColor: "teal", CrestInk: "moss",
+            Languages: "gurgle", Persona: Rules.GameSession.ClodPersona),
+        "moss",
+        new StatAllocation { Hearts = 2, Speed = 1, OdHandDice = 1, Skills = Skill.Search | Skill.Aid },
+        ["frog_gig", "bog_waders", "bog_lantern", "sack"],
+        Level: 1,
+        Price: Money.Gold(10));
+
     /// <summary>Hires a recruit: paid by <paramref name="buyer"/>, they become a companion character.</summary>
     /// <param name="purse">Who pays, if not the buyer (the Party Chest).</param>
     public static (ServiceResult Result, Character? Recruit) Hire(Character buyer, RecruitOffer offer, ContentCatalog content, DateTimeOffset now, IPurse? purse = null)
@@ -416,6 +430,12 @@ public static class TavernServices
         }
 
         Character recruit = Character.Create(offer.Name, offer.Portrait, offer.Allocation, content, now, isCompanion: true, offer.Appearance);
+        if (offer.Appearance.Persona == Rules.GameSession.ClodPersona)
+        {
+            // A frog hunter never walks past anything lying in the mud.
+            recruit.SetPolicy(recruit.Policy with { PicksUpLoot = true });
+        }
+
         recruit.GainXp(Progression.XpForLevel(offer.Level));
         foreach (string cardId in offer.Gear)
         {

@@ -59,6 +59,7 @@ public static class Crests
         new("hand", "Hand"),
         new("heart", "Heart"),
         new("anvil", "Anvil"),
+        new("frog", "Frog"),
         new("none", "None"),
     ];
 
@@ -233,6 +234,18 @@ public static class Crests
             case "eagle":
                 Poly(V(0, -1.25f), V(0.3f, -0.6f), V(1.45f, -0.95f), V(1.05f, 0.1f), V(0.35f, 0.25f), V(0.55f, 1.25f), V(0, 0.85f),
                     V(-0.55f, 1.25f), V(-0.35f, 0.25f), V(-1.05f, 0.1f), V(-1.45f, -0.95f), V(-0.3f, -0.6f));
+                break;
+            case "frog":
+                // Squatting, seen from above: a round body, splayed legs, two bulging eyes.
+                Dot(0, 0.15f, 0.75f);
+                Line(-0.55f, 0.45f, -1.2f, 1.05f, 0.3f);
+                Line(0.55f, 0.45f, 1.2f, 1.05f, 0.3f);
+                Line(-0.5f, -0.2f, -1.15f, -0.55f, 0.25f);
+                Line(0.5f, -0.2f, 1.15f, -0.55f, 0.25f);
+                Dot(-0.38f, -0.6f, 0.32f);
+                Dot(0.38f, -0.6f, 0.32f);
+                Dot(-0.38f, -0.65f, 0.12f, back);
+                Dot(0.38f, -0.65f, 0.12f, back);
                 break;
             case "fish":
                 Poly([.. Enumerable.Range(0, 16).Select(point =>

@@ -83,5 +83,6 @@ public static partial class Looks
         new("squire", "Squire", "human", "hair", [new(6, 5), new(9, 5)], null, null),
         new("ninja", "Ninja", "human", null, [new(6, 5), new(9, 5)], null, null),
         new("geisha", "Geisha", "human", "hair", [new(6, 5), new(9, 5)], "pale", "black"),
+        new("frog_hunter", "Frog Hunter", "human", null, [new(6, 6), new(9, 6)], null, null),
     ];
 }

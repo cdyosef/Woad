@@ -220,6 +220,15 @@ def draw(item):
         haft(c, 4, 28, 21, 11)
         c.poly([(20, 12), (24, 4), (28, 3), (27, 8), (21, 13)], STEEL[1])
         c.line(22, 10, 26, 5, STEEL[0])
+    elif i == "frog_gig":
+        # A long shaft and a three-pronged fork, barbed, a frog-green ribbon tied below it.
+        haft(c, 4, 29, 20, 13)
+        c.line(20, 13, 23, 10, IRON[1], 2)
+        for dx, dy in ((-3, -1), (0, 0), (3, 1)):
+            c.line(22 + dx, 11 + dy, 26 + dx, 3 + dy, STEEL[1], 1)
+            c.dot(26 + dx, 3 + dy, STEEL[0])
+        c.line(19, 9, 26, 13, IRON[1], 1)
+        c.rect(15, 16, 3, 3, GREEN[1])
     elif i == "great_axe":
         haft(c, 6, 28, 22, 6)
         c.poly([(14, 8), (24, 3), (28, 12), (20, 18)], STEEL[1])
@@ -362,6 +371,26 @@ def draw(item):
         c.rect(12, 5, 8, 3, LEATHER[0])
         for y in (11, 15, 19):
             c.line(2, y, 7, y, WHITE[1])
+    elif i == "bog_waders":
+        # Tall waders, up to the chest, with braces, mud on the boots.
+        c.poly([(9, 3), (23, 3), (24, 22), (27, 27), (27, 30), (5, 30), (5, 27), (8, 22)], GREEN[2])
+        c.line(16, 8, 16, 26, BLACK[1], 1)
+        c.line(11, 3, 11, 0, LEATHER[1], 1)
+        c.line(21, 3, 21, 0, LEATHER[1], 1)
+        c.rect(5, 26, 22, 4, LEATHER[2])
+        c.dot(9, 24, LEATHER[1])
+        c.dot(22, 23, LEATHER[1])
+    elif i == "bog_lantern":
+        # A shuttered iron lantern, its glow showing through the slats.
+        c.line(13, 3, 19, 3, IRON[0], 1)
+        c.line(13, 3, 12, 7, IRON[0], 1)
+        c.line(19, 3, 20, 7, IRON[0], 1)
+        c.rect(10, 7, 12, 3, IRON[1])
+        c.rect(11, 10, 10, 14, FLAME[0])
+        c.circle(16, 17, 3, FLAME[1])
+        for x in (11, 15, 19):
+            c.rect(x, 10, 2, 14, IRON[0])
+        c.rect(9, 24, 14, 4, IRON[1])
     elif i.endswith("_scroll"):
         scroll(c, i.removesuffix("_scroll"))
     elif i == "frost_wand":
@@ -1290,7 +1319,7 @@ ITEMS = [
     "leather_armor", "studded_armor", "chain_mail", "wardens_plate", "storm_mail", "dash_boots",
     "flame_scroll", "frost_scroll", "venom_scroll", "acid_scroll", "grave_scroll", "gale_scroll", "sun_scroll",
     "bloom_scroll", "quake_scroll", "spark_scroll", "mind_scroll", "shadow_scroll", "frost_wand", "boomerang",
-    "club", "big_club", "boulder", "shield_paint", "stick", "lit_stick", "rock", "sling", "rock_bag", "sack", "bomb_bag", "lucky_clover",
+    "club", "big_club", "boulder", "shield_paint", "stick", "lit_stick", "rock", "sling", "rock_bag", "sack", "bomb_bag", "frog_gig", "bog_waders", "bog_lantern", "lucky_clover",
     "torch", "lockpicks", "emerald_key", "barons_strongbox", "holy_key", "saints_relic", "modern_medicine", "thieves_oil", "burgling_tools", "cutpurse_knife", "sticky_gloves", "bomb", "autosmith_hammer", "eye_drops", "holy_water", "health_potion",
     "antidote", "strong_base", "smelling_salts", "bandages", "medicine_bag", "shovel", "sineater_doll",
     "loose_coins", "coin_pouch", "emerald", "pearl", "golden_idol",

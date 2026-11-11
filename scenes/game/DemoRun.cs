@@ -298,6 +298,22 @@ public static class DemoRun
         StartRoomId = "yard",
     };
 
+    /// <summary>For --clodtest: Aria and her companion Clod Hopper, frog hunter, at a bog pool, a slime and a frog-ish thing across it.</summary>
+    public static RunSetup Clod(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "sunken_temple",
+        Heroes =
+        [
+            DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20 }, CardIds = [.. Belted, "wooden_sword"] },
+            new HeroSetup(Woad.Core.Tavern.TavernServices.Clod.Name, DebugStats with { Hearts = 20, Speed = 2 }, [.. Belted, .. Woad.Core.Tavern.TavernServices.Clod.Gear], OwnerSeat: 0,
+                Portrait: Woad.Core.Tavern.TavernServices.Clod.Portrait, Appearance: Woad.Core.Tavern.TavernServices.Clod.Appearance,
+                Policy: Woad.Core.Model.CompanionPolicy.Default with { PicksUpLoot = true }),
+        ],
+        Rooms = [new RoomSetup("bog", RoomTemplate.Parse(".........\n.........\n..,,,,,..\n..,,,,,..\n..,,,,,..\n.........\n...12....\n.........\n......s..", ContentCatalog.LoadDefault()).WithTile(new GridPosition(4, 6), TileKind.ShallowWater))],
+        StartRoomId = "bog",
+    };
+
     /// <summary>For --toolstest: Aria wearing Sticky Gloves, Lockpicks on her belt, a Dagger in her off hand, nothing about to fight.</summary>
     public static RunSetup Tools(ulong seed) => new()
     {

@@ -627,6 +627,12 @@ Magic is dangerous in this world, and people don't like it, for good reason.
   the list below (up to rank 13, one for each). Raising Magic in the character editor, or with a level's
   points from the Party menu in a run, asks which.
 - Companions can take Magic too, and cast their spells under the **Fight** order.
+- **Clod Hopper**, frog hunter of the bog country, waits at every recruiter's elbow (10 gold): hat, waders and a
+  mossy coat, a frog on his crest. He brings a **Frog Gig** (Weapon 1, reach 2 in a line; +1 against swimmers and
+  earth creatures; a hit on something small out at its reach drags it a tile in), **Bog Waders** (water costs a step,
+  and he stays afloat), a **Bog Lantern** (a torch that never burns out) and a **Sack**. He speaks a little Gurgle,
+  picks up whatever's lying about, and says his piece now and then: at the big ones, the water ones, when hurt, and
+  when his feet are wet.
 - Each rank is also a **Magic Energy slot**, a pentagram after the Power bank in the dice pool. At the
   start of each of your turns, a d6 is rolled for each empty slot (shown in the dice tray, "Magic stirs"),
   and each **6** fills one with a **Magic Die**: its star turns yellow. A Magic Die works just like a banked

@@ -638,7 +638,8 @@ public partial class TavernScreen : Control
     private void ShowRecruits()
     {
         Row($"Your name here: {World.Reputation(Tavern.Id)}. At 3 and at 6, better folk will follow you.", 536);
-        foreach (RecruitOffer offer in TavernServices.Recruits(World, Tavern))
+        // Clod Hopper, the frog hunter, is always at the recruiter's elbow, keen to come along.
+        foreach (RecruitOffer offer in TavernServices.Recruits(World, Tavern).Append(TavernServices.Clod))
         {
             bool hired = Roster.Any(character => string.Equals(character.Name, offer.Name, StringComparison.OrdinalIgnoreCase));
             string stats = string.Join(", ", PointBuy.AllStats.Where(stat => offer.Allocation[stat] > 0).Select(stat => $"+{offer.Allocation[stat]} {StatName(stat)}")

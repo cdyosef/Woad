@@ -74,7 +74,8 @@ public sealed partial class GameSession
         Wielding wielding = Wield(hero, room, monster.Position, monster, only);
         // A Shovel strikes earth creatures with a die more and +1.
         int earth = wielding.HasStrike && wielding.Weapon?.Shovel == true && monster.Definition.DieType == DieType.Earth ? 1 : 0;
-        int weaponBonus = wielding.Bonus + earth + (monster.Definition.Swimmer && wielding.HasStrike && !wielding.OffHand ? wielding.Weapon?.SwimmerBonus ?? 0 : 0);
+        int weaponBonus = wielding.Bonus + earth + (monster.Definition.Swimmer && wielding.HasStrike && !wielding.OffHand ? wielding.Weapon?.SwimmerBonus ?? 0 : 0)
+            + (monster.Definition.DieType == DieType.Earth && wielding.HasStrike ? wielding.Weapon?.EarthBonus ?? 0 : 0);
         bool armed = useWeapon && wielding.HasStrike && (weaponBonus > 0 || wielding.Dice > 0);
         int bonus = (armed ? weaponBonus : 0) + extra + TakeRumbleBonus(holdBonus, dice);
         Turn.AttackDiceUsed += dice;
@@ -366,7 +367,7 @@ public sealed partial class GameSession
             }
         }
 
-        WeaponAftermath(hero, room, attack, events);
+        WeaponAftermath(hero, room, attack, hit, events);
         MonstersCounter(room, hero, attack.TargetIds, events);
         SpellAftermath(hero, room, attack, hit, events);
 
@@ -376,7 +377,7 @@ public sealed partial class GameSession
             QuenchHeldFire(hero);
             events.Add(new FlameWentOut(hero.Id));
         }
-        else if (attack.Torches > 0 && attack.Roll.Faces.Contains(1) && hero.EquippedCards.LastOrDefault(card => card.Definition.Torch) is { } torch)
+        else if (attack.Torches > 0 && attack.Roll.Faces.Contains(1) && hero.EquippedCards.LastOrDefault(card => card.Definition is { Torch: true, Everlit: false }) is { } torch)
         {
             hero.Remove(torch);
             events.Add(new TorchBurnedOut(hero.Id, torch.Id));
