@@ -91,6 +91,9 @@ public partial class GameScreen
             case DropKind.Bag when location != CardLocation.Backpack:
                 Execute(new StowCard(hero.Id, cardId));
                 break;
+            case DropKind.Pack when target.BagId is int bagId && hero.BagHolding(card)?.Id != bagId:
+                Execute(new PackCard(hero.Id, cardId, bagId));
+                break;
             case DropKind.Carry when location != CardLocation.Carried:
                 Execute(new CarryCard(hero.Id, cardId));
                 break;

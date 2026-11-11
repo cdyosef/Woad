@@ -1467,6 +1467,7 @@ public partial class GameScreen
         _confirmingRetreat = false;
         _wingsChoice = false;
         _heroPanel.CloseBag();
+        CloseBagUse();
         _spread?.Close();
         CloseRummage();
         CloseTrade();

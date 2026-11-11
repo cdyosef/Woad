@@ -46,7 +46,15 @@ public sealed class CardInstance
     /// <summary>How a character keeps it between runs: its id and its wear (and a packed belt, what it carries).</summary>
     public string Key => Packed is { } packed
         ? CardKey.Packed(CardKey.Of(Definition.Id, Wear), packed.Attached.SelectMany(Copies), packed.Held.SelectMany(Copies))
+        : _contents.Count > 0 ? CardKey.Bagged(CardKey.Of(Definition.Id, Wear, Painted), _contents.SelectMany(Copies))
         : CardKey.Of(Definition.Id, Wear, Painted);
+
+    private readonly List<CardInstance> _contents = [];
+
+    /// <summary>What's in it, for a bag (see <see cref="CardDefinition.Bag"/>): a stack a slot.</summary>
+    public IReadOnlyList<CardInstance> Contents => _contents;
+
+    internal List<CardInstance> ContentsList => _contents;
 
     /// <summary>A shield with its owner's crest painted on it (Shield Paint): heroes beside its bearer defend at +1.</summary>
     public bool Painted { get; internal set; }
@@ -84,7 +92,14 @@ public sealed class CardInstance
                 return made;
             }
 
-            card.Packed = new PackedBelt(Make(attached), Make(held));
+            if (card.Definition.Hangs is not null)
+            {
+                card._contents.AddRange(Make(held));
+            }
+            else
+            {
+                card.Packed = new PackedBelt(Make(attached), Make(held));
+            }
         }
 
         return card;

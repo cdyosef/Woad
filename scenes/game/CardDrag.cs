@@ -13,9 +13,12 @@ public enum DropKind
     Carry,
     Board,
     Sheet,
+
+    /// <summary>Into a bag under the belt (its id).</summary>
+    Pack,
 }
 
-public readonly record struct DropTarget(DropKind Kind, EquipSlot? Slot = null);
+public readonly record struct DropTarget(DropKind Kind, EquipSlot? Slot = null, int? BagId = null);
 
 /// <summary>
 /// Dragging cards about: any card the hero holds can be picked up from where it's shown (an equip square,

@@ -138,6 +138,14 @@ public partial class GameScreen : Control
         {
             RunBathsTest();
         }
+        else if (args.Contains("--bagtest"))
+        {
+            RunBagTest();
+        }
+        else if (args.Contains("--torchtest"))
+        {
+            RunTorchTest();
+        }
         else if (args.Contains("--smashtest"))
         {
             RunSmashTest();

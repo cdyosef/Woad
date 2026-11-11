@@ -149,7 +149,8 @@ public class SkillTests
         ContentCatalog content = ContentCatalog.LoadDefault();
 
         Assert.Equal(Skill.PickLock | Skill.Disarm | Skill.Steal, content.GetCard("burgling_tools").Tool!.For);
-        Assert.Equal(EquipSlot.OffHand, content.GetCard("burgling_tools").Slot);
+        Assert.Equal(["lockpicks", "cutpurse_knife", "thieves_oil"], content.GetCard("burgling_tools").Bag!.Holds);
+        Assert.Equal(EquipSlot.Belt, content.GetCard("burgling_tools").ModFor);
         Assert.All(new[] { "cutpurse_knife", "sticky_gloves" }, id => Assert.Equal(new ToolUse { For = Skill.Steal, Bonus = 1, Dice = 1 }, content.GetCard(id).Tool));
         Assert.Equal((EquipSlot.OffHand, EquipSlot.MainHand, 1), (content.GetCard("cutpurse_knife").Slot, content.GetCard("cutpurse_knife").AltSlot, content.GetCard("cutpurse_knife").AttackBonus));
         Assert.Equal(EquipSlot.Accessory, content.GetCard("sticky_gloves").Slot);

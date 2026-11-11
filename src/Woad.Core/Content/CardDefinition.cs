@@ -56,6 +56,20 @@ public enum CardUsage
     Charges,
 }
 
+/// <summary>
+/// A bag hung under the belt: <see cref="Slots"/> stacks of what it <see cref="Holds"/> (by card id; none listed, anything
+/// that isn't itself a bag, a belt, a buckle, carry-only or a flame), each stack up to <see cref="StackUpTo"/> (0: the card's
+/// own limit). A bag that names what it holds catches it when it's picked up (Rocks into the Rock Bag); a Sack only holds what's put in it.
+/// </summary>
+public sealed record BagSpec
+{
+    public int Slots { get; init; } = 4;
+
+    public IReadOnlyList<string> Holds { get; init; } = [];
+
+    public int StackUpTo { get; init; }
+}
+
 public enum CardEffectKind
 {
     /// <summary>Restore <see cref="CardEffect.Amount"/> hearts to yourself.</summary>
@@ -370,6 +384,16 @@ public sealed record CardDefinition
 
     /// <summary>Weapons: the card it shoots (the Sling's Rocks), one used up a shot. With none to hand, it can't strike.</summary>
     public string? Ammo { get; init; }
+
+    /// <summary>
+    /// A bag that hangs under the belt (a belt mod: the Rock Bag, the Medicine Bag, Burgling Tools, a Bomb Bag, a Sack):
+    /// a place of its own for what it holds, which opens like a bag. See <see cref="BagSpec"/>.
+    /// </summary>
+    public BagSpec? Bag { get; init; }
+
+    /// <summary>The bag this card is, if it's one (an old-style <see cref="Holds"/> mod is a bag of one stack).</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public BagSpec? Hangs => Bag ?? (Holds is { } held ? new BagSpec { Slots = 1, Holds = [held], StackUpTo = HoldsUpTo } : null);
 
     /// <summary>A mod that holds a card's stack (the Rock Bag, Rocks): up to <see cref="HoldsUpTo"/> of them, and a weapon loads them from the belt.</summary>
     public string? Holds { get; init; }

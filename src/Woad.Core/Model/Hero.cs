@@ -30,6 +30,9 @@ public enum CardLocation
 
     /// <summary>In the hero's arms, in the carrying slots: no Rumble and no Od Hand while anything is there.</summary>
     Carried,
+
+    /// <summary>In a bag hung under the belt (the Medicine Bag's potions, the Rock Bag's Rocks): to hand like the belt.</summary>
+    Bag,
 }
 
 /// <summary>A player's character during a run.</summary>
@@ -342,7 +345,7 @@ public sealed class Hero
     public IEnumerable<CardInstance> HeldFires => EquippedCards.Concat(_carried).Where(card => card.Definition.HeldFire);
 
     /// <summary>Their Medicine Bags, on the belt or in a hand, if they have any to hand.</summary>
-    public CardInstance? MedicineBag => EquippedCards.Concat(_belt).FirstOrDefault(card => card.Definition.MedicineBag);
+    public CardInstance? MedicineBag => EquippedCards.Concat(Bags).Concat(_belt).FirstOrDefault(card => card.Definition.MedicineBag);
 
     /// <summary>Their Bandages, anywhere they carry them.</summary>
     public CardInstance? Bandages => AllCards.FirstOrDefault(card => card.Definition.Bandage);
@@ -408,11 +411,59 @@ public sealed class Hero
     /// <summary>How many cards the belt worn holds: none for a hero who is beltless.</summary>
     public int BeltCapacity => _equipment.GetValueOrDefault(EquipSlot.Belt)?.Definition.BeltSlots ?? 0;
 
-    /// <summary>The belt's own slots in use: what a bag on it holds (the Rock Bag's Rocks) rides in a slot of its own, a bonus.</summary>
-    public int BeltUsed => _belt.Count(card => !IsBagged(card.Definition));
+    /// <summary>The belt's own slots in use (bags hang below it, with places of their own).</summary>
+    public int BeltUsed => _belt.Count;
 
-    /// <summary>The places the belt shows: its own slots, and one more for each bag on it (the Rock Bag).</summary>
-    public int BeltPlaces => BeltCapacity + (BeltCapacity > 0 ? _mods.Count(mod => mod.Definition.Holds is not null) : 0);
+    /// <summary>The places the belt shows.</summary>
+    public int BeltPlaces => BeltCapacity;
+
+    /// <summary>The bags hung under the belt (belt mods that are bags), in the order they went on.</summary>
+    public IEnumerable<CardInstance> Bags => BeltCapacity > 0 ? _mods.Where(mod => mod.Definition.Hangs is not null) : [];
+
+    /// <summary>The bag hung under the belt that has this card in it, or null.</summary>
+    public CardInstance? BagHolding(CardInstance card) => Bags.FirstOrDefault(bag => bag.Contents.Contains(card));
+
+    /// <summary>Whether this bag takes this kind of card at all (not whether it has room).</summary>
+    public static bool BagTakes(CardInstance bag, CardDefinition definition) =>
+        bag.Definition.Hangs is { } spec
+        && (spec.Holds.Count > 0
+            ? spec.Holds.Contains(definition.Id)
+            : definition.Hangs is null && !definition.CarryOnly && !definition.HeldFire && definition.Type is not (CardType.Belt or CardType.Buckle or CardType.Mod));
+
+    /// <summary>The most of a card one of this bag's stacks holds.</summary>
+    public static int BagStackLimit(CardInstance bag, CardDefinition definition) =>
+        bag.Definition.Hangs is { StackUpTo: > 0 } spec ? spec.StackUpTo
+        : definition.MaxStack > 0 ? definition.MaxStack
+        : definition.IsStackable ? int.MaxValue : 1;
+
+    /// <summary>How many of this card the bag has room for: in its stack of it, or a new slot.</summary>
+    public static int BagRoom(CardInstance bag, CardDefinition definition)
+    {
+        if (!BagTakes(bag, definition) || bag.Definition.Hangs is not { } spec)
+        {
+            return 0;
+        }
+
+        if (definition.IsStackable && bag.Contents.FirstOrDefault(card => card.Definition == definition) is { } stack)
+        {
+            return Math.Max(0, BagStackLimit(bag, definition) - stack.Count);
+        }
+
+        return bag.Contents.Count < spec.Slots ? BagStackLimit(bag, definition) : 0;
+    }
+
+    /// <summary>Puts a card into a bag: onto its stack of it, or into a slot of its own. Returns the card that holds it.</summary>
+    internal CardInstance PackInto(CardInstance bag, CardInstance card)
+    {
+        if (card.Definition.IsStackable && bag.Contents.FirstOrDefault(other => other.Definition == card.Definition && other != card) is { } stack)
+        {
+            stack.Absorb(card);
+            return stack;
+        }
+
+        bag.ContentsList.Add(card);
+        return card;
+    }
 
     /// <summary>The carrying slots in use.</summary>
     public int CarrySlotsUsed => _carried.Sum(card => card.Definition.CarrySlots) + (CarriedAlly is null ? 0 : GameRules.CarrySlots);
@@ -441,6 +492,11 @@ public sealed class Hero
             return on == EquipSlot.Belt ? $"The {mod.Name} goes on a belt, and you're beltless." : $"The {mod.Name} goes on a buckle, and you've none.";
         }
 
+        if (mod.Hangs is not null && Bags.Count() >= BeltCapacity)
+        {
+            return $"Your belt can hang only {BeltCapacity} bags, one for each of its slots.";
+        }
+
         return !mod.Repeats && _mods.Any(card => card.Definition == mod) ? $"Your {(on == EquipSlot.Belt ? "belt" : "buckle")} has {mod.Name} already." : null;
     }
 
@@ -452,7 +508,7 @@ public sealed class Hero
     public IEnumerable<CardInstance> EquippedCards =>
         _equipment.OrderBy(entry => entry.Key).Select(entry => entry.Value).Distinct();
 
-    public IEnumerable<CardInstance> AllCards => EquippedCards.Concat(_mods).Concat(_belt).Concat(_backpack).Concat(_carried);
+    public IEnumerable<CardInstance> AllCards => EquippedCards.Concat(_mods).Concat(_belt).Concat(Bags.SelectMany(bag => bag.Contents)).Concat(_backpack).Concat(_carried);
 
     /// <summary>Base stats plus the bonuses of everything equipped (mods on the belt and buckle too).</summary>
     public Stats EffectiveStats => EquippedCards.Concat(_mods).Concat(BeltTools).Aggregate(BaseStats, (stats, card) =>
@@ -544,13 +600,13 @@ public sealed class Hero
     public bool CanCarry(CardDefinition definition) =>
         definition.Clover ? CloverLuck < GameRules.MaxCloverLuck
         : definition.CarryOnly ? CanCarryInArms(definition)
-        : IsBagged(definition) && BeltCapacity > 0 ? (BagStack(definition)?.Count ?? 0) < StackLimit(definition)
+        : BagFor(definition) is not null ? true
         : StackOf(definition) is { } stack ? stack.Count < StackLimit(definition)
         : _backpack.Count < GameRules.BackpackCapacity;
 
     /// <summary>The most one stack of this card can hold: its own limit (10 Rocks), or a mod's that holds them (100 in a Rock Bag); no limit for most.</summary>
     public int StackLimit(CardDefinition definition) =>
-        _mods.Where(mod => mod.Definition.Holds == definition.Id).Select(mod => mod.Definition.HoldsUpTo).DefaultIfEmpty(0).Max() is > 0 and var held ? held
+        Bags.Where(bag => bag.Definition.Hangs!.Holds.Contains(definition.Id)).Select(bag => bag.Definition.Hangs!.StackUpTo).DefaultIfEmpty(0).Max() is > 0 and var held ? held
         : definition.MaxStack > 0 ? definition.MaxStack
         : int.MaxValue;
 
@@ -558,7 +614,7 @@ public sealed class Hero
     public int RoomFor(CardDefinition definition) =>
         definition.Clover ? GameRules.MaxCloverLuck - CloverLuck
         : !CanCarry(definition) ? 0
-        : IsBagged(definition) && BeltCapacity > 0 ? StackLimit(definition) - (BagStack(definition)?.Count ?? 0)
+        : BagFor(definition) is { } bag ? BagRoom(bag, definition)
         : StackLimit(definition) - (StackOf(definition)?.Count ?? 0);
 
     /// <summary>
@@ -568,8 +624,7 @@ public sealed class Hero
     public CardInstance? AmmoFor(CardInstance weapon) =>
         weapon.Definition.Ammo is not { } ammo ? null
         : _equipment.GetValueOrDefault(EquipSlot.OffHand) is { } off && off.Definition.Id == ammo ? off
-        : _mods.Any(mod => mod.Definition.Holds == ammo) ? _belt.FirstOrDefault(card => card.Definition.Id == ammo)
-        : null;
+        : Bags.SelectMany(bag => bag.Contents).FirstOrDefault(card => card.Definition.Id == ammo);
 
     /// <summary>A weapon ready to strike: anything but one that shoots with nothing to shoot.</summary>
     public bool Loaded(CardInstance weapon) => weapon.Definition.Ammo is null || AmmoFor(weapon) is not null;
@@ -589,6 +644,11 @@ public sealed class Hero
         if (_belt.FirstOrDefault(card => card.Id == cardId) is { } belted)
         {
             return (belted, CardLocation.Belt);
+        }
+
+        if (Bags.SelectMany(bag => bag.Contents).FirstOrDefault(card => card.Id == cardId) is { } bagged)
+        {
+            return (bagged, CardLocation.Bag);
         }
 
         if (_backpack.FirstOrDefault(card => card.Id == cardId) is { } packed)
@@ -713,25 +773,20 @@ public sealed class Hero
         : card.Definition.Belts && (BeltUsed < BeltCapacity || _belt.Any(held => held.Definition == card.Definition)) ? AddToBelt(card)
         : AddToBackpack(card);
 
-    /// <summary>A belt mod holds this card (the Rock Bag, Rocks).</summary>
-    public bool IsBagged(CardDefinition definition) => _mods.Any(mod => mod.Definition.Holds == definition.Id);
+    /// <summary>A bag hung under the belt that names this card, with room for it: it goes straight in when picked up (Rocks into the Rock Bag).</summary>
+    public CardInstance? BagFor(CardDefinition definition) =>
+        Bags.FirstOrDefault(bag => bag.Definition.Hangs!.Holds.Contains(definition.Id) && BagRoom(bag, definition) > 0);
 
-    /// <summary>The stack of this card in the bag on the belt that holds it (the Rock Bag's Rocks), or null.</summary>
+    /// <summary>A bag hung under the belt names this card and has room for it.</summary>
+    public bool IsBagged(CardDefinition definition) => BagFor(definition) is not null;
+
+    /// <summary>The stack of this card in a bag hung under the belt (the Rock Bag's Rocks), or null.</summary>
     public CardInstance? BagStack(CardDefinition definition) =>
-        IsBagged(definition) ? _belt.FirstOrDefault(card => card.Definition == definition) : null;
+        Bags.SelectMany(bag => bag.Contents).FirstOrDefault(card => card.Definition == definition);
 
-    /// <summary>A card the bag on the belt holds goes straight into it (Rocks into the Rock Bag), not into a hand's stack.</summary>
-    internal CardInstance AddToBag(CardInstance card)
-    {
-        if (BagStack(card.Definition) is { } bagged && bagged != card)
-        {
-            bagged.Absorb(card);
-            return bagged;
-        }
-
-        // The bag is a place of its own on the belt: it always has room for what it holds.
-        return Add(_belt, card);
-    }
+    /// <summary>A card a bag hung under the belt names goes straight into it (Rocks into the Rock Bag), not into a hand's stack.</summary>
+    internal CardInstance AddToBag(CardInstance card) =>
+        BagFor(card.Definition) is { } bag ? PackInto(bag, card) : AddToBackpack(card);
 
     /// <summary>A Lucky Clover picked up: its points, up to the most a hero can hold. The card itself goes nowhere.</summary>
     private CardInstance TakeClover(CardInstance card)
@@ -769,6 +824,10 @@ public sealed class Hero
         _backpack.Remove(card);
         _mods.Remove(card);
         _carried.Remove(card);
+        foreach (CardInstance bag in Bags.ToList())
+        {
+            bag.ContentsList.Remove(card);
+        }
     }
 
     /// <summary>Trims current hearts after gear that granted hearts is removed.</summary>
@@ -867,6 +926,11 @@ public sealed class Hero
         {
             _mods.Add(card);
         }
+        else if (IsBagged(definition))
+        {
+            // What a bag under the belt holds goes into it: Rocks into the Rock Bag, cures into the Medicine Bag.
+            AddToBag(card);
+        }
         else if (definition.Belts && BeltUsed < BeltCapacity)
         {
             // Belt tools ride on the belt, a torch too (unlit, till it's taken in hand).
@@ -875,11 +939,6 @@ public sealed class Hero
         else if (definition.Slot is not null && CardsDisplacedBy(definition).Count == 0)
         {
             Equip(card);
-        }
-        else if (IsBagged(definition) && BeltCapacity > 0)
-        {
-            // Rocks with a Rock Bag on: into the bag, a place of its own.
-            AddToBag(card);
         }
         else if (CanBelt(definition) && BeltUsed < BeltCapacity)
         {

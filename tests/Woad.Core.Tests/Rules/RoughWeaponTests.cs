@@ -106,12 +106,13 @@ public sealed class RoughWeaponTests
 
         GameSession session = Duel("..1...d..", ["t_sling", "shield", "t_rockbag", "t_rock"], new ScriptedDice(4));
         Hero hero = session.HeroInSeat();
-        Assert.Contains(hero.Card("t_rock"), hero.Belt);
+        CardInstance rock = hero.Card("t_rock");
+        Assert.Equal(CardLocation.Bag, hero.FindCard(rock.Id)!.Value.Location);
 
         IReadOnlyList<GameEvent> events = session.Do(new AttackMonster(hero.Id, session.OnlyMonster().Id));
 
         Assert.Equal(2, events.SingleOf<AttackRolled>().Bonus);
-        Assert.Null(hero.FindCard(hero.Belt.FirstOrDefault(card => card.Definition.Id == "t_rock")?.Id ?? -1));
+        Assert.Null(hero.FindCard(rock.Id));
     }
 
     [Fact]
@@ -136,9 +137,9 @@ public sealed class RoughWeaponTests
         GameSession bagged = Duel("....1d...", ["shield", "t_rockbag", .. tenRocks], new ScriptedDice());
         Hero bagger = bagged.HeroInSeat();
         Assert.Equal(100, bagger.StackLimit(rock));
-        // The ten start in a hand; the bag, empty, has room for a hundred more.
-        Assert.Equal(10, bagger.Equipment[EquipSlot.MainHand].Count);
-        Assert.Equal(100, bagger.RoomFor(rock));
+        // The ten start in the bag, with room for ninety more.
+        Assert.Equal(10, bagger.BagStack(rock)!.Count);
+        Assert.Equal(90, bagger.RoomFor(rock));
     }
 
     [Fact]
@@ -150,8 +151,8 @@ public sealed class RoughWeaponTests
         CardDefinition rock = hero.Card("t_rock").Definition;
         Room room = session.RoomById();
 
-        // Picked up, Rocks go straight into the bag on the belt, not the hand.
-        room.AddLoot(hero.Position, [new CardInstance(session.State.NextId(), rock, null, count: 14)]);
+        // Picked up, Rocks go straight into the bag on the belt (with the one it started with), not the hand.
+        room.AddLoot(hero.Position, [new CardInstance(session.State.NextId(), rock, null, count: 13)]);
         session.Do(new PickUpLoot(hero.Id));
         CardInstance bag = hero.BagStack(rock)!;
         Assert.Equal(14, bag.Count);

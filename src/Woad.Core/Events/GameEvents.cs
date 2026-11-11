@@ -251,6 +251,9 @@ public sealed record MonsterWeaponBroke(int MonsterId, string CardId) : GameEven
 /// <summary>A hero painted their crest on the shield in their off hand.</summary>
 public sealed record ShieldPainted(int HeroId, int CardId) : GameEvent;
 
+/// <summary>A card put into a bag under the belt (joining <paramref name="HolderId"/>, its stack there).</summary>
+public sealed record CardPacked(int HeroId, int CardId, int BagId, int HolderId) : GameEvent;
+
 /// <summary>A monster drinks in Elektrik dice that attacked it (Leviathan Jr.): <paramref name="Stored"/> now waiting to go off.</summary>
 public sealed record ElektrikAbsorbed(int MonsterId, int Dice, int Stored) : GameEvent;
 

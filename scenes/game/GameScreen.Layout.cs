@@ -728,6 +728,9 @@ public partial class GameScreen
         _heroPanel.CardSelected += ClickCard;
         _heroPanel.CardInspected += SelectCard;
         _heroPanel.BeltCardUsed += UseFromBelt;
+        _heroPanel.PouchCardUsed += UseFromBelt;
+        _heroPanel.BagUsed += UseBag;
+        _heroPanel.BagToggled += RefreshPanels;
         _heroPanel.SlotDoubleClicked += OnSlotDoubleClicked;
         _heroPanel.BuckleClicked += () =>
         {

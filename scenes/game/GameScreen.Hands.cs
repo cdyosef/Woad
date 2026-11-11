@@ -179,6 +179,7 @@ public partial class GameScreen
         };
         AddChild(_spread);
         AddChild(_heroPanel.BagView);
+        AddChild(_heroPanel.PouchView);
         AddChild(_heroPanel.BeltView);
 
         _curePicker = new Panel { Position = BoardOrigin + new Vector2(BoardView.Pixels / 2 - 70, 60), Size = new Vector2(140, 40), Visible = false, ZIndex = 4 };
@@ -455,6 +456,14 @@ public partial class GameScreen
             }
 
             stack.AddRange(tools.Select(tool => ItemCard(tool, mine && turn!.ToolsUsed, Plus(tool.Definition.Tool!.Bonus), mine && !turn!.ToolsUsed ? tool.Definition.Tool.Dice : 0)));
+
+            // The bags under the belt that work from there: Burgling Tools go in with the Od Hand dice, the Medicine Bag aims Aid.
+            foreach (CardInstance bag in hero.Bags.Where(bag => bag.Definition.Tool is not null || bag.Definition.MedicineBag))
+            {
+                stack.Add(bag.Definition.Tool is { } kit
+                    ? ItemCard(bag, mine && turn!.ToolsUsed, Plus(kit.Bonus), mine && !turn!.ToolsUsed ? kit.Dice : 0)
+                    : ItemCard(bag, tapped: false, "+1", 1));
+            }
         }
 
         if (hand.Played is { Held: true } played)
@@ -580,12 +589,20 @@ public partial class GameScreen
             return;
         }
 
-        // The off hand's weapon or torch in the Od Hand square: the follow-up, once there's one to make (never a search).
-        if (hand == _odHand && card.CardId is int offId && ActiveHero is { } holder && GameSession.OffHandItem(holder)?.Id == offId)
+        // The off hand's weapon or torch in the Od Hand square: the follow-up, once there's one to make. A torch (or a
+        // flame of Hold Fire) with no follow-up to make lights a search instead.
+        if (hand == _odHand && card.CardId is int offId && ActiveHero is { } holder && GameSession.OffHandItem(holder) is { } offItem && offItem.Id == offId)
         {
             if (_session.CheckOffHandAttack() is { } why)
             {
-                Log($"{card.Name}: {why}", Palette.TextDim);
+                if (offItem.Definition.Torch && _session.CheckSearch() is null)
+                {
+                    _search.EmitSignal(BaseButton.SignalName.Pressed);
+                }
+                else
+                {
+                    Log($"{card.Name}: {why}", Palette.TextDim);
+                }
             }
             else if (!_offHanding)
             {

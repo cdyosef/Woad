@@ -30,7 +30,7 @@ public sealed class RockBagPlaceTests
         // A belt of 4 filled with four things of its own, and a Rock Bag on it.
         GameSession session = TestRun.Start(Quiet, cards: ["t_rockbag", "potion", "drops", "holy", "bomb"]);
         Hero hero = session.HeroInSeat();
-        Assert.Equal((4, 4, 5), (hero.BeltUsed, hero.BeltCapacity, hero.BeltPlaces));
+        Assert.Equal((4, 4), (hero.BeltUsed, hero.BeltCapacity));
 
         session.RoomById().AddLoot(hero.Position, [Rocks(session, 12)]);
         session.Do(new PickUpLoot(hero.Id));
@@ -97,7 +97,7 @@ public sealed class RockBagPlaceTests
     }
 
     [Fact]
-    public void AFullBagCantComeOffABeltWithNoRoomForItsRocks()
+    public void AFullBagTakesItsRocksWithItOffTheBelt()
     {
         GameSession session = TestRun.Start(Quiet, cards: ["t_rockbag", "potion", "drops", "holy", "bomb"]);
         Hero hero = session.HeroInSeat();
@@ -105,6 +105,10 @@ public sealed class RockBagPlaceTests
         session.Do(new PickUpLoot(hero.Id));
         CardInstance bag = hero.Mods.Single(mod => mod.Definition.Id == "t_rockbag");
 
-        Assert.Contains("no room for what's in", session.Refuse(new StowCard(hero.Id, bag.Id)));
+        session.Do(new StowCard(hero.Id, bag.Id));
+
+        Assert.Contains(bag, hero.Backpack);
+        Assert.Equal(5, bag.Contents.Single().Count);
+        Assert.Equal(4, hero.BeltUsed);
     }
 }

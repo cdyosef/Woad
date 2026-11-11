@@ -87,7 +87,7 @@ the Party menu can spend points on them too.
   it. Characters saved when only the first Rumble die brought a skill (Shove) got back the points they'd paid for
   Rumble skills that are now free.
 - **Without the skill, a tool stands in**, once a turn, rolling only its own dice: Lockpicks or
-  Burgling Tools on a lock, a lit torch in hand on a search, a Medicine Bag (or Bandages, to rouse) on
+  Burgling Tools on a lock, a lit torch in hand on a search, a Medicine Bag (or Bandages) on
   Aid, Burgling Tools on a trap, and Burgling Tools, a Cutpurse Knife or Sticky Gloves on a steal. With
   the skill, the tool adds to your Od Hand dice.
 - **Where a tool is matters:** only tools **in a hand** (shown in the Od Hand square) go in with the Od Hand
@@ -176,11 +176,16 @@ the Party menu can spend points on them too.
   too small for what's on yours can't go on, and a belt comes off only empty. Characters saved before belts
   were cards were given a Basic Belt and Basic Buckle, with what was on their belt left there.
 - **Mods** go on the belt or the buckle and add their modifiers: Belt Studs (armor 1, on the belt), Buckle
-  Horns (+1 to Rumble rolls, on the buckle), the Rock Bag (on the belt, and a **place of its own** there, for Rocks
-  only: they take none of the belt's slots, and the belt square shows one more place for it; Rocks you pick up go
-  straight into it, up to 100, and a Sling loads them from the belt; a handful, ten at most, comes out into a hand free once a
-  turn, and a hand emptied of Rocks fills again from it on its own). No two the same, unless a mod's card says otherwise; the belt
-  or buckle comes off only once its mods are off, and a Rock Bag with Rocks in it only while the belt has a slot for them.
+  Horns (+1 to Rumble rolls, on the buckle), and **bags**. No two the same, unless a mod's card says otherwise; the belt
+  or buckle comes off only once its mods are off.
+- **Bags** hang under the belt (on the leg), as many as the belt has card slots, taking none of them. Each holds its
+  own stacks, kept with it wherever it goes (in the backpack too), and what's in one is to hand as from the belt: one
+  thing drawn into a hand free once a turn, used as the turn's free belt item, even in a fight. A bag that names what
+  it holds catches it when picked up or handed over; **Pack** puts a card into a bag that takes it (free out of a fight;
+  in one it takes the action, and nothing comes from the backpack). The **Rock Bag** (1 stack: Rocks, up to 100; a Sling
+  loads from it, and a hand emptied of Rocks fills again from it on its own, ten at most), the **Bomb Bag** (Bombs, up to
+  10), the **Medicine Bag** (20 stacks of cures, Bandages, Health Potions, Holy Water, Thieves' Oil, a Sineater Doll),
+  **Burgling Tools** (6: Lockpicks, Cutpurse Knife, Thieves' Oil) and the **Sack** (4 stacks of anything; several may hang).
 - **Carrying:** two slots in the hero's arms, for two cards or stacks. **While carrying anything, no Rumble
   and no Od Hand.** Carry-only cards go nowhere else: the Relic of Saint Wyn fills both slots. A card that
   finds no room anywhere else at the start of a run is carried. **Carry** takes a card into your arms (free
@@ -737,10 +742,9 @@ total reaches its number:
   hidden on a room's tiles, up to 2 of them: a Search reaching 2 + floor finds them, there to be picked up.
 - **What Aid cures:** Poison, Acid, Blind, Shine, Confused, Buried and Bad Luck Curses. Freeze, Black Hearts, Burning,
   Stun and Nekrot only with a **Medicine Bag** to hand. One stack a success, bag or not.
-- **Medicine Bag** (tool, stacks, goes on the belt and works from there or a hand): +1 and 1d6 on one
-  Aid roll a turn (a 6 rolls another), even with no Od Hand dice left. A failed Aid it helped with a 1
-  showing uses one up, as a failed pick snaps a lockpick.
-- **Bandages** (single use, stack): carried, one goes into each Rouse for +1d6 (a 6 rolls another).
+- **Medicine Bag** (a bag under the belt, working from there): +1 and 1d6 on one Aid roll a turn (a 6 rolls
+  another), even with no Od Hand dice left, and holds the cures (see Bags).
+- **Bandages** (single use, stack): carried, one goes into each Aid, a Rouse or a cure, for +1d6 (a 6 rolls another), even with no Od Hand dice left.
 - **Shovel** (two-handed, Weapon 2): a die more and +1 against earth creatures. Held, it digs a stack
   of Buried off you at the start of your turn, and adds a die to digging out and to Aid against Buried.
 - **Holy Water** (single use, stack): drink it to cure every Black Heart and every disease (and curses,
@@ -767,8 +771,8 @@ total reaches its number:
   it bursts where it lands, laying every stack it holds on everyone within a tile, friend or foe, no
   save, and is gone. The undead shrug off its Poison.
 
-- **Burgling Tools** (off hand): +1 and 1d6 on one roll a turn to pick a lock, disarm a trap or steal;
-  a failed roll with a 1 showing breaks them. **Cutpurse Knife** (either hand, weapon 1 like a Dagger)
+- **Burgling Tools** (a bag under the belt, working from there): +1 and 1d6 on one roll a turn to pick a lock,
+  disarm a trap or steal, with the Lockpicks and Cutpurse Knife inside joining in. **Cutpurse Knife** (either hand, weapon 1 like a Dagger)
   and **Sticky Gloves** (accessory): +1 and 1d6 on one steal a turn. The Waylay Inn sells the knife and
   gloves; Burgling Tools turn up from floor 2.
 - **Stealing from a monster** (once per monster): a key (40% *(tunable)*) or a card from the loot deck.

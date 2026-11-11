@@ -191,6 +191,9 @@ public sealed record PickUpAlly(int HeroId, int AllyId) : GameCommand(HeroId);
 /// <summary>Set down the ally you carry, beside you. Free.</summary>
 public sealed record PutDownAlly(int HeroId) : GameCommand(HeroId);
 
+/// <summary>Put a card into a bag hung under your belt (by its id): free out of a fight; in one it takes the action, and nothing from the backpack.</summary>
+public sealed record PackCard(int HeroId, int CardId, int BagId) : GameCommand(HeroId);
+
 /// <summary>Struggle against a snatch (Leviathan Jr.'s claws): every Rumble die left, beating its claws' total, frees you.</summary>
 public sealed record BreakFree(int HeroId) : GameCommand(HeroId);
 

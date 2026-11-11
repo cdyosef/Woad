@@ -27,13 +27,9 @@ public sealed partial class Character
     public int BeltCapacity(ContentCatalog content) =>
         _equipped.Select(key => content.GetCard(key)).FirstOrDefault(card => card.Slot == EquipSlot.Belt)?.BeltSlots ?? 0;
 
-    /// <summary>The belt slots in use: a stack of one card takes one slot; what a bag on the belt holds (the Rock Bag's Rocks) takes none.</summary>
-    public int BeltUsed(ContentCatalog content)
-    {
-        HashSet<string> bagged = [.. _equipped.Select(key => content.GetCard(key).Holds).OfType<string>()];
-        List<string> own = [.. _belt.Where(key => !bagged.Contains(CardKey.Id(key)))];
-        return own.Count(key => !content.GetCard(key).IsStackable) + own.Where(key => content.GetCard(key).IsStackable).Select(CardKey.Id).Distinct().Count();
-    }
+    /// <summary>The belt slots in use: a stack of one card takes one slot (bags hang below it, with their own places).</summary>
+    public int BeltUsed(ContentCatalog content) =>
+        _belt.Count(key => !content.GetCard(key).IsStackable) + _belt.Where(key => content.GetCard(key).IsStackable).Select(CardKey.Id).Distinct().Count();
 
     /// <summary>The slot each worn card fills, in the order they were put on (a card for either hand takes its other when its own is filled).</summary>
     public IReadOnlyDictionary<EquipSlot, string> WornSlots(ContentCatalog content)
