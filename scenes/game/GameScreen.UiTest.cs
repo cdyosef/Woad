@@ -1523,6 +1523,21 @@ public partial class GameScreen
     /// Debug mode (<c>-- --partytest</c>, with <see cref="DemoRun.PartyCheck"/>): Aria opens the Party menu,
     /// spends her point on a heart, and tells Pip to pick up loot.
     /// </summary>
+    private async Task ClickParty(Control button)
+    {
+        _party.Reveal(button);
+        await Pause(0.1);
+        await Click(this, button);
+    }
+
+    private async Task ClickBlock(PartyPanel party, string name)
+    {
+        var block = (Control)party.FindChild(name, recursive: true, owned: false)!;
+        party.Reveal(block);
+        await Pause(0.1);
+        await Click(this, block);
+    }
+
     private async void RunPartyTest()
     {
         try
@@ -1534,30 +1549,36 @@ public partial class GameScreen
             await Click(this, _partyButton);
             Check(_party.Visible, "the Party button opens the Party menu");
             await SaveShot("party_blocks");
-            await Click(this, (Control)_party.FindChild($"Block{pip.Id}", recursive: true, owned: false)!);
-            Check(SheetHero == pip, "clicking Pip's block puts up his sheet");
-            await Click(this, (Control)_party.FindChild($"Block{aria.Id}", recursive: true, owned: false)!);
-            Check(SheetHero == aria, "and Aria's puts hers back");
+            Check(_party.IsOpen(aria.Id) && _party.IsOpen(pip.Id) && _party.FindChild($"Card{aria.Equipment[EquipSlot.MainHand].Id}", recursive: true, owned: false) is not null,
+                "opened, her block and her companion's are open, their inventories laid out");
+            await ClickBlock(_party, $"Block{pip.Id}");
+            Check(SheetHero == pip && _party.IsOpen(pip.Id), "clicking Pip's block puts up his sheet");
+            await ClickBlock(_party, $"Block{pip.Id}");
+            Check(!_party.IsOpen(pip.Id) && _party.Find($"Policy{pip.Id}Loot") is null, "clicked again, it closes");
+            await ClickBlock(_party, $"Block{pip.Id}");
+            Check(_party.IsOpen(pip.Id), "and again opens it");
+            await ClickBlock(_party, $"Block{aria.Id}");
+            Check(SheetHero == aria, "Aria's block puts hers back");
 
             int max = aria.MaxHearts;
-            await Click(this, _party.Find($"Spend{aria.Id}Hearts")!);
+            await ClickParty(_party.Find($"Spend{aria.Id}Hearts")!);
             await WaitUntilIdle();
             Check(aria.MaxHearts == max + 1 && aria.PointsToSpend == 0, "spending the point on a heart raises her hearts");
 
-            await Click(this, _party.Find($"Policy{pip.Id}Loot")!);
+            await ClickParty(_party.Find($"Policy{pip.Id}Loot")!);
             await WaitUntilIdle();
             Check(pip.Policy.PicksUpLoot, "the Loot switch tells Pip to pick up loot");
 
             // Handing heroes over: Pip made a hero; then Aria made Pip's companion, the game playing her from then on.
             Check(_party.Find($"Follow{aria.Id}_{pip.Id}") is null, "with no other player, there's no one for Aria to follow");
-            await Click(this, _party.Find($"MakeHero{pip.Id}")!);
+            await ClickParty(_party.Find($"MakeHero{pip.Id}")!);
             await WaitUntilIdle();
             Check(!pip.IsCompanion, "Make hero takes Pip in hand as a hero");
-            await Click(this, _party.Find($"Follow{aria.Id}_{pip.Id}")!);
+            await ClickParty(_party.Find($"Follow{aria.Id}_{pip.Id}")!);
             await WaitUntilIdle();
             Check(aria.OwnerId == pip.Id, "Follow Pip makes Aria Pip's companion");
 
-            await Click(this, _party.Find("Close")!);
+            await ClickParty(_party.Find("Close")!);
             Check(!_party.Visible, "Close puts the Party menu away");
             GD.Print("Party test passed.");
             Sfx.QuitGame(this);

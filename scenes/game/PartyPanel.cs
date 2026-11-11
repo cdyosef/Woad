@@ -37,6 +37,10 @@ public partial class PartyPanel : Panel
     ];
 
     private VBoxContainer _rows = null!;
+    private ScrollContainer _scroll = null!;
+
+    /// <summary>Scrolls the list to show <paramref name="control"/> (for the click tests).</summary>
+    internal void Reveal(Control control) => _scroll.EnsureControlVisible(control);
     private SpellPicker _spellPicker = null!;
     private int _learnerId;
 
@@ -60,6 +64,42 @@ public partial class PartyPanel : Panel
     /// <summary>A hero's block was clicked: put up their sheet.</summary>
     public event Action<int>? HeroClicked;
 
+    /// <summary>A card in an opened block's inventory was clicked: it's picked up, for its buttons.</summary>
+    public event Action<int>? CardSelected;
+
+    /// <summary>The heroes whose blocks are open: their inventory and level-up menu under them.</summary>
+    private readonly HashSet<int> _open = [];
+
+    /// <summary>The hero whose sheet is up, as the game screen last said.</summary>
+    private int? _sheetId;
+
+    /// <summary>Opened afresh: the viewer's own block and their companions' are open.</summary>
+    public void Opened(GameSession session, Hero? viewer)
+    {
+        _open.Clear();
+        foreach (Hero hero in session.State.Heroes.Where(hero => viewer is not null && (hero == viewer || hero.OwnerId == viewer.Id)))
+        {
+            _open.Add(hero.Id);
+        }
+    }
+
+    internal bool IsOpen(int heroId) => _open.Contains(heroId);
+
+    /// <summary>
+    /// A block clicked: closed, it opens (their sheet goes up, their inventory and level-up menu open under it); open,
+    /// it puts their sheet up, or, with it up already, closes.
+    /// </summary>
+    private void ClickBlock(int heroId)
+    {
+        if (!_open.Add(heroId) && _sheetId == heroId)
+        {
+            _open.Remove(heroId);
+        }
+
+        _sheetId = heroId;
+        HeroClicked?.Invoke(heroId);
+    }
+
     internal Button? Find(string name) => FindChild(name, recursive: true, owned: false) as Button;
 
     public override void _Ready()
@@ -70,7 +110,7 @@ public partial class PartyPanel : Panel
         close.Name = "Close";
         close.Pressed += () => CloseRequested?.Invoke();
         AddChild(close);
-        var scroll = new ScrollContainer
+        var scroll = _scroll = new ScrollContainer
         {
             Position = new Vector2(6, 24),
             Size = new Vector2(Size.X - 12, Size.Y - 30),
@@ -86,8 +126,9 @@ public partial class PartyPanel : Panel
     }
 
     /// <summary>Lists the party; <paramref name="viewer"/> (the hero whose turn it is) gets the buttons for their own.</summary>
-    public void ShowParty(GameSession session, Hero? viewer)
+    public void ShowParty(GameSession session, Hero? viewer, Hero? sheet = null)
     {
+        _sheetId = sheet?.Id ?? viewer?.Id;
         foreach (Node old in _rows.GetChildren())
         {
             _rows.RemoveChild(old);
@@ -152,6 +193,45 @@ public partial class PartyPanel : Panel
         return y + 17 * ((players.Count + 2) / 3);
     }
 
+    /// <summary>An open block's inventory: what's worn, on the belt, in each bag under it, and in the pack, face up.</summary>
+    private float Inventory(Control row, Hero hero, float width, float y)
+    {
+        List<(string Title, IReadOnlyList<CardInstance> Cards, string Empty)> sections =
+        [
+            ("Worn", [.. hero.EquippedCards], "nothing"),
+            ($"Belt {hero.BeltUsed}/{hero.BeltCapacity}", hero.Belt, hero.BeltCapacity == 0 ? "no belt" : "empty"),
+            .. hero.Bags.Select(bag => ($"{bag.Definition.Name} {bag.Contents.Count}/{bag.Definition.Hangs!.Slots}", (IReadOnlyList<CardInstance>)[.. bag.Contents], "empty")),
+            ($"Pack {hero.Backpack.Count}/{GameRules.BackpackCapacity}", hero.Backpack, "empty"),
+        ];
+        const float labelWidth = 64;
+        int perLine = Math.Max(1, (int)((width - labelWidth - 4) / 30));
+        foreach ((string title, IReadOnlyList<CardInstance> cards, string empty) in sections)
+        {
+            row.AddChild(UiTheme.Label(new Vector2(4, y + 2), new Vector2(labelWidth, 12), title, color: Palette.TrimBright));
+            if (cards.Count == 0)
+            {
+                row.AddChild(UiTheme.Label(new Vector2(labelWidth, y + 2), new Vector2(120, 12), empty, color: Palette.TextDim));
+                y += 16;
+                continue;
+            }
+
+            for (int i = 0; i < cards.Count; i++)
+            {
+                CardInstance card = cards[i];
+                var face = new SheetCard { Position = new Vector2(labelWidth + i % perLine * 30, y + i / perLine * 40), Size = CardFace.Size, Back = "back_bag" };
+                face.Name = $"Card{card.Id}";
+                face.Show(card, "", selected: false, hero);
+                int id = card.Id;
+                face.Pressed += () => CardSelected?.Invoke(id);
+                row.AddChild(face);
+            }
+
+            y += 40 * ((cards.Count + perLine - 1) / perLine) + 2;
+        }
+
+        return y + 2;
+    }
+
     private Control Row(GameSession session, Hero hero, Hero? viewer)
     {
         float width = _rows.CustomMinimumSize.X;
@@ -173,9 +253,16 @@ public partial class PartyPanel : Panel
         }
 
         int clicked = hero.Id;
-        block.Pressed += () => HeroClicked?.Invoke(clicked);
+        block.Pressed += () => ClickBlock(clicked);
         row.AddChild(block);
         y += block.Size.Y + 3;
+        if (!_open.Contains(hero.Id))
+        {
+            row.CustomMinimumSize = new Vector2(width, y);
+            return row;
+        }
+
+        y = Inventory(row, hero, width, y);
 
         bool mine = viewer is not null && (hero == viewer || hero.OwnerId == viewer.Id) && hero.IsInPlay;
         if (mine && hero.PointsToSpend > 0)
