@@ -1121,7 +1121,7 @@ public partial class Main : Control
 				.Select(result => (Member: Of(result.Seat), Owner: result.Seat < setup.Heroes.Count && setup.Heroes[result.Seat].OwnerSeat is int owner ? Of(owner) : null))
 				.Where(entry => entry.Member is not null).Select(entry => (entry.Member!, entry.Owner))];
 			RaidWorld? bonds = _raiding ? LoadRaidWorld() : null;
-			settled = string.Join(" ", TavernServices.SettleRun(went, results.Any(result => result.Won), bonds));
+			settled = string.Join(" ", TavernServices.SettleRun(went, results.Any(result => result.Won), bonds).News);
 			if (bonds is not null)
 			{
 				SaveRaidWorld();

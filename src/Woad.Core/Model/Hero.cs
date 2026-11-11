@@ -36,6 +36,35 @@ public enum CardLocation
 }
 
 /// <summary>A player's character during a run.</summary>
+/// <summary>How an unpaid companion means to leave the run.</summary>
+public enum LeavingPlan
+{
+    /// <summary>Hangs about the entrance a few turns asking for offers, then goes.</summary>
+    Entrance,
+
+    /// <summary>Sees the first room through, fighting and picking it over, and goes when the party moves on.</summary>
+    FirstRoom,
+
+    /// <summary>Comes a few rooms along, and goes when the party heads deeper or finds the boss.</summary>
+    FewRooms,
+}
+
+/// <summary>Why a leaving companion goes.</summary>
+public enum LeavingWhy
+{
+    /// <summary>Nobody made an offer.</summary>
+    NoOffers,
+
+    /// <summary>Half their hearts gone: too hot.</summary>
+    Hurt,
+
+    /// <summary>They've picked up treasure worth what they were owed.</summary>
+    Satisfied,
+
+    /// <summary>The party's going further than they'll go unpaid.</summary>
+    TooDeep,
+}
+
 public sealed class Hero
 {
     private readonly Dictionary<EquipSlot, CardInstance> _equipment = [];
@@ -80,6 +109,33 @@ public sealed class Hero
 
     /// <summary>The game plays a companion's turns, following its owner's orders.</summary>
     public bool IsCompanion => OwnerId is not null;
+
+    /// <summary>A hired companion's wage, in copper.</summary>
+    public int Wage { get; internal set; }
+
+    /// <summary>Unpaid, unwanted and unbonded: on their way out of the party (see <see cref="Rules.GameSession"/>'s Leaving).</summary>
+    public bool Leaving { get; internal set; }
+
+    /// <summary>The turns a leaving companion still waits about for a last offer.</summary>
+    public int LeavingTurns { get; internal set; }
+
+    /// <summary>This turn a leaving companion only waits about (at the entrance).</summary>
+    public bool Lingering { get; internal set; }
+
+    /// <summary>How a leaving companion means to go, settled on their first turn.</summary>
+    public LeavingPlan? LeavingPlan { get; internal set; }
+
+    /// <summary>Why a leaving companion goes this turn, or null while they stay a while yet.</summary>
+    public LeavingWhy? LeavingWhy { get; internal set; }
+
+    /// <summary>The treasure a leaving companion had when they made up their mind, to tell when they've picked up what they were owed.</summary>
+    public int LeavingTreasure { get; internal set; }
+
+    /// <summary>They walked out of the run, back to the inn.</summary>
+    public bool Departed { get; internal set; }
+
+    /// <summary>Their bond with each other hero of the run, by that hero's id.</summary>
+    public Dictionary<int, int> Bonds { get; } = [];
 
     /// <summary>The round a companion with a persona last said its piece (see <see cref="Rules.GameSession"/>'s Persona).</summary>
     public int? SpokeRound { get; internal set; }

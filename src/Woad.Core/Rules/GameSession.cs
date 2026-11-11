@@ -220,6 +220,9 @@ public sealed partial class GameSession
             GetUp c => Handle(c, events),
             StopDropRoll c => Handle(c, events),
             FightFire c => Handle(c, events),
+            OfferWage c => Handle(c, events),
+            Convince c => Handle(c, events),
+            Depart c => Handle(c, events),
             DigOut c => Handle(c, events),
             AttackBomb c => Handle(c, events),
             _ => $"Unknown command {command.GetType().Name}.",
@@ -414,6 +417,7 @@ public sealed partial class GameSession
         State.Turn = new TurnState(hero.Id) { KeelingOver = hero.IsKeelingOver };
         events.Add(new TurnStarted(hero.Id));
         PersonaSpeaks(hero, events);
+        LeavingTurn(hero, events);
         ChargeMagic(hero, events);
         RechargeDefense(hero);
         DropHeldDefense(hero);
@@ -594,6 +598,9 @@ public sealed partial class GameSession
                 StartXp = heroSetup.Xp,
                 StartUnspentPoints = heroSetup.UnspentPoints,
                 Policy = heroSetup.Policy ?? CompanionPolicy.Default,
+                Wage = heroSetup.Wage,
+                Leaving = heroSetup.Leaving && ownerId is not null,
+                LeavingTurns = LeavingWait,
                 LuckAsks = heroSetup.LuckAsks,
                 CloverLuck = Math.Clamp(heroSetup.CloverLuck, 0, GameRules.MaxCloverLuck),
                 StartCloverLuck = Math.Clamp(heroSetup.CloverLuck, 0, GameRules.MaxCloverLuck),
@@ -624,6 +631,19 @@ public sealed partial class GameSession
             hero.Power.Banked = Math.Clamp(heroSetup.PowerDice, 0, hero.Power.Capacity);
             hero.Hearts = Math.Clamp(Math.Min(heroSetup.Hearts ?? hero.MaxHearts, hero.HealableTo), 1, hero.MaxHearts);
             hero.LuckRemaining = hero.EffectiveStats.Luck;
+        }
+
+        // The bonds between them, as they stood setting out (given by seat).
+        for (int seat = 0; seat < setup.Heroes.Count; seat++)
+        {
+            foreach ((int otherSeat, int bond) in setup.Heroes[seat].Bonds ?? new Dictionary<int, int>())
+            {
+                if (otherSeat >= 0 && otherSeat < state.Heroes.Count && otherSeat != seat && bond > 0)
+                {
+                    state.Heroes[seat].Bonds[state.Heroes[otherSeat].Id] = bond;
+                    state.Heroes[otherSeat].Bonds[state.Heroes[seat].Id] = bond;
+                }
+            }
         }
 
         startRoom.Explored = true;

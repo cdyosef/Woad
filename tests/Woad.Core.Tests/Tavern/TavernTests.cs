@@ -273,15 +273,16 @@ public class TavernTests
         (_, Character? clod) = TavernServices.Hire(ash, TavernServices.Clod, Content, DateTimeOffset.UnixEpoch);
         Assert.Equal((Money.Gold(25), Money.Gold(10)), (ash.Coins, clod!.Wage));
 
-        IReadOnlyList<string> lost = TavernServices.SettleRun([(ash, null), (clod, ash)], won: false, world: null);
+        IReadOnlyList<string> lost = TavernServices.SettleRun([(ash, null), (clod, ash)], won: false, world: null).News;
         Assert.Equal((Money.Gold(15), Money.Gold(10)), (ash.Coins, clod.Coins));
         Assert.Contains("pays Clod Hopper", Assert.Single(lost));
 
         TavernServices.SettleRun([(ash, null), (clod, ash)], won: true, world: null);
         // A purse run short pays what it holds.
-        IReadOnlyList<string> shortOf = TavernServices.SettleRun([(ash, null), (clod, ash)], won: false, world: null);
+        RunSettlement shortOf = TavernServices.SettleRun([(ash, null), (clod, ash)], won: false, world: null);
         Assert.Equal((0, Money.Gold(25)), (ash.Coins, clod.Coins));
-        Assert.Contains("can only pay", shortOf[0]);
+        Assert.Contains("can only pay", shortOf.News[0]);
+        Assert.Equal((clod, ash), Assert.Single(shortOf.Unpaid));
     }
 
     [Fact]
@@ -293,10 +294,41 @@ public class TavernTests
         TavernServices.SettleRun([(ash, null), (bryn, null), (cole, ash)], won: false, world);
         Assert.Equal(0, world.Bond(ash.Id, bryn.Id));
 
-        IReadOnlyList<string> news = TavernServices.SettleRun([(ash, null), (bryn, null), (cole, ash)], won: true, world);
+        IReadOnlyList<string> news = TavernServices.SettleRun([(ash, null), (bryn, null), (cole, ash)], won: true, world).News;
 
         Assert.Equal((1, 1, 1), (world.Bond(ash.Id, bryn.Id), world.Bond(ash.Id, cole.Id), world.Bond(bryn.Id, cole.Id)));
         Assert.Contains(news, line => line.Contains("grows closer"));
+    }
+
+    [Fact]
+    public void AnUnpaidCompanionGoesToTheBestOfferGoldAndBondTogether()
+    {
+        RaidWorld world = RaidWorld.Begin(Map);
+        Character ash = Hero("Ash", 0), bryn = Hero("Bryn", Money.Gold(30)), dara = Hero("Dara", Money.Gold(30)), cole = Hero("Cole", 0, companion: true);
+        cole.SetWage(Money.Gold(10));
+        world.RaiseBond(cole.Id, dara.Id, 3);
+        Assert.Equal([bryn, dara], TavernServices.Bidders(ash, [ash, cole, bryn, dara], ash.Id));
+
+        // 12 gold beats 10 gold, but not 10 gold and a bond of 3; an offer over the purse doesn't count.
+        AuctionResult result = TavernServices.CloseAuction(cole, ash, [(bryn, Money.Gold(12)), (dara, Money.Gold(10)), (ash, Money.Gold(99))], [ash, cole, bryn, dara], world);
+
+        Assert.Equal((AuctionOutcome.Hired, dara), (result.Outcome, result.NewLeader));
+        Assert.Equal((Money.Gold(10), false), (cole.Wage, cole.Leaving));
+    }
+
+    [Fact]
+    public void WithNoOfferABondKeepsThemAndWithoutOneTheyMeanToLeave()
+    {
+        RaidWorld world = RaidWorld.Begin(Map);
+        Character ash = Hero("Ash", 0), bryn = Hero("Bryn", Money.Gold(30)), cole = Hero("Cole", 0, companion: true);
+        cole.SetWage(Money.Gold(10));
+
+        Assert.Equal(AuctionOutcome.Leaving, TavernServices.CloseAuction(cole, ash, [(bryn, 0)], [ash, cole, bryn], world).Outcome);
+        Assert.True(cole.Leaving);
+
+        world.RaiseBond(cole.Id, bryn.Id);
+        Assert.Equal(AuctionOutcome.StaysForFriendship, TavernServices.CloseAuction(cole, ash, [], [ash, cole, bryn], world).Outcome);
+        Assert.False(cole.Leaving);
     }
 
     [Fact]

@@ -146,6 +146,11 @@ public sealed partial class Character : IPurse
 
     public void SetWage(int copper) => Wage = Math.Max(0, copper);
 
+    /// <summary>Unpaid, with nobody to take them on and no bond in the party: they start the next run leaving.</summary>
+    public bool Leaving { get; private set; }
+
+    public void SetLeaving(bool leaving) => Leaving = leaving && IsCompanion;
+
     /// <summary>The rolls Luck is asked on when they're about to fail (the Luck menu's switches).</summary>
     public LuckRoll LuckAsks { get; private set; } = LuckRoll.All;
 
@@ -453,7 +458,7 @@ public sealed partial class Character : IPurse
     /// <summary>The hero this character plays as in a run, carrying everything they own.</summary>
     /// <param name="ownerSeat">For a companion, the seat of the player it belongs to.</param>
     public HeroSetup ToHeroSetup(int? ownerSeat = null) => new(Name, BaseStats, [.. _equipped, .. _belt, .. _backpack, .. _carried], Id, Portrait, ownerSeat, Appearance, GuildStanding: GuildStanding, PowerDice: PowerDice, Skills: Allocation.Skills,
-        Allocation: Allocation, Xp: Xp, UnspentPoints: UnspentPoints, Policy: Policy, Spells: [.. _spells], Lingering: _lingering, LuckAsks: LuckAsks, CloverLuck: CloverLuck);
+        Allocation: Allocation, Xp: Xp, UnspentPoints: UnspentPoints, Policy: Policy, Spells: [.. _spells], Lingering: _lingering, LuckAsks: LuckAsks, CloverLuck: CloverLuck, Wage: Wage, Leaving: Leaving);
 
     /// <summary>
     /// Puts a card where a new hero would: in their arms if it's carry-only, a mod on the belt or buckle,

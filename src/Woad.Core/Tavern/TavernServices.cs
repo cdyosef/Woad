@@ -28,6 +28,24 @@ public sealed record Shopper(IPurse Purse, int Standing, Action<string> Receive,
         new(character, character.GuildStanding, key => character.GiveCard(key, content), character.Id);
 }
 
+/// <summary>How a run was settled: what to tell the players, and the companions not paid in full (with who owed them).</summary>
+public sealed record RunSettlement(IReadOnlyList<string> News, IReadOnlyList<(Character Companion, Character Owner)> Unpaid);
+
+/// <summary>How the auction for an unpaid companion came out.</summary>
+public enum AuctionOutcome
+{
+    /// <summary>Someone took them on: they follow the winner, at the offer as their wage.</summary>
+    Hired,
+
+    /// <summary>No offer, but a bond in the party keeps them.</summary>
+    StaysForFriendship,
+
+    /// <summary>No offer and no bond: they start the next run leaving.</summary>
+    Leaving,
+}
+
+public sealed record AuctionResult(AuctionOutcome Outcome, Character? NewLeader, string Message);
+
 /// <summary>Someone the recruiter can introduce: a companion to hire, already outfitted, for <c>Price</c> copper.</summary>
 public sealed record RecruitOffer(string Name, Appearance Appearance, string Portrait, StatAllocation Allocation, IReadOnlyList<string> Gear, int Level, int Price);
 
@@ -455,10 +473,11 @@ public static class TavernServices
     /// between each two of them.
     /// </summary>
     /// <param name="party">Everyone who went, each with whoever they follow (null for a player's own hero).</param>
-    /// <returns>What happened, to tell the players.</returns>
-    public static IReadOnlyList<string> SettleRun(IReadOnlyList<(Character Member, Character? Owner)> party, bool won, RaidWorld? world)
+    /// <returns>What happened, to tell the players, and the companions who weren't paid in full (with who owed them).</returns>
+    public static RunSettlement SettleRun(IReadOnlyList<(Character Member, Character? Owner)> party, bool won, RaidWorld? world)
     {
         var news = new List<string>();
+        var unpaid = new List<(Character Companion, Character Owner)>();
         foreach ((Character companion, Character? owner) in party.Where(entry => entry.Member.Wage > 0 && entry.Owner is not null))
         {
             int paid = Math.Min(companion.Wage, owner!.Coins);
@@ -466,6 +485,11 @@ public static class TavernServices
             {
                 owner.Spend(paid);
                 companion.Earn(paid);
+            }
+
+            if (paid < companion.Wage)
+            {
+                unpaid.Add((companion, owner));
             }
 
             news.Add(paid == companion.Wage ? $"{owner.Name} pays {companion.Name} {Money.Long(paid)}."
@@ -486,7 +510,44 @@ public static class TavernServices
             news.Add("The party grows closer (+1 bond).");
         }
 
-        return news;
+        return new RunSettlement(news, unpaid);
+    }
+
+    /// <summary>Who may bid for an unpaid companion: the party's other players (not who failed to pay them), the raid's leader first.</summary>
+    public static IReadOnlyList<Character> Bidders(Character owner, IReadOnlyList<Character> party, Guid leader) =>
+        [.. party.Where(member => !member.IsCompanion && member.Id != owner.Id).OrderBy(member => member.Id == leader ? 0 : 1)];
+
+    /// <summary>What an offer is worth to the companion: its gold, and a point for each point of bond with whoever makes it.</summary>
+    public static int OfferWorth(Character companion, Character bidder, int copper, RaidWorld? world) =>
+        copper / Money.CopperPerGold + (world?.Bond(companion.Id, bidder.Id) ?? 0);
+
+    /// <summary>
+    /// The auction for an unpaid companion closes. The best offer wins (gold and bond together; a tie goes to the
+    /// earlier bidder, the raid's leader first): it becomes their wage, paid after each run as before, and they follow
+    /// whoever made it. No offer worth having: with a bond in the party they stay on regardless; without one, they'll
+    /// start the next run leaving.
+    /// </summary>
+    /// <param name="offers">Each bidder's offer in copper (0 or less: no offer), in bidding order. An offer over the bidder's purse doesn't count.</param>
+    public static AuctionResult CloseAuction(Character companion, Character owner, IReadOnlyList<(Character Bidder, int Copper)> offers, IReadOnlyList<Character> party, RaidWorld? world)
+    {
+        (Character Bidder, int Copper)? best = offers.Where(offer => offer.Copper > 0 && offer.Copper <= offer.Bidder.Coins && !offer.Bidder.IsCompanion && offer.Bidder.Id != owner.Id)
+            .Select(offer => ((Character Bidder, int Copper)?)offer)
+            .MaxBy(offer => OfferWorth(companion, offer!.Value.Bidder, offer.Value.Copper, world));
+        if (best is { } won)
+        {
+            companion.SetWage(won.Copper);
+            companion.SetLeaving(false);
+            return new AuctionResult(AuctionOutcome.Hired, won.Bidder, $"{won.Bidder.Name} takes {companion.Name} on for {Money.Long(won.Copper)} a run.");
+        }
+
+        if (world is not null && party.Any(member => member.Id != companion.Id && world.Bond(companion.Id, member.Id) > 0))
+        {
+            companion.SetLeaving(false);
+            return new AuctionResult(AuctionOutcome.StaysForFriendship, null, $"{companion.Name} goes unpaid, but stays for the company.");
+        }
+
+        companion.SetLeaving(true);
+        return new AuctionResult(AuctionOutcome.Leaving, null, $"Nobody takes {companion.Name} on: they mean to head back to the inn when the party next sets out.");
     }
 
     /// <summary>

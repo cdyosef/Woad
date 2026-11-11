@@ -36,6 +36,20 @@ public static class CompanionBot
             return new RollKeel(hero.Id, hero.Power.Banked);
         }
 
+        // Unpaid and on their way out: they wait about for a last offer, then go.
+        if (hero.Leaving && turn is { PendingRoll: null, UnsettledPowerDice: 0 })
+        {
+            if (hero.LeavingWhy is not null)
+            {
+                return new Depart(hero.Id);
+            }
+
+            if (hero.Lingering)
+            {
+                return new EndTurn(hero.Id);
+            }
+        }
+
         // Badly on fire with the turn still fresh: stop, drop and roll.
         if ((hero.FireDice >= 2 || hero.Hearts <= 1) && session.CheckStopDropRoll() is null)
         {
@@ -410,7 +424,7 @@ public static class CompanionBot
         }
 
         // Its own ways, whatever its order: loot within reach is picked up, and better gear put on.
-        if (hero.Policy.PicksUpLoot)
+        if (hero.Policy.PicksUpLoot || hero.Leaving)
         {
             foreach (GridPosition tile in new[] { hero.Position }.Concat(hero.Position.SurroundingTiles()).Where(room.Layout.Contains))
             {

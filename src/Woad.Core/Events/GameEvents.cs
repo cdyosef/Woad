@@ -676,6 +676,28 @@ public sealed record FireOut(int EntityId, FireOutCause Cause) : GameEvent;
 /// <summary>A hero's weapon caught a monster and drags it a tile in (a Frog Gig).</summary>
 public sealed record Snagged(int HeroId, int MonsterId) : GameEvent;
 
+/// <summary>Why a leaving companion stayed after all.</summary>
+public enum StayReason
+{
+    /// <summary>Someone paid them what they were owed.</summary>
+    Paid,
+
+    /// <summary>Someone talked them round.</summary>
+    Convinced,
+
+    /// <summary>They thought better of the road back.</summary>
+    ChangeOfHeart,
+}
+
+/// <summary>A leaving companion stays: following <paramref name="LeaderId"/> now (null: whoever they followed), paid <paramref name="Paid"/> copper.</summary>
+public sealed record CompanionStayed(int HeroId, int? LeaderId, StayReason Reason, int Paid = 0) : GameEvent;
+
+/// <summary>A player tried to talk a leaving companion round: the die, their bond, and whether it did.</summary>
+public sealed record ConvinceRolled(int HeroId, int CompanionId, int Face, int Bond, bool Success) : GameEvent;
+
+/// <summary>An unpaid companion walked out of the run, back to the inn.</summary>
+public sealed record CompanionDeparted(int HeroId) : GameEvent;
+
 /// <summary>A burning hero did one part of stopping, dropping and rolling (<paramref name="Done"/> of the three so far this turn).</summary>
 public sealed record FireFought(int HeroId, FirePart Part, int Done) : GameEvent;
 

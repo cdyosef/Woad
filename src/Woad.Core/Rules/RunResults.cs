@@ -67,6 +67,15 @@ public sealed record HeroRunResult
     /// <summary>They retreated from a fight on the Woarld Map (off the field, but it isn't won).</summary>
     public bool Retreated { get; init; }
 
+    /// <summary>An unpaid companion who walked out of the run, back to the inn.</summary>
+    public bool Departed { get; init; }
+
+    /// <summary>For a companion, the seat of whoever they followed at the end (it changes when another player pays or persuades them to stay).</summary>
+    public int? OwnerSeat { get; init; }
+
+    /// <summary>A hired companion's wage at the end, in copper.</summary>
+    public int Wage { get; init; }
+
     /// <summary>Power Dice the hero still had banked, carried into their next run.</summary>
     public int PowerDice { get; init; }
 
@@ -126,7 +135,7 @@ public static class RunResults
     /// <summary>Whether a finished run counts as completed: a dungeon (not a fight on the Woarld Map) whose boss is beaten, and someone got out.</summary>
     public static bool Completed(GameState state) =>
         !state.Skirmish
-        && state.Heroes.Any(hero => !hero.Summoned && hero.Status == HeroStatus.Escaped && !state.RetreatedIds.Contains(hero.Id))
+        && state.Heroes.Any(hero => !hero.Summoned && !hero.Departed && hero.Status == HeroStatus.Escaped && !state.RetreatedIds.Contains(hero.Id))
         && !state.Rooms.Values.Any(room => room.Monsters.Any(monster => monster.Definition.Boss));
 
     /// <summary>The awards each hero in <paramref name="party"/> wins on this run (none if it isn't completed).</summary>
@@ -196,6 +205,9 @@ public static class RunResults
             Hearts = hero.Hearts,
             PowerDice = hero.Power.Banked,
             Retreated = state.RetreatedIds.Contains(hero.Id),
+            Departed = hero.Departed,
+            OwnerSeat = hero.OwnerId is int ownerId ? state.GetHero(ownerId).Seat : null,
+            Wage = hero.Wage,
             Allocation = hero.Allocation,
             Spells = hero.Allocation is null ? null : [.. hero.Spells.Select(spell => spell.Id)],
             Policy = hero.Policy,
