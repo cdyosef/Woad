@@ -107,10 +107,6 @@ LOOKS = [
         "........", "......oo", ".....oTT", "....oTTT", "...otTSS", "...otSeS", "...otSSS", "..oRRtTT",
         "..oRotTT", "..oSotTT", "..oRobbb", "...oRtTT", "....ollo", "....okko", "....oooo", "........"],
      "extra": [(6, 13, "n"), (7, 14, "n"), (8, 14, "n"), (9, 14, "n"), (10, 13, "n"), (7, 13, "w"), (8, 13, "w"), (9, 13, "w")]},
-    {"id": "frog_hunter", "name": "Frog Hunter", "skin": "human", "hair": None, "full": True, "rows": [
-        "............m.m.", "............mmm.", ".....oRRRRo..n..", "....oRRRRRRo.n..", "..ooRRRRRRRRon..", "....oSSSSSSo.n..", "....oSeSSeSo.n..", "....oSSSSSSo.n..",
-        "...oTTTTTTTTon..", "..oSTTTTTTTTSS..", ".ooSbbbgbbbbSS..", "ogootTTTTTTton..", ".o..oWWoWWo..n..", "....oWWoWWo..n..", "....okkokko..n..", "....ooo.ooo....."],
-     "palette": {"W": "#4a5a2e"}},
     {"id": "rogue", "name": "Rogue", "skin": "human", "hair": "hair", "rows": [
         "........", "......oo", ".....oHH", "....oHHH", "....oHSS", "....oSeS", "....oRRR", "...ootTT",
         "..oSotTT", "..oSotTT", "...oobbR", "....otTT", "....otTo", "....okko", "....oooo", "........"],
@@ -429,6 +425,10 @@ LOOKS = [
         ".otTotTT", ".otTotTT", "..ooRRRR", "...otTTT", "....otTT", "....owwo", "....oooo", "........"],
      "extra": [(6, 7, 'p'), (6, 8, 'p'), (1, 3, 'g'), (0, 2, 'g'), (1, 12, 'g'), (0, 13, 'g'), (2, 12, 'c')],
      "palette": {"p": "#d85060"}},
+    {"id": "frog_hunter", "name": "Frog Hunter", "skin": "human", "hair": None, "full": True, "rows": [
+        "............m.m.", "............mmm.", ".....oRRRRo..n..", "....oRRRRRRo.n..", "..ooRRRRRRRRon..", "....oSSSSSSo.n..", "....oSeSSeSo.n..", "....oSSSSSSo.n..",
+        "...oTTTTTTTTon..", "..oSTTTTTTTTSS..", ".ooSbbbgbbbbSS..", "ogootTTTTTTton..", ".o..oWWoWWo..n..", "....oWWoWWo..n..", "....okkokko..n..", "....ooo.ooo....."],
+     "palette": {"W": "#4a5a2e"}},
 ]
 
 
