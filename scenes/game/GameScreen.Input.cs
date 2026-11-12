@@ -388,6 +388,13 @@ public partial class GameScreen
             return;
         }
 
+        // A companion on their way out, unpaid: pay them to stay, or try to talk them round.
+        if (!hero.IsCompanion && _session.GetLeavingCompanions().FirstOrDefault(other => other.Position == tile) is { } leaver)
+        {
+            AskLeaver(hero, leaver);
+            return;
+        }
+
         // A downed ally beside you: aid them (Od Hand), or pick them up to carry.
         if (_session.State.HeroesIn(room).FirstOrDefault(other => other.Position == tile && other.IsKeelingOver && other != hero) is { } down)
         {
@@ -1458,6 +1465,32 @@ public partial class GameScreen
         _targeting = false;
         _board.SetBlast([]);
         RefreshPanels();
+    }
+
+    /// <summary>
+    /// A leaving companion clicked: pay them what they'll take to stay, try to talk them round (a d6 and your bond
+    /// with them, 6 or more, once a turn), or let them go.
+    /// </summary>
+    private void AskLeaver(Hero hero, Hero leaver)
+    {
+        _selectedCardId = _targetId = null;
+        RefreshPanels();
+        int price = _session.StayPrice(leaver, hero);
+        int bond = _session.BondBetween(leaver, hero);
+        var choices = new List<(string Text, Action Then)>();
+        if (_session.CheckOfferWage(leaver.Id, price) is null)
+        {
+            choices.Add(($"Pay {Money.Short(price)}", () => Execute(new OfferWage(hero.Id, leaver.Id, price))));
+        }
+
+        if (_session.CheckConvince(leaver.Id) is null)
+        {
+            choices.Add(($"Convince ({Math.Max(1, GameSession.ConvinceDifficulty - bond)}+)", () => Execute(new Convince(hero.Id, leaver.Id))));
+        }
+
+        choices.Add(("Let them go", RefreshPanels));
+        string cant = choices.Count == 1 ? $" ({_session.CheckOfferWage(leaver.Id, price)} {_session.CheckConvince(leaver.Id)})" : "";
+        _inventory.AskChoice(null, $"{leaver.Name} is leaving, unpaid: owed {Money.Short(leaver.Wage)}, your bond {bond}.{cant}", choices);
     }
 
     private void CancelSelection()

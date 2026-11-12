@@ -231,6 +231,9 @@ public sealed class TurnState
     /// <summary>A Medicine Bag has helped an Aid roll this turn (once a turn).</summary>
     public bool MedicineBagUsed { get; internal set; }
 
+    /// <summary>They've tried to talk a leaving companion round this turn.</summary>
+    public bool Convinced { get; internal set; }
+
     /// <summary>The parts of stopping, dropping and rolling done this turn: all three put the fire out.</summary>
     public IReadOnlySet<FirePart> FireParts => _fireParts;
 

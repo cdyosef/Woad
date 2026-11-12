@@ -138,6 +138,10 @@ public partial class GameScreen : Control
         {
             RunBathsTest();
         }
+        else if (args.Contains("--leavetest"))
+        {
+            RunLeaveTest();
+        }
         else if (args.Contains("--clodtest"))
         {
             RunClodTest();
@@ -1085,6 +1089,21 @@ public partial class GameScreen : Control
             case MonsterSpoke spoke:
                 Say(spoke.MonsterId, spoke.Text, Languages.Get(spoke.Language));
                 await Pause(1.2);
+                break;
+
+            case CompanionDeparted departed:
+                await RemoveFigure(departed.HeroId);
+                await _banner.Flash($"{NameOf(departed.HeroId)} walks out", Palette.TextDim, 0.6);
+                break;
+
+            case CompanionStayed stayed:
+                FloatOver(stayed.HeroId, stayed.Reason == StayReason.ChangeOfHeart ? "staying!" : "I'm in!", Palette.Heal);
+                await Pause(0.4);
+                break;
+
+            case ConvinceRolled convince:
+                FloatOver(convince.CompanionId, $"{convince.Face}{(convince.Bond > 0 ? $"+{convince.Bond}" : "")}: {(convince.Success ? "convinced" : "no")}", convince.Success ? Palette.Heal : Palette.TextDim);
+                await Pause(0.4);
                 break;
 
             case HeroSpoke spoke:

@@ -24,6 +24,9 @@ public partial class ResultsScreen : MenuScreen
     /// <summary>Shown when saving failed, so the player knows their progress may be missing.</summary>
     public string? SaveProblem { get; init; }
 
+    /// <summary>What was settled after the run: companions' wages paid, bonds grown.</summary>
+    public string Settled { get; init; } = "";
+
     public event Action? DoneRequested;
 
     internal Button DoneButton { get; private set; } = null!;
@@ -35,9 +38,14 @@ public partial class ResultsScreen : MenuScreen
             : $"{string.Join(" & ", winners).ToUpperInvariant()} {(winners.Count == 1 ? "WINS" : "WIN")}");
 
         string note = SaveProblem is not null ? $"Couldn't save: {SaveProblem}"
+            : Settled.Length > 0 ? Settled
             : Rows.Any(row => row.Character is not null) ? "Progress saved." : "";
-        Add(UiTheme.Label(new Vector2(380, 20), new Vector2(236, 14), note, color: SaveProblem is null ? Palette.TextDim : Palette.Danger))
-            .HorizontalAlignment = HorizontalAlignment.Right;
+        Label noteLabel = Add(UiTheme.Label(new Vector2(240, 20), new Vector2(376, 14), note, color: SaveProblem is null ? Palette.TextDim : Palette.Danger));
+        noteLabel.HorizontalAlignment = HorizontalAlignment.Right;
+        noteLabel.ClipText = true;
+        noteLabel.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        noteLabel.MouseFilter = MouseFilterEnum.Stop;
+        noteLabel.TooltipText = note;
 
         // Four rows fit; a bigger party scrolls.
         var scroll = Add(new ScrollContainer

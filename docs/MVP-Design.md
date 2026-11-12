@@ -627,7 +627,23 @@ Magic is dangerous in this world, and people don't like it, for good reason.
   the list below (up to rank 13, one for each). Raising Magic in the character editor, or with a level's
   points from the Party menu in a run, asks which.
 - Companions can take Magic too, and cast their spells under the **Fight** order.
-- **Clod Hopper**, frog hunter of the bog country, waits at every recruiter's elbow (10 gold): hat, waders and a
+- **Hiring** costs nothing down. A recruit's price is their **wage**: whoever they follow pays it to them after
+  every dungeon run they finish, win or lose (as much of it as that purse holds). Fights on the Woarld Map don't count.
+- **Bonds:** a party that wins a run together grows closer: +1 bond between each two of them.
+- **Unpaid** (in a raid): a companion not paid in full goes up for offers after the results. The party's other players
+  (the raid's leader first) each Match the wage, Raise a gold over the best offer, type their own, or Pass, as far as
+  their purse goes. The best offer wins, gold and bond together (a gold a point): it's their wage from then on, and
+  they follow whoever made it. No offer: a bond with anyone in the party keeps them; without one, they start the
+  next run **leaving**.
+- **Leaving:** how they go is their own affair, settled on their first turn. A third hang about the entrance three
+  turns asking for last offers; a third see the first room through, fighting and picking it over (they pick up loot
+  whatever their orders), and go when the party moves on; a third come three rooms along, and go when the party
+  heads deeper or finds the boss. Any of them goes at once with half their hearts gone, or once they've picked up
+  treasure worth what they were owed. Each of their turns they may have a **change of heart** (a d6 and their best
+  bond in the party, 6 or more). Click them, as a player in their room: **Pay** what they're owed (less a gold a
+  point of your bond, 1 gold at least), or **Convince** them, once a turn (a d6 and your bond with them, 6 or
+  more). Either way they stay, and follow you. Otherwise they spend a turn walking out, and wait at the inn.
+- **Clod Hopper**, frog hunter of the bog country, waits at every recruiter's elbow (10 gold a run): hat, waders and a
   mossy coat, a frog on his crest. He brings a **Frog Gig** (Weapon 1, reach 2 in a line; +1 against swimmers and
   earth creatures; a hit on something small out at its reach drags it a tile in), **Bog Waders** (water costs a step,
   and he stays afloat), a **Bog Lantern** (a torch that never burns out) and a **Sack**. He speaks a little Gurgle,

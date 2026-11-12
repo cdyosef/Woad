@@ -416,6 +416,15 @@ public enum FirePart
     Roll,
 }
 
+/// <summary>Pay a leaving companion in your room to stay (what they're owed, less a gold a point of bond with you): they follow you from then on.</summary>
+public sealed record OfferWage(int HeroId, int CompanionId, int Copper) : GameCommand(HeroId);
+
+/// <summary>Try to talk a leaving companion in your room round, once a turn: a d6 and your bond with them, 6 or more, and they stay and follow you.</summary>
+public sealed record Convince(int HeroId, int CompanionId) : GameCommand(HeroId);
+
+/// <summary>A leaving companion, their waiting done, spends their turn walking out of the run, back to the inn.</summary>
+public sealed record Depart(int HeroId) : GameCommand(HeroId);
+
 /// <summary>On fire: one part of stopping, dropping and rolling. All three in one turn put the fire out.</summary>
 public sealed record FightFire(int HeroId, FirePart Part) : GameCommand(HeroId);
 
