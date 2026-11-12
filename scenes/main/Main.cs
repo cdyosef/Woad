@@ -87,6 +87,10 @@ public partial class Main : Control
 	public override void _Ready()
 	{
 		Theme = UiTheme.Create();
+		_backdrop = new ColorRect { Color = Palette.Background, Size = new Vector2(640, 360), MouseFilter = MouseFilterEnum.Ignore };
+		AddChild(_backdrop);
+		GetViewport().SizeChanged += FitScreen;
+		FitCanvas();
 		_content = ContentCatalog.LoadDefault();
 
 		string[] args = OS.GetCmdlineUserArgs();
@@ -307,6 +311,10 @@ public partial class Main : Control
 			int from = fromAt >= 0 && fromAt + 1 < args.Length && int.TryParse(args[fromAt + 1], out int move) ? move : 0;
 			WatchReplay(args[replayAt + 1], from, autoPlay: true, clean: args.Contains("--clean"), quitAtEnd: true, speed: 1);
 		}
+		else if (args.Contains("--sizetest"))
+		{
+			RunSizeTest(seed);
+		}
 		else if (args.Contains("--replaytest"))
 		{
 			RunReplayTest(saveFolder);
@@ -359,6 +367,51 @@ public partial class Main : Control
 
 		_screen = screen;
 		AddChild(screen);
+		FitScreen();
+	}
+
+	/// <summary>
+	/// On a screen of another shape the canvas grows (the pixels stay whole): the game fills it, and a menu sits in
+	/// the middle of it.
+	/// </summary>
+	private void FitScreen()
+	{
+		Vector2 size = GetViewportRect().Size;
+		_backdrop.Size = size;
+		if (_screen is not null and not GameScreen)
+		{
+			_screen.Position = ((size - new Vector2(MenuScreen.Width, MenuScreen.Height)) / 2).Floor();
+		}
+	}
+
+	private ColorRect _backdrop = null!;
+
+	private Vector2I _windowSize;
+
+	/// <summary>The window's size is checked each frame (the canvas doesn't change with it, so nothing says when it does).</summary>
+	public override void _Process(double delta)
+	{
+		if (GetWindow().Size != _windowSize)
+		{
+			FitCanvas();
+		}
+	}
+
+	/// <summary>
+	/// Fits the canvas to the window: the biggest whole number of screen pixels to a game pixel that fits 640 by 360,
+	/// and the canvas as big as the window then holds (720 by 450 on a 16:10 screen at four or two to a pixel). The
+	/// pixels stay square and whole; the game fills the window, but for a sliver less than one game pixel wide.
+	/// </summary>
+	private void FitCanvas()
+	{
+		Window window = GetWindow();
+		Vector2I screen = _windowSize = window.Size;
+		int scale = Math.Max(1, Math.Min(screen.X / (int)MenuScreen.Width, screen.Y / (int)MenuScreen.Height));
+		var canvas = new Vector2I(Math.Max((int)MenuScreen.Width, screen.X / scale), Math.Max((int)MenuScreen.Height, screen.Y / scale));
+		if (window.ContentScaleSize != canvas)
+		{
+			window.ContentScaleSize = canvas;
+		}
 	}
 
 	private void ShowMainMenu()

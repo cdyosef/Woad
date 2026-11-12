@@ -80,6 +80,7 @@ public partial class GameScreen : Control
     public override void _Ready()
     {
         Size = new Vector2(640, 360);
+        GetViewport().SizeChanged += Relayout;
         NetReady();
         SheetCard.PaintedCrest = card => _session.State.Heroes.FirstOrDefault(hero => hero.FindCard(card.Id) is not null) is { } bearer ? CrestOf(bearer) : null;
         string[] args = OS.GetCmdlineUserArgs();
@@ -91,6 +92,7 @@ public partial class GameScreen : Control
 
         _narrator = new EventNarrator(NameOf, CardNameOf, id => Content.FindSpell(id)?.Name ?? id, id => _session.State.Rooms.TryGetValue(id, out Room? room) ? room.PlaceName : "");
         BuildLayout();
+        Relayout();
         StartRun(Setup);
 
         if (args.Contains("--uitest"))
