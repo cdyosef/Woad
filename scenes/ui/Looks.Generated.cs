@@ -3,7 +3,7 @@ namespace Woad.Scenes.Ui;
 
 public static partial class Looks
 {
-    public static IReadOnlyList<Look> All { get; } =
+    public static IReadOnlyList<Look> Built { get; } =
     [
         new("wanderer", "Wanderer", "human", "hair", [new(6, 5), new(9, 5)], null, null),
         new("knight", "Knight", null, null, [new(6, 5), new(9, 5)], null, null),

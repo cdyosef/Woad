@@ -196,7 +196,7 @@ public static partial class Looks
 
     public static Swatch? Find(IReadOnlyList<Swatch> swatches, string id) => swatches.FirstOrDefault(swatch => swatch.Id == id);
 
-    public static Texture2D? Strip(Look look) => GameArt.Texture($"res://assets/heroes/looks/{look.Id}.png");
+    public static Texture2D? Strip(Look look) => PaintedStrip(look) ?? GameArt.Texture($"res://assets/heroes/looks/{look.Id}.png");
 
     /// <summary>Draws the figure into <paramref name="rect"/> (under the canvas's current transform). False if there's no art.</summary>
     public static bool Draw(CanvasItem canvas, Rect2 rect, LookColors colors, Color? modulate = null)

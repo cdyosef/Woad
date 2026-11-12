@@ -310,6 +310,7 @@ public partial class Main : Control
 	{
 		Theme = null;
 		GameArt.Release();
+		Looks.Release();
 		UiTheme.Release();
 	}
 
