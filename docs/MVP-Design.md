@@ -924,7 +924,16 @@ total reaches its number:
   starts the run for everyone: the same start and seed on every machine. A machine plays only the heroes in its own
   seats; each move is sent to the host, which plays it if the rules allow and passes every accepted move on,
   numbered, with a fingerprint of the run, and every machine plays it and checks the fingerprint. The host's machine
-  plays the companions. A guest who leaves hands their heroes to the host. After the run each player's own
+  plays the companions. A guest who leaves hands their heroes to the host, and **rejoining** under the same name
+  they're sent the run so far and take their heroes up again (anyone else joining mid-run watches). A copy of the
+  game of another **version** (or with other rules) is turned away at the door, told the host's version.
+  **Chat** (Enter) goes round the table, said as one of your own heroes, any time.
+- **Replays:** the host records every online session (user://replays): the run, who made each move and when, what
+  was said, who came and went; written after every move. **Replays** in the Woarld Tree lists them: **Watch** plays one
+  again through the rules with every animation (Space plays or pauses, the arrow steps a move, round back and on,
+  1/2x to 4x, the camera as ever), **Clean** (H) hides every panel for clean shots, **Shot** (F12, any time) saves a
+  screenshot (user://screenshots), and **Record video** plays it in a window and writes every frame to an AVI
+  (user://videos, 1280x720 at 30 frames a second). A replay plays only on the version that made it. After the run each player's own
   characters are saved on their own machine. (Raids, taverns and the Woarld Map aren't online yet.)
 - **Retreat:** in a fight out on the Woarld Map a **Retreat** button sits in the top strip beside Party and
   Menu, well away from the other actions: your Od Hand dice look
@@ -1409,6 +1418,20 @@ them up there like any character.
   online play will swap in a server-backed one.
 
 ## Presentation
+
+- **The screen:** the game draws on a canvas of at least 640 by 360, scaled by a whole number of screen pixels to a
+  game pixel (crisp, square pixels). The canvas grows to the window's shape: 720 by 450 on a 16:10 screen, still
+  640 by 360 at 1920 by 1080. The character sheet keeps to the left, the board to its column; the right panel and its
+  log take the room to spare; menus sit in the middle.
+- **The right panel**, top to bottom: the floor map, Party and Menu; the **hover box** (whatever the mouse is over,
+  on the board or a card: its picture, name, a short description, and a green line on how to interact; it grows to
+  fit, never cut off, and never shrinks below its usual height, so nothing jumps); **what's selected** (the target's
+  sheet, a monster's with the banner of the side it moves with, a hero's with their crest; or a question the game
+  asks); and the **log**, as tall as you drag the bar above it (kept between games).
+- **The item slide-out:** pick up a card of yours and its whole story comes out from behind the character sheet,
+  below the carry and fire tabs: picture, name and kind; Use, Equip, Belt, Stow, Carry and Drop (greyed out with why);
+  its full text and numbers; every way it can be used; and its base price, before any haggling. Aiming the card at
+  the board, it slides away.
 
 ```
 640 px

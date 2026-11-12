@@ -101,6 +101,9 @@ public sealed class SeatMap
     public bool Controls(int peer, GameState state, int heroId) =>
         state.Heroes.FirstOrDefault(hero => hero.Id == heroId) is { } hero && PeerOf(state, hero) == peer;
 
+    /// <summary>A seat is played from <paramref name="peer"/> now (someone back at the table takes up their seat again).</summary>
+    public void Assign(int seat, int peer) => _peerBySeat[seat] = peer;
+
     /// <summary>A peer left: their seats pass to <paramref name="to"/> (the host), so the run can go on.</summary>
     public void Reassign(int from, int to)
     {

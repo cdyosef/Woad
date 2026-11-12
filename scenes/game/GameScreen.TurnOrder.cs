@@ -139,21 +139,26 @@ public partial class GameScreen
         }
 
         _targetSheet.ThemeId = state.ThemeId;
-        _targetSheet.Visible = _targetId is not null && _selectedCardId is null && !_inventory.IsChoosingHand;
+        _targetSheet.Visible = _targetId is not null && !_inventory.IsChoosingHand;
         if (monster is not null)
         {
-            _targetSheet.ShowMonster(monster);
+            _targetSheet.ShowMonster(monster, _session.FactionOf(monster));
         }
         else if (hero is not null)
         {
-            _targetSheet.ShowHero(hero);
+            _targetSheet.ShowHero(hero, CrestOf(hero));
         }
+
+        PlaceRight();
     }
 
     /// <summary>What the mouse is over, or what to do next, for the right panel.</summary>
-    private void SetHint(string text)
+    private void SetHint(string text) => SetHover(new HoverInfo("", text));
+
+    /// <summary>Shows what the mouse is over (or what to do next) in the hover box.</summary>
+    private void SetHover(HoverInfo info)
     {
-        _hoverInfo.Text = text;
-        _inventory.ShowHint(text);
+        _hoverInfo.Text = info.Title.Length > 0 ? $"{info.Title}: {info.Text}" : info.Text;
+        _hoverBox.ShowInfo(info);
     }
 }

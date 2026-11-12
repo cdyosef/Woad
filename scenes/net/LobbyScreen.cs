@@ -26,6 +26,9 @@ public partial class LobbyScreen : MenuScreen
 
     public event Action? BackRequested;
 
+    /// <summary>The recorded sessions, to watch.</summary>
+    public event Action? ReplaysRequested;
+
     /// <summary>The host pressed Start: the dungeon picked.</summary>
     public event Action<string>? StartRequested;
 
@@ -91,6 +94,14 @@ public partial class LobbyScreen : MenuScreen
         {
             Link.Leave();
             BackRequested?.Invoke();
+        };
+        Button replays = Add(UiTheme.Button(new Vector2(116, 316), new Vector2(88, 26), "Replays"));
+        replays.Name = "Replays";
+        replays.TooltipText = "Watch the sessions played online (the host records each one).";
+        replays.Pressed += () =>
+        {
+            Link.Leave();
+            ReplaysRequested?.Invoke();
         };
         _dungeon = Add(UiTheme.Button(new Vector2(300, 316), new Vector2(200, 26), ""));
         _dungeon.Pressed += () =>

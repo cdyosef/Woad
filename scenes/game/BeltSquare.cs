@@ -189,6 +189,7 @@ public partial class BeltSquare : Control
         if (hover != _hover)
         {
             _hover = hover;
+            CardSlot.Hover(CardIn(hover));
             QueueRedraw();
         }
     }

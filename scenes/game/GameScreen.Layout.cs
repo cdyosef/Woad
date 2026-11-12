@@ -143,7 +143,8 @@ public partial class GameScreen
         // Looking over another hero, their sheet is up, but nothing on it can be played.
         Hero? sheet = SheetHero;
         _heroPanel.ShowHero(sheet, sheet == hero ? turn : null, sheet == hero ? _selectedCardId : null);
-        _inventory.ShowHero(hero, _selectedCardId, AvailableCardActions(hero, turn));
+        // Aiming a card at the board, its slide-out makes way.
+        _inventory.ShowHero(hero, _targeting ? null : _selectedCardId, AvailableCardActions(hero, turn));
         _carryTab.ShowHero(sheet, sheet == hero ? _selectedCardId : null);
         _fireTab.ShowHero(sheet, _session, sheet == hero && turn is not null && !Locked);
         _buckleMenu.Visible &= sheet == hero && hero is not null;
@@ -716,9 +717,52 @@ public partial class GameScreen
 
     private static string Escape(string text) => text.Replace("[", "[lb]");
 
+    private ColorRect _background = null!;
+
+    /// <summary>For the size test: the bottom-right corner of the right panel.</summary>
+    internal Vector2 RightPanelEnd => _rightPanel.Position + _rightPanel.Size;
+    private Panel _rightPanel = null!;
+    private Panel _boardFill = null!;
+
+    /// <summary>The bottom of the right panel's controls, as built for 640 by 360 (they move down on a taller screen).</summary>
+    private readonly Dictionary<Control, float> _rightBottoms = [];
+
+    /// <summary>
+    /// Lays the screen out for the window: on a screen of another shape the game's canvas grows (the pixels stay
+    /// whole), the character sheet keeps to the left and the board to its column, and the right panel takes the
+    /// width to spare, its log the height.
+    /// </summary>
+    private void Relayout()
+    {
+        Vector2 size = GetViewportRect().Size;
+        size = new Vector2(Mathf.Max(640, size.X), Mathf.Max(360, size.Y));
+        float taller = size.Y - 360;
+        float rightWidth = size.X - SideWidth - BoardView.Pixels;
+        Size = size;
+        _background.Size = size;
+        _heroPanel.Size = new Vector2(SideWidth, size.Y);
+        _boardFill.Visible = taller > 0;
+        _boardFill.Size = new Vector2(BoardView.Pixels, taller);
+        _rightPanel.Size = new Vector2(rightWidth, size.Y);
+        PlaceRight();
+        if (_rightBottoms.Count == 0)
+        {
+            foreach (Control control in new Control[] { _luckHint, _confirm, _land, _flyOn, _endTurn, _orders })
+            {
+                _rightBottoms[control] = control.Position.Y;
+            }
+        }
+
+        foreach ((Control control, float y) in _rightBottoms)
+        {
+            control.Position = control.Position with { Y = y + taller };
+        }
+    }
+
     private void BuildLayout()
     {
-        AddChild(new ColorRect { Color = Palette.Background, Size = new Vector2(640, 360), MouseFilter = MouseFilterEnum.Ignore });
+        _background = new ColorRect { Color = Palette.Background, Size = new Vector2(640, 360), MouseFilter = MouseFilterEnum.Ignore };
+        AddChild(_background);
 
         _heroPanel = new HeroPanel();
         _heroPanel.CardSelected += ClickCard;
@@ -875,6 +919,9 @@ public partial class GameScreen
 
         // Under the board, the dice bar: who rolls on the left, VS, who answers on the right.
         AddChild(new Panel { Position = new Vector2(SideWidth, StripHeight + BoardView.Pixels), Size = new Vector2(BoardView.Pixels, StripHeight) });
+        // Below the dice bar, on a screen taller than the game's 360: the board's column carries on down.
+        _boardFill = new Panel { Position = new Vector2(SideWidth, 2 * StripHeight + BoardView.Pixels), Size = new Vector2(BoardView.Pixels, 0), Visible = false, MouseFilter = MouseFilterEnum.Ignore };
+        AddChild(_boardFill);
         _dice = new DiceBar { Position = new Vector2(SideWidth + 6, StripHeight + BoardView.Pixels + 1), Size = new Vector2(BoardView.Pixels - 12, 34) };
         _dice.DieClicked += index =>
         {
@@ -919,10 +966,12 @@ public partial class GameScreen
         AddChild(_dice);
 
         var right = new Panel { Position = new Vector2(SideWidth + BoardView.Pixels, 0), Size = new Vector2(SideWidth, 360) };
+        _rightPanel = right;
         AddChild(right);
         AddChild(_minimap);
 
-        _inventory = new InventoryPanel { Position = new Vector2(0, 98) };
+        AddChild(BuildItemSlideout());
+        _inventory = new InventoryPanel { Position = new Vector2(0, 98), Slideout = _itemSlideout };
         _inventory.HandChosen += (cardId, hand) => ExecuteForActiveHero(heroId => new EquipCard(heroId, cardId, hand));
         _inventory.ActionRequested += OnCardAction;
         _inventory.BlockedActionClicked += action =>
@@ -935,6 +984,7 @@ public partial class GameScreen
             RefreshPanels();
         };
         right.AddChild(_targetSheet);
+        BuildRightPanel();
 
         // The message log, under the cards: the newest line bright, older ones dimmed; scroll back with the wheel.
         _log = RichLabel(new Vector2(SideWidth + BoardView.Pixels + 8, 252), new Vector2(160, 66));

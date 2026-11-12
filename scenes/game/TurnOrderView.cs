@@ -181,11 +181,11 @@ public partial class TurnOrderView : Control
         {
             if (entry.Enemy == Faction.Undead)
             {
-                DrawUndeadCard(rect, active);
+                DrawUndeadCard(this, rect, active);
             }
             else
             {
-                DrawMonsterCard(rect, active);
+                DrawMonsterCard(this, rect, active);
             }
 
             return;
@@ -205,45 +205,45 @@ public partial class TurnOrderView : Control
     }
 
     /// <summary>The undead's card: black, a sickly green trim, and their symbol: a fanged skull with glowing green eyes.</summary>
-    private void DrawUndeadCard(Rect2 rect, bool active)
+    internal static void DrawUndeadCard(CanvasItem canvas, Rect2 rect, bool active)
     {
         Color green = new("60ff80"), dark = new("1a4a24"), bone = new("e8e2d0");
-        DrawRect(rect, Colors.Black);
-        DrawRect(rect, active ? Palette.TrimBright : green.Darkened(0.3f), filled: false, width: active ? 2 : 1);
-        DrawRect(rect.Grow(-2), dark, filled: false, width: 1);
+        canvas.DrawRect(rect, Colors.Black);
+        canvas.DrawRect(rect, active ? Palette.TrimBright : green.Darkened(0.3f), filled: false, width: active ? 2 : 1);
+        canvas.DrawRect(rect.Grow(-2), dark, filled: false, width: 1);
 
         Vector2 c = rect.GetCenter() + new Vector2(0, -1);
         float s = rect.Size.X / 22f;
         // The skull: a dome, a jaw and its fangs.
-        DrawCircle(c, 6.5f * s, bone);
-        DrawRect(new Rect2(c.X - 4 * s, c.Y + 3 * s, 8 * s, 4 * s), bone);
+        canvas.DrawCircle(c, 6.5f * s, bone);
+        canvas.DrawRect(new Rect2(c.X - 4 * s, c.Y + 3 * s, 8 * s, 4 * s), bone);
         foreach (float x in new[] { -3f, -1f, 1f, 3f })
         {
             bool fang = x is -3f or 3f;
-            DrawColoredPolygon([new Vector2(c.X + (x - 0.8f) * s, c.Y + 7 * s), new Vector2(c.X + (x + 0.8f) * s, c.Y + 7 * s), new Vector2(c.X + x * s, c.Y + (fang ? 10 : 8.5f) * s)], bone);
+            canvas.DrawColoredPolygon([new Vector2(c.X + (x - 0.8f) * s, c.Y + 7 * s), new Vector2(c.X + (x + 0.8f) * s, c.Y + 7 * s), new Vector2(c.X + x * s, c.Y + (fang ? 10 : 8.5f) * s)], bone);
         }
 
         // Dark sockets, green-glowing irises.
         foreach (float x in new[] { -2.6f, 2.6f })
         {
-            DrawCircle(c + new Vector2(x, 0) * s, 2 * s, Colors.Black);
-            DrawCircle(c + new Vector2(x, 0) * s, 1.3f * s, green with { A = 0.45f });
-            DrawCircle(c + new Vector2(x, 0) * s, 0.8f * s, green);
+            canvas.DrawCircle(c + new Vector2(x, 0) * s, 2 * s, Colors.Black);
+            canvas.DrawCircle(c + new Vector2(x, 0) * s, 1.3f * s, green with { A = 0.45f });
+            canvas.DrawCircle(c + new Vector2(x, 0) * s, 0.8f * s, green);
         }
 
-        DrawColoredPolygon([c + new Vector2(0, 2) * s, c + new Vector2(-0.9f, 3.5f) * s, c + new Vector2(0.9f, 3.5f) * s], Colors.Black);
+        canvas.DrawColoredPolygon([c + new Vector2(0, 2) * s, c + new Vector2(-0.9f, 3.5f) * s, c + new Vector2(0.9f, 3.5f) * s], Colors.Black);
     }
 
     /// <summary>The monsters' card: black, a fancy red trim, and their symbol.</summary>
-    private void DrawMonsterCard(Rect2 rect, bool active)
+    internal static void DrawMonsterCard(CanvasItem canvas, Rect2 rect, bool active)
     {
         Color red = new("c0242c"), dark = new("6a0e14"), gold = new("ffd040");
-        DrawRect(rect, Colors.Black);
-        DrawRect(rect, active ? Palette.TrimBright : red, filled: false, width: active ? 2 : 1);
-        DrawRect(rect.Grow(-2), dark, filled: false, width: 1);
+        canvas.DrawRect(rect, Colors.Black);
+        canvas.DrawRect(rect, active ? Palette.TrimBright : red, filled: false, width: active ? 2 : 1);
+        canvas.DrawRect(rect.Grow(-2), dark, filled: false, width: 1);
         foreach (Vector2 corner in new[] { rect.Position + new Vector2(1, 1), new Vector2(rect.End.X - 2, rect.Position.Y + 1), new Vector2(rect.Position.X + 1, rect.End.Y - 2), rect.End - new Vector2(2, 2) })
         {
-            DrawRect(new Rect2(corner, Vector2.One), gold);
+            canvas.DrawRect(new Rect2(corner, Vector2.One), gold);
         }
 
         Vector2 c = rect.GetCenter();
@@ -253,12 +253,12 @@ public partial class TurnOrderView : Control
             Vector2 dir = Vector2.FromAngle(Mathf.Pi / 4 * k);
             Vector2 side = new Vector2(-dir.Y, dir.X) * 1.6f * s;
             float length = (k % 2 == 0 ? 9 : 7) * s;
-            DrawColoredPolygon([c + dir * 4 * s + side, c + dir * length, c + dir * 4 * s - side], Colors.White);
+            canvas.DrawColoredPolygon([c + dir * 4 * s + side, c + dir * length, c + dir * 4 * s - side], Colors.White);
         }
 
-        DrawCircle(c, 5 * s, red);
-        DrawArc(c, 5 * s, 0, Mathf.Tau, 16, dark, 1);
-        DrawColoredPolygon([c + new Vector2(-4, 0) * s, c + new Vector2(0, -2.4f) * s, c + new Vector2(4, 0) * s, c + new Vector2(0, 2.4f) * s], gold);
-        DrawRect(new Rect2(c.X - 0.5f * s, c.Y - 1.5f * s, s, 3 * s), Colors.Black);
+        canvas.DrawCircle(c, 5 * s, red);
+        canvas.DrawArc(c, 5 * s, 0, Mathf.Tau, 16, dark, 1);
+        canvas.DrawColoredPolygon([c + new Vector2(-4, 0) * s, c + new Vector2(0, -2.4f) * s, c + new Vector2(4, 0) * s, c + new Vector2(0, 2.4f) * s], gold);
+        canvas.DrawRect(new Rect2(c.X - 0.5f * s, c.Y - 1.5f * s, s, 3 * s), Colors.Black);
     }
 }
