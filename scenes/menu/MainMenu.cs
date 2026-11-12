@@ -14,11 +14,16 @@ public partial class MainMenu : MenuScreen
     /// <summary>The Music Tracker, offered only when the game runs from the Godot editor.</summary>
     public event Action? TrackerRequested;
 
+    /// <summary>Pixel Paint: painting hero figures.</summary>
+    public event Action? PaintRequested;
+
     internal Button PlayButton { get; private set; } = null!;
 
     internal Button CharactersButton { get; private set; } = null!;
 
     internal Button SettingsButton { get; private set; } = null!;
+
+    internal Button PaintButton { get; private set; } = null!;
 
     public override void _Ready()
     {
@@ -37,9 +42,13 @@ public partial class MainMenu : MenuScreen
         SettingsButton.Pressed += () => SettingsRequested?.Invoke();
         Button quit = Add(UiTheme.Button(new Vector2(240, 266), new Vector2(160, 26), "Quit"));
         quit.Pressed += () => Sfx.QuitGame(this);
-        if (OS.HasFeature("editor"))
+        bool editor = OS.HasFeature("editor");
+        PaintButton = Add(UiTheme.CompactButton(new Vector2(editor ? 196 : 260, 300), new Vector2(120, 18), "Pixel Paint"));
+        PaintButton.TooltipText = "Paint your own hero figures";
+        PaintButton.Pressed += () => PaintRequested?.Invoke();
+        if (editor)
         {
-            Button tracker = Add(UiTheme.CompactButton(new Vector2(260, 300), new Vector2(120, 18), "Music Tracker"));
+            Button tracker = Add(UiTheme.CompactButton(new Vector2(324, 300), new Vector2(120, 18), "Music Tracker"));
             tracker.TooltipText = "Write chiptune songs for the game (only when running from the Godot editor)";
             tracker.Pressed += () => TrackerRequested?.Invoke();
         }

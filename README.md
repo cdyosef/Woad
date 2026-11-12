@@ -56,6 +56,7 @@ scenes/menu/                 Main menu, character list, character editor, party 
 scenes/game/                 The game screen: board, tokens, dice bar, hit effects, panels, event playback
 scenes/ui/                   Shared UI pieces: palette, theme, looks, crests, card slots, hearts
 scenes/tracker/              The Music Tracker, a chiptune editor for the game's songs
+scenes/paint/                Pixel Paint, where hero figures are painted in the game
 scenes/debug/                Synthetic mouse/keyboard driver used by the debug UI tests
 src/Woad.Core/               Pure C# rules engine: no Godot references allowed
   Rules/GameSession*.cs        Executes commands (Commands/) and returns events (Events/)
@@ -63,6 +64,7 @@ src/Woad.Core/               Pure C# rules engine: no Godot references allowed
   Characters/                  Saved characters, point-buy, levels, JSON character storage
   Content/Data/                Cards, monsters and dungeon themes as JSON (embedded in the DLL)
   Chiptune/                    Tracker songs: their file format, and the synth that renders them to WAV
+  Art/                         Painted hero figures: their file format
 tests/Woad.Core.Tests/       xUnit tests for Woad.Core
 docs/                        Design documents
 tools/                       Dev-machine scripts
@@ -123,6 +125,7 @@ on the Godot command line:
 | `--clicktest` | Checks that double-clicking a far-off monster rolls the Wend dice, clicking it again walks up to it with Rumble aimed, R puts Rumble away and back, and one more click attacks. |
 | `--resultstest` | Two saved characters click their way out of the exit; checks that their results are saved and shown. Uses a throwaway save folder. |
 | `--trackertest` | Writes a song in the Music Tracker from the keyboard (notes, a note-off, drums and a volume), copies its pattern, exports it into a throwaway folder and checks the song file and the WAV's length, plays it, and opens it again. |
+| `--pixeltest` | Paints a figure in Pixel Paint (pencil, mirror, fill, eraser, pick, undo and redo), saves it into a throwaway folder and finds it among the figures, opens it again, traces a drawing, then repaints a built-in figure and puts it back. |
 | `--autoplay` | The debug party plays a generated dungeon with the rules-engine bot until the run ends, narrating to the console. Add `--fast` for 8× speed, `--party N` for a party of N (up to 8), and `--theme sunken_temple` for the second dungeon. |
 
 Each test exits with code 1 on its first failed check.
@@ -161,6 +164,16 @@ script. PNGs are written uncompressed, so every machine and Python version produ
 file under the same path. The game looks files up by name: `assets/themes/<theme>/tiles/`,
 `assets/themes/<theme>/monsters/<monster id>.png`, `assets/heroes/`, `assets/ui/`, `assets/audio/`.
 Anything missing falls back to simple shapes, or silence.
+
+### Pixel Paint
+
+Hero figures can be painted in the game: **Pixel Paint** on the main menu, or run Godot with
+`-- --paint`. A figure is 16x16 pixels of fixed colors and of the four colors players pick (main,
+trim, skin and hair, each with a shade), with its eyes marked. Open any figure to repaint it, or start
+a new one; **Open...** lays a drawing under the grid to trace (the wheel zooms it, the middle button
+drags it). Saved figures turn up in character creation. Run from the Godot editor they save into
+`assets/heroes/painted/` as small JSON files, which ship with the game; an exported game saves them
+to the player's own folder. A painted figure with a built-in figure's name takes its place.
 
 ### The Music Tracker
 
