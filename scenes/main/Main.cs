@@ -90,7 +90,7 @@ public partial class Main : Control
 		_content = ContentCatalog.LoadDefault();
 
 		string[] args = OS.GetCmdlineUserArgs();
-		bool throwawaySaves = args.Contains("--menutest") || args.Contains("--resultstest") || args.Contains("--nethosttest") || args.Contains("--netguesttest");
+		bool throwawaySaves = args.Contains("--menutest") || args.Contains("--resultstest") || args.Contains("--nethosttest") || args.Contains("--netguesttest") || args.Contains("--netrejointest") || args.Contains("--netoldtest");
 		string saveFolder = throwawaySaves
 			? Path.Combine(Path.GetTempPath(), "woad-uitest", Guid.NewGuid().ToString("N"))
 			: ProjectSettings.GlobalizePath("user://characters");
@@ -112,7 +112,9 @@ public partial class Main : Control
 		AddChild(new Music());
 		_net = new NetLink { Name = "Net" };
 		AddChild(_net);
-		_net.RunStarted += StartNetRun;
+		_net.RunStarted += (run, seats) => StartNetRun(run, seats, joining: false);
+		_net.RunJoined += (run, seats) => StartNetRun(run, seats, joining: true);
+		_net.PlayerArrived += OnNetPlayerArrived;
 
 		ulong seed = (ulong)DateTime.UtcNow.Ticks;
 		if (args.Contains("--crestsheet"))
@@ -291,6 +293,14 @@ public partial class Main : Control
 		{
 			RunNetGuestTest(saveFolder);
 		}
+		else if (args.Contains("--netrejointest"))
+		{
+			RunNetRejoinTest(saveFolder);
+		}
+		else if (args.Contains("--netoldtest"))
+		{
+			RunNetOldTest(saveFolder);
+		}
 		else if (args.Contains("--resultstest"))
 		{
 			RunResultsTest(saveFolder);
@@ -422,11 +432,43 @@ public partial class Main : Control
 		}
 
 		var run = new SavedRun { ThemeId = themeId, Seed = seed, Heroes = heroes };
+		// Whose seats are whose, by name, so someone who drops out can take theirs up again.
+		_netSeatsByName = _net.Players.ToDictionary(player => player.Name, player => (IReadOnlyList<int>)[.. seats.PeerBySeat.Where(entry => entry.Value == player.Peer).Select(entry => entry.Key)]);
 		_net.StartRun(run.ToJson(), System.Text.Json.JsonSerializer.Serialize(seats.PeerBySeat));
 	}
 
+	/// <summary>On the host, the run being played online: its start and every move so far (what someone joining is sent).</summary>
+	private SavedRun? _netRecord;
+
+	private NetRun? _netRun;
+
+	/// <summary>On the host: each player's seats in the run, by their name.</summary>
+	private Dictionary<string, IReadOnlyList<int>> _netSeatsByName = [];
+
+	/// <summary>
+	/// On the host: someone sat down at the table. With a run under way, they're sent it so far: one who dropped out
+	/// (by their name) takes up their seats again; anyone else watches.
+	/// </summary>
+	private void OnNetPlayerArrived(int peer, string name)
+	{
+		if (_netRecord is null || _netRun is null || _screen is not GameScreen game || game.Net != _netRun)
+		{
+			return;
+		}
+
+		bool back = _netSeatsByName.TryGetValue(name, out IReadOnlyList<int>? seats) && seats.Count > 0;
+		foreach (int seat in back ? seats! : [])
+		{
+			_netRun.Seats.Assign(seat, peer);
+		}
+
+		_net.SendRun(peer, _netRecord.ToJson(), System.Text.Json.JsonSerializer.Serialize(_netRun.Seats.PeerBySeat));
+		game.NetSeatsChanged(name, back);
+	}
+
 	/// <summary>A run begins at the table (here, or from the host): everyone builds the same run from the same start.</summary>
-	private void StartNetRun(string runJson, string seatsJson)
+	/// <param name="joining">Joining (or rejoining) a run under way: it's rebuilt from its moves so far.</param>
+	private void StartNetRun(string runJson, string seatsJson, bool joining)
 	{
 		SavedRun run = SavedRun.FromJson(runJson);
 		var seats = new SeatMap(System.Text.Json.JsonSerializer.Deserialize<Dictionary<int, int>>(seatsJson) ?? []);
@@ -439,14 +481,42 @@ public partial class Main : Control
 		_runFromMap = false;
 		_themeId = run.ThemeId;
 		RunSetup setup = run.CreateSetup(_content);
-		var game = new GameScreen { Setup = setup, Content = _content, Net = new NetRun(_net, seats) };
+		GameSession? restored = null;
+		if (joining)
+		{
+			try
+			{
+				restored = run.Restore(_content);
+			}
+			catch (InvalidDataException exception)
+			{
+				_net.Leave();
+				ShowLobby();
+				GD.PushWarning($"Net: couldn't take up the run: {exception.Message}");
+				return;
+			}
+		}
+
+		_netRun = new NetRun(_net, seats, run.Commands.Count);
+		_netRecord = _net.IsHost ? run : null;
+		var game = new GameScreen { Setup = setup, Content = _content, Net = _netRun, Restored = restored };
+		if (_netRecord is { } record)
+		{
+			game.CommandPlayed += (command, state) => record.Record(command, state);
+		}
+
 		game.ExitRequested += () =>
 		{
 			_net.Leave();
 			ShowLobby();
 		};
 		IReadOnlyList<Character> party = _netParty;
-		game.RunFinished += results => FinishRun(results, setup, party);
+		game.RunFinished += results =>
+		{
+			_netRecord = null;
+			_netRun = null;
+			FinishRun(results, setup, party);
+		};
 		Show(game);
 	}
 

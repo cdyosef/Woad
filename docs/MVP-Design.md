@@ -916,7 +916,9 @@ total reaches its number:
   starts the run for everyone: the same start and seed on every machine. A machine plays only the heroes in its own
   seats; each move is sent to the host, which plays it if the rules allow and passes every accepted move on,
   numbered, with a fingerprint of the run, and every machine plays it and checks the fingerprint. The host's machine
-  plays the companions. A guest who leaves hands their heroes to the host. After the run each player's own
+  plays the companions. A guest who leaves hands their heroes to the host, and **rejoining** under the same name
+  they're sent the run so far and take their heroes up again (anyone else joining mid-run watches). A copy of the
+  game of another **version** (or with other rules) is turned away at the door, told the host's version. After the run each player's own
   characters are saved on their own machine. (Raids, taverns and the Woarld Map aren't online yet.)
 - **Retreat:** in a fight out on the Woarld Map a **Retreat** button sits in the top strip beside Party and
   Menu, well away from the other actions: your Od Hand dice look

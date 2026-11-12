@@ -16,6 +16,14 @@ public partial class NetLink : Node
 {
     public const int DefaultPort = 7777;
 
+    /// <summary>
+    /// This copy of the game, as the table checks it: its version's name and its rules' build. Two copies can only
+    /// play together if theirs match (a run is played through the rules on every machine).
+    /// </summary>
+    public static string GameVersion { get; } =
+        OS.GetEnvironment("WOAD_FAKE_VERSION") is { Length: > 0 } fake ? fake
+        : $"{ProjectSettings.GetSetting("application/config/version").AsString()} ({typeof(Woad.Core.Rules.GameSession).Assembly.ManifestModule.ModuleVersionId.ToString()[..8]})";
+
     /// <summary>The host's peer number (Godot's server is always 1).</summary>
     public const int HostPeer = 1;
 
@@ -58,8 +66,14 @@ public partial class NetLink : Node
     /// <summary>Someone left the table (their peer, their name).</summary>
     public event Action<int, string>? PlayerLeft;
 
-    /// <summary>The table is gone: the host left, or the connection dropped.</summary>
+    /// <summary>The table is gone: the host left, the connection dropped, or the host turned this copy away.</summary>
     public event Action<string>? Disconnected;
+
+    /// <summary>On the host: someone sat down at the table (their peer, their name), perhaps while a run is on.</summary>
+    public event Action<int, string>? PlayerArrived;
+
+    /// <summary>A run under way was sent to this player, joining (or rejoining) it: the run so far and the seats, as text.</summary>
+    public event Action<string, string>? RunJoined;
 
     public override void _Ready()
     {
@@ -135,7 +149,7 @@ public partial class NetLink : Node
     private void OnConnectedToServer()
     {
         StatusChanged?.Invoke("At the table.");
-        RpcId(HostPeer, MethodName.Hello, MyName);
+        RpcId(HostPeer, MethodName.Hello, MyName, GameVersion);
         // A party picked before the table was reached is brought along.
         if (_myOffer is var (heroes, names))
         {
@@ -177,7 +191,7 @@ public partial class NetLink : Node
     }
 
     [Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void Hello(string name)
+    private void Hello(string name, string version)
     {
         if (!IsHost)
         {
@@ -185,9 +199,35 @@ public partial class NetLink : Node
         }
 
         int peer = Multiplayer.GetRemoteSenderId();
-        _players[peer] = new TablePlayer(peer, name.Length > 24 ? name[..24] : name, []);
+        if (version != GameVersion)
+        {
+            // Different rules would fall out of step at once: turned away, with why.
+            RpcId(peer, MethodName.TurnedAway, $"The host plays version {GameVersion}, and you have {version}. Update to the same version to join.");
+            // They leave on hearing it; if they don't, the host lets them go a moment later (once the message is out).
+            GetTree().CreateTimer(2).Timeout += () => (Multiplayer.MultiplayerPeer as ENetMultiplayerPeer)?.DisconnectPeer(peer);
+            return;
+        }
+
+        name = name.Length > 24 ? name[..24] : name;
+        _players[peer] = new TablePlayer(peer, name, []);
         SendTable();
+        PlayerArrived?.Invoke(peer, name);
     }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void TurnedAway(string why) => Drop(why);
+
+    /// <summary>The host sends a run under way to someone (re)joining it: the run so far, and the seats.</summary>
+    public void SendRun(int peer, string runJson, string seatsJson)
+    {
+        if (IsHost)
+        {
+            RpcId(peer, MethodName.Joined, runJson, seatsJson);
+        }
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void Joined(string runJson, string seatsJson) => RunJoined?.Invoke(runJson, seatsJson);
 
     [Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void OfferParty(string heroesJson, string[] names)

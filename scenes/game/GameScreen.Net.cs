@@ -7,8 +7,8 @@ using Woad.Scenes.Ui;
 
 namespace Woad.Scenes.Game;
 
-/// <summary>A run being played online: the connection, and who plays which seat.</summary>
-public sealed record NetRun(NetLink Link, SeatMap Seats)
+/// <summary>A run being played online: the connection, who plays which seat, and how many moves the run had when this machine took it up (0 from the start; more, joining one under way).</summary>
+public sealed record NetRun(NetLink Link, SeatMap Seats, int StartMoves = 0)
 {
     public bool IsHost => Link.IsHost;
 
@@ -49,6 +49,7 @@ public partial class GameScreen
             return;
         }
 
+        _netMoves = net.StartMoves;
         net.Link.MoveSubmitted += OnMoveSubmitted;
         net.Link.MoveArrived += OnMoveArrived;
         net.Link.MoveRefused += OnMoveRefused;
@@ -92,9 +93,16 @@ public partial class GameScreen
 
     private void OnPlayerLeft(int peer, string name)
     {
-        // Their heroes pass to the host, so the run can go on.
+        // Their heroes pass to the host, so the run can go on (until they're back).
         Net!.Seats.Reassign(peer, NetLink.HostPeer);
-        Log($"{name} left the table: the host plays their heroes now.", Palette.TextDim);
+        Log($"{name} left the table: the host plays their heroes until they're back.", Palette.TextDim);
+        RefreshPanels();
+    }
+
+    /// <summary>Someone took up their seats again (or sat down to watch): the panels follow who plays what now.</summary>
+    internal void NetSeatsChanged(string name, bool rejoined)
+    {
+        Log(rejoined ? $"{name} is back at the table, and takes up their heroes again." : $"{name} has come to watch.", Palette.TrimBright);
         RefreshPanels();
     }
 
