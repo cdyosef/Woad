@@ -146,6 +146,14 @@ public partial class Main : Control
 		{
 			Show(new GameScreen { Setup = DemoRun.SmashDemo(seed), Content = _content });
 		}
+		else if (args.Contains("--leavetest"))
+		{
+			Show(new GameScreen { Setup = DemoRun.Leaver(seed), Content = _content });
+		}
+		else if (args.Contains("--auctiontest"))
+		{
+			RunAuctionTest();
+		}
 		else if (args.Contains("--clodtest"))
 		{
 			Show(new GameScreen { Setup = DemoRun.Clod(seed), Content = _content });
@@ -597,7 +605,14 @@ public partial class Main : Control
 		if (_raiding && _raid is not null)
 		{
 			// In a raid, heroes go in with the hearts they have left.
-			heroes = [.. heroes.Select((hero, seat) => hero with { Hearts = _raid.HeartsOf(party[seat].Id, party[seat].MaxHearts(_content)) })];
+			// ...and with the bonds between them (a leaving companion is easier to talk round by a friend).
+			RaidWorld bonds = LoadRaidWorld();
+			heroes = [.. heroes.Select((hero, seat) => hero with
+			{
+				Hearts = _raid.HeartsOf(party[seat].Id, party[seat].MaxHearts(_content)),
+				Bonds = Enumerable.Range(0, party.Count).Where(other => other != seat && bonds.Bond(party[seat].Id, party[other].Id) > 0)
+					.ToDictionary(other => other, other => bonds.Bond(party[seat].Id, party[other].Id)),
+			})];
 			_activeRunFile = _raidStore.RunFile(_raid);
 		}
 		else
@@ -1114,17 +1129,54 @@ public partial class Main : Control
 
 		// After a dungeon: hired companions are paid by whoever they follow, win or lose, and a party that won grows closer.
 		string settled = "";
+		IReadOnlyList<(Character Companion, Character Owner)> unpaid = [];
 		if (!setup.Skirmish)
 		{
 			Character? Of(int seat) => results.FirstOrDefault(result => result.Seat == seat) is { CharacterId: Guid id } ? party.FirstOrDefault(member => member.Id == id) : null;
-			List<(Character Member, Character? Owner)> went = [.. results.Where(result => result.CharacterId is not null)
-				.Select(result => (Member: Of(result.Seat), Owner: result.Seat < setup.Heroes.Count && setup.Heroes[result.Seat].OwnerSeat is int owner ? Of(owner) : null))
+			var news = new List<string>();
+			foreach (HeroRunResult result in results)
+			{
+				if (Of(result.Seat) is not { IsCompanion: true } companion)
+				{
+					continue;
+				}
+
+				// Whatever they meant to do setting out, it's settled now: gone, or with the party again.
+				companion.SetLeaving(false);
+				if (result.Wage > 0)
+				{
+					companion.SetWage(result.Wage);
+				}
+
+				if (result.Departed)
+				{
+					// They walked out: back at the inn, to be found (and hired) there.
+					Guid? raidLeader = _woarldParty.Count > 0 ? _woarldParty[Math.Clamp(_woarldLeader, 0, _woarldParty.Count - 1)].Id : null;
+					_woarldParty.RemoveAll(member => member.Id == companion.Id);
+					_woarldLeader = Math.Max(0, _woarldParty.FindIndex(member => member.Id == raidLeader));
+					news.Add($"{companion.Name} walked out, back to the inn.");
+				}
+				else if (result.OwnerSeat is int now && now != setup.Heroes[result.Seat].OwnerSeat && Of(now) is { } leader)
+				{
+					// Paid or talked round by another player: they follow them now.
+					FollowInParty(companion, leader);
+				}
+
+				_ = _characters.SaveAsync(companion);
+			}
+
+			List<(Character Member, Character? Owner)> went = [.. results.Where(result => result.CharacterId is not null && !result.Departed)
+				.Select(result => (Member: Of(result.Seat), Owner: result.OwnerSeat is int owner ? Of(owner) : null))
 				.Where(entry => entry.Member is not null).Select(entry => (entry.Member!, entry.Owner))];
 			RaidWorld? bonds = _raiding ? LoadRaidWorld() : null;
-			settled = string.Join(" ", TavernServices.SettleRun(went, results.Any(result => result.Won), bonds).News);
+			RunSettlement settlement = TavernServices.SettleRun(went, results.Any(result => result.Won), bonds);
+			settled = string.Join(" ", news.Concat(settlement.News));
+			// Out of a raid there's no party to bid, nor bonds: unpaid companions just carry on.
+			unpaid = _raiding && _raid is not null ? settlement.Unpaid : [];
 			if (bonds is not null)
 			{
 				SaveRaidWorld();
+				SaveRaid();
 			}
 
 			foreach (Character member in went.SelectMany(entry => new[] { entry.Member, entry.Owner }).OfType<Character>().Distinct())
@@ -1149,7 +1201,7 @@ public partial class Main : Control
 
 		Music.Play(results.Any(result => result.Won) ? "victory" : "defeat", loop: false);
 		var screen = new ResultsScreen { Rows = rows, Content = _content, SaveProblem = saveProblem, Settled = settled };
-		screen.DoneRequested += () =>
+		void MoveOn()
 		{
 			if (_runFromMap)
 			{
@@ -1159,7 +1211,44 @@ public partial class Main : Control
 			{
 				ShowRunSetup();
 			}
+		}
+
+		screen.DoneRequested += () =>
+		{
+			// Companions who went unpaid go up for offers from the rest of the party before it moves on.
+			if (unpaid.Count == 0 || _raid is null)
+			{
+				MoveOn();
+				return;
+			}
+
+			var auction = new WageAuctionScreen { Unpaid = unpaid, Party = [.. _woarldParty], Leader = _raid.Leader, World = LoadRaidWorld() };
+			auction.Settled += (companion, result) =>
+			{
+				if (result.NewLeader is { } leader)
+				{
+					FollowInParty(companion, leader);
+				}
+
+				_ = _characters.SaveAsync(companion);
+				SaveRaid();
+			};
+			auction.DoneRequested += MoveOn;
+			Show(auction);
 		};
 		Show(screen);
+	}
+
+	/// <summary>Seats a companion right after the player they follow now (a companion belongs to the nearest player seated before it).</summary>
+	private void FollowInParty(Character companion, Character leader)
+	{
+		Guid? raidLeader = _woarldParty.Count > 0 ? _woarldParty[Math.Clamp(_woarldLeader, 0, _woarldParty.Count - 1)].Id : null;
+		if (!_woarldParty.Any(member => member.Id == leader.Id) || _woarldParty.RemoveAll(member => member.Id == companion.Id) == 0)
+		{
+			return;
+		}
+
+		_woarldParty.Insert(_woarldParty.FindIndex(member => member.Id == leader.Id) + 1, companion);
+		_woarldLeader = Math.Max(0, _woarldParty.FindIndex(member => member.Id == raidLeader));
 	}
 }

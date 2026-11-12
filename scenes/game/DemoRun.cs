@@ -314,6 +314,22 @@ public static class DemoRun
         StartRoomId = "bog",
     };
 
+    /// <summary>For --leavetest: Aria and Clod Hopper, who went unpaid and starts the run leaving, in a quiet yard.</summary>
+    public static RunSetup Leaver(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes =
+        [
+            DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20 }, CardIds = [.. Belted, "wooden_sword"] },
+            new HeroSetup(Woad.Core.Tavern.TavernServices.Clod.Name, DebugStats with { Hearts = 20 }, [.. Belted, .. Woad.Core.Tavern.TavernServices.Clod.Gear], OwnerSeat: 0,
+                Portrait: Woad.Core.Tavern.TavernServices.Clod.Portrait, Appearance: Woad.Core.Tavern.TavernServices.Clod.Appearance,
+                Wage: Woad.Core.Model.Money.Gold(10), Leaving: true),
+        ],
+        Rooms = [new RoomSetup("yard", RoomTemplate.Parse(".........\n.........\n.........\n.........\n...12....\n.........\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
+        StartRoomId = "yard",
+    };
+
     /// <summary>For --toolstest: Aria wearing Sticky Gloves, Lockpicks on her belt, a Dagger in her off hand, nothing about to fight.</summary>
     public static RunSetup Tools(ulong seed) => new()
     {

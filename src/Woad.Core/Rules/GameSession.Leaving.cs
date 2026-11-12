@@ -154,7 +154,6 @@ public sealed partial class GameSession
         hero.Departed = true;
         hero.Status = HeroStatus.Escaped;
         events.Add(new CompanionDeparted(hero.Id));
-        events.Add(new HeroEscaped(hero.Id, hero.TreasureValue));
         EndRunIfOver(events);
         if (State.Phase == RunPhase.InProgress)
         {
