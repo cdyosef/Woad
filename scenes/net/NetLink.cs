@@ -69,6 +69,12 @@ public partial class NetLink : Node
     /// <summary>The table is gone: the host left, the connection dropped, or the host turned this copy away.</summary>
     public event Action<string>? Disconnected;
 
+    /// <summary>Something was said at the table, as a hero: the hero's id, the words, the language's id.</summary>
+    public event Action<int, string, string>? ChatArrived;
+
+    /// <summary>On the host: may this peer speak as this hero? (Set by the game while a run's on.)</summary>
+    public Func<int, int, bool>? MaySpeakAs { get; set; }
+
     /// <summary>On the host: someone sat down at the table (their peer, their name), perhaps while a run is on.</summary>
     public event Action<int, string>? PlayerArrived;
 
@@ -216,6 +222,43 @@ public partial class NetLink : Node
 
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void TurnedAway(string why) => Drop(why);
+
+    /// <summary>Says something at the table, as one of this player's heroes.</summary>
+    public void SendChat(int heroId, string text, string languageId)
+    {
+        text = text.Length > 120 ? text[..120] : text;
+        if (IsHost)
+        {
+            Said(HostPeer, heroId, text, languageId);
+        }
+        else if (IsOnline)
+        {
+            RpcId(HostPeer, MethodName.Speak, heroId, text, languageId);
+        }
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void Speak(int heroId, string text, string languageId)
+    {
+        if (IsHost)
+        {
+            Said(Multiplayer.GetRemoteSenderId(), heroId, text.Length > 120 ? text[..120] : text, languageId);
+        }
+    }
+
+    private void Said(int peer, int heroId, string text, string languageId)
+    {
+        if (MaySpeakAs is { } may && !may(peer, heroId))
+        {
+            return;
+        }
+
+        Rpc(MethodName.Heard, heroId, text, languageId);
+        ChatArrived?.Invoke(heroId, text, languageId);
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void Heard(int heroId, string text, string languageId) => ChatArrived?.Invoke(heroId, text, languageId);
 
     /// <summary>The host sends a run under way to someone (re)joining it: the run so far, and the seats.</summary>
     public void SendRun(int peer, string runJson, string seatsJson)

@@ -56,7 +56,7 @@ public partial class GameScreen : Control
     internal bool IsBusy => _busy;
 
     /// <summary>The player can't act: events are playing, or a companion is taking its turn.</summary>
-    private bool Locked => _busy || ActiveHero is { IsCompanion: true }
+    private bool Locked => _busy || ActiveHero is { IsCompanion: true } || Replay is not null
         // Online: only the heroes in this machine's seats are played from it.
         || (Net is { } net && (NetOutOfStep || (ActiveHero is { } theirs && !net.Mine(_session.State, theirs.Id))));
 
@@ -236,7 +236,14 @@ public partial class GameScreen : Control
             CardDrag.PressedAtMsec = Time.GetTicksMsec();
         }
 
-        if (@event is not InputEventKey { Pressed: true, Echo: false } key || _session.State.Turn is null || ActiveHero is not { IsCompanion: false } || _autoplay || Chatting)
+        // Replay keys (and F12 for a screenshot, anywhere).
+        if (@event is InputEventKey { Pressed: true, Echo: false } pressed && !Chatting && ReplayKey(pressed))
+        {
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (Replay is not null || @event is not InputEventKey { Pressed: true, Echo: false } key || _session.State.Turn is null || ActiveHero is not { IsCompanion: false } || _autoplay || Chatting)
         {
             return;
         }
@@ -290,9 +297,10 @@ public partial class GameScreen : Control
             Log("Friendly fire is on (FF): blasts, attacks and shoves can hit your allies.", Palette.Danger);
         }
 
+        ReplayReady();
         if (Restored is not null)
         {
-            Log($"Welcome back: round {_session.State.Round}, where you left off.", Palette.TrimBright);
+            Log(Replay is not null ? $"Watching the session from round {_session.State.Round}." : $"Welcome back: round {_session.State.Round}, where you left off.", Palette.TrimBright);
             await PlayEvents([]);
             return;
         }
@@ -395,7 +403,7 @@ public partial class GameScreen : Control
     {
         await Pause(0.2);
         // Online, the game plays companions on the host alone (everyone else is sent what they did).
-        if (Net is { IsHost: false } || _busy || _session.State.Phase != RunPhase.InProgress || ActiveHero is not { IsCompanion: true } companion)
+        if (Net is { IsHost: false } || Replay is not null || _busy || _session.State.Phase != RunPhase.InProgress || ActiveHero is not { IsCompanion: true } companion)
         {
             return;
         }

@@ -918,7 +918,14 @@ total reaches its number:
   numbered, with a fingerprint of the run, and every machine plays it and checks the fingerprint. The host's machine
   plays the companions. A guest who leaves hands their heroes to the host, and **rejoining** under the same name
   they're sent the run so far and take their heroes up again (anyone else joining mid-run watches). A copy of the
-  game of another **version** (or with other rules) is turned away at the door, told the host's version. After the run each player's own
+  game of another **version** (or with other rules) is turned away at the door, told the host's version.
+  **Chat** (Enter) goes round the table, said as one of your own heroes, any time.
+- **Replays:** the host records every online session (user://replays): the run, who made each move and when, what
+  was said, who came and went; written after every move. **Replays** in the Woarld Tree lists them: **Watch** plays one
+  again through the rules with every animation (Space plays or pauses, the arrow steps a move, round back and on,
+  1/2x to 4x, the camera as ever), **Clean** (H) hides every panel for clean shots, **Shot** (F12, any time) saves a
+  screenshot (user://screenshots), and **Record video** plays it in a window and writes every frame to an AVI
+  (user://videos, 1280x720 at 30 frames a second). A replay plays only on the version that made it. After the run each player's own
   characters are saved on their own machine. (Raids, taverns and the Woarld Map aren't online yet.)
 - **Retreat:** in a fight out on the Woarld Map a **Retreat** button sits in the top strip beside Party and
   Menu, well away from the other actions: your Od Hand dice look

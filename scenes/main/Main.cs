@@ -90,10 +90,12 @@ public partial class Main : Control
 		_content = ContentCatalog.LoadDefault();
 
 		string[] args = OS.GetCmdlineUserArgs();
-		bool throwawaySaves = args.Contains("--menutest") || args.Contains("--resultstest") || args.Contains("--nethosttest") || args.Contains("--netguesttest") || args.Contains("--netrejointest") || args.Contains("--netoldtest");
+		bool throwawaySaves = args.Contains("--menutest") || args.Contains("--resultstest") || args.Contains("--nethosttest") || args.Contains("--netguesttest") || args.Contains("--netrejointest") || args.Contains("--netoldtest") || args.Contains("--replaytest");
 		string saveFolder = throwawaySaves
 			? Path.Combine(Path.GetTempPath(), "woad-uitest", Guid.NewGuid().ToString("N"))
 			: ProjectSettings.GlobalizePath("user://characters");
+		_throwawaySaves = throwawaySaves;
+		_saveFolder = saveFolder;
 		_characters = new JsonCharacterRepository(saveFolder, _content);
 		_runFile = new SavedRunFile(throwawaySaves
 			? Path.Combine(saveFolder, "runs", "current-run.json")
@@ -115,6 +117,19 @@ public partial class Main : Control
 		_net.RunStarted += (run, seats) => StartNetRun(run, seats, joining: false);
 		_net.RunJoined += (run, seats) => StartNetRun(run, seats, joining: true);
 		_net.PlayerArrived += OnNetPlayerArrived;
+		_net.PlayerLeft += (_, name) =>
+		{
+			_netSession?.Note(SessionNoteKind.Left, name, _netRecord?.Commands.Count ?? 0);
+			WriteReplay();
+		};
+		_net.ChatArrived += (heroId, text, language) =>
+		{
+			if (_netSession is { } session && _netRecord is { } run)
+			{
+				session.Note(SessionNoteKind.Chat, _screen is GameScreen playing ? playing.Session.State.Heroes.FirstOrDefault(hero => hero.Id == heroId)?.Name ?? "" : "", run.Commands.Count, heroId, text, language);
+				WriteReplay();
+			}
+		};
 
 		ulong seed = (ulong)DateTime.UtcNow.Ticks;
 		if (args.Contains("--crestsheet"))
@@ -285,6 +300,17 @@ public partial class Main : Control
 		{
 			ShowTracker(args.Contains("--trackertest"));
 		}
+		else if (Array.IndexOf(args, "--replay") is var replayAt and >= 0 && replayAt + 1 < args.Length)
+		{
+			// Watching a replay straight away (as the video recorder does): from a move, perhaps clean, quitting at the end.
+			int fromAt = Array.IndexOf(args, "--from");
+			int from = fromAt >= 0 && fromAt + 1 < args.Length && int.TryParse(args[fromAt + 1], out int move) ? move : 0;
+			WatchReplay(args[replayAt + 1], from, autoPlay: true, clean: args.Contains("--clean"), quitAtEnd: true, speed: 1);
+		}
+		else if (args.Contains("--replaytest"))
+		{
+			RunReplayTest(saveFolder);
+		}
 		else if (args.Contains("--nethosttest"))
 		{
 			RunNetHostTest(saveFolder);
@@ -416,6 +442,7 @@ public partial class Main : Control
 				.Select(theme => (theme.Id, theme.Name))],
 		};
 		lobby.BackRequested += ShowModeSelect;
+		lobby.ReplaysRequested += ShowReplays;
 		lobby.StartRequested += themeId => HostNetRun(themeId, (ulong)DateTime.UtcNow.Ticks);
 		ShowMenu(lobby);
 	}
@@ -442,6 +469,109 @@ public partial class Main : Control
 
 	private NetRun? _netRun;
 
+	private bool _throwawaySaves;
+
+	private string _saveFolder = "";
+
+	/// <summary>On the host: the session being recorded, and where.</summary>
+	private SessionRecord? _netSession;
+
+	private string? _netSessionPath;
+
+	private void ShowReplays()
+	{
+		var screen = new ReplayListScreen { Folder = ReplayFolder };
+		screen.BackRequested += ShowLobby;
+		screen.WatchRequested += path => WatchReplay(path, 0, autoPlay: false, clean: false, quitAtEnd: false, speed: 1);
+		screen.VideoRequested += RecordVideo;
+		ShowMenu(screen);
+	}
+
+	/// <summary>Watches a recorded session from a move.</summary>
+	private void WatchReplay(string path, int fromMove, bool autoPlay, bool clean, bool quitAtEnd, float speed)
+	{
+		SessionRecord record;
+		GameSession restored;
+		try
+		{
+			record = SessionRecord.FromJson(File.ReadAllText(path));
+			restored = record.PlayTo(_content, fromMove);
+		}
+		catch (Exception exception) when (exception is IOException or InvalidDataException)
+		{
+			GD.PushWarning($"Can't play the replay: {exception.Message}");
+			if (quitAtEnd)
+			{
+				Sfx.QuitGame(this, 1);
+			}
+			else
+			{
+				ShowReplays();
+			}
+
+			return;
+		}
+
+		SavedRun run = record.RunSoFar();
+		var game = new GameScreen
+		{
+			Setup = run.CreateSetup(_content),
+			Content = _content,
+			Restored = restored,
+			Replay = new ReplayRun(record, run.Commands, fromMove, autoPlay, clean, quitAtEnd, speed),
+		};
+		game.ExitRequested += () =>
+		{
+			Engine.TimeScale = 1;
+			ShowReplays();
+		};
+		game.ReplayJumpRequested += (move, speedNow) => WatchReplay(path, move, autoPlay: false, clean: game.IsClean, quitAtEnd: false, speed: speedNow);
+		game.RunFinished += _ => { };
+		Show(game);
+	}
+
+	/// <summary>Where recorded videos are written.</summary>
+	private static string VideoFolder => ProjectSettings.GlobalizePath("user://videos");
+
+	/// <summary>
+	/// Records a replay to a video: another window of the game plays it from the start, clean of panels, and Godot's
+	/// movie writer saves every frame (at a steady 30 a second, however long each takes to draw) to an AVI file.
+	/// </summary>
+	private void RecordVideo(string path)
+	{
+		Directory.CreateDirectory(VideoFolder);
+		string video = Path.Combine(VideoFolder, Path.GetFileName(path).Replace(".woad-replay.json", ".avi"));
+		int process = OS.CreateProcess(OS.GetExecutablePath(),
+			["--path", ProjectSettings.GlobalizePath("res://"), "--write-movie", video, "--fixed-fps", "30", "--", "--replay", path, "--clean"]);
+		if (process > 0)
+		{
+			OS.ShellOpen(VideoFolder);
+		}
+	}
+	private string ReplayFolder => _throwawaySaves ? Path.Combine(_saveFolder, "replays") : ProjectSettings.GlobalizePath("user://replays");
+
+	private string ReplayPath(string themeId) =>
+		Path.Combine(ReplayFolder, $"{DateTime.Now:yyyy-MM-dd HHmm} {(_content.Themes.TryGetValue(themeId, out var theme) ? theme.Name : themeId)}.woad-replay.json");
+
+	/// <summary>Writes the session so far (after every move, so a crash loses nothing).</summary>
+	private void WriteReplay()
+	{
+		if (_netSession is null || _netSessionPath is null)
+		{
+			return;
+		}
+
+		try
+		{
+			Directory.CreateDirectory(ReplayFolder);
+			File.WriteAllText(_netSessionPath, _netSession.ToJson());
+		}
+		catch (IOException exception)
+		{
+			GD.PushWarning($"Couldn't write the replay: {exception.Message}");
+		}
+	}
+
 	/// <summary>On the host: each player's seats in the run, by their name.</summary>
 	private Dictionary<string, IReadOnlyList<int>> _netSeatsByName = [];
 
@@ -461,6 +591,9 @@ public partial class Main : Control
 		{
 			_netRun.Seats.Assign(seat, peer);
 		}
+
+		_netSession?.Note(back ? SessionNoteKind.Rejoined : SessionNoteKind.Watching, name, _netRecord.Commands.Count);
+		WriteReplay();
 
 		_net.SendRun(peer, _netRecord.ToJson(), System.Text.Json.JsonSerializer.Serialize(_netRun.Seats.PeerBySeat));
 		game.NetSeatsChanged(name, back);
@@ -502,7 +635,19 @@ public partial class Main : Control
 		var game = new GameScreen { Setup = setup, Content = _content, Net = _netRun, Restored = restored };
 		if (_netRecord is { } record)
 		{
-			game.CommandPlayed += (command, state) => record.Record(command, state);
+			// The host records the whole session, to watch again: every move and who made it, and what was said.
+			NetRun netRun = _netRun;
+			_netSession = new SessionRecord { GameVersion = NetLink.GameVersion, Run = record.ToJson(), Players = [.. _net.Players.Select(player => player.Name)] };
+			_netSessionPath = ReplayPath(record.ThemeId);
+			SessionRecord session = _netSession;
+			game.CommandPlayed += (command, state) =>
+			{
+				record.Record(command, state);
+				int? peer = state.Heroes.FirstOrDefault(hero => hero.Id == command.HeroId) is { } hero ? netRun.Seats.PeerOf(state, hero) : null;
+				session.Record(record, _net.Players.FirstOrDefault(player => player.Peer == peer)?.Name ?? "?");
+				WriteReplay();
+			};
+			_net.MaySpeakAs = (peer, heroId) => netRun.Seats.Controls(peer, game.Session.State, heroId);
 		}
 
 		game.ExitRequested += () =>
@@ -513,8 +658,11 @@ public partial class Main : Control
 		IReadOnlyList<Character> party = _netParty;
 		game.RunFinished += results =>
 		{
+			WriteReplay();
 			_netRecord = null;
 			_netRun = null;
+			_netSession = null;
+			_net.MaySpeakAs = null;
 			FinishRun(results, setup, party);
 		};
 		Show(game);

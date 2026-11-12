@@ -51,6 +51,7 @@ public partial class GameScreen
 
         _netMoves = net.StartMoves;
         net.Link.MoveSubmitted += OnMoveSubmitted;
+        net.Link.ChatArrived += OnChatArrived;
         net.Link.MoveArrived += OnMoveArrived;
         net.Link.MoveRefused += OnMoveRefused;
         net.Link.PlayerLeft += OnPlayerLeft;
@@ -58,6 +59,7 @@ public partial class GameScreen
         TreeExiting += () =>
         {
             net.Link.MoveSubmitted -= OnMoveSubmitted;
+            net.Link.ChatArrived -= OnChatArrived;
             net.Link.MoveArrived -= OnMoveArrived;
             net.Link.MoveRefused -= OnMoveRefused;
             net.Link.PlayerLeft -= OnPlayerLeft;
@@ -150,6 +152,12 @@ public partial class GameScreen
 
     public override void _Process(double delta)
     {
+        if (Replay is not null)
+        {
+            ReplayNext();
+            return;
+        }
+
         if (Net is null || _netPumping || _busy || NetOutOfStep || (_netSubmitted.Count == 0 && _netArrived.Count == 0))
         {
             return;

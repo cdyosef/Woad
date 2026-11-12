@@ -96,6 +96,13 @@ public partial class Main
             verdict = OS.GetProcessExitCode(guest);
             Check(!game.NetOutOfStep && verdict == 0, $"the returning guest took up the run in step and played on (exit code {verdict}, round {game.Session.State.Round})");
 
+            // The host recorded the session, move by move.
+            string[] replays = Directory.Exists(ReplayFolder) ? Directory.GetFiles(ReplayFolder, "*.woad-replay.json") : [];
+            Check(replays.Length == 1 && Woad.Core.Saves.SessionRecord.FromJson(File.ReadAllText(replays[0])) is { } recorded
+                && recorded.Moves.Count == game.NetMoves && recorded.Notes.Any(note => note.Kind == Woad.Core.Saves.SessionNoteKind.Rejoined)
+                && recorded.Notes.Any(note => note.Text == "Behind you!" && note.Name == "Bran") && !recorded.Notes.Any(note => note.Text == "forged"),
+                $"the host recorded the whole session, every move and the guest coming back ({replays.Length} files)");
+
             // A copy of another version is turned away at the door.
             OS.SetEnvironment("WOAD_FAKE_VERSION", "0.1 Long Ago");
             guest = OS.CreateProcess(OS.GetExecutablePath(), ["--headless", "--path", ProjectSettings.GlobalizePath("res://"), "--", "--netoldtest"]);
@@ -142,6 +149,13 @@ public partial class Main
             GameScreen game = await Screen<GameScreen>();
             await game.WaitUntilIdle();
             Check(game.Net!.Mine(game.Session.State, game.Session.State.Heroes[1].Id), "Bran is the guest's to move");
+
+            // Chat goes round the table: as Bran it's said; as Aria (not theirs) it isn't.
+            _net.SendChat(game.Session.State.Heroes[0].Id, "forged", "common");
+            _net.SendChat(game.Session.State.Heroes[1].Id, "Behind you!", "common");
+            await WaitFor(this, () => game.HasBubble(game.Session.State.Heroes[1].Id), "Bran's words to come back round the table", maxFrames: 3000);
+            Check(!game.HasBubble(game.Session.State.Heroes[0].Id), "the guest can't speak as the host's hero");
+
             await NetTestPlay(game, () => game.Session.State.Round >= NetTestRounds);
             Check(!game.NetOutOfStep, "the guest's game stayed in step with the host's");
             Check(game.Session.State.Round >= NetTestRounds, $"and reached round {NetTestRounds} ({game.Session.State.Round}, {game.NetMoves} moves)");

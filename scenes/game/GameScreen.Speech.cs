@@ -63,10 +63,17 @@ public partial class GameScreen
     /// <summary>Opens the chat box for the hero whose turn it is: their languages to pick from, and a line to type.</summary>
     private void OpenChat()
     {
-        if (ActiveHero is not { IsCompanion: false } hero || _autoplay)
+        // At one machine, the hero whose turn it is speaks; online, any time, one of this machine's own heroes.
+        Hero? speaker = Net is { } net
+            ? (ActiveHero is { IsCompanion: false } active && net.Mine(_session.State, active.Id) ? active
+                : _session.State.Heroes.FirstOrDefault(hero => !hero.IsCompanion && hero.IsInPlay && net.Mine(_session.State, hero.Id)))
+            : ActiveHero is { IsCompanion: false } own ? own : null;
+        if (speaker is not { } hero || _autoplay || Replay is not null)
         {
             return;
         }
+
+        _chatHeroId = hero.Id;
 
         if (_chat is null)
         {
@@ -101,14 +108,34 @@ public partial class GameScreen
     private void SendChat(string text)
     {
         string said = text.Trim();
-        if (said.Length > 0 && ActiveHero is { } hero)
+        if (said.Length > 0 && _session.State.Heroes.FirstOrDefault(hero => hero.Id == _chatHeroId) is { } hero)
         {
             IReadOnlyList<Language> speaks = hero.Appearance.Speaks;
             Language language = speaks[Math.Clamp(_chatLanguage.Selected, 0, speaks.Count - 1)];
-            Say(hero.Id, said, language);
+            if (Net is { } net)
+            {
+                // Online it goes round the table first, and shows here when the host passes it on.
+                net.Link.SendChat(hero.Id, said, language.Id);
+            }
+            else
+            {
+                Say(hero.Id, said, language);
+            }
         }
 
         CloseChat();
+    }
+
+    /// <summary>The hero the open chat box speaks as.</summary>
+    private int _chatHeroId;
+
+    /// <summary>Something said at the table (online, or in a replay), as one of the heroes.</summary>
+    private void OnChatArrived(int heroId, string text, string languageId)
+    {
+        if (_session.State.Heroes.Any(hero => hero.Id == heroId))
+        {
+            Say(heroId, text, Languages.Get(languageId));
+        }
     }
 
     private void CloseChat()
