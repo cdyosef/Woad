@@ -8,7 +8,9 @@ using Woad.Core.Saves;
 using Woad.Core.Tavern;
 using Woad.Core.Woarld;
 using Woad.Scenes.Game;
+using Woad.Core.Net;
 using Woad.Scenes.Menu;
+using Woad.Scenes.Net;
 using Woad.Scenes.Ui;
 using Woad.Scenes.Tavern;
 using Woad.Scenes.Tracker;
@@ -88,7 +90,7 @@ public partial class Main : Control
 		_content = ContentCatalog.LoadDefault();
 
 		string[] args = OS.GetCmdlineUserArgs();
-		bool throwawaySaves = args.Contains("--menutest") || args.Contains("--resultstest");
+		bool throwawaySaves = args.Contains("--menutest") || args.Contains("--resultstest") || args.Contains("--nethosttest") || args.Contains("--netguesttest");
 		string saveFolder = throwawaySaves
 			? Path.Combine(Path.GetTempPath(), "woad-uitest", Guid.NewGuid().ToString("N"))
 			: ProjectSettings.GlobalizePath("user://characters");
@@ -108,6 +110,9 @@ public partial class Main : Control
 		AudioSettings.Load(throwawaySaves ? Path.Combine(saveFolder, "settings.cfg") : "user://settings.cfg");
 		AddChild(new Sfx());
 		AddChild(new Music());
+		_net = new NetLink { Name = "Net" };
+		AddChild(_net);
+		_net.RunStarted += StartNetRun;
 
 		ulong seed = (ulong)DateTime.UtcNow.Ticks;
 		if (args.Contains("--crestsheet"))
@@ -278,6 +283,14 @@ public partial class Main : Control
 		{
 			ShowTracker(args.Contains("--trackertest"));
 		}
+		else if (args.Contains("--nethosttest"))
+		{
+			RunNetHostTest(saveFolder);
+		}
+		else if (args.Contains("--netguesttest"))
+		{
+			RunNetGuestTest(saveFolder);
+		}
 		else if (args.Contains("--resultstest"))
 		{
 			RunResultsTest(saveFolder);
@@ -366,7 +379,75 @@ public partial class Main : Control
 			_raiding = true;
 			ShowRaidList();
 		};
+		screen.WoarldTreeRequested += ShowLobby;
 		ShowMenu(screen);
+	}
+
+	// ---- Online: the Woarld Tree ---------------------------------------------------------------
+
+	/// <summary>The connection for playing online; it outlives the screens.</summary>
+	private NetLink _net = null!;
+
+	/// <summary>The characters this player brought to the table, for the run's results.</summary>
+	private IReadOnlyList<Character> _netParty = [];
+
+	private void ShowLobby()
+	{
+		_raiding = false;
+		_runFromMap = false;
+		var lobby = new LobbyScreen
+		{
+			Link = _net,
+			Repository = _characters,
+			Content = _content,
+			Dungeons = [.. _content.Themes.Values
+				.OrderBy(theme => Array.IndexOf(DungeonOrder, theme.Id) is var at and >= 0 ? at : int.MaxValue)
+				.ThenBy(theme => theme.Name, StringComparer.Ordinal)
+				.Select(theme => (theme.Id, theme.Name))],
+		};
+		lobby.BackRequested += ShowModeSelect;
+		lobby.StartRequested += themeId => HostNetRun(themeId, (ulong)DateTime.UtcNow.Ticks);
+		ShowMenu(lobby);
+	}
+
+	/// <summary>The host seats everyone at the table and begins the run for them all.</summary>
+	private void HostNetRun(string themeId, ulong seed)
+	{
+		(IReadOnlyList<HeroSetup> heroes, SeatMap? seats, string? problem) = NetTable.Seat(
+			[.. _net.Players.Select(player => (player.Peer, _net.Parties.TryGetValue(player.Peer, out string? party) ? SavedRun.HeroesFromJson(party) : (IReadOnlyList<HeroSetup>)[]))]);
+		if (seats is null)
+		{
+			GD.PushWarning($"Net: the table can't be seated: {problem}");
+			return;
+		}
+
+		var run = new SavedRun { ThemeId = themeId, Seed = seed, Heroes = heroes };
+		_net.StartRun(run.ToJson(), System.Text.Json.JsonSerializer.Serialize(seats.PeerBySeat));
+	}
+
+	/// <summary>A run begins at the table (here, or from the host): everyone builds the same run from the same start.</summary>
+	private void StartNetRun(string runJson, string seatsJson)
+	{
+		SavedRun run = SavedRun.FromJson(runJson);
+		var seats = new SeatMap(System.Text.Json.JsonSerializer.Deserialize<Dictionary<int, int>>(seatsJson) ?? []);
+		if (_screen is LobbyScreen lobby)
+		{
+			_netParty = [.. lobby.Picked];
+		}
+
+		_raiding = false;
+		_runFromMap = false;
+		_themeId = run.ThemeId;
+		RunSetup setup = run.CreateSetup(_content);
+		var game = new GameScreen { Setup = setup, Content = _content, Net = new NetRun(_net, seats) };
+		game.ExitRequested += () =>
+		{
+			_net.Leave();
+			ShowLobby();
+		};
+		IReadOnlyList<Character> party = _netParty;
+		game.RunFinished += results => FinishRun(results, setup, party);
+		Show(game);
 	}
 
 	private void ShowRaidList() => ShowRaidList("");
@@ -1203,7 +1284,12 @@ public partial class Main : Control
 		var screen = new ResultsScreen { Rows = rows, Content = _content, SaveProblem = saveProblem, Settled = settled };
 		void MoveOn()
 		{
-			if (_runFromMap)
+			if (_net.IsOnline)
+			{
+				// Back to the table, for another.
+				ShowLobby();
+			}
+			else if (_runFromMap)
 			{
 				ShowWoarldMap();
 			}
