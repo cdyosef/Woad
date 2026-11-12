@@ -22,6 +22,7 @@ public partial class TargetSheet : Panel
     private Portrait _portrait = null!;
     private SheetCard _attack = null!;
     private SheetCard _trait = null!;
+    private FactionBanner _banner = null!;
 
     public event Action? CloseRequested;
 
@@ -35,6 +36,7 @@ public partial class TargetSheet : Panel
         _hearts = Add(new HeartsView { Position = new(5, 17), Size = new(140, 9) });
         _kind = Add(UiTheme.Label(new(5, 26), new(158, 12), color: Palette.TextDim));
         _close = Add(UiTheme.CompactButton(new(152, 3), new(12, 12), "x"));
+        _banner = Add(new FactionBanner { Position = new(132, 2), Size = new(16, 16), MouseFilter = MouseFilterEnum.Stop });
         _close.Pressed += () => CloseRequested?.Invoke();
         _attack = Add(new SheetCard { Position = new(6, 42), Size = new(44, 50), Back = "rumble", ToggleMode = false, MouseFilter = MouseFilterEnum.Pass });
         _portrait = Add(new Portrait { Position = new(60, 40), Size = new(48, 54) });
@@ -44,9 +46,36 @@ public partial class TargetSheet : Panel
         _notes.AutowrapMode = TextServer.AutowrapMode.WordSmart;
     }
 
-    public void ShowMonster(Monster monster)
+    /// <summary>Widened with the panel: the name and dice run along it, the three cards sit in its middle, the x and the banner at its right.</summary>
+    public override void _Notification(int what)
+    {
+        if (what != NotificationResized || _close is null)
+        {
+            return;
+        }
+
+        float width = Size.X, middle = (width - 168) / 2;
+        _close.Position = new Vector2(width - 16, 3);
+        _banner.Position = new Vector2(width - 36, 2);
+        _name.Size = new Vector2(width - 60, 16);
+        _hearts.Size = new Vector2(width - 28, 9);
+        _kind.Size = new Vector2(width - 10, 12);
+        _attack.Position = new Vector2(6 + middle, 42);
+        _portrait.Position = new Vector2(60 + middle, 40);
+        _trait.Position = new Vector2(118 + middle, 42);
+        _dice.Size = new Vector2(width - 8, 13);
+        _notes.Size = new Vector2(width - 8, 40);
+    }
+
+    public void ShowMonster(Monster monster, Faction faction = Faction.Monsters)
     {
         MonsterDefinition definition = monster.Definition;
+        // Whose turn it takes: the monsters', or the undead's.
+        _banner.Visible = true;
+        _banner.Crest = null;
+        _banner.Faction = faction;
+        _banner.TooltipText = faction == Faction.Undead ? "Moves on the undead's turn." : "Moves on the monsters' turn.";
+        _banner.QueueRedraw();
         _name.Text = definition.Name.ToUpperInvariant();
         _name.AddThemeColorOverride("font_color", Palette.Danger);
         _hearts.ShowHearts(monster.Hearts, monster.MaxHearts);
@@ -73,8 +102,13 @@ public partial class TargetSheet : Panel
         _notes.Text = string.Join("  ", traits.Skip(1).Concat(State(monster)));
     }
 
-    public void ShowHero(Hero hero)
+    public void ShowHero(Hero hero, Crest? crest = null)
     {
+        // Their own banner: their crest.
+        _banner.Visible = crest is not null;
+        _banner.Crest = crest;
+        _banner.TooltipText = $"{hero.Name}'s banner.";
+        _banner.QueueRedraw();
         _name.Text = hero.Name.ToUpperInvariant();
         _name.AddThemeColorOverride("font_color", Palette.Seat(hero.Seat));
         _hearts.ShowHearts(hero.Hearts, hero.MaxHearts, hero.BlueHearts);
@@ -205,6 +239,32 @@ public partial class TargetSheet : Panel
     {
         AddChild(node);
         return node;
+    }
+
+    /// <summary>The banner of the side a monster moves with: the monsters' or the undead's (as in the turn order).</summary>
+    private sealed partial class FactionBanner : Control
+    {
+        public Faction Faction { get; set; }
+
+        /// <summary>A hero's crest, for their banner; null for a monster's side.</summary>
+        public Crest? Crest { get; set; }
+
+        public override void _Draw()
+        {
+            var rect = new Rect2(Vector2.Zero, Size);
+            if (Crest is { } crest)
+            {
+                Crests.Draw(this, new Rect2(rect.Position + new Vector2(2, 0), new Vector2(rect.Size.X - 4, rect.Size.Y)), crest);
+            }
+            else if (Faction == Faction.Undead)
+            {
+                TurnOrderView.DrawUndeadCard(this, rect, active: false);
+            }
+            else
+            {
+                TurnOrderView.DrawMonsterCard(this, rect, active: false);
+            }
+        }
     }
 
     /// <summary>The picture card in the middle: a monster's on black with a red trim, a hero's in their color.</summary>

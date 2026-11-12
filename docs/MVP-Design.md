@@ -1411,6 +1411,20 @@ them up there like any character.
 
 ## Presentation
 
+- **The screen:** the game draws on a canvas of at least 640 by 360, scaled by a whole number of screen pixels to a
+  game pixel (crisp, square pixels). The canvas grows to the window's shape: 720 by 450 on a 16:10 screen, still
+  640 by 360 at 1920 by 1080. The character sheet keeps to the left, the board to its column; the right panel and its
+  log take the room to spare; menus sit in the middle.
+- **The right panel**, top to bottom: the floor map, Party and Menu; the **hover box** (whatever the mouse is over,
+  on the board or a card: its picture, name, a short description, and a green line on how to interact; it grows to
+  fit, never cut off, and never shrinks below its usual height, so nothing jumps); **what's selected** (the target's
+  sheet, a monster's with the banner of the side it moves with, a hero's with their crest; or a question the game
+  asks); and the **log**, as tall as you drag the bar above it (kept between games).
+- **The item slide-out:** pick up a card of yours and its whole story comes out from behind the character sheet,
+  below the carry and fire tabs: picture, name and kind; Use, Equip, Belt, Stow, Carry and Drop (greyed out with why);
+  its full text and numbers; every way it can be used; and its base price, before any haggling. Aiming the card at
+  the board, it slides away.
+
 ```
 640 px
 ┌──────────────┬──────────────────────┬──────────────┐

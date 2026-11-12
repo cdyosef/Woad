@@ -143,7 +143,8 @@ public partial class GameScreen
         // Looking over another hero, their sheet is up, but nothing on it can be played.
         Hero? sheet = SheetHero;
         _heroPanel.ShowHero(sheet, sheet == hero ? turn : null, sheet == hero ? _selectedCardId : null);
-        _inventory.ShowHero(hero, _selectedCardId, AvailableCardActions(hero, turn));
+        // Aiming a card at the board, its slide-out makes way.
+        _inventory.ShowHero(hero, _targeting ? null : _selectedCardId, AvailableCardActions(hero, turn));
         _carryTab.ShowHero(sheet, sheet == hero ? _selectedCardId : null);
         _fireTab.ShowHero(sheet, _session, sheet == hero && turn is not null && !Locked);
         _buckleMenu.Visible &= sheet == hero && hero is not null;
@@ -743,7 +744,7 @@ public partial class GameScreen
         _boardFill.Visible = taller > 0;
         _boardFill.Size = new Vector2(BoardView.Pixels, taller);
         _rightPanel.Size = new Vector2(rightWidth, size.Y);
-        _log.Size = new Vector2(rightWidth - 16, 66 + taller);
+        PlaceRight();
         if (_rightBottoms.Count == 0)
         {
             foreach (Control control in new Control[] { _luckHint, _confirm, _land, _flyOn, _endTurn, _orders })
@@ -969,7 +970,8 @@ public partial class GameScreen
         AddChild(right);
         AddChild(_minimap);
 
-        _inventory = new InventoryPanel { Position = new Vector2(0, 98) };
+        AddChild(BuildItemSlideout());
+        _inventory = new InventoryPanel { Position = new Vector2(0, 98), Slideout = _itemSlideout };
         _inventory.HandChosen += (cardId, hand) => ExecuteForActiveHero(heroId => new EquipCard(heroId, cardId, hand));
         _inventory.ActionRequested += OnCardAction;
         _inventory.BlockedActionClicked += action =>
@@ -982,6 +984,7 @@ public partial class GameScreen
             RefreshPanels();
         };
         right.AddChild(_targetSheet);
+        BuildRightPanel();
 
         // The message log, under the cards: the newest line bright, older ones dimmed; scroll back with the wheel.
         _log = RichLabel(new Vector2(SideWidth + BoardView.Pixels + 8, 252), new Vector2(160, 66));

@@ -16,9 +16,17 @@ public partial class Main
     {
         try
         {
-            ShowGame(DemoRun.Leaver(seed), []);
+            ShowGame(DemoRun.Torch(seed), []);
             var game = (GameScreen)_screen!;
             await game.WaitUntilIdle();
+
+            // A card picked up (its slide-out), a monster targeted (its sheet), a monster under the mouse (the hover box).
+            Woad.Core.Model.Hero aria = game.Session.State.Heroes[0];
+            Woad.Core.Model.Monster slime = game.Session.State.RoomOf(aria).Monsters[0];
+            game.ShowForTest(aria.AllCards.First(card => card.Definition.Id == "torch").Id, slime.Id, slime.Position);
+            await game.WaitUntilIdle();
+            Check(game.ItemPanel.Body.Contains("Ways to use it") && game.ItemPanel.Body.Contains("Base price"), $"the slide-out tells all about the picked-up card ({game.ItemPanel.Body.Length} letters)");
+            Check(game.HoverPanel.Shown.Contains("Slime") || game.HoverPanel.Shown.Length > 20, $"the hover box tells what's under the mouse ({game.HoverPanel.Shown})");
 
             foreach ((int width, int height, Vector2 canvas) in new[] { (1440, 900, new Vector2(720, 450)), (1920, 1080, new Vector2(640, 360)), (1280, 800, new Vector2(640, 400)) })
             {
@@ -32,6 +40,7 @@ public partial class Main
                 Vector2 size = GetViewportRect().Size;
                 Check(size == canvas, $"a {width}x{height} window makes a {canvas.X}x{canvas.Y} canvas ({size})");
                 Check(game.Size == size && game.RightPanelEnd == size, $"the game fills it to every edge ({game.Size}, right panel to {game.RightPanelEnd})");
+                Check(game.LogHeight >= 24, $"the log has room ({game.LogHeight})");
                 if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } shots)
                 {
                     GetViewport().GetTexture().GetImage().SavePng($"{shots}/size_{width}x{height}.png");

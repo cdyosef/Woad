@@ -46,6 +46,24 @@ public partial class CardSlot : Button
         TooltipText = card is null ? "" : $"{card.Definition.Name}\n{card.Definition.Text}";
     }
 
+    /// <summary>A card came under the mouse (or none now): the game's hover box tells about it.</summary>
+    public static event Action<CardInstance?>? Hovered;
+
+    /// <summary>Tells the hover box a card is under the mouse (from anywhere that shows cards).</summary>
+    public static void Hover(CardInstance? card) => Hovered?.Invoke(card);
+
+    public override void _Notification(int what)
+    {
+        if (what == NotificationMouseEnter && Card is not null)
+        {
+            Hover(Card);
+        }
+        else if (what == NotificationMouseExit && Card is not null)
+        {
+            Hover(null);
+        }
+    }
+
     public static string Title(CardInstance card) =>
         card.Wear > 0 ? $"{card.Definition.Name} (worn -{card.Wear})"
         : card.Definition.Usage == CardUsage.Charges

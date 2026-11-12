@@ -34,21 +34,17 @@ public sealed record CardActions(IReadOnlyDictionary<CardAction, string> Blocked
 }
 
 /// <summary>
-/// In the right panel, under the floor map: the selected card's text and what you can do with it (the
-/// cards themselves are on the character sheet). Greyed-out buttons explain themselves on hover, and
-/// clicking one reports why it's unavailable.
+/// The questions the game asks in the right panel (which hand, aid or carry, drop it here?), each a line and its
+/// buttons. A picked-up card's text and its action buttons are in the item slide-out (<see cref="Slideout"/>).
 /// </summary>
 public partial class InventoryPanel : Control
 {
-    private readonly Dictionary<CardAction, Button> _actions = [];
-    private Label _details = null!;
     private Panel _handChoice = null!;
     private Label _handQuestion = null!;
     private readonly List<Button> _hands = [];
 
-    /// <summary>What the mouse is over on the board, or what to do next: shown while no card is picked.</summary>
-    private string _hint = "";
-    private bool _cardShown;
+    /// <summary>The item slide-out, where a picked-up card's text and buttons are.</summary>
+    public ItemSlideout Slideout { get; init; } = null!;
 
     /// <summary>The card the hand choice is for, while it's showing.</summary>
     private int? _choosingFor;
@@ -58,6 +54,9 @@ public partial class InventoryPanel : Control
 
     public event Action<CardAction>? ActionRequested;
 
+    /// <summary>A question came up, or went away: the panel around it makes room.</summary>
+    public event Action? QuestionChanged;
+
     /// <summary>A greyed-out button was clicked; the game says why it's unavailable.</summary>
     public event Action<CardAction>? BlockedActionClicked;
 
@@ -66,42 +65,27 @@ public partial class InventoryPanel : Control
 
     public override void _Ready()
     {
-        Size = new Vector2(176, 88);
+        Size = new Vector2(176, 66);
         MouseFilter = MouseFilterEnum.Ignore;
-
-        _details = UiTheme.Label(new(8, 0), new(160, 66), color: Palette.Text);
-        AddChild(_details);
-
-        CardAction[] actions = Enum.GetValues<CardAction>();
-        for (int i = 0; i < actions.Length; i++)
-        {
-            CardAction action = actions[i];
-            Button button = UiTheme.CompactButton(new(4 + i * 28, 68), new(27, 16), action.ToString());
-            button.Pressed += () => ActionRequested?.Invoke(action);
-            button.GuiInput += input =>
-            {
-                if (button.Disabled && input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left })
-                {
-                    BlockedActionClicked?.Invoke(action);
-                }
-            };
-            AddChild(button);
-            _actions[action] = button;
-        }
+        Slideout.ActionRequested += action => ActionRequested?.Invoke(action);
+        Slideout.BlockedActionClicked += action => BlockedActionClicked?.Invoke(action);
 
         // Asks which hand a card that goes in either (the Boomerang) is equipped into, over its text.
-        _handChoice = new Panel { Position = new Vector2(4, 0), Size = new Vector2(168, 64), Visible = false };
-        _handQuestion = UiTheme.Label(new Vector2(6, 3), new Vector2(156, 14), color: Palette.TrimBright);
+        _handChoice = new Panel { Position = new Vector2(4, 0), Size = new Vector2(168, 72), Visible = false };
+        _handQuestion = UiTheme.Label(new Vector2(6, 2), new Vector2(156, 26), color: Palette.TrimBright);
+        _handQuestion.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        _handQuestion.VerticalAlignment = VerticalAlignment.Center;
         _handChoice.AddChild(_handQuestion);
         for (int i = 0; i < 2; i++)
         {
-            Button hand = UiTheme.Button(new Vector2(4, 20 + i * 20), new Vector2(160, 18), "");
+            Button hand = UiTheme.Button(new Vector2(4, 30 + i * 20), new Vector2(160, 18), "");
             int choice = i;
             hand.Pressed += () =>
             {
                 if (_choices is { } choices)
                 {
                     _handChoice.Visible = false;
+                    QuestionChanged?.Invoke();
                     _choosingFor = null;
                     _choices = null;
                     choices[choice]();
@@ -109,6 +93,7 @@ public partial class InventoryPanel : Control
                 else if (_choosingFor is int cardId && hand.GetMeta("slot").AsInt32() is var slot)
                 {
                     _handChoice.Visible = false;
+                    QuestionChanged?.Invoke();
                     _choosingFor = null;
                     HandChosen?.Invoke(cardId, (EquipSlot)slot);
                 }
@@ -121,6 +106,17 @@ public partial class InventoryPanel : Control
     }
 
     internal Button HandButton(int index) => _hands[index];
+
+    /// <summary>Widened with the right panel: the question and its buttons run its width.</summary>
+    public void Widen(float width)
+    {
+        _handChoice.Size = new Vector2(width - 8, 72);
+        _handQuestion.Size = new Vector2(width - 20, 26);
+        foreach (Button hand in _hands)
+        {
+            hand.Size = new Vector2(width - 16, 18);
+        }
+    }
 
     internal bool IsChoosingHand => _handChoice.Visible;
 
@@ -142,6 +138,7 @@ public partial class InventoryPanel : Control
         }
 
         _handChoice.Visible = true;
+        QuestionChanged?.Invoke();
     }
 
     /// <summary>Asks which hand to equip a card into: each choice says what it would stow, or why it can't be.</summary>
@@ -165,46 +162,22 @@ public partial class InventoryPanel : Control
         }
 
         _handChoice.Visible = true;
+        QuestionChanged?.Invoke();
     }
 
-    internal Button ActionButton(CardAction action) => _actions[action];
-
-    private string NoCardText => _hint.Length > 0 ? _hint : "Select a card to see what it does.";
-
-    /// <summary>Shows what the mouse is over (or what to do next), unless a card's text is up.</summary>
-    public void ShowHint(string hint)
-    {
-        _hint = hint;
-        if (!_cardShown)
-        {
-            _details.Text = NoCardText;
-        }
-    }
+    internal Button ActionButton(CardAction action) => Slideout.Actions[action];
 
     public void ShowHero(Hero? hero, int? selectedCardId, CardActions actions)
     {
-        if (_choosingFor != selectedCardId)
+        if (_choosingFor != selectedCardId && _handChoice.Visible)
         {
             _handChoice.Visible = false;
+            QuestionChanged?.Invoke();
             _choosingFor = null;
             _choices = null;
         }
 
         CardInstance? selected = selectedCardId is int id ? hero?.FindCard(id)?.Card : null;
-        _cardShown = selected is not null;
-        _details.Text = selected is null
-            ? NoCardText
-            : $"{CardSlot.Title(selected)}: {selected.Definition.Text}" + (hero!.HasSetBonus(selected.Definition) ? " SET BONUS ON!" : "")
-              // Why a card you'd use can't be used right now (out of range, say), where it's easy to see.
-              + (selected.Definition.Effect is not null && !actions.Allows(CardAction.Use) ? $"\nCan't use: {actions.Explain(CardAction.Use)}" : "");
-
-        foreach ((CardAction action, Button button) in _actions)
-        {
-            button.Disabled = !actions.Allows(action);
-            button.TooltipText = actions.Explain(action);
-        }
-
-        // A scroll can't be worn, but its spell can be learned: Equip becomes Learn.
-        _actions[CardAction.Equip].Text = selected?.Definition.Teaches is not null ? "Learn" : "Equip";
+        Slideout.ShowCard(selected, hero, actions);
     }
 }
