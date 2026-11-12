@@ -102,6 +102,22 @@ public sealed class SavedRun
 
     public string ToJson() => JsonSerializer.Serialize(this, Options);
 
+    /// <summary>One move as text, as a save writes it (for sending over a network).</summary>
+    public static string CommandToJson(GameCommand command) => JsonSerializer.Serialize(command, Options);
+
+    /// <exception cref="InvalidDataException">Not a move this version knows.</exception>
+    public static GameCommand CommandFromJson(string json)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<GameCommand>(json, Options) ?? throw new InvalidDataException("The move is empty.");
+        }
+        catch (JsonException exception)
+        {
+            throw new InvalidDataException($"The move can't be read: {exception.Message}", exception);
+        }
+    }
+
     /// <exception cref="InvalidDataException">Not a save this version can read.</exception>
     public static SavedRun FromJson(string json)
     {
