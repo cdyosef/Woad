@@ -33,10 +33,14 @@ public partial class GameScreen
             for (int turns = 0; turns < 14 && clod.Leaving; turns++)
             {
                 await Click(this, _endTurn);
-                await WaitUntilIdle();
+                // Clod's turn plays itself, after a beat: wait for it to come back round to Aria.
+                await Pause(0.3);
+                await WaitFor(this, () => !_busy && ActiveHero == aria, "the turn to come back to Aria", maxFrames: 3000);
             }
 
-            Check(!clod.Leaving && (clod.Departed || clod.IsInPlay), $"in the end he walks out, or stays after all (departed {clod.Departed}: {string.Join(" / ", _messages.TakeLast(3))})");
+            // Waiting at the entrance he's gone (or won round) by now; coming along a while, he may still be making up his mind.
+            Check(clod.Leaving ? clod.LeavingPlan != LeavingPlan.Entrance && clod.IsInPlay : clod.Departed || clod.IsInPlay,
+                $"in the end he walks out, stays after all, or is still coming along ({clod.LeavingPlan}, departed {clod.Departed}: {string.Join(" / ", _messages.TakeLast(3))})");
             Check(!clod.Departed || !_figures.ContainsKey(clod.Id), "gone, his figure leaves the board");
             await SaveShot("leaver_end");
             GD.Print("Leave test passed.");

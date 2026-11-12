@@ -88,6 +88,22 @@ public sealed class RunNetTests
     }
 
     [Fact]
+    public void TheTableIsSeatedPartyByPartyAndPartiesCrossTheWireWhole()
+    {
+        Stats stats = GameRules.HeroBaseStats;
+        IReadOnlyList<HeroSetup> hosts = [new HeroSetup("Aria", stats, ["wooden_sword"])];
+        IReadOnlyList<HeroSetup> guests = SavedRun.HeroesFromJson(SavedRun.HeroesToJson([new HeroSetup("Bran", stats, ["wooden_sword"]), new HeroSetup("Clod Hopper", stats, ["frog_gig"], OwnerSeat: 0, Wage: 1000)]));
+
+        (IReadOnlyList<HeroSetup> heroes, SeatMap? seats, string? problem) = NetTable.Seat([(HostPeer, hosts), (GuestPeer, guests)]);
+
+        Assert.Null(problem);
+        Assert.Equal(["Aria", "Bran", "Clod Hopper"], heroes.Select(hero => hero.Name));
+        Assert.Equal((1, 1000), (heroes[2].OwnerSeat, heroes[2].Wage));
+        Assert.Equal(new Dictionary<int, int> { [0] = HostPeer, [1] = GuestPeer }, seats!.PeerBySeat);
+        Assert.Contains("hero of their own", NetTable.Seat([(HostPeer, hosts), (GuestPeer, [])]).Problem);
+    }
+
+    [Fact]
     public void ACopyOutOfStepIsCaught()
     {
         (RunHost host, RunReplica guest) = Table();

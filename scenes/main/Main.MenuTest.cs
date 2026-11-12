@@ -148,7 +148,7 @@ public partial class Main
             await Click(this, menu.PlayButton);
             ModeSelectScreen modes = await Screen<ModeSelectScreen>();
             Check(!modes.DungeonRunButton.Disabled, "Play opens Select Mode, with Dungeon Run ready");
-            Check(!modes.RaidingPartyButton.Disabled && new[] { modes.FrontierRaidButton, modes.BalladButton, modes.MapEditorButton, modes.WoarldTreeButton }.All(button => button.Disabled),
+            Check(!modes.RaidingPartyButton.Disabled && !modes.WoarldTreeButton.Disabled && new[] { modes.FrontierRaidButton, modes.BalladButton, modes.MapEditorButton }.All(button => button.Disabled),
                 "Raiding Party is ready too; the modes still to come are greyed out");
             await Click(this, modes.BackButton);
             menu = await Screen<MainMenu>();

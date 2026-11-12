@@ -910,6 +910,14 @@ total reaches its number:
   "You can't suss out any trouble." Beat bandits: Law +3 each; beat real guards: Law -2 each. The
   Captains (Guard and Bandit) are big, heavily armored (2d6 defense +3), quick, with a two-handed spiked
   mace (2d6+2 and a die of its own): a hit stuns, and each 6 on the mace's die stuns once more.
+- **Online (the Woarld Tree):** a dungeon run played together. One machine **hosts a table** (UDP port 7777 by
+  default); the others **join** by its address. Each player brings a party from their own saved characters (a hero
+  first, companions with them); up to 8 heroes sit, each player's party in turn. The host picks the dungeon and
+  starts the run for everyone: the same start and seed on every machine. A machine plays only the heroes in its own
+  seats; each move is sent to the host, which plays it if the rules allow and passes every accepted move on,
+  numbered, with a fingerprint of the run, and every machine plays it and checks the fingerprint. The host's machine
+  plays the companions. A guest who leaves hands their heroes to the host. After the run each player's own
+  characters are saved on their own machine. (Raids, taverns and the Woarld Map aren't online yet.)
 - **Retreat:** in a fight out on the Woarld Map a **Retreat** button sits in the top strip beside Party and
   Menu, well away from the other actions: your Od Hand dice look
   for a way out, against the monsters' chase (a die more than there are of them, and 3: harder than

@@ -17,6 +17,9 @@ public partial class ModeSelectScreen : MenuScreen
 
     public event Action? RaidingPartyRequested;
 
+    /// <summary>Playing together online: the lobby.</summary>
+    public event Action? WoarldTreeRequested;
+
     internal Button DungeonRunButton { get; private set; } = null!;
 
     internal Button RaidingPartyButton { get; private set; } = null!;
@@ -42,7 +45,8 @@ public partial class ModeSelectScreen : MenuScreen
         FrontierRaidButton = Mode(2, "Frontier Raid", "Raid a Woarld made fresh at random. Saved as an Expedition.");
         BalladButton = Mode(3, "Ballad of the Woad Raiders", "The long campaign, in a Woarld your party's own. Saved as a Ballad.");
         MapEditorButton = Mode(4, "Map Editor", "Draw your own Woarlds and dungeons.");
-        WoarldTreeButton = Mode(5, "Woarld Tree", "Raid together online.");
+        WoarldTreeButton = Mode(5, "Woarld Tree", "Play a dungeon run together: host a table, or join a friend's.", ready: true);
+        WoarldTreeButton.Pressed += () => WoarldTreeRequested?.Invoke();
 
         BackButton = Add(UiTheme.Button(new Vector2(20, 316), new Vector2(88, 26), "Back"));
         BackButton.Pressed += () => BackRequested?.Invoke();

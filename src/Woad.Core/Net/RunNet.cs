@@ -111,6 +111,48 @@ public sealed class SeatMap
     }
 }
 
+/// <summary>Seating a table of players for a networked run.</summary>
+public static class NetTable
+{
+    /// <summary>
+    /// Seats everyone: each peer's party in turn (its players, each with the companions that follow them), in the
+    /// order the peers are given. Within a party, a companion's owner is given as a seat of that party (from 0).
+    /// </summary>
+    /// <returns>The run's heroes, in seat order, and who plays which seat; or why the table can't be seated.</returns>
+    public static (IReadOnlyList<HeroSetup> Heroes, SeatMap? Seats, string? Problem) Seat(IReadOnlyList<(int Peer, IReadOnlyList<HeroSetup> Party)> parties)
+    {
+        var heroes = new List<HeroSetup>();
+        var peerBySeat = new Dictionary<int, int>();
+        foreach ((int peer, IReadOnlyList<HeroSetup> party) in parties)
+        {
+            int offset = heroes.Count;
+            if (party.Count == 0 || party[0].OwnerSeat is not null)
+            {
+                return ([], null, "Everyone at the table needs a hero of their own.");
+            }
+
+            for (int i = 0; i < party.Count; i++)
+            {
+                HeroSetup hero = party[i];
+                if (hero.OwnerSeat is int owner && (owner < 0 || owner >= i || party[owner].OwnerSeat is not null))
+                {
+                    return ([], null, $"{hero.Name} has nobody to follow.");
+                }
+
+                heroes.Add(hero with { OwnerSeat = hero.OwnerSeat + offset });
+                if (hero.OwnerSeat is null)
+                {
+                    peerBySeat[offset + i] = peer;
+                }
+            }
+        }
+
+        return heroes.Count > GameRules.MaxHeroes
+            ? ([], null, $"That's {heroes.Count} at the table: {GameRules.MaxHeroes} is the most.")
+            : (heroes, new SeatMap(peerBySeat), null);
+    }
+}
+
 /// <summary>A move the host accepted: its number in the run (from 0), the move, and the run's fingerprint after it.</summary>
 public sealed record AcceptedMove(int Index, GameCommand Command, ulong Fingerprint);
 

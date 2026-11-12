@@ -102,6 +102,22 @@ public sealed class SavedRun
 
     public string ToJson() => JsonSerializer.Serialize(this, Options);
 
+    /// <summary>Heroes as text, as a save writes them (a player's party, sent to the host of a networked run).</summary>
+    public static string HeroesToJson(IReadOnlyList<HeroSetup> heroes) => JsonSerializer.Serialize(heroes, Options);
+
+    /// <exception cref="InvalidDataException">Not heroes this version can read.</exception>
+    public static IReadOnlyList<HeroSetup> HeroesFromJson(string json)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<List<HeroSetup>>(json, Options) ?? throw new InvalidDataException("The party is empty.");
+        }
+        catch (JsonException exception)
+        {
+            throw new InvalidDataException($"The party can't be read: {exception.Message}", exception);
+        }
+    }
+
     /// <summary>One move as text, as a save writes it (for sending over a network).</summary>
     public static string CommandToJson(GameCommand command) => JsonSerializer.Serialize(command, Options);
 

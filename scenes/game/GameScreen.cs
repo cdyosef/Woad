@@ -56,7 +56,9 @@ public partial class GameScreen : Control
     internal bool IsBusy => _busy;
 
     /// <summary>The player can't act: events are playing, or a companion is taking its turn.</summary>
-    private bool Locked => _busy || ActiveHero is { IsCompanion: true };
+    private bool Locked => _busy || ActiveHero is { IsCompanion: true }
+        // Online: only the heroes in this machine's seats are played from it.
+        || (Net is { } net && (NetOutOfStep || (ActiveHero is { } theirs && !net.Mine(_session.State, theirs.Id))));
 
     internal GameSession Session => _session;
 
@@ -78,6 +80,7 @@ public partial class GameScreen : Control
     public override void _Ready()
     {
         Size = new Vector2(640, 360);
+        NetReady();
         SheetCard.PaintedCrest = card => _session.State.Heroes.FirstOrDefault(hero => hero.FindCard(card.Id) is not null) is { } bearer ? CrestOf(bearer) : null;
         string[] args = OS.GetCmdlineUserArgs();
         _autoplay = args.Contains("--autoplay");
@@ -306,11 +309,35 @@ public partial class GameScreen : Control
             return false;
         }
 
+        // Online and not the host: the move goes to the host, and is played here when the host passes it back.
+        if (Net is { IsHost: false } away && !_netApplying)
+        {
+            if (NetOutOfStep || !away.Mine(_session.State, command.HeroId))
+            {
+                Log(NetOutOfStep ? "This game is out of step with the host's." : "That hero isn't yours to move.", Palette.TextDim);
+                return false;
+            }
+
+            away.Link.SubmitMove(Woad.Core.Net.RunWire.Write(command));
+            return false;
+        }
+
         CommandResult result = _session.Execute(command);
         if (!result.IsAccepted)
         {
-            Log(result.Error!, Palette.Danger);
+            _lastRefusal = result.Error;
+            if (!_netApplying)
+            {
+                Log(result.Error!, Palette.Danger);
+            }
+
             return false;
+        }
+
+        _netMoves++;
+        if (Net is { IsHost: true } hosting)
+        {
+            hosting.Link.BroadcastMove(_netMoves - 1, Woad.Core.Net.RunWire.Write(command), Woad.Core.Net.RunWire.Fingerprint(_session.State));
         }
 
         CommandPlayed?.Invoke(command, _session.State);
@@ -367,7 +394,8 @@ public partial class GameScreen : Control
     private async void CompanionNext()
     {
         await Pause(0.2);
-        if (_busy || _session.State.Phase != RunPhase.InProgress || ActiveHero is not { IsCompanion: true } companion)
+        // Online, the game plays companions on the host alone (everyone else is sent what they did).
+        if (Net is { IsHost: false } || _busy || _session.State.Phase != RunPhase.InProgress || ActiveHero is not { IsCompanion: true } companion)
         {
             return;
         }
