@@ -25,6 +25,7 @@ namespace Woad.Scenes;
 /// <c>--theme id</c> for another dungeon); <c>--menutest</c> and
 /// <c>--resultstest</c> click through the menus using a throwaway save folder; <c>--tracker</c> opens the
 /// Music Tracker, and <c>--trackertest</c> writes and exports a song with it into a throwaway folder.
+/// <c>--paint</c> opens Pixel Paint, and <c>--pixeltest</c> paints and saves a figure with it into a throwaway folder.
 /// </summary>
 public partial class Main : Control
 {
@@ -283,6 +284,10 @@ public partial class Main : Control
 		{
 			ShowTracker(args.Contains("--trackertest"));
 		}
+		else if (args.Contains("--paint") || args.Contains("--pixeltest"))
+		{
+			ShowPaint(args.Contains("--pixeltest"));
+		}
 		else if (args.Contains("--nethosttest"))
 		{
 			RunNetHostTest(saveFolder);
@@ -310,6 +315,7 @@ public partial class Main : Control
 	{
 		Theme = null;
 		GameArt.Release();
+		Looks.Release();
 		UiTheme.Release();
 	}
 
@@ -332,6 +338,7 @@ public partial class Main : Control
 		menu.CharactersRequested += ShowCharacters;
 		menu.SettingsRequested += ShowSettings;
 		menu.TrackerRequested += () => ShowTracker();
+		menu.PaintRequested += () => ShowPaint();
 		ShowMenu(menu);
 	}
 

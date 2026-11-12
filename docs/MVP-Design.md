@@ -124,6 +124,14 @@ the Party menu can spend points on them too.
   - **Random** rolls a look and colors. Any two players may share colors: on the board each hero
     stands on a ring of their seat color.
   - Characters saved before looks existed are Wanderers in their crest's color.
+  - **Pixel Paint** (on the main menu) paints figures: a 16x16 grid with a pencil, an eraser, a fill, a
+    pick, a mirror and undo; paints for the four player colors (each with a shade), an eye paint (the
+    pixels crossed out while Keeling Over) and fixed colors; which skin and hair sets players pick from;
+    a drawing laid under the grid to trace; and the figure shown as it will look in the game. Any figure
+    can be opened and repainted (Delete puts a built-in one back), or saved under a new name as a new
+    figure. Painted figures turn up in character creation. They save to the player's own folder, or
+    into the game (`assets/heroes/painted/`) when it runs from the Godot editor. In an online game, a
+    table that doesn't have a painted figure sees a Wanderer.
 - **Languages:** everyone speaks **Common**; the **Tongues** window (beside Skills in the editor) adds others, for
   now free: **Primordial** (dots and dashes in runes, as if carved into stone, time and space), and two tongues of
   it, **Gurgle** (the water's: wavy dashes, curving lines between the dots) and **Gravel** (the stone's: rough-hewn).

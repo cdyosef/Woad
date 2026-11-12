@@ -60,6 +60,7 @@ Invoke-Step 'Floor click test' { & $Godot --headless --path $root --quit-after 6
 Invoke-Step 'Hazard click test' { & $Godot --headless --path $root --quit-after 6000 -- --hazardtest }
 Invoke-Step 'Results click test' { & $Godot --headless --path $root --quit-after 200000 -- --resultstest }
 Invoke-Step 'Tracker click test' { & $Godot --headless --path $root --quit-after 6000 -- --trackertest }
+Invoke-Step 'Pixel Paint click test' { & $Godot --headless --path $root --quit-after 6000 -- --pixeltest }
 Invoke-Step 'Autoplay' { & $Godot --headless --path $root --quit-after 400000 -- --autoplay --fast }
 
 Write-Host 'All smoke tests passed.' -ForegroundColor Green
