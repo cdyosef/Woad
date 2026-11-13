@@ -14,6 +14,9 @@ public sealed record PaintedLook(string Id, string Name, string? SkinSet, string
 {
     public const int Size = 16;
 
+    /// <summary>Shipped locked: picked only once its code is entered (see <see cref="FigureLock"/>); null for an open one.</summary>
+    public FigureLock? Lock { get; init; }
+
     public const char Empty = '.';
 
     public const char Eye = 'e';
@@ -99,7 +102,7 @@ public sealed record PaintedLook(string Id, string Name, string? SkinSet, string
     }
 
     public string ToJson() => JsonSerializer.Serialize(
-        new LookFile(Id, Name, SkinSet, HairSet, [.. Rows], Palette.OrderBy(entry => entry.Key).ToDictionary(entry => entry.Key.ToString(), entry => entry.Value)), Options);
+        new LookFile(Id, Name, SkinSet, HairSet, [.. Rows], Palette.OrderBy(entry => entry.Key).ToDictionary(entry => entry.Key.ToString(), entry => entry.Value), Lock?.Hash, Lock?.Secret), Options);
 
     public static PaintedLook FromJson(string json)
     {
@@ -110,7 +113,10 @@ public sealed record PaintedLook(string Id, string Name, string? SkinSet, string
         }
 
         var look = new PaintedLook(file.Id ?? "", file.Name ?? file.Id ?? "", file.Skin, file.Hair, file.Rows ?? [],
-            (file.Palette ?? []).ToDictionary(entry => entry.Key[0], entry => entry.Value.ToLowerInvariant()));
+            (file.Palette ?? []).ToDictionary(entry => entry.Key[0], entry => entry.Value.ToLowerInvariant()))
+        {
+            Lock = file.LockHash is { Length: > 0 } hash ? new FigureLock(hash, file.Secret ?? false) : null,
+        };
         return look.Problem() is { } problem ? throw new FormatException(problem) : look;
     }
 
@@ -122,5 +128,7 @@ public sealed record PaintedLook(string Id, string Name, string? SkinSet, string
         AllowTrailingCommas = true,
     };
 
-    private sealed record LookFile(string? Id, string? Name, string? Skin, string? Hair, List<string>? Rows, Dictionary<string, string>? Palette);
+    private sealed record LookFile(string? Id, string? Name, string? Skin, string? Hair, List<string>? Rows, Dictionary<string, string>? Palette,
+        [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? LockHash = null,
+        [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] bool? Secret = null);
 }

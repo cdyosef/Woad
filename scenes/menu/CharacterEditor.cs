@@ -271,7 +271,13 @@ public partial class CharacterEditor : MenuScreen
             _styleRows.Add((caption, previous, swatch, value, next));
         }
 
-        _previewStats = Add(UiTheme.Label(new Vector2(366, 210), new Vector2(246, 96)));
+        _previewStats = Add(UiTheme.Label(new Vector2(366, 210), new Vector2(246, 74)));
+
+        // A code unlocks figures that ship locked.
+        CodeEdit = Add(new LineEdit { Position = new Vector2(366, 286), Size = new Vector2(150, 18), PlaceholderText = "Have a code?", MaxLength = 32 });
+        CodeEdit.TextSubmitted += _ => TryCode();
+        UnlockButton = Add(UiTheme.Button(new Vector2(522, 286), new Vector2(90, 18), "Unlock"));
+        UnlockButton.Pressed += TryCode;
 
         // A new rank of Magic asks which basic spell it teaches.
         _spellPicker = Add(new SpellPicker { Position = new Vector2(196, 80) });
@@ -293,6 +299,31 @@ public partial class CharacterEditor : MenuScreen
 
         Refresh();
         NameEdit.GrabFocus();
+    }
+
+    internal LineEdit CodeEdit { get; private set; } = null!;
+
+    internal Button UnlockButton { get; private set; } = null!;
+
+    internal string ErrorText => _error.Text;
+
+    /// <summary>The look row's shown name ("??? (locked)" for a teased locked one).</summary>
+    internal string LookShown => _styleRows[0].Value.Text;
+
+    /// <summary>What the last code did, to say under the name.</summary>
+    private string _unlockNote = "";
+
+    private void TryCode()
+    {
+        IReadOnlyList<string> opened = Looks.TryUnlock(CodeEdit.Text);
+        _unlockNote = opened.Count > 0 ? $"Unlocked: {string.Join(", ", opened)}!" : "That code doesn't unlock anything.";
+        if (opened.Count > 0)
+        {
+            CodeEdit.Text = "";
+            Sfx.Play("coin");
+        }
+
+        Refresh();
     }
 
     private Button TypeButton(Vector2 position, float width, string text, bool companion)
@@ -467,7 +498,8 @@ public partial class CharacterEditor : MenuScreen
         switch (row)
         {
             case 0:
-                _look = Step(Looks.All.Select(each => each.Id).ToList(), _look, delta);
+                // The figures to pick from: the secret locked ones stay hidden; the teased ones show, dark.
+                _look = Step(Looks.Choosable.Select(each => each.Id).ToList(), _look, delta);
                 break;
             case 1:
                 _main = Cycle(Looks.Colors, _main, null, delta);
@@ -527,7 +559,8 @@ public partial class CharacterEditor : MenuScreen
 
     private void Randomize()
     {
-        Look look = Looks.All[Random.Shared.Next(Looks.All.Count)];
+        IReadOnlyList<Look> open = Looks.PickableNow;
+        Look look = open[Random.Shared.Next(open.Count)];
         _look = look.Id;
         _main = Looks.Colors[Random.Shared.Next(Looks.Colors.Count)].Id;
         _trim = Looks.Colors.Where(swatch => swatch.Id != _main).ElementAt(Random.Shared.Next(Looks.Colors.Count - 1)).Id;
@@ -560,7 +593,10 @@ public partial class CharacterEditor : MenuScreen
             _crestRows[row].Swatch!.Color = color;
         }
 
-        ShowRow(0, "Look", null, look.Name, enabled: true);
+        // A teased figure still locked shows as a dark shape, "???", till its code is entered.
+        bool locked = Looks.IsLocked(look.Id);
+        _figure.Modulate = _preview.Modulate = locked ? new Color(0, 0, 0, 0.9f) : Colors.White;
+        ShowRow(0, "Look", null, locked ? "??? (locked)" : look.Name, enabled: true);
         ShowRow(1, "Main", colors.Main, Looks.Find(Looks.Colors, _main)!.Name, enabled: true);
         ShowRow(2, "Trim", colors.Trim, Looks.Find(Looks.Colors, _trim)!.Name, enabled: true);
         ShowSet(3, look.SkinSet, "Skin", _skin, look.SkinDefault, colors.Skin);
@@ -623,8 +659,12 @@ public partial class CharacterEditor : MenuScreen
 
         string name = NameEdit.Text.Trim();
         string? nameError = Character.CheckName(name);
-        _error.Text = name.Length == 0 ? "" : nameError ?? "";
-        SaveButton.Disabled = _saving || nameError is not null;
+        bool lookLocked = Looks.IsLocked(_look);
+        // What the last code did comes first (said once); then why a locked look can't be saved; then the name's trouble.
+        _error.Text = _unlockNote.Length > 0 ? _unlockNote : lookLocked ? "That look is locked: enter its code to unlock it." : name.Length == 0 ? "" : nameError ?? "";
+        _error.AddThemeColorOverride("font_color", _unlockNote.StartsWith("Unlocked", StringComparison.Ordinal) ? Palette.Heal : Palette.Danger);
+        _unlockNote = "";
+        SaveButton.Disabled = _saving || nameError is not null || lookLocked;
 
         Stats stats = PointBuy.ToStats(_allocation);
         string speed = stats.Speed >= 0 ? $"+{stats.Speed}" : stats.Speed.ToString();

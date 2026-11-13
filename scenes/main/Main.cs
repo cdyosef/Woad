@@ -316,6 +316,10 @@ public partial class Main : Control
 			int from = fromAt >= 0 && fromAt + 1 < args.Length && int.TryParse(args[fromAt + 1], out int move) ? move : 0;
 			WatchReplay(args[replayAt + 1], from, autoPlay: true, clean: args.Contains("--clean"), quitAtEnd: true, speed: 1);
 		}
+		else if (args.Contains("--locktest"))
+		{
+			RunLockTest();
+		}
 		else if (args.Contains("--sizetest"))
 		{
 			RunSizeTest(seed);

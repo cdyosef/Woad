@@ -1,0 +1,34 @@
+{
+  "id": "footman",
+  "name": "Footman",
+  "skin": "human",
+  "hair": "hair",
+  "rows": [
+    "................",
+    "......abba......",
+    ".....cbbbbc.....",
+    "....RdRdRdRd....",
+    "....ahhbbhha....",
+    "....SSebbeSS....",
+    "....aSSSSSSr....",
+    "...fbShhhhSfb...",
+    "..fSrfsSSsfrSf..",
+    "..dSarbfbfraSd..",
+    "..fdaggRRggadf..",
+    "...fdrtTTtrdf...",
+    "....abTaaTba....",
+    "....bbdaadbb....",
+    "....aaaaaaaa....",
+    "................"
+  ],
+  "palette": {
+    "a": "#181420",
+    "b": "#6a7484",
+    "c": "#ffffff",
+    "d": "#3a2414",
+    "f": "#5a5868",
+    "g": "#5a3a1a"
+  },
+  "lockHash": "38cce43b99908700d6b13b631980aedc6aa1b1ce2e4fd5c14c5db7690c1297b6",
+  "secret": false
+}

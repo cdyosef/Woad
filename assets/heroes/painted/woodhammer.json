@@ -1,0 +1,33 @@
+{
+  "id": "woodhammer",
+  "name": "Woodhammer",
+  "skin": "human",
+  "hair": "hair",
+  "rows": [
+    "...HHHHHHHHHHHH.",
+    "..HHHSSSSSHHHHHH",
+    "..HSHhhShhHSH.H.",
+    "..HsHaeSeaHsH...",
+    ".HHhHSSSSSHh.bbb",
+    ".HSRhSSSSShRS.b.",
+    ".SSrhsaaaShRS.b.",
+    ".SSRRSSSSsrRScb.",
+    ".SrRRSsssSrRRSb.",
+    ".S.RRSSSSSrRRSSS",
+    "SSRrrSSsSSSrrRSS",
+    "SSSTdSSSSSSdTrb.",
+    ".S.TTddffddTT.b.",
+    "..TTTTTTTTTTTTb.",
+    ".TTt........tT..",
+    "RRrd........drRR"
+  ],
+  "palette": {
+    "a": "#ffffff",
+    "b": "#e5b352",
+    "c": "#c8955a",
+    "d": "#3a2414",
+    "f": "#ffb03a"
+  },
+  "lockHash": "38cce43b99908700d6b13b631980aedc6aa1b1ce2e4fd5c14c5db7690c1297b6",
+  "secret": false
+}

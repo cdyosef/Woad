@@ -1,0 +1,33 @@
+{
+  "id": "squirrelly",
+  "name": "Squirrelly",
+  "skin": "hair",
+  "hair": "fur",
+  "rows": [
+    "....aHbaabHa....",
+    "....aHbaabHa....",
+    "....aHHHHHHa....",
+    "....aaHHHaaa....",
+    "....acaSacca....",
+    "....aecSSeca....",
+    "...aaRRbbRRa....",
+    ".R.HtHHccHHta.c.",
+    "...HttSHHSttHcc.",
+    ".HHHttRRRRttHHc.",
+    ".HH.rHRSSRHrHHc.",
+    "....tTTTTTTtdcc.",
+    "....hHTTTTHdcc..",
+    "....aHHaaHHa....",
+    "..HHHhfaafhHHH..",
+    "....aaaaaaaa...."
+  ],
+  "palette": {
+    "a": "#181420",
+    "b": "#f0a0b0",
+    "c": "#ffffff",
+    "d": "#ece6d6",
+    "f": "#3a2414"
+  },
+  "lockHash": "38cce43b99908700d6b13b631980aedc6aa1b1ce2e4fd5c14c5db7690c1297b6",
+  "secret": false
+}

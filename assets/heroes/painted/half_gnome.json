@@ -1,0 +1,30 @@
+{
+  "id": "half_gnome",
+  "name": "Half-Gnome",
+  "skin": "human",
+  "hair": "hair",
+  "rows": [
+    ".......aa.......",
+    "......aTTa......",
+    ".....atTTta.....",
+    ".....aTTTTa.....",
+    "....atTTTTta....",
+    "...aRRRRRRRRa...",
+    "....aSeSSeSa....",
+    "....aSSssSSa....",
+    "....aHHHHHHa....",
+    "..aSaHHHHHHaSa..",
+    "...aaHHHHHHaa...",
+    "....atTTTTta....",
+    "....atTaaTta....",
+    "....abbaabba....",
+    "....aaaaaaaa....",
+    "................"
+  ],
+  "palette": {
+    "a": "#181420",
+    "b": "#3a2414"
+  },
+  "lockHash": "38cce43b99908700d6b13b631980aedc6aa1b1ce2e4fd5c14c5db7690c1297b6",
+  "secret": false
+}

@@ -1,0 +1,40 @@
+{
+  "id": "bighead_brigand",
+  "name": "Bighead Brigand",
+  "skin": "orc",
+  "hair": "hair",
+  "rows": [
+    ".....abba.......",
+    "...cabddbac.....",
+    "...abaddaba.....",
+    "..fgggggggggf...",
+    "..ddddddddddd...",
+    ".idddddddddddi..",
+    ".icecaddacecii.i",
+    "..iiiaddaiiij.ii",
+    "..jiiiiiiiijj.kk",
+    "...jiiiiiijji.ll",
+    ".laaicccmciiaall",
+    ".llaiiiiiiiall..",
+    "kk.gaaaaaaagg...",
+    "ii.lgnnnnnglll..",
+    "i.fllknnnklllf..",
+    ".ff..kknkk...ff."
+  ],
+  "palette": {
+    "a": "#5a5868",
+    "b": "#8a5a32",
+    "c": "#ffffff",
+    "d": "#6a7484",
+    "f": "#3a2414",
+    "g": "#5a3a1a",
+    "i": "#f4c8a0",
+    "j": "#d89a6a",
+    "k": "#181420",
+    "l": "#34303e",
+    "m": "#ffb03a",
+    "n": "#8a1e28"
+  },
+  "lockHash": "38cce43b99908700d6b13b631980aedc6aa1b1ce2e4fd5c14c5db7690c1297b6",
+  "secret": false
+}

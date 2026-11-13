@@ -1,0 +1,42 @@
+{
+  "id": "icebeard_jarl",
+  "name": "Icebeard Jarl",
+  "skin": null,
+  "hair": "fish",
+  "rows": [
+    "aaa...bccb...aaa",
+    "a.a..bcTTcb..a.a",
+    "a...dccffccd...a",
+    "aaacdccccccdcaaa",
+    ".facdSecceSdcaff",
+    ".f.ghSSccSShgf.f",
+    "..giiHHHHHHiig.f",
+    "..RRhHHbbHHRR..c",
+    "..rrftHHHHfrr..d",
+    "..SStTHfHTHSS..d",
+    "djSSjjfHHjfSSjjj",
+    "...klmmHHmmlk..d",
+    ".n.ktTTfTTTtk.kd",
+    "..kkboobboobkk.d",
+    "....fppbbppf..cd",
+    "...bpppbbpppb..c"
+  ],
+  "palette": {
+    "a": "#ece6d6",
+    "b": "#181420",
+    "c": "#b8c0cc",
+    "d": "#6a7484",
+    "f": "#bdedff",
+    "g": "#ffffff",
+    "i": "#34303e",
+    "j": "#5a5868",
+    "k": "#a0e0f0",
+    "l": "#6a4a2a",
+    "m": "#5a3a1a",
+    "n": "#94e5fc",
+    "o": "#c8955a",
+    "p": "#3a2414"
+  },
+  "lockHash": "38cce43b99908700d6b13b631980aedc6aa1b1ce2e4fd5c14c5db7690c1297b6",
+  "secret": false
+}

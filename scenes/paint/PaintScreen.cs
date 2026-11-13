@@ -188,6 +188,10 @@ public partial class PaintScreen : MenuScreen
 
         _name = painting.Name;
         NameEdit.Text = _name;
+        _openedLock = painting.Lock;
+        _lockKind = painting.Lock is null ? LockKind.Open : painting.Lock.Secret ? LockKind.Secret : LockKind.Teased;
+        _lockCode.Text = "";
+        ShowLock();
         _skinSet = _sets.Contains(painting.SkinSet) ? painting.SkinSet : null;
         _hairSet = _sets.Contains(painting.HairSet) ? painting.HairSet : null;
         _worn[2] = Math.Max(0, Looks.SetSwatches(_skinSet).ToList().FindIndex(swatch => swatch.Id == look.SkinDefault));
@@ -245,7 +249,80 @@ public partial class PaintScreen : MenuScreen
         }
 
         return new PaintedLook(LookId, _name.Trim(), _skinSet, _hairSet, rows,
-            letters.Where(entry => entry.Value != PaintedLook.Empty).ToDictionary(entry => entry.Value, entry => entry.Key));
+            letters.Where(entry => entry.Value != PaintedLook.Empty).ToDictionary(entry => entry.Value, entry => entry.Key))
+        {
+            Lock = LockToSave(),
+        };
+    }
+
+    // ---- Locking a figure (from the Godot editor: the figures that ship with the game) --------------------------
+
+    /// <summary>How a figure ships: open to everyone, teased (a dark "???" until its code is entered), or secret (hidden till then).</summary>
+    internal enum LockKind
+    {
+        Open,
+        Teased,
+        Secret,
+    }
+
+    private LockKind _lockKind;
+
+    /// <summary>The lock the figure had when it was opened (its code isn't known, only its hash).</summary>
+    private FigureLock? _openedLock;
+
+    private LineEdit _lockCode = null!;
+    private Button _lockButton = null!;
+
+    /// <summary>Whether this Pixel Paint can lock figures: run from the Godot editor, where the figures that ship are painted.</summary>
+    internal static bool CanLock => OS.HasFeature("editor");
+
+    /// <summary>For the tests: names the figure, as typing in the name box would.</summary>
+    internal void Rename(string name)
+    {
+        _name = name;
+        NameEdit.Text = name;
+        Refresh();
+    }
+
+    internal LineEdit LockCode => _lockCode;
+
+    internal Button LockButton => _lockButton;
+
+    /// <summary>The lock a save gives the figure: none for an open one; a new code's; or, with no code typed, the one it had.</summary>
+    private FigureLock? LockToSave()
+    {
+        if (!CanLock || _lockKind == LockKind.Open)
+        {
+            return null;
+        }
+
+        bool secret = _lockKind == LockKind.Secret;
+        return FigureLock.For(_lockCode.Text, secret) ?? (_openedLock is { } kept ? kept with { Secret = secret } : null);
+    }
+
+    private void BuildLock()
+    {
+        _lockCode = Add(new LineEdit { Position = new Vector2(462, 292), Size = new Vector2(96, 20), PlaceholderText = "Lock code", MaxLength = 32, Visible = CanLock });
+        _lockCode.TooltipText = "A code players enter to unlock this figure. Figures with the same code unlock together.";
+        _lockButton = Add(UiTheme.CompactButton(new Vector2(562, 292), new Vector2(58, 20), "Open"));
+        _lockButton.Visible = CanLock;
+        _lockButton.Pressed += () =>
+        {
+            _lockKind = (LockKind)(((int)_lockKind + 1) % 3);
+            ShowLock();
+        };
+    }
+
+    private void ShowLock()
+    {
+        _lockButton.Text = _lockKind.ToString();
+        _lockButton.TooltipText = _lockKind switch
+        {
+            LockKind.Open => "Everyone can pick it. Click to lock it.",
+            LockKind.Teased => "Shows as a dark ??? until its code is entered. Click for Secret.",
+            _ => "Hidden altogether until its code is entered. Click to open it to everyone.",
+        };
+        _lockCode.PlaceholderText = _lockKind != LockKind.Open && _openedLock is not null ? "(keeps its code)" : "Lock code";
     }
 
     private void BuildTools()
@@ -396,6 +473,7 @@ public partial class PaintScreen : MenuScreen
         colors.TooltipText = "See the figure in other colors a player might pick";
         colors.Pressed += WearOtherColors;
 
+        BuildLock();
         SaveButton = Add(UiTheme.Button(new Vector2(462, 316), new Vector2(76, 26), "Save"));
         SaveButton.TooltipText = "Ctrl+S";
         SaveButton.Pressed += Save;
@@ -587,13 +665,18 @@ public partial class PaintScreen : MenuScreen
         _skinSet = "human";
         _hairSet = "hair";
         Canvas.Load(PaintCanvas.Blank());
+        _openedLock = null;
+        _lockKind = LockKind.Open;
+        _lockCode.Text = "";
+        ShowLock();
         Say("A blank figure. Name it, paint it, save it.");
         Refresh();
     }
 
     private void OpenNeighbor(int delta)
     {
-        IReadOnlyList<Look> all = Looks.All;
+        // Players can't open a figure that's still locked for them.
+        IReadOnlyList<Look> all = CanLock ? Looks.All : Looks.PickableNow;
         int index = all.ToList().FindIndex(look => look.Id == LookId);
         index = index < 0 ? (delta > 0 ? 0 : all.Count - 1) : ((index + delta) % all.Count + all.Count) % all.Count;
         Open(all[index]);
@@ -613,6 +696,12 @@ public partial class PaintScreen : MenuScreen
         if (painting.Problem() is { } problem)
         {
             Say(problem);
+            return;
+        }
+
+        if (CanLock && _lockKind != LockKind.Open && painting.Lock is null)
+        {
+            Say("Type a code to lock it with (or click the lock back to Open).");
             return;
         }
 

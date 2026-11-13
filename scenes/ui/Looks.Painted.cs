@@ -56,6 +56,87 @@ public static partial class Looks
 
     public static string PaintedPath(string id) => Path.Combine(PaintedDir, $"{id}.json");
 
+    // ---- Locked figures: shipped locked, picked once their code is entered --------------------------------------
+
+    private static HashSet<string>? _unlocked;
+    private static string? _unlocksPath;
+
+    /// <summary>Where the codes entered on this computer are kept (by their hashes).</summary>
+    public static string UnlocksPath
+    {
+        get => _unlocksPath ??= ProjectSettings.GlobalizePath("user://unlocks.json");
+        set
+        {
+            _unlocksPath = value;
+            _unlocked = null;
+        }
+    }
+
+    private static HashSet<string> Unlocked
+    {
+        get
+        {
+            if (_unlocked is null)
+            {
+                _unlocked = [];
+                try
+                {
+                    if (File.Exists(UnlocksPath))
+                    {
+                        _unlocked.UnionWith(System.Text.Json.JsonSerializer.Deserialize<List<string>>(File.ReadAllText(UnlocksPath)) ?? []);
+                    }
+                }
+                catch (Exception failure) when (failure is IOException or System.Text.Json.JsonException)
+                {
+                    GD.PushWarning($"Couldn't read the unlocked figures: {failure.Message}");
+                }
+            }
+
+            return _unlocked;
+        }
+    }
+
+    /// <summary>The lock on a figure that's still locked here, or null (an open figure, or one unlocked).</summary>
+    public static FigureLock? LockOn(string id) =>
+        Painted(id)?.Lock is { } figureLock && !Unlocked.Contains(figureLock.Hash) ? figureLock : null;
+
+    public static bool IsLocked(string id) => LockOn(id) is not null;
+
+    /// <summary>Hidden altogether: locked, and secret.</summary>
+    public static bool IsHidden(string id) => LockOn(id) is { Secret: true };
+
+    /// <summary>The figures to pick from in character creation: all but the secret locked ones (the teased locked ones show, dark).</summary>
+    public static IReadOnlyList<Look> Choosable => [.. All.Where(look => !IsHidden(look.Id))];
+
+    /// <summary>The figures a player can pick right now: open or unlocked.</summary>
+    public static IReadOnlyList<Look> PickableNow => [.. All.Where(look => !IsLocked(look.Id))];
+
+    /// <summary>Tries a code: the names of the figures it unlocks (none, if it's wrong or they're open already).</summary>
+    public static IReadOnlyList<string> TryUnlock(string code)
+    {
+        if (FigureLock.Normalize(code).Length == 0)
+        {
+            return [];
+        }
+
+        string hash = FigureLock.HashOf(code);
+        List<string> opened = [.. All.Where(look => LockOn(look.Id)?.Hash == hash).Select(look => look.Name)];
+        if (opened.Count > 0 && Unlocked.Add(hash))
+        {
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(UnlocksPath)!);
+                File.WriteAllText(UnlocksPath, System.Text.Json.JsonSerializer.Serialize(Unlocked.Order().ToList()));
+            }
+            catch (IOException failure)
+            {
+                GD.PushWarning($"Couldn't keep the unlocked figures: {failure.Message}");
+            }
+        }
+
+        return opened;
+    }
+
     /// <summary>A figure that comes with the game's own painted figures (<see cref="ShippedDir"/>).</summary>
     public static bool IsShipped(string id) => id.Length > 0 && Godot.FileAccess.FileExists($"{ShippedDir}/{id}.json");
 
