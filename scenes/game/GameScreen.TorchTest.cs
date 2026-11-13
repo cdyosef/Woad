@@ -47,4 +47,70 @@ public partial class GameScreen
             Sfx.QuitGame(this, 1);
         }
     }
+
+    /// <summary>
+    /// Debug mode (<c>-- --torchsearchtest</c>, with <see cref="DemoRun.TorchBeside"/>): Aria knows Search and holds a
+    /// torch in her off hand, a fire beetle right beside her. After a swing at it, Search still searches.
+    /// </summary>
+    private async void RunTorchSearchTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            CardInstance torch = aria.AllCards.Single(card => card.Definition.Id == "torch");
+            await ExecuteAsync(new EquipCard(aria.Id, torch.Id, EquipSlot.OffHand));
+            await WaitUntilIdle();
+            // A Rumble swing at the beetle beside her: now the torch in her off hand could follow it up.
+            Monster beetle = ShownRoom.Monsters.Single();
+            await ExecuteAsync(new AttackMonster(aria.Id, beetle.Id));
+            await WaitUntilIdle();
+            await ConfirmIfHeld();
+            Check(ShownRoom.FindMonster(beetle.Id) is not null, "the beetle is still there");
+            int used = _session.State.Turn!.OdHandDiceUsed;
+            _search.EmitSignal(BaseButton.SignalName.Pressed);
+            await WaitUntilIdle();
+            await ConfirmIfHeld();
+            Check(!_offHanding && (_session.State.Turn!.OdHandDiceUsed > used || _session.State.Turn.ToolsUsed),
+                $"Search searches, by the torch's light ({string.Join(" / ", _messages.TakeLast(3))})");
+            GD.Print("Torch search test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Torch test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
+
+    /// <summary>
+    /// Debug mode (<c>-- --poweruptest</c>): Power up, left of End turn, rolls every die she has left at once, banks the
+    /// 6s as Power Dice, and ends her turn.
+    /// </summary>
+    private async void RunPowerUpTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            int round = _session.State.Round;
+            Check(!_powerUp.Disabled && _powerUp.Visible, $"Power up is there to click ({_powerUp.TooltipText})");
+            Check(_powerUp.GetGlobalRect().End.X <= _endTurn.GetGlobalRect().Position.X, "it's left of End turn");
+            int dice = _session.PowerUpDice;
+            int banked = aria.Power.Banked;
+            await Click(this, _powerUp);
+            await WaitUntilIdle();
+            Check(_messages.Any(line => line.Contains("powers up")), $"she powers up ({string.Join(" / ", _messages.TakeLast(3))})");
+            Check(_session.State.Round > round, $"and her turn's over (round {round} to {_session.State.Round})");
+            Check(aria.Power.Banked >= banked, $"the 6s of {dice} dice banked ({banked} to {aria.Power.Banked})");
+
+            GD.Print("Power up test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Power up test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
 }

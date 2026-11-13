@@ -193,6 +193,10 @@ public partial class Main : Control
 		{
 			Show(new GameScreen { Setup = DemoRun.Torch(seed), Content = _content });
 		}
+		else if (args.Contains("--torchsearchtest") || args.Contains("--poweruptest"))
+		{
+			Show(new GameScreen { Setup = DemoRun.TorchBeside(seed), Content = _content });
+		}
 		else if (args.Contains("--bathstest"))
 		{
 			Show(new GameScreen { Setup = DemoRun.Baths(seed), Content = _content });

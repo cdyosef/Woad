@@ -179,8 +179,18 @@ public sealed partial class GameSession
             return error;
         }
 
+        // Searching by a light without the skill: the Od Hand dice still go in, looking around the tiles next to them,
+        // while the light's dice search the whole room. The light's had its use this turn.
+        int looking = 0;
+        if (!ActiveHero.Knows(Skill.Search) && command.ToolId is null)
+        {
+            looking = Math.Clamp(command.Dice ?? OdHandDiceLeft, 0, OdHandDiceLeft);
+            dice = looking;
+            Turn.ToolsUsed |= ToolStandsIn(Skill.Search);
+        }
+
         ActiveHero.SearchedRoomIds.Add(ActiveRoom.Id);
-        RollOdHand(command, dice, new OdHandCheck(OdHandCheckKind.Search, 0, ActiveHero.Position), events);
+        RollOdHand(command, dice, new OdHandCheck(OdHandCheckKind.Search, 0, ActiveHero.Position) { FeelDice = looking }, events);
         return null;
     }
 
@@ -668,6 +678,15 @@ public sealed partial class GameSession
 
                 break;
 
+            case OdHandCheckKind.Search when check.FeelDice > 0:
+            {
+                // The Od Hand dice looked around the tiles next to them; only the light's reach the rest of the room.
+                int light = total - roll.Roll.Faces.Take(check.FeelDice).Sum();
+                Explore(hero, room, roll.Roll, light, events);
+                Reveal(hero, room, light, GameRules.SearchRange, events, near: total);
+                break;
+            }
+
             case OdHandCheckKind.Search:
                 Explore(hero, room, roll.Roll, total, events);
                 Reveal(hero, room, total, GameRules.SearchRange, events);
@@ -739,11 +758,11 @@ public sealed partial class GameSession
     /// A search finds every secret within <paramref name="reach"/> tiles of the hero whose difficulty the total
     /// reaches; on the tiles next to them (and their own) the Focus Bonus adds to it.
     /// </summary>
-    private void Reveal(Hero hero, Room room, int total, int reach, List<GameEvent> events)
+    private void Reveal(Hero hero, Room room, int total, int reach, List<GameEvent> events, int? near = null)
     {
         bool Finds(GridPosition tile, int difficulty) => tile.ChebyshevDistanceTo(hero.Position) switch
         {
-            <= 1 => total + hero.Focus >= difficulty,
+            <= 1 => (near ?? total) + hero.Focus >= difficulty,
             int away when away <= reach => total >= difficulty,
             _ => false,
         };

@@ -56,6 +56,7 @@ public partial class GameScreen
 
             // The pack opens the same way, and its knot closes it.
             await Click(this, _heroPanel.BagDeck);
+            await WaitUntilIdle();
             Check(_heroPanel.IsBagOpen, "the pack opens");
             await ClickAt(this, _heroPanel.BagMouth.GetGlobalRect().Position + _heroPanel.BagMouth.KnotPoint);
             Check(!_heroPanel.IsBagOpen, "the pack's knot closes it");

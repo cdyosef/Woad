@@ -92,7 +92,14 @@ public enum OdHandCheckKind
 /// which is a contest). <see cref="Target"/> is the tile involved; <see cref="TargetId"/> who is robbed;
 /// <see cref="SpellId"/> the spell being learned.
 /// </summary>
-public sealed record OdHandCheck(OdHandCheckKind Kind, int Difficulty, GridPosition Target = default, int TargetId = 0, string? SpellId = null, Ailment? Cure = null);
+public sealed record OdHandCheck(OdHandCheckKind Kind, int Difficulty, GridPosition Target = default, int TargetId = 0, string? SpellId = null, Ailment? Cure = null)
+{
+    /// <summary>
+    /// On a search by a light (a torch) by someone who hasn't learned to Search: the first this many dice are their Od Hand
+    /// dice, which only look around the tiles next to them; the light's dice search the whole room.
+    /// </summary>
+    public int FeelDice { get; init; }
+}
 
 /// <summary>
 /// A hero's roll whose dice are rolled but not yet resolved, waiting for Luck rerolls or Power Dice

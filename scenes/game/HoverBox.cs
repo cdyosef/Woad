@@ -26,6 +26,16 @@ public partial class HoverBox : Control
 
     internal string Shown => _text.Text;
 
+    /// <summary>The text's size: a step up on a bigger screen.</summary>
+    public int TextSize
+    {
+        set
+        {
+            _text.AddThemeFontSizeOverride("normal_font_size", value);
+            Fit();
+        }
+    }
+
     public override void _Ready()
     {
         MouseFilter = MouseFilterEnum.Ignore;

@@ -330,6 +330,16 @@ public static class DemoRun
         StartRoomId = "yard",
     };
 
+    /// <summary>For --torchsearchtest: Aria, who knows Search, a torch in her off hand, a fire beetle right beside her.</summary>
+    public static RunSetup TorchBeside(ulong seed) => new()
+    {
+        Seed = seed,
+        ThemeId = "emerald_keep",
+        Heroes = [DebugHeroes[0] with { BaseStats = DebugHeroes[0].BaseStats with { Hearts = 20, OdHandDice = 1 }, CardIds = [.. Belted, "wooden_sword", "torch"] }],
+        Rooms = [new RoomSetup("yard", RoomTemplate.Parse(".........\n.........\n.........\n.........\n....1f...\n.........\n.........\n.........\n.........", ContentCatalog.LoadDefault()))],
+        StartRoomId = "yard",
+    };
+
     /// <summary>For --toolstest: Aria wearing Sticky Gloves, Lockpicks on her belt, a Dagger in her off hand, nothing about to fight.</summary>
     public static RunSetup Tools(ulong seed) => new()
     {

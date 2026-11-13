@@ -183,7 +183,8 @@ public partial class GameScreen
         }
         bool held = hero is not null && _session.HeldBy(hero) is not null;
         _roll.Disabled = !(idle && !pending && _session.MoveDiceLeft > 0) || held;
-        string? searchBlocked = _session.State.Turn is not null && _session.CheckOffHandAttack() is null ? null : _session.CheckSearch();
+        string? searchBlocked = _session.State.Turn is not null && _session.CheckOffHandAttack() is null && hero is not { TorchesHeld: > 0 }
+            ? null : _session.CheckSearch();
         _search.Disabled = !(idle && !pending) || searchBlocked is not null;
         _search.TooltipText = _session.State.Turn is null ? "" : searchBlocked ?? "Search the room with your selected Od Hand dice: finds secret doors, traps and stashes your total reaches.";
         // Out on the Woarld Map, Retreat waits up in the top strip, well away from the other actions; once
@@ -199,7 +200,7 @@ public partial class GameScreen
             ? "The fight's won: gather up what fell, then Move on, the whole party together. Anything left lying here stays behind."
             : retreatBlocked
             ?? $"Retreat: your selected Od Hand dice look for a way out, against the monsters' chase (a die more than there are of them, +{GameSession.RetreatChaseBonus}). Get away and you're off the field, the monsters left where they are; fail and you bolt in a panic and fall flat.";
-        _partyButton.Position = new Vector2(SideWidth + BoardView.Pixels + (_retreat.Visible ? 30 : 82), 3);
+        PlaceTopRight();
         _steal.Disabled = !(idle && !pending) || _session.CheckStealStart() is not null;
         _stealing &= !_steal.Disabled || _aloneTool is not null;
         _steal.Text = _stealing ? "Cancel" : "Steal";
@@ -216,6 +217,10 @@ public partial class GameScreen
         _shoving &= !_shove.Disabled;
         _shove.Text = _shoving ? "Cancel" : "Shove";
         _endTurn.Disabled = !((idle && !pending) || keeling);
+        string? powerUpError = turn is null ? "" : _session.CheckPowerUp();
+        _powerUp.Disabled = Locked || !(idle && !pending) || powerUpError is not null;
+        _powerUp.TooltipText = "Power up: roll every die you've left this turn (Rumble, Wend and Od Hand) at once; each 6 is a Power Die, banked. It ends your turn."
+            + (powerUpError is { Length: > 0 } ? $"\n{powerUpError}" : turn is null ? "" : $"\n{_session.PowerUpDice} dice to roll.");
         UpdateCastButton(hero, idle && !pending);
         _endTurn.Text = turn is { KeelingOver: true } ? "Roll Keel Die" : "End turn";
         _endTurn.TooltipText = turn is { KeelingOver: true }
@@ -722,10 +727,36 @@ public partial class GameScreen
     /// <summary>For the size test: the bottom-right corner of the right panel.</summary>
     internal Vector2 RightPanelEnd => _rightPanel.Position + _rightPanel.Size;
     private Panel _rightPanel = null!;
-    private Panel _boardFill = null!;
 
-    /// <summary>The bottom of the right panel's controls, as built for 640 by 360 (they move down on a taller screen).</summary>
-    private readonly Dictionary<Control, float> _rightBottoms = [];
+    private Panel _topStrip = null!;
+    private Control _boardFrame = null!;
+    private ColorRect _frameRock = null!;
+    private ScrollHints _scrollHints = null!;
+    private Panel _dicePanel = null!;
+    private Panel _promptStrip = null!;
+    private PowerUpButton _powerUp = null!;
+
+    /// <summary>What's laid over the board (menus, windows, the hand spread out): it moves and grows with the board.</summary>
+    private Control _boardLayer = null!;
+
+    /// <summary>The drawer under the sheet the bag (and the belt's full view, and a bag off the belt) roll out of.</summary>
+    private Control _drawer = null!;
+
+    /// <summary>A view rolling out of the drawer (the tests wait for it before clicking inside).</summary>
+    private Tween? _drawerSlide;
+
+    /// <summary>How much bigger the sheet is drawn: 1.25 on a screen tall enough (450, its 360 a quarter bigger), else 1.</summary>
+    private float _sheetScale = 1;
+
+    /// <summary>The height of the strip over the dice tray where Power! and Try your Luck? (and Confirm) always come up.</summary>
+    private const float PromptHeight = 38;
+
+    /// <summary>The right column's width: compact, the board taking the rest.</summary>
+    private const float RightWidth = 160;
+
+    internal Rect2 BoardRect => new(_boardFrame.Position, _boardFrame.Size);
+
+    internal float SheetScale => _sheetScale;
 
     /// <summary>
     /// Lays the screen out for the window: on a screen of another shape the game's canvas grows (the pixels stay
@@ -736,27 +767,134 @@ public partial class GameScreen
     {
         Vector2 size = GetViewportRect().Size;
         size = new Vector2(Mathf.Max(640, size.X), Mathf.Max(360, size.Y));
-        float taller = size.Y - 360;
-        float rightWidth = size.X - SideWidth - BoardView.Pixels;
         Size = size;
         _background.Size = size;
-        _heroPanel.Size = new Vector2(SideWidth, size.Y);
-        _boardFill.Visible = taller > 0;
-        _boardFill.Size = new Vector2(BoardView.Pixels, taller);
-        _rightPanel.Size = new Vector2(rightWidth, size.Y);
-        PlaceRight();
-        if (_rightBottoms.Count == 0)
+
+        // The sheet down the left, a quarter bigger where the screen's tall enough.
+        float scale = _sheetScale = size.Y >= 450 ? 1.25f : 1f;
+        float sheet = SideWidth * scale;
+        _heroPanel.Scale = new Vector2(scale, scale);
+        _heroPanel.Size = new Vector2(SideWidth, size.Y / scale);
+
+        // The right column, compact; the board's column takes the rest.
+        float right = size.X - sheet - RightWidth >= BoardView.Pixels ? RightWidth : Mathf.Max(140, size.X - sheet - BoardView.Pixels);
+        float width = size.X - sheet - right;
+        _rightPanel.Position = new Vector2(size.X - right, 0);
+        _rightPanel.Size = new Vector2(right, size.Y);
+
+        // The board's column, top to bottom: the turn strip; the board; the prompt strip (Power! on the left, Luck right of
+        // it, Confirm on the right), its own room when there's height for it, else over the board's foot; the dice tray.
+        float diceY = size.Y - StripHeight;
+        float promptY = diceY - PromptHeight;
+        bool ownRoom = promptY - StripHeight >= BoardView.Pixels;
+        float boardHeight = (ownRoom ? promptY : diceY) - StripHeight;
+        _topStrip.Position = new Vector2(sheet, 0);
+        _topStrip.Size = new Vector2(width, StripHeight);
+        _turnOrder.Position = new Vector2(sheet + 3, 1);
+        _header.Position = new Vector2(sheet + 196, 4);
+        _header.Size = new Vector2(width - 198, 28);
+        _hoverInfo.Position = new Vector2(sheet + 6, 19);
+        _hoverInfo.Size = new Vector2(width - 12, 14);
+        var boardSize = new Vector2(width, boardHeight);
+        _boardFrame.Position = new Vector2(sheet, StripHeight);
+        _boardFrame.Size = _frameRock.Size = _scrollHints.Size = _turnFrame.Size = boardSize;
+        _board.ViewSize = boardSize;
+        _boardLayer.Position = _boardFrame.Position;
+        foreach (Control cover in new Control[] { _party, _banner, _spread })
         {
-            foreach (Control control in new Control[] { _luckHint, _confirm, _land, _flyOn, _endTurn, _orders })
-            {
-                _rightBottoms[control] = control.Position.Y;
-            }
+            cover.Size = boardSize;
         }
 
-        foreach ((Control control, float y) in _rightBottoms)
+        _promptStrip.Visible = ownRoom;
+        _promptStrip.Position = new Vector2(sheet, promptY);
+        _promptStrip.Size = new Vector2(width, PromptHeight);
+        _dicePanel.Position = new Vector2(sheet, diceY);
+        _dicePanel.Size = new Vector2(width, StripHeight);
+        _dice.Position = new Vector2(sheet + 6, diceY + 1);
+        _dice.Size = new Vector2(width - 12, 34);
+        float rightEdge = sheet + width - 4;
+        _confirm.Position = new Vector2(rightEdge - 120, promptY + 10);
+        _confirm.Size = new Vector2(120, 20);
+        _luckHint.Position = new Vector2(rightEdge - 160, promptY + 12);
+        _luckHint.Size = new Vector2(160, 14);
+        _flyOn.Position = new Vector2(rightEdge - 78, promptY + 10);
+        _land.Position = new Vector2(rightEdge - 160, promptY + 10);
+        PlaceBubbles();
+
+        // The carry and fire tabs slide out from the sheet's edge beside the Carry button; the bag's drawer below them.
+        _carryTab.Position = new Vector2(sheet, HeroPanel.Rows[0] * scale);
+        _fireTab.Position = new Vector2(sheet, HeroPanel.Rows[0] * scale + 62);
+        _drawer.Position = new Vector2(sheet, HeroPanel.Rows[1] * scale);
+        _drawer.Scale = new Vector2(scale, scale);
+        _drawer.Size = new Vector2(width / scale, (promptY - _drawer.Position.Y) / scale);
+
+        // The reading text a step bigger on a bigger screen: the log, the hover box, the item's story.
+        int text = scale > 1 ? UiTheme.FontSize + 2 : UiTheme.FontSize;
+        _log.AddThemeFontSizeOverride("normal_font_size", text);
+        _hoverBox.TextSize = text;
+        _itemSlideout.TextSize = text;
+        _minimap.Position = new Vector2(_rightPanel.Position.X + 8, 20);
+        _minimap.Size = new Vector2(right - 16, 76);
+        PlaceTopRight();
+        LayoutEndTurnRow();
+        PlaceRight();
+        PlaceItemSlideout();
+    }
+
+    /// <summary>Party, Retreat and Menu along the top of the right column (Party moves over while Retreat's away).</summary>
+    private void PlaceTopRight()
+    {
+        float left = _rightPanel.Position.X;
+        float width = _rightPanel.Size.X;
+        _menu.Position = new Vector2(left + width - 48, 3);
+        _retreat.Position = new Vector2(left + width - 100, 3);
+        _partyButton.Position = new Vector2(left + width - (_retreat.Visible ? 146 : 94), 3);
+    }
+
+    /// <summary>
+    /// Gathers what goes over the board into a layer that moves with it, and the bag's views into the drawer under the
+    /// sheet, once everything's built.
+    /// </summary>
+    private void BuildLayers()
+    {
+        _boardLayer = new Control { Name = "BoardLayer", Position = BoardOrigin, MouseFilter = MouseFilterEnum.Ignore };
+        AddChild(_boardLayer);
+        foreach (Control cover in new Control[] { _party, _buckleMenu, _luckMenu, _spread, _curePicker, _spellPicker, _rummage, _countPrompt, _merchantPanel, _trade, _banner })
         {
-            control.Position = control.Position with { Y = y + taller };
+            cover.Reparent(_boardLayer);
         }
+
+        _drawer = new Control { Name = "Drawer", ClipContents = true, MouseFilter = MouseFilterEnum.Ignore, ZIndex = 3 };
+        AddChild(_drawer);
+        foreach (Control view in new[] { _heroPanel.BagView, _heroPanel.BeltView, _heroPanel.PouchView })
+        {
+            view.Reparent(_drawer);
+            view.ZIndex = 0;
+            view.Position = Vector2.Zero;
+            // Out it rolls, from under the sheet; it goes away at once.
+            view.VisibilityChanged += () =>
+            {
+                if (view.Visible)
+                {
+                    view.Position = new Vector2(-view.Size.X, 0);
+                    _drawerSlide?.Kill();
+                    _drawerSlide = view.CreateTween();
+                    _drawerSlide.TweenProperty(view, "position:x", 0f, 0.16).SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.Out);
+                }
+
+                PlaceItemSlideout();
+            };
+        }
+
+        foreach (Control control in new Control[] { _luckHint, _confirm, _land, _flyOn })
+        {
+            control.Reparent(this);
+        }
+
+        _promptStrip.MoveToFront();
+        _dicePanel.MoveToFront();
+        _dice.MoveToFront();
+        _boardLayer.MoveToFront();
     }
 
     private void BuildLayout()
@@ -793,7 +931,8 @@ public partial class GameScreen
         AddChild(_heroPanel);
         _minimap = new MinimapView { Position = new Vector2(SideWidth + BoardView.Pixels + 8, 20), Size = new Vector2(160, 76) };
 
-        AddChild(new Panel { Position = new Vector2(SideWidth, 0), Size = new Vector2(BoardView.Pixels, StripHeight) });
+        _topStrip = new Panel { Position = new Vector2(SideWidth, 0), Size = new Vector2(BoardView.Pixels, StripHeight) };
+        AddChild(_topStrip);
         _header = RichLabel(new Vector2(SideWidth + 196, 4), new Vector2(BoardView.Pixels - 198, 28));
         _turnOrder = new TurnOrderView { Position = new Vector2(SideWidth + 3, 1), Size = new Vector2(190, 33) };
         _turnOrder.HeroClicked += ViewHero;
@@ -868,14 +1007,17 @@ public partial class GameScreen
 
         // The board scrolls inside a frame the size of a standard room; around a smaller room, solid rock.
         var frame = new Control { Position = BoardOrigin, Size = new Vector2(BoardView.Pixels, BoardView.Pixels), ClipContents = true, MouseFilter = MouseFilterEnum.Pass };
-        frame.AddChild(new ColorRect { Size = frame.Size, Color = Palette.Rock, MouseFilter = MouseFilterEnum.Ignore });
+        _boardFrame = frame;
+        _frameRock = new ColorRect { Size = frame.Size, Color = Palette.Rock, MouseFilter = MouseFilterEnum.Ignore };
+        frame.AddChild(_frameRock);
         _board = new BoardView();
         _board.TileClicked += OnTileClicked;
         _board.TileDoubleClicked += OnTileDoubleClicked;
         _board.TileHovered += OnTileHovered;
         _board.CancelRequested += CancelSelection;
         frame.AddChild(_board);
-        frame.AddChild(new ScrollHints { Board = _board, Size = frame.Size });
+        _scrollHints = new ScrollHints { Board = _board, Size = frame.Size };
+        frame.AddChild(_scrollHints);
         _turnFrame = new TurnFrame { Size = frame.Size };
         frame.AddChild(_turnFrame);
         AddChild(frame);
@@ -910,7 +1052,11 @@ public partial class GameScreen
         _carryTab.CardSelected += ClickCard;
         _carryTab.PutDownRequested += () => ExecuteForActiveHero(heroId => new PutDownAlly(heroId));
         AddChild(_carryTab);
-        _heroPanel.CarryClicked += () => _carryTab.Toggle();
+        _heroPanel.CarryClicked += () =>
+        {
+            _carryTab.Toggle();
+            PlaceItemSlideout();
+        };
 
         // The fire slot under it, out while the hero burns: double-click for STOP, DROP and ROLL.
         _fireTab = new FireTab { Position = new Vector2(SideWidth, StripHeight + 4 + 62), ZIndex = 2 };
@@ -918,10 +1064,11 @@ public partial class GameScreen
         AddChild(_fireTab);
 
         // Under the board, the dice bar: who rolls on the left, VS, who answers on the right.
-        AddChild(new Panel { Position = new Vector2(SideWidth, StripHeight + BoardView.Pixels), Size = new Vector2(BoardView.Pixels, StripHeight) });
-        // Below the dice bar, on a screen taller than the game's 360: the board's column carries on down.
-        _boardFill = new Panel { Position = new Vector2(SideWidth, 2 * StripHeight + BoardView.Pixels), Size = new Vector2(BoardView.Pixels, 0), Visible = false, MouseFilter = MouseFilterEnum.Ignore };
-        AddChild(_boardFill);
+        // Over it, the prompt strip: Power! and Try your Luck? always come up in the same place there.
+        _promptStrip = new Panel { Name = "PromptStrip", MouseFilter = MouseFilterEnum.Ignore, Visible = false };
+        AddChild(_promptStrip);
+        _dicePanel = new Panel { Position = new Vector2(SideWidth, StripHeight + BoardView.Pixels), Size = new Vector2(BoardView.Pixels, StripHeight) };
+        AddChild(_dicePanel);
         _dice = new DiceBar { Position = new Vector2(SideWidth + 6, StripHeight + BoardView.Pixels + 1), Size = new Vector2(BoardView.Pixels - 12, 34) };
         _dice.DieClicked += index =>
         {
@@ -1079,8 +1226,11 @@ public partial class GameScreen
         _search = UiTheme.Accent(UiTheme.CompactButton(new Vector2(88, 303), new Vector2(40, 20), "Search"), Palette.DieOdHand);
         _search.Pressed += () =>
         {
-            // With something in the off hand and a monster in its reach, the Od Hand card attacks with it; otherwise it searches (or feels around).
-            if (_session.State.Turn is not null && _session.CheckOffHandAttack() is null)
+            // With a weapon in the off hand and a monster in its reach, the Od Hand card attacks with it; otherwise it searches (or
+            // feels around). A light in either hand (a torch, a Lit Stick, a flame of Hold Fire) always searches: Search is what
+            // it's for; its follow-up swing is on its own card in the Od Hand square.
+            if (_session.State.Turn is not null && _session.CheckOffHandAttack() is null
+                && ActiveHero is not { TorchesHeld: > 0 })
             {
                 bool aiming = !_offHanding;
                 CancelSelection();
@@ -1128,7 +1278,15 @@ public partial class GameScreen
         };
         right.AddChild(_shove);
 
-        _endTurn = UiTheme.Button(new Vector2(6, 335), new Vector2(164, 20), "End turn");
+        // Power up, left of End turn: every die left rolled at once for Power Dice, and the turn's over.
+        _powerUp = new PowerUpButton { Position = new Vector2(6, 335), Size = new Vector2(22, 20) };
+        _powerUp.Pressed += () =>
+        {
+            CancelSelection();
+            ExecuteForActiveHero(heroId => new PowerUp(heroId));
+        };
+        _heroPanel.AddChild(_powerUp);
+        _endTurn = UiTheme.Button(new Vector2(30, 335), new Vector2(140, 20), "End turn");
         _endTurn.Pressed += () =>
         {
             CancelSelection();
@@ -1145,6 +1303,7 @@ public partial class GameScreen
         BuildTradeWindow();
         _banner = new TurnBanner { Position = BoardOrigin, Size = new Vector2(BoardView.Pixels, BoardView.Pixels) };
         AddChild(_banner);
+        BuildLayers();
     }
 
     private RichTextLabel RichLabel(Vector2 position, Vector2 size)
@@ -1161,17 +1320,14 @@ public partial class GameScreen
         return label;
     }
 
-    /// <summary>The bubbles over the dice tray (Power! and Try your Luck?): side by side from its left side, just above it.</summary>
+    /// <summary>
+    /// The bubbles over the dice tray, each in its own place that's always the same: Power! on the left, Try your Luck?
+    /// right of it.
+    /// </summary>
     private void PlaceBubbles()
     {
-        // From the tray's left side: Power! first, then Try your Luck?.
-        List<Control> up = [.. new Control[] { _powerPrompt, _luckPrompt }.Where(bubble => bubble.Visible)];
-        float x = _dice.Position.X + 4;
-        foreach (Control bubble in up)
-        {
-            bubble.Position = new Vector2(x, _dice.Position.Y - bubble.Size.Y - 1);
-            bubble.MoveToFront();
-            x += bubble.Size.X + 6;
-        }
+        float y = _dice.Position.Y - PromptHeight;
+        _powerPrompt.Position = new Vector2(_dice.Position.X - 2, y + 1);
+        _luckPrompt.Position = new Vector2(_dice.Position.X - 2 + _powerPrompt.Size.X + 6, y + 1);
     }
 }

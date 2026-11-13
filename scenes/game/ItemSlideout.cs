@@ -37,6 +37,12 @@ public partial class ItemSlideout : Control
 
     internal string Body => _body.Text;
 
+    /// <summary>The story's text size: a step up on a bigger screen.</summary>
+    public int TextSize
+    {
+        set => _body.AddThemeFontSizeOverride("normal_font_size", value);
+    }
+
     public override void _Ready()
     {
         ClipContents = true;
@@ -86,9 +92,40 @@ public partial class ItemSlideout : Control
     {
         if (what == NotificationResized && _window is not null)
         {
-            _window.Size = new Vector2(Width, Size.Y);
-            _scroll.Size = new Vector2(Width - 8, Size.Y - 48);
+            Fit();
         }
+    }
+
+    /// <summary>
+    /// Fits the window to the room it's given: its six buttons in a row when it's its full width, in two rows of three
+    /// when narrower (beside the bag's drawer).
+    /// </summary>
+    private void Fit()
+    {
+        float width = Size.X;
+        bool narrow = width < Width - 1;
+        int perRow = narrow ? 3 : 6;
+        float step = (width - 8) / perRow;
+        int i = 0;
+        foreach (Button button in Actions.Values)
+        {
+            button.Position = new Vector2(4 + i % perRow * step, 25 + i / perRow * 17);
+            button.Size = new Vector2(step - 1.5f, 16);
+            i++;
+        }
+
+        float top = narrow ? 61 : 44;
+        _window.Size = new Vector2(width, Size.Y);
+        if (!_out)
+        {
+            _window.Position = _window.Position with { X = -width };
+        }
+
+        _title.Size = _kind.Size = new Vector2(width - 29, 12);
+        _scroll.Position = new Vector2(4, top);
+        _scroll.Size = new Vector2(width - 8, Size.Y - top - 4);
+        _body.CustomMinimumSize = new Vector2(width - 18, 0);
+        _body.Size = _body.Size with { X = width - 18 };
     }
 
     /// <summary>Shows a picked-up card (sliding out), or nothing (sliding back in).</summary>
@@ -149,7 +186,7 @@ public partial class ItemSlideout : Control
         }
 
         _slide = CreateTween();
-        _slide.TweenProperty(_window, "position:x", open ? 0f : -Width, SlideSeconds).SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.Out);
+        _slide.TweenProperty(_window, "position:x", open ? 0f : -Size.X, SlideSeconds).SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.Out);
         if (!open)
         {
             _slide.TweenCallback(Callable.From(() => Visible = false));

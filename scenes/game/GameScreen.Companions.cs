@@ -75,7 +75,7 @@ public partial class GameScreen
         }
 
         float height = companions.Count * OrderRowHeight + 6;
-        _ordersPanel.Position = new Vector2(4, 331 - height);
+        _ordersPanel.Position = new Vector2(4, _heroPanel.Size.Y - 29 - height);
         _ordersPanel.Size = new Vector2(168, height);
         for (int i = 0; i < companions.Count; i++)
         {

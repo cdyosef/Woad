@@ -135,7 +135,8 @@ public partial class GameScreen
             // The bag opens into its cards, face up, to pick from.
             CardInstance buckler = bran.Backpack.Single(card => card.Definition.Id == "dagger");
             await Click(this, _heroPanel.BagDeck);
-            Check(_heroPanel.IsBagOpen, "clicking the bag opens it over the board");
+            await WaitUntilIdle();
+            Check(_heroPanel.IsBagOpen, "clicking the bag opens it, rolling out from under the sheet");
             if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } shots)
             {
                 await Pause(0.1);
@@ -1656,7 +1657,7 @@ public partial class GameScreen
 
     internal async Task WaitUntilIdle()
     {
-        await WaitFor(this, () => !_busy, "event playback to finish");
+        await WaitFor(this, () => !_busy && _drawerSlide?.IsRunning() != true, "event playback (and the drawer rolling out) to finish");
         while (_session.State.Turn?.UnsettledPowerDice > 0)
         {
             Check(_powerPrompt.Visible && _addPower.IsVisibleInTree(), "a 6 puts up Power! over the dice tray, to Roll or Bank the Power Die");
