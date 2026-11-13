@@ -193,7 +193,7 @@ public partial class PaintScreen : MenuScreen
         _worn[2] = Math.Max(0, Looks.SetSwatches(_skinSet).ToList().FindIndex(swatch => swatch.Id == look.SkinDefault));
         _worn[3] = Math.Max(0, Looks.SetSwatches(_hairSet).ToList().FindIndex(swatch => swatch.Id == look.HairDefault));
         Canvas.Load(pixels);
-        Say(Looks.IsBuilt(look.Id) && !Looks.IsSaved(look.Id) ? $"Opened {look.Name}. Saving repaints it; a new name makes a new figure." : $"Opened {look.Name}.");
+        Say(Looks.IsOriginal(look.Id) ? $"Opened {look.Name}. It comes with the game, so saving makes a new figure from it: the original stays as it is." : $"Opened {look.Name}.");
         Refresh();
         return true;
     }
@@ -558,6 +558,14 @@ public partial class PaintScreen : MenuScreen
 
     private void Save()
     {
+        // The game's own figures are never painted over: a painting of one is saved as a new figure.
+        string? original = Looks.IsOriginal(LookId) ? _name.Trim() : null;
+        if (original is not null)
+        {
+            _name = Looks.FreshName(_name);
+            NameEdit.Text = _name;
+        }
+
         PaintedLook painting = Painting();
         if (painting.Problem() is { } problem)
         {
@@ -577,8 +585,9 @@ public partial class PaintScreen : MenuScreen
 
         Sfx.Play("coin");
         int eyes = painting.Eyes.Count();
-        Say(eyes == 2 ? $"Saved {painting.Name}. Pick it in Characters."
-            : $"Saved {painting.Name}. It has {UiTheme.Count(eyes, "eye", "eyes")} marked (most have two).");
+        string copy = original is null ? "" : $" ({original} stays as it came.)";
+        Say((eyes == 2 ? $"Saved {painting.Name}. Pick it in Characters."
+            : $"Saved {painting.Name}. It has {UiTheme.Count(eyes, "eye", "eyes")} marked (most have two).") + copy);
         Refresh();
     }
 

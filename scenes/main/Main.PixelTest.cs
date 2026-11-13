@@ -133,9 +133,11 @@ public partial class Main
                 await Click(this, paint.Swatch("R"));
                 await ClickAt(this, Cell(7, 8));
                 await Click(this, paint.SaveButton);
-                Check(Looks.All.Count == built && Looks.Painted("wanderer") is { } repainted && repainted.Rows[8][7] == 'R' && repainted.Rows[8][8] == 'R', "saving it repaints the built-in figure, without adding one");
+                Check(paint.LookId == "wanderer_2" && Looks.Painted("wanderer_2") is { } copy && copy.Rows[8][7] == 'R' && copy.Rows[8][8] == 'R',
+                    $"saving a built-in figure makes a new one from it ({paint.LookId}: {paint.Status})");
+                Check(Looks.Painted("wanderer") is null && Looks.All.Count == built + 1, "and the original stays as it came");
                 await Click(this, paint.DeleteButton);
-                Check(Looks.Painted("wanderer") is null && canvas[7, 8] == "T", "Delete puts the built-in figure back as it came");
+                Check(Looks.Painted("wanderer_2") is null && Looks.All.Count == built, "Delete takes the new figure away again");
             }
             else
             {

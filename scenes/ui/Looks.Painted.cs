@@ -56,6 +56,30 @@ public static partial class Looks
 
     public static string PaintedPath(string id) => Path.Combine(PaintedDir, $"{id}.json");
 
+    /// <summary>A figure that comes with the game's own painted figures (<see cref="ShippedDir"/>).</summary>
+    public static bool IsShipped(string id) => id.Length > 0 && Godot.FileAccess.FileExists($"{ShippedDir}/{id}.json");
+
+    /// <summary>
+    /// A figure that comes with the game (built in, or painted for it) and isn't saved where Pixel Paint saves: it's never
+    /// painted over. Saving it makes a new figure, so the original is always there (for everyone).
+    /// </summary>
+    public static bool IsOriginal(string id) => (IsBuilt(id) || IsShipped(id)) && !IsSaved(id);
+
+    /// <summary>A name for a new figure painted from <paramref name="name"/>: "Footman 2", "Footman 3"... the first not taken.</summary>
+    public static string FreshName(string name)
+    {
+        string trimmed = name.Trim();
+        for (int n = 2; ; n++)
+        {
+            string candidate = $"{trimmed} {n}";
+            string id = PaintedLook.IdFor(candidate);
+            if (!IsBuilt(id) && !IsShipped(id) && !IsSaved(id) && All.All(look => look.Id != id))
+            {
+                return candidate;
+            }
+        }
+    }
+
     /// <summary>Reads the painted figures again (after one is saved or deleted).</summary>
     public static void Reload()
     {
