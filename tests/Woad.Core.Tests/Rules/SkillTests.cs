@@ -60,14 +60,14 @@ public class SkillTests
     [Fact]
     public void ALitTorchSearchesForYouOnceATurnWithoutTheSkill()
     {
-        GameSession session = TestRun.Start(Open, new ScriptedDice(3), cards: ["t_torch"], skills: Skill.None);
+        GameSession session = TestRun.Start(Open, new ScriptedDice(2, 3), cards: ["t_torch"], skills: Skill.None);
         Hero hero = session.HeroInSeat();
 
-        OdHandRolled rolled = session.Do(new Search(hero.Id)).SingleOf<OdHandRolled>();
+        OdHandRolled rolled = session.Do(new Search(hero.Id, Dice: 1)).SingleOf<OdHandRolled>();
 
-        // The torch's die, and +1 for its light.
-        Assert.Equal((1, 4), (rolled.ToolDice, rolled.Total));
-        Assert.Equal(0, session.State.Turn!.OdHandDiceUsed);
+        // The Od Hand die (looking around), the torch's die (searching the room), and +1 for its light.
+        Assert.Equal((OdHandCheckKind.Search, 1, 6), (rolled.Kind, rolled.ToolDice, rolled.Total));
+        Assert.Equal(1, session.State.Turn!.OdHandDiceUsed);
         Assert.False(session.Searches);
     }
 
@@ -375,7 +375,7 @@ public class SkillTests
         Assert.False(session.Searches);
 
         session.Do(new HighAlert(hero.Id));
-        OdHandRolled rolled = session.Do(new Search(hero.Id)).SingleOf<OdHandRolled>();
+        OdHandRolled rolled = session.Do(new Search(hero.Id, Dice: 0)).SingleOf<OdHandRolled>();
 
         Assert.Equal(4, rolled.Total);
         Assert.Equal(0, session.State.Turn!.OdHandDiceUsed);

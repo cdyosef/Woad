@@ -77,4 +77,39 @@ public class SearchRangeTests
         Assert.True(session.RoomById().TrapAt(new GridPosition(8, 1))!.Revealed);
         Assert.False(session.RoomById().TrapAt(new GridPosition(9, 1))!.Revealed);
     }
+
+    [Theory]
+    [InlineData(EquipSlot.OffHand)]
+    [InlineData(EquipSlot.MainHand)]
+    public void WithoutSearchATorchInEitherHandSearchesTheRoomWhileTheOdHandDiceLookAround(EquipSlot hand)
+    {
+        // The Od Hand die's 4 looks around; the torch's die's 2 (and +1 in its light) searches the room: 7 next door, 3 further off.
+        var features = new RoomFeatures
+        {
+            Traps = new Dictionary<GridPosition, TrapSetup>
+            {
+                [new GridPosition(4, 3)] = new(TrapKind.Spikes, 7),
+                [new GridPosition(4, 1)] = new(TrapKind.Spikes, 3),
+                [new GridPosition(1, 4)] = new(TrapKind.Spikes, 4),
+            },
+        };
+        GameSession session = TestRun.Start([new RoomSetup("A", TestRun.Room(Open), Features: features)], new ScriptedDice(4, 2), cards: ["t_torch"], skills: Skill.None);
+        Hero hero = session.HeroInSeat();
+        CardInstance torch = hero.AllCards.Single(card => card.Definition.Id == "t_torch");
+        if (hero.Equipment.GetValueOrDefault(hand) != torch)
+        {
+            session.Do(new EquipCard(hero.Id, torch.Id, hand));
+        }
+
+        Assert.True(session.Searches);
+        IReadOnlyList<GameEvent> events = session.Do(new Search(hero.Id, Dice: 1));
+
+        OdHandRolled rolled = events.SingleOf<OdHandRolled>();
+        Assert.Equal(OdHandCheckKind.Search, rolled.Kind);
+        Assert.Equal(7, rolled.Total);
+        Assert.True(session.RoomById().TrapAt(new GridPosition(4, 3))!.Revealed);
+        Assert.True(session.RoomById().TrapAt(new GridPosition(4, 1))!.Revealed);
+        Assert.False(session.RoomById().TrapAt(new GridPosition(1, 4))!.Revealed);
+        Assert.Equal(1, session.State.Turn!.OdHandDiceUsed);
+    }
 }
