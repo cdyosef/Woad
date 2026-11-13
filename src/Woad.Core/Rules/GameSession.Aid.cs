@@ -59,9 +59,10 @@ public sealed partial class GameSession
             return targetError;
         }
 
-        // Rolled with no Od Hand dice, it takes a Medicine Bag, or Bandages.
+        // Rolled with no Od Hand dice, it takes a Medicine Bag, or Bandages. With one of them, the Od Hand dice go in
+        // too, Aid learned or not: the kit does what the skill would.
         bool bandaged = command.UseTools && ActiveHero.Bandages is not null;
-        int usable = OdHandDiceFor(Skill.Aid);
+        int usable = bag || bandaged ? OdHandDiceLeft : OdHandDiceFor(Skill.Aid);
         int least = bag || bandaged ? 0 : 1;
         int dice = command.Dice ?? usable;
         if (dice < least || dice > usable)
