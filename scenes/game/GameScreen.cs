@@ -159,6 +159,10 @@ public partial class GameScreen : Control
         {
             RunTorchTest();
         }
+        else if (args.Contains("--torchsearchtest"))
+        {
+            RunTorchSearchTest();
+        }
         else if (args.Contains("--smashtest"))
         {
             RunSmashTest();

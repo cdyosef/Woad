@@ -47,4 +47,39 @@ public partial class GameScreen
             Sfx.QuitGame(this, 1);
         }
     }
+
+    /// <summary>
+    /// Debug mode (<c>-- --torchsearchtest</c>, with <see cref="DemoRun.TorchBeside"/>): Aria knows Search and holds a
+    /// torch in her off hand, a fire beetle right beside her. After a swing at it, Search still searches.
+    /// </summary>
+    private async void RunTorchSearchTest()
+    {
+        try
+        {
+            await WaitUntilIdle();
+            Hero aria = ActiveHero!;
+            CardInstance torch = aria.AllCards.Single(card => card.Definition.Id == "torch");
+            await ExecuteAsync(new EquipCard(aria.Id, torch.Id, EquipSlot.OffHand));
+            await WaitUntilIdle();
+            // A Rumble swing at the beetle beside her: now the torch in her off hand could follow it up.
+            Monster beetle = ShownRoom.Monsters.Single();
+            await ExecuteAsync(new AttackMonster(aria.Id, beetle.Id));
+            await WaitUntilIdle();
+            await ConfirmIfHeld();
+            Check(ShownRoom.FindMonster(beetle.Id) is not null, "the beetle is still there");
+            int used = _session.State.Turn!.OdHandDiceUsed;
+            _search.EmitSignal(BaseButton.SignalName.Pressed);
+            await WaitUntilIdle();
+            await ConfirmIfHeld();
+            Check(!_offHanding && (_session.State.Turn!.OdHandDiceUsed > used || _session.State.Turn.ToolsUsed),
+                $"Search searches, by the torch's light ({string.Join(" / ", _messages.TakeLast(3))})");
+            GD.Print("Torch search test passed.");
+            Sfx.QuitGame(this);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Torch test failed: {exception.Message}");
+            Sfx.QuitGame(this, 1);
+        }
+    }
 }
