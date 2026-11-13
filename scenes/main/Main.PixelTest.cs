@@ -123,7 +123,18 @@ public partial class Main
             }
 
             await Click(this, paint.DeleteButton);
-            Check(!File.Exists(Looks.PaintedPath("tin_man")) && Looks.All.Count == built, "Delete takes a painted figure away");
+            Check(paint.IsAskingToDelete && File.Exists(Looks.PaintedPath("tin_man")), "Delete asks first");
+            if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } asked)
+            {
+                await NextFrame(this);
+                await NextFrame(this);
+                GetViewport().GetTexture().GetImage().SavePng($"{asked}/paint-delete.png");
+            }
+            await Click(this, paint.KeepButton);
+            Check(!paint.IsAskingToDelete && File.Exists(Looks.PaintedPath("tin_man")), "Keep it keeps it");
+            await Click(this, paint.DeleteButton);
+            await Click(this, paint.ConfirmDeleteButton);
+            Check(!File.Exists(Looks.PaintedPath("tin_man")) && Looks.All.Count == built, "Delete, said again, takes a painted figure away");
 
             Look wanderer = Looks.Get("wanderer");
             if (paint.Open(wanderer))
@@ -137,6 +148,7 @@ public partial class Main
                     $"saving a built-in figure makes a new one from it ({paint.LookId}: {paint.Status})");
                 Check(Looks.Painted("wanderer") is null && Looks.All.Count == built + 1, "and the original stays as it came");
                 await Click(this, paint.DeleteButton);
+                await Click(this, paint.ConfirmDeleteButton);
                 Check(Looks.Painted("wanderer_2") is null && Looks.All.Count == built, "Delete takes the new figure away again");
             }
             else

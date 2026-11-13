@@ -400,7 +400,50 @@ public partial class PaintScreen : MenuScreen
         SaveButton.TooltipText = "Ctrl+S";
         SaveButton.Pressed += Save;
         DeleteButton = Add(UiTheme.Button(new Vector2(544, 316), new Vector2(76, 26), "Delete"));
-        DeleteButton.Pressed += Delete;
+        DeleteButton.Pressed += AskDelete;
+
+        // Deleting asks first: it can't be undone.
+        _confirmDelete = Add(new Panel { Position = new Vector2(200, 140), Size = new Vector2(240, 74), Visible = false, ZIndex = 5 });
+        _confirmDelete.AddThemeStyleboxOverride("panel", UiTheme.Box(Palette.Ink, Palette.Danger, 2));
+        _confirmQuestion = UiTheme.Label(new Vector2(8, 6), new Vector2(224, 32), "", color: Palette.Text);
+        _confirmQuestion.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        _confirmQuestion.HorizontalAlignment = HorizontalAlignment.Center;
+        _confirmDelete.AddChild(_confirmQuestion);
+        ConfirmDeleteButton = UiTheme.Accent(UiTheme.Button(new Vector2(16, 44), new Vector2(98, 22), "Delete"), Palette.Danger);
+        ConfirmDeleteButton.Pressed += () =>
+        {
+            _confirmDelete.Visible = false;
+            Delete();
+        };
+        _confirmDelete.AddChild(ConfirmDeleteButton);
+        KeepButton = UiTheme.Button(new Vector2(126, 44), new Vector2(98, 22), "Keep it");
+        KeepButton.Pressed += () => _confirmDelete.Visible = false;
+        _confirmDelete.AddChild(KeepButton);
+    }
+
+    private Panel _confirmDelete = null!;
+    private Label _confirmQuestion = null!;
+
+    /// <summary>The prompt's buttons (for the click tests).</summary>
+    internal Button ConfirmDeleteButton { get; private set; } = null!;
+
+    internal Button KeepButton { get; private set; } = null!;
+
+    internal bool IsAskingToDelete => _confirmDelete.Visible;
+
+    /// <summary>Asks before deleting: it can't be undone.</summary>
+    private void AskDelete()
+    {
+        if (!Looks.IsSaved(LookId))
+        {
+            return;
+        }
+
+        string name = _name.Trim();
+        _confirmQuestion.Text = Looks.IsBuilt(LookId)
+            ? $"Throw away your repainting of {name}? It goes back to how it came. This can't be undone."
+            : $"Delete {name}? This can't be undone.";
+        _confirmDelete.Visible = true;
     }
 
     private void AddSwatch(string paint, Vector2 position, string tip)
