@@ -676,6 +676,9 @@ public sealed record FireOut(int EntityId, FireOutCause Cause) : GameEvent;
 /// <summary>A hero's weapon caught a monster and drags it a tile in (a Frog Gig).</summary>
 public sealed record Snagged(int HeroId, int MonsterId) : GameEvent;
 
+/// <summary>A hero powered up: the roll of every die they had left, the Power Dice it banked, and their bank now.</summary>
+public sealed record PoweredUp(int HeroId, DiceRoll Roll, int Gained, int Banked) : GameEvent;
+
 /// <summary>Why a leaving companion stayed after all.</summary>
 public enum StayReason
 {

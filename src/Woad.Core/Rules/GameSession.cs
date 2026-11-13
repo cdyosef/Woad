@@ -221,6 +221,7 @@ public sealed partial class GameSession
             StopDropRoll c => Handle(c, events),
             FightFire c => Handle(c, events),
             OfferWage c => Handle(c, events),
+            PowerUp c => Handle(c, events),
             Convince c => Handle(c, events),
             Depart c => Handle(c, events),
             DigOut c => Handle(c, events),

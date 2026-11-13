@@ -416,6 +416,9 @@ public enum FirePart
     Roll,
 }
 
+/// <summary>Power up: every Rumble, Wend and Od Hand die left this turn rolled at once, each 6 banked as a Power Die; the turn ends.</summary>
+public sealed record PowerUp(int HeroId) : GameCommand(HeroId);
+
 /// <summary>Pay a leaving companion in your room to stay (what they're owed, less a gold a point of bond with you): they follow you from then on.</summary>
 public sealed record OfferWage(int HeroId, int CompanionId, int Copper) : GameCommand(HeroId);
 
