@@ -1,0 +1,39 @@
+{
+  "id": "bighorn_chief",
+  "name": "Bighorn Chief",
+  "skin": "human",
+  "hair": "hair",
+  "rows": [
+    "a.....bccb.....a",
+    "db...bcTTcb...bd",
+    "dddcfccffccfcddd",
+    "dddcfccccccfcddd",
+    ".ddcfSecceSfcdd.",
+    "...bhSSccSShb...",
+    "...ggHHHHHHgg...",
+    "..RRhHHbbHHRR..c",
+    "..rrttHHHHtrr.cf",
+    "..SStTHHHTtSS.ff",
+    "fiSSiiiHHiiSSiii",
+    "...gjkkkkkkjg.ff",
+    "...gtTTTTTTtg.ff",
+    "..ggbllbbllbgcff",
+    "....bmmbbmmb..cf",
+    "...bmmmbbmmmb..c"
+  ],
+  "palette": {
+    "a": "#34303e",
+    "b": "#181420",
+    "c": "#b8c0cc",
+    "d": "#ece6d6",
+    "f": "#6a7484",
+    "g": "#8a1e28",
+    "i": "#5a5868",
+    "j": "#6a4a2a",
+    "k": "#5a3a1a",
+    "l": "#c8955a",
+    "m": "#3a2414"
+  },
+  "lockHash": "38cce43b99908700d6b13b631980aedc6aa1b1ce2e4fd5c14c5db7690c1297b6",
+  "secret": false
+}

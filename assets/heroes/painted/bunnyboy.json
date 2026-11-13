@@ -1,0 +1,32 @@
+{
+  "id": "bunnyboy",
+  "name": "BunnyBoy",
+  "skin": "hair",
+  "hair": "fur",
+  "rows": [
+    "....aHbaabHa....",
+    "....aHbaabHa....",
+    "....aHHHHHHa....",
+    "....aHHHHHHa....",
+    "....aHHSSHHa....",
+    "....aSeSSeSa....",
+    "...aaHSbbSHa....",
+    ".R.HtHHccHHta.c.",
+    "...HttSHHSttHcc.",
+    ".HHHttRRRRttHHc.",
+    ".HH.hHSSSSHhHHc.",
+    "....tTTTTTTTtcc.",
+    "....hHTTTTHhTc..",
+    "....aHHaaHHa....",
+    "..HHHhdaadhHHH..",
+    "....aaaaaaaa...."
+  ],
+  "palette": {
+    "a": "#181420",
+    "b": "#f0a0b0",
+    "c": "#ffffff",
+    "d": "#3a2414"
+  },
+  "lockHash": "38cce43b99908700d6b13b631980aedc6aa1b1ce2e4fd5c14c5db7690c1297b6",
+  "secret": false
+}

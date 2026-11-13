@@ -1428,6 +1428,12 @@ them up there like any character.
   fit, never cut off, and never shrinks below its usual height, so nothing jumps); **what's selected** (the target's
   sheet, a monster's with the banner of the side it moves with, a hero's with their crest; or a question the game
   asks); and the **log**, as tall as you drag the bar above it (kept between games).
+- **Locked figures:** painted figures that ship with the game can be locked with a code (in Pixel Paint, run from the
+  Godot editor: a code and Open / Teased / Secret). Only a hash of the code is kept. A **teased** one shows in
+  character creation as a dark "???" that can't be saved; a **secret** one isn't shown at all. Typing the code in
+  character creation ("Have a code?", any case, spaces and marks ignored) unlocks every figure with that code, for
+  good on that computer. Figures sharing a code unlock together. Pixel Paint in a player's game never paints over the
+  game's own figures: saving one makes a new figure ("Footman 2"), and Delete asks first.
 - **The item slide-out:** pick up a card of yours and its whole story comes out from behind the character sheet,
   below the carry and fire tabs: picture, name and kind; Use, Equip, Belt, Stow, Carry and Drop (greyed out with why);
   its full text and numbers; every way it can be used; and its base price, before any haggling. Aiming the card at
