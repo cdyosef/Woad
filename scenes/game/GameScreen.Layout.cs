@@ -183,7 +183,8 @@ public partial class GameScreen
         }
         bool held = hero is not null && _session.HeldBy(hero) is not null;
         _roll.Disabled = !(idle && !pending && _session.MoveDiceLeft > 0) || held;
-        string? searchBlocked = _session.State.Turn is not null && _session.CheckOffHandAttack() is null ? null : _session.CheckSearch();
+        string? searchBlocked = _session.State.Turn is not null && _session.CheckOffHandAttack() is null && !(hero is not null && GameSession.OffHandItem(hero) is { Definition.Torch: true })
+            ? null : _session.CheckSearch();
         _search.Disabled = !(idle && !pending) || searchBlocked is not null;
         _search.TooltipText = _session.State.Turn is null ? "" : searchBlocked ?? "Search the room with your selected Od Hand dice: finds secret doors, traps and stashes your total reaches.";
         // Out on the Woarld Map, Retreat waits up in the top strip, well away from the other actions; once
@@ -1079,8 +1080,11 @@ public partial class GameScreen
         _search = UiTheme.Accent(UiTheme.CompactButton(new Vector2(88, 303), new Vector2(40, 20), "Search"), Palette.DieOdHand);
         _search.Pressed += () =>
         {
-            // With something in the off hand and a monster in its reach, the Od Hand card attacks with it; otherwise it searches (or feels around).
-            if (_session.State.Turn is not null && _session.CheckOffHandAttack() is null)
+            // With a weapon in the off hand and a monster in its reach, the Od Hand card attacks with it; otherwise it searches (or
+            // feels around). A light in the off hand (a torch, a Lit Stick, a flame of Hold Fire) always searches: Search is what
+            // it's for; its follow-up swing is on its own card in the Od Hand square.
+            if (_session.State.Turn is not null && _session.CheckOffHandAttack() is null
+                && !(ActiveHero is { } searcher && GameSession.OffHandItem(searcher) is { Definition.Torch: true }))
             {
                 bool aiming = !_offHanding;
                 CancelSelection();
