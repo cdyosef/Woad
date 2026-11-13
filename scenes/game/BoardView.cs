@@ -75,8 +75,30 @@ public partial class BoardView : Control
     /// <summary>How far the player has zoomed the board (1: a standard room fills the view).</summary>
     public float UserZoom { get; private set; } = 1;
 
-    /// <summary>The board pixels across the view at the player's zoom.</summary>
-    private float ViewPixels => Pixels / UserZoom;
+    /// <summary>
+    /// The view's size on screen: a standard room's square at the least, bigger (showing more of the room) where the
+    /// screen has room for it. The game screen sets it with the layout.
+    /// </summary>
+    public Vector2 ViewSize
+    {
+        get => _viewSize;
+        set
+        {
+            _viewSize = value;
+            if (_room is not null)
+            {
+                UserZoom = Mathf.Clamp(UserZoom, LeastZoom, MaxUserZoom);
+                _camera = Clamp(_camera);
+                Place(Vector2.Zero);
+                QueueRedraw();
+            }
+        }
+    }
+
+    private Vector2 _viewSize = new(Pixels, Pixels);
+
+    /// <summary>The board pixels across and down the view at the player's zoom.</summary>
+    private Vector2 ViewSpan => _viewSize / UserZoom;
 
     /// <summary>The zoom on the action at its peak this time (less when the player's zoomed right in).</summary>
     private float _actionPeak = ActionZoom;
@@ -89,7 +111,7 @@ public partial class BoardView : Control
     private float _zoomTarget = 1;
 
     /// <summary>What's in view, in board pixels: the camera's view, or less of the board while zoomed in on the action.</summary>
-    private Rect2 ViewRect => new(_view, new Vector2(Pixels, Pixels) / (UserZoom * _zoom));
+    private Rect2 ViewRect => new(_view, _viewSize / (UserZoom * _zoom));
 
     /// <summary>The board pixel at the top-left of what's in view, zoom and all.</summary>
     private Vector2 _view;
@@ -292,7 +314,7 @@ public partial class BoardView : Control
 
     /// <summary>The part of the board drawn: the view and two tiles round it, or all of it.</summary>
     private Rect2 ShownRect() => Culls
-        ? new Rect2(_camera - new Vector2(2 * TileSize, 2 * TileSize), new Vector2(ViewPixels + 4 * TileSize, ViewPixels + 4 * TileSize))
+        ? new Rect2(_camera - new Vector2(2 * TileSize, 2 * TileSize), ViewSpan + new Vector2(4 * TileSize, 4 * TileSize))
         : new Rect2(Vector2.Zero, RoomPixels);
 
     /// <summary>The tiles drawn (see <see cref="ShownRect"/>).</summary>
@@ -324,8 +346,8 @@ public partial class BoardView : Control
     {
         Vector2 at = TileOrigin(tile) + new Vector2(TileSize / 2f, (below ? 30 : 0) - lift);
         float half = text.Length * UiTheme.HeadingPixelSize * size * 0.45f;
-        at.X = Mathf.Clamp(at.X, _camera.X + half + 4, _camera.X + ViewPixels - half - 4);
-        at.Y = Mathf.Clamp(at.Y, _camera.Y + 14 * size / 2f, _camera.Y + ViewPixels - 8);
+        at.X = Mathf.Clamp(at.X, _camera.X + half + 4, _camera.X + ViewSpan.X - half - 4);
+        at.Y = Mathf.Clamp(at.Y, _camera.Y + 14 * size / 2f, _camera.Y + ViewSpan.Y - 8);
         AddChild(new ActionCallout { Position = at, Text = text, Color = color, Size = size });
     }
 
@@ -398,7 +420,7 @@ public partial class BoardView : Control
             ? _follow.Position + new Vector2(TileSize / 2f, TileSize / 2f)
             : _lookAt is { } tile ? TileOrigin(tile) + new Vector2(TileSize / 2f, TileSize / 2f)
             : RoomPixels / 2 - new Vector2(0, TopMargin / 2);
-        return Clamp(center - new Vector2(ViewPixels / 2, ViewPixels / 2));
+        return Clamp(center - ViewSpan / 2);
     }
 
     /// <summary>
@@ -410,7 +432,7 @@ public partial class BoardView : Control
         get
         {
             Vector2 room = RoomPixels;
-            return (_camera.X > 1, _camera.Y > 1 - TopMargin, _camera.X + ViewPixels < room.X - 1, _camera.Y + ViewPixels < room.Y - 1);
+            return (_camera.X > 1, _camera.Y > 1 - TopMargin, _camera.X + ViewSpan.X < room.X - 1, _camera.Y + ViewSpan.Y < room.Y - 1);
         }
     }
 
@@ -420,9 +442,9 @@ public partial class BoardView : Control
     private Vector2 Clamp(Vector2 camera)
     {
         Vector2 room = RoomPixels;
-        float view = ViewPixels;
-        float Axis(float value, float from, float to) => to - from <= view ? (from + to - view) / 2 : Mathf.Clamp(value, from, to - view);
-        return new Vector2(Axis(camera.X, 0, room.X), Axis(camera.Y, -TopMargin, room.Y));
+        Vector2 view = ViewSpan;
+        static float Axis(float value, float from, float to, float view) => to - from <= view ? (from + to - view) / 2 : Mathf.Clamp(value, from, to - view);
+        return new Vector2(Axis(camera.X, 0, room.X, view.X), Axis(camera.Y, -TopMargin, room.Y, view.Y));
     }
 
     /// <summary>Moves the view by <paramref name="by"/> pixels, no further than keeps the anchor tile in view.</summary>
@@ -434,9 +456,9 @@ public partial class BoardView : Control
         {
             Vector2 at = TileOrigin(tile);
             Vector2 room = RoomPixels;
-            float view = ViewPixels;
-            float Keep(float value, float anchor, float size) => size <= view ? value : Mathf.Clamp(value, anchor + TileSize - view, anchor);
-            camera = new Vector2(Keep(camera.X, at.X, room.X), Keep(camera.Y, at.Y, room.Y));
+            Vector2 view = ViewSpan;
+            static float Keep(float value, float anchor, float size, float view) => size <= view ? value : Mathf.Clamp(value, anchor + TileSize - view, anchor);
+            camera = new Vector2(Keep(camera.X, at.X, room.X, view.X), Keep(camera.Y, at.Y, room.Y, view.Y));
         }
 
         _camera = camera;
@@ -444,7 +466,7 @@ public partial class BoardView : Control
     }
 
     /// <summary>The least the player can zoom to here: out until the whole room fits, but no further than <see cref="MinUserZoom"/>, nor below 1.</summary>
-    private float LeastZoom => Mathf.Clamp(Pixels / Mathf.Max(RoomPixels.X, RoomPixels.Y + TopMargin), MinUserZoom, 1);
+    private float LeastZoom => Mathf.Clamp(Mathf.Min(_viewSize.X / RoomPixels.X, _viewSize.Y / (RoomPixels.Y + TopMargin)), MinUserZoom, 1);
 
     /// <summary>Zooms the player's view by <paramref name="factor"/>, keeping <paramref name="at"/> (a board pixel) where it is on screen.</summary>
     public void ZoomAt(Vector2 at, float factor)
@@ -463,7 +485,7 @@ public partial class BoardView : Control
     }
 
     /// <summary>Zooms the player's view in or out about its middle (+ and -).</summary>
-    public void ZoomBy(float factor) => ZoomAt(_camera + new Vector2(ViewPixels / 2, ViewPixels / 2), factor);
+    public void ZoomBy(float factor) => ZoomAt(_camera + ViewSpan / 2, factor);
 
     /// <summary>Puts the player's zoom back to 1 and the view back on the action (Home).</summary>
     public void ResetZoom()
@@ -481,7 +503,7 @@ public partial class BoardView : Control
     {
         float scale = UserZoom * _zoom;
         float zoomed = _actionPeak > 1 ? Mathf.Clamp((_zoom - 1) / (_actionPeak - 1), 0, 1) : 0;
-        _view = _camera.Lerp(_zoomFocus - new Vector2(Pixels, Pixels) / (2 * scale), zoomed);
+        _view = _camera.Lerp(_zoomFocus - _viewSize / (2 * scale), zoomed);
         Scale = new Vector2(scale, scale);
         Position = -_view * scale + jolt;
     }

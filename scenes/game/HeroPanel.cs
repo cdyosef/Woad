@@ -10,11 +10,11 @@ namespace Woad.Scenes.Game;
 /// <summary>
 /// Left panel: the active hero's character sheet. On top, their name and hearts; level, title, kills
 /// and XP; gold, keys, torches and treasure; and the Power Dice bank. Under it the cards, laid out like
-/// the body: accessory, head and Magic across the top, off hand, body and main hand across the middle,
-/// and the bag (a deck, its cards listed under it), feet and belt (a fanned hand) along the bottom. Each
-/// pool of dice sits under the card it goes with (see <see cref="Pool"/>): Luck under the accessory, Od
-/// Hand under the off hand, Defense under the body, Rumble under the main hand, Wend under the feet.
-/// End turn is at the bottom.
+/// the body: accessory, head and Magic across the top (Carry standing up along the edge beside Magic), off
+/// hand, body and main hand across the middle, and the belt (a fanned hand), feet and the bag (a deck, its
+/// cards listed under it) along the bottom. Each pool of dice sits under the card it goes with (see
+/// <see cref="Pool"/>): Luck under the accessory, Od Hand under the off hand, Defense under the body, Rumble
+/// under the main hand, Wend under the feet. Power up and End turn are at the bottom.
 /// </summary>
 public partial class HeroPanel : Panel
 {
@@ -22,7 +22,7 @@ public partial class HeroPanel : Panel
     public const float CardHeight = 50;
 
     /// <summary>The three columns, and the tops of the three rows of cards.</summary>
-    public static readonly float[] Columns = [4, 64, 124];
+    public static readonly float[] Columns = [2, 60, 118];
     public static readonly float[] Rows = [52, 130, 208];
 
     private static readonly (EquipSlot Slot, int Column, int Row, string Back, string Name)[] Slots =
@@ -146,7 +146,7 @@ public partial class HeroPanel : Panel
     internal CardSlot EquipmentSlot(EquipSlot slot) => _slots[slot];
 
     /// <summary>A point on the part of a belt card that shows, to click it (the ones nearer the buckle cover the rest).</summary>
-    internal Vector2 BeltPoint(int index) => _beltSquare.GetGlobalRect().Position + _beltSquare.CardPoint(index);
+    internal Vector2 BeltPoint(int index) => _beltSquare.GetGlobalTransform() * _beltSquare.CardPoint(index);
 
     internal CardSlot BackpackSlot(int index) => _backpack[index];
 
@@ -172,10 +172,10 @@ public partial class HeroPanel : Panel
         Size = new Vector2(176, 360);
         Add(Pool);
         Pool.Place(DicePool.Power, new Vector2(4, 39), 168);
-        Pool.Place(DicePool.OdHand, new Vector2(3, Rows[1] + CardHeight + 2), 57);
-        Pool.Place(DicePool.Defense, new Vector2(63, Rows[1] + CardHeight + 2), 57);
-        Pool.Place(DicePool.Rumble, new Vector2(122, Rows[1] + CardHeight + 2), 50);
-        Pool.Place(DicePool.Wend, new Vector2(63, Rows[2] + CardHeight + 2), 57);
+        Pool.Place(DicePool.OdHand, new Vector2(1, Rows[1] + CardHeight + 2), 57);
+        Pool.Place(DicePool.Defense, new Vector2(59, Rows[1] + CardHeight + 2), 57);
+        Pool.Place(DicePool.Rumble, new Vector2(116, Rows[1] + CardHeight + 2), 52);
+        Pool.Place(DicePool.Wend, new Vector2(59, Rows[2] + CardHeight + 2), 57);
 
         // 1. Name and hearts. 2. Level, title, kills and XP. 3. Gold, keys, torches and treasure.
         _name = Add(UiTheme.Label(new(4, 0), new(80, 16), fontSize: UiTheme.HeadingSize));
@@ -199,20 +199,27 @@ public partial class HeroPanel : Panel
         MagicCard.Pressed += () => MagicClicked?.Invoke();
         _luck = Add(UiTheme.RichLabel(new(3, Rows[0] + CardHeight + 2), new(76, 12)));
         LuckClover = Add(new LuckClover { Position = new(2, Rows[0] + CardHeight + 1), Size = new(76, 13) });
-        _magicRank = Add(UiTheme.RichLabel(new(137, Rows[0] + CardHeight + 2), new(38, 12)));
-        CarryButton = Add(UiTheme.CompactButton(new(Columns[1], Rows[0] + CardHeight + 2), new(CardWidth, 12), "Carry"));
+        _magicRank = Add(UiTheme.RichLabel(new(128, Rows[0] + CardHeight + 2), new(40, 12)));
+        // Carry, standing up along the sheet's edge beside the Magic card: C A R R Y.
+        CarryButton = Add(UiTheme.CompactButton(new(Columns[2] + CardWidth + 1, Rows[0]), new(175 - Columns[2] - CardWidth, CardHeight), ""));
         CarryButton.Name = "Carry";
-        CarryButton.AddThemeFontSizeOverride("font_size", UiTheme.FontSize - 2);
+        Label upright = UiTheme.Label(Vector2.Zero, CarryButton.Size, "C\nA\nR\nR\nY", fontSize: UiTheme.FontSize - 2, color: Palette.TrimBright);
+        upright.HorizontalAlignment = HorizontalAlignment.Center;
+        upright.VerticalAlignment = VerticalAlignment.Center;
+        upright.AddThemeConstantOverride("line_spacing", -3);
+        upright.MouseFilter = MouseFilterEnum.Ignore;
+        CarryButton.AddChild(upright);
         CarryButton.TooltipText = "What you carry in your arms: pull the window out (or put it back). Drag cards onto it to carry them.";
         CarryButton.Pressed += () => CarryClicked?.Invoke();
 
-        // The bag: a deck, its cards listed under it.
+        // The bag, bottom right under the main hand: a deck, its cards listed under it. Open, it rolls out from under the
+        // sheet like a drawer (the game screen puts it there).
         for (int i = 2; i >= 1; i--)
         {
-            Add(new Panel { Position = new(Columns[0] + i * 2, Rows[2] - i * 2), Size = new(CardWidth, CardHeight), MouseFilter = MouseFilterEnum.Ignore });
+            Add(new Panel { Position = new(Columns[2] + i * 2, Rows[2] - i * 2), Size = new(CardWidth, CardHeight), MouseFilter = MouseFilterEnum.Ignore });
         }
 
-        _bag = Add(new SheetCard { Position = new(Columns[0], Rows[2]), Size = new(CardWidth, CardHeight), Back = "back_bag", ToggleMode = false, DropsAs = new DropTarget(DropKind.Bag) });
+        _bag = Add(new SheetCard { Position = new(Columns[2], Rows[2]), Size = new(CardWidth, CardHeight), Back = "back_bag", ToggleMode = false, DropsAs = new DropTarget(DropKind.Bag) });
         _bag.Pressed += ToggleBag;
 
         // The bag open over the board, seen from above: its cards face up inside, two rows of four, to pick from; its knot closes it.
@@ -233,7 +240,7 @@ public partial class HeroPanel : Panel
         }
         for (int i = 0; i < _backpack.Length; i++)
         {
-            CardSlot slot = Add(new CardSlot { Position = new(2, Rows[2] + CardHeight + 3 + i * 11), Size = new(60, 11), Flat = true, Draggable = true, DropsAs = new DropTarget(DropKind.Bag) });
+            CardSlot slot = Add(new CardSlot { Position = new(Columns[2] - 2, Rows[2] + CardHeight + 3 + i * 11), Size = new(176 - Columns[2], 11), Flat = true, Draggable = true, DropsAs = new DropTarget(DropKind.Bag) });
             slot.AddThemeFontSizeOverride("font_size", UiTheme.FontSize);
             slot.Pressed += () =>
             {
@@ -245,8 +252,8 @@ public partial class HeroPanel : Panel
             _backpack[i] = slot;
         }
 
-        // The belt square, wearing the belt, with the belt fan beneath it.
-        _beltSquare = Add(new BeltSquare { Position = new(Columns[2], Rows[2]) });
+        // The belt square, bottom left, wearing the belt, with the belt fan beneath it.
+        _beltSquare = Add(new BeltSquare { Position = new(Columns[0], Rows[2]) });
         _beltSquare.CardSelected += id => CardSelected?.Invoke(id);
         _beltSquare.CardUsed += id => BeltCardUsed?.Invoke(id);
         _beltSquare.BuckleClicked += () => BuckleClicked?.Invoke();
@@ -276,7 +283,7 @@ public partial class HeroPanel : Panel
         }
 
         // The bags hung under the belt, on the leg; each opens over the board, seen from above, its knot on top to close it.
-        _bagRow = Add(new BagRow { Position = new(Columns[2] - 4, Rows[2] + BeltSquare.SquareHeight + 12) });
+        _bagRow = Add(new BagRow { Position = new(Columns[0], Rows[2] + BeltSquare.SquareHeight + 12) });
         _bagRow.KnotClicked += id =>
         {
             TogglePouch(id);
@@ -311,7 +318,7 @@ public partial class HeroPanel : Panel
             _pouchCards[i] = card;
         }
 
-        _turn = Add(UiTheme.Label(new(118, Rows[2] + BeltSquare.SquareHeight + 12 + BagRow.RowHeight), new(56, 24), color: Palette.TextDim));
+        _turn = Add(UiTheme.Label(new(Columns[0], Rows[2] + BeltSquare.SquareHeight + 12 + BagRow.RowHeight), new(56, 24), color: Palette.TextDim));
         _turn.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         _turn.HorizontalAlignment = HorizontalAlignment.Center;
     }

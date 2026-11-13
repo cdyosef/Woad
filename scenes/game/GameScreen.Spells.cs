@@ -71,12 +71,15 @@ public partial class GameScreen
         _heroPanel.ShowMagic(hero is not null && (hero.EffectiveStats.Magic > 0 || hero.Spells.Count > 0), !_cast.Disabled, _cast.TooltipText);
     }
 
-    /// <summary>The bottom of the sheet: Orders on the left while it shows, End turn filling the rest.</summary>
+    /// <summary>The bottom of the sheet: Orders on the left while it shows, Power up, then End turn filling the rest.</summary>
     private void LayoutEndTurnRow()
     {
+        float y = _heroPanel.Size.Y - 25;
         float left = _orders.Visible ? 60 : 6;
-        _endTurn.Position = new Vector2(left, 335);
-        _endTurn.Size = new Vector2(170 - left, 20);
+        _orders.Position = new Vector2(6, y);
+        _powerUp.Position = new Vector2(left, y);
+        _endTurn.Position = new Vector2(left + 24, y);
+        _endTurn.Size = new Vector2(170 - left - 24, 20);
     }
 
     private void OpenSpells()

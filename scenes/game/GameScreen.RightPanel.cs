@@ -15,7 +15,10 @@ namespace Woad.Scenes.Game;
 public partial class GameScreen
 {
     private const float HoverTop = 100;
-    private const float LogBottomRoom = 42;
+    private const float LogBottomRoom = 6;
+
+    /// <summary>How tall the item slide-out is: its name, its buttons and the start of its story (the rest scrolls).</summary>
+    private const float ItemSlideoutHeight = 130;
     private const float DefaultLogHeight = 66;
     private const string UiPrefsPath = "user://ui.cfg";
 
@@ -25,6 +28,10 @@ public partial class GameScreen
     private float _logHeight = DefaultLogHeight;
 
     internal HoverBox HoverPanel => _hoverBox;
+
+    internal HeroPanel Sheet => _heroPanel;
+
+    internal ItemSlideout Slideout => _itemSlideout;
 
     internal ItemSlideout ItemPanel => _itemSlideout;
 
@@ -90,14 +97,38 @@ public partial class GameScreen
         prefs.Save(UiPrefsPath);
     }
 
-    /// <summary>The item slide-out, sized to the column below the carry and fire tabs.</summary>
+    /// <summary>The item slide-out, coming out over the board's left side (see <see cref="PlaceItemSlideout"/>).</summary>
     private ItemSlideout BuildItemSlideout()
     {
-        _itemSlideout = new ItemSlideout { Position = new Vector2(SideWidth, ItemSlideoutTop), Size = new Vector2(ItemSlideout.Width, 360 - ItemSlideoutTop - 4), ZIndex = 2 };
+        _itemSlideout = new ItemSlideout { Position = new Vector2(SideWidth, StripHeight + 2), Size = new Vector2(ItemSlideout.Width, 200), ZIndex = 2 };
         return _itemSlideout;
     }
 
-    private const float ItemSlideoutTop = StripHeight + 4 + 62 + 92;
+    /// <summary>
+    /// The item slide-out comes out from the sheet's edge over the board's lower left, down to the prompt strip (short,
+    /// leaving the board above it to click on): beside the bag's drawer while it's out, or the carry or fire tab, so it
+    /// never covers them.
+    /// </summary>
+    private void PlaceItemSlideout()
+    {
+        if (_drawer is null || _itemSlideout is null)
+        {
+            return;
+        }
+
+        float left = _boardFrame.Position.X;
+        float beside = _drawer.GetChildren().OfType<Control>().Where(view => view.Visible).Select(view => view.Size.X * _sheetScale).DefaultIfEmpty(0).Max();
+        if (beside == 0 && (_carryTab.IsOut || _fireTab.Visible))
+        {
+            beside = 72;
+        }
+
+        float width = Mathf.Clamp(_boardFrame.Size.X - beside - 2, 120, ItemSlideout.Width);
+        float bottom = _promptStrip.Visible ? _promptStrip.Position.Y : _dice.Position.Y - 1;
+        float height = Mathf.Min(ItemSlideoutHeight, bottom - StripHeight - 4);
+        _itemSlideout.Position = new Vector2(left + beside, bottom - 2 - height);
+        _itemSlideout.Size = new Vector2(width, height);
+    }
 
     /// <summary>Lays out the right panel's boxes, top to bottom: the hover box, what's selected, and the log taking the height you gave it.</summary>
     private void PlaceRight()
@@ -122,7 +153,6 @@ public partial class GameScreen
         _logDivider.Size = new Vector2(width - 8, 5);
         _log.Position = new Vector2(left + 8, top);
         _log.Size = new Vector2(width - 16, bottom - top);
-        _itemSlideout.Size = new Vector2(ItemSlideout.Width, Size.Y - ItemSlideoutTop - 4);
     }
 
     /// <summary>What the hover box says about a tile: who or what is there, its picture, and how to interact with it.</summary>

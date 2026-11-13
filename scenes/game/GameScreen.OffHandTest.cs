@@ -58,7 +58,7 @@ public partial class GameScreen
             await ClickTile(slime.Position);
             await ConfirmIfHeld();
             await WaitUntilIdle();
-            Check(_session.AttackDiceLeft == 0 && GameSession.OffHandItem(aria) == dagger, "the Rumble attack is the sword's; the Dagger is still in her off hand");
+            Check(_session.AttackDiceLeft == 0 && GameSession.OffHandItem(aria) == dagger, $"the Rumble attack is the sword's; the Dagger is still in her off hand ({_session.AttackDiceLeft} left, at {TileCenter(slime.Position)} in {BoardRect}; {string.Join(" / ", _messages.TakeLast(3))})");
             Check(InSquare(_odHand, dagger), "with a follow-up to make, the Dagger is in the Od Hand square");
 
             Check(_session.State.Rooms["yard"].FindMonster(slime.Id) is not null, "the ogre takes the sword and stands");

@@ -56,6 +56,8 @@ public sealed class EventNarrator(Func<int, string> nameOf, Func<int, string> ca
         Drowned drowned => $"{nameOf(drowned.HeroId)} has no strength left to swim and goes under!",
         PowerDiceEarned earned => $"{nameOf(earned.HeroId)} rolled a 6 and earns a Power Die!",
         PowerDieAdded added => $"{nameOf(added.HeroId)} adds a Power Die: {added.Face}, for {added.Total}.",
+        PoweredUp { Gained: 0 } up => $"{nameOf(up.HeroId)} powers up: no 6s, no Power Dice.",
+        PoweredUp up => $"{nameOf(up.HeroId)} powers up: {up.Gained} Power {(up.Gained == 1 ? "Die" : "Dice")} banked ({up.Banked} in all)!",
         ConditionChanged { Count: 0 } cleared => $"{nameOf(cleared.EntityId)} is rid of {DieTypes.Label(cleared.Condition).ToLowerInvariant()}.",
         ConditionChanged changed => $"{nameOf(changed.EntityId)}: {DieTypes.Describe(changed.Condition, changed.Count)}.",
         GearCorroded corroded => $"Acid eats {nameOf(corroded.HeroId)}'s {cardNameOf(corroded.CardId)}: armor {corroded.ArmorLeft} until it's mended.",

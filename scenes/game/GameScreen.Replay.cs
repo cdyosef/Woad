@@ -62,8 +62,8 @@ public partial class GameScreen
         _roundStarts = replay.Record.RoundStarts(Content);
 
         // At the top of the right-hand panel (Party and Menu have nothing to do in a replay).
-        const float barWidth = 172;
-        _replayBar = new Panel { Position = new Vector2(SideWidth + BoardView.Pixels + 2, 2), Size = new Vector2(barWidth, 56), ZIndex = 5 };
+        float barWidth = _rightPanel.Size.X - 4;
+        _replayBar = new Panel { Position = new Vector2(_rightPanel.Position.X + 2, 2), Size = new Vector2(barWidth, 56), ZIndex = 5 };
         _replayBar.AddThemeStyleboxOverride("panel", UiTheme.Box(Palette.Ink with { A = 0.85f }, Palette.Trim));
         AddChild(_replayBar);
         float x = 3, y = 2;

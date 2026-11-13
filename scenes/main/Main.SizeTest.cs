@@ -47,7 +47,36 @@ public partial class Main
                 }
             }
 
+            // At 720 by 450: the sheet a quarter bigger, the board wider than a standard room; the bag rolls out of its
+            // drawer under the sheet, and a card picked from it slides out beside it, not over it.
             GetWindow().Size = new Vector2I(1440, 900);
+            for (int frame = 0; frame < 10; frame++)
+            {
+                await NextFrame(this);
+            }
+
+            Check(game.SheetScale == 1.25f && game.BoardRect.Size.X > BoardView.Pixels && game.BoardRect.Size.Y >= BoardView.Pixels, $"at 720x450 the sheet's bigger and the board shows more ({game.SheetScale}, {game.BoardRect})");
+            game.ShowForTest(null, null, null);
+            await Click(this, game.Sheet.BagDeck);
+            for (int frame = 0; frame < 20; frame++)
+            {
+                await NextFrame(this);
+            }
+            Rect2 bag = game.Sheet.BagView.GetGlobalRect();
+            Check(game.Sheet.IsBagOpen && bag.Position.X >= game.Sheet.GetGlobalRect().End.X - 1, $"the bag rolls out from under the sheet ({bag})");
+            game.ShowForTest(aria.AllCards.First(card => card.Definition.Id == "torch").Id, null, null);
+            for (int frame = 0; frame < 20; frame++)
+            {
+                await NextFrame(this);
+            }
+            Rect2 slide = game.Slideout.GetGlobalRect();
+            Check(slide.Position.X >= bag.End.X - 1, $"a picked card's slide-out comes out beside the open bag, not over it ({slide} by {bag})");
+            if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } bagShots)
+            {
+                GetViewport().GetTexture().GetImage().SavePng($"{bagShots}/size_bag.png");
+            }
+
+            await Click(this, game.Sheet.BagDeck);
             ShowMainMenu();
             for (int frame = 0; frame < 10; frame++)
             {

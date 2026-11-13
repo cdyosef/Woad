@@ -32,7 +32,11 @@ public partial class BagMouthView : Control
     public string Title
     {
         get => _title.Text;
-        set => _title.Text = value;
+        set
+        {
+            _title.Text = value;
+            _title.Size = new Vector2(Size.X, 12);
+        }
     }
 
     /// <summary>The knot at the top was clicked: close the bag.</summary>

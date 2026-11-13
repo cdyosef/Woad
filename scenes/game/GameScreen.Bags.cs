@@ -55,8 +55,8 @@ public partial class GameScreen
     private void AskBagUse(Hero hero, CardInstance bag, CardInstance top)
     {
         int index = hero.Bags.ToList().IndexOf(bag);
-        Vector2 at = _heroPanel.BagRow.GetGlobalRect().Position + _heroPanel.BagRow.KnotPoint(index);
-        _bagUse = new Panel { Position = new Vector2(Math.Min(at.X - 26, 176 - 54), at.Y - 46), Size = new Vector2(52, 40), ZIndex = 6 };
+        Vector2 at = _heroPanel.BagRow.GetGlobalTransform() * _heroPanel.BagRow.KnotPoint(index);
+        _bagUse = new Panel { Position = new Vector2(Mathf.Clamp(at.X - 26, 2, SideWidth * _sheetScale - 54), at.Y - 46), Size = new Vector2(52, 40), ZIndex = 6 };
         _bagUse.AddThemeStyleboxOverride("panel", UiTheme.Box(Palette.Ink, Palette.Trim));
         Label title = UiTheme.Heading(UiTheme.Label(new Vector2(0, 1), new Vector2(52, 12), "USE", 9, Palette.TrimBright), 1);
         title.HorizontalAlignment = HorizontalAlignment.Center;

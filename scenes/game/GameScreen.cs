@@ -163,6 +163,10 @@ public partial class GameScreen : Control
         {
             RunTorchSearchTest();
         }
+        else if (args.Contains("--poweruptest"))
+        {
+            RunPowerUpTest();
+        }
         else if (args.Contains("--smashtest"))
         {
             RunSmashTest();
@@ -1334,6 +1338,14 @@ public partial class GameScreen : Control
                 await Pause(0.3);
                 break;
 
+            case PoweredUp up:
+                // Every die left, rolled at once in the tray: the 6s go to the bank.
+                await _dice.ShowRoll($"{NameOf(up.HeroId)} powers up", up.Roll, 0, newGroup: true);
+                CalloutOver(up.HeroId, up.Gained > 0 ? $"+{up.Gained} POWER" : "NO 6S", up.Gained > 0 ? Palette.Power : Palette.TextDim);
+                RefreshPanels();
+                await Pause(0.3);
+                break;
+
             case PowerDieAdded added:
                 _attackTotal += added.Face;
                 _attackPower += added.Face;
@@ -1713,7 +1725,7 @@ public partial class GameScreen : Control
             case EnemyPhaseStarted:
                 Sfx.Play("monsters");
                 break;
-            case MovementRolled or AttackRolled or DefenseRolled or DieRerolled or PowerDieAdded:
+            case MovementRolled or AttackRolled or DefenseRolled or DieRerolled or PowerDieAdded or PoweredUp:
                 Sfx.PlayVaried("dice");
                 break;
             case PowerDiceEarned:
