@@ -822,6 +822,8 @@ public partial class GameScreen
         PlaceBubbles();
 
         // The carry and fire tabs slide out from the sheet's edge beside the Carry button; the bag's drawer below them.
+        _heroPanel.CarryButton.Scale = new Vector2(scale, scale);
+        _heroPanel.CarryButton.Position = new Vector2(sheet - 5 * scale, HeroPanel.Rows[0] * scale);
         _carryTab.Position = new Vector2(sheet, HeroPanel.Rows[0] * scale);
         _fireTab.Position = new Vector2(sheet, HeroPanel.Rows[0] * scale + 62);
         _drawer.Position = new Vector2(sheet, HeroPanel.Rows[1] * scale);
@@ -891,6 +893,9 @@ public partial class GameScreen
             control.Reparent(this);
         }
 
+        // Carry stands on the border between the sheet and the board: over the board's frame, so all of it takes clicks.
+        _heroPanel.CarryButton.Reparent(this);
+        _heroPanel.CarryButton.ZIndex = 2;
         _promptStrip.MoveToFront();
         _dicePanel.MoveToFront();
         _dice.MoveToFront();

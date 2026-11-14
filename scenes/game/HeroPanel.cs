@@ -200,9 +200,10 @@ public partial class HeroPanel : Panel
         _luck = Add(UiTheme.RichLabel(new(3, Rows[0] + CardHeight + 2), new(76, 12)));
         LuckClover = Add(new LuckClover { Position = new(2, Rows[0] + CardHeight + 1), Size = new(76, 13) });
         _magicRank = Add(UiTheme.RichLabel(new(128, Rows[0] + CardHeight + 2), new(40, 12)));
-        // Carry, standing up along the sheet's edge beside the Magic card: C A R R Y.
-        CarryButton = Add(UiTheme.CompactButton(new(Columns[2] + CardWidth + 1, Rows[0]), new(175 - Columns[2] - CardWidth, CardHeight), ""));
+        // Carry, standing up on the sheet's border beside the Magic card (over the line between it and the board): C A R R Y.
+        CarryButton = Add(UiTheme.CompactButton(new(171, Rows[0]), new(11, CardHeight), ""));
         CarryButton.Name = "Carry";
+        CarryButton.ZIndex = 2;
         Label upright = UiTheme.Label(Vector2.Zero, CarryButton.Size, "C\nA\nR\nR\nY", fontSize: UiTheme.FontSize - 2, color: Palette.TrimBright);
         upright.HorizontalAlignment = HorizontalAlignment.Center;
         upright.VerticalAlignment = VerticalAlignment.Center;

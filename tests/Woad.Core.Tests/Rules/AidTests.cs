@@ -254,4 +254,24 @@ public class AidTests
         Assert.Equal(GameRules.DollCapacity, doll.SoakedStacks);
         Assert.Equal(2, hero.Conditions[Condition.Shine]);
     }
+
+    [Theory]
+    [InlineData("t_bag")]
+    [InlineData("t_bandage")]
+    public void WithoutAidAMedicineBagOrBandagesTakeTheOdHandDiceToo(string kit)
+    {
+        // No Aid skill: the Od Hand die (5) still goes in, with the kit's die (5) (and the bag's +1), -1 for the Poison.
+        GameSession session = TestRun.Start(Pair, new ScriptedDice(5, 5), cards: [kit], skills: Skill.None);
+        Hero hero = session.HeroInSeat();
+        hero.Conditions.Add(Condition.Poison, 1);
+
+        Assert.Null(session.CheckAid(hero.Id));
+        OdHandRolled rolled = session.Do(new Aid(hero.Id, hero.Id, Dice: 1)).SingleOf<OdHandRolled>();
+
+        Assert.Equal(1, rolled.ToolDice);
+        Assert.Equal(9 + (kit == "t_bag" ? 1 : 0), rolled.Total);
+        Assert.Equal(OdHandCheckKind.Cure, rolled.Kind);
+        Assert.Equal(1, session.State.Turn!.OdHandDiceUsed);
+        Assert.Equal(kit == "t_bandage", hero.Conditions.Has(Condition.Poison));
+    }
 }
