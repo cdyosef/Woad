@@ -499,65 +499,88 @@ public partial class HandView : Control
 }
 
 /// <summary>
-/// A hand of ability cards spread out over the board: the dull ones at the back (left), the ones that
-/// can be used now lit and standing up at the front. Every card can be picked, lit or not; one that
-/// can't be done now says why instead. Clicking anywhere else, or right-clicking, puts the hand away.
+/// A hand of ability cards spread out over the board, in one straight row along its foot (overlapping when there are
+/// many): the ones that can be used now glow in the hand's colour, the rest have a plain grey frame. The board isn't
+/// darkened. Hovering a card shows all about it in a panel above the row; clicking it plays it (one that can't be done
+/// now says why instead). Clicking anywhere else, or right-clicking, puts the hand away.
 /// </summary>
 public partial class HandSpread : Control
 {
-    private readonly List<(SheetCard View, AbilityCard Card)> _shown = [];
+    private readonly List<(SpreadCard View, AbilityCard Card)> _shown = [];
     private Label _title = null!;
+    private Panel _info = null!;
+    private RichTextLabel _infoText = null!;
+    private float _step;
 
     /// <summary>A card was picked from a hand: its action to take (or explain).</summary>
     public event Action<HandView, AbilityCard>? Picked;
 
     public event Action? Closed;
 
+    /// <summary>What a card says (its key numbers, and all about it), from the game screen.</summary>
+    public Func<HandView, AbilityCard, CardInfo>? Describe { get; set; }
+
     public HandView? Hand { get; private set; }
+
+    /// <summary>The text in the info panel (for the tests).</summary>
+    internal string InfoShown => _info.Visible ? _infoText.Text : "";
 
     public override void _Ready()
     {
         MouseFilter = MouseFilterEnum.Stop;
         Visible = false;
-        AddChild(new ColorRect { Size = Size, Color = new Color(0.02f, 0.02f, 0.05f, 0.6f), MouseFilter = MouseFilterEnum.Ignore });
-        _title = UiTheme.Label(new Vector2(0, 12), new Vector2(Size.X, 14));
+        _title = UiTheme.Label(new Vector2(0, 6), new Vector2(Size.X, 14));
         _title.HorizontalAlignment = HorizontalAlignment.Center;
         AddChild(_title);
+        _info = new Panel { Visible = false, MouseFilter = MouseFilterEnum.Ignore, ZIndex = 10 };
+        _info.AddThemeStyleboxOverride("panel", UiTheme.Box(Palette.Ink, Palette.Trim));
+        AddChild(_info);
+        _infoText = UiTheme.RichLabel(new Vector2(6, 4), new Vector2(200, 10));
+        _infoText.FitContent = true;
+        _infoText.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        _infoText.MouseFilter = MouseFilterEnum.Ignore;
+        _infoText.AddThemeConstantOverride("line_separation", -3);
+        _info.AddChild(_infoText);
     }
 
     /// <summary>The card for an ability's button, while the hand it's in is spread out.</summary>
-    internal SheetCard? CardFor(Button action) => _shown.FirstOrDefault(entry => entry.Card.Action == action).View;
+    internal SpreadCard? CardFor(Button action) => _shown.FirstOrDefault(entry => entry.Card.Action == action).View;
+
+    /// <summary>A point on the part of the card for an ability that shows (the next one over can cover its right side).</summary>
+    internal Vector2? PointFor(Button action) =>
+        CardFor(action) is { } view ? view.GetGlobalTransform() * new Vector2(Mathf.Min(_step, SpreadCard.Width) / 2, SpreadCard.Height / 2) : null;
 
     public void Open(HandView hand)
     {
         Close();
         Hand = hand;
         Visible = true;
-        QueueRedraw();
+        _title.Size = new Vector2(Size.X, 14);
         _title.Text = hand.Title.ToUpperInvariant();
         _title.AddThemeColorOverride("font_color", hand.Color);
 
-        // Dull cards at the back, lit ones at the front, standing up.
-        List<AbilityCard> cards = [.. hand.Cards.Where(card => card.Held).OrderBy(card => card.IsLit)];
-        float width = CardFace.Size.X, height = CardFace.Size.Y;
-        float spread = Math.Min(40, (Size.X - 30) / Math.Max(1, cards.Count));
-        float start = Size.X / 2 - spread * (cards.Count - 1) / 2;
+        // In the hand's own order, in a straight row along the board's foot; overlapping if they don't all fit.
+        List<AbilityCard> cards = [.. hand.Cards.Where(card => card.Held)];
+        _step = Math.Min(SpreadCard.Width + 6, (Size.X - 16 - SpreadCard.Width) / Math.Max(1, cards.Count - 1));
+        float row = (cards.Count - 1) * _step + SpreadCard.Width;
+        float start = (Size.X - row) / 2;
+        float top = Size.Y - SpreadCard.Height - 10;
         for (int i = 0; i < cards.Count; i++)
         {
             AbilityCard card = cards[i];
             bool lit = card.IsLit;
-            float tilt = (i - (cards.Count - 1) / 2f) * 0.09f;
-            var view = new SheetCard
-            {
-                Size = new Vector2(width, height),
-                Position = new Vector2(start + i * spread - width / 2, Size.Y - height - 14 - (lit ? 12 : 0) + Math.Abs(tilt) * 30),
-                PivotOffset = new Vector2(width / 2, height),
-                Rotation = tilt,
-                ToggleMode = false,
-            };
+            CardInfo info = Describe?.Invoke(hand, card) ?? new CardInfo("", card.Action.TooltipText);
+            var view = new SpreadCard { Position = new Vector2(start + i * _step, top), TextureFilter = TextureFilterEnum.Nearest };
             AddChild(view);
-            view.ShowFace(card.Picture, card.Name, lit ? hand.Color : Palette.TrimDim, enabled: true, card.Action.TooltipText);
-            view.Modulate = lit ? Colors.White : new Color(0.75f, 0.75f, 0.75f);
+            view.Show(card.Picture, card.Name, info.Line, hand.Color, lit);
+            view.MouseEntered += () => ShowInfo(view, card, info, lit);
+            view.MouseExited += () =>
+            {
+                view.Position = view.Position with { Y = top };
+                view.ZIndex = 0;
+                _info.Visible = false;
+                _title.Visible = true;
+            };
             view.Pressed += () =>
             {
                 Close();
@@ -568,19 +591,53 @@ public partial class HandSpread : Control
                 // Dragged to its own hand's square, it's played into it without being used.
                 view.FaceDrag = source => CardDrag.BeginAbility(source, hand.Title, card.Name, card.Picture);
             }
+
             _shown.Add((view, card));
         }
     }
 
+    /// <summary>The hovered card lifts to the front, and all about it shows in the panel above the row.</summary>
+    private void ShowInfo(SpreadCard view, AbilityCard card, CardInfo info, bool lit)
+    {
+        view.ZIndex = 1;
+        view.Position = view.Position with { Y = Size.Y - SpreadCard.Height - 16 };
+        float width = Size.X - 12;
+        string why = !lit && card.Action.Disabled && card.Action.TooltipText.Length > 0 && !info.Body.Contains(card.Action.TooltipText)
+            ? $"\n[color={Palette.Hex(Palette.Danger)}]Not now: {card.Action.TooltipText}[/color]" : "";
+        _infoText.Size = new Vector2(width - 12, 10);
+        _infoText.CustomMinimumSize = new Vector2(width - 12, 0);
+        _infoText.Text = $"[color={Palette.Hex(Hand?.Color ?? Palette.TrimBright)}]{card.Name.ToUpperInvariant()}[/color]\n{info.Body}{why}";
+        _info.Size = new Vector2(width, 20);
+        _info.Position = new Vector2(6, view.Position.Y - 24);
+        _info.Visible = true;
+        // Sized once its text is laid out: above the row, as tall as it needs.
+        Callable.From(() => FitInfo(view.Position.Y)).CallDeferred();
+    }
+
+    private void FitInfo(float rowTop)
+    {
+        if (!_info.Visible)
+        {
+            return;
+        }
+
+        float height = Mathf.Min(_infoText.GetContentHeight() + 8, rowTop - 8);
+        _info.Size = _info.Size with { Y = height };
+        _info.Position = _info.Position with { Y = rowTop - height - 4 };
+        // A tall one covers the hand's title.
+        _title.Visible = _info.Position.Y > _title.Position.Y + 14;
+    }
+
     public void Close()
     {
-        foreach ((SheetCard view, _) in _shown)
+        foreach ((SpreadCard view, _) in _shown)
         {
             RemoveChild(view);
             view.QueueFree();
         }
 
         _shown.Clear();
+        _info.Visible = false;
         bool was = Visible;
         Visible = false;
         Hand = null;

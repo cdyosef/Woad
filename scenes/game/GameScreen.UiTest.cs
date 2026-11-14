@@ -79,8 +79,8 @@ public partial class GameScreen
             await UseAbility(_highAlert);
             await WaitUntilIdle();
             Check(_session.State.Turn!.AlertDice == 1 && _session.State.Turn.AttackDiceUsed == 1, "High Alert spends a Rumble die on the next search");
-            Check(_rumbleHand.Front == HandView.SkillKey && _rumbleHand.Played?.Action == _highAlert && _rumbleHand.Stack.Any(card => card.Key == HandView.DiceKey),
-                "a skill played from the hand goes on top of the Rumble stack, the dice card behind it");
+            Check(_rumbleHand.Front == HandView.DiceKey && _rumbleHand.Played is null && _rumbleHand.Stack.All(card => card.Key != HandView.SkillKey),
+                $"a skill played from the hand doesn't stay in the Rumble square: its dice card stays on top ({_rumbleHand.Front})");
             Check(new[] { _bullRush, _guard }.All(action => _rumbleHand.Cards.Any(card => card.Action == action && card.Held))
                 && _odHand.Cards.Any(card => card.Action == _parry && card.Held), "Bull Rush and Guard are in the Rumble hand, Parry in the Od Hand");
 
@@ -877,6 +877,14 @@ public partial class GameScreen
             Check(_spread.Hand == _magicHand && SpellCard("hurl_fire") is not null && !_spellButtons["hurl_fire"].Disabled, "the Magic card spreads out the spells she knows");
             Check(_spellButtons["quake"].Disabled, "Quake is dull with nothing beside her");
             Check(_magicHand.Cards.Count == aria.Spells.Count, "her Magic hand holds only the spells she knows");
+            Check(_spread.GetChildren().OfType<ColorRect>().All(cover => cover.Color.A == 0), "the spread doesn't darken the board");
+            List<SpreadCard> row = [.. aria.Spells.Where(spell => spell.Upgrades is null).Select(spell => SpellCard(spell.Id)!)];
+            Check(row.All(card => card.Position.Y == row[0].Position.Y && card.Rotation == 0), "the spells lie in one straight row");
+
+            // Hovered, a spell tells all: its cost, its dice, who it reaches, and what boosting it does and how far.
+            await HoverAt(this, SpellPoint("hurl_fire"));
+            string info = _spread.InfoShown;
+            Check(info.Contains("Cost:") && info.Contains("Dice:") && info.Contains("Reaches:") && info.Contains("Boosting:"), $"hovering Hurl Fire shows all about it ({info})");
             if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } shots)
             {
                 await Pause(0.1);
@@ -885,7 +893,7 @@ public partial class GameScreen
 
             // What she can pay with: banked Power, and any Magic Die her slot charged at the turn's start (spent first).
             int power = aria.Power.Banked, magic = aria.MagicCharged;
-            await Click(this, SpellCard("hurl_fire")!);
+            await ClickAt(this, SpellPoint("hurl_fire"));
             Check(_casting == "hurl_fire", "picking Hurl Fire aims it");
             Monster slime = ShownRoom.MonsterAt(new GridPosition(3, 3))!;
             Check(_session.GetSpellTargets("hurl_fire").Contains(slime.Position), "the slime is in its range");
@@ -904,7 +912,7 @@ public partial class GameScreen
             OnPoolTokenClicked(DicePool.Power, 0);
             Check(SelectedPowerDice == 1, "a banked Power Die selected");
             await Click(this, _heroPanel.MagicCard);
-            await Click(this, SpellCard("swirly_eyes")!);
+            await ClickAt(this, SpellPoint("swirly_eyes"));
             Check(_session.GetSpellTargets("swirly_eyes").Contains(ogre.Position), "the ogre is in Swirly Eyes' range");
             await ClickTile(ogre.Position);
             Check(_swirling == ogre.Position, "Swirly Eyes asks where to move the ogre");
@@ -1071,7 +1079,7 @@ public partial class GameScreen
             async Task CastAt(string spellId, GridPosition target)
             {
                 await Click(this, _heroPanel.MagicCard);
-                await Click(this, SpellCard(spellId)!);
+                await ClickAt(this, SpellPoint(spellId));
                 Check(_session.GetSpellTargets(spellId).Contains(target), $"{spellId} can be aimed at {target}");
                 await ClickTile(target);
                 await WaitUntilIdle();
@@ -1408,14 +1416,14 @@ public partial class GameScreen
             Vector2 rumbleSquare = _rumbleHand.GetGlobalRect().Position + new Vector2(24, 20);
             await ClickAt(this, _rumbleHand.GetGlobalRect().Position + _rumbleHand.FanPoint);
             Check(_spread.CardFor(_shove) is not null, "Shove is in the spread Rumble hand");
-            await DragAt(this, _spread.CardFor(_shove)!.GetGlobalRect().GetCenter(), _odHand.GetGlobalRect().Position + new Vector2(24, 20));
+            await DragAt(this, _spread.PointFor(_shove)!.Value, _odHand.GetGlobalRect().Position + new Vector2(24, 20));
             Check(_odHand.Played is null && _rumbleHand.Played?.Name != "Shove", "an ability card won't go into another hand's square");
             if (_spread.Hand != _rumbleHand)
             {
                 await ClickAt(this, _rumbleHand.GetGlobalRect().Position + _rumbleHand.FanPoint);
             }
 
-            await DragAt(this, _spread.CardFor(_shove)!.GetGlobalRect().GetCenter(), rumbleSquare);
+            await DragAt(this, _spread.PointFor(_shove)!.Value, rumbleSquare);
             await WaitUntilIdle();
             Check(_rumbleHand.Played?.Name == "Shove" && !_spread.Visible, "dragged onto the Rumble square, Shove is played there");
             await SaveShot("shove_played");
@@ -1680,7 +1688,10 @@ public partial class GameScreen
     private Task ClickBelt(int index) => ClickAt(this, _heroPanel.BeltPoint(index));
 
     /// <summary>A spell's card in the spread Magic hand.</summary>
-    private SheetCard? SpellCard(string spellId) => _spellButtons.TryGetValue(spellId, out Button? button) ? _spread.CardFor(button) : null;
+    private SpreadCard? SpellCard(string spellId) => _spellButtons.TryGetValue(spellId, out Button? button) ? _spread.CardFor(button) : null;
+
+    /// <summary>A point on the showing part of a spell's card in the spread Magic hand.</summary>
+    private Vector2 SpellPoint(string spellId) => _spread.PointFor(_spellButtons[spellId])!.Value;
 
     /// <summary>Plays an ability from its hand: spreads the hand out, then clicks its card.</summary>
     internal async Task UseAbility(Button action)
@@ -1691,7 +1702,7 @@ public partial class GameScreen
             await ClickAt(this, hand.GetGlobalRect().Position + hand.FanPoint);
         }
 
-        SheetCard? card = _spread.CardFor(action);
+        SpreadCard? card = _spread.CardFor(action);
         Check(card is not null, $"{action.Text} is in the {hand.Title} hand");
         if (System.Environment.GetEnvironmentVariable("WOAD_SHOTS") is { } shots)
         {
@@ -1699,7 +1710,7 @@ public partial class GameScreen
             GetViewport().GetTexture().GetImage().SavePng($"{shots}/hand_{hand.Title.Replace(" ", "")}_{System.DateTime.Now.Ticks}.png");
         }
 
-        await Click(this, card!);
+        await ClickAt(this, _spread.PointFor(action)!.Value);
     }
 
     private Task ClickTile(GridPosition tile) =>

@@ -159,18 +159,13 @@ public partial class GameScreen
         _heroPanel.AddChild(_magicHand);
 
         _spread = new HandSpread { Position = BoardOrigin, Size = new Vector2(BoardView.Pixels, BoardView.Pixels), ZIndex = 3 };
+        _spread.Describe = DescribeCard;
         _spread.Picked += (hand, card) =>
         {
-            // Played from the hand, a skill takes its place in the stack, on top; the dice action puts the dice card on top.
+            // Played from the hand, a skill doesn't stay in the square: the square keeps its dice card on top.
             if (hand.Default is not null && ActiveHero is { } hero)
             {
-                if (card != hand.Default)
-                {
-                    hand.Played = card;
-                    _playedCards[(hero.Id, hand.Title)] = card.Name;
-                }
-
-                _fronts[(hero.Id, hand.Title)] = card == hand.Default ? HandView.DiceKey : HandView.SkillKey;
+                _fronts[(hero.Id, hand.Title)] = HandView.DiceKey;
                 ApplyStackFronts();
             }
 

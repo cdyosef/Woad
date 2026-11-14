@@ -30,6 +30,14 @@ public static class UiDriver
     public static Task Click(Node context, Control control) => ClickAt(context, control.GetGlobalRect().GetCenter());
 
     /// <summary>Moves the mouse to a point in 640x360 canvas coordinates and clicks it.</summary>
+    /// <summary>Moves the mouse over a point, and lets a frame go by.</summary>
+    public static async Task HoverAt(Node context, Vector2 position)
+    {
+        context.GetViewport().PushInput(new InputEventMouseMotion { Position = position, GlobalPosition = position }, inLocalCoords: true);
+        await NextFrame(context);
+        await NextFrame(context);
+    }
+
     public static async Task ClickAt(Node context, Vector2 position)
     {
         Viewport viewport = context.GetViewport();
